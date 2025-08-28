@@ -1,0 +1,2 @@
+class EmailOtp < ApplicationRecord
+end

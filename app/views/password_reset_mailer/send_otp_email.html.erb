@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Reset OTP</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .otp {
+      font-size: 28px;
+      font-weight: bold;
+      color: #1a73e8;
+      margin: 20px 0;
+      letter-spacing: 4px;
+    }
+
+    .footer {
+      font-size: 14px;
+      color: #888;
+      margin-top: 30px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Password Reset Request</h1>
+    <p>Hello <%= @user.fullname %>,</p>
+    <p>You recently requested to reset your password. Please use the following One-Time Password (OTP) to verify your identity:</p>
+    <div class="otp"><%= @otp %></div>
+    <p>This OTP is valid for the next 10 minutes.</p>
+    <p>If you did not make this request, you can safely ignore this email.</p>
+    <div class="footer">
+      &copy; <%= Time.current.year %> CarbonCube-KE. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+

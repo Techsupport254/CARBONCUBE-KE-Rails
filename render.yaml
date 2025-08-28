@@ -1,0 +1,20 @@
+# Exported from Render on 2024-10-12T16:50:14Z
+services:
+- type: web
+  name: CARBONCUBE-KE-Rails
+  runtime: docker
+  repo: https://github.com/LewKM/CARBONCUBE-KE-Rails
+  plan: free
+  envVars:
+  - key: SECRET_KEY_BASE
+    sync: false
+  - key: RAILS_MASTER_KEY
+    sync: false
+  - key: DATABASE_URL
+    sync: false
+  - key: WEB_CONCURRENCY
+    sync: false
+  region: frankfurt
+  dockerContext: .
+  dockerfilePath: ./Dockerfile
+version: "1"

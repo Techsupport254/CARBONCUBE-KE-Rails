@@ -1,0 +1,31 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  name: MyString
+  description: MyText
+  contact_info: MyText
+  phone_number: MyString
+  birth_date: 2024-06-28
+  location: MyString
+  category: one
+  total_revenue: 9.99
+  total_orders: 1
+  customer_demographics: 
+  product_inventory: 
+  analytics: 
+
+two:
+  user: two
+  name: MyString
+  description: MyText
+  contact_info: MyText
+  phone_number: MyString
+  birth_date: 2024-06-28
+  location: MyString
+  category: two
+  total_revenue: 9.99
+  total_orders: 1
+  customer_demographics: 
+  product_inventory: 
+  analytics: 

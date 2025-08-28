@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  order: one
+  carrier: MyString
+  tracking_number: MyString
+  status: MyString
+
+two:
+  order: two
+  carrier: MyString
+  tracking_number: MyString
+  status: MyString

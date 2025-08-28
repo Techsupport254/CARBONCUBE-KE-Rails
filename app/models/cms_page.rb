@@ -1,0 +1,2 @@
+class CmsPage < ApplicationRecord
+end

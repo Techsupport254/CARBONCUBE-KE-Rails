@@ -1,0 +1,619 @@
+[
+    {
+        "name": "Baringo",
+        "capital": "Kabarnet",
+        "county_code": 30,
+        "sub_counties": [
+            { "name": "Baringo Central", "sub_county_code": 159 },
+            { "name": "Baringo North", "sub_county_code": 158 },
+            { "name": "Baringo South", "sub_county_code": 160 },
+            { "name": "Eldama Ravine", "sub_county_code": 162 },
+            { "name": "Mogotio", "sub_county_code": 161 },
+            { "name": "Tiaty", "sub_county_code": 157 }
+        ]
+    },    
+    {
+        "name": "Bomet",
+        "capital": "Bomet",
+        "county_code": 36,
+        "sub_counties": [
+            { "name": "Bomet Central", "sub_county_code": 197 },
+            { "name": "Bomet East", "sub_county_code": 196 },
+            { "name": "Chepalungu", "sub_county_code": 195 },
+            { "name": "Konoin", "sub_county_code": 198 },
+            { "name": "Sotik", "sub_county_code": 194 }
+        ]
+    },    
+    {
+        "name": "Bungoma",
+        "capital": "Bungoma",
+        "county_code": 39,
+        "sub_counties": [
+            { "name": "Bumula", "sub_county_code": 219 },
+            { "name": "Kabuchai", "sub_county_code": 218 },
+            { "name": "Kanduyi", "sub_county_code": 220 },
+            { "name": "Kimilil", "sub_county_code": 223 },
+            { "name": "Mt Elgon", "sub_county_code": 216 },
+            { "name": "Sirisia", "sub_county_code": 217 },
+            { "name": "Tongaren", "sub_county_code": 224 },
+            { "name": "Webuye East", "sub_county_code": 221 },
+            { "name": "Webuye West", "sub_county_code": 222 }
+        ]
+    },
+    {
+        "name": "Busia",
+        "capital": "Busia",
+        "county_code": 40,
+        "sub_counties": [
+            { "name": "Budalangi", "sub_county_code": 231 },
+            { "name": "Butula", "sub_county_code": 229 },
+            { "name": "Funyula", "sub_county_code": 230 },
+            { "name": "Nambale", "sub_county_code": 227 },
+            { "name": "Teso North", "sub_county_code": 225 },
+            { "name": "Teso South", "sub_county_code": 226 }
+        ]
+    },    
+    {
+        "name": "Elgeyo-Marakwet",
+        "capital": "Iten",
+        "county_code": 28,
+        "sub_counties": [
+            { "name": "Keiyo North", "sub_county_code": 149 },
+            { "name": "Keiyo South", "sub_county_code": 150 },
+            { "name": "Marakwet East", "sub_county_code": 147 },
+            { "name": "Marakwet West", "sub_county_code": 148 }
+        ]
+    },
+    {
+        "name": "Embu",
+        "capital": "Embu",
+        "county_code": 14,
+        "sub_counties": [
+            { "name": "Manyatta", "sub_county_code": 63 },
+            { "name": "Mbeere North", "sub_county_code": 66 },
+            { "name": "Mbeere South", "sub_county_code": 65 },
+            { "name": "Runyenjes", "sub_county_code": 64 }
+        ]
+    },    
+    {
+        "name": "Garissa",
+        "capital": "Garissa",
+        "county_code": 7,
+        "sub_counties": [
+            { "name": "Balambala", "sub_county_code": 28 },
+            { "name": "Daadab", "sub_county_code": 30 },
+            { "name": "Fafi", "sub_county_code": 31 },
+            { "name": "Garissa Township", "sub_county_code": 27 },
+            { "name": "Ijara", "sub_county_code": 32 },
+            { "name": "Lagdera", "sub_county_code": 29 }
+        ]
+    },
+    {
+        "name": "Homa Bay",
+        "capital": "Homa Bay",
+        "county_code": 43,
+        "sub_counties": [
+            { "name": "Homabay Township", "sub_county_code": 249 },
+            { "name": "Kabondo Kapisul", "sub_county_code": 246 },
+            { "name": "Karachuonyo", "sub_county_code": 247 },
+            { "name": "Kasipul", "sub_county_code": 245 },
+            { "name": "Mbita", "sub_county_code": 251 },
+            { "name": "Ndhiwa", "sub_county_code": 250 },
+            { "name": "Rangwe", "sub_county_code": 248 },
+            { "name": "Suba", "sub_county_code": 252 }
+        ]
+    },    
+    {
+        "name": "Isiolo",
+        "capital": "Isiolo",
+        "county_code": 11,
+        "sub_counties": [
+            { "name": "Isiolo North", "sub_county_code": 49 },
+            { "name": "Isiolo South", "sub_county_code": 50 }
+        ]
+    },
+    {
+        "name": "Kajiado",
+        "county_code": 34,
+        "sub_counties": [
+            { "name": "Kajiado Central", "sub_county_code": 184 },
+            { "name": "Kajiado East", "sub_county_code": 185 },
+            { "name": "Kajiado North", "sub_county_code": 183 },
+            { "name": "Kajiado South", "sub_county_code": 187 },
+            { "name": "Kajiado West", "sub_county_code": 186 }
+        ]
+    },
+    {
+        "name": "Kakamega",
+        "capital": "Kakamega",
+        "county_code": 37,
+        "sub_counties": [
+            { "name": "Butere", "sub_county_code": 207 },
+            { "name": "Ikolomani", "sub_county_code": 210 },
+            { "name": "Khwisero", "sub_county_code": 208 },
+            { "name": "Likuyani", "sub_county_code": 200 },
+            { "name": "Lugari", "sub_county_code": 201 },
+            { "name": "Lurambi", "sub_county_code": 202 },
+            { "name": "Malava", "sub_county_code": 201 },
+            { "name": "Matungu", "sub_county_code": 3712 },
+            { "name": "Mumias East", "sub_county_code": 205 },
+            { "name": "Mumias West", "sub_county_code": 204 },
+            { "name": "Navakholo", "sub_county_code": 203 },
+            { "name": "Shinyalu", "sub_county_code": 209 }
+        ]
+    },    
+    {
+        "name": "Kericho",
+        "capital": "Kericho",
+        "county_code": 35,
+        "sub_counties": [
+            { "name": "Ainamoi", "sub_county_code": 190 },
+            { "name": "Belgut", "sub_county_code": 192 },
+            { "name": "Bureti", "sub_county_code": 191 },
+            { "name": "Kipkelion East", "sub_county_code": 188 },
+            { "name": "Kipkelion West", "sub_county_code": 189 },
+            { "name": "Soin Sigowet", "sub_county_code": 193 }
+        ]
+    },
+    {
+        "name": "Kiambu",
+        "capital": "Kiambu",
+        "county_code": 22,
+        "sub_counties": [
+            { "name": "Gatundu North", "sub_county_code": 112 },
+            { "name": "Gatundu South", "sub_county_code": 111 },
+            { "name": "Githunguri", "sub_county_code": 116 },
+            { "name": "Juja", "sub_county_code": 113 },
+            { "name": "Kabete", "sub_county_code": 119 },
+            { "name": "Kiambaa", "sub_county_code": 118 },
+            { "name": "Kiambu", "sub_county_code": 117 },
+            { "name": "Kikuyu", "sub_county_code": 120 },
+            { "name": "Lari", "sub_county_code": 122 },
+            { "name": "Limuru", "sub_county_code": 121 },
+            { "name": "Ruiru", "sub_county_code": 115 },
+            { "name": "Thika Town", "sub_county_code": 114 }
+        ]
+    },
+    {
+        "name": "Kilifi",
+        "capital": "Kilifi",
+        "county_code": 3,
+        "sub_counties": [
+            { "name": "Ganze", "sub_county_code": 15 },
+            { "name": "Kaloleni", "sub_county_code": 13 },
+            { "name": "Kilifi North", "sub_county_code": 11 },
+            { "name": "Kilifi South", "sub_county_code": 12 },
+            { "name": "Magarini", "sub_county_code": 17 },
+            { "name": "Malindi", "sub_county_code": 16 },
+            { "name": "Rabai", "sub_county_code": 14 }
+        ]
+    },    
+    {
+        "name": "Kirinyaga",
+        "capital": "Kerugoya/Kutus",
+        "county_code": 20,
+        "sub_counties": [
+            { "name": "Gichugu", "sub_county_code": 101 },
+            { "name": "Kirinyaga Central", "sub_county_code": 103 },
+            { "name": "Mwea ", "sub_county_code": 100 },
+            { "name": "Ndia", "sub_county_code": 102 }
+        ]
+    },
+    {
+        "name": "Kisii",
+        "capital": "Kisii",
+        "county_code": 45,
+        "sub_counties": [
+            { "name": "Bobasi", "sub_county_code": 264 },
+            { "name": "Bonchari", "sub_county_code": 261 },
+            { "name": "Bomachoge Borabu", "sub_county_code": 263 },
+            { "name": "Bomachoge Chache", "sub_county_code": 265 },
+            { "name": "Kitutu Chache North", "sub_county_code": 268 },
+            { "name": "Kitutu Chache South", "sub_county_code": 269 },
+            { "name": "Nyaribari Chache", "sub_county_code": 267 },
+            { "name": "Nyaribari Masaba", "sub_county_code": 266 },
+            { "name": "South Mugirango", "sub_county_code": 262 }
+        ]
+    },
+    {
+        "name": "Kisumu",
+        "capital": "Kisumu",
+        "county_code": 42,
+        "sub_counties": [
+            { "name": "Kisumu Central", "sub_county_code": 240 },
+            { "name": "Kisumu East", "sub_county_code": 238 },
+            { "name": "Kisumu West", "sub_county_code": 239 },
+            { "name": "Muhoroni", "sub_county_code": 243 },
+            { "name": "Nyakach", "sub_county_code": 244 },
+            { "name": "Nyando", "sub_county_code": 242 },
+            { "name": "Seme", "sub_county_code": 241 }
+        ]
+    },    
+    {
+        "name": "Kitui",
+        "capital": "Kitui",
+        "county_code": 15,
+        "sub_counties": [
+            { "name": "Kitui Central", "sub_county_code": 72 },
+            { "name": "Kitui East", "sub_county_code": 73 },
+            { "name": "Kitui Rural", "sub_county_code": 71 },
+            { "name": "Kitui South", "sub_county_code": 74 },
+            { "name": "Kitui West", "sub_county_code": 70 },
+            { "name": "Mwingi Central", "sub_county_code": 69 },
+            { "name": "Mwingi North", "sub_county_code": 67 },
+            { "name": "Mwingi West", "sub_county_code": 68 }
+        ]
+    },
+    {
+        "name": "Kwale",
+        "capital": "Kwale",
+        "county_code": 2,
+        "sub_counties": [
+            { "name": "Kinango", "sub_county_code": 10 },
+            { "name": "Lungalunga", "sub_county_code": 8 },
+            { "name": "Msambweni", "sub_county_code": 7 },
+            { "name": "Matuga", "sub_county_code": 9 }
+        ]
+    },
+    {
+        "name": "Laikipia",
+        "capital": "Rumuruti",
+        "county_code": 31,
+        "sub_counties": [
+            { "name": "Laikipia East", "sub_county_code": 164 },
+            { "name": "Laikipia North", "sub_county_code": 165 },
+            { "name": "Laikipia West", "sub_county_code": 163 }
+        ]
+    },    
+    {
+        "name": "Lamu",
+        "capital": "Lamu",
+        "county_code": 5,
+        "sub_counties": [
+            { "name": "Lamu East", "sub_county_code": 21 },
+            { "name": "Lamu West", "sub_county_code": 22 }
+        ]
+    },
+    {
+        "name": "Machakos",
+        "capital": "Machakos",
+        "county_code": 16,
+        "sub_counties": [
+            { "name": "Kangundo", "sub_county_code": 77 },
+            { "name": "Kathiani", "sub_county_code": 79 },
+            { "name": "Machakos Town", "sub_county_code": 81 },
+            { "name": "Masinga", "sub_county_code": 75 },
+            { "name": "Matungulu", "sub_county_code": 78 },
+            { "name": "Mavoko", "sub_county_code": 80 },
+            { "name": "Mwala", "sub_county_code": 82 },
+            { "name": "Yatta", "sub_county_code": 76 }
+        ]
+    },
+    {
+        "name": "Makueni",
+        "capital": "Wote",
+        "county_code": 17,
+        "sub_counties": [
+            { "name": "Kaiti", "sub_county_code": 85 },
+            { "name": "Kibwezi East", "sub_county_code": 88 },
+            { "name": "Kibwezi West", "sub_county_code": 87 },
+            { "name": "Kilome", "sub_county_code": 84 },
+            { "name": "Makueni", "sub_county_code": 86 },
+            { "name": "Mbooni", "sub_county_code": 83 }
+        ]
+    },    
+    {
+        "name": "Mandera",
+        "capital": "Mandera",
+        "county_code": 9,
+        "sub_counties": [
+            { "name": "Banissa", "sub_county_code": 40 },
+            { "name": "Lafey", "sub_county_code": 44 },
+            { "name": "Mandera East", "sub_county_code": 43 },
+            { "name": "Mandera North", "sub_county_code": 41 },
+            { "name": "Mandera South", "sub_county_code": 42 },
+            { "name": "Mandera West", "sub_county_code": 39 }
+        ]
+    },
+    {
+        "name": "Marsabit",
+        "capital": "Marsabit",
+        "county_code": 10,
+        "sub_counties": [
+            { "name": "Laisamis", "sub_county_code": 48 },
+            { "name": "Moyale", "sub_county_code": 45 },
+            { "name": "North Horr", "sub_county_code": 46 },
+            { "name": "Saku", "sub_county_code": 47 }
+        ]
+    },
+    {
+        "name": "Meru",
+        "capital": "Meru",
+        "county_code": 12,
+        "sub_counties": [
+            { "name": "Buuri", "sub_county_code": 57 },
+            { "name": "Igembe Central", "sub_county_code": 52 },
+            { "name": "Igembe North", "sub_county_code": 53 },
+            { "name": "Igembe South", "sub_county_code": 51 },
+            { "name": "Imenti North", "sub_county_code": 56 },
+            { "name": "Imenti South", "sub_county_code": 59 },
+            { "name": "Tigania East", "sub_county_code": 55 },
+            { "name": "Tigania West", "sub_county_code": 54 }
+        ]
+    },    
+    {
+        "name": "Migori",
+        "capital": "Migori",
+        "county_code": 44,
+        "sub_counties": [
+            { "name": "Awendo", "sub_county_code": 254 },
+            { "name": "Kuria East", "sub_county_code": 260 },
+            { "name": "Kuria West", "sub_county_code": 259 },
+            { "name": "Nyatike", "sub_county_code": 258 },
+            { "name": "Rongo", "sub_county_code": 253 },
+            { "name": "Suna East", "sub_county_code": 255 },
+            { "name": "Suna West", "sub_county_code": 256 },
+            { "name": "Uriri", "sub_county_code": 257 }
+        ]
+    },
+    {
+        "name": "Mombasa",
+        "capital": "Mombasa City",
+        "county_code": 1,
+        "sub_counties": [
+            { "name": "Changamwe", "sub_county_code": 1 },
+            { "name": "Jomvu", "sub_county_code": 2 },
+            { "name": "Kisauni", "sub_county_code": 3 },
+            { "name": "Likoni", "sub_county_code": 5 },
+            { "name": "Mvita", "sub_county_code": 6 },
+            { "name": "Nyali", "sub_county_code": 4 }
+        ]
+    },
+    {
+        "name": "Murang'a",
+        "capital": "Murang'a",
+        "county_code": 21,
+        "sub_counties": [
+            { "name": "Gatanga", "sub_county_code": 110 },
+            { "name": "Kandara", "sub_county_code": 109 },
+            { "name": "Kangema", "sub_county_code": 104 },
+            { "name": "Kigumo", "sub_county_code": 107 },
+            { "name": "Kiharu", "sub_county_code": 106 },
+            { "name": "Maragwa", "sub_county_code": 108 },
+            { "name": "Mathioya", "sub_county_code": 105 }
+        ]
+    },    
+    {
+        "name": "Nairobi",
+        "capital": "Nairobi City",
+        "county_code": 47,
+        "sub_counties": [
+            { "name": "Dagoretti North", "sub_county_code": 275 },
+            { "name": "Dagoretti South", "sub_county_code": 276 },
+            { "name": "Embakasi Central", "sub_county_code": 284 },
+            { "name": "Embakasi East", "sub_county_code": 285 },
+            { "name": "Embakasi North", "sub_county_code": 283 },
+            { "name": "Embakasi South", "sub_county_code": 282 },
+            { "name": "Embakasi West", "sub_county_code": 286 },
+            { "name": "Kamukunji", "sub_county_code": 288 },
+            { "name": "Kasarani", "sub_county_code": 280 },
+            { "name": "Kibra", "sub_county_code": 278 },
+            { "name": "Lang'ata", "sub_county_code": 277 },
+            { "name": "Makadara", "sub_county_code": 287 },
+            { "name": "Mathare", "sub_county_code": 290 },
+            { "name": "Roysambu", "sub_county_code": 279 },
+            { "name": "Ruaraka", "sub_county_code": 281 },
+            { "name": "Starehe", "sub_county_code": 289 },
+            { "name": "Westlands", "sub_county_code": 274 }
+        ]
+    },
+    {
+        "name": "Nakuru",
+        "capital": "Nakuru",
+        "county_code": 32,
+        "sub_counties": [
+            { "name": "Bahati", "sub_county_code": 174 },
+            { "name": "Gilgil", "sub_county_code": 169 },
+            { "name": "Kuresoi North", "sub_county_code": 171 },
+            { "name": "Kuresoi South", "sub_county_code": 170 },
+            { "name": "Molo", "sub_county_code": 166 },
+            { "name": "Naivasha", "sub_county_code": 168 },
+            { "name": "Nakuru Town East", "sub_county_code": 176 },
+            { "name": "Nakuru Town West", "sub_county_code": 175 },
+            { "name": "Njoro", "sub_county_code": 167 },
+            { "name": "Rongai", "sub_county_code": 173 },
+            { "name": "Subukia", "sub_county_code": 172 }
+        ]
+    },
+    {
+        "name": "Nandi",
+        "capital": "Kapsabet",
+        "county_code": 29,
+        "sub_counties": [
+            { "name": "Aldai", "sub_county_code": 152 },
+            { "name": "Chesumei", "sub_county_code": 154 },
+            { "name": "Emgwen", "sub_county_code": 155 },
+            { "name": "Mosop", "sub_county_code": 156 },
+            { "name": "Nandi Hills", "sub_county_code": 153 },
+            { "name": "Tindiret", "sub_county_code": 151 }
+        ]
+    },    
+    {
+        "name": "Narok",
+        "capital": "Narok",
+        "county_code": 33,
+        "sub_counties": [
+            { "name": "Emurua Dikirr", "sub_county_code": 178 },
+            { "name": "Kilgoris", "sub_county_code": 177 },
+            { "name": "Narok East", "sub_county_code": 180 },
+            { "name": "Narok North", "sub_county_code": 179 },
+            { "name": "Narok South", "sub_county_code": 181 },
+            { "name": "Narok West", "sub_county_code": 182 }
+        ]
+    },
+    {
+        "name": "Nyamira",
+        "capital": "Nyamira",
+        "county_code": 46,
+        "sub_counties": [
+            { "name": "Borabu", "sub_county_code": 273 },
+            { "name": "Kitutu Masaba", "sub_county_code": 270 },
+            { "name": "Mugirango North", "sub_county_code": 272 },
+            { "name": "Mugirango West", "sub_county_code": 271 }
+        ]
+    },
+    {
+        "name": "Nyandarua",
+        "capital": "Ol Kalou",
+        "county_code": 18,
+        "sub_counties": [
+            { "name": "Kinangop", "sub_county_code": 89 },
+            { "name": "Kipipiri", "sub_county_code": 90 },
+            { "name": "Ndaragwa", "sub_county_code": 93 },
+            { "name": "Ol Jorok", "sub_county_code": 92 },
+            { "name": "Ol Kalou", "sub_county_code": 91 }
+        ]
+    },    
+    {
+        "name": "Nyeri",
+        "capital": "Nyeri",
+        "county_code": 19,
+        "sub_counties": [
+            { "name": "Kieni", "sub_county_code": 95 },
+            { "name": "Mathira", "sub_county_code": 96 },
+            { "name": "Mukurweini", "sub_county_code": 98 },
+            { "name": "Nyeri Town", "sub_county_code": 99 },
+            { "name": "Othaya", "sub_county_code": 97 },
+            { "name": "Tetu", "sub_county_code": 94 }
+        ]
+    },
+    {
+        "name": "Samburu",
+        "capital": "Maralal",
+        "county_code": 25,
+        "sub_counties": [
+            { "name": "Samburu East", "sub_county_code": 135 },
+            { "name": "Samburu North", "sub_county_code": 134 },
+            { "name": "Samburu West", "sub_county_code": 133 }
+        ]
+    },
+    {
+        "name": "Siaya",
+        "capital": "Siaya",
+        "county_code": 41,
+        "sub_counties": [
+            { "name": "Alego Usonga", "sub_county_code": 234 },
+            { "name": "Bondo", "sub_county_code": 236 },
+            { "name": "Gem", "sub_county_code": 235 },
+            { "name": "Rarieda", "sub_county_code": 237 },
+            { "name": "Ugenya", "sub_county_code": 232 },
+            { "name": "Ugunja", "sub_county_code": 233 }
+        ]
+    },    
+    {
+        "name": "Taita-Taveta",
+        "capital": "Voi",
+        "county_code": 6,
+        "sub_counties": [
+            { "name": "Mwatate", "sub_county_code": 25 },
+            { "name": "Taveta", "sub_county_code": 23 },
+            { "name": "Voi", "sub_county_code": 26 },
+            { "name": "Wundanyi", "sub_county_code": 26 }
+        ]
+    },
+    {
+        "name": "Tana River",
+        "capital": "Hola",
+        "county_code": 4,
+        "sub_counties": [
+            { "name": "Bura", "sub_county_code": 20 },
+            { "name": "Galole", "sub_county_code": 19 },
+            { "name": "Garsen", "sub_county_code": 18 }
+        ]
+    },
+    {
+        "name": "Tharaka-Nithi",
+        "capital": "Chuka",
+        "county_code": 13,
+        "sub_counties": [
+            { "name": "Chuka/Igambang'ombe", "sub_county_code": 61 },
+            { "name": "Maara", "sub_county_code": 60 },
+            { "name": "Tharaka", "sub_county_code": 62 }
+        ]
+    },    
+    {
+        "name": "Trans-Nzoia",
+        "capital": "Kitale",
+        "county_code": 26,
+        "sub_counties": [
+            { "name": "Cherangany", "sub_county_code": 140 },
+            { "name": "Endebess", "sub_county_code": 137 },
+            { "name": "Kiminini", "sub_county_code": 139 },
+            { "name": "Kwanza", "sub_county_code": 136 },
+            { "name": "Saboti", "sub_county_code": 138 }
+        ]
+    },
+    {
+        "name": "Turkana",
+        "capital": "Lodwar",
+        "county_code": 23,
+        "sub_counties": [
+            { "name": "Loima", "sub_county_code": 126 },
+            { "name": "Turkana Central", "sub_county_code": 125 },
+            { "name": "Turkana East", "sub_county_code": 128 },
+            { "name": "Turkana North", "sub_county_code": 123 },
+            { "name": "Turkana South", "sub_county_code": 127 },
+            { "name": "Turkana West", "sub_county_code": 124 }
+        ]
+    },
+    {
+        "name": "Uasin Gishu",
+        "capital": "Eldoret",
+        "county_code": 27,
+        "sub_counties": [
+            { "name": "Ainabkoi", "sub_county_code": 144 },
+            { "name": "Kapseret", "sub_county_code": 145 },
+            { "name": "Kesses", "sub_county_code": 146 },
+            { "name": "Moiben", "sub_county_code": 143 },
+            { "name": "Soy", "sub_county_code": 141 },
+            { "name": "Turbo", "sub_county_code": 142 }
+        ]
+    },    
+    {
+        "name": "Vihiga",
+        "capital": "Vihiga",
+        "county_code": 38,
+        "sub_counties": [
+            { "name": "Emuhaya", "sub_county_code": 215 },
+            { "name": "Hamisi", "sub_county_code": 213 },
+            { "name": "Luanda", "sub_county_code": 214 },
+            { "name": "Sabatia", "sub_county_code": 212 },
+            { "name": "Vihiga", "sub_county_code": 211 }
+        ]
+    },
+    {
+        "name": "Wajir",
+        "capital": "Wajir",
+        "county_code": 8,
+        "sub_counties": [
+            { "name": "Eldas", "sub_county_code": 37 },
+            { "name": "Tarbaj", "sub_county_code": 35 },
+            { "name": "Wajir East", "sub_county_code": 34 },
+            { "name": "Wajir North", "sub_county_code": 33 },
+            { "name": "Wajir South", "sub_county_code": 38 },
+            { "name": "Wajir West", "sub_county_code": 36 }
+        ]
+    },
+    {
+        "name": "West Pokot",
+        "capital": "Kapenguria",
+        "county_code": 24,
+        "sub_counties": [
+            { "name": "Kacheliba", "sub_county_code": 131 },
+            { "name": "Kapenguria", "sub_county_code": 129 },
+            { "name": "Pokot South", "sub_county_code": 132 },
+            { "name": "Sigor", "sub_county_code": 130 }
+        ]
+    }
+    
+]

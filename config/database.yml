@@ -1,0 +1,22 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  url: <%= ENV['DATABASE_URL'] %>
+
+development:
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  url: <%= ENV['DATABASE_URL'] || 'postgresql://Quaint:3323@localhost:5432/carbon_development' %>
+
+test:
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  url: <%= ENV['DATABASE_URL']&.gsub('/carbon_development', '/carbon_test') || 'postgresql://Quaint:3323@localhost:5432/carbon_test' %>
+
+production:
+  <<: *default
+  sslmode: require
+  ssl: true

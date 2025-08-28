@@ -1,0 +1,31 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  transaction_type: MyString
+  trans_id: MyString
+  trans_time: MyString
+  trans_amount: 9.99
+  business_short_code: MyString
+  bill_ref_number: MyString
+  invoice_number: MyString
+  org_account_balance: MyString
+  third_party_trans_id: MyString
+  msisdn: MyString
+  first_name: MyString
+  middle_name: MyString
+  last_name: MyString
+
+two:
+  transaction_type: MyString
+  trans_id: MyString
+  trans_time: MyString
+  trans_amount: 9.99
+  business_short_code: MyString
+  bill_ref_number: MyString
+  invoice_number: MyString
+  org_account_balance: MyString
+  third_party_trans_id: MyString
+  msisdn: MyString
+  first_name: MyString
+  middle_name: MyString
+  last_name: MyString
