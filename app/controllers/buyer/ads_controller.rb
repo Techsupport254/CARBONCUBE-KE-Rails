@@ -134,8 +134,21 @@ class Buyer::AdsController < ApplicationController
     ad = Ad.find(params[:id])
 
     # Fetch ads that share either the same category or subcategory
-    related_ads = Ad.where.not(id: ad.id)
+    # Apply the same filters as the main ads endpoint
+    related_ads = Ad.active
+                    .joins(:seller)
+                    .where(sellers: { blocked: false })
+                    .where(flagged: false)
+                    .where.not(id: ad.id)
                     .where('category_id = ? OR subcategory_id = ?', ad.category_id, ad.subcategory_id)
+                    .includes(
+                      :category,
+                      :subcategory,
+                      :reviews,
+                      seller: { seller_tier: :tier }
+                    )
+                    .order('ads.created_at DESC')
+                    .limit(10) # Limit to 10 related ads for performance
                     .distinct
 
     render json: related_ads, each_serializer: AdSerializer

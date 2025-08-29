@@ -13,7 +13,11 @@ class Analytic < ApplicationRecord
   
   # Class methods for analytics
   def self.source_distribution(days = 30)
-    recent(days).group(:source).count
+    # Group by normalized source where nil or empty strings are bucketed as 'other'
+    # This ensures the sum of the distribution equals total visits
+    recent(days)
+      .group(Arel.sql("COALESCE(NULLIF(source, ''), 'other')"))
+      .count
   end
   
   def self.utm_source_distribution(days = 30)
