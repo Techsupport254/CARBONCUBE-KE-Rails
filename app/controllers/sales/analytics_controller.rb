@@ -27,40 +27,34 @@ class Sales::AnalyticsController < ApplicationController
       .where(buyers: { deleted: false })
     all_reveal_clicks = ClickEvent.where(event_type: 'Reveal-Seller-Details')
     
-    # Limit analytics window to last 30 days for detailed timestamp data (reduces payload)
-    window_start = 30.days.ago
-    # Get detailed data with timestamps for frontend filtering
-    sellers_with_timestamps = all_sellers.where('created_at >= ?', window_start).pluck(:created_at)
-    buyers_with_timestamps = all_buyers.where('created_at >= ?', window_start).pluck(:created_at)
-    ads_with_timestamps = all_ads.where('created_at >= ?', window_start).pluck(:created_at)
-    reviews_with_timestamps = all_reviews.where('created_at >= ?', window_start).pluck(:created_at)
-    wishlists_with_timestamps = all_wishlists.where('created_at >= ?', window_start).pluck(:created_at)
+    # Get ALL data with timestamps for frontend filtering (no 30-day restriction)
+    sellers_with_timestamps = all_sellers.pluck(:created_at)
+    buyers_with_timestamps = all_buyers.pluck(:created_at)
+    ads_with_timestamps = all_ads.pluck(:created_at)
+    reviews_with_timestamps = all_reviews.pluck(:created_at)
+    wishlists_with_timestamps = all_wishlists.pluck(:created_at)
     
     # Get seller tiers with timestamps
     paid_seller_tiers_with_timestamps = all_paid_seller_tiers
-      .where('sellers.created_at >= ?', window_start)
       .pluck('sellers.created_at')
     
     unpaid_seller_tiers_with_timestamps = all_unpaid_seller_tiers
-      .where('sellers.created_at >= ?', window_start)
       .pluck('sellers.created_at')
     
     # Get click events with timestamps
-    ad_clicks_with_timestamps = all_ad_clicks.where('created_at >= ?', window_start).pluck(:created_at)
+    ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at)
     
     buyer_ad_clicks_with_timestamps = all_buyer_ad_clicks
-      .where('click_events.created_at >= ?', window_start)
       .pluck('click_events.created_at')
     
     # Get reveal clicks with timestamps (include both authenticated and unauthenticated users)
-    reveal_clicks_with_timestamps = all_reveal_clicks.where('created_at >= ?', window_start).pluck(:created_at)
+    reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at)
     
-    # Get category click events with timestamps (include both authenticated and unauthenticated users)
+    # Get category click events with timestamps (include all data)
     category_click_events_with_timestamps = Category.joins(ads: :click_events)
       .select('categories.name AS category_name, 
               click_events.event_type,
               click_events.created_at')
-      .where('click_events.created_at >= ?', window_start)
       .order('categories.name')
     
     # Process category data
@@ -101,7 +95,7 @@ class Sales::AnalyticsController < ApplicationController
     # Analytics data prepared successfully
     
     response_data = {
-      # Raw data with timestamps for frontend filtering (last 30 days)
+      # Raw data with timestamps for frontend filtering (ALL data, no time restriction)
       sellers_with_timestamps: sellers_with_timestamps,
       buyers_with_timestamps: buyers_with_timestamps,
       ads_with_timestamps: ads_with_timestamps,
@@ -146,30 +140,28 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def get_source_analytics
-    # Get source tracking data for the last 30 days
-    days = 30
+    # Get source tracking data for ALL time (no 30-day restriction)
+    source_distribution = Analytic.source_distribution(nil)
+    utm_source_distribution = Analytic.utm_source_distribution(nil)
+    utm_medium_distribution = Analytic.utm_medium_distribution(nil)
+    utm_campaign_distribution = Analytic.utm_campaign_distribution(nil)
+    referrer_distribution = Analytic.referrer_distribution(nil)
     
-    source_distribution = Analytic.source_distribution(days)
-    utm_source_distribution = Analytic.utm_source_distribution(days)
-    utm_medium_distribution = Analytic.utm_medium_distribution(days)
-    utm_campaign_distribution = Analytic.utm_campaign_distribution(days)
-    referrer_distribution = Analytic.referrer_distribution(days)
+    # Get visitor engagement metrics for ALL time
+    visitor_metrics = Analytic.visitor_engagement_metrics(nil)
     
-    # Get visitor engagement metrics
-    visitor_metrics = Analytic.visitor_engagement_metrics(days)
+    # Get unique visitors by source for ALL time
+    unique_visitors_by_source = Analytic.unique_visitors_by_source(nil)
+    visits_by_source = Analytic.visits_by_source(nil)
     
-    # Get unique visitors by source
-    unique_visitors_by_source = Analytic.unique_visitors_by_source(days)
-    visits_by_source = Analytic.visits_by_source(days)
-    
-    # Get visits by day for the last 30 days
-    daily_visits = Analytic.recent(days)
+    # Get visits by day for ALL time
+    daily_visits = Analytic.all
                            .group("DATE(created_at)")
                            .order("DATE(created_at)")
                            .count
     
-    # Get unique visitors trend
-    daily_unique_visitors = Analytic.unique_visitors_trend(days)
+    # Get unique visitors trend for ALL time
+    daily_unique_visitors = Analytic.unique_visitors_trend(nil)
     
     # Get top sources and referrers
     top_sources = source_distribution.sort_by { |_, count| -count }.first(10)
@@ -196,9 +188,8 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def get_device_analytics
-    # Get device analytics for the last 30 days
-    days = 30
-    recent_analytics = Analytic.recent(days)
+    # Get device analytics for ALL time (no 30-day restriction)
+    all_analytics = Analytic.all
     
     # Device type distribution
     device_types = {}
@@ -206,7 +197,7 @@ class Sales::AnalyticsController < ApplicationController
     operating_systems = {}
     screen_resolutions = {}
     
-    recent_analytics.each do |analytic|
+    all_analytics.each do |analytic|
       next unless analytic.data && analytic.data['device']
       
       device_data = analytic.data['device']
@@ -235,7 +226,7 @@ class Sales::AnalyticsController < ApplicationController
       browsers: browsers,
       operating_systems: operating_systems,
       screen_resolutions: screen_resolutions,
-      total_devices: recent_analytics.count
+      total_devices: all_analytics.count
     }
   end
 end

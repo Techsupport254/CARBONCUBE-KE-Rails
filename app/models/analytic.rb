@@ -8,8 +8,8 @@ class Analytic < ApplicationRecord
   scope :by_utm_medium, ->(utm_medium) { where(utm_medium: utm_medium) }
   scope :by_utm_campaign, ->(utm_campaign) { where(utm_campaign: utm_campaign) }
   
-  # Scope for recent analytics
-  scope :recent, ->(days = 30) { where('created_at >= ?', days.days.ago) }
+  # Scope for recent analytics - supports getting all data when days is nil
+  scope :recent, ->(days = 30) { days.nil? ? all : where('created_at >= ?', days.days.ago) }
   
   # Class methods for analytics
   def self.source_distribution(days = 30)
