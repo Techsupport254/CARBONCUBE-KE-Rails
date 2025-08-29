@@ -37,7 +37,7 @@ Rails.application.configure do
   end
 
   # Configure Action Cable for development
-  config.action_cable.url = 'ws://localhost:3000/cable'
+  config.action_cable.url = 'ws://localhost:3001/cable'
   config.action_cable.allowed_request_origins = ['http://localhost:3000']
 
   # Store uploaded files on the local file system (see config/storage.yml for options).

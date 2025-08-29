@@ -4,7 +4,9 @@ class Buyer::SubcategoriesController < ApplicationController
 
   # GET /buyer/subcategories
   def index
-    @subcategories = Subcategory.all
+    @subcategories = Rails.cache.fetch('buyer_subcategories_all', expires_in: 12.hours) do
+      Subcategory.all.as_json
+    end
     render json: @subcategories
   end
 

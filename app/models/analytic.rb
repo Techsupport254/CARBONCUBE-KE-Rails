@@ -72,47 +72,34 @@ class Analytic < ApplicationRecord
   end
 
   def self.returning_visitors_count(days = 30)
-    # Count visitors who visited for the first time more than 7 days ago
-    # Get all visitors in the specified period
-    all_visitors = recent(days)
+    # Count visitors (seen in the recent window) whose first visit was more than 7 days ago
+    subquery_sql = recent(days)
       .where(Arel.sql("data->>'visitor_id' IS NOT NULL"))
-      .distinct.pluck(Arel.sql("data->>'visitor_id'"))
-    
-    # Count visitors whose first visit was more than 7 days ago
-    returning_visitors_count = 0
-    all_visitors.each do |visitor_id|
-      first_visit = Analytic.where(Arel.sql("data->>'visitor_id' = ?"), visitor_id)
-                           .order(:created_at)
-                           .first
-      
-      if first_visit && first_visit.created_at < 7.days.ago
-        returning_visitors_count += 1
-      end
-    end
-    
-    returning_visitors_count
+      .select(Arel.sql("DISTINCT data->>'visitor_id' AS visitor_id")).to_sql
+
+    # For those visitors, compute their first-ever visit in a single grouped query
+    first_visits = Analytic
+      .where(Arel.sql("data->>'visitor_id' IN (#{subquery_sql})"))
+      .group(Arel.sql("data->>'visitor_id'"))
+      .minimum(:created_at)
+
+    cutoff = 7.days.ago
+    first_visits.values.count { |timestamp| timestamp < cutoff }
   end
 
   def self.new_visitors_count(days = 30)
-    # Count visitors who visited for the first time within the last 7 days
-    # Get all visitors in the specified period
-    all_visitors = recent(days)
+    # Count visitors (seen in the recent window) whose first visit was within the last 7 days
+    subquery_sql = recent(days)
       .where(Arel.sql("data->>'visitor_id' IS NOT NULL"))
-      .distinct.pluck(Arel.sql("data->>'visitor_id'"))
-    
-    # Count visitors whose first visit was within the last 7 days
-    new_visitors_count = 0
-    all_visitors.each do |visitor_id|
-      first_visit = Analytic.where(Arel.sql("data->>'visitor_id' = ?"), visitor_id)
-                           .order(:created_at)
-                           .first
-      
-      if first_visit && first_visit.created_at >= 7.days.ago
-        new_visitors_count += 1
-      end
-    end
-    
-    new_visitors_count
+      .select(Arel.sql("DISTINCT data->>'visitor_id' AS visitor_id")).to_sql
+
+    first_visits = Analytic
+      .where(Arel.sql("data->>'visitor_id' IN (#{subquery_sql})"))
+      .group(Arel.sql("data->>'visitor_id'"))
+      .minimum(:created_at)
+
+    cutoff = 7.days.ago
+    first_visits.values.count { |timestamp| timestamp >= cutoff }
   end
 
   def self.visitor_engagement_metrics(days = 30)

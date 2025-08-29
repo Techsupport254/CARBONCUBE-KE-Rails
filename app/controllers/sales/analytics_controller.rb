@@ -3,41 +3,47 @@ class Sales::AnalyticsController < ApplicationController
   before_action :authenticate_sales_user
 
   def index
+    # Limit analytics window to last 30 days to reduce payload
+    window_start = 30.days.ago
     # Get all data with timestamps for frontend filtering
-    sellers_with_timestamps = Seller.where(deleted: false).pluck(:created_at)
-    buyers_with_timestamps = Buyer.where(deleted: false).pluck(:created_at)
-    ads_with_timestamps = Ad.where(deleted: false).pluck(:created_at)
-    reviews_with_timestamps = Review.pluck(:created_at)
-    wishlists_with_timestamps = WishList.pluck(:created_at)
+    sellers_with_timestamps = Seller.where(deleted: false).where('created_at >= ?', window_start).pluck(:created_at)
+    buyers_with_timestamps = Buyer.where(deleted: false).where('created_at >= ?', window_start).pluck(:created_at)
+    ads_with_timestamps = Ad.where(deleted: false).where('created_at >= ?', window_start).pluck(:created_at)
+    reviews_with_timestamps = Review.where('created_at >= ?', window_start).pluck(:created_at)
+    wishlists_with_timestamps = WishList.where('created_at >= ?', window_start).pluck(:created_at)
     
     # Get seller tiers with timestamps
     paid_seller_tiers_with_timestamps = SellerTier
       .joins(:seller)
       .where(tier_id: [2, 3, 4], sellers: { deleted: false })
+      .where('sellers.created_at >= ?', window_start)
       .pluck('sellers.created_at')
     
     unpaid_seller_tiers_with_timestamps = SellerTier
       .joins(:seller)
       .where(tier_id: 1, sellers: { deleted: false })
+      .where('sellers.created_at >= ?', window_start)
       .pluck('sellers.created_at')
     
     # Get click events with timestamps
-    ad_clicks_with_timestamps = ClickEvent.where(event_type: 'Ad-Click').pluck(:created_at)
+    ad_clicks_with_timestamps = ClickEvent.where(event_type: 'Ad-Click').where('created_at >= ?', window_start).pluck(:created_at)
     
     buyer_ad_clicks_with_timestamps = ClickEvent
       .joins(:buyer)
       .where(event_type: 'Ad-Click')
       .where(buyers: { deleted: false })
+      .where('click_events.created_at >= ?', window_start)
       .pluck('click_events.created_at')
     
     # Get reveal clicks with timestamps (include both authenticated and unauthenticated users)
-    reveal_clicks_with_timestamps = ClickEvent.where(event_type: 'Reveal-Seller-Details').pluck(:created_at)
+    reveal_clicks_with_timestamps = ClickEvent.where(event_type: 'Reveal-Seller-Details').where('created_at >= ?', window_start).pluck(:created_at)
     
     # Get category click events with timestamps (include both authenticated and unauthenticated users)
     category_click_events_with_timestamps = Category.joins(ads: :click_events)
       .select('categories.name AS category_name, 
               click_events.event_type,
               click_events.created_at')
+      .where('click_events.created_at >= ?', window_start)
       .order('categories.name')
     
     # Process category data

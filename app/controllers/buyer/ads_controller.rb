@@ -4,7 +4,8 @@ class Buyer::AdsController < ApplicationController
 
   # GET /buyer/ads
   def index
-    per_page = params[:per_page]&.to_i || 500  # ✅ Default to fetching all ads if not specified
+    per_page = params[:per_page]&.to_i || 50
+    per_page = 500 if per_page > 500
     page = params[:page].to_i.positive? ? params[:page].to_i : 1
 
     @ads = Ad.active.joins(:seller)
@@ -13,54 +14,22 @@ class Buyer::AdsController < ApplicationController
             .includes(
               :category,
               :subcategory,
-              :reviews,
               seller: { seller_tier: :tier }
             )
-            .preload(:reviews)
 
     filter_by_category if params[:category_id].present?
     filter_by_subcategory if params[:subcategory_id].present?
 
-    @ads = @ads.limit(per_page).offset((page - 1) * per_page)
+    @ads = @ads.order(created_at: :desc)
+            .limit(per_page).offset((page - 1) * per_page)
 
-    # ✅ Group ads by subcategory for frontend
-    grouped_ads = @ads.group_by(&:subcategory_id)
-    
-    # Pre-calculate review statistics to avoid N+1 queries
-    ad_ids = @ads.pluck(:id)
-    review_stats = Review.where(ad_id: ad_ids)
-                        .group(:ad_id)
-                        .select('ad_id, COUNT(*) as count, AVG(rating) as average')
-                        .index_by(&:ad_id)
-    
-    # Serialize each group of ads properly using the serializer
-    serialized_ads = {}
-    grouped_ads.each do |subcategory_id, ads_array|
-      # Attach pre-calculated review stats to each ad
-      ads_array.each do |ad|
-        if review_stats[ad.id]
-          ad.define_singleton_method(:review_stats) do
-            {
-              count: review_stats[ad.id].count,
-              average: review_stats[ad.id].average.to_f
-            }
-          end
-        end
-      end
-      
-      serialized_ads[subcategory_id] = ActiveModel::Serializer::CollectionSerializer.new(
-        ads_array, 
-        serializer: AdSerializer
-      ).as_json
-    end
-
-    render json: serialized_ads
+    render json: @ads, each_serializer: AdSerializer
   end
 
   # GET /buyer/ads/:id
   def show
     @ad = Ad.find(params[:id])
-    render json: @ad, serializer: AdSerializer
+    render json: @ad, serializer: AdSerializer, include_reviews: true
   end
   
 
@@ -119,7 +88,6 @@ class Buyer::AdsController < ApplicationController
       .includes(
         :category,
         :subcategory,
-        :reviews,
         seller: { seller_tier: :tier }
       )
       .order('tier_priority ASC, ads.created_at DESC')
@@ -144,12 +112,10 @@ class Buyer::AdsController < ApplicationController
                     .includes(
                       :category,
                       :subcategory,
-                      :reviews,
                       seller: { seller_tier: :tier }
                     )
                     .order('ads.created_at DESC')
                     .limit(10) # Limit to 10 related ads for performance
-                    .distinct
 
     render json: related_ads, each_serializer: AdSerializer
   end
