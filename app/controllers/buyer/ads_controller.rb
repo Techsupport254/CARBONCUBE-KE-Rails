@@ -8,24 +8,29 @@ class Buyer::AdsController < ApplicationController
     per_page = 500 if per_page > 500
     page = params[:page].to_i.positive? ? params[:page].to_i : 1
 
-    @ads = Ad.active.joins(:seller)
-            .where(sellers: { blocked: false })
-            .where(flagged: false)
-            .includes(
-              :category,
-              :subcategory,
-              seller: { seller_tier: :tier }
-            )
+    # Use caching for better performance
+    cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:balanced]}_#{params[:category_id]}_#{params[:subcategory_id]}"
+    
+    @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
+      ads_query = Ad.active.joins(:seller)
+                   .where(sellers: { blocked: false })
+                   .where(flagged: false)
+                   .includes(
+                     :category,
+                     :subcategory,
+                     seller: { seller_tier: :tier }
+                   )
 
-    filter_by_category if params[:category_id].present?
-    filter_by_subcategory if params[:subcategory_id].present?
+      filter_by_category(ads_query) if params[:category_id].present?
+      filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
-    # For the home page, get a balanced distribution of ads across subcategories
-    if params[:balanced] == 'true' || (params[:per_page]&.to_i || 50) > 100
-      @ads = get_balanced_ads(per_page)
-    else
-      @ads = @ads.order(created_at: :desc)
-              .limit(per_page).offset((page - 1) * per_page)
+      # For the home page, get a balanced distribution of ads across subcategories
+      if params[:balanced] == 'true' || (params[:per_page]&.to_i || 50) > 100
+        get_balanced_ads(per_page)
+      else
+        ads_query.order(created_at: :desc)
+                .limit(per_page).offset((page - 1) * per_page)
+      end
     end
 
     render json: @ads, each_serializer: AdSerializer
@@ -155,12 +160,12 @@ class Buyer::AdsController < ApplicationController
     render json: { error: 'Ad not found' }, status: :not_found
   end
 
-  def filter_by_category
-    @ads = @ads.where(category_id: params[:category_id])
+  def filter_by_category(ads_query)
+    ads_query.where(category_id: params[:category_id])
   end
 
-  def filter_by_subcategory
-    @ads = @ads.where(subcategory_id: params[:subcategory_id])
+  def filter_by_subcategory(ads_query)
+    ads_query.where(subcategory_id: params[:subcategory_id])
   end
 
   def ad_params

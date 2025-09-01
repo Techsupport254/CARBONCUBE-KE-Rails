@@ -1,13 +1,16 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: 5
+  pool: 20
   url: <%= ENV['DATABASE_URL'] %>
+  variables:
+    statement_timeout: 30000
+    lock_timeout: 10000
 
 development:
   adapter: postgresql
   encoding: unicode
-  pool: 5
+  pool: 20
   url: <%= ENV['DATABASE_URL'] || 'postgresql://Quaint:3323@localhost:5432/carbon_development' %>
 
 test:
