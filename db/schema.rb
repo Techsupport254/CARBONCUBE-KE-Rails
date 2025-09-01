@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -65,10 +65,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.boolean "deleted", default: false
     t.integer "reviews_count", default: 0, null: false
+    t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"
+    t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at"
+    t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
     t.index ["description"], name: "index_ads_on_description", opclass: :gin_trgm_ops, using: :gin
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
+    t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id"], name: "index_ads_on_seller_id"
+    t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
     t.index ["title"], name: "index_ads_on_title", opclass: :gin_trgm_ops, using: :gin
   end
@@ -108,7 +113,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ad_id"], name: "index_buy_for_me_order_cart_items_on_ad_id"
-    t.index ["buyer_id"], name: "index_buy_for_me_order_cart_items_on_buyer_id"
   end
 
   create_table "buy_for_me_order_items", force: :cascade do |t|
@@ -123,7 +127,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.index ["buy_for_me_order_id"], name: "index_buy_for_me_order_items_on_buy_for_me_order_id"
   end
 
-  create_table "buy_for_me_order_sellers", force: :cascade do |t|
+  create_table "buy_for_me_order_sellers", id: :bigint, default: -> { "nextval('buy_for_me_order_vendors_id_seq'::regclass)" }, force: :cascade do |t|
     t.bigint "buy_for_me_order_id", null: false
     t.bigint "seller_id", null: false
     t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
@@ -140,10 +144,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.string "mpesa_transaction_code"
     t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.index ["buyer_id"], name: "index_buy_for_me_orders_on_buyer_id"
   end
 
-  create_table "buyers", force: :cascade do |t|
+  create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
     t.string "fullname", null: false
     t.string "username", null: false
     t.string "password_digest"
@@ -165,7 +168,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "deleted", default: false, null: false
-    t.index "lower((email)::text)", name: "index_buyers_on_lower_email", unique: true
+    t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"
     t.index ["education_id"], name: "index_buyers_on_education_id"
@@ -184,7 +187,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ad_id"], name: "index_cart_items_on_ad_id"
-    t.index ["buyer_id"], name: "index_cart_items_on_buyer_id"
   end
 
   create_table "categories", force: :cascade do |t|
@@ -199,7 +201,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.bigint "seller_id", null: false
     t.bigint "category_id", null: false
     t.index ["category_id", "seller_id"], name: "index_categories_sellers_on_category_id_and_seller_id"
-    t.index ["seller_id", "category_id"], name: "index_categories_sellers_on_seller_id_and_category_id"
   end
 
   create_table "click_events", force: :cascade do |t|
@@ -209,8 +210,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"
-    t.index ["buyer_id"], name: "index_click_events_on_buyer_id"
+    t.index ["event_type", "created_at"], name: "index_click_events_on_event_type_created_at"
   end
 
   create_table "cms_pages", force: :cascade do |t|
@@ -227,9 +229,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.bigint "ad_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["ad_id", "buyer_id", "seller_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["ad_id"], name: "index_conversations_on_ad_id"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
-    t.index ["buyer_id", "seller_id", "ad_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
     t.index ["seller_id"], name: "index_conversations_on_seller_id"
   end
@@ -344,7 +346,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.index ["order_id"], name: "index_order_items_on_order_id"
   end
 
-  create_table "order_sellers", force: :cascade do |t|
+  create_table "order_sellers", id: :bigint, default: -> { "nextval('order_vendors_id_seq'::regclass)" }, force: :cascade do |t|
     t.bigint "order_id", null: false
     t.bigint "seller_id", null: false
     t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
@@ -362,19 +364,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.string "mpesa_transaction_code"
     t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.index ["buyer_id"], name: "index_orders_on_buyer_id"
   end
 
   create_table "password_otps", force: :cascade do |t|
-    t.string "otp_digest", null: false
-    t.datetime "otp_sent_at", null: false
-    t.string "otp_purpose", default: "password_reset", null: false
+    t.string "otp_digest"
+    t.datetime "otp_sent_at"
+    t.string "otp_purpose"
     t.string "otpable_type", null: false
     t.bigint "otpable_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["otpable_type", "otpable_id"], name: "index_password_otps_on_otpable"
-    t.index ["otpable_type", "otpable_id"], name: "index_password_otps_on_otpable_type_and_otpable_id"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -393,6 +393,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.string "last_name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "playing_with_neon", id: :serial, force: :cascade do |t|
+    t.text "name", null: false
+    t.float "value", limit: 24
   end
 
   create_table "promotions", force: :cascade do |t|
@@ -459,17 +464,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.index ["name"], name: "index_sectors_on_name", unique: true
   end
 
-  create_table "seller_tiers", force: :cascade do |t|
+  create_table "seller_tiers", id: :bigint, default: -> { "nextval('vendor_tiers_id_seq'::regclass)" }, force: :cascade do |t|
     t.bigint "seller_id", null: false
     t.bigint "tier_id", null: false
     t.integer "duration_months", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
   end
 
-  create_table "sellers", force: :cascade do |t|
+  create_table "sellers", id: :bigint, default: -> { "nextval('vendors_id_seq'::regclass)" }, force: :cascade do |t|
     t.string "fullname"
     t.string "username"
     t.string "description"
@@ -494,8 +498,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.bigint "document_type_id"
     t.date "document_expiry_date"
     t.boolean "document_verified", default: false
-    t.index "lower((email)::text)", name: "index_sellers_on_lower_email", unique: true
+    t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
+    t.index ["blocked"], name: "index_sellers_on_blocked"
     t.index ["county_id"], name: "index_sellers_on_county_id"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"
@@ -525,6 +530,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.integer "category_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["category_id", "name"], name: "index_subcategories_on_category_id_name"
   end
 
   create_table "tier_features", force: :cascade do |t|
@@ -563,7 +569,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_27_082710) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ad_id"], name: "index_wish_lists_on_ad_id"
-    t.index ["buyer_id"], name: "index_wish_lists_on_buyer_id"
+    t.index ["buyer_id"], name: "index_wish_lists_on_purchaser_id"
   end
 
   add_foreign_key "ad_searches", "buyers"

@@ -144,14 +144,45 @@ class Buyer::AdsController < ApplicationController
   private
 
   def get_balanced_ads(per_page)
-    # Simplified balanced ads query - just get recent ads with proper includes
-    Ad.active
-      .joins(:seller)
-      .where(sellers: { blocked: false })
-      .where(flagged: false)
-      .includes(:category, :subcategory, seller: { seller_tier: :tier })
-      .order(created_at: :desc)
-      .limit(per_page)
+    # Get all subcategories with their ad counts
+    subcategory_counts = Ad.active
+                           .joins(:seller, :subcategory)
+                           .where(sellers: { blocked: false })
+                           .where(flagged: false)
+                           .group('subcategories.id')
+                           .count
+
+    # Calculate how many ads to take from each subcategory
+    total_subcategories = subcategory_counts.length
+    ads_per_subcategory = [per_page / total_subcategories, 1].max
+
+    balanced_ads = []
+    
+    subcategory_counts.each do |subcategory_id, count|
+      next if count == 0
+      
+      # Get ads for this subcategory, sorted by tier priority (highest first) and recency
+      subcategory_ads = Ad.active
+                          .joins(:seller, seller: { seller_tier: :tier })
+                          .where(sellers: { blocked: false })
+                          .where(flagged: false)
+                          .where(subcategory_id: subcategory_id)
+                          .select('ads.*, CASE tiers.id
+                                        WHEN 4 THEN 1
+                                        WHEN 3 THEN 2
+                                        WHEN 2 THEN 3
+                                        WHEN 1 THEN 4
+                                        ELSE 5
+                                      END AS tier_priority')
+                          .order('tier_priority ASC, ads.created_at DESC')
+                          .limit(ads_per_subcategory)
+                          .includes(:category, :subcategory, seller: { seller_tier: :tier })
+      
+      balanced_ads.concat(subcategory_ads.to_a)
+    end
+
+    # Sort the final result by tier priority (highest first) and recency
+    balanced_ads.sort_by { |ad| [ad.tier_priority || 5, ad.created_at] }.reverse
   end
 
   def set_ad
