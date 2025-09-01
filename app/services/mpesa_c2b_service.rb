@@ -15,7 +15,7 @@ class MpesaC2bService
 
     if response.code == 200
       token = JSON.parse(response.body)["access_token"]
-      Rails.logger.info("✅ M-Pesa Access Token Retrieved")
+      Rails.logger.info("M-Pesa Access Token Retrieved")
       token
     else
       Rails.logger.error("❌ Failed to retrieve access token: #{response.body}")

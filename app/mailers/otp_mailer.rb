@@ -1,5 +1,5 @@
 class OtpMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']  # ✅ update as needed
+  default from: ENV['BREVO_EMAIL']  # update as needed
 
   def send_otp
     @email = params[:email]

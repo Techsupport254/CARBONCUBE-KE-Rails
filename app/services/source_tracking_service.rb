@@ -53,7 +53,7 @@ class SourceTrackingService
         }
       )
       
-      Rails.logger.info "✅ Successfully tracked visit from source: #{source}"
+      Rails.logger.info "Successfully tracked visit from source: #{source}"
       analytic
       
     rescue ActiveRecord::RecordInvalid => e

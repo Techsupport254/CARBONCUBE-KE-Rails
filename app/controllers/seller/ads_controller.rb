@@ -184,7 +184,7 @@ class Seller::AdsController < ApplicationController
     script_path = Rails.root.join("scripts/sharpen_image.py")
     # Rails.logger.info "🛠️ Sharpening image: #{image_path} before upload..."
     `python3 "#{script_path}" "#{image_path}"`  # Ensure paths are quoted
-    # Rails.logger.info "✅ Image sharpened: #{image_path}"
+    # Rails.logger.info "Image sharpened: #{image_path}"
   end
   
   # Optimize image size and convert to WebP using ImageProcessing + Vips
@@ -214,7 +214,7 @@ class Seller::AdsController < ApplicationController
       # Rails.logger.info "🔄 Tried quality=#{quality}: #{readable_size} KB (Path: #{current_webp_path})"
 
       if file_size <= max_file_size
-        # Rails.logger.info "✅ Compression successful under 1MB at quality=#{quality} (#{readable_size} KB)"
+        # Rails.logger.info "Compression successful under 1MB at quality=#{quality} (#{readable_size} KB)"
         return current_webp_path
       elsif quality <= min_quality
         Rails.logger.warn "⚠️ Minimum quality reached (#{min_quality}). File still exceeds 1MB (#{readable_size} KB)"

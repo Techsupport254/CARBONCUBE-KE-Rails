@@ -20,8 +20,13 @@ class Buyer::AdsController < ApplicationController
     filter_by_category if params[:category_id].present?
     filter_by_subcategory if params[:subcategory_id].present?
 
-    @ads = @ads.order(created_at: :desc)
-            .limit(per_page).offset((page - 1) * per_page)
+    # For the home page, get a balanced distribution of ads across subcategories
+    if params[:balanced] == 'true' || (params[:per_page]&.to_i || 50) > 100
+      @ads = get_balanced_ads(per_page)
+    else
+      @ads = @ads.order(created_at: :desc)
+              .limit(per_page).offset((page - 1) * per_page)
+    end
 
     render json: @ads, each_serializer: AdSerializer
   end
@@ -132,6 +137,48 @@ class Buyer::AdsController < ApplicationController
   end
 
   private
+
+  def get_balanced_ads(per_page)
+    # Use a single optimized query with window functions to get balanced ads
+    # This approach uses ROW_NUMBER() to rank ads within each subcategory
+    # and then selects the top N from each subcategory
+    
+    sql = <<-SQL
+      WITH ranked_ads AS (
+        SELECT 
+          ads.*,
+          ROW_NUMBER() OVER (
+            PARTITION BY ads.subcategory_id 
+            ORDER BY ads.created_at DESC
+          ) as rn
+        FROM ads
+        INNER JOIN sellers ON sellers.id = ads.seller_id
+        WHERE ads.deleted = false 
+          AND sellers.blocked = false 
+          AND ads.flagged = false
+      )
+      SELECT * FROM ranked_ads 
+      WHERE rn <= 10
+      ORDER BY created_at DESC
+      LIMIT ?
+    SQL
+    
+    # Execute the raw SQL and map to Ad objects
+    result = ActiveRecord::Base.connection.execute(
+      ActiveRecord::Base.sanitize_sql([sql, per_page])
+    )
+    
+    # Get the ad IDs from the result
+    ad_ids = result.map { |row| row['id'] }
+    
+    # Return empty if no ads found
+    return Ad.none if ad_ids.empty?
+    
+    # Fetch the full Ad objects with includes in the correct order
+    Ad.where(id: ad_ids)
+      .includes(:category, :subcategory, seller: { seller_tier: :tier })
+      .order(Arel.sql("position(id::text in '#{ad_ids.join(',')}')"))
+  end
 
   def set_ad
     @ad = Ad.find(params[:id])

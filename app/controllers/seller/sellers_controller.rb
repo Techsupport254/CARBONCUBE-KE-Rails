@@ -69,7 +69,7 @@ class Seller::SellersController < ApplicationController
         return render json: { error: "Failed to upload document" }, status: :unprocessable_entity
       end
 
-      # Rails.logger.info "✅ Document uploaded successfully: #{uploaded_document_url}"
+      # Rails.logger.info "Document uploaded successfully: #{uploaded_document_url}"
     end
 
     if params[:seller][:profile_picture].present?
@@ -89,7 +89,7 @@ class Seller::SellersController < ApplicationController
         return render json: { error: "Failed to upload profile picture" }, status: :unprocessable_entity
       end
 
-      # Rails.logger.info "✅ Profile picture uploaded successfully: #{uploaded_profile_picture_url}"
+      # Rails.logger.info "Profile picture uploaded successfully: #{uploaded_profile_picture_url}"
     end
 
     @seller = Seller.new(seller_params)
@@ -103,7 +103,7 @@ class Seller::SellersController < ApplicationController
     if @seller.save
       SellerTier.create(seller_id: @seller.id, tier_id: 1, duration_months: 0)
       token = JsonWebToken.encode(seller_id: @seller.id, role: 'Seller')
-      # Rails.logger.info "✅ Seller created successfully: #{@seller.id}"
+      # Rails.logger.info "Seller created successfully: #{@seller.id}"
       render json: { token: token, seller: @seller }, status: :created
     else
       Rails.logger.error "❌ Seller creation failed: #{@seller.errors.full_messages.inspect}"

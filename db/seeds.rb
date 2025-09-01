@@ -1835,7 +1835,7 @@ buyers.first(5).each do |buyer|
   end
 end
 
-puts "✅ Seeded conversations and messages successfully."
+puts "Seeded conversations and messages successfully."
 
 puts "Starts seeding for the Banners"
 
@@ -1854,7 +1854,7 @@ banner_urls.each_with_index do |url, index|
   end
 end
 
-puts "✅ Seeded banners successfully."
+puts "Seeded banners successfully."
 
 puts "Starts seeding for the Promotions"
 

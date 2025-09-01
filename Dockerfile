@@ -26,13 +26,13 @@ COPY . .
 COPY scripts/ /app/scripts/
 RUN chmod +x /app/scripts/*.py  
 
-# ✅ Copy the entrypoint script and make it executable
+# Copy the entrypoint script and make it executable
 COPY entrypoint.sh /usr/bin/entrypoint.sh
 RUN chmod +x /usr/bin/entrypoint.sh
 
 # Expose the port
 EXPOSE 3001
 
-# ✅ Use entrypoint.sh to setup cron and start Rails
+# Use entrypoint.sh to setup cron and start Rails
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["rails", "server", "-b", "0.0.0.0", "-p", "3001"]
