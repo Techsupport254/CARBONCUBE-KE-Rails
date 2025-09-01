@@ -139,45 +139,14 @@ class Buyer::AdsController < ApplicationController
   private
 
   def get_balanced_ads(per_page)
-    # Use a single optimized query with window functions to get balanced ads
-    # This approach uses ROW_NUMBER() to rank ads within each subcategory
-    # and then selects the top N from each subcategory
-    
-    sql = <<-SQL
-      WITH ranked_ads AS (
-        SELECT 
-          ads.*,
-          ROW_NUMBER() OVER (
-            PARTITION BY ads.subcategory_id 
-            ORDER BY ads.created_at DESC
-          ) as rn
-        FROM ads
-        INNER JOIN sellers ON sellers.id = ads.seller_id
-        WHERE ads.deleted = false 
-          AND sellers.blocked = false 
-          AND ads.flagged = false
-      )
-      SELECT * FROM ranked_ads 
-      WHERE rn <= 10
-      ORDER BY created_at DESC
-      LIMIT ?
-    SQL
-    
-    # Execute the raw SQL and map to Ad objects
-    result = ActiveRecord::Base.connection.execute(
-      ActiveRecord::Base.sanitize_sql([sql, per_page])
-    )
-    
-    # Get the ad IDs from the result
-    ad_ids = result.map { |row| row['id'] }
-    
-    # Return empty if no ads found
-    return Ad.none if ad_ids.empty?
-    
-    # Fetch the full Ad objects with includes in the correct order
-    Ad.where(id: ad_ids)
+    # Simplified balanced ads query - just get recent ads with proper includes
+    Ad.active
+      .joins(:seller)
+      .where(sellers: { blocked: false })
+      .where(flagged: false)
       .includes(:category, :subcategory, seller: { seller_tier: :tier })
-      .order(Arel.sql("position(id::text in '#{ad_ids.join(',')}')"))
+      .order(created_at: :desc)
+      .limit(per_page)
   end
 
   def set_ad
