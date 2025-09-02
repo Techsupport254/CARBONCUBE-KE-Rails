@@ -8,26 +8,27 @@ class Buyer::AdsController < ApplicationController
     per_page = 500 if per_page > 500
     page = params[:page].to_i.positive? ? params[:page].to_i : 1
 
-    # Use caching for better performance
-    cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:balanced]}_#{params[:category_id]}_#{params[:subcategory_id]}"
-    
-    @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
-      ads_query = Ad.active.joins(:seller)
-                   .where(sellers: { blocked: false })
-                   .where(flagged: false)
-                   .includes(
-                     :category,
-                     :subcategory,
-                     seller: { seller_tier: :tier }
-                   )
+    # For the home page, get a balanced distribution of ads across subcategories
+    if params[:balanced] == 'true' || (params[:per_page]&.to_i || 50) > 100
+      @ads = get_balanced_ads(per_page)
+    else
+      # Use caching for better performance
+      cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}"
+      
+      @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
+        ads_query = Ad.active.joins(:seller)
+                     .where(sellers: { blocked: false })
+                     .where(flagged: false)
+                     .includes(
+                       :category,
+                       :subcategory,
+                       :reviews,
+                       seller: { seller_tier: :tier }
+                     )
 
-      filter_by_category(ads_query) if params[:category_id].present?
-      filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+        ads_query = filter_by_category(ads_query) if params[:category_id].present?
+        ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
-      # For the home page, get a balanced distribution of ads across subcategories
-      if params[:balanced] == 'true' || (params[:per_page]&.to_i || 50) > 100
-        get_balanced_ads(per_page)
-      else
         ads_query.order(created_at: :desc)
                 .limit(per_page).offset((page - 1) * per_page)
       end
@@ -38,7 +39,12 @@ class Buyer::AdsController < ApplicationController
 
   # GET /buyer/ads/:id
   def show
-    @ad = Ad.find(params[:id])
+    @ad = Ad.includes(
+      :category,
+      :subcategory,
+      :reviews,
+      seller: { seller_tier: :tier }
+    ).find(params[:id])
     render json: @ad, serializer: AdSerializer, include_reviews: true
   end
   
@@ -87,7 +93,7 @@ class Buyer::AdsController < ApplicationController
     end
 
     ads = ads
-      .joins(seller: { seller_tier: :tier })
+      .joins(:seller, :reviews, seller: { seller_tier: :tier })
       .select('ads.*, CASE tiers.id
                         WHEN 4 THEN 1
                         WHEN 3 THEN 2
@@ -98,10 +104,10 @@ class Buyer::AdsController < ApplicationController
       .includes(
         :category,
         :subcategory,
+        :reviews,
         seller: { seller_tier: :tier }
       )
       .order('tier_priority ASC, ads.created_at DESC')
-      .distinct
 
     render json: ads, each_serializer: AdSerializer
   end
@@ -122,6 +128,7 @@ class Buyer::AdsController < ApplicationController
                     .includes(
                       :category,
                       :subcategory,
+                      :reviews,
                       seller: { seller_tier: :tier }
                     )
                     .order('ads.created_at DESC')
@@ -144,45 +151,40 @@ class Buyer::AdsController < ApplicationController
   private
 
   def get_balanced_ads(per_page)
-    # Get all subcategories with their ad counts
-    subcategory_counts = Ad.active
-                           .joins(:seller, :subcategory)
-                           .where(sellers: { blocked: false })
-                           .where(flagged: false)
-                           .group('subcategories.id')
-                           .count
-
-    # Calculate how many ads to take from each subcategory
-    total_subcategories = subcategory_counts.length
-    ads_per_subcategory = [per_page / total_subcategories, 1].max
-
-    balanced_ads = []
+    # Get all categories with their subcategories
+    categories = Category.includes(:subcategories).all
     
-    subcategory_counts.each do |subcategory_id, count|
-      next if count == 0
-      
-      # Get ads for this subcategory, sorted by tier priority (highest first) and recency
-      subcategory_ads = Ad.active
-                          .joins(:seller, seller: { seller_tier: :tier })
-                          .where(sellers: { blocked: false })
-                          .where(flagged: false)
-                          .where(subcategory_id: subcategory_id)
-                          .select('ads.*, CASE tiers.id
-                                        WHEN 4 THEN 1
-                                        WHEN 3 THEN 2
-                                        WHEN 2 THEN 3
-                                        WHEN 1 THEN 4
-                                        ELSE 5
-                                      END AS tier_priority')
-                          .order('tier_priority ASC, ads.created_at DESC')
-                          .limit(ads_per_subcategory)
-                          .includes(:category, :subcategory, seller: { seller_tier: :tier })
-      
-      balanced_ads.concat(subcategory_ads.to_a)
+    # Calculate how many ads to get per subcategory to achieve balance
+    total_subcategories = categories.sum { |cat| cat.subcategories.count }
+    ads_per_subcategory = [per_page / total_subcategories, 1].max
+    
+    all_ads = []
+    
+    categories.each do |category|
+      category.subcategories.each do |subcategory|
+        # Get ads for this subcategory, ordered by tier priority
+        subcategory_ads = Ad.active
+           .joins(:seller, seller: { seller_tier: :tier })
+           .where(sellers: { blocked: false })
+           .where(flagged: false)
+           .where(subcategory_id: subcategory.id)
+           .select('ads.*, CASE tiers.id
+                     WHEN 4 THEN 1
+                     WHEN 3 THEN 2
+                     WHEN 2 THEN 3
+                     WHEN 1 THEN 4
+                     ELSE 5
+                   END AS tier_priority')
+           .order('tier_priority ASC, ads.created_at DESC')
+           .limit(ads_per_subcategory)
+           .preload(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+        
+        all_ads.concat(subcategory_ads)
+      end
     end
-
-    # Sort the final result by tier priority (highest first) and recency
-    balanced_ads.sort_by { |ad| [ad.tier_priority || 5, ad.created_at] }.reverse
+    
+    # Sort the final result by tier priority and creation date
+    all_ads.sort_by { |ad| [ad.tier_priority || 5, ad.created_at] }.reverse
   end
 
   def set_ad

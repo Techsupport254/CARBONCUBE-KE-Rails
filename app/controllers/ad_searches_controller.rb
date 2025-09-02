@@ -30,7 +30,8 @@ class AdSearchesController < ApplicationController
   end
 
   def ad_search_params
-    params.permit(:search_term)
+    # Allow metadata parameters to prevent unpermitted parameters warning
+    params.permit(:search_term, metadata: {}, ad_search: {})
   end
 
   # Check if the current request should be excluded based on internal user criteria

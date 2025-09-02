@@ -35,6 +35,10 @@ class Seller < ApplicationRecord
   validates :age_group, presence: true
   # validates :tier, inclusion: { in: %w[Free Basic Standard Premium] }
 
+  # Callbacks for cache invalidation
+  after_save :invalidate_caches
+  after_destroy :invalidate_caches
+
   def calculate_mean_rating
     # Use cached reviews if available, otherwise calculate
     if reviews.loaded?
@@ -60,5 +64,17 @@ class Seller < ApplicationRecord
 
   def normalize_email
     self.email = email.to_s.strip.downcase
+  end
+
+  def invalidate_caches
+    # Invalidate related caches when seller is updated or deleted
+    Rails.cache.delete_matched("buyer_ads_*")
+    Rails.cache.delete_matched("search_*")
+    Rails.cache.delete_matched("balanced_ads_*")
+    Rails.cache.delete_matched("related_ads_*")
+    
+    # Invalidate category and subcategory caches
+    Rails.cache.delete('buyer_categories_simple')
+    Rails.cache.delete('buyer_subcategories_all')
   end
 end

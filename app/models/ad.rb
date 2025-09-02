@@ -39,6 +39,10 @@ class Ad < ApplicationRecord
   # Ensure media can accept a string or array of strings
   serialize :media, coder: JSON
 
+  # Callbacks for cache invalidation
+  after_save :invalidate_caches
+  after_destroy :invalidate_caches
+
   # Soft delete
   def flag
     update(flagged: true)
@@ -67,15 +71,20 @@ class Ad < ApplicationRecord
   # Efficient method to get review statistics
   def review_stats
     if reviews.loaded?
-      {
-        count: reviews.size,
-        average: reviews.any? ? reviews.sum(&:rating).to_f / reviews.size : 0.0
-      }
+      total_reviews = reviews.size
+      return { total: 0, average: 0.0 } if total_reviews == 0
+      
+      total_rating = reviews.sum(&:rating)
+      average_rating = total_rating.to_f / total_reviews
+      
+      { total: total_reviews, average: average_rating }
     else
-      {
-        count: reviews_count || reviews.count,
-        average: reviews.average(:rating).to_f
-      }
+      total_reviews = reviews.count
+      return { total: 0, average: 0.0 } if total_reviews == 0
+      
+      average_rating = reviews.average(:rating).to_f
+      
+      { total: total_reviews, average: average_rating }
     end
   end
   
@@ -86,4 +95,18 @@ class Ad < ApplicationRecord
   def first_media_url
     media&.first # Safely access the first URL in the media array
   end  
+
+  private
+
+  def invalidate_caches
+    # Invalidate related caches when ad is updated or deleted
+    Rails.cache.delete_matched("buyer_ads_*")
+    Rails.cache.delete_matched("search_*")
+    Rails.cache.delete_matched("balanced_ads_*")
+    Rails.cache.delete_matched("related_ads_*")
+    
+    # Invalidate category and subcategory caches
+    Rails.cache.delete('buyer_categories_simple')
+    Rails.cache.delete('buyer_subcategories_all')
+  end
 end

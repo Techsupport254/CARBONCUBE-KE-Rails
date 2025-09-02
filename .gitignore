@@ -9,7 +9,18 @@
 
 # Ignore all environment files (except templates).
 /.env*
+!/.env.example
 !/.env*.erb
+
+# Additional security - ignore any files that might contain secrets
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.yml
+secrets.yaml
+credentials.yml
+credentials.yaml
 
 # Ignore all logfiles and tempfiles.
 /log/*

@@ -47,7 +47,7 @@ class ClickEventsController < ApplicationController
 
   def click_event_params
     # Only permit the fields that actually exist in the ClickEvent model
-    params.permit(:event_type, :ad_id, metadata: {})
+    params.permit(:event_type, :ad_id, :device_hash, :user_agent, metadata: {}, click_event: {})
   end
 
   # Check if the current request should be excluded based on internal user criteria
