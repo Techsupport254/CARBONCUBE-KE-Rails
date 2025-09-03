@@ -40,7 +40,7 @@ class Seller::SellersController < ApplicationController
     # Rails.logger.info "🔍 Checking if buyer exists with email: #{seller_email}"
 
     if Buyer.exists?(email: seller_email)
-      Rails.logger.error "❌ Email already used by buyer: #{seller_email}"
+      Rails.logger.error "Email already used by buyer: #{seller_email}"
       return render json: { errors: ['Email is already in use by a buyer'] }, status: :unprocessable_entity
     end
 
@@ -65,7 +65,7 @@ class Seller::SellersController < ApplicationController
       end
 
       if uploaded_document_url.nil?
-        Rails.logger.error "❌ Document upload failed"
+        Rails.logger.error "Document upload failed"
         return render json: { error: "Failed to upload document" }, status: :unprocessable_entity
       end
 
@@ -85,7 +85,7 @@ class Seller::SellersController < ApplicationController
       )
 
       if uploaded_profile_picture_url.nil?
-        Rails.logger.error "❌ Profile picture upload failed"
+        Rails.logger.error "Profile picture upload failed"
         return render json: { error: "Failed to upload profile picture" }, status: :unprocessable_entity
       end
 
@@ -106,7 +106,7 @@ class Seller::SellersController < ApplicationController
       # Rails.logger.info "Seller created successfully: #{@seller.id}"
       render json: { token: token, seller: @seller }, status: :created
     else
-      Rails.logger.error "❌ Seller creation failed: #{@seller.errors.full_messages.inspect}"
+      Rails.logger.error "Seller creation failed: #{@seller.errors.full_messages.inspect}"
       render json: @seller.errors, status: :unprocessable_entity
     end
   end
@@ -149,7 +149,7 @@ class Seller::SellersController < ApplicationController
     end
     send(processing_method, file)
   rescue => e
-    Rails.logger.error "❌ Upload failed (#{type}): #{e.message}"
+    Rails.logger.error "Upload failed (#{type}): #{e.message}"
     nil
   end
 
@@ -167,7 +167,7 @@ class Seller::SellersController < ApplicationController
       uploaded = Cloudinary::Uploader.upload(optimized_path, upload_preset: ENV['UPLOAD_PRESET'], folder: "business_permits")
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "❌ Error processing permit: #{e.message}"
+      Rails.logger.error "Error processing permit: #{e.message}"
       nil
     ensure
       FileUtils.rm_rf(temp_folder)
@@ -194,7 +194,7 @@ class Seller::SellersController < ApplicationController
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "❌ Error processing profile picture: #{e.message}"
+      Rails.logger.error "Error processing profile picture: #{e.message}"
       nil
     ensure
       FileUtils.rm_rf(temp_folder)

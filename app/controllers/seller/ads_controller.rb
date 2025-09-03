@@ -41,7 +41,7 @@ class Seller::AdsController < ApplicationController
     if @ad.save
       render json: @ad.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating]), status: :created
     else
-      Rails.logger.error "❌ Ad save failed: #{@ad.errors.full_messages.join(', ')}"
+      Rails.logger.error "Ad save failed: #{@ad.errors.full_messages.join(', ')}"
       render json: @ad.errors, status: :unprocessable_entity
     end
   end
@@ -161,7 +161,7 @@ class Seller::AdsController < ApplicationController
         
         uploaded_urls << uploaded_image["secure_url"]
       rescue => e
-        Rails.logger.error "❌ Error processing image: #{e.message}"
+        Rails.logger.error "Error processing image: #{e.message}"
       end
     end
 
@@ -211,7 +211,7 @@ class Seller::AdsController < ApplicationController
       file_size = File.size(current_webp_path)
       readable_size = (file_size / 1024.0).round(2)
 
-      # Rails.logger.info "🔄 Tried quality=#{quality}: #{readable_size} KB (Path: #{current_webp_path})"
+      # Rails.logger.info "Tried quality=#{quality}: #{readable_size} KB (Path: #{current_webp_path})"
 
       if file_size <= max_file_size
         # Rails.logger.info "Compression successful under 1MB at quality=#{quality} (#{readable_size} KB)"

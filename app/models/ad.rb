@@ -106,7 +106,8 @@ class Ad < ApplicationRecord
     Rails.cache.delete_matched("related_ads_*")
     
     # Invalidate category and subcategory caches
-    Rails.cache.delete('buyer_categories_simple')
+          Rails.cache.delete('buyer_categories_with_ads_count')
+      Rails.cache.delete('buyer_category_analytics')
     Rails.cache.delete('buyer_subcategories_all')
   end
 end

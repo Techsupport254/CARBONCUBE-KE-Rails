@@ -160,6 +160,11 @@ Rails.application.routes.draw do
     resources :banners
     resources :promotions, except: [:new, :edit]
     get 'identify', to: 'admins#identify'
+    resource :profile, only: [:show, :update] do
+      collection do
+        post 'change-password'
+      end
+    end
     resources :notifications, only: [:index, :create]
     resources :ad_searches, only: [:index, :show, :destroy]
     resources :click_events, only: [:index, :show, :destroy]
@@ -246,7 +251,11 @@ Rails.application.routes.draw do
       # Messages are nested under conversations
       resources :messages, only: [:index, :create]
     end
-    resources :categories
+    resources :categories do
+      collection do
+        get :analytics
+      end
+    end
     resources :notifications
     resources :subcategories
 

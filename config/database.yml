@@ -11,7 +11,7 @@ development:
   adapter: postgresql
   encoding: unicode
   pool: 20
-  url: <%= ENV['DATABASE_URL'] || 'postgresql://Quaint:3323@localhost:5432/carbon_development' %>
+  url: <%= ENV['DATABASE_URL'] || 'postgresql://Quaint:3323@localhost:5432/merged' %>
 
 test:
   adapter: postgresql
@@ -23,3 +23,4 @@ production:
   <<: *default
   sslmode: require
   ssl: true
+  url: <%= ENV['DATABASE_URL'] %>

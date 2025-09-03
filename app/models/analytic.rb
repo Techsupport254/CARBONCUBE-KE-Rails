@@ -11,29 +11,94 @@ class Analytic < ApplicationRecord
   # Scope for recent analytics - supports getting all data when days is nil
   scope :recent, ->(days = 30) { days.nil? ? all : where('created_at >= ?', days.days.ago) }
   
+  # Scope for date range filtering
+  scope :date_range, ->(start_date, end_date) { 
+    if start_date && end_date
+      where('DATE(created_at) >= ? AND DATE(created_at) <= ?', start_date, end_date)
+    else
+      all
+    end
+  }
+  
+  # Helper method to get filtered scope
+  def self.filtered_scope(date_filter)
+    if date_filter && date_filter.is_a?(Hash) && date_filter[:start_date] && date_filter[:end_date]
+      date_range(date_filter[:start_date], date_filter[:end_date])
+    else
+      recent(30)
+    end
+  end
+  
   # Class methods for analytics
-  def self.source_distribution(days = 30)
-    # Group by normalized source where nil or empty strings are bucketed as 'other'
-    # This ensures the sum of the distribution equals total visits
-    recent(days)
+  def self.source_distribution(date_filter = nil)
+    # Compute 'direct' as visits without from/source/utm_source and without referrer
+    scope = filtered_scope(date_filter)
+
+    direct_count = scope
+      .where(source: [nil, ''])
+      .where(utm_source: [nil, ''])
+      .where(referrer: [nil, ''])
+      .count
+
+    # External sources are those with any of: source present, utm_source present, or referrer present
+    # Group them by normalized source, defaulting to 'other' when blank
+    external_counts = scope
+      .where.not(source: [nil, '']).or(
+        scope.where.not(utm_source: [nil, ''])
+      ).or(
+        scope.where.not(referrer: [nil, ''])
+      )
       .group(Arel.sql("COALESCE(NULLIF(source, ''), 'other')"))
       .count
+
+    # Ensure direct bucket exists
+    external_counts['direct'] = (external_counts['direct'] || 0) + direct_count
+
+    external_counts
   end
   
-  def self.utm_source_distribution(days = 30)
-    recent(days).where.not(utm_source: [nil, '']).group(:utm_source).count
+  def self.utm_source_distribution(date_filter = nil)
+    # Include both UTM sources and 'from' parameter sources
+    scope = filtered_scope(date_filter)
+    
+    # Get UTM source counts
+    utm_counts = scope.where.not(utm_source: [nil, '']).group(:utm_source).count
+    
+    # Get 'from' parameter counts (where source is set but utm_source is nil/empty)
+    from_counts = scope
+      .where.not(source: [nil, ''])
+      .where(utm_source: [nil, ''])
+      .group(:source)
+      .count
+    
+    # Merge the counts, preferring UTM source if both exist for same source
+    merged_counts = {}
+    
+    # Add UTM counts
+    utm_counts.each { |source, count| merged_counts[source] = count }
+    
+    # Add 'from' counts, but don't override existing UTM counts
+    from_counts.each do |source, count|
+      if merged_counts[source]
+        merged_counts[source] += count  # Add to existing UTM count
+      else
+        merged_counts[source] = count   # New source from 'from' parameter
+      end
+    end
+    
+    merged_counts
   end
   
-  def self.utm_medium_distribution(days = 30)
-    recent(days).where.not(utm_medium: [nil, '']).group(:utm_medium).count
+  def self.utm_medium_distribution(date_filter = nil)
+    filtered_scope(date_filter).where.not(utm_medium: [nil, '']).group(:utm_medium).count
   end
   
-  def self.utm_campaign_distribution(days = 30)
-    recent(days).where.not(utm_campaign: [nil, '']).group(:utm_campaign).count
+  def self.utm_campaign_distribution(date_filter = nil)
+    filtered_scope(date_filter).where.not(utm_campaign: [nil, '']).group(:utm_campaign).count
   end
   
-  def self.referrer_distribution(days = 30)
-    recent(days).where.not(referrer: [nil, '']).group(:referrer).count
+  def self.referrer_distribution(date_filter = nil)
+    filtered_scope(date_filter).where.not(referrer: [nil, '']).group(:referrer).count
   end
 
   # Unique visitor tracking methods
@@ -45,19 +110,19 @@ class Analytic < ApplicationRecord
     recent(days).count
   end
 
-  def self.unique_visitors_by_source(days = 30)
-    recent(days)
+  def self.unique_visitors_by_source(date_filter = nil)
+    filtered_scope(date_filter)
       .where("data->>'visitor_id' IS NOT NULL")
       .group(:source)
       .distinct.count("data->>'visitor_id'")
   end
 
-  def self.visits_by_source(days = 30)
-    recent(days).group(:source).count
+  def self.visits_by_source(date_filter = nil)
+    filtered_scope(date_filter).group(:source).count
   end
 
-  def self.unique_visitors_trend(days = 30)
-    recent(days)
+  def self.unique_visitors_trend(date_filter = nil)
+    filtered_scope(date_filter)
       .where("data->>'visitor_id' IS NOT NULL")
       .group("DATE(created_at)")
       .order("DATE(created_at)")
@@ -71,9 +136,10 @@ class Analytic < ApplicationRecord
       .count
   end
 
-  def self.returning_visitors_count(days = 30)
-    # Count visitors (seen in the recent window) whose first visit was more than 7 days ago
-    subquery_sql = recent(days)
+  def self.returning_visitors_count(date_filter = nil)
+    # Count visitors (seen in the filtered window) whose first visit was more than 7 days ago
+    scope = filtered_scope(date_filter)
+    subquery_sql = scope
       .where(Arel.sql("data->>'visitor_id' IS NOT NULL"))
       .select(Arel.sql("DISTINCT data->>'visitor_id' AS visitor_id")).to_sql
 
@@ -87,9 +153,10 @@ class Analytic < ApplicationRecord
     first_visits.values.count { |timestamp| timestamp < cutoff }
   end
 
-  def self.new_visitors_count(days = 30)
-    # Count visitors (seen in the recent window) whose first visit was within the last 7 days
-    subquery_sql = recent(days)
+  def self.new_visitors_count(date_filter = nil)
+    # Count visitors (seen in the filtered window) whose first visit was within the last 7 days
+    scope = filtered_scope(date_filter)
+    subquery_sql = scope
       .where(Arel.sql("data->>'visitor_id' IS NOT NULL"))
       .select(Arel.sql("DISTINCT data->>'visitor_id' AS visitor_id")).to_sql
 
@@ -102,20 +169,20 @@ class Analytic < ApplicationRecord
     first_visits.values.count { |timestamp| timestamp >= cutoff }
   end
 
-  def self.visitor_engagement_metrics(days = 30)
-    recent_analytics = recent(days)
+  def self.visitor_engagement_metrics(date_filter = nil)
+    scope = filtered_scope(date_filter)
     
     # Calculate average visits per visitor
-    total_visits = recent_analytics.count
-    unique_visitors = recent_analytics.where("data->>'visitor_id' IS NOT NULL").distinct.count("data->>'visitor_id'")
+    total_visits = scope.count
+    unique_visitors = scope.where("data->>'visitor_id' IS NOT NULL").distinct.count("data->>'visitor_id'")
     
     avg_visits_per_visitor = unique_visitors > 0 ? (total_visits.to_f / unique_visitors).round(2) : 0
     
     {
       total_visits: total_visits,
       unique_visitors: unique_visitors,
-      returning_visitors: returning_visitors_count(days),
-      new_visitors: new_visitors_count(days),
+      returning_visitors: returning_visitors_count(date_filter),
+      new_visitors: new_visitors_count(date_filter),
       avg_visits_per_visitor: avg_visits_per_visitor
     }
   end

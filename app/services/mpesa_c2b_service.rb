@@ -18,7 +18,7 @@ class MpesaC2bService
       Rails.logger.info("M-Pesa Access Token Retrieved")
       token
     else
-      Rails.logger.error("❌ Failed to retrieve access token: #{response.body}")
+      Rails.logger.error("Failed to retrieve access token: #{response.body}")
       nil
     end
   end

@@ -10,8 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_02_160343) do
+  create_schema "auth"
+  create_schema "extensions"
+  create_schema "graphql"
+  create_schema "graphql_public"
+  create_schema "pgbouncer"
+  create_schema "realtime"
+  create_schema "storage"
+  create_schema "vault"
+
   # These are extensions that must be enabled in order to support this database
+  enable_extension "extensions.pg_stat_statements"
+  enable_extension "extensions.pgcrypto"
+  enable_extension "extensions.uuid-ossp"
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
 
@@ -65,14 +77,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
     t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.boolean "deleted", default: false
     t.integer "reviews_count", default: 0, null: false
+    t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"
     t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at"
+    t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
+    t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
     t.index ["description"], name: "index_ads_on_description", opclass: :gin_trgm_ops, using: :gin
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
+    t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged_perf"
     t.index ["seller_id"], name: "index_ads_on_seller_id"
+    t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
     t.index ["title"], name: "index_ads_on_title", opclass: :gin_trgm_ops, using: :gin
@@ -194,6 +211,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "ads_count", default: 0, null: false
+    t.index ["ads_count"], name: "index_categories_on_ads_count"
     t.index ["name"], name: "index_categories_on_name"
   end
 
@@ -280,6 +299,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
     t.text "answer"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "fingerprint_removal_requests", force: :cascade do |t|
+    t.string "requester_name", null: false
+    t.text "device_description", null: false
+    t.string "device_hash", null: false
+    t.text "user_agent", null: false
+    t.string "status", default: "pending", null: false
+    t.text "rejection_reason"
+    t.datetime "approved_at"
+    t.datetime "rejected_at"
+    t.text "additional_info"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_fingerprint_removal_requests_on_created_at"
+    t.index ["device_hash"], name: "index_fingerprint_removal_requests_on_device_hash"
+    t.index ["status"], name: "index_fingerprint_removal_requests_on_status"
   end
 
   create_table "incomes", force: :cascade do |t|
@@ -498,7 +534,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
     t.bigint "document_type_id"
     t.date "document_expiry_date"
     t.boolean "document_verified", default: false
+    t.integer "ads_count", default: 0, null: false
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
+    t.index ["ads_count"], name: "index_sellers_on_ads_count"
     t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
     t.index ["blocked"], name: "index_sellers_on_blocked"
     t.index ["county_id"], name: "index_sellers_on_county_id"
@@ -530,6 +568,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_01_111818) do
     t.integer "category_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "ads_count", default: 0, null: false
+    t.index ["ads_count"], name: "index_subcategories_on_ads_count"
     t.index ["category_id", "name"], name: "index_subcategories_on_category_id_name"
   end
 

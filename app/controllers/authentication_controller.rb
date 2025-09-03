@@ -8,7 +8,7 @@ class AuthenticationController < ApplicationController
     if @user&.authenticate(params[:password])
       role = determine_role(@user)
 
-      # ❌ Block login if the user is soft-deleted
+      # Block login if the user is soft-deleted
       if (@user.is_a?(Buyer) || @user.is_a?(Seller)) && @user.deleted?
         render json: { errors: ['Your account has been deleted. Please contact support.'] }, status: :unauthorized
         return

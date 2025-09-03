@@ -26,11 +26,11 @@ class SourceTrackingController < ApplicationController
       }, status: :created
     else
       # Log the request details for debugging
-      Rails.logger.error "❌ Source tracking failed for request:"
-      Rails.logger.error "❌ URL: #{request.url}"
-      Rails.logger.error "❌ Referrer: #{request.referrer}"
-      Rails.logger.error "❌ User Agent: #{request.user_agent}"
-      Rails.logger.error "❌ Params: #{request.params.except('controller', 'action')}"
+      Rails.logger.error "Source tracking failed for request:"
+      Rails.logger.error "URL: #{request.url}"
+      Rails.logger.error "Referrer: #{request.referrer}"
+      Rails.logger.error "User Agent: #{request.user_agent}"
+      Rails.logger.error "Params: #{request.params.except('controller', 'action')}"
       
       render json: { 
         success: false, 
@@ -46,20 +46,21 @@ class SourceTrackingController < ApplicationController
   end
 
   def analytics
-    # Get analytics data for the sales dashboard
-    days = params[:days]&.to_i || 30
+    # Always return all data - filtering will be done on frontend
+    source_distribution = Analytic.source_distribution
+    utm_source_distribution = Analytic.utm_source_distribution
+    utm_medium_distribution = Analytic.utm_medium_distribution
+    utm_campaign_distribution = Analytic.utm_campaign_distribution
+    referrer_distribution = Analytic.referrer_distribution
     
-    source_distribution = Analytic.source_distribution(days)
-    utm_source_distribution = Analytic.utm_source_distribution(days)
-    utm_medium_distribution = Analytic.utm_medium_distribution(days)
-    utm_campaign_distribution = Analytic.utm_campaign_distribution(days)
-    referrer_distribution = Analytic.referrer_distribution(days)
+    # Get total visits (all-time)
+    total_visits = Analytic.count
     
-    # Get total visits
-    total_visits = Analytic.recent(days).count
+    # Get all visits with timestamps for frontend filtering
+    visit_timestamps = Analytic.all.pluck(:created_at)
     
-    # Get visits by day for the last 30 days
-    daily_visits = Analytic.recent(days)
+    # Get visits by day for all time
+    daily_visits = Analytic.all
                            .group("DATE(created_at)")
                            .order("DATE(created_at)")
                            .count
@@ -72,6 +73,7 @@ class SourceTrackingController < ApplicationController
       utm_campaign_distribution: utm_campaign_distribution,
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
+      visit_timestamps: visit_timestamps,
       top_sources: source_distribution.sort_by { |_, count| -count }.first(10),
       top_referrers: referrer_distribution.sort_by { |_, count| -count }.first(10)
     }

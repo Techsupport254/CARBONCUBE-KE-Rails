@@ -140,28 +140,60 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def get_source_analytics
-    # Get source tracking data for ALL time (no 30-day restriction)
-    source_distribution = Analytic.source_distribution(nil)
-    utm_source_distribution = Analytic.utm_source_distribution(nil)
-    utm_medium_distribution = Analytic.utm_medium_distribution(nil)
-    utm_campaign_distribution = Analytic.utm_campaign_distribution(nil)
-    referrer_distribution = Analytic.referrer_distribution(nil)
+    # Get date parameters for filtering
+    start_date = params[:start_date]
+    end_date = params[:end_date]
     
-    # Get visitor engagement metrics for ALL time
-    visitor_metrics = Analytic.visitor_engagement_metrics(nil)
+    puts "=== SOURCE ANALYTICS REQUEST ==="
+    puts "Start date: #{start_date}"
+    puts "End date: #{end_date}"
     
-    # Get unique visitors by source for ALL time
-    unique_visitors_by_source = Analytic.unique_visitors_by_source(nil)
-    visits_by_source = Analytic.visits_by_source(nil)
+    # Build date filter
+    date_filter = nil
+    if start_date && end_date
+      date_filter = { start_date: start_date, end_date: end_date }
+      puts "Date filter: #{date_filter}"
+    else
+      puts "No date filter provided"
+    end
     
-    # Get visits by day for ALL time
-    daily_visits = Analytic.all
-                           .group("DATE(created_at)")
-                           .order("DATE(created_at)")
-                           .count
+    # Get source tracking data with optional date filtering
+    source_distribution = Analytic.source_distribution(date_filter)
+    utm_source_distribution = Analytic.utm_source_distribution(date_filter)
+    utm_medium_distribution = Analytic.utm_medium_distribution(date_filter)
+    utm_campaign_distribution = Analytic.utm_campaign_distribution(date_filter)
+    referrer_distribution = Analytic.referrer_distribution(date_filter)
     
-    # Get unique visitors trend for ALL time
-    daily_unique_visitors = Analytic.unique_visitors_trend(nil)
+    # Get visitor engagement metrics with date filtering
+    visitor_metrics = Analytic.visitor_engagement_metrics(date_filter)
+    
+    # Get unique visitors by source with date filtering
+    unique_visitors_by_source = Analytic.unique_visitors_by_source(date_filter)
+    visits_by_source = Analytic.visits_by_source(date_filter)
+    
+    # Get visits by day with date filtering
+    if date_filter
+      daily_visits = Analytic.date_range(date_filter[:start_date], date_filter[:end_date])
+                             .group("DATE(created_at)")
+                             .order("DATE(created_at)")
+                             .count
+    else
+      daily_visits = Analytic.all
+                             .group("DATE(created_at)")
+                             .order("DATE(created_at)")
+                             .count
+    end
+    
+    # Get visit timestamps with date filtering
+    if date_filter
+      visit_timestamps = Analytic.date_range(date_filter[:start_date], date_filter[:end_date])
+                                 .pluck(:created_at)
+    else
+      visit_timestamps = Analytic.all.pluck(:created_at)
+    end
+    
+    # Get unique visitors trend with date filtering
+    daily_unique_visitors = Analytic.unique_visitors_trend(date_filter)
     
     # Get top sources and referrers
     top_sources = source_distribution.sort_by { |_, count| -count }.first(10)
@@ -181,6 +213,7 @@ class Sales::AnalyticsController < ApplicationController
       utm_campaign_distribution: utm_campaign_distribution,
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
+      visit_timestamps: visit_timestamps,
       daily_unique_visitors: daily_unique_visitors,
       top_sources: top_sources,
       top_referrers: top_referrers

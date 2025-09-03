@@ -57,14 +57,14 @@ class SourceTrackingService
       analytic
       
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "❌ Validation failed for source tracking: #{e.message}"
-      Rails.logger.error "❌ Validation errors: #{e.record.errors.full_messages}"
-      Rails.logger.error "❌ Source: #{source}, Referrer: #{referrer}"
+      Rails.logger.error "Validation failed for source tracking: #{e.message}"
+      Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
+      Rails.logger.error "Source: #{source}, Referrer: #{referrer}"
       nil
     rescue => e
-      Rails.logger.error "❌ Failed to track source: #{e.message}"
-      Rails.logger.error "❌ Error details: #{e.backtrace.first(5)}"
-      Rails.logger.error "❌ Source: #{source}, Referrer: #{referrer}"
+      Rails.logger.error "Failed to track source: #{e.message}"
+      Rails.logger.error "Error details: #{e.backtrace.first(5)}"
+      Rails.logger.error "Source: #{source}, Referrer: #{referrer}"
       nil
     end
   end
@@ -75,12 +75,6 @@ class SourceTrackingService
     # Check for 'from' parameter first (your custom parameter)
     if @params[:from].present?
       source = self.class.sanitize_source(@params[:from])
-      return source
-    end
-    
-    # Check for source in request body (frontend sends this)
-    if @params[:source].present?
-      source = self.class.sanitize_source(@params[:source])
       return source
     end
     
