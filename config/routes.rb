@@ -220,13 +220,13 @@ Rails.application.routes.draw do
     get 'identify', to: 'sellers#identify'
     resources :notifications
 
+    # Custom route for seller_id handling (must come before resources)
+    get 'seller_tiers/:seller_id', to: 'seller_tiers#show'
+
     # Seller Tiers
     resources :seller_tiers, only: [:index, :show] do
       patch 'update_tier', on: :collection
     end
-
-    # Custom route for seller_id handling
-    get 'seller_tiers/:seller_id', to: 'seller_tiers#show'
 
   end
 

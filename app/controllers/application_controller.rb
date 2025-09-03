@@ -1,5 +1,6 @@
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::Base  
+  include ExceptionHandler
 
   # Protect from CSRF for non-API endpoints
   protect_from_forgery with: :exception, unless: -> { request.format.json? }
@@ -21,5 +22,9 @@ class ApplicationController < ActionController::Base
   def authenticate_request
     @current_user = AuthorizeApiRequest.new(request.headers).result
     render json: { error: 'Not Authorized' }, status: 401 unless @current_user
+  end
+
+  def json_response(object, status = :ok)
+    render json: object, status: status
   end
 end

@@ -10,7 +10,12 @@ RUN apt-get update -qq && apt-get install -y \
   python3 \
   python3-pip \
   python3-opencv \
+  python3-numpy \
   cron
+
+# Install additional Python packages
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
 
 # Set the working directory
 WORKDIR /app

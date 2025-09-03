@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_02_160343) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_03_122011) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -500,12 +500,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_02_160343) do
     t.index ["name"], name: "index_sectors_on_name", unique: true
   end
 
-  create_table "seller_tiers", id: :bigint, default: -> { "nextval('vendor_tiers_id_seq'::regclass)" }, force: :cascade do |t|
+  create_table "seller_tiers", force: :cascade do |t|
     t.bigint "seller_id", null: false
     t.bigint "tier_id", null: false
     t.integer "duration_months", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
   end
 

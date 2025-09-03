@@ -5,7 +5,8 @@ class SellerTier < ApplicationRecord
   def subscription_countdown
     # Check if the tier is free (tier_id = 1)
     if tier_id == 1
-      expiration_date = updated_at + 1.month # Free tier has a fixed duration of 1 month
+      # Free tier never expires
+      return { never_expires: true }
     else
       expiration_date = updated_at + duration_months.months
     end
