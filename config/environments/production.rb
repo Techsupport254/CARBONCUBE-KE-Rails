@@ -104,9 +104,14 @@ Rails.application.configure do
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
   # Use a different cache store in production.
-  config.cache_store = :redis_cache_store, {
-    url: ENV['REDIS_URL']
-  }
+  # Use file store if Redis is not available, otherwise use Redis
+  if ENV['REDIS_URL'].present?
+    config.cache_store = :redis_cache_store, {
+      url: ENV['REDIS_URL']
+    }
+  else
+    config.cache_store = :file_store, Rails.root.join("tmp", "cache")
+  end
 
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {

@@ -37,7 +37,16 @@ class Seller::AdsController < ApplicationController
         return render json: { error: "Ad creation limit reached for your current tier (#{ad_limit} ads max)." }, status: :forbidden
       end
 
-      params[:ad][:media] = process_and_upload_images(params[:ad][:media]) if params[:ad][:media].present?
+      # Process and upload images if present
+      if params[:ad][:media].present?
+        begin
+          params[:ad][:media] = process_and_upload_images(params[:ad][:media])
+        rescue => e
+          Rails.logger.error "Error processing images: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          return render json: { error: "Failed to process images. Please try again." }, status: :unprocessable_entity
+        end
+      end
 
       @ad = current_seller.ads.build(ad_params)
 
@@ -45,7 +54,7 @@ class Seller::AdsController < ApplicationController
         render json: @ad.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating]), status: :created
       else
         Rails.logger.error "Ad save failed: #{@ad.errors.full_messages.join(', ')}"
-        render json: @ad.errors, status: :unprocessable_entity
+        render json: { errors: @ad.errors.full_messages }, status: :unprocessable_entity
       end
     rescue => e
       Rails.logger.error "Error creating ad: #{e.message}"
@@ -108,8 +117,22 @@ class Seller::AdsController < ApplicationController
 
   def python_available?
     @python_available ||= begin
+      # First check if python3 is available
+      python_check = `which python3 2>&1`
+      if python_check.strip.empty?
+        Rails.logger.error "Python3 not found in PATH"
+        return false
+      end
+
+      # Then check if required modules are available
       result = `python3 -c "import cv2, numpy; print('OK')" 2>&1`
-      result.strip == "OK"
+      if result.strip != "OK"
+        Rails.logger.error "Python modules not available: #{result}"
+        return false
+      end
+
+      Rails.logger.info "Python3 and required modules are available"
+      true
     rescue => e
       Rails.logger.error "Error checking Python availability: #{e.message}"
       false
@@ -146,6 +169,11 @@ class Seller::AdsController < ApplicationController
     # Convert empty strings to nil for optional numeric fields
     %i[item_length item_width item_height item_weight].each do |field|
       permitted[field] = nil if permitted[field].blank?
+    end
+
+    # Set default weight_unit if empty or invalid
+    if permitted[:weight_unit].blank? || !['Grams', 'Kilograms'].include?(permitted[:weight_unit])
+      permitted[:weight_unit] = 'Grams'
     end
 
     permitted
@@ -194,6 +222,7 @@ class Seller::AdsController < ApplicationController
     rescue => e
       Rails.logger.error "Error in process_and_upload_images: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
+      return [] # Return empty array instead of failing
     ensure
       FileUtils.rm_rf(temp_folder) if Dir.exist?(temp_folder) # Cleanup temp folder
       # Rails.logger.info "🗑️ Temp folder removed: #{temp_folder}"
