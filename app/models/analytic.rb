@@ -31,24 +31,21 @@ class Analytic < ApplicationRecord
   
   # Class methods for analytics
   def self.source_distribution(date_filter = nil)
-    # Compute 'direct' as visits without from/source/utm_source and without referrer
+    # Compute 'direct' as visits without utm_source and without referrer
     scope = filtered_scope(date_filter)
 
     direct_count = scope
-      .where(source: [nil, ''])
       .where(utm_source: [nil, ''])
       .where(referrer: [nil, ''])
       .count
 
-    # External sources are those with any of: source present, utm_source present, or referrer present
+    # External sources are those with utm_source present or referrer present
     # Group them by normalized source, defaulting to 'other' when blank
     external_counts = scope
-      .where.not(source: [nil, '']).or(
-        scope.where.not(utm_source: [nil, ''])
-      ).or(
+      .where.not(utm_source: [nil, '']).or(
         scope.where.not(referrer: [nil, ''])
       )
-      .group(Arel.sql("COALESCE(NULLIF(source, ''), 'other')"))
+      .group(Arel.sql("COALESCE(NULLIF(utm_source, ''), 'other')"))
       .count
 
     # Ensure direct bucket exists
@@ -58,35 +55,11 @@ class Analytic < ApplicationRecord
   end
   
   def self.utm_source_distribution(date_filter = nil)
-    # Include both UTM sources and 'from' parameter sources
+    # Only include UTM sources
     scope = filtered_scope(date_filter)
     
-    # Get UTM source counts
-    utm_counts = scope.where.not(utm_source: [nil, '']).group(:utm_source).count
-    
-    # Get 'from' parameter counts (where source is set but utm_source is nil/empty)
-    from_counts = scope
-      .where.not(source: [nil, ''])
-      .where(utm_source: [nil, ''])
-      .group(:source)
-      .count
-    
-    # Merge the counts, preferring UTM source if both exist for same source
-    merged_counts = {}
-    
-    # Add UTM counts
-    utm_counts.each { |source, count| merged_counts[source] = count }
-    
-    # Add 'from' counts, but don't override existing UTM counts
-    from_counts.each do |source, count|
-      if merged_counts[source]
-        merged_counts[source] += count  # Add to existing UTM count
-      else
-        merged_counts[source] = count   # New source from 'from' parameter
-      end
-    end
-    
-    merged_counts
+    # Get UTM source counts only
+    scope.where.not(utm_source: [nil, '']).group(:utm_source).count
   end
   
   def self.utm_medium_distribution(date_filter = nil)
@@ -113,12 +86,12 @@ class Analytic < ApplicationRecord
   def self.unique_visitors_by_source(date_filter = nil)
     filtered_scope(date_filter)
       .where("data->>'visitor_id' IS NOT NULL")
-      .group(:source)
+      .group(:utm_source)
       .distinct.count("data->>'visitor_id'")
   end
 
   def self.visits_by_source(date_filter = nil)
-    filtered_scope(date_filter).group(:source).count
+    filtered_scope(date_filter).group(:utm_source).count
   end
 
   def self.unique_visitors_trend(date_filter = nil)

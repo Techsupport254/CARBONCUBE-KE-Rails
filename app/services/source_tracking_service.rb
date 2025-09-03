@@ -72,12 +72,6 @@ class SourceTrackingService
   private
 
   def parse_source_from_params
-    # Check for 'from' parameter first (your custom parameter)
-    if @params[:from].present?
-      source = self.class.sanitize_source(@params[:from])
-      return source
-    end
-    
     # Check for UTM source
     if @params[:utm_source].present?
       source = self.class.sanitize_source(@params[:utm_source])
