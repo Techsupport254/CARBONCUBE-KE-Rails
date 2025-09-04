@@ -14,6 +14,12 @@ class Buyer::WishListsController < ApplicationController
     })
   end
 
+  # GET /buyer/wishlist/count
+  def count
+    count = current_buyer.wish_lists.count
+    render json: { count: count }
+  end
+
   # POST /buyer/wish_lists
   def create
     ad = Ad.find(params[:ad_id])

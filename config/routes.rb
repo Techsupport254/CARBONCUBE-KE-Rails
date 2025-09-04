@@ -241,6 +241,9 @@ Rails.application.routes.draw do
     end
 
     resources :wish_lists, only: [:index, :create, :destroy] do
+      collection do
+        get :count
+      end
       member do
         post 'add_to_cart' # This route adds the ad to the cart
       end
@@ -276,6 +279,7 @@ Rails.application.routes.draw do
     resources :ads, only: [:index, :show] do
       collection do
         get 'search'
+        get 'load_more_subcategory'
       end
       member do
         post 'add_to_cart'

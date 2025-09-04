@@ -2,7 +2,7 @@ class AdSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :price, :quantity, :brand, :condition, :manufacturer,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_name, 
-             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :media_urls, :first_media_url
+             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :media_urls, :first_media_url, :tier_priority
 
   has_one :seller, serializer: SellerSerializer
   has_many :reviews, if: :include_reviews?
@@ -24,7 +24,19 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def seller_tier_name
-    object.seller&.seller_tier&.tier&.name || "N/A"
+    # Try to get tier name from associations first
+    tier_name = object.seller&.seller_tier&.tier&.name
+    return tier_name if tier_name.present?
+    
+    # Fallback: determine tier name from tier_id if available
+    tier_id = object.seller&.seller_tier&.tier_id
+    case tier_id
+    when 4 then "Premium"
+    when 3 then "Standard"
+    when 2 then "Basic"
+    when 1 then "Free"
+    else "Free"
+    end
   end
 
   def reviews_count
@@ -48,11 +60,39 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def seller_tier
-    object.seller&.seller_tier&.tier_id
+    object.seller&.seller_tier&.tier_id || 1
   end
 
   def enterprise_name
     object.seller&.enterprise_name
+  end
+
+  def tier_priority
+    # Try to get tier_id from associations first
+    tier_id = object.seller&.seller_tier&.tier_id
+    if tier_id
+      case tier_id
+      when 4 then 1  # Premium
+      when 3 then 2  # Standard
+      when 2 then 3  # Basic
+      when 1 then 4  # Free
+      else 5         # Unknown
+      end
+    else
+      # Fallback: try to get from the database directly
+      seller_tier = SellerTier.find_by(seller_id: object.seller_id)
+      if seller_tier
+        case seller_tier.tier_id
+        when 4 then 1  # Premium
+        when 3 then 2  # Standard
+        when 2 then 3  # Basic
+        when 1 then 4  # Free
+        else 5         # Unknown
+        end
+      else
+        4  # Default to Free
+      end
+    end
   end
 
   def include_reviews?

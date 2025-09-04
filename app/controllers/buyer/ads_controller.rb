@@ -10,7 +10,9 @@ class Buyer::AdsController < ApplicationController
 
     # For the home page, get a balanced distribution of ads across subcategories
     if params[:balanced] == 'true' || (params[:per_page]&.to_i || 50) > 100
-      @ads = get_balanced_ads(per_page)
+      result = get_balanced_ads(per_page)
+      @ads = result[:ads]
+      @subcategory_counts = result[:subcategory_counts]
     else
       # Use caching for better performance
       cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}"
@@ -19,22 +21,28 @@ class Buyer::AdsController < ApplicationController
         ads_query = Ad.active.joins(:seller)
                      .where(sellers: { blocked: false })
                      .where(flagged: false)
-                     .includes(
-                       :category,
-                       :subcategory,
-                       :reviews,
-                       seller: { seller_tier: :tier }
-                     )
+                     .joins(seller: { seller_tier: :tier })
+                     .select('ads.*, CASE tiers.id
+                               WHEN 4 THEN 1
+                               WHEN 3 THEN 2
+                               WHEN 2 THEN 3
+                               WHEN 1 THEN 4
+                               ELSE 5
+                             END AS tier_priority')
 
         ads_query = filter_by_category(ads_query) if params[:category_id].present?
         ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
-        ads_query.order(created_at: :desc)
-                .limit(per_page).offset((page - 1) * per_page)
+        ads_query
+          .order('tier_priority ASC, ads.created_at DESC')
+          .limit(per_page).offset((page - 1) * per_page)
       end
     end
 
-    render json: @ads, each_serializer: AdSerializer
+    render json: {
+      ads: @ads.map { |ad| AdSerializer.new(ad).as_json },
+      subcategory_counts: @subcategory_counts || {}
+    }
   end
 
   # GET /buyer/ads/:id
@@ -115,28 +123,98 @@ class Buyer::AdsController < ApplicationController
   
   # GET /buyer/ads/:id/related
   def related
-    ad = Ad.find(params[:id])
+    # Use @ad from before_action instead of finding it again
+    ad = @ad
 
     # Fetch ads that share either the same category or subcategory
     # Apply the same filters as the main ads endpoint
     related_ads = Ad.active
-                    .joins(:seller)
+                    .joins(:seller, seller: { seller_tier: :tier })
                     .where(sellers: { blocked: false })
                     .where(flagged: false)
                     .where.not(id: ad.id)
-                    .where('category_id = ? OR subcategory_id = ?', ad.category_id, ad.subcategory_id)
+                    .where('ads.category_id = ? OR ads.subcategory_id = ?', ad.category_id, ad.subcategory_id)
+                    .select('ads.*, CASE tiers.id
+                              WHEN 4 THEN 1
+                              WHEN 3 THEN 2
+                              WHEN 2 THEN 3
+                              WHEN 1 THEN 4
+                              ELSE 5
+                            END AS tier_priority')
                     .includes(
                       :category,
                       :subcategory,
                       :reviews,
                       seller: { seller_tier: :tier }
                     )
-                    .order('ads.created_at DESC')
+                    .order(Arel.sql('CASE tiers.id
+                              WHEN 4 THEN 1
+                              WHEN 3 THEN 2
+                              WHEN 2 THEN 3
+                              WHEN 1 THEN 4
+                              ELSE 5
+                            END ASC, ads.created_at DESC'))
                     .limit(10) # Limit to 10 related ads for performance
 
     render json: related_ads, each_serializer: AdSerializer
   end
 
+
+  # GET /buyer/ads/load_more_subcategory
+  def load_more_subcategory
+    subcategory_id = params[:subcategory_id]
+    page = params[:page]&.to_i || 1
+    per_page = params[:per_page]&.to_i || 20
+    
+    if subcategory_id.blank?
+      render json: { error: 'Subcategory ID is required' }, status: :bad_request
+      return
+    end
+    
+    subcategory = Subcategory.find_by(id: subcategory_id)
+    unless subcategory
+      render json: { error: 'Subcategory not found' }, status: :not_found
+      return
+    end
+    
+    # Get total count for this subcategory
+    total_count = Ad.active
+      .joins(:seller)
+      .where(sellers: { blocked: false })
+      .where(flagged: false)
+      .where(subcategory_id: subcategory_id)
+      .count
+    
+    ads = Ad.active
+      .joins(:seller, seller: { seller_tier: :tier })
+      .where(sellers: { blocked: false })
+      .where(flagged: false)
+      .where(subcategory_id: subcategory_id)
+      .select('ads.*, CASE tiers.id
+                WHEN 4 THEN 1
+                WHEN 3 THEN 2
+                WHEN 2 THEN 3
+                WHEN 1 THEN 4
+                ELSE 5
+              END AS tier_priority')
+      .order(Arel.sql('CASE tiers.id
+                WHEN 4 THEN 1
+                WHEN 3 THEN 2
+                WHEN 2 THEN 3
+                WHEN 1 THEN 4
+                ELSE 5
+              END ASC, ads.created_at DESC'))  # Strict hierarchical order
+      .limit(per_page)
+      .offset((page - 1) * per_page)
+      .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+    
+    render json: {
+      ads: ads,
+      total_count: total_count,
+      current_page: page,
+      per_page: per_page
+    }
+  end
 
   # GET /buyer/ads/:id/seller
   def seller
@@ -154,37 +232,88 @@ class Buyer::AdsController < ApplicationController
     # Get all categories with their subcategories
     categories = Category.includes(:subcategories).all
     
-    # Calculate how many ads to get per subcategory to achieve balance
-    total_subcategories = categories.sum { |cat| cat.subcategories.count }
-    ads_per_subcategory = [per_page / total_subcategories, 1].max
+    # Set fixed number of ads per subcategory (20)
+    ads_per_subcategory = 20
+    
+    # Check if we need to load more for a specific subcategory
+    subcategory_id = params[:subcategory_id]
+    page = params[:page]&.to_i || 1
     
     all_ads = []
+    subcategory_counts = {}
     
-    categories.each do |category|
-      category.subcategories.each do |subcategory|
-        # Get ads for this subcategory, ordered by tier priority
+    if subcategory_id.present?
+      # Load more for specific subcategory
+      subcategory = Subcategory.find_by(id: subcategory_id)
+      if subcategory
+        # Get total count for this subcategory
+        total_count = Ad.active
+          .joins(:seller)
+          .where(sellers: { blocked: false })
+          .where(flagged: false)
+          .where(subcategory_id: subcategory.id)
+          .count
+        
+        subcategory_counts[subcategory.id] = total_count
+        
         subcategory_ads = Ad.active
            .joins(:seller, seller: { seller_tier: :tier })
            .where(sellers: { blocked: false })
            .where(flagged: false)
            .where(subcategory_id: subcategory.id)
-           .select('ads.*, CASE tiers.id
+           .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+           .order(Arel.sql('CASE tiers.id
                      WHEN 4 THEN 1
                      WHEN 3 THEN 2
                      WHEN 2 THEN 3
                      WHEN 1 THEN 4
                      ELSE 5
-                   END AS tier_priority')
-           .order('tier_priority ASC, ads.created_at DESC')
+                   END ASC, ads.created_at DESC'))  # Strict hierarchical order
            .limit(ads_per_subcategory)
-           .preload(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+           .offset((page - 1) * ads_per_subcategory)
         
         all_ads.concat(subcategory_ads)
       end
+    else
+      # Regular balanced loading for all subcategories
+      categories.each do |category|
+        category.subcategories.each do |subcategory|
+          # Get total count for this subcategory
+          total_count = Ad.active
+            .joins(:seller)
+            .where(sellers: { blocked: false })
+            .where(flagged: false)
+            .where(subcategory_id: subcategory.id)
+            .count
+          
+          subcategory_counts[subcategory.id] = total_count
+          
+          # Get ads for this subcategory, ordered by tier priority first, then by creation date
+          subcategory_ads = Ad.active
+             .joins(:seller, seller: { seller_tier: :tier })
+             .where(sellers: { blocked: false })
+             .where(flagged: false)
+             .where(subcategory_id: subcategory.id)
+             .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+             .order(Arel.sql('CASE tiers.id
+                       WHEN 4 THEN 1
+                       WHEN 3 THEN 2
+                       WHEN 2 THEN 3
+                       WHEN 1 THEN 4
+                       ELSE 5
+                     END ASC, ads.created_at DESC'))  # Strict hierarchical order
+             .limit(ads_per_subcategory)
+          
+          all_ads.concat(subcategory_ads)
+        end
+      end
     end
     
-    # Sort the final result by tier priority and creation date
-    all_ads.sort_by { |ad| [ad.tier_priority || 5, ad.created_at] }.reverse
+    # Return both ads and subcategory counts
+    {
+      ads: all_ads,
+      subcategory_counts: subcategory_counts
+    }
   end
 
   def set_ad
