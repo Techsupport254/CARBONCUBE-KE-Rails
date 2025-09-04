@@ -38,7 +38,29 @@ Rails.application.configure do
 
   # Configure Action Cable for development
   config.action_cable.url = 'ws://localhost:3001/cable'
-  config.action_cable.allowed_request_origins = ['http://localhost:3000']
+  config.action_cable.allowed_request_origins = [/http:\/\/*/, /https:\/\/*/]
+  
+  # Disable force SSL in development
+  config.force_ssl = false
+  
+  # Ensure proper logger configuration
+  config.logger = ActiveSupport::Logger.new(STDOUT)
+  config.log_level = :debug
+  
+  # Fix ActionCable logger issue - ensure logger exists
+  config.after_initialize do
+    ActionCable.server.config.logger = Rails.logger
+    ActionCable.server.config.log_tags = []
+  end
+  
+  # Ensure ActionCable is properly configured
+  config.action_cable.disable_request_forgery_protection = true
+  
+  # Set mount path for ActionCable
+  config.action_cable.mount_path = '/cable'
+  
+  # Configure worker pool size
+  config.action_cable.worker_pool_size = 4
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
@@ -99,4 +121,13 @@ Rails.application.configure do
 
   # Reduce ActiveModel Serializer logging
   # config.active_model_serializers.logger = Logger.new(nil)
+
+  # Disable ActionCable logging to reduce noise
+  ActionCable.server.config.logger = Logger.new(nil)
+  
+  # Disable ActionCable connection logging
+  ActionCable.server.config.log_tags = []
+  
+  # Disable ActionCable subscription logging
+  ActionCable.server.config.logger = nil
 end

@@ -101,7 +101,8 @@ class Buyer::AdsController < ApplicationController
     end
 
     ads = ads
-      .joins(:seller, :reviews, seller: { seller_tier: :tier })
+      .joins(:seller, seller: { seller_tier: :tier })
+      .left_joins(:reviews)
       .select('ads.*, CASE tiers.id
                         WHEN 4 THEN 1
                         WHEN 3 THEN 2
@@ -117,7 +118,37 @@ class Buyer::AdsController < ApplicationController
       )
       .order('tier_priority ASC, ads.created_at DESC')
 
-    render json: ads, each_serializer: AdSerializer
+    # Check if the search query matches any shop names
+    matching_shops = []
+    if query.present?
+      # Find shops that match the search query
+      matching_shops = Seller.joins(:seller_tier)
+                           .where(blocked: false)
+                           .where('enterprise_name ILIKE ?', "%#{query}%")
+                           .includes(:seller_tier)
+                           .limit(5) # Limit to 5 shops
+    end
+
+    # Prepare the response
+    response = {
+      ads: ads.map { |ad| AdSerializer.new(ad).as_json },
+      shops: matching_shops.map do |shop|
+        {
+          id: shop.id,
+          enterprise_name: shop.enterprise_name,
+          description: shop.description,
+          email: shop.email,
+          address: shop.location,
+          profile_picture: shop.profile_picture,
+          tier: shop.seller_tier&.tier&.name || 'Free',
+          tier_id: shop.seller_tier&.tier&.id || 1,
+          product_count: Ad.active.where(seller_id: shop.id, flagged: false).count,
+          created_at: shop.created_at
+        }
+      end
+    }
+
+    render json: response
   end
 
   

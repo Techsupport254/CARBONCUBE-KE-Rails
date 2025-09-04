@@ -68,6 +68,9 @@ Rails.application.routes.draw do
     get 'ads', to: 'sellers#ads'
   end
 
+  # Route for shop pages
+  get 'shop/:slug', to: 'shops#show', as: :shop
+
   # Routes for document types
   resources :document_types, only: [:index]
 

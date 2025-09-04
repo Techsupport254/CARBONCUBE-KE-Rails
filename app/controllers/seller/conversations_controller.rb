@@ -2,23 +2,32 @@ class Seller::ConversationsController < ApplicationController
   before_action :authenticate_seller
 
   def index
-    # Fetch ONLY conversations where current seller is the seller
-    @conversations = Conversation.where(seller_id: current_seller.id)
+    # Fetch conversations where current seller is the seller
+    @conversations = Conversation.where(seller_id: @current_user.id)
                                 .includes(:admin, :buyer, :ad, :messages)
                                 .order(updated_at: :desc)
     
-    # Simple JSON without complex includes to avoid method errors
-    conversations_data = @conversations.map do |conversation|
+    # Group conversations by buyer_id to avoid duplicates
+    grouped_conversations = @conversations.group_by(&:buyer_id)
+    
+    conversations_data = grouped_conversations.map do |buyer_id, conversations|
+      # Get the most recent conversation for this buyer
+      most_recent_conversation = conversations.max_by(&:updated_at)
+      last_message = most_recent_conversation.messages.last
+      
       {
-        id: conversation.id,
-        seller_id: conversation.seller_id, # Include this to verify
-        created_at: conversation.created_at,
-        updated_at: conversation.updated_at,
-        admin: conversation.admin,
-        buyer: conversation.buyer,
-        ad: conversation.ad,
-        messages_count: conversation.messages.count,
-        last_message: conversation.messages.last&.content
+        id: most_recent_conversation.id,
+        seller_id: most_recent_conversation.seller_id,
+        buyer_id: most_recent_conversation.buyer_id,
+        created_at: most_recent_conversation.created_at,
+        updated_at: most_recent_conversation.updated_at,
+        admin: most_recent_conversation.admin,
+        buyer: most_recent_conversation.buyer,
+        ad: most_recent_conversation.ad,
+        messages_count: conversations.sum { |c| c.messages.count },
+        last_message: last_message&.content,
+        last_message_time: last_message&.created_at,
+        all_conversation_ids: conversations.map(&:id)
       }
     end
     
@@ -26,18 +35,29 @@ class Seller::ConversationsController < ApplicationController
   end
 
   def show
-    @conversation = Conversation.find_by(id: params[:id], seller_id: current_seller.id)
+    @conversation = Conversation.find_by(id: params[:id], seller_id: @current_user.id)
     
     if @conversation
-      render json: @conversation
+      # Get all conversations with the same buyer
+      all_conversations_with_buyer = Conversation.where(
+        seller_id: @current_user.id,
+        buyer_id: @conversation.buyer_id
+      )
+      
+      # Get all messages from all conversations with this buyer
+      all_messages = all_conversations_with_buyer.flat_map(&:messages).sort_by(&:created_at)
+      
+      render json: {
+        conversation: @conversation,
+        all_messages: all_messages,
+        total_messages: all_messages.count
+      }
     else
       render json: { error: 'Conversation not found' }, status: :not_found
     end
   end
 
   def create
-    @current_user = current_seller
-    
     # Find existing conversation or create new one
     @conversation = Conversation.find_or_create_by(
       seller_id: @current_user.id,
@@ -67,7 +87,7 @@ class Seller::ConversationsController < ApplicationController
   end
 
   def update
-    @conversation = Conversation.find_by(id: params[:id], seller_id: current_seller.id)
+    @conversation = Conversation.find_by(id: params[:id], seller_id: @current_user.id)
     
     unless @conversation
       render json: { error: 'Conversation not found' }, status: :not_found
@@ -77,7 +97,7 @@ class Seller::ConversationsController < ApplicationController
     # Add a new message to the conversation
     message = @conversation.messages.create!(
       content: params[:content],
-      sender: current_seller
+      sender: @current_user
     )
 
     render json: {
@@ -96,9 +116,6 @@ class Seller::ConversationsController < ApplicationController
 
   def authenticate_seller
     @current_user = SellerAuthorizeApiRequest.new(request.headers).result
-    
-    if @current_user.nil?
-      render json: { error: 'Not Authorized' }, status: :unauthorized
-    end
+    render json: { error: 'Not Authorized' }, status: :unauthorized unless @current_user&.is_a?(Seller)
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_03_144252) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_04_141156) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -356,6 +356,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_03_144252) do
     t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "ad_id"
+    t.text "product_context"
+    t.string "status"
+    t.datetime "read_at"
+    t.datetime "delivered_at"
+    t.index ["ad_id"], name: "index_messages_on_ad_id"
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
     t.index ["sender_type", "sender_id"], name: "index_messages_on_sender"
   end
@@ -639,6 +645,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_03_144252) do
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers"
   add_foreign_key "conversations", "sellers"
+  add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations"
   add_foreign_key "order_items", "ads"
   add_foreign_key "order_items", "orders"

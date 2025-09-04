@@ -40,3 +40,9 @@ preload_app!
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
+
+# Suppress logging in development
+if ENV.fetch("RAILS_ENV", "development") == "development"
+  quiet
+  log_requests false
+end

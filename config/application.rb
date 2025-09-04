@@ -49,5 +49,15 @@ module CARBONCUBE_KERails
     end
 
     config.api_only = true
+    
+    # Enable ActionCable for API-only applications
+    config.action_cable.mount_path = '/cable'
+    config.action_cable.allowed_request_origins = ['http://localhost:3000', 'https://carboncube-ke.vercel.app']
+    
+    # Fix ActionCable logger issue
+    config.after_initialize do
+      ActionCable.server.config.logger = Rails.logger
+      ActionCable.server.config.log_tags = []
+    end
   end
 end
