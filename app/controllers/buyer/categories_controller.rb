@@ -16,6 +16,7 @@ class Buyer::CategoriesController < ApplicationController
     @category_analytics = Rails.cache.fetch('buyer_category_analytics', expires_in: 24.hours) do
       # Click-event based metrics (ad clicks, wishlist clicks, reveal clicks)
       click_rows = Category.joins(ads: :click_events)
+                           .where(ads: { deleted: false })
                            .select("categories.id AS category_id, categories.name AS category_name, \
                                    SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END) AS ad_clicks, \
                                    SUM(CASE WHEN click_events.event_type = 'Add-to-Wish-List' THEN 1 ELSE 0 END) AS wish_list_clicks, \
@@ -28,6 +29,7 @@ class Buyer::CategoriesController < ApplicationController
 
       # Real wishlist totals per category (based on WishList rows)
       wishlist_rows = Category.joins(ads: :wish_lists)
+                              .where(ads: { deleted: false })
                               .select("categories.id AS category_id, categories.name AS category_name, COUNT(wish_lists.id) AS total_wishlists")
                               .group('categories.id, categories.name')
 

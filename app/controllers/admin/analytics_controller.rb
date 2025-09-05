@@ -117,6 +117,7 @@ class Admin::AnalyticsController < ApplicationController
 
     #Count of Click Events for each category
     category_click_events = Category.joins(ads: :click_events)
+                            .where(ads: { deleted: false })
                             .select('categories.name AS category_name, 
                                     SUM(CASE WHEN click_events.event_type = \'Ad-Click\' THEN 1 ELSE 0 END) AS ad_clicks,
                                     SUM(CASE WHEN click_events.event_type = \'Add-to-Wish-List\' THEN 1 ELSE 0 END) AS wish_list_clicks,
@@ -137,6 +138,7 @@ class Admin::AnalyticsController < ApplicationController
     # 
     category_wishlists = Category
       .joins(ads: :wish_lists)
+      .where(ads: { deleted: false })
       .select('categories.id, categories.name, COUNT(wish_lists.id) AS total_wishlists')
       .group('categories.id, categories.name')
       .order('total_wishlists DESC')

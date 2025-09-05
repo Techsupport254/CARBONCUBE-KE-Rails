@@ -52,6 +52,7 @@ class Sales::AnalyticsController < ApplicationController
     
     # Get category click events with timestamps (include all data)
     category_click_events_with_timestamps = Category.joins(ads: :click_events)
+      .where(ads: { deleted: false })
       .select('categories.name AS category_name, 
               click_events.event_type,
               click_events.created_at')
