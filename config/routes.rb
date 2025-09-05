@@ -33,6 +33,10 @@ Rails.application.routes.draw do
   post 'track', to: 'source_tracking#track'
   get 'analytics', to: 'source_tracking#analytics'
   
+  # Meta tags API for social media crawlers
+  get 'meta/shop/:slug', to: 'meta_tags#shop'
+  get 'meta/ad/:ad_id', to: 'meta_tags#ad'
+  
   resources :incomes, only: [:index]
   resources :sectors, only: [:index]
   resources :educations, only: [:index]
