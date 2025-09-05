@@ -38,7 +38,7 @@ class MetaTagsController < ApplicationController
     if shop
       # Generate shop-specific meta tags
       title = "#{shop.enterprise_name} | Carbon Cube Kenya"
-      description = shop.description.presence || "#{shop.enterprise_name} - #{shop.tier} seller offering #{shop.product_count} quality products for online shopping on Carbon Cube Kenya"
+      description = shop.description.presence || "#{shop.enterprise_name} - #{shop.tier&.name} seller offering #{shop.ads.active.count} quality products for online shopping on Carbon Cube Kenya"
       
       # Use shop profile picture or fallback
       image_url = if shop.profile_picture.present?

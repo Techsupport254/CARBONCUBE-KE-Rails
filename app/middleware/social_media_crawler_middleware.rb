@@ -15,6 +15,8 @@ class SocialMediaCrawlerMiddleware
       'twitterbot',
       'linkedinbot',
       'whatsapp',
+      'whatsappbot',
+      'whatsapp/',
       'telegrambot',
       'slackbot',
       'discordbot',
@@ -34,11 +36,11 @@ class SocialMediaCrawlerMiddleware
       if path.match?(/^\/shop\/([^\/]+)$/)
         slug = $1
         # Redirect to meta tag API
-        return [302, { 'Location' => "/api/meta/shop/#{slug}" }, []]
+        return [302, { 'Location' => "/meta/shop/#{slug}" }, []]
       elsif path.match?(/^\/ads\/(\d+)$/)
         ad_id = $1
         # Redirect to meta tag API
-        return [302, { 'Location' => "/api/meta/ad/#{ad_id}" }, []]
+        return [302, { 'Location' => "/meta/ad/#{ad_id}" }, []]
       end
     end
     
