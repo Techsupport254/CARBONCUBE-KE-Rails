@@ -1,32 +1,38 @@
 class MetaTagsController < ApplicationController
   def shop
-    slug = params[:slug]
-    
-    # Convert slug back to enterprise name format for searching (same logic as ShopsController)
-    enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
-    
-    # Find shop by enterprise name (case insensitive)
-    shop = Seller.includes(:seller_tier, :tier)
-                 .where('LOWER(enterprise_name) = ?', enterprise_name.downcase)
-                 .first
-    
-    # If no exact match, try partial match
-    unless shop
+    begin
+      slug = params[:slug]
+      
+      # Convert slug back to enterprise name format for searching (same logic as ShopsController)
+      enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
+      
+      # Find shop by enterprise name (case insensitive)
       shop = Seller.includes(:seller_tier, :tier)
-                   .where('LOWER(enterprise_name) ILIKE ?', "%#{enterprise_name.downcase}%")
+                   .where('LOWER(enterprise_name) = ?', enterprise_name.downcase)
                    .first
-    end
-    
-    # If still no match, try to find by ID as fallback
-    unless shop
-      begin
-        shop_id = slug.to_i
-        if shop_id > 0
-          shop = Seller.includes(:seller_tier, :tier).find(shop_id)
-        end
-      rescue ActiveRecord::RecordNotFound
-        # Ignore and continue to error handling
+      
+      # If no exact match, try partial match
+      unless shop
+        shop = Seller.includes(:seller_tier, :tier)
+                     .where('LOWER(enterprise_name) ILIKE ?', "%#{enterprise_name.downcase}%")
+                     .first
       end
+      
+      # If still no match, try to find by ID as fallback
+      unless shop
+        begin
+          shop_id = slug.to_i
+          if shop_id > 0
+            shop = Seller.includes(:seller_tier, :tier).find(shop_id)
+          end
+        rescue ActiveRecord::RecordNotFound
+          # Ignore and continue to error handling
+        end
+      end
+    rescue => e
+      Rails.logger.error "Error in MetaTagsController#shop: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      shop = nil
     end
     
     if shop
@@ -64,10 +70,16 @@ class MetaTagsController < ApplicationController
   end
   
   def ad
-    ad_id = params[:ad_id]
-    
-    # Find ad by ID
-    ad = Ad.find_by(id: ad_id, deleted: false)
+    begin
+      ad_id = params[:ad_id]
+      
+      # Find ad by ID
+      ad = Ad.find_by(id: ad_id, deleted: false)
+    rescue => e
+      Rails.logger.error "Error in MetaTagsController#ad: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      ad = nil
+    end
     
     if ad
       # Generate ad-specific meta tags
