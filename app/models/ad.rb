@@ -53,6 +53,16 @@ class Ad < ApplicationRecord
     update(flagged: false)
   end
 
+  # Soft delete ad (for stores to delete their own ads)
+  def soft_delete
+    update(deleted: true)
+  end
+
+  # Restore deleted ad
+  def restore
+    update(deleted: false)
+  end
+
   # Calculate the total quantity sold for the product
   def quantity_sold
     order_items.sum(:quantity)

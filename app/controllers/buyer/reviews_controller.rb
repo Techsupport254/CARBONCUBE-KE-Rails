@@ -44,7 +44,9 @@ class Buyer::ReviewsController < ApplicationController
   private
 
   def set_ad
-    @ad = Ad.find(params[:ad_id])
+    @ad = Ad.active.find(params[:ad_id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Ad not found' }, status: :not_found
   end
 
   def set_review

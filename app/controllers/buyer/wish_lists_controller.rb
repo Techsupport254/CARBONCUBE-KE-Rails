@@ -22,7 +22,7 @@ class Buyer::WishListsController < ApplicationController
 
   # POST /buyer/wish_lists
   def create
-    ad = Ad.find(params[:ad_id])
+    ad = Ad.active.find(params[:ad_id])
     current_buyer.wish_list_ad(ad)
     render json: { message: 'Ad wishlisted successfully' }, status: :created
   rescue ActiveRecord::RecordNotFound
@@ -31,7 +31,7 @@ class Buyer::WishListsController < ApplicationController
 
   # DELETE /buyer/wish_lists/:id
   def destroy
-    ad = Ad.find(params[:id])
+    ad = Ad.active.find(params[:id])
     if current_buyer.unwish_list_ad(ad)
       render json: { message: 'Wish list removed successfully' }, status: :ok
     else
@@ -43,7 +43,7 @@ class Buyer::WishListsController < ApplicationController
 
   # POST /buyer/wish_lists/:id/add_to_cart
   def add_to_cart
-    ad = Ad.find(params[:id])
+    ad = Ad.active.find(params[:id])
     cart_item = CartItem.new(buyer: current_buyer, ad: ad)
 
     if cart_item.save

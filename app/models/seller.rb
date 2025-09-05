@@ -38,6 +38,9 @@ class Seller < ApplicationRecord
   # Callbacks for cache invalidation
   after_save :invalidate_caches
   after_destroy :invalidate_caches
+  
+  # Auto-delete ads when seller is deleted
+  before_destroy :mark_ads_as_deleted
 
   def calculate_mean_rating
     # Use cached reviews if available, otherwise calculate
@@ -58,6 +61,11 @@ class Seller < ApplicationRecord
     else
       update(blocked: false)
     end
+  end
+
+  # Soft delete ads when seller is deleted
+  def mark_ads_as_deleted
+    ads.update_all(deleted: true)
   end
 
   private

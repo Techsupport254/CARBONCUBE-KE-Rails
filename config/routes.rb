@@ -34,7 +34,6 @@ Rails.application.routes.draw do
   get 'analytics', to: 'source_tracking#analytics'
   
   # Meta tags API for social media crawlers
-  get 'meta/shop/:slug', to: 'meta_tags#shop'
   get 'meta/ad/:ad_id', to: 'meta_tags#ad'
   
   resources :incomes, only: [:index]
@@ -74,6 +73,7 @@ Rails.application.routes.draw do
 
   # Route for shop pages
   get 'shop/:slug', to: 'shops#show', as: :shop
+  get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
 
   # Routes for document types
   resources :document_types, only: [:index]

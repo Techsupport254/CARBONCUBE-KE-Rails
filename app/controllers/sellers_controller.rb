@@ -1,7 +1,7 @@
 class SellersController < ApplicationController
   def ads
     seller = Seller.find(params[:seller_id])
-    ads = seller.ads.includes(:category, :subcategory) # eager-load if needed
+    ads = seller.ads.active.includes(:category, :subcategory) # eager-load if needed
     
     # Add pagination support (only if page and limit are provided)
     if params[:page] && params[:limit]

@@ -6,7 +6,7 @@ class AdsController < ApplicationController
     
     # Fetch ads from all active sellers (not just premium)
     @ads = Ad.active.joins(:seller)
-             .where(sellers: { blocked: false })
+             .where(sellers: { blocked: false, deleted: false })
              .where(flagged: false)
              .includes(
                :category,

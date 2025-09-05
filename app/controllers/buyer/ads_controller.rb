@@ -19,7 +19,7 @@ class Buyer::AdsController < ApplicationController
       
       @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
         ads_query = Ad.active.joins(:seller)
-                     .where(sellers: { blocked: false })
+                     .where(sellers: { blocked: false, deleted: false })
                      .where(flagged: false)
                      .joins(seller: { seller_tier: :tier })
                      .select('ads.*, CASE tiers.id
@@ -64,7 +64,7 @@ class Buyer::AdsController < ApplicationController
     subcategory_param = params[:subcategory]
 
     ads = Ad.active.joins(:seller, :category, :subcategory)
-            .where(sellers: { blocked: false })
+            .where(sellers: { blocked: false, deleted: false })
             .where(flagged: false)
 
     if query.present?
@@ -123,7 +123,7 @@ class Buyer::AdsController < ApplicationController
     if query.present?
       # Find shops that match the search query
       matching_shops = Seller.joins(:seller_tier)
-                           .where(blocked: false)
+                           .where(blocked: false, deleted: false)
                            .where('enterprise_name ILIKE ?', "%#{query}%")
                            .includes(:seller_tier)
                            .limit(5) # Limit to 5 shops
@@ -280,7 +280,7 @@ class Buyer::AdsController < ApplicationController
         # Get total count for this subcategory
         total_count = Ad.active
           .joins(:seller)
-          .where(sellers: { blocked: false })
+          .where(sellers: { blocked: false, deleted: false })
           .where(flagged: false)
           .where(subcategory_id: subcategory.id)
           .count
@@ -289,7 +289,7 @@ class Buyer::AdsController < ApplicationController
         
         subcategory_ads = Ad.active
            .joins(:seller, seller: { seller_tier: :tier })
-           .where(sellers: { blocked: false })
+           .where(sellers: { blocked: false, deleted: false })
            .where(flagged: false)
            .where(subcategory_id: subcategory.id)
            .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
@@ -312,7 +312,7 @@ class Buyer::AdsController < ApplicationController
           # Get total count for this subcategory
           total_count = Ad.active
             .joins(:seller)
-            .where(sellers: { blocked: false })
+            .where(sellers: { blocked: false, deleted: false })
             .where(flagged: false)
             .where(subcategory_id: subcategory.id)
             .count
@@ -322,7 +322,7 @@ class Buyer::AdsController < ApplicationController
           # Get ads for this subcategory, ordered by tier priority first, then by creation date
           subcategory_ads = Ad.active
              .joins(:seller, seller: { seller_tier: :tier })
-             .where(sellers: { blocked: false })
+             .where(sellers: { blocked: false, deleted: false })
              .where(flagged: false)
              .where(subcategory_id: subcategory.id)
              .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
