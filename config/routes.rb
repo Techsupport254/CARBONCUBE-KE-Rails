@@ -92,6 +92,9 @@ Rails.application.routes.draw do
     get 'ads', to: 'sellers#ads'
   end
 
+  # Public sellers endpoint for sitemap generation
+  get 'sellers', to: 'sellers#index'
+
   # Route for shop pages
   get 'shop/:slug', to: 'shops#show', as: :shop
   get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
