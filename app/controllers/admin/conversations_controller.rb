@@ -28,6 +28,20 @@ class Admin::ConversationsController < ApplicationController
     end
   end
 
+  # GET /admin/conversations/unread_count
+  def unread_count
+    # Get all conversations for the current admin
+    conversations = Conversation.where(admin_id: current_admin.id)
+    
+    # Count unread messages (messages not sent by admin and not read)
+    unread_count = conversations.joins(:messages)
+                               .where(messages: { sender_type: ['Buyer', 'Seller'] })
+                               .where(messages: { status: [nil, Message::STATUS_SENT] })
+                               .count
+    
+    render json: { count: unread_count }
+  end
+
   private
 
   def conversation_params

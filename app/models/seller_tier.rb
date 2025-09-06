@@ -1,15 +1,19 @@
 class SellerTier < ApplicationRecord
   belongs_to :seller
   belongs_to :tier
+  belongs_to :payment_transaction, optional: true
+
+  validates :duration_months, presence: true, numericality: { greater_than_or_equal_to: 0 }
 
   def subscription_countdown
     # Check if the tier is free (tier_id = 1)
     if tier_id == 1
       # Free tier never expires
       return { never_expires: true }
-    else
-      expiration_date = updated_at + duration_months.months
     end
+
+    # Use expires_at if available, otherwise calculate from updated_at
+    expiration_date = expires_at || (updated_at + duration_months.months)
 
     remaining_time = expiration_date - Time.current
 
@@ -25,5 +29,16 @@ class SellerTier < ApplicationRecord
     else
       { expired: true }
     end
+  end
+
+  def expired?
+    return false if tier_id == 1 # Free tier never expires
+    return true unless expires_at
+    expires_at < Time.current
+  end
+
+  def days_until_expiry
+    return nil if tier_id == 1 || expired?
+    ((expires_at - Time.current) / 1.day).ceil
   end
 end

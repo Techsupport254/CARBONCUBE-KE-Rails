@@ -18,5 +18,22 @@ class AdsController < ApplicationController
 
     render json: @ads, each_serializer: AdSerializer
   end
+
+  # GET /ads/:id
+  def show
+    @ad = Ad.active.joins(:seller)
+            .where(sellers: { blocked: false, deleted: false })
+            .where(flagged: false)
+            .includes(
+              :category,
+              :subcategory,
+              seller: { seller_tier: :tier }
+            )
+            .find(params[:id])
+
+    render json: @ad, serializer: AdSerializer
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Ad not found' }, status: :not_found
+  end
 end
 

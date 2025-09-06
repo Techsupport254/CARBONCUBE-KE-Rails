@@ -1,11 +1,14 @@
 class ConversationsChannel < ApplicationCable::Channel
   def subscribed
     # Subscribe to conversations for the current user
+    Rails.logger.info "📡 ConversationsChannel subscribed: user_type=#{params[:user_type]}, user_id=#{params[:user_id]}"
     stream_from "conversations_#{params[:user_type]}_#{params[:user_id]}"
+    Rails.logger.info "📡 Streaming from: conversations_#{params[:user_type]}_#{params[:user_id]}"
   end
 
   def unsubscribed
     # Any cleanup needed when channel is unsubscribed
+    Rails.logger.info "📡 ConversationsChannel unsubscribed: user_type=#{params[:user_type]}, user_id=#{params[:user_id]}"
   end
 
   def receive(data)

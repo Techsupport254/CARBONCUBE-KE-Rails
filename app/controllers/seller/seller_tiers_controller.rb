@@ -30,16 +30,40 @@ class Seller::SellerTiersController < ApplicationController
       seller_tier = SellerTier.find_by(seller_id: params[:seller_id])
       
       if seller_tier
+        # Calculate expiry date if not set
+        expiry_date = seller_tier.expires_at || (seller_tier.updated_at + seller_tier.duration_months.months)
+        
         render json: {
           subscription_countdown: seller_tier.subscription_countdown,
+          subscription_expiry_date: expiry_date.iso8601,
           tier: {
             id: seller_tier.tier.id,
             name: seller_tier.tier.name,
-            ad_limit: seller_tier.tier.ads_limit
+            ads_limit: seller_tier.tier.ads_limit
           }
         }
       else
-        render json: { error: 'Seller tier not found' }, status: :not_found
+        # If no seller tier exists, create a default free tier
+        seller = Seller.find_by(id: params[:seller_id])
+        if seller
+          # Create a default free tier for the seller
+          seller_tier = SellerTier.create(seller_id: seller.id, tier_id: 1, duration_months: 0)
+          
+          # Calculate expiry date if not set
+          expiry_date = seller_tier.expires_at || (seller_tier.updated_at + seller_tier.duration_months.months)
+          
+          render json: {
+            subscription_countdown: seller_tier.subscription_countdown,
+            subscription_expiry_date: expiry_date.iso8601,
+            tier: {
+              id: seller_tier.tier.id,
+              name: seller_tier.tier.name,
+              ads_limit: seller_tier.tier.ads_limit
+            }
+          }
+        else
+          render json: { error: 'Seller not found' }, status: :not_found
+        end
       end
     else
       # Original behavior for tier ID
@@ -48,7 +72,7 @@ class Seller::SellerTiersController < ApplicationController
       render json: {
         id: @tier.id,
         name: @tier.name,
-        ad_limit: @tier.ads_limit
+        ads_limit: @tier.ads_limit
       }
     end
   end

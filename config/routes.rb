@@ -7,6 +7,12 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
 
+        # API namespace for lightweight endpoints
+        namespace :api do
+          post 'email/exists', to: 'email#exists'
+          post 'username/exists', to: 'email#username_exists'
+        end
+
   #========================================Public namespace for public-specific functionality==========================================#
   
   get "up" => "rails/health#show", as: :rails_health_check
@@ -46,6 +52,18 @@ Rails.application.routes.draw do
   post "payments/validate", to: "mpesa#validate_payment"
   post "payments/confirm", to: "mpesa#confirm_payment"
   
+  # STK Push payment routes
+  post "payments/initiate", to: "payments#initiate_payment"
+  get "payments/status/:payment_id", to: "payments#check_payment_status"
+  post "payments/stk_callback", to: "payments#stk_callback"
+  get "payments/history", to: "payments#payment_history"
+  delete "payments/cancel/:payment_id", to: "payments#cancel_payment"
+  
+  # Manual payment verification routes
+  get "payments/manual_instructions", to: "payments#manual_payment_instructions"
+  post "payments/verify_manual", to: "payments#verify_manual_payment"
+  post "payments/confirm_manual", to: "payments#confirm_manual_payment"
+  
   # Routes for counties and sub_counties
   resources :counties, only: [:index] do
     get 'sub_counties', on: :member # /counties/:id/sub_counties
@@ -53,6 +71,9 @@ Rails.application.routes.draw do
 
   # Routes for age_groups
   resources :age_groups, only: [:index]
+
+  # Routes for document_types
+  resources :document_types, only: [:index]
 
   # Routes for password OTPs
   post '/password_resets/request_otp', to: 'password_resets#request_otp'
@@ -74,6 +95,9 @@ Rails.application.routes.draw do
   # Route for shop pages
   get 'shop/:slug', to: 'shops#show', as: :shop
   get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
+
+  # Catch-all route for missing static files (like images)
+  get 'ads/*filename', to: 'application#missing_file', constraints: { filename: /.*/ }
 
   # Routes for document types
   resources :document_types, only: [:index]
@@ -156,9 +180,11 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :conversations, only: [:index, :show, :create] do
-      resources :messages, only: [:index, :create]
-    end
+      resources :conversations, only: [:index, :show, :create] do
+        resources :messages, only: [:index, :create]
+        get :unread_count, on: :collection
+        get :unread_counts, on: :collection
+      end
 
     resources :analytics
     resources :reviews
@@ -219,9 +245,13 @@ Rails.application.routes.draw do
       post 'change-password', to: 'profiles#change_password'
     end
 
+    resources :seller_documents
+
     resources :conversations, only: [:index, :show, :create] do
       # Messages are nested under conversations
       resources :messages, only: [:index, :create]
+      get :unread_count, on: :collection
+      get :unread_counts, on: :collection
     end
 
     get 'identify', to: 'sellers#identify'
@@ -260,6 +290,8 @@ Rails.application.routes.draw do
     resources :conversations, only: [:index, :show, :create] do
       # Messages are nested under conversations
       resources :messages, only: [:index, :create]
+      get :unread_count, on: :collection
+      get :unread_counts, on: :collection
     end
     resources :categories do
       collection do

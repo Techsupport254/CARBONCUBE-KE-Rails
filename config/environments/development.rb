@@ -5,6 +5,9 @@ Rails.application.configure do
   # 
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
+  
+  # Set secret key base for development
+  config.secret_key_base = 'development_secret_key_change_in_production_123456789012345678901234567890123456789012345678901234567890'
 
   # In the development environment your application's code is reloaded any time
   # it changes. This slows down response time but is perfect for development
@@ -122,12 +125,10 @@ Rails.application.configure do
   # Reduce ActiveModel Serializer logging
   # config.active_model_serializers.logger = Logger.new(nil)
 
-  # Disable ActionCable logging to reduce noise
-  ActionCable.server.config.logger = Logger.new(nil)
-  
-  # Disable ActionCable connection logging
-  ActionCable.server.config.log_tags = []
-  
-  # Disable ActionCable subscription logging
-  ActionCable.server.config.logger = nil
+  # Reduce ActionCable logging to minimize noise
+  config.after_initialize do
+    ActionCable.server.config.logger = Logger.new(STDOUT)
+    ActionCable.server.config.logger.level = Logger::WARN
+    ActionCable.server.config.log_tags = []
+  end
 end

@@ -2,7 +2,7 @@ class AdSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :price, :quantity, :brand, :condition, :manufacturer,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_name, 
-             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :media_urls, :first_media_url, :tier_priority
+             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority
 
   has_one :seller, serializer: SellerSerializer
   has_many :reviews, if: :include_reviews?
@@ -41,6 +41,18 @@ class AdSerializer < ActiveModel::Serializer
 
   def reviews_count
     object.reviews_count || 0
+  end
+
+  def average_rating
+    # Calculate average rating from reviews
+    if object.reviews.loaded?
+      # Use loaded reviews if available
+      reviews = object.reviews
+      reviews.any? ? (reviews.sum(&:rating).to_f / reviews.size).round(1) : 0.0
+    else
+      # Calculate from database
+      object.reviews.average(:rating)&.round(1) || 0.0
+    end
   end
 
   def media_urls

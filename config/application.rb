@@ -18,10 +18,6 @@ module CARBONCUBE_KERails
 
     # Add this line:
     config.middleware.use Rack::ContentLength
-    
-    # Add social media crawler middleware
-    require_relative '../app/middleware/social_media_crawler_middleware'
-    config.middleware.use SocialMediaCrawlerMiddleware
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.

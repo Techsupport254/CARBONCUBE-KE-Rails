@@ -52,53 +52,11 @@ class Buyer::MessagesController < ApplicationController
     @message.status = Message::STATUS_SENT
 
     if @message.save
-      # Broadcast the message to all participants
-      broadcast_message(@message)
-      
+      # Message broadcasting is handled by the Message model's after_create callback
       render json: @message.as_json(include: :sender), status: :created
     else
       render json: @message.errors, status: :unprocessable_entity
     end
-  end
-
-  private
-
-  def broadcast_message(message)
-    # Broadcast to buyer
-    ActionCable.server.broadcast(
-      "conversations_buyer_#{@conversation.buyer_id}",
-      {
-        type: 'new_message',
-        conversation_id: @conversation.id,
-        message: {
-          id: message.id,
-          content: message.content,
-          created_at: message.created_at,
-          sender_type: message.sender_type,
-          sender_id: message.sender_id,
-          ad_id: message.ad_id,
-          product_context: message.product_context
-        }
-      }
-    )
-
-    # Broadcast to seller
-    ActionCable.server.broadcast(
-      "conversations_seller_#{@conversation.seller_id}",
-      {
-        type: 'new_message',
-        conversation_id: @conversation.id,
-        message: {
-          id: message.id,
-          content: message.content,
-          created_at: message.created_at,
-          sender_type: message.sender_type,
-          sender_id: message.sender_id,
-          ad_id: message.ad_id,
-          product_context: message.product_context
-        }
-      }
-    )
   end
 
   private

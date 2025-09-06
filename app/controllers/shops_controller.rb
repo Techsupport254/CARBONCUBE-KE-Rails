@@ -40,12 +40,6 @@ class ShopsController < ApplicationController
       return
     end
     
-    # Check if this is a social media crawler
-    if social_media_crawler?
-      # Serve HTML with meta tags for social media crawlers
-      render_html_for_crawler
-      return
-    end
     
     # Get shop's active ads with pagination
     page = params[:page]&.to_i || 1
@@ -64,6 +58,14 @@ class ShopsController < ApplicationController
     # Get total count for pagination
     @total_count = @shop.ads.active.where(flagged: false).count
     
+    # Calculate review statistics for SEO
+    all_reviews = Review.joins(:ad).where(ads: { seller_id: @shop.id })
+    total_reviews = all_reviews.count
+    average_rating = total_reviews > 0 ? all_reviews.average(:rating).round(1) : 0
+    
+    # Get shop categories for SEO
+    shop_categories = @shop.categories.pluck(:name).join(', ')
+    
     render json: {
       shop: {
         id: @shop.id,
@@ -75,7 +77,18 @@ class ShopsController < ApplicationController
         tier: @shop.seller_tier&.tier&.name || 'Free',
         tier_id: @shop.seller_tier&.tier&.id || 1,
         product_count: @total_count,
-        created_at: @shop.created_at
+        created_at: @shop.created_at,
+        # SEO-specific fields
+        fullname: @shop.fullname,
+        phone_number: @shop.phone_number,
+        city: @shop.city,
+        county: @shop.county&.name,
+        sub_county: @shop.sub_county&.name,
+        business_registration_number: @shop.business_registration_number,
+        categories: shop_categories,
+        total_reviews: total_reviews,
+        average_rating: average_rating,
+        slug: slug
       },
       ads: @ads.map { |ad| AdSerializer.new(ad).as_json },
       pagination: {
@@ -194,89 +207,4 @@ class ShopsController < ApplicationController
 
   private
 
-  def social_media_crawler?
-    user_agent = request.user_agent.to_s.downcase
-    
-    social_crawlers = [
-      'facebookexternalhit',
-      'facebookcatalog',
-      'twitterbot',
-      'linkedinbot',
-      'whatsapp',
-      'whatsappbot',
-      'whatsapp/',
-      'telegrambot',
-      'slackbot',
-      'discordbot',
-      'skypeuripreview',
-      'applebot',
-      'googlebot',
-      'bingbot'
-    ]
-    
-    social_crawlers.any? { |crawler| user_agent.include?(crawler) }
-  end
-
-  def render_html_for_crawler
-    # Generate shop-specific meta tags
-    title = "#{@shop.enterprise_name} Shop - #{@shop.ads.active.count} Products | Carbon Cube Kenya"
-    description = @shop.description.presence || "#{@shop.enterprise_name} - #{@shop.seller_tier&.tier&.name || 'Free'} seller offering #{@shop.ads.active.count} quality products for online shopping on Carbon Cube Kenya"
-    
-    # Use shop profile picture or fallback
-    image_url = if @shop.profile_picture.present?
-      if @shop.profile_picture.start_with?('http')
-        @shop.profile_picture
-      else
-        "https://carboncube-ke.com#{@shop.profile_picture}"
-      end
-    else
-      "https://via.placeholder.com/1200x630/FFD700/000000?text=#{CGI.escape(@shop.enterprise_name)}"
-    end
-    
-    url = "https://carboncube-ke.com/shop/#{params[:slug]}"
-    
-    # Return HTML with meta tags for social media crawlers
-    html_content = generate_meta_html(title, description, image_url, url, "website")
-    render html: html_content.html_safe
-  end
-
-  def generate_meta_html(title, description, image_url, url, type)
-    <<~HTML
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <title>#{title}</title>
-        <meta name="description" content="#{description}">
-        
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="#{type}">
-        <meta property="og:url" content="#{url}">
-        <meta property="og:site_name" content="Carbon Cube Kenya">
-        <meta property="og:title" content="#{title}">
-        <meta property="og:description" content="#{description}">
-        <meta property="og:image" content="#{image_url}">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
-        <meta property="og:locale" content="en_US">
-        <meta property="og:image:alt" content="#{title}">
-        
-        <!-- Twitter Card -->
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:site" content="@carboncube_kenya">
-        <meta name="twitter:title" content="#{title}">
-        <meta name="twitter:description" content="#{description}">
-        <meta name="twitter:image" content="#{image_url}">
-        <meta name="twitter:image:alt" content="#{title}">
-        
-        <!-- Redirect to actual page -->
-        <meta http-equiv="refresh" content="0; url=#{url}">
-        <script>window.location.href = "#{url}";</script>
-      </head>
-      <body>
-        <p>Redirecting to <a href="#{url}">#{url}</a>...</p>
-      </body>
-      </html>
-    HTML
-  end
 end

@@ -101,7 +101,18 @@ class Seller::SellersController < ApplicationController
     # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
 
     if @seller.save
-      SellerTier.create(seller_id: @seller.id, tier_id: 1, duration_months: 0)
+      # Assign Premium tier expiring at midnight on January 1, 2026 (last day of 2025) for 2025 registrations
+      current_year = Date.current.year
+      if current_year == 2025
+        # Set exact expiry date to midnight on January 1, 2026 (00:00 2026-01-01)
+        expiry_date = DateTime.new(2026, 1, 1, 0, 0, 0)
+        Rails.logger.info "🎉 2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date}"
+        SellerTier.create(seller_id: @seller.id, tier_id: 4, duration_months: 0, expires_at: expiry_date)
+      else
+        # Default free tier for other years
+        Rails.logger.info "📝 #{current_year} Registration: Assigning Free tier to seller #{@seller.id}"
+        SellerTier.create(seller_id: @seller.id, tier_id: 1, duration_months: 0)
+      end
       token = JsonWebToken.encode(seller_id: @seller.id, role: 'Seller')
       # Rails.logger.info "Seller created successfully: #{@seller.id}"
       render json: { token: token, seller: @seller }, status: :created

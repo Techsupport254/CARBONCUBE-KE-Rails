@@ -17,6 +17,11 @@ class ApplicationController < ActionController::Base
     render json: { message: "API is up and running" }, status: :ok
   end
 
+  def missing_file
+    # Return a 404 for missing static files like images
+    render json: { error: 'File not found' }, status: :not_found
+  end
+
   private
 
   def authenticate_request

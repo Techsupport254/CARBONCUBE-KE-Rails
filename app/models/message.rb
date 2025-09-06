@@ -5,6 +5,9 @@ class Message < ApplicationRecord
 
   validates :content, presence: true
 
+  # Callbacks
+  after_create :broadcast_new_message
+
   # Status constants
   STATUS_SENT = 'sent'
   STATUS_DELIVERED = 'delivered'
@@ -57,6 +60,50 @@ class Message < ApplicationRecord
       '✓' # Single check for delivered
     else
       '✓' # Single check for sent
+    end
+  end
+
+  private
+
+  def broadcast_new_message
+    # Broadcast to buyer
+    if conversation.buyer_id
+      ActionCable.server.broadcast(
+        "conversations_buyer_#{conversation.buyer_id}",
+        {
+          type: 'new_message',
+          conversation_id: conversation.id,
+          message: {
+            id: id,
+            content: content,
+            created_at: created_at,
+            sender_type: sender_type,
+            sender_id: sender_id,
+            ad_id: ad_id,
+            product_context: product_context
+          }
+        }
+      )
+    end
+
+    # Broadcast to seller
+    if conversation.seller_id
+      ActionCable.server.broadcast(
+        "conversations_seller_#{conversation.seller_id}",
+        {
+          type: 'new_message',
+          conversation_id: conversation.id,
+          message: {
+            id: id,
+            content: content,
+            created_at: created_at,
+            sender_type: sender_type,
+            sender_id: sender_id,
+            ad_id: ad_id,
+            product_context: product_context
+          }
+        }
+      )
     end
   end
 end

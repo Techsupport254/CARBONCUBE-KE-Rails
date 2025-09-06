@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_04_141156) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -419,6 +419,36 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_04_141156) do
     t.index ["otpable_type", "otpable_id"], name: "index_password_otps_on_otpable"
   end
 
+  create_table "payment_transactions", force: :cascade do |t|
+    t.bigint "seller_id", null: false
+    t.bigint "tier_id", null: false
+    t.bigint "tier_pricing_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.string "phone_number", null: false
+    t.string "status", default: "initiated", null: false
+    t.string "transaction_type", default: "tier_upgrade", null: false
+    t.string "checkout_request_id", null: false
+    t.string "merchant_request_id", null: false
+    t.string "mpesa_receipt_number"
+    t.string "transaction_date"
+    t.string "callback_phone_number"
+    t.decimal "callback_amount", precision: 10, scale: 2
+    t.string "stk_response_code"
+    t.string "stk_response_description"
+    t.text "error_message"
+    t.datetime "completed_at"
+    t.datetime "failed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["checkout_request_id"], name: "index_payment_transactions_on_checkout_request_id", unique: true
+    t.index ["created_at"], name: "index_payment_transactions_on_created_at"
+    t.index ["merchant_request_id"], name: "index_payment_transactions_on_merchant_request_id", unique: true
+    t.index ["seller_id"], name: "index_payment_transactions_on_seller_id"
+    t.index ["status"], name: "index_payment_transactions_on_status"
+    t.index ["tier_id"], name: "index_payment_transactions_on_tier_id"
+    t.index ["tier_pricing_id"], name: "index_payment_transactions_on_tier_pricing_id"
+  end
+
   create_table "payments", force: :cascade do |t|
     t.string "transaction_type"
     t.string "trans_id"
@@ -506,12 +536,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_04_141156) do
     t.index ["name"], name: "index_sectors_on_name", unique: true
   end
 
+  create_table "seller_documents", force: :cascade do |t|
+    t.bigint "seller_id", null: false
+    t.bigint "document_type_id", null: false
+    t.string "document_url"
+    t.date "document_expiry_date"
+    t.boolean "document_verified", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_type_id"], name: "index_seller_documents_on_document_type_id"
+    t.index ["seller_id", "document_type_id"], name: "index_seller_documents_on_seller_id_and_document_type_id", unique: true
+    t.index ["seller_id"], name: "index_seller_documents_on_seller_id"
+  end
+
   create_table "seller_tiers", force: :cascade do |t|
     t.bigint "seller_id", null: false
     t.bigint "tier_id", null: false
     t.integer "duration_months", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "expires_at"
+    t.bigint "payment_transaction_id"
+    t.index ["expires_at"], name: "index_seller_tiers_on_expires_at"
+    t.index ["payment_transaction_id"], name: "index_seller_tiers_on_payment_transaction_id"
     t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
   end
@@ -543,12 +590,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_04_141156) do
     t.boolean "document_verified", default: false
     t.integer "ads_count", default: 0, null: false
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
+    t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
     t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
     t.index ["blocked"], name: "index_sellers_on_blocked"
+    t.index ["business_registration_number"], name: "index_sellers_on_business_registration_number", unique: true, where: "((business_registration_number IS NOT NULL) AND ((business_registration_number)::text <> ''::text))"
     t.index ["county_id"], name: "index_sellers_on_county_id"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
+    t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
     t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"
+    t.index ["username"], name: "index_sellers_on_username", unique: true, where: "((username IS NOT NULL) AND ((username)::text <> ''::text))"
   end
 
   create_table "shipments", force: :cascade do |t|
@@ -652,11 +703,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_04_141156) do
   add_foreign_key "order_sellers", "orders"
   add_foreign_key "order_sellers", "sellers"
   add_foreign_key "orders", "buyers"
+  add_foreign_key "payment_transactions", "sellers"
+  add_foreign_key "payment_transactions", "tier_pricings"
+  add_foreign_key "payment_transactions", "tiers"
   add_foreign_key "reviews", "ads"
   add_foreign_key "reviews", "buyers"
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
   add_foreign_key "riders", "sub_counties"
+  add_foreign_key "seller_documents", "document_types"
+  add_foreign_key "seller_documents", "sellers"
   add_foreign_key "seller_tiers", "sellers"
   add_foreign_key "seller_tiers", "tiers"
   add_foreign_key "sellers", "age_groups"

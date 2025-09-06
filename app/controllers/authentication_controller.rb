@@ -35,10 +35,20 @@ class AuthenticationController < ApplicationController
         user_response[:name] = @user.username
       end
       
+      # Always include username if available
+      if @user.respond_to?(:username) && @user.username.present?
+        user_response[:username] = @user.username
+      end
+      
       user_response[:phone_number] = @user.phone_number if @user.is_a?(Rider)
       user_response[:id_number] = @user.id_number if @user.is_a?(Rider)
 
-      token = JsonWebToken.encode(user_id: @user.id, role: role)
+      # Create token with appropriate ID field based on user type
+      if role == 'seller'
+        token = JsonWebToken.encode(seller_id: @user.id, role: role)
+      else
+        token = JsonWebToken.encode(user_id: @user.id, role: role)
+      end
       render json: { token: token, user: user_response }, status: :ok
     else
       render json: { errors: ['Invalid login credentials'] }, status: :unauthorized

@@ -112,6 +112,40 @@ class Seller::ConversationsController < ApplicationController
     }, status: :created
   end
 
+  # GET /seller/conversations/unread_counts
+  def unread_counts
+    # Get all conversations for the current seller with unread message counts
+    conversations = Conversation.where(seller_id: @current_user.id)
+    
+    unread_counts = conversations.map do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Buyer', 'Admin'])
+                                .where(status: [nil, Message::STATUS_SENT])
+                                .count
+      
+      {
+        conversation_id: conversation.id,
+        unread_count: unread_count
+      }
+    end
+    
+    render json: { unread_counts: unread_counts }
+  end
+
+  # GET /seller/conversations/unread_count
+  def unread_count
+    # Get all conversations for the current seller
+    conversations = Conversation.where(seller_id: @current_user.id)
+    
+    # Count unread messages (messages not sent by seller and not read)
+    unread_count = conversations.joins(:messages)
+                               .where(messages: { sender_type: ['Buyer', 'Admin'] })
+                               .where(messages: { status: [nil, Message::STATUS_SENT] })
+                               .count
+    
+    render json: { count: unread_count }
+  end
+
   private
 
   def authenticate_seller

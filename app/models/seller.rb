@@ -14,6 +14,7 @@ class Seller < ApplicationRecord
   has_many :notifications, as: :notifiable
   has_many :buy_for_me_order_sellers
   has_many :password_otps, as: :otpable, dependent: :destroy
+  has_many :seller_documents, dependent: :destroy
   has_one :categories_seller
   has_one :category, through: :categories_seller
   has_one :seller_tier
@@ -27,11 +28,12 @@ class Seller < ApplicationRecord
   validates :county_id, presence: true
   validates :sub_county_id, presence: true
   validates :fullname, presence: true
-  validates :phone_number, presence: true
+  validates :phone_number, presence: true, uniqueness: true
   validates :email, presence: true, uniqueness: { case_sensitive: false }
-  validates :enterprise_name, presence: true
+  validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
   validates :location, presence: true
-  validates :business_registration_number, length: { minimum: 1 }, allow_blank: true
+  validates :business_registration_number, length: { minimum: 1 }, allow_blank: true, uniqueness: true, allow_nil: true
+  validates :username, presence: true, uniqueness: true, allow_blank: true
   validates :age_group, presence: true
   # validates :tier, inclusion: { in: %w[Free Basic Standard Premium] }
 
