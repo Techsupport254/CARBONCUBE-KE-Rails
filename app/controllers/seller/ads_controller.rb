@@ -4,7 +4,6 @@ class Seller::AdsController < ApplicationController
   before_action :authenticate_seller
   before_action :set_ad, only: [:show, :update, :destroy]
 
-  require "image_processing/vips"
 
   # app/controllers/seller/ads_controller.rb
   def index
@@ -18,7 +17,24 @@ class Seller::AdsController < ApplicationController
   end
 
   def show
-    render json: @ad.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating])
+    # Get reviews
+    reviews = @ad.reviews.includes(:buyer)
+    
+    # Get buyer details using the BuyerDetailsUtility
+    buyer_details = nil
+    begin
+      buyer_details = BuyerDetailsUtility.get_ad_reviewers_details(@ad.id)
+    rescue => e
+      Rails.logger.error "Error fetching buyer details: #{e.message}"
+      buyer_details = { error: "Failed to fetch buyer details" }
+    end
+    
+    # Render the complete ad data with reviews and buyer details
+    render json: {
+      **@ad.as_json(include: [:category], methods: [:quantity_sold, :mean_rating]),
+      reviews: reviews.as_json(include: [:buyer]),
+      buyer_details: buyer_details
+    }
   end
 
   def create
@@ -76,9 +92,18 @@ class Seller::AdsController < ApplicationController
       updated = ad.update(ad_params)
 
     # Case 3: media includes uploaded files (ActionDispatch::Http::UploadedFile)
+    # This handles mixed arrays of existing URLs and new files
     else
-      uploaded_urls = process_and_upload_images(media_param)
-      merged_media = (ad.media || []) | uploaded_urls
+      # Separate existing URLs from new files
+      existing_urls = media_param.select { |m| m.is_a?(String) }
+      new_files = media_param.select { |m| m.is_a?(ActionDispatch::Http::UploadedFile) }
+      
+      # Process and upload new files
+      uploaded_urls = process_and_upload_images(new_files)
+      
+      # Merge existing URLs with newly uploaded URLs
+      merged_media = existing_urls | uploaded_urls
+      
       updated = ad.update(ad_params.except(:media).merge(media: merged_media))
     end
 
@@ -115,29 +140,6 @@ class Seller::AdsController < ApplicationController
 
   private
 
-  def python_available?
-    @python_available ||= begin
-      # First check if python3 is available
-      python_check = `which python3 2>&1`
-      if python_check.strip.empty?
-        Rails.logger.error "Python3 not found in PATH"
-        return false
-      end
-
-      # Then check if required modules are available
-      result = `python3 -c "import cv2, numpy; print('OK')" 2>&1`
-      if result.strip != "OK"
-        Rails.logger.error "Python modules not available: #{result}"
-        return false
-      end
-
-      Rails.logger.info "Python3 and required modules are available"
-      true
-    rescue => e
-      Rails.logger.error "Error checking Python availability: #{e.message}"
-      false
-    end
-  end
 
   def authenticate_seller
     @current_user = SellerAuthorizeApiRequest.new(request.headers).result
@@ -180,42 +182,20 @@ class Seller::AdsController < ApplicationController
   end
 
 
-  # Converts images to WebP and uploads them to Cloudinary
+  # Uploads images to Cloudinary as-is (no preprocessing)
   def process_and_upload_images(images)
     uploaded_urls = []
-    temp_folder = Rails.root.join("tmp/uploads/#{Time.now.to_i}")
-    
-    begin
-      FileUtils.mkdir_p(temp_folder)
 
+    begin
       Parallel.each(Array(images), in_threads: 4) do |image|
         begin
-          temp_file_path = temp_folder.join(image.original_filename)
-          File.binwrite(temp_file_path, image.read) # Faster than File.open
+          # Upload original image directly to Cloudinary without any processing
+          uploaded_image = Cloudinary::Uploader.upload(image.tempfile.path, upload_preset: ENV['UPLOAD_PRESET'])
+          Rails.logger.info "🚀 Uploaded to Cloudinary: #{uploaded_image['secure_url']}"
 
-          # Check if Python is available for image processing
-          if python_available?
-            # 🔹 Check sharpness before processing
-            unless sharp_enough?(temp_file_path)
-              # Rails.logger.info "📸 Image is blurry: #{temp_file_path}. Sharpening..."
-              sharpen_image(temp_file_path)
-            end
-
-            # Resize & Convert to WebP
-            optimized_webp_path = optimize_and_convert_to_webp(temp_file_path)
-            # Rails.logger.info "📂 Optimized and converted to WebP: #{optimized_webp_path}"
-          else
-            Rails.logger.warn "Python not available, skipping image processing"
-            optimized_webp_path = temp_file_path
-          end
-
-          # Upload optimized WebP image in parallel
-          uploaded_image = Cloudinary::Uploader.upload(optimized_webp_path, upload_preset: ENV['UPLOAD_PRESET'])
-          # Rails.logger.info "🚀 Uploaded to Cloudinary: #{uploaded_image['secure_url']}"
-          
           uploaded_urls << uploaded_image["secure_url"]
         rescue => e
-          Rails.logger.error "Error processing image: #{e.message}"
+          Rails.logger.error "Error uploading image: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
         end
       end
@@ -223,84 +203,10 @@ class Seller::AdsController < ApplicationController
       Rails.logger.error "Error in process_and_upload_images: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       return [] # Return empty array instead of failing
-    ensure
-      FileUtils.rm_rf(temp_folder) if Dir.exist?(temp_folder) # Cleanup temp folder
-      # Rails.logger.info "🗑️ Temp folder removed: #{temp_folder}"
     end
 
     uploaded_urls
   end
 
-  # Python sharpness check with logging
-  def sharp_enough?(image_path)
-    begin
-      script_path = Rails.root.join("scripts/check_sharpness.py")
-      result = `python3 "#{script_path}" "#{image_path}"`.strip  # Ensure paths are quoted
-      # Rails.logger.info "📸 Checking sharpness for: #{image_path} - Result: #{result}"
-      result == "Sharp"  # Expect script to return 'Sharp' or 'Blurry'
-    rescue => e
-      Rails.logger.error "Error checking sharpness: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      true # Assume image is sharp enough if check fails
-    end
-  end
 
-  # Python sharpening function with logging
-  def sharpen_image(image_path)
-    begin
-      script_path = Rails.root.join("scripts/sharpen_image.py")
-      # Rails.logger.info "🛠️ Sharpening image: #{image_path} before upload..."
-      result = `python3 "#{script_path}" "#{image_path}"`  # Ensure paths are quoted
-      Rails.logger.info "Python script output: #{result}"
-      # Rails.logger.info "Image sharpened: #{image_path}"
-    rescue => e
-      Rails.logger.error "Error sharpening image: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-    end
-  end
-  
-  # Optimize image size and convert to WebP using ImageProcessing + Vips
-  def optimize_and_convert_to_webp(image_path)
-    begin
-      image_path = image_path.to_s
-      base_webp_path = image_path.sub(/\.\w+$/, ".webp")
-      max_file_size = 1 * 1024 * 1024 # 1 MB
-      quality = 70
-      min_quality = 40
-      step = 10
-
-      # Rails.logger.info "🧩 Starting compression for: #{File.basename(image_path)}"
-
-      loop do
-        current_webp_path = base_webp_path.sub(".webp", "_q#{quality}.webp")
-
-        ImageProcessing::Vips
-          .source(image_path)
-          .resize_to_limit(1080, nil) # Resize to width 1080px
-          .convert("webp")
-          .saver(quality: quality)
-          .call(destination: current_webp_path)
-
-        file_size = File.size(current_webp_path)
-        readable_size = (file_size / 1024.0).round(2)
-
-        # Rails.logger.info "Tried quality=#{quality}: #{readable_size} KB (Path: #{current_webp_path})"
-
-        if file_size <= max_file_size
-          # Rails.logger.info "Compression successful under 1MB at quality=#{quality} (#{readable_size} KB)"
-          return current_webp_path
-        elsif quality <= min_quality
-          Rails.logger.warn "⚠️ Minimum quality reached (#{min_quality}). File still exceeds 1MB (#{readable_size} KB)"
-          return current_webp_path
-        else
-          quality -= step
-        end
-      end
-    rescue => e
-      Rails.logger.error "Error optimizing image: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      # Return original image path if optimization fails
-      image_path
-    end
-  end
 end

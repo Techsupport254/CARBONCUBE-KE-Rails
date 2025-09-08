@@ -227,6 +227,8 @@ Rails.application.routes.draw do
     resources :ads do
       member do
         put 'restore'
+        get 'buyer_details', to: 'buyer_details#show'
+        get 'buyer_details/summary', to: 'buyer_details#summary'
       end
     end
     resources :orders do
