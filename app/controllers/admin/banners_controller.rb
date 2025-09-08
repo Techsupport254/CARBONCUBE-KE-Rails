@@ -1,7 +1,6 @@
 require 'cloudinary'
 require 'cloudinary/uploader'
 require 'fileutils'
-require 'image_processing/vips'
 
 class Admin::BannersController < ApplicationController
   before_action :set_banner, only: [:show, :update, :destroy]
@@ -62,21 +61,18 @@ class Admin::BannersController < ApplicationController
     params.require(:banner).permit(:image_url)
   end
 
-  # Converts images to WebP and uploads them to Cloudinary
+  # Upload images directly to Cloudinary without processing
   def process_and_upload_images(images)
     uploaded_urls = []
-    temp_folder = Rails.root.join("tmp/uploads/banners").to_s  # Ensure it's a string
+    temp_folder = Rails.root.join("tmp/uploads/banners").to_s
     FileUtils.mkdir_p(temp_folder)
 
     Array(images).each do |image|
-      temp_file_path = File.join(temp_folder, image.original_filename)  # Convert Pathname to String
+      temp_file_path = File.join(temp_folder, image.original_filename)
       File.open(temp_file_path, "wb") { |file| file.write(image.read) }
 
-      # Convert to WebP
-      optimized_webp_path = optimize_and_convert_to_webp(temp_file_path.to_s)  # Ensure string
-
-      # Upload to Cloudinary
-      uploaded_image = Cloudinary::Uploader.upload(optimized_webp_path, upload_preset: ENV['UPLOAD_PRESET'])
+      # Upload directly to Cloudinary
+      uploaded_image = Cloudinary::Uploader.upload(temp_file_path, upload_preset: ENV['UPLOAD_PRESET'])
       uploaded_urls << uploaded_image["secure_url"]
     rescue => e
       Rails.logger.error("Failed to process image #{image.original_filename}: #{e.message}")
@@ -84,19 +80,5 @@ class Admin::BannersController < ApplicationController
 
     FileUtils.rm_rf(temp_folder) # Cleanup temp folder
     uploaded_urls
-  end
-
-  # Optimize image size and convert to WebP using ImageProcessing + Vips
-  def optimize_and_convert_to_webp(image_path)
-    webp_path = image_path.sub(/\.\w+$/, ".webp")
-
-    ImageProcessing::Vips
-      .source(image_path)
-      .resize_to_limit(1080, nil) # Resize width to 1080px (height auto-adjusts)
-      .convert("webp")
-      .saver(quality: 70) # Set WebP compression quality
-      .call(destination: webp_path)
-
-    webp_path
   end
 end
