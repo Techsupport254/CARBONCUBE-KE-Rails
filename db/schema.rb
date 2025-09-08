@@ -82,6 +82,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.index ["category_id"], name: "index_ads_on_category_id"
     t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at"
     t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at_perf"
+    t.index ["deleted", "flagged", "seller_id", "created_at", "id"], name: "index_ads_best_sellers_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
     t.index ["description"], name: "index_ads_on_description", opclass: :gin_trgm_ops, using: :gin
@@ -120,6 +121,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.string "image_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "best_sellers_cache", force: :cascade do |t|
+    t.string "cache_key", null: false
+    t.jsonb "data", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cache_key"], name: "index_best_sellers_cache_on_cache_key", unique: true
+    t.index ["expires_at"], name: "index_best_sellers_cache_on_expires_at"
   end
 
   create_table "buy_for_me_order_cart_items", force: :cascade do |t|
@@ -229,6 +240,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"
     t.index ["event_type", "created_at"], name: "index_click_events_on_event_type_created_at"
@@ -384,6 +396,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.decimal "total_price", precision: 10, scale: 2, default: "0.0", null: false
     t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["ad_id", "quantity"], name: "index_order_items_on_ad_id_quantity"
     t.index ["ad_id"], name: "index_order_items_on_ad_id"
     t.index ["order_id"], name: "index_order_items_on_order_id"
   end
@@ -492,6 +505,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "seller_reply"
+    t.index ["ad_id", "rating"], name: "index_reviews_on_ad_id_rating"
     t.index ["ad_id"], name: "index_reviews_on_ad_id"
     t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
   end
@@ -559,6 +573,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.bigint "payment_transaction_id"
     t.index ["expires_at"], name: "index_seller_tiers_on_expires_at"
     t.index ["payment_transaction_id"], name: "index_seller_tiers_on_payment_transaction_id"
+    t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_id_tier_id"
     t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
   end

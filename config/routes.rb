@@ -7,11 +7,9 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
 
-        # API namespace for lightweight endpoints
-        namespace :api do
-          post 'email/exists', to: 'email#exists'
-          post 'username/exists', to: 'email#username_exists'
-        end
+  # Email and username validation routes
+  post 'email/exists', to: 'email#exists'
+  post 'username/exists', to: 'email#username_exists'
 
   #========================================Public namespace for public-specific functionality==========================================#
   
@@ -20,6 +18,21 @@ Rails.application.routes.draw do
   resources :banners, only: [:index]
   resources :ads, only: [:index, :show] do
     get 'reviews', to: 'reviews#index', on: :member
+  end
+  
+  # Sitemap generation endpoints
+  get 'sitemap/ads', to: 'sitemap#ads'
+  get 'sitemap/sellers', to: 'sitemap#sellers'
+  get 'sitemap/categories', to: 'sitemap#categories'
+  get 'sitemap/subcategories', to: 'sitemap#subcategories'
+  get 'sitemap/stats', to: 'sitemap#stats'
+  
+  # Best sellers routes
+  resources :best_sellers, only: [:index] do
+    collection do
+      get 'global'
+      get 'refresh'
+    end
   end
 
   # Routes for logging ad searches
@@ -349,6 +362,11 @@ Rails.application.routes.draw do
 #for sales
     namespace :sales do
       resources :analytics, only: [:index]  # Dashboard data
+      resources :conversations, only: [:index, :show, :create] do
+        resources :messages, only: [:index, :create]
+        get :unread_count, on: :collection
+        get :unread_counts, on: :collection
+      end
     end
 
 

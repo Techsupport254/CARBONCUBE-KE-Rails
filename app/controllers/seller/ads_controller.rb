@@ -31,7 +31,7 @@ class Seller::AdsController < ApplicationController
     
     # Render the complete ad data with reviews and buyer details
     render json: {
-      **@ad.as_json(include: [:category], methods: [:quantity_sold, :mean_rating]),
+      **@ad.as_json(include: [:category, :subcategory], methods: [:quantity_sold, :mean_rating]),
       reviews: reviews.as_json(include: [:buyer]),
       buyer_details: buyer_details
     }
@@ -82,29 +82,27 @@ class Seller::AdsController < ApplicationController
   def update
     ad = current_seller.ads.find(params[:id])
     media_param = params[:ad][:media]
+    existing_media_param = params[:ad][:existing_media]
 
-    # Case 1: No media param at all — preserve existing media
-    if media_param.nil?
-      updated = ad.update(ad_params.except(:media))
+    # Handle image updates based on whether we have new files and/or existing media
+    if media_param.present? || existing_media_param.present?
+      # Start with existing media URLs that should be kept
+      final_media = existing_media_param.present? ? existing_media_param : []
 
-    # Case 2: media is a list of Strings (Cloudinary URLs) — replacing media or removing some
-    elsif media_param.all? { |m| m.is_a?(String) }
-      updated = ad.update(ad_params)
+      # Add new uploaded files if any
+      if media_param.present?
+        new_files = media_param.select { |m| m.is_a?(ActionDispatch::Http::UploadedFile) }
+        if new_files.any?
+          uploaded_urls = process_and_upload_images(new_files)
+          final_media += uploaded_urls
+        end
+      end
 
-    # Case 3: media includes uploaded files (ActionDispatch::Http::UploadedFile)
-    # This handles mixed arrays of existing URLs and new files
+      # Update with final media array
+      updated = ad.update(ad_params.except(:media, :existing_media).merge(media: final_media))
     else
-      # Separate existing URLs from new files
-      existing_urls = media_param.select { |m| m.is_a?(String) }
-      new_files = media_param.select { |m| m.is_a?(ActionDispatch::Http::UploadedFile) }
-      
-      # Process and upload new files
-      uploaded_urls = process_and_upload_images(new_files)
-      
-      # Merge existing URLs with newly uploaded URLs
-      merged_media = existing_urls | uploaded_urls
-      
-      updated = ad.update(ad_params.except(:media).merge(media: merged_media))
+      # No media changes, just update other fields
+      updated = ad.update(ad_params.except(:media, :existing_media))
     end
 
     if updated
@@ -165,17 +163,21 @@ class Seller::AdsController < ApplicationController
       :title, :description, :category_id, :subcategory_id, :price, 
       :quantity, :brand, :manufacturer, :item_length, :item_width, 
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
-      media: []
+      media: [], existing_media: []
     )
 
-    # Convert empty strings to nil for optional numeric fields
+    # Convert empty strings to nil for optional numeric fields (only for fields that are present in params)
     %i[item_length item_width item_height item_weight].each do |field|
-      permitted[field] = nil if permitted[field].blank?
+      if params[:ad].key?(field) && permitted[field].blank?
+        permitted[field] = nil
+      end
     end
 
-    # Set default weight_unit if empty or invalid
-    if permitted[:weight_unit].blank? || !['Grams', 'Kilograms'].include?(permitted[:weight_unit])
-      permitted[:weight_unit] = 'Grams'
+    # Set default weight_unit if empty or invalid (only when field is present in params)
+    if params[:ad].key?(:weight_unit)
+      if permitted[:weight_unit].blank? || !['Grams', 'Kilograms'].include?(permitted[:weight_unit])
+        permitted[:weight_unit] = 'Grams'
+      end
     end
 
     permitted

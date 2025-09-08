@@ -561,30 +561,206 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def fetch_best_selling_ads
-    current_seller.ads.joins(:order_items)
-                      .select('ads.id AS ad_id, ads.title AS ad_title, ads.price AS ad_price, SUM(order_items.quantity) AS total_sold, ads.media AS media')
-                      .group('ads.id')
-                      .order('total_sold DESC')
-                      .limit(3)
-                      .map { |record| 
-                        {
-                          ad_id: record.ad_id,
-                          ad_title: record.ad_title,
-                          ad_price: record.ad_price,
-                          total_sold: record.total_sold,
-                          media: record.media
-                        }
-                      }
+    # Use the new comprehensive scoring algorithm
+    best_sellers_controller = BestSellersController.new
+    best_sellers_controller.params = ActionController::Parameters.new(limit: 3)
+    
+    # Get seller's ads with comprehensive scoring
+    seller_ads = current_seller.ads.active
+                              .joins(:category, :subcategory)
+                              .joins("LEFT JOIN order_items ON ads.id = order_items.ad_id")
+                              .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
+                              .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
+                              .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
+                              .joins("LEFT JOIN seller_tiers ON ads.seller_id = seller_tiers.seller_id")
+                              .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
+                              .select("
+                                ads.id,
+                                ads.title,
+                                ads.description,
+                                ads.price,
+                                ads.quantity,
+                                ads.media,
+                                ads.created_at,
+                                ads.updated_at,
+                                ads.seller_id,
+                                categories.name as category_name,
+                                subcategories.name as subcategory_name,
+                                COALESCE(tiers.id, 1) as seller_tier_id,
+                                COALESCE(tiers.name, 'Free') as seller_tier_name,
+                                COALESCE(SUM(order_items.quantity), 0) as total_sold,
+                                COALESCE(AVG(reviews.rating), 0) as avg_rating,
+                                COALESCE(COUNT(DISTINCT reviews.id), 0) as review_count,
+                                COALESCE(SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END), 0) as ad_clicks,
+                                COALESCE(SUM(CASE WHEN click_events.event_type = 'Reveal-Seller-Details' THEN 1 ELSE 0 END), 0) as reveal_clicks,
+                                COALESCE(SUM(CASE WHEN click_events.event_type = 'Add-to-Wish-List' THEN 1 ELSE 0 END), 0) as wishlist_clicks,
+                                COALESCE(SUM(CASE WHEN click_events.event_type = 'Add-to-Cart' THEN 1 ELSE 0 END), 0) as cart_clicks,
+                                COALESCE(COUNT(DISTINCT wish_lists.id), 0) as wishlist_count
+                              ")
+                              .group("ads.id, categories.id, subcategories.id, tiers.id")
+                              .having("SUM(order_items.quantity) > 0 OR AVG(reviews.rating) > 0 OR SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END) > 0 OR COUNT(DISTINCT wish_lists.id) > 0")
+    
+    # Calculate comprehensive scores and sort
+    scored_ads = seller_ads.map do |ad|
+      score = calculate_comprehensive_score(ad)
+      {
+        ad_id: ad.id,
+        ad_title: ad.title,
+        ad_price: ad.price.to_f,
+        total_sold: ad.total_sold.to_i,
+        media: ad.media,
+        comprehensive_score: score,
+        metrics: {
+          avg_rating: ad.avg_rating.to_f.round(2),
+          review_count: ad.review_count.to_i,
+          ad_clicks: ad.ad_clicks.to_i,
+          reveal_clicks: ad.reveal_clicks.to_i,
+          wishlist_clicks: ad.wishlist_clicks.to_i,
+          cart_clicks: ad.cart_clicks.to_i,
+          wishlist_count: ad.wishlist_count.to_i
+        }
+      }
+    end
+    
+    # Sort by comprehensive score and return top 3
+    scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(3)
+  end
+
+  # Comprehensive scoring methods (copied from BestSellersController)
+  def calculate_comprehensive_score(ad)
+    # Comprehensive scoring algorithm combining multiple factors
+    
+    # 1. Sales Score (40% weight) - Most important factor
+    sales_score = calculate_sales_score(ad.total_sold.to_i)
+    
+    # 2. Review Score (25% weight) - Quality indicator
+    review_score = calculate_review_score(ad.avg_rating.to_f, ad.review_count.to_i)
+    
+    # 3. Engagement Score (20% weight) - User interest
+    engagement_score = calculate_engagement_score(
+      ad.ad_clicks.to_i,
+      ad.reveal_clicks.to_i,
+      ad.wishlist_clicks.to_i,
+      ad.cart_clicks.to_i,
+      ad.wishlist_count.to_i
+    )
+    
+    # 4. Seller Tier Bonus (10% weight) - Premium seller boost
+    tier_bonus = calculate_tier_bonus(ad.seller_tier_id.to_i)
+    
+    # 5. Recency Score (5% weight) - Freshness factor
+    recency_score = calculate_recency_score(ad.created_at)
+    
+    # Calculate weighted total score
+    total_score = (sales_score * 0.40) + 
+                  (review_score * 0.25) + 
+                  (engagement_score * 0.20) + 
+                  (tier_bonus * 0.10) + 
+                  (recency_score * 0.05)
+    
+    total_score.round(2)
+  end
+
+  def calculate_sales_score(total_sold)
+    # Logarithmic scaling for sales to prevent extreme outliers from dominating
+    return 0 if total_sold <= 0
+    
+    # Base score from sales volume
+    base_score = Math.log10(total_sold + 1) * 10
+    
+    # Cap at 100 points
+    [base_score, 100].min
+  end
+
+  def calculate_review_score(avg_rating, review_count)
+    return 0 if review_count <= 0
+    
+    # Rating score (0-50 points based on rating)
+    rating_score = (avg_rating / 5.0) * 50
+    
+    # Review count bonus (0-50 points based on review volume)
+    count_bonus = Math.log10(review_count + 1) * 10
+    count_bonus = [count_bonus, 50].min
+    
+    rating_score + count_bonus
+  end
+
+  def calculate_engagement_score(ad_clicks, reveal_clicks, wishlist_clicks, cart_clicks, wishlist_count)
+    # Combine all engagement metrics with different weights
+    
+    # Ad clicks (most important engagement metric)
+    click_score = Math.log10(ad_clicks + 1) * 15
+    
+    # Reveal clicks (shows serious interest)
+    reveal_score = Math.log10(reveal_clicks + 1) * 10
+    
+    # Wishlist interactions (shows interest)
+    wishlist_score = Math.log10(wishlist_clicks + wishlist_count + 1) * 8
+    
+    # Cart clicks (shows purchase intent)
+    cart_score = Math.log10(cart_clicks + 1) * 12
+    
+    total_score = click_score + reveal_score + wishlist_score + cart_score
+    
+    # Cap at 100 points
+    [total_score, 100].min
+  end
+
+  def calculate_tier_bonus(seller_tier_id)
+    # Tier bonuses to give premium sellers a boost
+    case seller_tier_id
+    when 4 # Premium
+      20
+    when 3 # Standard
+      10
+    when 2 # Basic
+      5
+    else # Free
+      0
+    end
+  end
+
+  def calculate_recency_score(created_at)
+    # Give newer ads a small boost
+    days_old = (Time.current - created_at) / 1.day
+    
+    case days_old
+    when 0..7      # Less than a week
+      10
+    when 8..30     # Less than a month
+      8
+    when 31..90    # Less than 3 months
+      5
+    when 91..365   # Less than a year
+      2
+    else           # Older than a year
+      0
+    end
   end
 
   def authenticate_seller
-    @current_user = SellerAuthorizeApiRequest.new(request.headers).result
-    unless @current_user && @current_user.is_a?(Seller)
-      render json: { error: 'Not Authorized' }, status: 401
+    begin
+      @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
+      unless @current_seller && @current_seller.is_a?(Seller)
+        render json: { error: 'Not Authorized' }, status: 401
+        return
+      end
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken => e
+      Rails.logger.error "Authentication error: #{e.message}"
+      render json: { error: 'Authentication failed' }, status: 401
+      return
+    rescue => e
+      Rails.logger.error "Unexpected authentication error: #{e.message}"
+      render json: { error: 'Authentication failed' }, status: 401
+      return
     end
   end
 
   def current_seller
-    @current_user
+    if @current_seller.nil?
+      Rails.logger.error "current_seller called but @current_seller is nil"
+      raise "Authentication required"
+    end
+    @current_seller
   end
 end

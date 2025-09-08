@@ -3,7 +3,7 @@ class Seller::ConversationsController < ApplicationController
 
   def index
     # Fetch conversations where current seller is the seller
-    @conversations = Conversation.where(seller_id: @current_user.id)
+    @conversations = Conversation.where(seller_id: @current_seller.id)
                                 .includes(:admin, :buyer, :ad, :messages)
                                 .order(updated_at: :desc)
     
@@ -35,12 +35,12 @@ class Seller::ConversationsController < ApplicationController
   end
 
   def show
-    @conversation = Conversation.find_by(id: params[:id], seller_id: @current_user.id)
+    @conversation = Conversation.find_by(id: params[:id], seller_id: @current_seller.id)
     
     if @conversation
       # Get all conversations with the same buyer
       all_conversations_with_buyer = Conversation.where(
-        seller_id: @current_user.id,
+        seller_id: @current_seller.id,
         buyer_id: @conversation.buyer_id
       )
       
@@ -60,7 +60,7 @@ class Seller::ConversationsController < ApplicationController
   def create
     # Find existing conversation or create new one
     @conversation = Conversation.find_or_create_by(
-      seller_id: @current_user.id,
+      seller_id: @current_seller.id,
       buyer_id: params[:buyer_id],
       ad_id: params[:ad_id]
     ) do |conv|
@@ -70,7 +70,7 @@ class Seller::ConversationsController < ApplicationController
     # Create the message
     message = @conversation.messages.create!(
       content: params[:content],
-      sender: @current_user
+      sender: @current_seller
     )
 
     # Return the conversation with the new message
@@ -87,7 +87,7 @@ class Seller::ConversationsController < ApplicationController
   end
 
   def update
-    @conversation = Conversation.find_by(id: params[:id], seller_id: @current_user.id)
+    @conversation = Conversation.find_by(id: params[:id], seller_id: @current_seller.id)
     
     unless @conversation
       render json: { error: 'Conversation not found' }, status: :not_found
@@ -97,7 +97,7 @@ class Seller::ConversationsController < ApplicationController
     # Add a new message to the conversation
     message = @conversation.messages.create!(
       content: params[:content],
-      sender: @current_user
+      sender: @current_seller
     )
 
     render json: {
@@ -115,7 +115,7 @@ class Seller::ConversationsController < ApplicationController
   # GET /seller/conversations/unread_counts
   def unread_counts
     # Get all conversations for the current seller with unread message counts
-    conversations = Conversation.where(seller_id: @current_user.id)
+    conversations = Conversation.where(seller_id: @current_seller.id)
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
@@ -135,7 +135,7 @@ class Seller::ConversationsController < ApplicationController
   # GET /seller/conversations/unread_count
   def unread_count
     # Get all conversations for the current seller
-    conversations = Conversation.where(seller_id: @current_user.id)
+    conversations = Conversation.where(seller_id: @current_seller.id)
     
     # Count unread messages (messages not sent by seller and not read)
     unread_count = conversations.joins(:messages)
@@ -149,7 +149,11 @@ class Seller::ConversationsController < ApplicationController
   private
 
   def authenticate_seller
-    @current_user = SellerAuthorizeApiRequest.new(request.headers).result
-    render json: { error: 'Not Authorized' }, status: :unauthorized unless @current_user&.is_a?(Seller)
+    @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
+    render json: { error: 'Not Authorized' }, status: :unauthorized unless @current_seller&.is_a?(Seller)
+  end
+
+  def current_seller
+    @current_seller
   end
 end
