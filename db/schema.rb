@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_09_061937) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -63,7 +63,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.text "description"
     t.text "media"
     t.decimal "price", precision: 10, scale: 2
-    t.integer "quantity"
     t.string "brand"
     t.integer "condition", default: 0, null: false
     t.string "manufacturer"
@@ -131,47 +130,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.datetime "updated_at", null: false
     t.index ["cache_key"], name: "index_best_sellers_cache_on_cache_key", unique: true
     t.index ["expires_at"], name: "index_best_sellers_cache_on_expires_at"
-  end
-
-  create_table "buy_for_me_order_cart_items", force: :cascade do |t|
-    t.bigint "buyer_id", null: false
-    t.bigint "ad_id", null: false
-    t.integer "quantity", default: 1, null: false
-    t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["ad_id"], name: "index_buy_for_me_order_cart_items_on_ad_id"
-  end
-
-  create_table "buy_for_me_order_items", force: :cascade do |t|
-    t.bigint "buy_for_me_order_id", null: false
-    t.bigint "ad_id", null: false
-    t.integer "quantity", default: 1, null: false
-    t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
-    t.decimal "total_price", precision: 10, scale: 2, default: "0.0", null: false
-    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.index ["ad_id"], name: "index_buy_for_me_order_items_on_ad_id"
-    t.index ["buy_for_me_order_id"], name: "index_buy_for_me_order_items_on_buy_for_me_order_id"
-  end
-
-  create_table "buy_for_me_order_sellers", id: :bigint, default: -> { "nextval('buy_for_me_order_vendors_id_seq'::regclass)" }, force: :cascade do |t|
-    t.bigint "buy_for_me_order_id", null: false
-    t.bigint "seller_id", null: false
-    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.index ["buy_for_me_order_id"], name: "index_buy_for_me_order_sellers_on_buy_for_me_order_id"
-    t.index ["seller_id"], name: "index_buy_for_me_order_sellers_on_seller_id"
-  end
-
-  create_table "buy_for_me_orders", force: :cascade do |t|
-    t.bigint "buyer_id", null: false
-    t.decimal "total_amount", precision: 10, scale: 2
-    t.decimal "processing_fee", precision: 10, scale: 2
-    t.decimal "delivery_fee", precision: 10, scale: 2
-    t.string "mpesa_transaction_code"
-    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
   end
 
   create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
@@ -388,39 +346,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
   end
 
-  create_table "order_items", force: :cascade do |t|
-    t.bigint "order_id", null: false
-    t.bigint "ad_id", null: false
-    t.integer "quantity", default: 1, null: false
-    t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
-    t.decimal "total_price", precision: 10, scale: 2, default: "0.0", null: false
-    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.index ["ad_id", "quantity"], name: "index_order_items_on_ad_id_quantity"
-    t.index ["ad_id"], name: "index_order_items_on_ad_id"
-    t.index ["order_id"], name: "index_order_items_on_order_id"
-  end
-
-  create_table "order_sellers", id: :bigint, default: -> { "nextval('order_vendors_id_seq'::regclass)" }, force: :cascade do |t|
-    t.bigint "order_id", null: false
-    t.bigint "seller_id", null: false
-    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.index ["order_id"], name: "index_order_sellers_on_order_id"
-    t.index ["seller_id"], name: "index_order_sellers_on_seller_id"
-  end
-
-  create_table "orders", force: :cascade do |t|
-    t.bigint "buyer_id", null: false
-    t.string "status", default: "Processing"
-    t.decimal "total_amount", precision: 10, scale: 2
-    t.decimal "processing_fee", precision: 10, scale: 2
-    t.decimal "delivery_fee", precision: 10, scale: 2
-    t.string "mpesa_transaction_code"
-    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-  end
-
   create_table "password_otps", force: :cascade do |t|
     t.string "otp_digest"
     t.datetime "otp_sent_at"
@@ -617,16 +542,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
     t.index ["username"], name: "index_sellers_on_username", unique: true, where: "((username IS NOT NULL) AND ((username)::text <> ''::text))"
   end
 
-  create_table "shipments", force: :cascade do |t|
-    t.bigint "order_id", null: false
-    t.string "carrier"
-    t.string "tracking_number"
-    t.string "status"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["order_id"], name: "index_shipments_on_order_id"
-  end
-
   create_table "sub_counties", force: :cascade do |t|
     t.string "name", null: false
     t.integer "sub_county_code", null: false
@@ -689,13 +604,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
   add_foreign_key "ads", "categories"
   add_foreign_key "ads", "sellers"
   add_foreign_key "ads", "subcategories"
-  add_foreign_key "buy_for_me_order_cart_items", "ads"
-  add_foreign_key "buy_for_me_order_cart_items", "buyers"
-  add_foreign_key "buy_for_me_order_items", "ads"
-  add_foreign_key "buy_for_me_order_items", "buy_for_me_orders"
-  add_foreign_key "buy_for_me_order_sellers", "buy_for_me_orders"
-  add_foreign_key "buy_for_me_order_sellers", "sellers"
-  add_foreign_key "buy_for_me_orders", "buyers"
   add_foreign_key "buyers", "age_groups"
   add_foreign_key "buyers", "counties"
   add_foreign_key "buyers", "educations"
@@ -713,11 +621,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
   add_foreign_key "conversations", "sellers"
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations"
-  add_foreign_key "order_items", "ads"
-  add_foreign_key "order_items", "orders"
-  add_foreign_key "order_sellers", "orders"
-  add_foreign_key "order_sellers", "sellers"
-  add_foreign_key "orders", "buyers"
   add_foreign_key "payment_transactions", "sellers"
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"
@@ -734,7 +637,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_06_122627) do
   add_foreign_key "sellers", "counties"
   add_foreign_key "sellers", "document_types"
   add_foreign_key "sellers", "sub_counties"
-  add_foreign_key "shipments", "orders"
   add_foreign_key "sub_counties", "counties"
   add_foreign_key "tier_features", "tiers"
   add_foreign_key "tier_pricings", "tiers"

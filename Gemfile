@@ -66,8 +66,6 @@ gem 'rubyzip', '~> 2.3.2'
 # serializers
 gem 'active_model_serializers'
 
-# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "vips"
 
 # Password manager env
 gem 'dotenv-rails', groups: [:development, :test, :production]
@@ -87,8 +85,6 @@ gem 'faker'
 # Redis
 gem 'redis'
 
-# Parallel for image processing
-gem 'parallel'
 
 # Use hiredis to get better performance than the "redis" gem
 gem 'hiredis'

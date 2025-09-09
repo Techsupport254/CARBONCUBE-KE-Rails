@@ -14,12 +14,15 @@ class JsonWebToken
         # Check if token has the correct format (3 parts separated by dots)
         parts = token.split('.')
         if parts.length != 3
-            Rails.logger.error "JWT Decode Error: Not enough or too many segments"
+            Rails.logger.error "JWT Decode Error: Invalid token format - expected 3 parts, got #{parts.length}"
             return nil
         end
         
         body = JWT.decode(token, SECRET_KEY)[0]
         HashWithIndifferentAccess.new body
+    rescue JWT::ExpiredSignature => e
+        Rails.logger.error "JWT Decode Error: Token has expired - #{e.message}"
+        nil
     rescue JWT::DecodeError => e
         Rails.logger.error "JWT Decode Error: #{e.message}"
         nil

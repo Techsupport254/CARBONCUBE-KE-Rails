@@ -4,15 +4,12 @@ class Buyer < ApplicationRecord
 
   has_secure_password
 
-  has_many :orders
   has_many :reviews
   has_many :cart_items
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
   has_many :sent_messages, as: :sender, class_name: 'Message'
   has_many :conversations
-  has_many :notifications, as: :notifiable
-  has_many :buy_for_me_orders
   has_many :click_events
   has_many :ad_searches
   has_many :password_otps, as: :otpable, dependent: :destroy

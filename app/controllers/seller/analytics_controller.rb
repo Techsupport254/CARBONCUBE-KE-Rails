@@ -484,12 +484,8 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def calculate_revenue_share(category_id)
-    total_category_revenue = Seller.joins(ads: { order_items: :order })
-                                    .where(ads: { category_id: category_id })
-                                    .sum('order_items.quantity * ads.price')
-    seller_revenue = calculate_total_revenue
-
-    { seller_revenue: seller_revenue, total_category_revenue: total_category_revenue, revenue_share: ((seller_revenue / total_category_revenue.to_f) * 100).round(2) }
+    # Since orders are removed, return zero revenue share
+    { seller_revenue: 0, total_category_revenue: 0, revenue_share: 0 }
   end
 
   def fetch_top_competitor_ads(category_id)
@@ -525,11 +521,13 @@ class Seller::AnalyticsController < ApplicationController
 
   #===================================== HELPER METHODS =================================================#
   def calculate_total_orders
-    current_seller.orders.count
+    # Since orders are removed, return 0
+    0
   end
 
   def calculate_total_revenue
-    current_seller.orders.joins(order_items: :ad).sum('order_items.quantity * ads.price')
+    # Since orders are removed, return 0
+    0
   end
 
   def calculate_total_ads
@@ -549,15 +547,8 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def calculate_sales_performance
-    current_month = Date.current.beginning_of_month
-    three_months_ago = 3.months.ago.beginning_of_month
-
-    sales_performance = current_seller.orders.joins(:order_items)
-                            .where(created_at: three_months_ago..current_month.end_of_month)
-                            .group("DATE_TRUNC('month', orders.created_at)")
-                            .sum('order_items.quantity * order_items.price')
-                            .transform_keys { |k| k.strftime("%B %Y") }
-    sales_performance
+    # Since orders are removed, return empty performance data
+    {}
   end
 
   def fetch_best_selling_ads
@@ -568,7 +559,6 @@ class Seller::AnalyticsController < ApplicationController
     # Get seller's ads with comprehensive scoring
     seller_ads = current_seller.ads.active
                               .joins(:category, :subcategory)
-                              .joins("LEFT JOIN order_items ON ads.id = order_items.ad_id")
                               .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
                               .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
                               .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
@@ -579,7 +569,6 @@ class Seller::AnalyticsController < ApplicationController
                                 ads.title,
                                 ads.description,
                                 ads.price,
-                                ads.quantity,
                                 ads.media,
                                 ads.created_at,
                                 ads.updated_at,
@@ -588,7 +577,7 @@ class Seller::AnalyticsController < ApplicationController
                                 subcategories.name as subcategory_name,
                                 COALESCE(tiers.id, 1) as seller_tier_id,
                                 COALESCE(tiers.name, 'Free') as seller_tier_name,
-                                COALESCE(SUM(order_items.quantity), 0) as total_sold,
+                                0 as total_sold,
                                 COALESCE(AVG(reviews.rating), 0) as avg_rating,
                                 COALESCE(COUNT(DISTINCT reviews.id), 0) as review_count,
                                 COALESCE(SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END), 0) as ad_clicks,
@@ -598,7 +587,7 @@ class Seller::AnalyticsController < ApplicationController
                                 COALESCE(COUNT(DISTINCT wish_lists.id), 0) as wishlist_count
                               ")
                               .group("ads.id, categories.id, subcategories.id, tiers.id")
-                              .having("SUM(order_items.quantity) > 0 OR AVG(reviews.rating) > 0 OR SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END) > 0 OR COUNT(DISTINCT wish_lists.id) > 0")
+                              .having("AVG(reviews.rating) > 0 OR SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END) > 0 OR COUNT(DISTINCT wish_lists.id) > 0")
     
     # Calculate comprehensive scores and sort
     scored_ads = seller_ads.map do |ad|

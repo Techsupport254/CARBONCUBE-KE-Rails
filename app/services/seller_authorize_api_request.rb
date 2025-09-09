@@ -36,7 +36,25 @@ class SellerAuthorizeApiRequest
   end
 
   def decoded_token
-    @decoded_token ||= JsonWebToken.decode(http_auth_header)
+    @decoded_token ||= begin
+      token = http_auth_header
+      return nil if token.blank?
+      
+      # Check if token has the correct format (3 parts separated by dots)
+      parts = token.split('.')
+      if parts.length != 3
+        Rails.logger.error "JWT Decode Error: Invalid token format - expected 3 parts, got #{parts.length}"
+        return nil
+      end
+      
+      JsonWebToken.decode(token)
+    rescue JWT::DecodeError => e
+      Rails.logger.error "JWT Decode Error: #{e.message}"
+      nil
+    rescue => e
+      Rails.logger.error "JWT Decode Error: #{e.message}"
+      nil
+    end
   end
 
   def http_auth_header

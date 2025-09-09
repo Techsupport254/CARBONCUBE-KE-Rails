@@ -80,7 +80,11 @@ class Seller::ProfilesController < ApplicationController
       unexpected_fields = ['birthdate', 'created_at', 'updated_at', 'id']
       unexpected_fields.each { |field| update_params.delete(field) }
       
+      # Additional filtering for empty strings and null values
+      update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
+      
       Rails.logger.info "Update params after filtering: #{update_params.inspect}"
+      Rails.logger.info "Seller current values: fullname=#{@seller.fullname}, email=#{@seller.email}, phone_number=#{@seller.phone_number}"
       
       # Add the uploaded URLs if available
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
@@ -89,6 +93,7 @@ class Seller::ProfilesController < ApplicationController
       if @seller.update(update_params)
         render json: @seller
       else
+        Rails.logger.error "Seller update failed with errors: #{@seller.errors.full_messages.join(', ')}"
         render json: { errors: @seller.errors.full_messages }, status: :unprocessable_entity
       end
     rescue => e
@@ -151,17 +156,11 @@ class Seller::ProfilesController < ApplicationController
     nil
   end
 
-  # Profile Picture Upload (with face crop)
+  # Profile Picture Upload (direct upload, no processing)
   def process_and_upload_profile_picture(image)
-    temp_folder = Rails.root.join("tmp/uploads/profile_pictures/#{Time.now.to_i}")
-    FileUtils.mkdir_p(temp_folder)
     begin
-      temp_file_path = temp_folder.join(image.original_filename)
-      File.binwrite(temp_file_path, image.read)
-
-      optimized_path = optimize_profile_picture(temp_file_path)
-
-      uploaded = Cloudinary::Uploader.upload(optimized_path,
+      # Upload directly to Cloudinary without any processing
+      uploaded = Cloudinary::Uploader.upload(image.tempfile.path,
         upload_preset: ENV['UPLOAD_PRESET'],
         folder: "profile_pictures",
         transformation: [
@@ -171,44 +170,24 @@ class Seller::ProfilesController < ApplicationController
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error processing profile picture: #{e.message}"
+      Rails.logger.error "Error uploading profile picture: #{e.message}"
       nil
-    ensure
-      FileUtils.rm_rf(temp_folder)
     end
   end
 
-  # Optimize and convert profile picture
-  def optimize_profile_picture(image_path)
-    webp_path = image_path.to_s.sub(/\.\w+$/, ".webp")
-    ImageProcessing::Vips
-      .source(image_path)
-      .resize_to_fill(400, 400)
-      .convert("webp")
-      .saver(quality: 85)
-      .call(destination: webp_path)
-    webp_path
-  end
-
-  # Document Upload
+  # Document Upload (direct upload, no processing)
   def process_and_upload_document(document)
-    temp_folder = Rails.root.join("tmp/uploads/documents/#{Time.now.to_i}")
-    FileUtils.mkdir_p(temp_folder)
     begin
-      temp_file_path = temp_folder.join(document.original_filename)
-      File.binwrite(temp_file_path, document.read)
-
-      uploaded = Cloudinary::Uploader.upload(temp_file_path,
+      # Upload directly to Cloudinary without any processing
+      uploaded = Cloudinary::Uploader.upload(document.tempfile.path,
         upload_preset: ENV['UPLOAD_PRESET'],
         folder: "seller_documents",
         resource_type: "raw"
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error processing document: #{e.message}"
+      Rails.logger.error "Error uploading document: #{e.message}"
       nil
-    ensure
-      FileUtils.rm_rf(temp_folder)
     end
   end
 end

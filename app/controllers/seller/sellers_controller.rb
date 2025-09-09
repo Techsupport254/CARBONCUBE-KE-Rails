@@ -164,38 +164,28 @@ class Seller::SellersController < ApplicationController
     nil
   end
 
-  # Permit Upload (with optional sharpening)
+  # Permit Upload (direct to Cloudinary)
   def process_and_upload_permit(image)
-    temp_folder = Rails.root.join("tmp/uploads/#{Time.now.to_i}")
-    FileUtils.mkdir_p(temp_folder)
     begin
-      temp_file_path = temp_folder.join(image.original_filename)
-      File.binwrite(temp_file_path, image.read)
-
-      sharpen_image(temp_file_path) unless sharp_enough?(temp_file_path)
-      optimized_path = optimize_and_convert_to_webp(temp_file_path)
-
-      uploaded = Cloudinary::Uploader.upload(optimized_path, upload_preset: ENV['UPLOAD_PRESET'], folder: "business_permits")
+      uploaded = Cloudinary::Uploader.upload(image.tempfile.path,
+        upload_preset: ENV['UPLOAD_PRESET'],
+        folder: "business_permits",
+        transformation: [
+          { width: 1080, crop: "limit" },
+          { quality: "auto", fetch_format: "auto" }
+        ]
+      )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error processing permit: #{e.message}"
+      Rails.logger.error "Error uploading permit: #{e.message}"
       nil
-    ensure
-      FileUtils.rm_rf(temp_folder)
     end
   end
 
-  # Profile Picture Upload (with face crop)
+  # Profile Picture Upload (direct to Cloudinary)
   def process_and_upload_profile_picture(image)
-    temp_folder = Rails.root.join("tmp/uploads/profile_pictures/#{Time.now.to_i}")
-    FileUtils.mkdir_p(temp_folder)
     begin
-      temp_file_path = temp_folder.join(image.original_filename)
-      File.binwrite(temp_file_path, image.read)
-
-      optimized_path = optimize_profile_picture(temp_file_path)
-
-      uploaded = Cloudinary::Uploader.upload(optimized_path,
+      uploaded = Cloudinary::Uploader.upload(image.tempfile.path,
         upload_preset: ENV['UPLOAD_PRESET'],
         folder: "profile_pictures",
         transformation: [
@@ -205,36 +195,11 @@ class Seller::SellersController < ApplicationController
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error processing profile picture: #{e.message}"
+      Rails.logger.error "Error uploading profile picture: #{e.message}"
       nil
-    ensure
-      FileUtils.rm_rf(temp_folder)
     end
   end
 
-  # Optimize and convert to WebP for permits
-  def optimize_and_convert_to_webp(image_path)
-    webp_path = image_path.to_s.sub(/\.\w+$/, ".webp")
-    ImageProcessing::Vips
-      .source(image_path)
-      .resize_to_limit(1080, nil)
-      .convert("webp")
-      .saver(quality: 70)
-      .call(destination: webp_path)
-    webp_path
-  end
-
-  # Optimize and convert profile picture
-  def optimize_profile_picture(image_path)
-    webp_path = image_path.to_s.sub(/\.\w+$/, ".webp")
-    ImageProcessing::Vips
-      .source(image_path)
-      .resize_to_fill(400, 400)
-      .convert("webp")
-      .saver(quality: 85)
-      .call(destination: webp_path)
-    webp_path
-  end
 
   # Upload raw PDF file
   def upload_file_only(file)
@@ -242,16 +207,5 @@ class Seller::SellersController < ApplicationController
     uploaded["secure_url"]
   end
 
-  # Sharpness detection using Python script
-  def sharp_enough?(image_path)
-    script_path = Rails.root.join("scripts/check_sharpness.py")
-    result = `python3 "#{script_path}" "#{image_path}"`.strip
-    result == "Sharp"
-  end
-
-  # Sharpen image using Python script
-  def sharpen_image(image_path)
-    script_path = Rails.root.join("scripts/sharpen_image.py")
-    `python3 "#{script_path}" "#{image_path}"`
-  end
+end
 end

@@ -161,7 +161,7 @@ end
   private
 
   def ad_params
-    params.require(:ad).permit(:title, :description, :price, :quantity, :category_id, :brand, :manufacturer, :package_dimensions, :package_weight, :seller_id, :condition)
+    params.require(:ad).permit(:title, :description, :price, :category_id, :brand, :manufacturer, :package_dimensions, :package_weight, :seller_id, :condition)
   end
 
   def authenticate_admin

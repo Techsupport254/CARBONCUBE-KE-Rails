@@ -5,14 +5,9 @@ class Seller < ApplicationRecord
   has_secure_password
   has_and_belongs_to_many :categories
   has_many :ads
-  has_many :order_sellers
-  has_many :orders, through: :order_sellers
   has_many :reviews, through: :ads
-  has_many :invoices, through: :orders
   has_many :sent_messages, as: :sender, class_name: 'Message'
   has_many :conversations
-  has_many :notifications, as: :notifiable
-  has_many :buy_for_me_order_sellers
   has_many :password_otps, as: :otpable, dependent: :destroy
   has_many :seller_documents, dependent: :destroy
   has_one :categories_seller

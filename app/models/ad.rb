@@ -14,22 +14,18 @@ class Ad < ApplicationRecord
   belongs_to :category
   belongs_to :subcategory
   
-  has_many :order_items
-  has_many :orders, through: :order_items
   has_many :reviews, dependent: :destroy
   has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :buyers, through: :bookmarks
-  has_many :buy_for_me_orders
   has_many :click_events
   has_many :conversations, dependent: :destroy
 
   accepts_nested_attributes_for :category
   accepts_nested_attributes_for :reviews
 
-  validates :title, :description, :price, :quantity, :brand, :manufacturer, presence: true
+  validates :title, :description, :price, :brand, :manufacturer, presence: true
   validates :price, numericality: true
-  validates :quantity, numericality: { greater_than_or_equal_to: 0 }
   validates :item_length, :item_width, :item_height, numericality: true, allow_nil: true
   validates :item_weight, numericality: { greater_than: 0 }, allow_nil: true
 
@@ -61,11 +57,6 @@ class Ad < ApplicationRecord
   # Restore deleted ad
   def restore
     update(deleted: false)
-  end
-
-  # Calculate the total quantity sold for the product
-  def quantity_sold
-    order_items.sum(:quantity)
   end
 
   # Calculate the average rating for the product

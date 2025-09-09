@@ -1,5 +1,5 @@
 class AdSerializer < ActiveModel::Serializer
-  attributes :id, :title, :description, :price, :quantity, :brand, :condition, :manufacturer,
+  attributes :id, :title, :description, :price, :brand, :condition, :manufacturer,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_name, 
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority
@@ -40,7 +40,11 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def reviews_count
-    object.reviews_count || 0
+    if object.reviews.loaded?
+      object.reviews.size
+    else
+      object.reviews.count
+    end
   end
 
   def average_rating

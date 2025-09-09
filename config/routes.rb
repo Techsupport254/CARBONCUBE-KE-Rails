@@ -111,6 +111,8 @@ Rails.application.routes.draw do
   # Route for shop pages
   get 'shop/:slug', to: 'shops#show', as: :shop
   get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
+  get 'shop/:slug/meta', to: 'shops#meta_tags', as: :shop_meta_tags
+  get 'shop/:slug/preview', to: 'shop_meta#show', as: :shop_preview
 
   # Catch-all route for missing static files (like images)
   get 'ads/*filename', to: 'application#missing_file', constraints: { filename: /.*/ }
@@ -133,26 +135,17 @@ Rails.application.routes.draw do
       get ':seller_id/profile', to: 'profiles#show'
       get ':seller_id/ads', to: 'ads#index'
       get ':seller_id/ads/:ad_id/reviews', to: 'reviews#index'
-      get ':seller_id/orders', to: 'orders#index_for_seller'
     end
 
     namespace :buyer do
       get ':buyer_id/profile', to: 'profiles#show'
-      get ':buyer_id/orders', to: 'orders#index_for_buyer'
     end
     
 
     namespace :rider do
       get ':rider_id/profile', to: 'profiles#show'
-      get ':rider_id/orders', to: 'orders#index_for_rider'
     end
 
-    resources :orders, only: [:index, :show, :destroy] do
-      member do
-        put 'update-status', to: 'orders#update_status'
-      end
-    end
-    
     resources :categories
     resources :subcategories
     resources :ads do
@@ -172,7 +165,6 @@ Rails.application.routes.draw do
         put 'block'
         put 'unblock'
         get 'analytics'
-        get 'orders', to: 'sellers#orders'
         get 'ads'
         get 'reviews'
         post :verify_document
@@ -192,7 +184,6 @@ Rails.application.routes.draw do
         put 'unblock'
         put 'assign'
         put 'analytics'
-        get 'orders', to: 'riders#orders'
       end
     end
 
@@ -214,7 +205,6 @@ Rails.application.routes.draw do
         post 'change-password'
       end
     end
-    resources :notifications, only: [:index, :create]
     resources :ad_searches, only: [:index, :show, :destroy]
     resources :click_events, only: [:index, :show, :destroy]
     resources :tiers, only: [:index, :show, :create, :update, :destroy]
@@ -244,13 +234,7 @@ Rails.application.routes.draw do
         get 'buyer_details/summary', to: 'buyer_details#summary'
       end
     end
-    resources :orders do
-      member do
-        put 'update_status', to: 'orders#update_status' # Custom route for updating order status
-      end
-    end
 
-    resources :shipments
     resources :categories, only: [:index, :show]
     get 'categories', to: 'categories#index'
     get 'subcategories', to: 'subcategories#index'
@@ -273,7 +257,6 @@ Rails.application.routes.draw do
     end
 
     get 'identify', to: 'sellers#identify'
-    resources :notifications
 
     # Custom route for seller_id handling (must come before resources)
     get 'seller_tiers/:seller_id', to: 'seller_tiers#show'
@@ -316,16 +299,9 @@ Rails.application.routes.draw do
         get :analytics
       end
     end
-    resources :notifications
     resources :subcategories
 
     resources :cart_items, only: [:index, :create, :destroy, :update] do
-      collection do
-        post :checkout
-      end
-    end
-
-    resources :buy_for_me_order_cart_items, only: [:index, :create, :destroy, :update] do
       collection do
         post :checkout
       end
@@ -340,20 +316,11 @@ Rails.application.routes.draw do
       end
       member do
         post 'add_to_cart'
-        post 'add_to_buy_for_me_order_cart'
         get 'related', to: 'ads#related'
         get 'seller', to: 'ads#seller'
       end
       resources :reviews, only: [:create, :index] # Nested reviews under ads
     end
-
-    resources :orders, only: [:index, :show, :create] do
-      member do
-        put  :update_status_to_delivered
-      end
-    end
-
-    resources :buy_for_me_orders, only: [:index, :show, :create]
 
     get 'identify', to: 'buyers#identify'
   end
@@ -373,7 +340,6 @@ Rails.application.routes.draw do
   #==========================================Rider namespace for buyer-specific functionality=========================================#
   namespace :rider do
     resources :riders
-    resources :orders
     post 'signup', to: 'riders#create'
   end
   #========================================== End of Rider namespace for buyer-specific functionality=========================================#

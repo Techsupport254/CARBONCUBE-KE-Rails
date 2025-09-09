@@ -6,16 +6,8 @@ RUN apt-get update -qq && apt-get install -y \
   build-essential \
   libpq-dev \
   nodejs \
-  libvips \
-  python3 \
-  python3-pip \
-  python3-opencv \
-  python3-numpy \
   cron
 
-# Install additional Python packages
-COPY requirements.txt .
-RUN pip3 install --break-system-packages -r requirements.txt
 
 # Set the working directory
 WORKDIR /app
@@ -27,9 +19,6 @@ RUN bundle install
 # Copy the entire application
 COPY . .
 
-# Copy Python scripts into the container
-COPY scripts/ /app/scripts/
-RUN chmod +x /app/scripts/*.py  
 
 # Copy the entrypoint script and make it executable
 COPY entrypoint.sh /usr/bin/entrypoint.sh
