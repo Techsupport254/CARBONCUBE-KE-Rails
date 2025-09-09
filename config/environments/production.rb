@@ -45,8 +45,13 @@ Rails.application.configure do
   config.action_cable.url = "wss://carboncube-ke.com/api/cable"
   config.action_cable.allowed_request_origins = [
     "https://carboncube-ke.com",
-    "https://www.carboncube-ke.com"
+    "https://www.carboncube-ke.com",
+    "http://localhost",
+    "https://localhost"
   ]
+  
+  # Enable WebSocket debugging
+  config.action_cable.disable_request_forgery_protection = true
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   # Can be used together with config.force_ssl for Strict-Transport-Security and secure cookies.
