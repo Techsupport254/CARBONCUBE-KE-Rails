@@ -52,8 +52,6 @@ Rails.application.routes.draw do
   post 'track', to: 'source_tracking#track'
   get 'analytics', to: 'source_tracking#analytics'
   
-  # Meta tags API for social media crawlers
-  get 'meta/ad/:ad_id', to: 'meta_tags#ad'
   
   resources :incomes, only: [:index]
   resources :sectors, only: [:index]
@@ -112,7 +110,6 @@ Rails.application.routes.draw do
   get 'shop/:slug', to: 'shops#show', as: :shop
   get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
   get 'shop/:slug/meta', to: 'shops#meta_tags', as: :shop_meta_tags
-  get 'shop/:slug/preview', to: 'shop_meta#show', as: :shop_preview
 
   # Catch-all route for missing static files (like images)
   get 'ads/*filename', to: 'application#missing_file', constraints: { filename: /.*/ }
