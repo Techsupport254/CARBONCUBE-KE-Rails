@@ -101,7 +101,16 @@ Rails.application.configure do
   # config.hosts.clear # Allow all hosts (only for debugging)
 
   # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Allow requests from frontend container and external domains
+  config.host_authorization = {
+    exclude: ->(request) { request.path == "/up" },
+    hosts: [
+      "carboncube-ke.com",
+      "www.carboncube-ke.com", 
+      "carbon-frontend-1",
+      "carbon-backend-1"
+    ]
+  }
 
   # Use a different cache store in production.
   # Use file store if Redis is not available, otherwise use Redis
