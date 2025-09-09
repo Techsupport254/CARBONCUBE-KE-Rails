@@ -30,9 +30,6 @@ class Admin::AdsController < ApplicationController
     @ad = Ad.includes(:seller, :category, :subcategory, :reviews => :buyer)
                       .find(params[:id])
                       .tap do |ad|
-                        ad.define_singleton_method(:quantity_sold) do
-                          OrderItem.where(ad_id: id).sum(:quantity)
-                        end
                         ad.define_singleton_method(:mean_rating) do
                           # Use cached reviews if available, otherwise calculate
                           if reviews.loaded?
@@ -54,7 +51,7 @@ class Admin::AdsController < ApplicationController
           only: [:rating, :review]
         }
       },
-      methods: [:quantity_sold, :mean_rating]
+      methods: [:mean_rating]
     )
   end
 

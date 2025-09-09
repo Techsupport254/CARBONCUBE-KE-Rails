@@ -11,8 +11,8 @@ class Seller::AdsController < ApplicationController
     deleted_ads = current_seller.ads.deleted.includes(:category, :reviews)
 
     render json: {
-      active_ads: active_ads.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating]),
-      deleted_ads: deleted_ads.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating])
+      active_ads: active_ads.as_json(include: [:category, :reviews], methods: [:mean_rating]),
+      deleted_ads: deleted_ads.as_json(include: [:category, :reviews], methods: [:mean_rating])
     }
   end
 
@@ -31,7 +31,7 @@ class Seller::AdsController < ApplicationController
     
     # Render the complete ad data with reviews and buyer details
     render json: {
-      **@ad.as_json(include: [:category, :subcategory], methods: [:quantity_sold, :mean_rating]),
+      **@ad.as_json(include: [:category, :subcategory], methods: [:mean_rating]),
       reviews: reviews.as_json(include: [:buyer]),
       buyer_details: buyer_details
     }
@@ -67,7 +67,7 @@ class Seller::AdsController < ApplicationController
       @ad = current_seller.ads.build(ad_params)
 
       if @ad.save
-        render json: @ad.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating]), status: :created
+        render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :created
       else
         Rails.logger.error "Ad save failed: #{@ad.errors.full_messages.join(', ')}"
         render json: { errors: @ad.errors.full_messages }, status: :unprocessable_entity
@@ -106,7 +106,7 @@ class Seller::AdsController < ApplicationController
     end
 
     if updated
-      render json: ad.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating])
+      render json: ad.as_json(include: [:category, :reviews], methods: [:mean_rating])
     else
       render json: { error: ad.errors.full_messages }, status: :unprocessable_entity
     end
@@ -129,7 +129,7 @@ class Seller::AdsController < ApplicationController
     end
 
     if ad.update(deleted: false)
-      render json: ad.as_json(include: [:category, :reviews], methods: [:quantity_sold, :mean_rating]), status: :ok
+      render json: ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :ok
     else
       render json: { error: ad.errors.full_messages }, status: :unprocessable_entity
     end
