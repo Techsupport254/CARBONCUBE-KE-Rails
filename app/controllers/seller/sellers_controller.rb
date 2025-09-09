@@ -208,4 +208,3 @@ class Seller::SellersController < ApplicationController
   end
 
 end
-end
