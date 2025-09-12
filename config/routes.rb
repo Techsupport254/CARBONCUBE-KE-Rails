@@ -20,12 +20,21 @@ Rails.application.routes.draw do
     get 'reviews', to: 'reviews#index', on: :member
   end
   
-  # Sitemap generation endpoints
+  # Sitemap generation endpoints (public)
   get 'sitemap/ads', to: 'sitemap#ads'
   get 'sitemap/sellers', to: 'sitemap#sellers'
   get 'sitemap/categories', to: 'sitemap#categories'
   get 'sitemap/subcategories', to: 'sitemap#subcategories'
   get 'sitemap/stats', to: 'sitemap#stats'
+  
+  # API namespace for sitemap endpoints
+  namespace :api do
+    get 'sitemap/ads', to: 'sitemap#ads'
+    get 'sitemap/sellers', to: 'sitemap#sellers'
+    get 'sitemap/categories', to: 'sitemap#categories'
+    get 'sitemap/subcategories', to: 'sitemap#subcategories'
+    get 'sitemap/stats', to: 'sitemap#stats'
+  end
   
   # Best sellers routes
   resources :best_sellers, only: [:index] do
