@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   # Email and username validation routes
   post 'email/exists', to: 'email#exists'
   post 'username/exists', to: 'email#username_exists'
+  
+  # Contact form routes
+  post 'contact/submit', to: 'contact#submit'
 
   #========================================Public namespace for public-specific functionality==========================================#
   
