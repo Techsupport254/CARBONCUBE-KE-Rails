@@ -1,4 +1,4 @@
-class CreateInternalUserExclusions < ActiveRecord::Migration[8.0]
+class CreateInternalUserExclusions < ActiveRecord::Migration[7.1]
   def change
     create_table :internal_user_exclusions do |t|
       t.string :identifier_type, null: false

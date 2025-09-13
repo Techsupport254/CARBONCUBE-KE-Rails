@@ -1,4 +1,4 @@
-class CleanupDuplicateSellers < ActiveRecord::Migration[8.0]
+class CleanupDuplicateSellers < ActiveRecord::Migration[7.1]
   def up
     # Clean up duplicate enterprise names by adding unique suffixes
     puts "Cleaning up duplicate enterprise names..."

@@ -1,4 +1,4 @@
-class FixDuplicateEnterpriseNames < ActiveRecord::Migration[8.0]
+class FixDuplicateEnterpriseNames < ActiveRecord::Migration[7.1]
   def up
     # Find all duplicate enterprise names (case insensitive)
     duplicates = execute(<<-SQL)

@@ -1,4 +1,4 @@
-class DropOrdersTables < ActiveRecord::Migration[8.0]
+class DropOrdersTables < ActiveRecord::Migration[7.1]
   def change
     # Drop dependent tables first
     drop_table :shipments, if_exists: true

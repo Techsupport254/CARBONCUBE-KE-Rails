@@ -6,7 +6,18 @@ RUN apt-get update -qq && apt-get install -y \
   build-essential \
   libpq-dev \
   nodejs \
-  cron
+  cron \
+  wget \
+  curl
+
+# Install anycable-go for Linux
+RUN curl -s https://api.github.com/repos/anycable/anycable-go/releases/latest | \
+    grep "browser_download_url.*linux.*amd64" | \
+    grep -v "mrb" | \
+    cut -d '"' -f 4 | \
+    head -1 | \
+    wget -i - -O /usr/local/bin/anycable-go && \
+    chmod +x /usr/local/bin/anycable-go
 
 
 # Set the working directory

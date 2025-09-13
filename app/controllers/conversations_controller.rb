@@ -77,6 +77,32 @@ class ConversationsController < ApplicationController
     end
   end
 
+  def online_status
+    participant_ids = params[:participant_ids] || []
+    online_status = {}
+    
+    Rails.logger.info "Checking online status for participants: #{participant_ids}"
+    
+    participant_ids.each do |participant_id|
+      # Parse participant ID format: "buyer_123", "seller_456", "admin_789"
+      parts = participant_id.split('_')
+      next if parts.length != 2
+      
+      user_type = parts[0]
+      user_id = parts[1].to_i
+      
+      # Check if user is online using Rails cache
+      cache_key = "online_user_#{user_type}_#{user_id}"
+      is_online = Rails.cache.exist?(cache_key)
+      
+      Rails.logger.info "User #{participant_id}: cache_key=#{cache_key}, online=#{is_online}"
+      online_status[participant_id] = is_online
+    end
+    
+    Rails.logger.info "Online status result: #{online_status}"
+    render json: { online_status: online_status }, status: :ok
+  end
+
   private
 
   def authenticate_user

@@ -1,4 +1,4 @@
-class FixSellerTiersSequence < ActiveRecord::Migration[8.0]
+class FixSellerTiersSequence < ActiveRecord::Migration[7.1]
   def up
     # Create the correct sequence for seller_tiers if it doesn't exist
     execute <<-SQL

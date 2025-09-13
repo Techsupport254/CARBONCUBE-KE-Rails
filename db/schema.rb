@@ -10,22 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
-  create_schema "auth"
-  create_schema "extensions"
-  create_schema "graphql"
-  create_schema "graphql_public"
-  create_schema "pgbouncer"
-  create_schema "realtime"
-  create_schema "storage"
-  create_schema "vault"
-
+ActiveRecord::Schema[7.1].define(version: 2025_09_13_090432) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "extensions.pg_stat_statements"
-  enable_extension "extensions.pgcrypto"
-  enable_extension "extensions.uuid-ossp"
-  enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
+  enable_extension "plpgsql"
 
   create_table "abouts", force: :cascade do |t|
     t.text "description"
@@ -76,20 +64,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.boolean "deleted", default: false
     t.integer "reviews_count", default: 0, null: false
-    t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"
     t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at"
-    t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at_perf"
-    t.index ["deleted", "flagged", "seller_id", "created_at", "id"], name: "index_ads_best_sellers_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
-    t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
     t.index ["description"], name: "index_ads_on_description", opclass: :gin_trgm_ops, using: :gin
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
-    t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged_perf"
     t.index ["seller_id"], name: "index_ads_on_seller_id"
-    t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
     t.index ["title"], name: "index_ads_on_title", opclass: :gin_trgm_ops, using: :gin
@@ -122,17 +104,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "best_sellers_cache", force: :cascade do |t|
+  create_table "best_sellers_caches", force: :cascade do |t|
     t.string "cache_key", null: false
     t.jsonb "data", null: false
     t.datetime "expires_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["cache_key"], name: "index_best_sellers_cache_on_cache_key", unique: true
-    t.index ["expires_at"], name: "index_best_sellers_cache_on_expires_at"
+    t.index ["cache_key"], name: "index_best_sellers_caches_on_cache_key", unique: true
+    t.index ["expires_at"], name: "index_best_sellers_caches_on_expires_at"
   end
 
-  create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
+  create_table "buyers", force: :cascade do |t|
     t.string "fullname", null: false
     t.string "username", null: false
     t.string "password_digest"
@@ -154,7 +136,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "deleted", default: false, null: false
-    t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
+    t.index "lower((email)::text)", name: "index_buyers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"
     t.index ["education_id"], name: "index_buyers_on_education_id"
@@ -173,6 +155,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ad_id"], name: "index_cart_items_on_ad_id"
+    t.index ["buyer_id"], name: "index_cart_items_on_buyer_id"
   end
 
   create_table "categories", force: :cascade do |t|
@@ -180,8 +163,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "ads_count", default: 0, null: false
-    t.index ["ads_count"], name: "index_categories_on_ads_count"
     t.index ["name"], name: "index_categories_on_name"
   end
 
@@ -189,6 +170,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.bigint "seller_id", null: false
     t.bigint "category_id", null: false
     t.index ["category_id", "seller_id"], name: "index_categories_sellers_on_category_id_and_seller_id"
+    t.index ["seller_id", "category_id"], name: "index_categories_sellers_on_seller_id_and_category_id"
   end
 
   create_table "click_events", force: :cascade do |t|
@@ -201,6 +183,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"
+    t.index ["buyer_id"], name: "index_click_events_on_buyer_id"
     t.index ["event_type", "created_at"], name: "index_click_events_on_event_type_created_at"
   end
 
@@ -219,9 +202,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "inquirer_seller_id"
-    t.index ["ad_id", "buyer_id", "seller_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["ad_id"], name: "index_conversations_on_ad_id"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
+    t.index ["buyer_id", "seller_id", "ad_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
     t.index ["inquirer_seller_id"], name: "index_conversations_on_inquirer_seller_id"
     t.index ["seller_id"], name: "index_conversations_on_seller_id"
@@ -271,23 +254,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.text "answer"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "fingerprint_removal_requests", force: :cascade do |t|
-    t.string "requester_name", null: false
-    t.text "device_description", null: false
-    t.string "device_hash", null: false
-    t.text "user_agent", null: false
-    t.string "status", default: "pending", null: false
-    t.text "rejection_reason"
-    t.datetime "approved_at"
-    t.datetime "rejected_at"
-    t.text "additional_info"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["created_at"], name: "index_fingerprint_removal_requests_on_created_at"
-    t.index ["device_hash"], name: "index_fingerprint_removal_requests_on_device_hash"
-    t.index ["status"], name: "index_fingerprint_removal_requests_on_status"
   end
 
   create_table "incomes", force: :cascade do |t|
@@ -349,14 +315,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
   end
 
   create_table "password_otps", force: :cascade do |t|
-    t.string "otp_digest"
-    t.datetime "otp_sent_at"
-    t.string "otp_purpose"
+    t.string "otp_digest", null: false
+    t.datetime "otp_sent_at", null: false
+    t.string "otp_purpose", default: "password_reset", null: false
     t.string "otpable_type", null: false
     t.bigint "otpable_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["otpable_type", "otpable_id"], name: "index_password_otps_on_otpable"
+    t.index ["otpable_type", "otpable_id"], name: "index_password_otps_on_otpable_type_and_otpable_id"
   end
 
   create_table "payment_transactions", force: :cascade do |t|
@@ -405,11 +372,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.string "last_name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "playing_with_neon", id: :serial, force: :cascade do |t|
-    t.text "name", null: false
-    t.float "value", limit: 24
   end
 
   create_table "promotions", force: :cascade do |t|
@@ -505,7 +467,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
   end
 
-  create_table "sellers", id: :bigint, default: -> { "nextval('vendors_id_seq'::regclass)" }, force: :cascade do |t|
+  create_table "sellers", force: :cascade do |t|
     t.string "fullname"
     t.string "username"
     t.string "description"
@@ -530,10 +492,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.bigint "document_type_id"
     t.date "document_expiry_date"
     t.boolean "document_verified", default: false
-    t.integer "ads_count", default: 0, null: false
-    t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
+    t.index "lower((email)::text)", name: "index_sellers_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
-    t.index ["ads_count"], name: "index_sellers_on_ads_count"
     t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
     t.index ["blocked"], name: "index_sellers_on_blocked"
     t.index ["business_registration_number"], name: "index_sellers_on_business_registration_number", unique: true, where: "((business_registration_number IS NOT NULL) AND ((business_registration_number)::text <> ''::text))"
@@ -558,8 +518,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.integer "category_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "ads_count", default: 0, null: false
-    t.index ["ads_count"], name: "index_subcategories_on_ads_count"
     t.index ["category_id", "name"], name: "index_subcategories_on_category_id_name"
   end
 
@@ -600,7 +558,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "updated_at", null: false
     t.bigint "seller_id"
     t.index ["ad_id"], name: "index_wish_lists_on_ad_id"
-    t.index ["buyer_id"], name: "index_wish_lists_on_purchaser_id"
+    t.index ["buyer_id"], name: "index_wish_lists_on_buyer_id"
     t.index ["seller_id"], name: "index_wish_lists_on_seller_id"
     t.check_constraint "buyer_id IS NOT NULL OR seller_id IS NOT NULL", name: "wish_lists_user_check"
   end

@@ -1,4 +1,4 @@
-class AddSellerToWishLists < ActiveRecord::Migration[8.0]
+class AddSellerToWishLists < ActiveRecord::Migration[7.1]
   def change
     # Make buyer reference optional
     change_column_null :wish_lists, :buyer_id, true

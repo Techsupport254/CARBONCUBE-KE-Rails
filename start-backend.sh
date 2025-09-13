@@ -12,7 +12,7 @@ bundle exec anycable &
 RPC_PID=$!
 
 # Start AnyCable-Go WebSocket server
-./bin/anycable-go --host=0.0.0.0 --port=8080 --redis-url=redis://localhost:6379/1 &
+./bin/anycable-go --host=0.0.0.0 --port=8080 --redis_url=redis://localhost:6379/1 &
 WS_PID=$!
 
 echo "✅ Backend services started:"

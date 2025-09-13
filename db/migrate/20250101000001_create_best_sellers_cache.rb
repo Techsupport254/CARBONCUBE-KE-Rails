@@ -1,4 +1,4 @@
-class CreateBestSellersCache < ActiveRecord::Migration[8.0]
+class CreateBestSellersCache < ActiveRecord::Migration[7.1]
   def change
     create_table :best_sellers_caches do |t|
       t.string :cache_key, null: false, index: { unique: true }

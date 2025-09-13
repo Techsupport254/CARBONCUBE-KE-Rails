@@ -1,4 +1,4 @@
-class AddSearchIndexesToAds < ActiveRecord::Migration[8.0]
+class AddSearchIndexesToAds < ActiveRecord::Migration[7.1]
   def change
   end
 end

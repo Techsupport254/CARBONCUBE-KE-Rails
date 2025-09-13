@@ -1,4 +1,4 @@
-class AddUniquenessConstraintsToSellers < ActiveRecord::Migration[8.0]
+class AddUniquenessConstraintsToSellers < ActiveRecord::Migration[7.1]
   def change
     # Add unique constraint for enterprise_name (shop name) - case insensitive
     add_index :sellers, 'LOWER(enterprise_name)', unique: true, name: 'index_sellers_on_lower_enterprise_name'
