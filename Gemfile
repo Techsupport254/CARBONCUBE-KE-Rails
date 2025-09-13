@@ -1,111 +1,79 @@
 source "https://rubygems.org"
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-
-# Specify your gem's dependencies in backend/Gemfile
-ruby "3.4.4" 
+ruby "3.4.4"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails" , "~> 8.0.2"
-
-# The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
-gem "sprockets-rails"
+gem "rails", "~> 7.1.0"
 
 # Use postgresql as the database for Active Record
-gem 'pg'
+gem "pg", "~> 1.1"
 
-# Use the Puma web server [https://github.com/puma/puma]
+# Use Puma as the app server
 gem "puma", ">= 5.0"
 
-# Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
-gem "importmap-rails"
-
-# Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
-gem "turbo-rails"
-
-# Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
-gem "stimulus-rails"
-
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem "jbuilder"
+# gem "jbuilder"
 
-# Use Redis adapter to run Action Cable in production
-# gem "redis", ">= 4.0.1"
+# Redis will be specified in the AnyCable section below
 
 # Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
 # gem "kredis"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
+gem "bcrypt", "~> 3.1.7"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ windows jruby ]
+gem "tzinfo-data", platforms: %i[ mingw mswin x64_mingw jruby ]
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
-# JWT authentication
+# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
+gem "image_processing", "~> 1.2"
+
+# Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
+gem "rack-cors"
+
+# Added based on your project setup
 gem 'jwt'
-
-# Authentication
-gem 'bcrypt', '~> 3.1.7'  # for password hashing
-
-# CORS
-gem 'rack-cors', require: 'rack/cors'
-
-# YAML
-gem 'psych', '~> 5.1.0'
-
-# Rubyzip
-gem 'rubyzip', '~> 2.3.2'
-
-
-# # Sinatra
-# gem "sinatra", '~> 4.0.0'
-# gem "sinatra-activerecord", '~> 2.0.27'
-
-# serializers
-gem 'active_model_serializers'
-
-
-# Password manager env
-gem 'dotenv-rails', groups: [:development, :test, :production]
-
-# Gem fot httparty requests
 gem 'httparty'
 
-# Search on postgresql
-gem 'pg_search'
-
-# Date grouping gem
-gem 'groupdate'
-
-# Seed generator
-gem 'faker'
-
-# Redis
-gem 'redis'
-
-
-# Use hiredis to get better performance than the "redis" gem
-gem 'hiredis'
-
-# Amazon Rekognition for image moderation
-# gem 'aws-sdk-rekognition', '~> 1.111'
-# 
-# Cron Job Gem
+# Whenever
 gem 'whenever', require: false
 
+# Dotenv for environment variables
+gem 'dotenv-rails'
 
-# Cloudinary for image hosting
-gem 'cloudinary'
+# Active Storage is included in Rails
 
-# Use the sitemap generator for SEO
+# Sidekiq for background jobs
+gem 'sidekiq'
+
+# Sitemap generator
 gem 'sitemap_generator'
 
+# Additional gems based on your project
+gem 'cloudinary'
+gem 'activestorage-cloudinary-service'
+
+# Redis for Action Cable in production
+gem 'redis', '~> 5.0'
+
+# AnyCable for WebSocket handling
+gem 'anycable-rails', '~> 1.5'
+
+# PgSearch for full-text search
+gem 'pg_search'
+
+# Active Model Serializers for JSON API responses
+gem 'active_model_serializers'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ]
+  gem "debug", platforms: %i[ mri mingw x64_mingw ]
+  gem 'rspec-rails'
+  gem 'factory_bot_rails'
 end
 
 group :development do
@@ -117,10 +85,4 @@ group :development do
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
-end
-
-group :test do
-  # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
-  gem "capybara"
-  gem "selenium-webdriver"
 end

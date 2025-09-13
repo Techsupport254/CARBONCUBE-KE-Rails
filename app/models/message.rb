@@ -66,23 +66,30 @@ class Message < ApplicationRecord
   private
 
   def broadcast_new_message
+    message_data = {
+      id: id,
+      content: content,
+      created_at: created_at,
+      sender_type: sender_type,
+      sender_id: sender_id,
+      ad_id: ad_id,
+      product_context: product_context,
+      status: determine_status,
+      read_at: read_at,
+      delivered_at: delivered_at
+    }
+
+    broadcast_payload = {
+      type: 'new_message',
+      conversation_id: conversation.id,
+      message: message_data
+    }
+
     # Broadcast to buyer
     if conversation.buyer_id
       ActionCable.server.broadcast(
         "conversations_buyer_#{conversation.buyer_id}",
-        {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: {
-            id: id,
-            content: content,
-            created_at: created_at,
-            sender_type: sender_type,
-            sender_id: sender_id,
-            ad_id: ad_id,
-            product_context: product_context
-          }
-        }
+        broadcast_payload
       )
     end
 
@@ -90,20 +97,26 @@ class Message < ApplicationRecord
     if conversation.seller_id
       ActionCable.server.broadcast(
         "conversations_seller_#{conversation.seller_id}",
-        {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: {
-            id: id,
-            content: content,
-            created_at: created_at,
-            sender_type: sender_type,
-            sender_id: sender_id,
-            ad_id: ad_id,
-            product_context: product_context
-          }
-        }
+        broadcast_payload
       )
+    end
+
+    # Broadcast to inquirer seller (if different from main seller)
+    if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
+      ActionCable.server.broadcast(
+        "conversations_seller_#{conversation.inquirer_seller_id}",
+        broadcast_payload
+      )
+    end
+  end
+
+  def determine_status
+    if read_at.present?
+      'read'
+    elsif delivered_at.present?
+      'delivered'
+    else
+      status.present? ? status : 'sent'
     end
   end
 end

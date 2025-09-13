@@ -2,12 +2,14 @@ class Seller::AnalyticsController < ApplicationController
   before_action :authenticate_seller
 
   def index
-    # Get seller's tier_id
-    tier_id = current_seller.seller_tier&.tier_id
+    begin
+      # Get seller's tier_id
+      tier_id = current_seller.seller_tier&.tier_id
 
+      Rails.logger.info "Analytics request for seller #{current_seller.id} with tier #{tier_id}"
 
-    # Prepare the response based on the seller's tier
-    response_data = {
+      # Prepare the response based on the seller's tier
+      response_data = {
       tier_id: tier_id, # Include tier_id in the response
       total_orders: calculate_total_orders,
       total_ads: calculate_total_ads
@@ -24,18 +26,17 @@ class Seller::AnalyticsController < ApplicationController
       response_data.merge!(click_events_stats: top_click_event_stats)
     when 4 # Premium tier
       response_data.merge!(calculate_premium_tier_data)
-      response_data.merge!(
-        wishlist_stats: top_wishlist_stats,
-        basic_wishlist_stats: basic_wishlist_stats,
-        competitor_stats: calculate_competitor_stats,
-        click_events_stats: top_click_event_stats
-      )
     else
       render json: { error: 'Invalid tier' }, status: 400
       return
     end
 
     render json: response_data
+    rescue => e
+      Rails.logger.error "Analytics error for seller #{current_seller&.id}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Internal server error', details: e.message }, status: 500
+    end
   end
 
 
@@ -539,7 +540,27 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def calculate_average_rating
-    current_seller.ads.joins(:reviews).average(:rating).to_f.round(1)
+    ads = current_seller.ads.includes(:reviews)
+
+    if ads.empty?
+      return 0.0
+    end
+
+    # Calculate average rating for each ad that has reviews, then average those
+    ad_ratings = ads.map do |ad|
+      if ad.reviews.loaded?
+        ad.reviews.any? ? ad.reviews.sum(&:rating).to_f / ad.reviews.size : nil
+      else
+        ad.reviews.average(:rating).to_f if ad.reviews.exists?
+      end
+    end.compact # Remove nil values (ads with no reviews)
+
+    # Return average of rated ads only, rounded to 1 decimal place
+    if ad_ratings.any?
+      (ad_ratings.sum / ad_ratings.size).round(1)
+    else
+      0.0 # No rated ads yet
+    end
   end
 
   def calculate_total_reviews
@@ -577,7 +598,6 @@ class Seller::AnalyticsController < ApplicationController
                                 subcategories.name as subcategory_name,
                                 COALESCE(tiers.id, 1) as seller_tier_id,
                                 COALESCE(tiers.name, 'Free') as seller_tier_name,
-                                0 as total_sold,
                                 COALESCE(AVG(reviews.rating), 0) as avg_rating,
                                 COALESCE(COUNT(DISTINCT reviews.id), 0) as review_count,
                                 COALESCE(SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END), 0) as ad_clicks,
@@ -596,7 +616,6 @@ class Seller::AnalyticsController < ApplicationController
         ad_id: ad.id,
         ad_title: ad.title,
         ad_price: ad.price.to_f,
-        total_sold: ad.total_sold.to_i,
         media: ad.media,
         comprehensive_score: score,
         metrics: {
@@ -606,7 +625,9 @@ class Seller::AnalyticsController < ApplicationController
           reveal_clicks: ad.reveal_clicks.to_i,
           wishlist_clicks: ad.wishlist_clicks.to_i,
           cart_clicks: ad.cart_clicks.to_i,
-          wishlist_count: ad.wishlist_count.to_i
+          wishlist_count: ad.wishlist_count.to_i,
+          seller_tier_id: ad.seller_tier_id.to_i,
+          seller_tier_name: ad.seller_tier_name
         }
       }
     end
@@ -621,17 +642,17 @@ class Seller::AnalyticsController < ApplicationController
     
     # 1. Sales Score (40% weight) - Most important factor
     sales_score = calculate_sales_score(ad.total_sold.to_i)
-    
+
     # 2. Review Score (25% weight) - Quality indicator
-    review_score = calculate_review_score(ad.avg_rating.to_f, ad.review_count.to_i)
-    
+    review_score = calculate_review_score(ad.avg_rating, ad.review_count)
+
     # 3. Engagement Score (20% weight) - User interest
     engagement_score = calculate_engagement_score(
-      ad.ad_clicks.to_i,
-      ad.reveal_clicks.to_i,
-      ad.wishlist_clicks.to_i,
-      ad.cart_clicks.to_i,
-      ad.wishlist_count.to_i
+      ad.ad_clicks,
+      ad.reveal_clicks,
+      ad.wishlist_clicks,
+      ad.cart_clicks,
+      ad.wishlist_count
     )
     
     # 4. Seller Tier Bonus (10% weight) - Premium seller boost

@@ -2,27 +2,49 @@ class Seller::ConversationsController < ApplicationController
   before_action :authenticate_seller
 
   def index
-    # Fetch conversations where current seller is the seller
-    @conversations = Conversation.where(seller_id: @current_seller.id)
-                                .includes(:admin, :buyer, :ad, :messages)
-                                .order(updated_at: :desc)
+    # Fetch conversations where current seller is either the seller, buyer, or inquirer_seller
+    @conversations = Conversation.where(
+      "(seller_id = ? OR buyer_id = ? OR inquirer_seller_id = ?)", 
+      @current_seller.id, 
+      @current_seller.id,
+      @current_seller.id
+    ).includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+     .order(updated_at: :desc)
     
-    # Group conversations by buyer_id to avoid duplicates
-    grouped_conversations = @conversations.group_by(&:buyer_id)
+    # Group conversations by the other participant (not current seller)
+    grouped_conversations = @conversations.group_by do |conv|
+      if conv.seller_id == @current_seller.id
+        # Current seller is the ad owner, group by the inquirer
+        if conv.buyer_id.present?
+          "buyer_#{conv.buyer_id}"
+        else
+          "inquirer_seller_#{conv.inquirer_seller_id}"
+        end
+      elsif conv.inquirer_seller_id == @current_seller.id
+        # Current seller is the inquirer, group by the ad owner
+        "seller_#{conv.seller_id}"
+      else
+        # Current seller is the buyer, group by the ad owner
+        "seller_#{conv.seller_id}"
+      end
+    end
     
-    conversations_data = grouped_conversations.map do |buyer_id, conversations|
-      # Get the most recent conversation for this buyer
+    conversations_data = grouped_conversations.map do |participant_key, conversations|
+      # Get the most recent conversation for this participant
       most_recent_conversation = conversations.max_by(&:updated_at)
       last_message = most_recent_conversation.messages.last
-      
+
       {
         id: most_recent_conversation.id,
         seller_id: most_recent_conversation.seller_id,
         buyer_id: most_recent_conversation.buyer_id,
+        inquirer_seller_id: most_recent_conversation.inquirer_seller_id,
         created_at: most_recent_conversation.created_at,
         updated_at: most_recent_conversation.updated_at,
         admin: most_recent_conversation.admin,
         buyer: most_recent_conversation.buyer,
+        seller: most_recent_conversation.seller,
+        inquirer_seller: most_recent_conversation.inquirer_seller,
         ad: most_recent_conversation.ad,
         messages_count: conversations.sum { |c| c.messages.count },
         last_message: last_message&.content,
@@ -58,10 +80,30 @@ class Seller::ConversationsController < ApplicationController
   end
 
   def create
+    # Prevent sellers from messaging their own ads
+    if params[:seller_id].to_i == @current_seller.id && params[:buyer_id].blank?
+      render json: { error: 'You cannot message your own ads' }, status: :unprocessable_entity
+      return
+    end
+
+    # Determine the conversation structure based on who is messaging
+    if params[:seller_id].to_i == @current_seller.id
+      # Current seller owns the ad - they are responding to a buyer/inquirer
+      seller_id = @current_seller.id
+      buyer_id = params[:buyer_id]
+      inquirer_seller_id = nil
+    else
+      # Current seller is inquiring about someone else's ad
+      seller_id = params[:seller_id]  # Ad owner
+      buyer_id = nil  # No buyer involved
+      inquirer_seller_id = @current_seller.id  # Current seller is the inquirer
+    end
+
     # Find existing conversation or create new one
     @conversation = Conversation.find_or_create_by(
-      seller_id: @current_seller.id,
-      buyer_id: params[:buyer_id],
+      seller_id: seller_id,
+      buyer_id: buyer_id,
+      inquirer_seller_id: inquirer_seller_id,
       ad_id: params[:ad_id]
     ) do |conv|
       conv.admin_id = params[:admin_id] if params[:admin_id].present?

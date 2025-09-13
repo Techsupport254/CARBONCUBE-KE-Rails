@@ -3,14 +3,29 @@ class Seller::MessagesController < ApplicationController
   before_action :set_conversation
 
   def index
-    # Get all conversations with the same buyer
-    all_conversations_with_buyer = Conversation.where(
-      seller_id: @current_user.id,
-      buyer_id: @conversation.buyer_id
-    )
+    # Get all conversations with the same participant (buyer or inquirer_seller)
+    if @conversation.buyer_id.present?
+      # Regular buyer conversation
+      all_conversations_with_participant = Conversation.where(
+        seller_id: @current_user.id,
+        buyer_id: @conversation.buyer_id
+      )
+    elsif @conversation.inquirer_seller_id.present? && @conversation.seller_id == @current_user.id
+      # Current user is the ad owner, inquirer_seller is the other participant
+      all_conversations_with_participant = Conversation.where(
+        seller_id: @current_user.id,
+        inquirer_seller_id: @conversation.inquirer_seller_id
+      )
+    else
+      # Current user is the inquirer_seller, seller is the other participant
+      all_conversations_with_participant = Conversation.where(
+        seller_id: @conversation.seller_id,
+        inquirer_seller_id: @current_user.id
+      )
+    end
     
-    # Get all messages from all conversations with this buyer
-    all_messages = all_conversations_with_buyer.flat_map(&:messages).sort_by(&:created_at)
+    # Get all messages from all conversations with this participant
+    all_messages = all_conversations_with_participant.flat_map(&:messages).sort_by(&:created_at)
     
     # Include ad information for each message
     messages_with_ads = all_messages.map do |message|
@@ -61,7 +76,14 @@ class Seller::MessagesController < ApplicationController
   private
 
   def set_conversation
-    @conversation = Conversation.find_by(id: params[:conversation_id], seller_id: @current_user.id)
+    # Find conversation where current seller is either the seller or the inquirer_seller
+    @conversation = Conversation.where(
+      id: params[:conversation_id]
+    ).where(
+      "(seller_id = ? OR inquirer_seller_id = ?)", 
+      @current_user.id, 
+      @current_user.id
+    ).first
     
     unless @conversation
       render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
@@ -69,7 +91,7 @@ class Seller::MessagesController < ApplicationController
   end
 
   def message_params
-    params.require(:message).permit(:content)
+    params.require(:message).permit(:content, :ad_id)
   end
 
   def authenticate_seller

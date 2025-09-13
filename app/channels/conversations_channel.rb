@@ -1,78 +1,210 @@
 class ConversationsChannel < ApplicationCable::Channel
+  include ActionView::Helpers::SanitizeHelper
+  
   def subscribed
-    # Subscribe to conversations for the current user
-    Rails.logger.info "📡 ConversationsChannel subscribed: user_type=#{params[:user_type]}, user_id=#{params[:user_id]}"
-    stream_from "conversations_#{params[:user_type]}_#{params[:user_id]}"
-    Rails.logger.info "📡 Streaming from: conversations_#{params[:user_type]}_#{params[:user_id]}"
+    # Try to get user from connection, fallback to subscription params
+    user = connection.current_user || find_user_from_params
+    
+    return reject unless user
+    
+    # Subscribe to user-specific conversation stream
+    stream_name = "conversations_#{get_user_type(user).downcase}_#{user.id}"
+    stream_from stream_name
+    
+    log_channel_activity('subscribed', { stream: stream_name, user_id: user.id })
+    track_message_metric('subscribed')
+    
+    # Broadcast online status
+    broadcast_presence_update('online', user)
   end
 
   def unsubscribed
-    # Any cleanup needed when channel is unsubscribed
-    Rails.logger.info "📡 ConversationsChannel unsubscribed: user_type=#{params[:user_type]}, user_id=#{params[:user_id]}"
+    log_channel_activity('unsubscribed')
+    track_message_metric('unsubscribed')
+    
+    # Broadcast offline status
+    user = connection.current_user || find_user_from_params
+    broadcast_presence_update('offline', user) if user
   end
 
   def receive(data)
-    # Handle incoming messages
-    conversation_id = data['conversation_id']
-    message_content = data['content']
-    sender_type = data['sender_type']
-    sender_id = data['sender_id']
+    return if rate_limited?
     
-    # Find the conversation
-    conversation = Conversation.find(conversation_id)
+    user = connection.current_user || find_user_from_params
+    return reject unless user
     
-    # Create the message
-    message = conversation.messages.create!(
-      content: message_content,
-      sender_type: sender_type,
-      sender_id: sender_id
+    # Basic validation for incoming message
+    return unless data.present? && data.is_a?(Hash)
+    
+    # Process message asynchronously for better performance
+    ProcessWebSocketMessageJob.perform_later(
+      data.merge(
+        sender_user: user,
+        sender_session: connection.session_id
+      )
     )
     
-    # Broadcast to all participants
-    broadcast_to_participants(conversation, message)
+    track_message_metric('message_received')
+  end
+  
+  def typing(data)
+    return if rate_limited?
+    
+    user = connection.current_user || find_user_from_params
+    return reject unless user
+    
+    conversation_id = data['conversation_id']&.to_i
+    typing_status = data['typing'] == true
+    
+    return unless conversation_id && validate_conversation_access(conversation_id, user)
+    
+    # Broadcast typing status to conversation participants
+    broadcast_to_conversation_participants(
+      conversation_id,
+      {
+        type: 'typing_status',
+        user_id: user.id,
+        user_type: get_user_type(user),
+        typing: typing_status,
+        conversation_id: conversation_id,
+        timestamp: Time.current.iso8601
+      },
+      exclude_sender: true,
+      current_user: user
+    )
+    
+    track_message_metric('typing_update')
+  end
+  
+  def mark_read(data)
+    return if rate_limited?
+    
+    user = connection.current_user || find_user_from_params
+    return reject unless user
+    
+    message_id = data['message_id']&.to_i
+    return unless message_id
+    
+    # Process read receipt asynchronously
+    ProcessReadReceiptJob.perform_later(message_id, user.id)
+    
+    track_message_metric('mark_read')
   end
 
   private
 
-  def broadcast_to_participants(conversation, message)
+  def find_user_from_params
+    user_type = params[:user_type]
+    user_id = params[:user_id]
+    
+    return nil unless user_type && user_id
+    
+    case user_type.downcase
+    when 'buyer'
+      Buyer.find_by(id: user_id)
+    when 'seller'
+      Seller.find_by(id: user_id)
+    when 'admin'
+      Admin.find_by(id: user_id)
+    else
+      nil
+    end
+  end
+
+  def validate_conversation_access(conversation_id, user)
+    conversation = Conversation.find_by(id: conversation_id)
+    return false unless conversation
+    
+    # Check if user is a participant
+    user_type = get_user_type(user)
+    case user_type.downcase
+    when 'buyer'
+      conversation.buyer_id == user.id
+    when 'seller'
+      conversation.seller_id == user.id || conversation.inquirer_seller_id == user.id
+    when 'admin', 'sales'
+      true # Admins and sales users can access all conversations
+    when 'rider'
+      false # Riders don't have conversation access
+    else
+      false
+    end
+  end
+  
+  def broadcast_to_conversation_participants(conversation_id, data, exclude_sender: false, current_user: nil)
+    conversation = Conversation.find_by(id: conversation_id)
+    return unless conversation
+    
     # Broadcast to buyer
-    if conversation.buyer_id
-      ActionCable.server.broadcast(
-        "conversations_buyer_#{conversation.buyer_id}",
+    if conversation.buyer_id && (!exclude_sender || conversation.buyer_id != current_user&.id)
+      broadcast_with_retry("conversations_buyer_#{conversation.buyer_id}", data)
+    end
+    
+    # Broadcast to seller
+    if conversation.seller_id && (!exclude_sender || conversation.seller_id != current_user&.id)
+      broadcast_with_retry("conversations_seller_#{conversation.seller_id}", data)
+    end
+    
+    # Broadcast to inquirer seller (if different from main seller)
+    if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id && (!exclude_sender || conversation.inquirer_seller_id != current_user&.id)
+      broadcast_with_retry("conversations_seller_#{conversation.inquirer_seller_id}", data)
+    end
+  end
+  
+  def broadcast_presence_update(status, user)
+    return unless user
+    
+    # Get user's conversations to notify participants
+    conversations = get_user_conversations(user)
+    
+    conversations.find_each do |conversation|
+      broadcast_to_conversation_participants(
+        conversation.id,
         {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: {
-            id: message.id,
-            content: message.content,
-            created_at: message.created_at,
-            sender_type: message.sender_type,
-            sender_id: message.sender_id,
-            ad_id: message.ad_id,
-            product_context: message.product_context
-          }
-        }
+          type: 'presence_update',
+          user_id: user.id,
+          user_type: get_user_type(user),
+          status: status,
+          timestamp: Time.current.iso8601
+        },
+        exclude_sender: true,
+        current_user: user
       )
     end
-
-    # Broadcast to seller
-    if conversation.seller_id
-      ActionCable.server.broadcast(
-        "conversations_seller_#{conversation.seller_id}",
-        {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: {
-            id: message.id,
-            content: message.content,
-            created_at: message.created_at,
-            sender_type: message.sender_type,
-            sender_id: message.sender_id,
-            ad_id: message.ad_id,
-            product_context: message.product_context
-          }
-        }
-      )
+  end
+  
+  def get_user_conversations(user)
+    user_type = get_user_type(user)
+    case user_type.downcase
+    when 'buyer'
+      Conversation.where(buyer_id: user.id)
+    when 'seller'
+      Conversation.where(seller_id: user.id)
+    when 'admin'
+      Conversation.all
+    when 'sales'
+      Conversation.all  # Sales users can see all conversations like admins
+    when 'rider'
+      Conversation.none  # Riders don't have conversations in this system
+    else
+      Conversation.none
+    end
+  end
+  
+  def get_user_type(user)
+    case user.class.name
+    when 'Buyer'
+      'buyer'
+    when 'Seller'
+      'seller'
+    when 'Admin'
+      'admin'
+    when 'SalesUser'
+      'sales'
+    when 'Rider'
+      'rider'
+    else
+      'unknown'
     end
   end
 end

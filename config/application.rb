@@ -1,27 +1,19 @@
 require_relative "boot"
-require "rails/all"
 
-# Load environment variables from .env in development and test environments
-if ['development', 'test'].include?(ENV['RAILS_ENV'] || ENV['RACK_ENV'])
-  require 'dotenv'
-  Dotenv.load('.env')
-end
+require "rails/all"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module CARBONCUBE_KERails
+module CarbonecomRails
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.1
 
-    # Add this line:
-    config.middleware.use Rack::ContentLength
-
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
-    # Common ones are `templates`, `generators`, or `middleware`, for example.
+    # Common ones are `templates`, `generators`, or `middleware`.
     config.autoload_lib(ignore: %w(assets tasks))
 
     # Configuration for the application, engines, and railties goes here.
@@ -29,13 +21,8 @@ module CARBONCUBE_KERails
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    config.time_zone = 'Africa/Nairobi' # Example for EAT time zone
-    config.active_record.default_timezone = :local
+    # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-    
-    # Pilot phase configuration - can be disabled in production
-    # Set PILOT_PHASE_ENABLED=false in production environment to disable pilot restrictions
-    config.pilot_phase_enabled = ENV.fetch('PILOT_PHASE_ENABLED', 'true').downcase == 'true'
     
     # CORS configuration
     config.middleware.insert_before 0, Rack::Cors do
@@ -50,14 +37,20 @@ module CARBONCUBE_KERails
 
     config.api_only = true
     
-    # Enable ActionCable for API-only applications
+    # Enable Action Cable at /cable
     config.action_cable.mount_path = '/cable'
-    config.action_cable.allowed_request_origins = ['http://localhost:3000', 'https://carboncube-ke.vercel.app']
     
-    # Fix ActionCable logger issue
-    config.after_initialize do
-      ActionCable.server.config.logger = Rails.logger
-      ActionCable.server.config.log_tags = []
-    end
+    # Action Cable configuration
+    config.action_cable.url = 'ws://localhost:8081/cable'
+    config.action_cable.allowed_request_origins = ['http://localhost:3000', 'https://localhost:3000']
+    
+    # Background job configuration - disabled for now
+    # config.active_job.queue_adapter = :sidekiq
+    
+    # Time zone
+    config.time_zone = 'UTC'
+    
+    # Security headers
+    config.force_ssl = Rails.env.production?
   end
 end

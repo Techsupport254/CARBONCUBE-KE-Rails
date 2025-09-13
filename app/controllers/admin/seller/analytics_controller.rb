@@ -14,10 +14,6 @@ class Admin::Seller::AnalyticsController < ApplicationController
                               .where(order_items: { ad_id: @seller.ads.pluck(:id) })
                               .distinct.count
 
-    # Calculate total number of ads sold (sum of quantities)
-    total_ads_sold = @seller.orders.joins(:order_items)
-                                  .where(order_items: { ad_id: @seller.ads.pluck(:id) })
-                                  .sum('order_items.quantity')
 
     # Calculate average rating (mean of ratings) from reviews related to the seller's ads
     mean_rating = @seller.reviews.joins(:ad)
@@ -49,7 +45,6 @@ class Admin::Seller::AnalyticsController < ApplicationController
     analytics = {
       total_revenue: total_revenue,
       total_orders: total_orders,
-      total_ads_sold: total_ads_sold,
       mean_rating: mean_rating,
       total_reviews: reviews_by_rating.values.sum,
       rating_pie_chart: rating_pie_chart,

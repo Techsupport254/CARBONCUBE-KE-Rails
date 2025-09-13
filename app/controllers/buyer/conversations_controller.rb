@@ -1,8 +1,8 @@
 class Buyer::ConversationsController < ApplicationController
-  before_action :authenticate_buyer
+  before_action :authenticate_user
 
   def index
-    # Fetch conversations where current buyer is the buyer
+    # Fetch conversations where current user is the buyer (works for both buyers and sellers chatting as buyers)
     @conversations = Conversation.where(buyer_id: @current_user.id)
                                 .includes(:admin, :seller, :ad, :messages, ad: [:category, :subcategory])
                                 .order(updated_at: :desc)
@@ -93,10 +93,24 @@ class Buyer::ConversationsController < ApplicationController
   end
 
   def create
+    # Determine buyer_id and seller_id based on current user type
+    buyer_id = nil
+    seller_id = nil
+
+    if @current_user.is_a?(Buyer)
+      buyer_id = @current_user.id
+      seller_id = params[:seller_id]
+    elsif @current_user.is_a?(Seller)
+      # When a seller chats with another seller, treat the current seller as a buyer
+      # This allows seller-to-seller conversations while maintaining model compatibility
+      buyer_id = @current_user.id
+      seller_id = params[:seller_id]
+    end
+
     # Find existing conversation or create new one
     @conversation = Conversation.find_or_create_by(
-      buyer_id: @current_user.id,
-      seller_id: params[:seller_id],
+      buyer_id: buyer_id,
+      seller_id: seller_id,
       ad_id: params[:ad_id]
     ) do |conv|
       conv.admin_id = params[:admin_id] if params[:admin_id].present?
@@ -188,9 +202,15 @@ class Buyer::ConversationsController < ApplicationController
 
   private
 
-  def authenticate_buyer
+  def authenticate_user
+    # Try to authenticate as buyer first
     @current_user = BuyerAuthorizeApiRequest.new(request.headers).result
-    
+
+    # If not a buyer, try to authenticate as seller
+    if @current_user.nil?
+      @current_user = SellerAuthorizeApiRequest.new(request.headers).result
+    end
+
     if @current_user.nil?
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end

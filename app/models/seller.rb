@@ -6,6 +6,8 @@ class Seller < ApplicationRecord
   has_and_belongs_to_many :categories
   has_many :ads
   has_many :reviews, through: :ads
+  has_many :wish_lists, dependent: :destroy
+  has_many :wish_listed_ads, through: :wish_lists, source: :ad
   has_many :sent_messages, as: :sender, class_name: 'Message'
   has_many :conversations
   has_many :password_otps, as: :otpable, dependent: :destroy
@@ -63,6 +65,18 @@ class Seller < ApplicationRecord
   # Soft delete ads when seller is deleted
   def mark_ads_as_deleted
     ads.update_all(deleted: true)
+  end
+
+  def wish_list_ad(ad)
+    wish_lists.create(ad: ad) unless wish_listed?(ad)
+  end
+
+  def unwish_list_ad(ad)
+    wish_lists.find_by(ad: ad)&.destroy
+  end
+
+  def wish_listed?(ad)
+    wish_listed_ads.include?(ad)
   end
 
   private

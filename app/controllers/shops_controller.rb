@@ -61,7 +61,23 @@ class ShopsController < ApplicationController
     # Calculate review statistics for SEO
     all_reviews = Review.joins(:ad).where(ads: { seller_id: @shop.id })
     total_reviews = all_reviews.count
-    average_rating = total_reviews > 0 ? all_reviews.average(:rating).round(1) : 0
+
+    # Calculate average rating correctly: average of each ad's rating, not all individual reviews
+    if total_reviews > 0
+      # Get all ads for this seller with their reviews
+      seller_ads = @shop.ads.includes(:reviews)
+
+      # Calculate average rating for each ad that has reviews, then average those
+      ad_ratings = seller_ads.map do |ad|
+        ad_reviews = all_reviews.where(ad_id: ad.id)
+        ad_reviews.any? ? ad_reviews.average(:rating).to_f : nil
+      end.compact # Remove nil values (ads with no reviews)
+
+      # Only include rated ads in the calculation
+      average_rating = ad_ratings.any? ? (ad_ratings.sum / ad_ratings.size).round(1) : 0.0
+    else
+      average_rating = 0.0
+    end
     
     # Get shop categories for SEO
     shop_categories = @shop.categories.pluck(:name).join(', ')
@@ -157,8 +173,24 @@ class ShopsController < ApplicationController
     # Calculate review statistics
     all_reviews = Review.joins(:ad).where(ads: { seller_id: @shop.id })
     total_reviews = all_reviews.count
-    average_rating = total_reviews > 0 ? all_reviews.average(:rating).round(1) : 0
-    
+
+    # Calculate average rating correctly: average of each ad's rating, not all individual reviews
+    if total_reviews > 0
+      # Get all ads for this seller with their reviews
+      seller_ads = @shop.ads.includes(:reviews)
+
+      # Calculate average rating for each ad that has reviews, then average those
+      ad_ratings = seller_ads.map do |ad|
+        ad_reviews = all_reviews.where(ad_id: ad.id)
+        ad_reviews.any? ? ad_reviews.average(:rating).to_f : nil
+      end.compact # Remove nil values (ads with no reviews)
+
+      # Only include rated ads in the calculation
+      average_rating = ad_ratings.any? ? (ad_ratings.sum / ad_ratings.size).round(1) : 0.0
+    else
+      average_rating = 0.0
+    end
+
     # Rating distribution
     rating_distribution = (1..5).map do |rating|
       count = all_reviews.where(rating: rating).count
@@ -248,8 +280,24 @@ class ShopsController < ApplicationController
     # Calculate review statistics
     all_reviews = Review.joins(:ad).where(ads: { seller_id: @shop.id })
     total_reviews = all_reviews.count
-    average_rating = total_reviews > 0 ? all_reviews.average(:rating).round(1) : 0
-    
+
+    # Calculate average rating correctly: average of each ad's rating, not all individual reviews
+    if total_reviews > 0
+      # Get all ads for this seller with their reviews
+      seller_ads = @shop.ads.includes(:reviews)
+
+      # Calculate average rating for each ad that has reviews, then average those
+      ad_ratings = seller_ads.map do |ad|
+        ad_reviews = all_reviews.where(ad_id: ad.id)
+        ad_reviews.any? ? ad_reviews.average(:rating).to_f : nil
+      end.compact # Remove nil values (ads with no reviews)
+
+      # Only include rated ads in the calculation
+      average_rating = ad_ratings.any? ? (ad_ratings.sum / ad_ratings.size).round(1) : 0.0
+    else
+      average_rating = 0.0
+    end
+
     # Get shop categories
     shop_categories = @shop.categories.pluck(:name).join(', ')
     

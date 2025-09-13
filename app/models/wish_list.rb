@@ -1,6 +1,11 @@
 class WishList < ApplicationRecord
-  belongs_to :buyer
+  belongs_to :buyer, optional: true
+  belongs_to :seller, optional: true
   belongs_to :ad
+
+  # Ensure only one user type is associated
+  validates :buyer_id, presence: true, unless: :seller_id?
+  validates :seller_id, presence: true, unless: :buyer_id?
 
   after_commit :invalidate_category_caches
 

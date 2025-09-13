@@ -1,6 +1,7 @@
 
 Rails.application.routes.draw do
-
+  # Health check endpoint
+  get '/health', to: 'health#show'
 
   root to: 'application#home'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
@@ -13,6 +14,15 @@ Rails.application.routes.draw do
   
   # Contact form routes
   post 'contact/submit', to: 'contact#submit'
+  
+  # Unified conversations and messages endpoints for all user types
+  resources :conversations, only: [:index, :show, :create] do
+    resources :messages, only: [:index, :create]
+    collection do
+      get :unread_count
+      get :unread_counts
+    end
+  end
 
   #========================================Public namespace for public-specific functionality==========================================#
   
@@ -30,14 +40,6 @@ Rails.application.routes.draw do
   get 'sitemap/subcategories', to: 'sitemap#subcategories'
   get 'sitemap/stats', to: 'sitemap#stats'
   
-  # API namespace for sitemap endpoints
-  namespace :api do
-    get 'sitemap/ads', to: 'sitemap#ads'
-    get 'sitemap/sellers', to: 'sitemap#sellers'
-    get 'sitemap/categories', to: 'sitemap#categories'
-    get 'sitemap/subcategories', to: 'sitemap#subcategories'
-    get 'sitemap/stats', to: 'sitemap#stats'
-  end
   
   # Best sellers routes
   resources :best_sellers, only: [:index] do

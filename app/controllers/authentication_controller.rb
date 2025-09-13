@@ -15,7 +15,7 @@ class AuthenticationController < ApplicationController
       end
 
       # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
-      if Rails.application.config.pilot_phase_enabled && role == 'seller' && @user.county&.county_code.to_i != 47
+      if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'seller' && @user.county&.county_code.to_i != 47
         render json: {
           errors: ['Access restricted during pilot phase. Only Nairobi-based sellers can log in.']
         }, status: :forbidden

@@ -95,6 +95,46 @@ class Ad < ApplicationRecord
 
   def first_media_url
     media&.first # Safely access the first URL in the media array
+  end
+
+  # Analytics methods for seller dashboard
+  def total_sold
+    # For now, return 0 as we don't have a sales tracking system yet
+    # This could be calculated from completed orders/payments in the future
+    0
+  end
+
+  def avg_rating
+    mean_rating
+  end
+
+  def review_count
+    # Try to use the cached database column first, otherwise count reviews
+    if has_attribute?(:reviews_count) && reviews_count.present?
+      reviews_count
+    else
+      reviews.size
+    end
+  end
+
+  def ad_clicks
+    click_events.where(event_type: 'Ad-Click').count
+  end
+
+  def reveal_clicks
+    click_events.where(event_type: 'Reveal-Seller-Details').count
+  end
+
+  def wishlist_clicks
+    click_events.where(event_type: 'Add-to-Wish-List').count
+  end
+
+  def cart_clicks
+    click_events.where(event_type: 'Add-to-Cart').count
+  end
+
+  def wishlist_count
+    wish_lists.count
   end  
 
   private

@@ -5,8 +5,6 @@ test:
   adapter: test
 
 production:
-  adapter: async
-  # Use async adapter instead of Redis for now
-  # adapter: redis
-  # url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
-  # channel_prefix: carbonecomrails_production
+  adapter: redis
+  url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6379/1") %>
+  channel_prefix: carboncube_production

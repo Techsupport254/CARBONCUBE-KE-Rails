@@ -70,7 +70,7 @@ class Buyer::MessagesController < ApplicationController
   end
 
   def message_params
-    params.require(:message).permit(:content)
+    params.require(:message).permit(:content, :ad_id)
   end
 
   def authenticate_buyer

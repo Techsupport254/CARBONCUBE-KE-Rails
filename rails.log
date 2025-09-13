@@ -1,0 +1,67 @@
+=> Booting Puma
+=> Rails 7.1.5.2 application starting in development 
+=> Run `bin/rails server --help` for more startup options
+[dotenv] Set [36mMPESA_ENV[0m
+[dotenv] Loaded [33m.env.local[0m
+[dotenv] Set [36mPOSTGRES_USER[0m, [36mPOSTGRES_PASSWORD[0m, [36mDATABASE_URL[0m, [36mRAILS_MASTER_KEY[0m, [36mCLOUDINARY_API_KEY[0m, [36mCLOUDINARY_API_SECRET[0m, [36mUPLOAD_PRESET[0m, [36mCLOUDINARY_CLOUD_NAME[0m, [36mMPESA_CONSUMER_KEY[0m, [36mMPESA_CONSUMER_SECRET[0m, [36mMPESA_SHORTCODE[0m, [36mBREVO_EMAIL[0m, [36mBREVO_SMTP_USER[0m, [36mBREVO_SMTP_PASSWORD[0m, [36mPILOT_PHASE_ENABLED[0m, [36mREACT_APP_PILOT_PHASE_ENABLED[0m, and [36mMPESA_PASSKEY[0m
+[dotenv] Loaded [33m.env[0m
+Exiting
+/Users/Quaint/Desktop/CARBON/backend/config/initializers/active_model_serializers.rb:4:in '<main>': uninitialized constant ActiveModelSerializers (NameError)
+
+  ActiveModelSerializers.logger = Logger.new(nil)
+  ^^^^^^^^^^^^^^^^^^^^^^
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/engine.rb:690:in 'Kernel#load'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/engine.rb:690:in 'block in Rails::Engine#load_config_initializer'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/activesupport-7.1.5.2/lib/active_support/notifications.rb:208:in 'ActiveSupport::Notifications.instrument'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/engine.rb:689:in 'Rails::Engine#load_config_initializer'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/engine.rb:643:in 'block (2 levels) in <class:Engine>'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/engine.rb:642:in 'Array#each'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/engine.rb:642:in 'block in <class:Engine>'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/initializable.rb:32:in 'BasicObject#instance_exec'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/initializable.rb:32:in 'Rails::Initializable::Initializer#run'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/initializable.rb:61:in 'block in Rails::Initializable#run_initializers'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:231:in 'block in TSort.tsort_each'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:353:in 'block (2 levels) in TSort.each_strongly_connected_component'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:425:in 'block (2 levels) in TSort.each_strongly_connected_component_from'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:434:in 'TSort.each_strongly_connected_component_from'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:424:in 'block in TSort.each_strongly_connected_component_from'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/initializable.rb:50:in 'Array#each'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/initializable.rb:50:in 'Rails::Initializable::Collection#tsort_each_child'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:418:in 'Method#call'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:418:in 'TSort.each_strongly_connected_component_from'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:352:in 'block in TSort.each_strongly_connected_component'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:350:in 'Rails::Initializable::Collection#each'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:350:in 'Method#call'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:350:in 'TSort.each_strongly_connected_component'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:229:in 'TSort.tsort_each'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/tsort.rb:208:in 'TSort#tsort_each'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/initializable.rb:60:in 'Rails::Initializable#run_initializers'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/application.rb:426:in 'Rails::Application#initialize!'
+	from /Users/Quaint/Desktop/CARBON/backend/config/environment.rb:5:in '<main>'
+	from config.ru:3:in 'Kernel#require_relative'
+	from config.ru:3:in 'block (2 levels) in <main>'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rack-3.1.12/lib/rack/builder.rb:108:in 'Kernel#eval'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rack-3.1.12/lib/rack/builder.rb:108:in 'Rack::Builder.new_from_string'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rack-3.1.12/lib/rack/builder.rb:97:in 'Rack::Builder.load_file'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rack-3.1.12/lib/rack/builder.rb:67:in 'Rack::Builder.parse_file'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rackup-2.2.1/lib/rackup/server.rb:354:in 'Rackup::Server#build_app_and_options_from_config'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rackup-2.2.1/lib/rackup/server.rb:263:in 'Rackup::Server#app'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/rackup-2.2.1/lib/rackup/server.rb:424:in 'Rackup::Server#wrapped_app'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/commands/server/server_command.rb:76:in 'Rails::Server#log_to_stdout'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/commands/server/server_command.rb:36:in 'Rails::Server#start'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/commands/server/server_command.rb:145:in 'block in Rails::Command::ServerCommand#perform'
+	from <internal:kernel>:91:in 'Kernel#tap'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/commands/server/server_command.rb:136:in 'Rails::Command::ServerCommand#perform'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/thor-1.3.2/lib/thor/command.rb:28:in 'Thor::Command#run'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/thor-1.3.2/lib/thor/invocation.rb:127:in 'Thor::Invocation#invoke_command'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/command/base.rb:178:in 'Rails::Command::Base#invoke_command'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/thor-1.3.2/lib/thor.rb:538:in 'Thor.dispatch'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/command/base.rb:73:in 'Rails::Command::Base.perform'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/command.rb:71:in 'block in Rails::Command.invoke'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/command.rb:149:in 'Rails::Command.with_argv'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/command.rb:69:in 'Rails::Command.invoke'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/railties-7.1.5.2/lib/rails/commands.rb:18:in '<main>'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/bundled_gems.rb:82:in 'Kernel.require'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/3.4.0/bundled_gems.rb:82:in 'block (2 levels) in Kernel#replace_require'
+	from /Users/Quaint/.rbenv/versions/3.4.4/lib/ruby/gems/3.4.0/gems/bootsnap-1.18.4/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb:30:in 'Kernel#require'
+	from bin/rails:4:in '<main>'

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_09_080000) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -218,10 +218,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_09_080000) do
     t.bigint "ad_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "inquirer_seller_id"
     t.index ["ad_id", "buyer_id", "seller_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["ad_id"], name: "index_conversations_on_ad_id"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
+    t.index ["inquirer_seller_id"], name: "index_conversations_on_inquirer_seller_id"
     t.index ["seller_id"], name: "index_conversations_on_seller_id"
   end
 
@@ -592,12 +594,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_09_080000) do
   end
 
   create_table "wish_lists", force: :cascade do |t|
-    t.bigint "buyer_id", null: false
+    t.bigint "buyer_id"
     t.bigint "ad_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "seller_id"
     t.index ["ad_id"], name: "index_wish_lists_on_ad_id"
     t.index ["buyer_id"], name: "index_wish_lists_on_purchaser_id"
+    t.index ["seller_id"], name: "index_wish_lists_on_seller_id"
+    t.check_constraint "buyer_id IS NOT NULL OR seller_id IS NOT NULL", name: "wish_lists_user_check"
   end
 
   add_foreign_key "ad_searches", "buyers"
@@ -619,6 +624,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_09_080000) do
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers"
   add_foreign_key "conversations", "sellers"
+  add_foreign_key "conversations", "sellers", column: "inquirer_seller_id"
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations"
   add_foreign_key "payment_transactions", "sellers"
@@ -642,4 +648,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_09_080000) do
   add_foreign_key "tier_pricings", "tiers"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers"
+  add_foreign_key "wish_lists", "sellers"
 end
