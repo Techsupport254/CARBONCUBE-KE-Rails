@@ -79,6 +79,10 @@ class Seller < ApplicationRecord
     wish_listed_ads.include?(ad)
   end
 
+  def ads_count
+    ads.where(deleted: false).count
+  end
+
   private
 
   def normalize_email
