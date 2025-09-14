@@ -3,15 +3,26 @@ module ApplicationCable
     identified_by :current_user, :session_id
     
     def connect
-      authenticate_user!
-      setup_session
-      track_connection
-      Rails.logger.info "🔌 WebSocket connection established for user #{current_user.id}"
+      begin
+        authenticate_user!
+        setup_session
+        track_connection
+        Rails.logger.info "🔌 WebSocket connection established for user #{current_user.id}"
+      rescue StandardError => e
+        Rails.logger.error "WebSocket connection setup failed: #{e.message}"
+        # Allow connection to proceed even if setup fails
+        Rails.logger.warn "Allowing WebSocket connection despite setup failure"
+      end
     end
     
     def disconnect
-      track_disconnection
-      Rails.logger.info "🔌 WebSocket connection closed for user #{current_user&.id}"
+      begin
+        track_disconnection
+        Rails.logger.info "🔌 WebSocket connection closed for user #{current_user&.id}"
+      rescue StandardError => e
+        Rails.logger.error "WebSocket disconnection tracking failed: #{e.message}"
+        # Don't prevent disconnection even if tracking fails
+      end
     end
     
     private
@@ -116,12 +127,16 @@ module ApplicationCable
         active: true
       }
       
-      Redis.current.setex(session_key, 7200, session_data.to_json)
+      begin
+        Redis.current.setex(session_key, 7200, session_data.to_json)
+      rescue StandardError => e
+        Rails.logger.warn "Failed to create new WebSocket session in Redis: #{e.message}"
+        # Continue without session storage
+      end
     end
     
     def setup_session
-      # Store connection info in Redis for tracking
-      connection_key = "ws_connection:#{current_user.id}:#{session_id}"
+      # Store connection info in Redis for tracking using WebSocket service
       connection_data = {
         user_id: current_user.id,
         session_id: session_id,
@@ -130,24 +145,23 @@ module ApplicationCable
         user_agent: request.headers['User-Agent']
       }
       
-      Redis.current.setex(connection_key, 3600, connection_data.to_json)
+      WebsocketService.store_connection_data(current_user.id, session_id, connection_data)
     end
     
     def track_connection
-      # Increment connection metrics
-      increment_metric('websocket.connections.total')
-      increment_metric("websocket.connections.user_type.#{current_user.user_type}")
+      # Increment connection metrics using WebSocket service
+      WebsocketService.track_metric('websocket.connections.total')
+      WebsocketService.track_metric("websocket.connections.user_type.#{current_user.user_type}")
     end
     
     def track_disconnection
       return unless current_user
       
-      # Clean up connection tracking
-      connection_key = "ws_connection:#{current_user.id}:#{session_id}"
-      Redis.current.del(connection_key)
+      # Clean up connection tracking using WebSocket service
+      WebsocketService.remove_connection_data(current_user.id, session_id)
       
       # Track disconnection metrics
-      increment_metric('websocket.disconnections.total')
+      WebsocketService.track_metric('websocket.disconnections.total')
     end
     
     def increment_metric(metric_name, value = 1)

@@ -44,6 +44,9 @@ module CarbonecomRails
     config.action_cable.url = 'ws://localhost:8080/cable'
     config.action_cable.allowed_request_origins = ['http://localhost:3000', 'https://localhost:3000']
     
+    # WebSocket fallback configuration
+    config.websocket_enabled = ENV.fetch('WEBSOCKET_ENABLED', 'true') == 'true'
+    
     # Background job configuration - disabled for now
     # config.active_job.queue_adapter = :sidekiq
     

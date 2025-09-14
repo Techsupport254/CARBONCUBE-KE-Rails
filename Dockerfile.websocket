@@ -15,3 +15,4 @@ EXPOSE 8080
 
 # Default command
 CMD ["anycable-go", "--host=0.0.0.0", "--port=8080", "--redis_url=redis://redis:6379/1", "--rpc-host=backend:50051"]
+

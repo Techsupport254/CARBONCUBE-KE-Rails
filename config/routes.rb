@@ -1,7 +1,11 @@
 
 Rails.application.routes.draw do
-  # Health check endpoint
+  # Health check endpoints
   get '/health', to: 'health#show'
+  namespace :api do
+    get '/health/websocket', to: 'health#websocket_status'
+    get '/health/overall', to: 'health#overall_health'
+  end
 
   root to: 'application#home'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

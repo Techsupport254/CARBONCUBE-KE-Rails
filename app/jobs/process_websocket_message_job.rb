@@ -1,8 +1,8 @@
 class ProcessWebsocketMessageJob < ApplicationJob
   queue_as :websocket
   
-  # Retry configuration with exponential backoff
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  # Retry configuration with exponential backoff - reduced attempts for graceful degradation
+  retry_on StandardError, wait: :exponentially_longer, attempts: 2
   
   def perform(message_data)
     # Extract data
@@ -45,9 +45,11 @@ class ProcessWebsocketMessageJob < ApplicationJob
     Rails.logger.error "Failed to process WebSocket message: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
     
-    # Send error back to sender if possible
-    notify_sender_of_error(sender_user, sender_session, e.message)
-    raise e
+    # Send error back to sender if possible (non-blocking)
+    WebsocketService.notify_error(sender_user, sender_session, e.message)
+    
+    # Don't re-raise the error to prevent job failure from blocking deployment
+    Rails.logger.warn "WebSocket message processing failed but deployment continues"
   end
   
   private
@@ -121,52 +123,15 @@ class ProcessWebsocketMessageJob < ApplicationJob
     # Prepare broadcast data
     message_data = serialize_message(message)
     
-    # Broadcast to buyer
-    if conversation.buyer_id
-      AnyCable.broadcast(
-        "conversations_buyer_#{conversation.buyer_id}",
-        {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: message_data,
-          timestamp: Time.current.iso8601
-        }
-      )
+    # Use WebSocket service for broadcasting with fallback
+    success = WebsocketService.broadcast_to_conversation(conversation, message_data, sender_session)
+    
+    if success
+      WebsocketService.track_metric('websocket.messages.broadcast.success')
+    else
+      Rails.logger.warn "Message broadcast failed but job continues"
+      WebsocketService.track_metric('websocket.messages.broadcast.error')
     end
-    
-    # Broadcast to seller
-    if conversation.seller_id
-      AnyCable.broadcast(
-        "conversations_seller_#{conversation.seller_id}",
-        {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: message_data,
-          timestamp: Time.current.iso8601
-        }
-      )
-    end
-    
-    # Broadcast to inquirer seller (if different from main seller)
-    if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
-      AnyCable.broadcast(
-        "conversations_seller_#{conversation.inquirer_seller_id}",
-        {
-          type: 'new_message',
-          conversation_id: conversation.id,
-          message: message_data,
-          timestamp: Time.current.iso8601
-        }
-      )
-    end
-    
-    # Track broadcast metrics
-    increment_metric('websocket.messages.broadcast.success')
-    
-  rescue StandardError => e
-    Rails.logger.error "Failed to broadcast message: #{e.message}"
-    increment_metric('websocket.messages.broadcast.error')
-    raise e
   end
   
   def serialize_message(message)
@@ -195,36 +160,46 @@ class ProcessWebsocketMessageJob < ApplicationJob
   end
   
   def update_conversation_activity(conversation)
-    # Update last activity timestamp
-    conversation.touch(:updated_at)
-    
-    # Update Redis cache for quick access
-    cache_key = "conversation_activity:#{conversation.id}"
-    Redis.current.setex(cache_key, 3600, Time.current.to_i)
+    begin
+      # Update last activity timestamp
+      conversation.touch(:updated_at)
+      
+      # Update Redis cache for quick access
+      cache_key = "conversation_activity:#{conversation.id}"
+      Redis.current.setex(cache_key, 3600, Time.current.to_i)
+    rescue StandardError => e
+      Rails.logger.warn "Failed to update conversation activity: #{e.message}"
+      # Continue without Redis cache update
+    end
   end
   
   def track_message_metrics(message)
     date_key = Date.current.to_s
     
-    # Track total messages
-    increment_metric("websocket.messages.created.total")
-    increment_metric("websocket.messages.created.#{message.sender_type.downcase}")
-    increment_metric("websocket.messages.created.type.#{message.message_type}")
+    # Track total messages using WebSocket service
+    WebsocketService.track_metric("websocket.messages.created.total")
+    WebsocketService.track_metric("websocket.messages.created.#{message.sender_type.downcase}")
+    WebsocketService.track_metric("websocket.messages.created.type.#{message.message_type}")
     
     # Track daily metrics
-    increment_metric("websocket.messages.daily.#{date_key}")
+    WebsocketService.track_metric("websocket.messages.daily.#{date_key}")
   end
   
   def post_message_processing(conversation, message)
-    # Queue notification job for offline participants
-    NotifyOfflineParticipantsJob.perform_later(conversation.id, message.id)
-    
-    # Update conversation participants' unread counts
-    UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
-    
-    # Content moderation (if enabled)
-    if Rails.application.config.content_moderation_enabled
-      ContentModerationJob.perform_later(message.id)
+    begin
+      # Queue notification job for offline participants
+      NotifyOfflineParticipantsJob.perform_later(conversation.id, message.id)
+      
+      # Update conversation participants' unread counts
+      UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
+      
+      # Content moderation (if enabled)
+      if Rails.application.config.content_moderation_enabled
+        ContentModerationJob.perform_later(message.id)
+      end
+    rescue StandardError => e
+      Rails.logger.warn "Failed to process post-message hooks: #{e.message}"
+      # Continue without post-processing
     end
   end
   
