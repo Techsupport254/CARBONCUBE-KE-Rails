@@ -1,7 +1,9 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  pool: 35
+  pool: 10
+  timeout: 5000
+  connect_timeout: 10
   url: <%= ENV['DATABASE_URL'] %>
   variables:
     statement_timeout: 30000
@@ -10,7 +12,9 @@ default: &default
 development:
   adapter: postgresql
   encoding: unicode
-  pool: 35
+  pool: 10
+  timeout: 5000
+  connect_timeout: 10
   url: <%= ENV['DATABASE_URL'] || 'postgresql://Quaint:3323@localhost:5432/merged' %>
 
 test:

@@ -2,25 +2,16 @@
 Rails.application.routes.draw do
   # Health check endpoints
   get '/health', to: 'health#show'
-  namespace :api do
-    get '/health/websocket', to: 'health#websocket_status'
-    get '/health/overall', to: 'health#overall_health'
-    
-    # Best sellers routes
-    resources :best_sellers, only: [:index] do
-      collection do
-        get 'global'
-        get 'refresh'
-      end
+  # Health check endpoints
+  get '/health/websocket', to: 'health#websocket_status'
+  get '/health/overall', to: 'health#overall_health'
+  
+  # Best sellers routes
+  resources :best_sellers, only: [:index] do
+    collection do
+      get 'global'
+      get 'refresh'
     end
-    
-    # Public API routes
-    resources :ads, only: [:index, :show] do
-      get 'reviews', to: 'reviews#index', on: :member
-    end
-    resources :categories, only: [:index, :show]
-    resources :subcategories, only: [:index, :show]
-    resources :banners, only: [:index]
   end
 
   root to: 'application#home'
@@ -49,6 +40,10 @@ Rails.application.routes.draw do
   
   get "up" => "rails/health#show", as: :rails_health_check
   post 'auth/login', to: 'authentication#login'
+  resources :banners, only: [:index]
+  resources :ads, only: [:index, :show] do
+    get 'reviews', to: 'reviews#index', on: :member
+  end
   
   # Sitemap generation endpoints (public)
   get 'sitemap/ads', to: 'sitemap#ads'

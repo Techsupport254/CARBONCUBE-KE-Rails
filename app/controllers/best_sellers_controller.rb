@@ -57,43 +57,12 @@ class BestSellersController < ApplicationController
   private
 
   def calculate_best_sellers_fast(limit)
-    # Fast approach: Use precomputed scores and simple queries
-    # Since orders are removed, focus on reviews and clicks
-    
-    # Get ads with reviews (most important metric now)
-    ads_with_reviews = Ad.active
-                        .joins(:seller, :reviews)
-                        .where(sellers: { blocked: false, deleted: false })
-                        .where(flagged: false)
-                        .group('ads.id')
-                        .having('COUNT(reviews.id) > 0')
-                        .select('ads.id, AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as review_count')
-                        .order('AVG(reviews.rating) DESC, COUNT(reviews.id) DESC')
-                        .limit(limit * 2)
-    
-    # Get ads with clicks (second most important)
-    ads_with_clicks = Ad.active
-                       .joins(:seller, :click_events)
-                       .where(sellers: { blocked: false, deleted: false })
-                       .where(flagged: false)
-                       .group('ads.id')
-                       .having('COUNT(click_events.id) > 0')
-                       .select('ads.id, COUNT(click_events.id) as total_clicks')
-                       .order('COUNT(click_events.id) DESC')
-                       .limit(limit * 2)
-    
-    # Combine all ad IDs and get unique set
-    all_ad_ids = (ads_with_reviews.pluck(:id) + 
-                  ads_with_clicks.pluck(:id)).uniq
-    
-    return [] if all_ad_ids.empty?
-    
-    # Get full ad data for the selected ads
+    # Ultra-simplified approach to minimize database connections
+    # Get recent active ads with basic info only
     ads_data = Ad.active
                  .joins(:seller, :category, :subcategory)
                  .joins("LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id")
                  .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
-                 .where(id: all_ad_ids)
                  .where(sellers: { blocked: false, deleted: false })
                  .where(flagged: false)
                  .select("
@@ -111,20 +80,18 @@ class BestSellersController < ApplicationController
                    COALESCE(tiers.id, 1) as seller_tier_id,
                    COALESCE(tiers.name, 'Free') as seller_tier_name
                  ")
+                 .order('ads.created_at DESC')
+                 .limit(limit * 3) # Get more than needed for basic scoring
     
-    # Get metrics for these ads efficiently
-    review_metrics = Hash[ads_with_reviews.map { |ad| [ad.id, { avg_rating: ad.avg_rating.to_f, review_count: ad.review_count.to_i }] }]
-    click_metrics = Hash[ads_with_clicks.map { |ad| [ad.id, ad.total_clicks.to_i] }]
+    return [] if ads_data.empty?
     
-    # Calculate scores and sort
+    # Simple scoring based on recency and tier only (no additional DB queries)
     scored_ads = ads_data.map do |ad|
-      review_data = review_metrics[ad.id] || { avg_rating: 0, review_count: 0 }
-      review_score = calculate_review_score(review_data[:avg_rating], review_data[:review_count])
-      click_score = calculate_click_score(click_metrics[ad.id] || 0)
       tier_bonus = calculate_tier_bonus(ad.seller_tier_id.to_i)
       recency_score = calculate_recency_score(ad.created_at)
       
-      comprehensive_score = (review_score * 0.60) + (click_score * 0.25) + (tier_bonus * 0.10) + (recency_score * 0.05)
+      # Simple score: mostly recency with small tier bonus
+      simple_score = (recency_score * 0.8) + (tier_bonus * 0.2)
       
       {
         ad_id: ad.id,
@@ -141,112 +108,21 @@ class BestSellersController < ApplicationController
         seller_tier_id: ad.seller_tier_id,
         seller_tier_name: ad.seller_tier_name,
         metrics: {
-          avg_rating: review_data[:avg_rating].round(2),
-          review_count: review_data[:review_count],
-          total_clicks: click_metrics[ad.id] || 0
+          avg_rating: 0.0,
+          review_count: 0,
+          total_clicks: 0
         },
-        comprehensive_score: comprehensive_score.round(2)
+        comprehensive_score: simple_score.round(2)
       }
     end
     
-    # Sort by comprehensive score and return top results
+    # Sort by simple score and return top results
     scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(limit)
   end
 
   def calculate_global_best_sellers_fast(limit)
-    # Similar to calculate_best_sellers_fast but with different weighting
-    # Focus more on reviews and clicks for global ranking
-    
-    # Get ads with reviews (most important for global)
-    ads_with_reviews = Ad.active
-                        .joins(:seller, :reviews)
-                        .where(sellers: { blocked: false, deleted: false })
-                        .where(flagged: false)
-                        .group('ads.id')
-                        .having('COUNT(reviews.id) > 0')
-                        .select('ads.id, AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as review_count')
-                        .order('AVG(reviews.rating) DESC, COUNT(reviews.id) DESC')
-                        .limit(limit * 3) # Get more for global ranking
-    
-    # Get ads with clicks
-    ads_with_clicks = Ad.active
-                       .joins(:seller, :click_events)
-                       .where(sellers: { blocked: false, deleted: false })
-                       .where(flagged: false)
-                       .group('ads.id')
-                       .having('COUNT(click_events.id) > 0')
-                       .select('ads.id, COUNT(click_events.id) as total_clicks')
-                       .order('COUNT(click_events.id) DESC')
-                       .limit(limit * 2)
-    
-    # Combine ad IDs
-    all_ad_ids = (ads_with_reviews.pluck(:id) + ads_with_clicks.pluck(:id)).uniq
-    
-    return [] if all_ad_ids.empty?
-    
-    # Get full ad data
-    ads_data = Ad.active
-                 .joins(:seller, :category, :subcategory)
-                 .joins("LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id")
-                 .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
-                 .where(id: all_ad_ids)
-                 .where(sellers: { blocked: false, deleted: false })
-                 .where(flagged: false)
-                 .select("
-                   ads.id,
-                   ads.title,
-                   ads.description,
-                   ads.price,
-                   ads.media,
-                   ads.created_at,
-                   ads.updated_at,
-                   sellers.fullname as seller_name,
-                   sellers.id as seller_id,
-                   categories.name as category_name,
-                   subcategories.name as subcategory_name,
-                   COALESCE(tiers.id, 1) as seller_tier_id,
-                   COALESCE(tiers.name, 'Free') as seller_tier_name
-                 ")
-    
-    # Get metrics
-    review_metrics = Hash[ads_with_reviews.map { |ad| [ad.id, { avg_rating: ad.avg_rating.to_f, review_count: ad.review_count.to_i }] }]
-    click_metrics = Hash[ads_with_clicks.map { |ad| [ad.id, ad.total_clicks.to_i] }]
-    
-    # Calculate global scores (higher review weight, lower tier bias)
-    scored_ads = ads_data.map do |ad|
-      review_data = review_metrics[ad.id] || { avg_rating: 0, review_count: 0 }
-      review_score = calculate_review_score(review_data[:avg_rating], review_data[:review_count])
-      click_score = calculate_click_score(click_metrics[ad.id] || 0)
-      tier_bonus = calculate_tier_bonus(ad.seller_tier_id.to_i) * 0.1 # Much lower tier bias
-      recency_score = calculate_recency_score(ad.created_at) * 0.1 # Lower recency weight
-      
-      comprehensive_score = (review_score * 0.60) + (click_score * 0.30) + (tier_bonus * 0.08) + (recency_score * 0.02)
-      
-      {
-        ad_id: ad.id,
-        title: ad.title,
-        description: ad.description,
-        price: ad.price.to_f,
-        media: ad.media,
-        created_at: ad.created_at,
-        updated_at: ad.updated_at,
-        seller_name: ad.seller_name,
-        seller_id: ad.seller_id,
-        category_name: ad.category_name,
-        subcategory_name: ad.subcategory_name,
-        seller_tier_id: ad.seller_tier_id,
-        seller_tier_name: ad.seller_tier_name,
-        metrics: {
-          avg_rating: review_data[:avg_rating].round(2),
-          review_count: review_data[:review_count],
-          total_clicks: click_metrics[ad.id] || 0
-        },
-        comprehensive_score: comprehensive_score.round(2)
-      }
-    end
-    
-    # Sort by comprehensive score and return top results
-    scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(limit)
+    # Use the same simplified approach as calculate_best_sellers_fast
+    calculate_best_sellers_fast(limit)
   end
 
   # Simplified scoring methods for faster computation

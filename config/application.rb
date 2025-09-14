@@ -55,5 +55,12 @@ module CarbonecomRails
     
     # Security headers
     config.force_ssl = Rails.env.production?
+    
+    # Database connection pooling configuration
+    # Note: Connection pool settings are configured in database.yml
+    
+    # Add connection pool middleware
+    require_relative '../app/middleware/connection_pool_middleware'
+    config.middleware.use ConnectionPoolMiddleware
   end
 end
