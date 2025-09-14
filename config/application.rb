@@ -41,7 +41,7 @@ module CarbonecomRails
     config.action_cable.mount_path = '/cable'
     
     # Action Cable configuration
-    config.action_cable.url = 'ws://localhost:8081/cable'
+    config.action_cable.url = 'ws://localhost:8080/cable'
     config.action_cable.allowed_request_origins = ['http://localhost:3000', 'https://localhost:3000']
     
     # Background job configuration - disabled for now

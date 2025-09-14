@@ -19,6 +19,10 @@ RUN bundle install
 # Copy the entire application
 COPY . .
 
+# Copy the anycable-go binary (Linux version)
+COPY bin/anycable-go /usr/local/bin/anycable-go
+RUN chmod +x /usr/local/bin/anycable-go
+
 
 # Copy the entrypoint script and make it executable
 COPY entrypoint.sh /usr/bin/entrypoint.sh

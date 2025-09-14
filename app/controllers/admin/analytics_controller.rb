@@ -92,17 +92,17 @@ class Admin::AnalyticsController < ApplicationController
     end.limit(10)
 
     # # Total Revenue
-    # total_revenue = Order.sum(:total_amount)
+    # total_revenue = PaymentTransaction.where(status: 'completed').sum(:amount)
 
     # Sales Performance (example: revenue by month)
     # Sales Performance for the last 3 months
     current_month = Date.current.beginning_of_month
     three_months_ago = 2.months.ago.beginning_of_month
 
-    sales_performance = Order.joins(:order_items)
+    sales_performance = PaymentTransaction.where(status: 'completed')
                         .where(created_at: three_months_ago..current_month.end_of_month)
-                        .group("DATE_TRUNC('month', orders.created_at)")
-                        .sum('order_items.price * order_items.quantity')
+                        .group("DATE_TRUNC('month', payment_transactions.created_at)")
+                        .sum(:amount)
                         .transform_keys { |k| k.strftime("%B %Y") }
 
 #===============================================================CATEGORY ANALYTICS===============================================================#
@@ -158,12 +158,6 @@ class Admin::AnalyticsController < ApplicationController
 
     # Log the data for tracking purposes
     # Rails.logger.info "Fetched Category Wishlist Data: #{category_wishlist_data.inspect}"
-
-    # Total number of orders by status
-    statuses = ['Processing', 'Dispatched', 'In-Transit', 'Delivered', 'Cancelled', 'Returned']
-    order_counts_by_status = statuses.map do |status|
-      { name: status, count: Order.where(status: status).count }
-    end
 
 #===============================================================PURCHASER ANALYTICS===============================================================#
 
@@ -273,7 +267,6 @@ class Admin::AnalyticsController < ApplicationController
       sellers_insights: sellers_insights,
       sales_performance: sales_performance,
       ads_per_category: ads_per_category,
-      order_counts_by_status: order_counts_by_status,
       category_click_events: category_click_events,
       category_wishlist_data: category_wishlist_data,
       buyer_age_groups: buyer_age_groups,

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_13_090432) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -21,11 +21,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
   create_schema "vault"
 
   # These are extensions that must be enabled in order to support this database
-  enable_extension "extensions.pg_stat_statements"
-  enable_extension "extensions.pgcrypto"
-  enable_extension "extensions.uuid-ossp"
-  enable_extension "pg_catalog.plpgsql"
-  enable_extension "pg_trgm"
+  enable_extension "pg_graphql"
+  enable_extension "pg_stat_statements"
+  enable_extension "pgcrypto"
+  enable_extension "plpgsql"
+  enable_extension "supabase_vault"
+  enable_extension "uuid-ossp"
 
   create_table "abouts", force: :cascade do |t|
     t.text "description"
@@ -84,7 +85,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.index ["deleted", "flagged", "seller_id", "created_at", "id"], name: "index_ads_best_sellers_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
-    t.index ["description"], name: "index_ads_on_description", opclass: :gin_trgm_ops, using: :gin
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged_perf"
@@ -92,7 +92,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
-    t.index ["title"], name: "index_ads_on_title", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "age_groups", force: :cascade do |t|
@@ -122,14 +121,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "best_sellers_cache", force: :cascade do |t|
+  create_table "best_sellers_caches", force: :cascade do |t|
     t.string "cache_key", null: false
     t.jsonb "data", null: false
     t.datetime "expires_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["cache_key"], name: "index_best_sellers_cache_on_cache_key", unique: true
-    t.index ["expires_at"], name: "index_best_sellers_cache_on_expires_at"
+    t.index ["cache_key"], name: "index_best_sellers_caches_on_cache_key", unique: true
+    t.index ["expires_at"], name: "index_best_sellers_caches_on_expires_at"
   end
 
   create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
@@ -409,7 +408,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_13_090432) do
 
   create_table "playing_with_neon", id: :serial, force: :cascade do |t|
     t.text "name", null: false
-    t.float "value", limit: 24
+    t.float "value"
   end
 
   create_table "promotions", force: :cascade do |t|

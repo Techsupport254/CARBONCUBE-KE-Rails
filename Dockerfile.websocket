@@ -1,0 +1,17 @@
+# Use the official anycable-go image as base
+FROM anycable/anycable-go:1.4
+
+# Set working directory
+WORKDIR /app
+
+# Copy the anycable-go binary (Linux version)
+COPY bin/anycable-go /usr/local/bin/anycable-go
+
+# Make sure it's executable
+RUN chmod +x /usr/local/bin/anycable-go
+
+# Expose the WebSocket port
+EXPOSE 8080
+
+# Default command
+CMD ["anycable-go", "--host=0.0.0.0", "--port=8080", "--redis_url=redis://redis:6379/1", "--rpc-host=backend:50051"]
