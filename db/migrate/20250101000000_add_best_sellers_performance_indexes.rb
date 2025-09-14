@@ -1,4 +1,4 @@
-class AddBestSellersPerformanceIndexes < ActiveRecord::Migration[8.0]
+class AddBestSellersPerformanceIndexes < ActiveRecord::Migration[7.1]
   def up
     # Indexes for order_items to optimize sales queries
     add_index :order_items, [:ad_id, :quantity], name: 'index_order_items_on_ad_id_quantity' unless index_exists?(:order_items, [:ad_id, :quantity], name: 'index_order_items_on_ad_id_quantity')
@@ -9,8 +9,10 @@ class AddBestSellersPerformanceIndexes < ActiveRecord::Migration[8.0]
     # Indexes for click_events to optimize click queries
     add_index :click_events, [:ad_id, :created_at], name: 'index_click_events_on_ad_id_created_at' unless index_exists?(:click_events, [:ad_id, :created_at], name: 'index_click_events_on_ad_id_created_at')
     
-    # Composite index for ads with seller joins for best sellers queries
-    add_index :ads, [:deleted, :flagged, :seller_id, :created_at, :id], name: 'index_ads_best_sellers_perf' unless index_exists?(:ads, [:deleted, :flagged, :seller_id, :created_at, :id], name: 'index_ads_best_sellers_perf')
+    # Composite index for ads with seller joins for best sellers queries (only if deleted column exists)
+    if column_exists?(:ads, :deleted)
+      add_index :ads, [:deleted, :flagged, :seller_id, :created_at, :id], name: 'index_ads_best_sellers_perf' unless index_exists?(:ads, [:deleted, :flagged, :seller_id, :created_at, :id], name: 'index_ads_best_sellers_perf')
+    end
     
     # Index for wish_lists
     add_index :wish_lists, :ad_id, name: 'index_wish_lists_on_ad_id' unless index_exists?(:wish_lists, :ad_id, name: 'index_wish_lists_on_ad_id')

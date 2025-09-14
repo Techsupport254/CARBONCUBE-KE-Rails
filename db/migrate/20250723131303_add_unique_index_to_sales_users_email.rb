@@ -1,4 +1,4 @@
-class AddUniqueIndexToSalesUsersEmail < ActiveRecord::Migration[8.0]
+class AddUniqueIndexToSalesUsersEmail < ActiveRecord::Migration[7.1]
   def change
   end
 end

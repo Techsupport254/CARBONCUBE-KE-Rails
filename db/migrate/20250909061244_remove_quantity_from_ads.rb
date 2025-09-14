@@ -1,4 +1,4 @@
-class RemoveQuantityFromAds < ActiveRecord::Migration[8.0]
+class RemoveQuantityFromAds < ActiveRecord::Migration[7.1]
   def change
     remove_column :ads, :quantity, :integer
   end

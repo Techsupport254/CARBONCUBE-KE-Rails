@@ -1,4 +1,4 @@
-class CreateSellerDocuments < ActiveRecord::Migration[8.0]
+class CreateSellerDocuments < ActiveRecord::Migration[7.1]
   def change
     create_table :seller_documents do |t|
       t.references :seller, null: false, foreign_key: true

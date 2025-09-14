@@ -1,4 +1,4 @@
-class AddUniqueIndexToSellerAndBuyerEmails < ActiveRecord::Migration[8.0]
+class AddUniqueIndexToSellerAndBuyerEmails < ActiveRecord::Migration[7.1]
   def change
     remove_index :sellers, :email if index_exists?(:sellers, :email)
     remove_index :buyers, :email if index_exists?(:buyers, :email)

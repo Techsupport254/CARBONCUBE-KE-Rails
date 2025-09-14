@@ -1,4 +1,4 @@
-class FixConversationSellerIds < ActiveRecord::Migration[8.0]
+class FixConversationSellerIds < ActiveRecord::Migration[7.1]
   def up
     # Find conversations that have an ad_id but no seller_id or admin_id
     conversations_to_fix = Conversation.where('ad_id IS NOT NULL AND seller_id IS NULL AND admin_id IS NULL')

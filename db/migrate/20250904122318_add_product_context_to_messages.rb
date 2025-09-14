@@ -1,4 +1,4 @@
-class AddProductContextToMessages < ActiveRecord::Migration[8.0]
+class AddProductContextToMessages < ActiveRecord::Migration[7.1]
   def change
     # Add product context to individual messages
     add_column :messages, :ad_id, :integer

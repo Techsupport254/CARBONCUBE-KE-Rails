@@ -1,4 +1,4 @@
-class AddSourceTrackingToAnalytics < ActiveRecord::Migration[8.0]
+class AddSourceTrackingToAnalytics < ActiveRecord::Migration[7.1]
   def change
     add_column :analytics, :source, :string
     add_column :analytics, :referrer, :string

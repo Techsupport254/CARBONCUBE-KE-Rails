@@ -1,4 +1,4 @@
-class AddDeletedToAds < ActiveRecord::Migration[8.0]
+class AddDeletedToAds < ActiveRecord::Migration[7.1]
   def change
     add_column :ads, :deleted, :boolean, default: false
   end

@@ -21,6 +21,7 @@ Rails.application.routes.draw do
     collection do
       get :unread_count
       get :unread_counts
+      post :online_status
     end
   end
 

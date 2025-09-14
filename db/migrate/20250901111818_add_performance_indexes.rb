@@ -1,4 +1,4 @@
-class AddPerformanceIndexes < ActiveRecord::Migration[8.0]
+class AddPerformanceIndexes < ActiveRecord::Migration[7.1]
   def up
     # Indexes for ads table
     add_index :ads, [:deleted, :flagged, :created_at], name: 'index_ads_on_deleted_flagged_created_at' unless index_exists?(:ads, [:deleted, :flagged, :created_at], name: 'index_ads_on_deleted_flagged_created_at')

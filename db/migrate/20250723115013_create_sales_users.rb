@@ -1,4 +1,4 @@
-class CreateSalesUsers < ActiveRecord::Migration[8.0]
+class CreateSalesUsers < ActiveRecord::Migration[7.1]
   def change
     create_table :sales_users do |t|
       t.string :fullname
