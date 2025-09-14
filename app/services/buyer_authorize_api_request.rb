@@ -16,14 +16,22 @@ class BuyerAuthorizeApiRequest
 
     if buyer_id
       buyer = Buyer.find_by(id: buyer_id)
-      return buyer if buyer
+      if buyer && !buyer.deleted?
+        return buyer
+      elsif buyer&.deleted?
+        Rails.logger.error "BuyerAuthorizeApiRequest: Buyer #{buyer_id} is deleted"
+      end
     end
 
     buyer_email = decoded_token[:email] if decoded_token.present?
 
     if buyer_email
       buyer = Buyer.find_by(email: buyer_email)
-      return buyer if buyer
+      if buyer && !buyer.deleted?
+        return buyer
+      elsif buyer&.deleted?
+        Rails.logger.error "BuyerAuthorizeApiRequest: Buyer with email #{buyer_email} is deleted"
+      end
     end
 
     raise ExceptionHandler::InvalidToken, 'Invalid token'

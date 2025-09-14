@@ -79,29 +79,38 @@ module ApplicationCable
     def find_user_from_token(decoded_token)
       # Handle different token formats based on user type
       if decoded_token['seller_id']
-        Seller.find_by(id: decoded_token['seller_id'])
+        seller = Seller.find_by(id: decoded_token['seller_id'])
+        return seller if seller && !seller.deleted?
+        Rails.logger.error "WebSocket: Seller #{decoded_token['seller_id']} not found or deleted"
+        return nil
       elsif decoded_token['user_id']
         # Try to find user in different models based on role
         role = decoded_token['role']
         case role&.downcase
         when 'buyer'
-          Buyer.find_by(id: decoded_token['user_id'])
+          buyer = Buyer.find_by(id: decoded_token['user_id'])
+          return buyer if buyer && !buyer.deleted?
         when 'admin'
-          Admin.find_by(id: decoded_token['user_id'])
+          return Admin.find_by(id: decoded_token['user_id'])
         when 'sales'
-          SalesUser.find_by(id: decoded_token['user_id'])
+          return SalesUser.find_by(id: decoded_token['user_id'])
         when 'rider'
-          Rider.find_by(id: decoded_token['user_id'])
+          rider = Rider.find_by(id: decoded_token['user_id'])
+          return rider if rider && !rider.deleted?
         else
           # Fallback: try all models
-          Buyer.find_by(id: decoded_token['user_id']) ||
-          Admin.find_by(id: decoded_token['user_id']) ||
-          SalesUser.find_by(id: decoded_token['user_id']) ||
-          Rider.find_by(id: decoded_token['user_id'])
+          buyer = Buyer.find_by(id: decoded_token['user_id'])
+          return buyer if buyer && !buyer.deleted?
+          admin = Admin.find_by(id: decoded_token['user_id'])
+          return admin if admin
+          sales_user = SalesUser.find_by(id: decoded_token['user_id'])
+          return sales_user if sales_user
+          rider = Rider.find_by(id: decoded_token['user_id'])
+          return rider if rider && !rider.deleted?
         end
-      else
-        nil
       end
+      
+      nil
     end
     
     def verify_session_validity!

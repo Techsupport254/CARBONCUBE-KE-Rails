@@ -19,7 +19,12 @@ class SellerAuthorizeApiRequest
     if seller_id
       seller = Seller.find_by(id: seller_id)
       Rails.logger.info "SellerAuthorizeApiRequest: Found seller by ID: #{seller&.id}"
-      return seller if seller
+      if seller && !seller.deleted?
+        Rails.logger.info "SellerAuthorizeApiRequest: Seller is active, returning seller"
+        return seller
+      elsif seller&.deleted?
+        Rails.logger.error "SellerAuthorizeApiRequest: Seller #{seller_id} is deleted"
+      end
     end
 
     seller_email = decoded_token[:email] if decoded_token.present?
@@ -28,7 +33,12 @@ class SellerAuthorizeApiRequest
     if seller_email
       seller = Seller.find_by(email: seller_email)
       Rails.logger.info "SellerAuthorizeApiRequest: Found seller by email: #{seller&.id}"
-      return seller if seller
+      if seller && !seller.deleted?
+        Rails.logger.info "SellerAuthorizeApiRequest: Seller is active, returning seller"
+        return seller
+      elsif seller&.deleted?
+        Rails.logger.error "SellerAuthorizeApiRequest: Seller with email #{seller_email} is deleted"
+      end
     end
 
     Rails.logger.error "SellerAuthorizeApiRequest: No seller found, raising InvalidToken"
