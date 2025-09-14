@@ -103,6 +103,9 @@ Rails.application.configure do
   config.hosts << "backend"
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
+  config.hosts << "188.245.245.79"
+  config.hosts << "carbon-frontend-1"
+  config.hosts << "carbon-backend-1"
   # config.hosts.clear # Allow all hosts (only for debugging)
 
   # Skip DNS rebinding protection for the default health check endpoint.
