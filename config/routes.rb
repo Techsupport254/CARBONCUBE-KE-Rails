@@ -5,6 +5,14 @@ Rails.application.routes.draw do
   namespace :api do
     get '/health/websocket', to: 'health#websocket_status'
     get '/health/overall', to: 'health#overall_health'
+    
+    # Best sellers routes
+    resources :best_sellers, only: [:index] do
+      collection do
+        get 'global'
+        get 'refresh'
+      end
+    end
   end
 
   root to: 'application#home'
@@ -45,14 +53,6 @@ Rails.application.routes.draw do
   get 'sitemap/subcategories', to: 'sitemap#subcategories'
   get 'sitemap/stats', to: 'sitemap#stats'
   
-  
-  # Best sellers routes
-  resources :best_sellers, only: [:index] do
-    collection do
-      get 'global'
-      get 'refresh'
-    end
-  end
 
   # Routes for logging ad searches
   resources :ad_searches, only: [:create]
