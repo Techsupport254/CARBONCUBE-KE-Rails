@@ -1,4 +1,4 @@
-class ProcessWebSocketMessageJob < ApplicationJob
+class ProcessWebsocketMessageJob < ApplicationJob
   queue_as :websocket
   
   # Retry configuration with exponential backoff
