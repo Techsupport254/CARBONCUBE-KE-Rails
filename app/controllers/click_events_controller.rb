@@ -1,5 +1,6 @@
 class ClickEventsController < ApplicationController
-  before_action :authenticate_buyer, only: [:create]
+  # Remove authentication requirement for click events to allow anonymous tracking
+  # before_action :authenticate_buyer, only: [:create]
 
   def create
     # Check if this is an internal user that should be excluded
