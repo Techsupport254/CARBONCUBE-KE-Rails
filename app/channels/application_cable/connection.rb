@@ -1,5 +1,5 @@
 module ApplicationCable
-  class Connection < AnyCable::Connection
+  class Connection < ActionCable::Connection::Base
     identified_by :current_user, :session_id
     
     def connect
