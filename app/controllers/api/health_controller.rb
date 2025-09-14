@@ -1,6 +1,6 @@
 class Api::HealthController < ApplicationController
   # Skip authentication for health checks
-  skip_before_action :authenticate_user!
+  skip_before_action :authenticate_request, raise: false
   
   def websocket_status
     status = WebsocketService.status
