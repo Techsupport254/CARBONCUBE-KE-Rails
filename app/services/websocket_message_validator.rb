@@ -1,7 +1,7 @@
 require 'dry-validation'
 
 # Base validator for WebSocket messages
-class WebSocketMessageValidator < Dry::Validation::Contract
+class WebsocketMessageValidator < Dry::Validation::Contract
   # Common validation rules
   def self.timestamp_format
     ->(value) { Time.parse(value.to_s) rescue false }
@@ -13,7 +13,7 @@ class WebSocketMessageValidator < Dry::Validation::Contract
 end
 
 # Validator for conversation messages
-class ConversationMessageValidator < WebSocketMessageValidator
+class ConversationMessageValidator < WebsocketMessageValidator
   params do
     required(:conversation_id).filled(:integer)
     required(:content).filled(:string)
@@ -39,7 +39,7 @@ class ConversationMessageValidator < WebSocketMessageValidator
 end
 
 # Validator for presence updates
-class PresenceUpdateValidator < WebSocketMessageValidator
+class PresenceUpdateValidator < WebsocketMessageValidator
   params do
     required(:type).filled(:string, included_in?: %w[typing_start typing_stop message_read message_delivered online offline])
     optional(:conversation_id).maybe(:integer)
@@ -50,7 +50,7 @@ class PresenceUpdateValidator < WebSocketMessageValidator
   
   rule(:timestamp) do
     if key? && value
-      unless WebSocketMessageValidator.timestamp_format.call(value)
+      unless WebsocketMessageValidator.timestamp_format.call(value)
         key.failure('must be a valid timestamp')
       end
     end
@@ -58,7 +58,7 @@ class PresenceUpdateValidator < WebSocketMessageValidator
 end
 
 # Validator for notification messages
-class NotificationMessageValidator < WebSocketMessageValidator
+class NotificationMessageValidator < WebsocketMessageValidator
   params do
     required(:type).filled(:string, included_in?: %w[order_update payment_confirmation new_message system_alert])
     required(:title).filled(:string)
