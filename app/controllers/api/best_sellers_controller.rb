@@ -67,7 +67,7 @@ class Api::BestSellersController < ApplicationController
                    ads.created_at, ads.updated_at, ads.seller_id,
                    categories.name as category_name,
                    subcategories.name as subcategory_name,
-                   sellers.name as seller_name,
+                   sellers.fullname as seller_name,
                    seller_tiers.tier_id as seller_tier_id,
                    tiers.name as seller_tier_name
                  ")
@@ -151,7 +151,7 @@ class Api::BestSellersController < ApplicationController
                    ads.created_at, ads.updated_at, ads.seller_id,
                    categories.name as category_name,
                    subcategories.name as subcategory_name,
-                   sellers.name as seller_name,
+                   sellers.fullname as seller_name,
                    seller_tiers.tier_id as seller_tier_id,
                    tiers.name as seller_tier_name
                  ")
