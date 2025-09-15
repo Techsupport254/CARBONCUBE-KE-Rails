@@ -1,18 +1,74 @@
 # app/controllers/buyer/profiles_controller.rb
+require 'fileutils'
+
 class Buyer::ProfilesController < ApplicationController
   before_action :authenticate_buyer
 
   # GET /buyer/profile
   def show
-    render json: current_buyer
+    render json: current_buyer.as_json
   end
 
   # PATCH/PUT /buyer/profile
   def update
-    if current_buyer.update(buyer_params)
-      render json: current_buyer
-    else
-      render json: current_buyer.errors, status: :unprocessable_entity
+    begin
+      Rails.logger.info "Received params: #{params.inspect}"
+      
+      uploaded_profile_picture_url = nil
+      
+      # Handle profile picture upload if present
+      if params[:profile_picture].present?
+        pic = params[:profile_picture]
+        
+        # Check if it's actually a file object
+        unless pic.respond_to?(:original_filename)
+          Rails.logger.error "Profile picture is not a file object: #{pic.class}"
+          return render json: { error: "Invalid file format" }, status: :unprocessable_entity
+        end
+        
+        Rails.logger.info "📸 Processing profile picture: #{pic.original_filename}"
+
+        uploaded_profile_picture_url = handle_upload(
+          file: pic,
+          type: :profile_picture,
+          max_size: 2.megabytes,
+          accepted_types: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+          processing_method: :process_and_upload_profile_picture
+        )
+
+        if uploaded_profile_picture_url.nil?
+          Rails.logger.error "Profile picture upload failed"
+          return render json: { error: "Failed to upload profile picture" }, status: :unprocessable_entity
+        end
+
+        Rails.logger.info "Profile picture uploaded successfully: #{uploaded_profile_picture_url}"
+      end
+
+      # Only update fields that are provided and valid
+      update_params = buyer_params.reject { |k, v| v.blank? }
+      
+      # Remove any unexpected fields that might cause issues
+      unexpected_fields = ['created_at', 'updated_at', 'id']
+      unexpected_fields.each { |field| update_params.delete(field) }
+      
+      # Additional filtering for empty strings and null values
+      update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
+      
+      Rails.logger.info "Update params after filtering: #{update_params.inspect}"
+      
+      # Add the uploaded URL if available
+      update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
+      
+      if current_buyer.update(update_params)
+        render json: current_buyer.as_json
+      else
+        Rails.logger.error "Update failed: #{current_buyer.errors.full_messages}"
+        render json: current_buyer.errors, status: :unprocessable_entity
+      end
+    rescue => e
+      Rails.logger.error "Unexpected error in update: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "An unexpected error occurred" }, status: :internal_server_error
     end
   end
 
@@ -52,6 +108,37 @@ class Buyer::ProfilesController < ApplicationController
 
   # Updated buyer_params to permit top-level parameters
   def buyer_params
-    params.permit(:fullname, :username, :phone_number, :email, :location, :zipcode, :fullname, :location, :gender, :city, :birthdate)
+    params.permit(:fullname, :username, :phone_number, :email, :location, :zipcode, :gender, :city)
+  end
+
+  # DRY Upload Handler
+  def handle_upload(file:, type:, max_size:, accepted_types:, processing_method:)
+    raise "#{type.to_s.humanize} is too large" if file.size > max_size
+    unless accepted_types.include?(file.content_type)
+      raise "#{type.to_s.humanize} must be one of: #{accepted_types.join(', ')}"
+    end
+    send(processing_method, file)
+  rescue => e
+    Rails.logger.error "Upload failed (#{type}): #{e.message}"
+    nil
+  end
+
+  # Profile Picture Upload (direct upload, no processing)
+  def process_and_upload_profile_picture(image)
+    begin
+      # Upload directly to Cloudinary without any processing
+      uploaded = Cloudinary::Uploader.upload(image.tempfile.path,
+        upload_preset: ENV['UPLOAD_PRESET'],
+        folder: "buyer_profile_pictures",
+        transformation: [
+          { width: 400, height: 400, crop: "fill", gravity: "face" },
+          { quality: "auto", fetch_format: "auto" }
+        ]
+      )
+      uploaded["secure_url"]
+    rescue => e
+      Rails.logger.error "Error uploading profile picture: #{e.message}"
+      nil
+    end
   end
 end
