@@ -587,6 +587,35 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_090155) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "users", force: :cascade do |t|
+    t.string "type", null: false
+    t.string "fullname", null: false
+    t.string "username"
+    t.string "email", null: false
+    t.string "password_digest", null: false
+    t.string "phone_number"
+    t.string "location"
+    t.string "zipcode"
+    t.string "city"
+    t.string "gender"
+    t.boolean "blocked", default: false
+    t.boolean "deleted", default: false
+    t.string "profile_picture"
+    t.bigint "county_id"
+    t.bigint "sub_county_id"
+    t.bigint "age_group_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["age_group_id"], name: "index_users_on_age_group_id"
+    t.index ["county_id"], name: "index_users_on_county_id"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["phone_number"], name: "index_users_on_phone_number", unique: true, where: "(phone_number IS NOT NULL)"
+    t.index ["sub_county_id"], name: "index_users_on_sub_county_id"
+    t.index ["type", "email"], name: "index_users_on_type_and_email"
+    t.index ["type"], name: "index_users_on_type"
+    t.index ["username"], name: "index_users_on_username", unique: true, where: "(username IS NOT NULL)"
+  end
+
   create_table "vehicle_types", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -646,6 +675,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_090155) do
   add_foreign_key "sub_counties", "counties"
   add_foreign_key "tier_features", "tiers"
   add_foreign_key "tier_pricings", "tiers"
+  add_foreign_key "users", "age_groups"
+  add_foreign_key "users", "counties"
+  add_foreign_key "users", "sub_counties"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers"
   add_foreign_key "wish_lists", "sellers"
