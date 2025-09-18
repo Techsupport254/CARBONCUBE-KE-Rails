@@ -28,5 +28,5 @@ RUN chmod +x /usr/bin/entrypoint.sh
 EXPOSE 3001
 
 # Use entrypoint.sh to setup cron and start Rails
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]
 CMD ["rails", "server", "-b", "0.0.0.0", "-p", "3001"]
