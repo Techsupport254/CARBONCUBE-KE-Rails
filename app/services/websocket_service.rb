@@ -7,7 +7,7 @@ class WebsocketService
       
       begin
         # Try to ping Redis to check if WebSocket infrastructure is available
-        Redis.current.ping == 'PONG'
+        RedisConnection.ping == 'PONG'
       rescue StandardError
         false
       end
@@ -18,7 +18,7 @@ class WebsocketService
       return false unless available?
       
       begin
-        AnyCable.broadcast(channel, data)
+        ActionCable.server.broadcast(channel, data)
         true
       rescue StandardError => e
         Rails.logger.warn "WebSocket broadcast failed: #{e.message}"
@@ -90,7 +90,7 @@ class WebsocketService
       
       begin
         connection_key = "ws_connection:#{user_id}:#{session_id}"
-        Redis.current.setex(connection_key, 3600, connection_data.to_json)
+        RedisConnection.setex(connection_key, 3600, connection_data.to_json)
         true
       rescue StandardError => e
         Rails.logger.warn "Failed to store WebSocket connection data: #{e.message}"
@@ -104,11 +104,51 @@ class WebsocketService
       
       begin
         connection_key = "ws_connection:#{user_id}:#{session_id}"
-        Redis.current.del(connection_key)
+        RedisConnection.del(connection_key)
         true
       rescue StandardError => e
         Rails.logger.warn "Failed to remove WebSocket connection data: #{e.message}"
         false
+      end
+    end
+    
+    # Get active connections for a user
+    def get_active_connections(user_id)
+      return [] unless available?
+      
+      begin
+        # Get all connection keys for this user
+        pattern = "ws_connection:#{user_id}:*"
+        connection_keys = RedisConnection.keys(pattern)
+        
+        active_connections = []
+        connection_keys.each do |key|
+          connection_data = RedisConnection.get(key)
+          if connection_data
+            begin
+              parsed_data = JSON.parse(connection_data)
+              # Check if connection is still valid (not expired)
+              if parsed_data['connected_at']
+                connected_at = Time.parse(parsed_data['connected_at'])
+                # Consider connection active if it was established within last 5 minutes
+                if connected_at > 5.minutes.ago
+                  active_connections << parsed_data
+                else
+                  # Remove expired connection
+                  RedisConnection.del(key)
+                end
+              end
+            rescue => e
+              # Remove invalid connection data
+              RedisConnection.del(key)
+            end
+          end
+        end
+        
+        active_connections
+      rescue StandardError => e
+        Rails.logger.warn "Failed to get active connections for user #{user_id}: #{e.message}"
+        []
       end
     end
     
@@ -118,8 +158,8 @@ class WebsocketService
       
       begin
         metric_key = "metrics:#{metric_name}:#{Date.current}"
-        Redis.current.incrby(metric_key, value)
-        Redis.current.expire(metric_key, 86400)
+        RedisConnection.incrby(metric_key, value)
+        RedisConnection.expire(metric_key, 86400)
         true
       rescue StandardError => e
         Rails.logger.debug "Failed to track metric #{metric_name}: #{e.message}"
@@ -133,7 +173,7 @@ class WebsocketService
         enabled: Rails.application.config.websocket_enabled,
         available: available?,
         redis_connected: redis_connected?,
-        anycable_available: anycable_available?
+        actioncable_available: actioncable_available?
       }
     end
     
@@ -141,16 +181,16 @@ class WebsocketService
     
     def redis_connected?
       begin
-        Redis.current.ping == 'PONG'
+        RedisConnection.ping == 'PONG'
       rescue StandardError
         false
       end
     end
     
-    def anycable_available?
+    def actioncable_available?
       begin
-        # Check if AnyCable is available in the current environment
-        defined?(AnyCable) && AnyCable.respond_to?(:broadcast)
+        # Check if ActionCable is available in the current environment
+        defined?(ActionCable) && ActionCable.server.respond_to?(:broadcast)
       rescue StandardError
         false
       end

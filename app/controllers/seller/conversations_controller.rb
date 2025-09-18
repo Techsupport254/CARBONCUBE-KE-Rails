@@ -162,7 +162,7 @@ class Seller::ConversationsController < ApplicationController
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
                                 .where(sender_type: ['Buyer', 'Admin'])
-                                .where(status: [nil, Message::STATUS_SENT])
+                                .where(read_at: nil)
                                 .count
       
       {
@@ -171,7 +171,13 @@ class Seller::ConversationsController < ApplicationController
       }
     end
     
-    render json: { unread_counts: unread_counts }
+    # Count conversations with unread messages
+    conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
+    
+    render json: { 
+      unread_counts: unread_counts,
+      conversations_with_unread: conversations_with_unread
+    }
   end
 
   # GET /seller/conversations/unread_count
@@ -182,7 +188,7 @@ class Seller::ConversationsController < ApplicationController
     # Count unread messages (messages not sent by seller and not read)
     unread_count = conversations.joins(:messages)
                                .where(messages: { sender_type: ['Buyer', 'Admin'] })
-                               .where(messages: { status: [nil, Message::STATUS_SENT] })
+                               .where(messages: { read_at: nil })
                                .count
     
     render json: { count: unread_count }

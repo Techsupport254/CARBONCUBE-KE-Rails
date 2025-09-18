@@ -10,8 +10,6 @@ class ConversationsController < ApplicationController
       fetch_seller_conversations
     when 'Admin', 'SalesUser'
       fetch_admin_conversations
-    when 'Rider'
-      render json: { conversations: [] }, status: :ok  # Riders don't have conversations
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
@@ -25,8 +23,6 @@ class ConversationsController < ApplicationController
       render_seller_conversation
     when 'Admin', 'SalesUser'
       render_admin_conversation
-    when 'Rider'
-      render json: { error: 'Riders do not have access to conversations' }, status: :forbidden
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
@@ -40,8 +36,6 @@ class ConversationsController < ApplicationController
       create_seller_conversation
     when 'Admin', 'SalesUser'
       create_admin_conversation
-    when 'Rider'
-      render json: { error: 'Riders cannot create conversations' }, status: :forbidden
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
@@ -55,8 +49,6 @@ class ConversationsController < ApplicationController
       fetch_seller_unread_counts
     when 'Admin', 'SalesUser'
       fetch_admin_unread_counts
-    when 'Rider'
-      render json: { unread_counts: {} }, status: :ok  # Riders don't have conversations
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
@@ -70,8 +62,6 @@ class ConversationsController < ApplicationController
       fetch_seller_unread_count
     when 'Admin', 'SalesUser'
       fetch_admin_unread_count
-    when 'Rider'
-      render json: { unread_count: 0 }, status: :ok  # Riders don't have conversations
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
@@ -107,9 +97,14 @@ class ConversationsController < ApplicationController
 
   def authenticate_user
     # Try authenticating as different user types
-    @current_user = authenticate_seller || authenticate_buyer || authenticate_admin || authenticate_sales || authenticate_rider
+    Rails.logger.info "ConversationsController: Attempting authentication..."
     
-    unless @current_user
+    @current_user = authenticate_seller || authenticate_buyer || authenticate_admin || authenticate_sales
+    
+    if @current_user
+      Rails.logger.info "ConversationsController: Authenticated as #{@current_user.class.name} with ID #{@current_user.id}"
+    else
+      Rails.logger.error "ConversationsController: Authentication failed for all user types"
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end
@@ -138,11 +133,6 @@ class ConversationsController < ApplicationController
     nil
   end
 
-  def authenticate_rider
-    RiderAuthorizeApiRequest.new(request.headers).result
-  rescue
-    nil
-  end
 
   def set_conversation
     @conversation = case @current_user.class.name
@@ -152,8 +142,6 @@ class ConversationsController < ApplicationController
                      find_seller_conversation
                    when 'Admin', 'SalesUser'
                      find_admin_conversation
-                   when 'Rider'
-                     nil  # Riders don't have conversations
                    end
 
     unless @conversation
@@ -197,6 +185,12 @@ class ConversationsController < ApplicationController
     buyer_id = @current_user.id
     seller_id = params[:seller_id]
 
+    # If seller_id is not provided but ad_id is, get seller_id from the ad
+    if params[:seller_id].blank? && params[:ad_id].present?
+      ad = Ad.find(params[:ad_id])
+      seller_id = ad.seller_id
+    end
+
     # Find existing conversation or create new one
     @conversation = Conversation.find_or_create_by(
       buyer_id: buyer_id,
@@ -204,11 +198,13 @@ class ConversationsController < ApplicationController
       ad_id: params[:ad_id]
     ) do |conv|
       conv.admin_id = params[:admin_id] if params[:admin_id].present?
-      # If seller_id is not provided but ad_id is, get seller_id from the ad
-      if params[:seller_id].blank? && params[:ad_id].present?
-        ad = Ad.find(params[:ad_id])
-        conv.seller_id = ad.seller_id
-      end
+    end
+
+    # Ensure the conversation is saved and valid
+    unless @conversation.persisted?
+      Rails.logger.error "Conversation validation errors: #{@conversation.errors.full_messages}"
+      render json: { error: 'Failed to create conversation', details: @conversation.errors.full_messages }, status: :unprocessable_entity
+      return
     end
 
     # Create the message
@@ -273,8 +269,11 @@ class ConversationsController < ApplicationController
   end
 
   def create_seller_conversation
+    Rails.logger.info "Seller conversation creation - Current user: #{@current_user.id}, Params: #{params.inspect}"
+    
     # Prevent sellers from messaging their own ads
     if params[:seller_id].to_i == @current_user.id && params[:buyer_id].blank?
+      Rails.logger.warn "Seller #{@current_user.id} trying to message their own ad"
       render json: { error: 'You cannot message your own ads' }, status: :unprocessable_entity
       return
     end
@@ -283,6 +282,7 @@ class ConversationsController < ApplicationController
     if params[:ad_id].present?
       ad = Ad.find_by(id: params[:ad_id])
       if ad && ad.seller_id == @current_user.id && (params[:seller_id].blank? || params[:seller_id].to_i == @current_user.id)
+        Rails.logger.warn "Seller #{@current_user.id} trying to message themselves via ad_id"
         render json: { error: 'You cannot message yourself about your own ads' }, status: :unprocessable_entity
         return
       end
@@ -294,6 +294,7 @@ class ConversationsController < ApplicationController
       seller_id = @current_user.id
       buyer_id = params[:buyer_id]
       inquirer_seller_id = nil
+      Rails.logger.info "Seller-to-buyer conversation: seller_id=#{seller_id}, buyer_id=#{buyer_id}"
     else
       # Current seller is inquiring about someone else's ad
       seller_id = params[:seller_id]  # Ad owner
@@ -305,6 +306,7 @@ class ConversationsController < ApplicationController
         ad = Ad.find_by(id: params[:ad_id])
         seller_id = ad.seller_id if ad
       end
+      Rails.logger.info "Seller-to-seller conversation: seller_id=#{seller_id}, inquirer_seller_id=#{inquirer_seller_id}"
     end
 
     # Find existing conversation or create new one
@@ -315,6 +317,13 @@ class ConversationsController < ApplicationController
       ad_id: params[:ad_id]
     ) do |conv|
       conv.admin_id = params[:admin_id] if params[:admin_id].present?
+    end
+
+    # Ensure the conversation is saved and valid
+    unless @conversation.persisted?
+      Rails.logger.error "Conversation validation errors: #{@conversation.errors.full_messages}"
+      render json: { error: 'Failed to create conversation', details: @conversation.errors.full_messages }, status: :unprocessable_entity
+      return
     end
 
     # Create the message
@@ -349,18 +358,26 @@ class ConversationsController < ApplicationController
   end
 
   def create_admin_conversation
+    # If seller_id is not provided but ad_id is, get seller_id from the ad
+    seller_id = params[:seller_id]
+    if params[:seller_id].blank? && params[:ad_id].present?
+      ad = Ad.find(params[:ad_id])
+      seller_id = ad.seller_id
+    end
+
     # Find existing conversation or create new one
     @conversation = Conversation.find_or_create_by(
       admin_id: @current_user.id,
-      seller_id: params[:seller_id],
+      seller_id: seller_id,
       buyer_id: params[:buyer_id],
       ad_id: params[:ad_id]
-    ) do |conv|
-      # If seller_id is not provided but ad_id is, get seller_id from the ad
-      if params[:seller_id].blank? && params[:ad_id].present?
-        ad = Ad.find(params[:ad_id])
-        conv.seller_id = ad.seller_id
-      end
+    )
+
+    # Ensure the conversation is saved and valid
+    unless @conversation.persisted?
+      Rails.logger.error "Conversation validation errors: #{@conversation.errors.full_messages}"
+      render json: { error: 'Failed to create conversation', details: @conversation.errors.full_messages }, status: :unprocessable_entity
+      return
     end
 
     # Create the message
@@ -390,7 +407,7 @@ class ConversationsController < ApplicationController
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
                                 .where(sender_type: ['Seller', 'Admin'])
-                                .where(status: [nil, Message::STATUS_SENT])
+                                .where(read_at: nil)
                                 .count
       
       {
@@ -399,7 +416,13 @@ class ConversationsController < ApplicationController
       }
     end
     
-    render json: { unread_counts: unread_counts }
+    # Count conversations with unread messages
+    conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
+    
+    render json: { 
+      unread_counts: unread_counts,
+      conversations_with_unread: conversations_with_unread
+    }
   end
 
   def fetch_seller_unread_counts
@@ -416,13 +439,13 @@ class ConversationsController < ApplicationController
         # Seller-to-seller conversation: count messages not sent by current user
         unread_count = conversation.messages
                                   .where.not(sender_id: @current_user.id)
-                                  .where(status: [nil, Message::STATUS_SENT])
+                                  .where(read_at: nil)
                                   .count
       else
         # Regular conversation: count messages from buyers and admins
         unread_count = conversation.messages
                                   .where(sender_type: ['Buyer', 'Admin'])
-                                  .where(status: [nil, Message::STATUS_SENT])
+                                  .where(read_at: nil)
                                   .count
       end
       
@@ -432,7 +455,13 @@ class ConversationsController < ApplicationController
       }
     end
     
-    render json: { unread_counts: unread_counts }
+    # Count conversations with unread messages
+    conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
+    
+    render json: { 
+      unread_counts: unread_counts,
+      conversations_with_unread: conversations_with_unread
+    }
   end
 
   def fetch_admin_unread_counts
@@ -441,7 +470,7 @@ class ConversationsController < ApplicationController
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
                                 .where(sender_type: ['Seller', 'Buyer'])
-                                .where(status: [nil, Message::STATUS_SENT])
+                                .where(read_at: nil)
                                 .count
       
       {
@@ -450,7 +479,13 @@ class ConversationsController < ApplicationController
       }
     end
     
-    render json: { unread_counts: unread_counts }
+    # Count conversations with unread messages
+    conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
+    
+    render json: { 
+      unread_counts: unread_counts,
+      conversations_with_unread: conversations_with_unread
+    }
   end
 
   def fetch_buyer_unread_count
@@ -458,7 +493,7 @@ class ConversationsController < ApplicationController
     
     unread_count = conversations.joins(:messages)
                                .where(messages: { sender_type: ['Seller', 'Admin'] })
-                               .where(messages: { status: [nil, Message::STATUS_SENT] })
+                               .where(messages: { read_at: nil })
                                .count
     
     render json: { count: unread_count }
@@ -478,13 +513,13 @@ class ConversationsController < ApplicationController
         # Seller-to-seller conversation: count messages not sent by current user
         unread_count = conversation.messages
                                   .where.not(sender_id: @current_user.id)
-                                  .where(status: [nil, Message::STATUS_SENT])
+                                  .where(read_at: nil)
                                   .count
       else
         # Regular conversation: count messages from buyers and admins
         unread_count = conversation.messages
                                   .where(sender_type: ['Buyer', 'Admin'])
-                                  .where(status: [nil, Message::STATUS_SENT])
+                                  .where(read_at: nil)
                                   .count
       end
       total_unread += unread_count

@@ -113,7 +113,7 @@ class Seller::SellersController < ApplicationController
         Rails.logger.info "📝 #{current_year} Registration: Assigning Free tier to seller #{@seller.id}"
         SellerTier.create(seller_id: @seller.id, tier_id: 1, duration_months: 0)
       end
-      token = JsonWebToken.encode(seller_id: @seller.id, role: 'Seller')
+      token = JsonWebToken.encode(seller_id: @seller.id, email: @seller.email, role: 'Seller')
       # Rails.logger.info "Seller created successfully: #{@seller.id}"
       render json: { token: token, seller: @seller }, status: :created
     else

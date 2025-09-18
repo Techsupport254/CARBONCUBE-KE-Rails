@@ -52,7 +52,7 @@ module ApplicationCable
       retries = 0
       
       begin
-        AnyCable.broadcast(channel_name, data)
+        ActionCable.server.broadcast(channel_name, data)
         track_broadcast_metric(channel_name)
       rescue StandardError => e
         retries += 1

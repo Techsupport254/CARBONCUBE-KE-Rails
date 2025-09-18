@@ -12,11 +12,26 @@ module ExceptionHandler
     end
     
     rescue_from ExceptionHandler::InvalidToken do |e|
-      json_response({ message: e.message }, :unauthorized)
+      # Check if the error message indicates token expiration
+      if e.message.include?('expired')
+        json_response({ 
+          message: 'Your session has expired. Please log in again.',
+          error_type: 'token_expired',
+          expired: true 
+        }, :unauthorized)
+      else
+        json_response({ 
+          message: e.message,
+          error_type: 'invalid_token'
+        }, :unauthorized)
+      end
     end
 
     rescue_from ExceptionHandler::MissingToken do |e|
-      json_response({ message: e.message }, :unauthorized)
+      json_response({ 
+        message: 'Authentication token is required',
+        error_type: 'missing_token'
+      }, :unauthorized)
     end
   end
 

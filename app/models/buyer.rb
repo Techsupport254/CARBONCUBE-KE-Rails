@@ -53,6 +53,14 @@ class Buyer < ApplicationRecord
   def password_required?
     new_record? || password.present?
   end
+  
+  def deleted?
+    deleted == true
+  end
+  
+  def user_type
+    'buyer'
+  end
 
   private
 

@@ -65,14 +65,26 @@ class JwtService
 
     # Generate WebSocket token for real-time connections
     def generate_websocket_token(user, session_id = nil)
-      payload = {
-        user_id: user.id,
-        email: user.email,
-        user_type: user.user_type,
-        session_id: session_id || generate_session_id,
-        token_type: 'websocket',
-        permissions: websocket_permissions(user)
-      }
+      # Use appropriate ID field based on user type
+      payload = if user.is_a?(Seller)
+        {
+          seller_id: user.id,
+          email: user.email,
+          user_type: user.user_type,
+          session_id: session_id || generate_session_id,
+          token_type: 'websocket',
+          permissions: websocket_permissions(user)
+        }
+      else
+        {
+          user_id: user.id,
+          email: user.email,
+          user_type: user.user_type,
+          session_id: session_id || generate_session_id,
+          token_type: 'websocket',
+          permissions: websocket_permissions(user)
+        }
+      end
       
       token = encode(payload, WEBSOCKET_TOKEN_EXPIRY.from_now)
       

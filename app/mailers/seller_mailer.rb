@@ -1,5 +1,5 @@
 class SellerMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']
+  default from: 'noreply@carboncube-ke.com'
 
   def document_expiry_reminder(seller)
     @seller = seller

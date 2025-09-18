@@ -3,6 +3,7 @@ class AuthenticationController < ApplicationController
 
   def login
     identifier = params[:email] || params[:identifier] || params[:authentication]&.[](:email)
+    remember_me = params[:remember_me] == true || params[:remember_me] == 'true'
     @user = find_user_by_identifier(identifier)
 
     if @user&.authenticate(params[:password])
@@ -40,19 +41,94 @@ class AuthenticationController < ApplicationController
         user_response[:username] = @user.username
       end
       
-      user_response[:phone_number] = @user.phone_number if @user.is_a?(Rider)
-      user_response[:id_number] = @user.id_number if @user.is_a?(Rider)
-
-      # Create token with appropriate ID field based on user type
-      if role == 'seller'
-        token = JsonWebToken.encode(seller_id: @user.id, role: role)
-      else
-        token = JsonWebToken.encode(user_id: @user.id, role: role)
+      # Add profile picture if available
+      if @user.respond_to?(:profile_picture) && @user.profile_picture.present?
+        user_response[:profile_picture] = @user.profile_picture
       end
-      render json: { token: token, user: user_response }, status: :ok
+      
+
+      # Create token with appropriate ID field and remember_me flag
+      token_payload = if role == 'seller'
+        { seller_id: @user.id, email: @user.email, role: role, remember_me: remember_me }
+      else
+        { user_id: @user.id, email: @user.email, role: role, remember_me: remember_me }
+      end
+      
+      token = JsonWebToken.encode(token_payload)
+      render json: { token: token, user: user_response, remember_me: remember_me }, status: :ok
     else
       render json: { errors: ['Invalid login credentials'] }, status: :unauthorized
     end
+  end
+
+  def refresh_token
+    token_validation = TokenValidationService.new(request.headers)
+    
+    # Check if token is expired
+    unless token_validation.token_expired?
+      render json: { 
+        error: 'Token is not expired',
+        error_type: 'token_not_expired'
+      }, status: :bad_request
+      return
+    end
+
+    # Extract user information from expired token
+    validation_result = token_validation.validate_token
+    unless validation_result[:success]
+      render json: { 
+        error: 'Invalid token',
+        error_type: 'invalid_token'
+      }, status: :unauthorized
+      return
+    end
+
+    payload = validation_result[:payload]
+    user_id = payload[:user_id] || payload[:seller_id]
+    role = payload[:role]
+    remember_me = payload[:remember_me]
+
+    # Check if remember_me was enabled during login
+    unless remember_me
+      render json: { 
+        error: 'Token refresh not allowed - remember me was not enabled',
+        error_type: 'refresh_not_allowed'
+      }, status: :forbidden
+      return
+    end
+
+    # Find the user
+    user = find_user_by_id_and_role(user_id, role)
+    unless user
+      render json: { 
+        error: 'User not found',
+        error_type: 'user_not_found'
+      }, status: :not_found
+      return
+    end
+
+    # Check if user is deleted
+    if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
+      render json: { 
+        error: 'Account has been deleted',
+        error_type: 'account_deleted'
+      }, status: :unauthorized
+      return
+    end
+
+    # Generate new token with remember_me flag
+    token_payload = if role == 'seller'
+      { seller_id: user.id, email: user.email, role: role, remember_me: remember_me }
+    else
+      { user_id: user.id, email: user.email, role: role, remember_me: remember_me }
+    end
+    
+    new_token = JsonWebToken.encode(token_payload)
+
+    render json: { 
+      token: new_token,
+      message: 'Token refreshed successfully'
+    }, status: :ok
   end
 
   private
@@ -63,14 +139,28 @@ class AuthenticationController < ApplicationController
       Buyer.find_by(email: identifier) ||
       Seller.find_by(email: identifier) ||
       Admin.find_by(email: identifier) ||
-      SalesUser.find_by(email: identifier) ||
-      Rider.find_by(email: identifier)
+      SalesUser.find_by(email: identifier)
     elsif identifier.match?(/\A\d{10}\z/)
-      # Assume phone number if it’s 10 digits
-      Rider.find_by(phone_number: identifier)
+      # Assume phone number if it's 10 digits - no longer supported
+      nil
     else
-      # Otherwise, assume it’s an ID number
-      Rider.find_by(id_number: identifier)
+      # Otherwise, assume it's an ID number - no longer supported
+      nil
+    end
+  end
+
+  def find_user_by_id_and_role(user_id, role)
+    case role
+    when 'buyer'
+      Buyer.find_by(id: user_id)
+    when 'seller'
+      Seller.find_by(id: user_id)
+    when 'admin'
+      Admin.find_by(id: user_id)
+    when 'sales'
+      SalesUser.find_by(id: user_id)
+    else
+      nil
     end
   end
 
@@ -80,7 +170,6 @@ class AuthenticationController < ApplicationController
     when Seller then 'seller'
     when Admin then 'admin'
     when SalesUser then 'sales'
-    when Rider then 'rider'
     else 'unknown'
     end
   end

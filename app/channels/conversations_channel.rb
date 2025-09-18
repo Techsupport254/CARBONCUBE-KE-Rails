@@ -5,6 +5,13 @@ class ConversationsChannel < ApplicationCable::Channel
     # Try to get user from connection, fallback to subscription params
     user = connection.current_user || find_user_from_params
     
+    # If we found a user from params, set it on the connection
+    if user && !connection.current_user
+      connection.current_user = user
+      connection.session_id = SecureRandom.uuid
+      Rails.logger.info "ConversationsChannel: Set current_user from params: #{user.class.name} ID: #{user.id}"
+    end
+    
     return reject unless user
     
     # Subscribe to user-specific conversation stream
@@ -19,12 +26,22 @@ class ConversationsChannel < ApplicationCable::Channel
   end
 
   def unsubscribed
-    log_channel_activity('unsubscribed')
-    track_message_metric('unsubscribed')
-    
-    # Broadcast offline status
-    user = connection.current_user || find_user_from_params
-    broadcast_presence_update('offline', user) if user
+    begin
+      log_channel_activity('unsubscribed')
+      track_message_metric('unsubscribed')
+      
+      # Broadcast offline status
+      user = connection.current_user || find_user_from_params
+      broadcast_presence_update('offline', user) if user
+      
+      # Clean up connection tracking
+      if user
+        WebsocketService.remove_connection_data(user.id, connection.session_id)
+      end
+    rescue => e
+      Rails.logger.warn "ConversationsChannel unsubscribed error: #{e.message}"
+      # Don't raise the error to prevent subscription cleanup issues
+    end
   end
 
   def receive(data)
@@ -37,7 +54,7 @@ class ConversationsChannel < ApplicationCable::Channel
     return unless data.present? && data.is_a?(Hash)
     
     # Process message asynchronously for better performance
-    ProcessWebSocketMessageJob.perform_later(
+    ProcessWebsocketMessageJob.perform_later(
       data.merge(
         sender_user: user,
         sender_session: connection.session_id
@@ -125,7 +142,7 @@ class ConversationsChannel < ApplicationCable::Channel
     when 'admin', 'sales'
       true # Admins and sales users can access all conversations
     when 'rider'
-      false # Riders don't have conversation access
+      false # Only buyers, sellers, and admins have conversation access
     else
       false
     end
@@ -148,6 +165,23 @@ class ConversationsChannel < ApplicationCable::Channel
     # Broadcast to inquirer seller (if different from main seller)
     if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id && (!exclude_sender || conversation.inquirer_seller_id != current_user&.id)
       broadcast_with_retry("conversations_seller_#{conversation.inquirer_seller_id}", data)
+    end
+  end
+  
+  def broadcast_with_retry(stream_name, data, max_retries: 2)
+    retries = 0
+    begin
+      ActionCable.server.broadcast(stream_name, data)
+    rescue => e
+      retries += 1
+      if retries <= max_retries
+        Rails.logger.warn "Broadcast failed for #{stream_name}, retrying (#{retries}/#{max_retries}): #{e.message}"
+        sleep(0.1 * retries) # Brief backoff
+        retry
+      else
+        Rails.logger.error "Broadcast failed for #{stream_name} after #{max_retries} retries: #{e.message}"
+        # Don't raise the error to prevent breaking the message flow
+      end
     end
   end
   
@@ -185,7 +219,7 @@ class ConversationsChannel < ApplicationCable::Channel
     when 'sales'
       Conversation.all  # Sales users can see all conversations like admins
     when 'rider'
-      Conversation.none  # Riders don't have conversations in this system
+      Conversation.none  # Only buyers, sellers, and admins have conversations
     else
       Conversation.none
     end
@@ -201,10 +235,26 @@ class ConversationsChannel < ApplicationCable::Channel
       'admin'
     when 'SalesUser'
       'sales'
-    when 'Rider'
-      'rider'
     else
       'unknown'
     end
+  end
+  
+  def log_channel_activity(action, data = {})
+    Rails.logger.info "ConversationsChannel #{action}: #{data.inspect}"
+  end
+  
+  def track_message_metric(action)
+    # Track metrics using WebSocket service if available
+    begin
+      WebsocketService.track_metric("websocket.conversations.#{action}")
+    rescue => e
+      Rails.logger.debug "Failed to track metric: #{e.message}"
+    end
+  end
+  
+  def rate_limited?
+    # Simple rate limiting - can be enhanced with Redis-based rate limiting
+    false
   end
 end

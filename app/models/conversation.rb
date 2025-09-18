@@ -9,7 +9,10 @@ class Conversation < ApplicationRecord
 
   # Validation for participant presence
   validate :at_least_one_participant_present
-  validates :ad_id, uniqueness: { scope: [:buyer_id, :seller_id, :inquirer_seller_id], message: "conversation already exists for this ad" }
+  validates :ad_id, uniqueness: { 
+    scope: [:buyer_id, :seller_id, :inquirer_seller_id], 
+    message: "conversation already exists for this ad with these participants" 
+  }
 
   private
 

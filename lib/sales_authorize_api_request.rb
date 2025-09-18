@@ -8,14 +8,14 @@ class SalesAuthorizeApiRequest
     token = http_auth_header
     return nil unless token
 
-    decoded_auth_token = JsonWebToken.decode(token)
-    SalesUser.find_by(id: decoded_auth_token[:user_id])
-  rescue JWT::ExpiredSignature
-    Rails.logger.warn('JWT has expired')
-    nil
-  rescue JWT::DecodeError => e
-    Rails.logger.warn("JWT Decode Error: #{e.message}")
-    nil
+    decoded_result = JsonWebToken.decode(token)
+    
+    if decoded_result[:success]
+      SalesUser.find_by(id: decoded_result[:payload][:user_id])
+    else
+      Rails.logger.warn("JWT validation failed: #{decoded_result[:error]}")
+      nil
+    end
   rescue => e
     Rails.logger.error("Unexpected Auth Error: #{e.message}")
     nil

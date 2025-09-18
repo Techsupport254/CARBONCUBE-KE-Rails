@@ -166,7 +166,8 @@ class ProcessWebsocketMessageJob < ApplicationJob
       
       # Update Redis cache for quick access
       cache_key = "conversation_activity:#{conversation.id}"
-      Redis.current.setex(cache_key, 3600, Time.current.to_i)
+      redis = Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379/0')
+      redis.setex(cache_key, 3600, Time.current.to_i)
     rescue StandardError => e
       Rails.logger.warn "Failed to update conversation activity: #{e.message}"
       # Continue without Redis cache update
@@ -191,7 +192,13 @@ class ProcessWebsocketMessageJob < ApplicationJob
       NotifyOfflineParticipantsJob.perform_later(conversation.id, message.id)
       
       # Update conversation participants' unread counts
-      UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
+      # Try to perform immediately first, fallback to queue if Sidekiq is not available
+      begin
+        UpdateUnreadCountsJob.perform_now(conversation.id, message.id)
+      rescue StandardError => e
+        Rails.logger.warn "Failed to perform UpdateUnreadCountsJob immediately, queuing instead: #{e.message}"
+        UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
+      end
       
       # Content moderation (if enabled)
       if Rails.application.config.content_moderation_enabled
@@ -206,7 +213,7 @@ class ProcessWebsocketMessageJob < ApplicationJob
   def notify_sender_of_error(sender_user, sender_session, error_message)
     return unless sender_user && sender_session
     
-    AnyCable.broadcast(
+    ActionCable.server.broadcast(
       "conversations_#{sender_user.user_type.downcase}_#{sender_user.id}",
       {
         type: 'message_error',

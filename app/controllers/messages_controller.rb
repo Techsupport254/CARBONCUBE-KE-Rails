@@ -15,6 +15,95 @@ class MessagesController < ApplicationController
     end
   end
 
+  def mark_as_read
+    begin
+      message = @conversation.messages.find(params[:message_id])
+      
+      if message && message.sender != @current_user
+        message.mark_as_read!
+        
+        # Broadcast read receipt via WebSocket
+        broadcast_read_receipt(message)
+        
+        render json: { 
+          success: true, 
+          message_id: message.id, 
+          status: 'read',
+          read_at: message.read_at 
+        }
+      else
+        render json: { error: 'Message not found or unauthorized' }, status: :not_found
+      end
+    rescue ActiveRecord::RecordNotFound
+      # Message doesn't exist - return success to prevent frontend errors
+      Rails.logger.info "Message #{params[:message_id]} not found in conversation #{@conversation.id}, likely deleted"
+      render json: { 
+        success: true, 
+        message_id: params[:message_id], 
+        status: 'not_found',
+        note: 'Message no longer exists' 
+      }
+    end
+  end
+
+  def mark_as_delivered
+    begin
+      message = @conversation.messages.find(params[:message_id])
+      
+      if message && message.sender != @current_user
+        message.mark_as_delivered!
+        
+        # Broadcast delivery receipt via WebSocket
+        broadcast_delivery_receipt(message)
+        
+        render json: { 
+          success: true, 
+          message_id: message.id, 
+          status: 'delivered',
+          delivered_at: message.delivered_at 
+        }
+      else
+        render json: { error: 'Message not found or unauthorized' }, status: :not_found
+      end
+    rescue ActiveRecord::RecordNotFound
+      # Message doesn't exist - return success to prevent frontend errors
+      Rails.logger.info "Message #{params[:message_id]} not found in conversation #{@conversation.id}, likely deleted"
+      render json: { 
+        success: true, 
+        message_id: params[:message_id], 
+        status: 'not_found',
+        note: 'Message no longer exists' 
+      }
+    end
+  end
+
+  def status
+    begin
+      message = @conversation.messages.find(params[:message_id])
+      
+      if message
+        render json: {
+          message_id: message.id,
+          status: message.status_text,
+          status_icon: message.status_icon,
+          read_at: message.read_at,
+          delivered_at: message.delivered_at,
+          sent_at: message.created_at
+        }
+      else
+        render json: { error: 'Message not found' }, status: :not_found
+      end
+    rescue ActiveRecord::RecordNotFound
+      # Message doesn't exist - return not found status
+      Rails.logger.info "Message #{params[:message_id]} not found in conversation #{@conversation.id}, likely deleted"
+      render json: { 
+        error: 'Message not found',
+        message_id: params[:message_id],
+        status: 'not_found'
+      }, status: :not_found
+    end
+  end
+
   def create
     @message = @conversation.messages.build(message_params)
     @message.sender = @current_user
@@ -32,6 +121,72 @@ class MessagesController < ApplicationController
     end
   end
 
+  def process_pending_deliveries
+    # This endpoint can be called to manually process pending delivery receipts
+    # Useful for testing or manual intervention
+    begin
+      user_type = @current_user.class.name.downcase
+      user_id = @current_user.id
+      
+      # Find all sent messages where this user is the recipient
+      pending_messages = case user_type
+      when 'buyer'
+        Message.joins(:conversation)
+               .where(conversations: { buyer_id: user_id })
+               .where(status: ['sent', nil])
+               .where.not(sender_type: 'Buyer')
+      when 'seller'
+        Message.joins(:conversation)
+               .where(conversations: { seller_id: user_id })
+               .where(status: ['sent', nil])
+               .where.not(sender_type: 'Seller')
+      else
+        []
+      end
+      
+      # Mark these messages as delivered
+      processed_count = 0
+      pending_messages.each do |message|
+        message.mark_as_delivered!
+        broadcast_delivery_receipt(message)
+        processed_count += 1
+      end
+      
+      render json: { 
+        success: true, 
+        processed_count: processed_count,
+        message: "Processed #{processed_count} pending delivery receipts"
+      }
+    rescue => e
+      Rails.logger.error "Failed to process pending deliveries: #{e.message}"
+      render json: { error: 'Failed to process pending deliveries' }, status: :internal_server_error
+    end
+  end
+
+  def send_test_email
+    # This endpoint can be used to test email notifications
+    begin
+      message = @conversation.messages.find(params[:message_id])
+      recipient = message.get_recipient
+      
+      if recipient
+        MessageNotificationMailer.new_message_notification(message, recipient).deliver_now
+        render json: { 
+          success: true, 
+          message: "Test email sent to #{recipient.email}",
+          recipient_email: recipient.email
+        }
+      else
+        render json: { error: 'No recipient found for this message' }, status: :not_found
+      end
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Message not found' }, status: :not_found
+    rescue => e
+      Rails.logger.error "Failed to send test email: #{e.message}"
+      render json: { error: 'Failed to send test email' }, status: :internal_server_error
+    end
+  end
+
   private
 
   def authenticate_user
@@ -45,13 +200,21 @@ class MessagesController < ApplicationController
 
   def authenticate_seller
     SellerAuthorizeApiRequest.new(request.headers).result
-  rescue
+  rescue ExceptionHandler::MissingToken, ExceptionHandler::InvalidToken => e
+    Rails.logger.debug "SellerAuthorizeApiRequest: #{e.message}"
+    nil
+  rescue => e
+    Rails.logger.warn "SellerAuthorizeApiRequest: Unexpected error: #{e.message}"
     nil
   end
 
   def authenticate_buyer
     BuyerAuthorizeApiRequest.new(request.headers).result
-  rescue
+  rescue ExceptionHandler::MissingToken, ExceptionHandler::InvalidToken => e
+    Rails.logger.debug "BuyerAuthorizeApiRequest: #{e.message}"
+    nil
+  rescue => e
+    Rails.logger.warn "BuyerAuthorizeApiRequest: Unexpected error: #{e.message}"
     nil
   end
 
@@ -191,5 +354,37 @@ class MessagesController < ApplicationController
 
   def message_params
     params.require(:message).permit(:content, :ad_id)
+  end
+
+  def broadcast_read_receipt(message)
+    sender_type = message.sender_type.downcase
+    sender_id = message.sender_id
+    
+    ActionCable.server.broadcast(
+      "presence_#{sender_type}_#{sender_id}",
+      {
+        type: 'message_read',
+        message_id: message.id,
+        conversation_id: message.conversation_id,
+        read_at: message.read_at,
+        status: 'read'
+      }
+    )
+  end
+
+  def broadcast_delivery_receipt(message)
+    sender_type = message.sender_type.downcase
+    sender_id = message.sender_id
+    
+    ActionCable.server.broadcast(
+      "presence_#{sender_type}_#{sender_id}",
+      {
+        type: 'message_delivered',
+        message_id: message.id,
+        conversation_id: message.conversation_id,
+        delivered_at: message.delivered_at,
+        status: 'delivered'
+      }
+    )
   end
 end

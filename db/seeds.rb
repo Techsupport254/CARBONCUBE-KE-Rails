@@ -136,7 +136,7 @@ SalesUser.find_or_create_by(email: 'timothy@carboncube.com') do |sales|
   sales.password = '@timothy123'
 end
 
-puts "Starts seeding Sellers, Riders and Buyers"
+puts "Starts seeding Sellers and Buyers"
 
 # Seed Tiers
 free_tier = Tier.create!(name: "Free", ads_limit: 10)
@@ -888,34 +888,6 @@ def assign_county_and_sub_county(counties, nairobi)
   [county.id, sub_county&.id]
 end
 
-# Seed 50 Riders (75% from Nairobi)
-50.times do
-  county_id, sub_county_id = assign_county_and_sub_county(counties, nairobi)
-
-  Rider.find_or_create_by(email: nil) do |rider|
-    full_name = Faker::Name.name
-    username = full_name.downcase.gsub(/\s+/, "")
-    email = "#{username}@example.com"
-
-    rider.full_name = full_name
-    rider.phone_number = generate_custom_phone_number(used_phone_numbers)
-    used_phone_numbers.add(rider.phone_number)
-    rider.age_group_id = AgeGroup.pluck(:id).sample
-    rider.email = email
-    rider.id_number = Faker::Number.number(digits: 8).to_s
-    rider.driving_license = Faker::DrivingLicence.british_driving_licence
-    rider.vehicle_type = "Motorbike"
-    rider.license_plate = generate_motorbike_license_plate
-    rider.password = 'rider@123'
-    rider.physical_address = Faker::Address.full_address
-    rider.gender = ['Male', 'Female'].sample
-
-    # Assign county and sub-county
-    rider.county_id = county_id
-    rider.sub_county_id = sub_county_id
-  end
-end
-
 # Seed 100 Buyers (75% from Nairobi)
 100.times do
   county_id, sub_county_id = assign_county_and_sub_county(counties, nairobi)
@@ -1025,7 +997,7 @@ tier_durations = [1, 3, 6, 12] # Define valid durations in months
     end
   end
 end
-puts "Riders, Buyers, and Sellers have been seeded successfully!"
+puts "Buyers and Sellers have been seeded successfully!"
 
 puts "Starts seeding the ads of the categories..."
 

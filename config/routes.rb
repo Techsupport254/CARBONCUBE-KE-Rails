@@ -28,7 +28,17 @@ Rails.application.routes.draw do
   
   # Unified conversations and messages endpoints for all user types
   resources :conversations, only: [:index, :show, :create] do
-    resources :messages, only: [:index, :create]
+    resources :messages, only: [:index, :create] do
+      member do
+        patch :mark_as_read
+        patch :mark_as_delivered
+        get :status
+      end
+      collection do
+        post :process_pending_deliveries
+        post :send_test_email
+      end
+    end
     collection do
       get :unread_count
       get :unread_counts
@@ -40,6 +50,7 @@ Rails.application.routes.draw do
   
   get "up" => "rails/health#show", as: :rails_health_check
   post 'auth/login', to: 'authentication#login'
+  post 'auth/refresh', to: 'authentication#refresh_token'
   resources :banners, only: [:index]
   resources :ads, only: [:index, :show] do
     get 'reviews', to: 'reviews#index', on: :member
@@ -352,12 +363,6 @@ Rails.application.routes.draw do
     end
 
 
-  #==========================================Rider namespace for buyer-specific functionality=========================================#
-  namespace :rider do
-    resources :riders
-    post 'signup', to: 'riders#create'
-  end
-  #========================================== End of Rider namespace for buyer-specific functionality=========================================#
 
   mount ActionCable.server => '/cable'
 end

@@ -9,4 +9,12 @@ class Admin < ApplicationRecord
     validates :email, presence: true, uniqueness: true
 
     has_secure_password
+    
+    def deleted?
+      false
+    end
+    
+    def user_type
+      'admin'
+    end
 end

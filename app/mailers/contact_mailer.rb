@@ -1,5 +1,5 @@
 class ContactMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL'] || 'noreply@carboncube-ke.com'
+  default from: 'noreply@carboncube-ke.com'
 
   # Send contact form submission to admin
   def contact_form

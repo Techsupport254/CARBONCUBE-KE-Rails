@@ -19,20 +19,29 @@
         background-color: #ffffff;
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
       .header {
-        background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+        background-color: #2C333F;
         padding: 20px;
         text-align: center;
+        border-bottom: 2px solid #F7B500;
+      }
+      .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
       }
       .logo {
-        display: inline-block;
-        margin: 0;
-      }
-      .logo img {
         height: 40px;
         width: auto;
+      }
+      .brand-name {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
       }
       .content {
         padding: 30px 20px;
@@ -48,24 +57,23 @@
       .button {
         display: inline-block;
         padding: 12px 24px;
-        background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+        background-color: #F7B500;
         color: #000;
         text-decoration: none;
         border-radius: 6px;
         font-weight: 600;
         margin: 20px 0;
-        transition: all 0.3s ease;
+        transition: background-color 0.3s ease;
       }
       .button:hover {
-        background: linear-gradient(135deg, #ff8f00 0%, #ffc107 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+        background-color: #e6a300;
       }
       .contact-info {
-        background: linear-gradient(135deg, #fff8e1 0%, #fff3c4 100%);
+        background-color: #f8f9fa;
         padding: 20px;
         border-radius: 6px;
         margin: 20px 0;
+        border-left: 4px solid #F7B500;
       }
       .contact-info h3 {
         margin-top: 0;
@@ -78,8 +86,45 @@
         color: #333;
       }
       .highlight {
-        color: #ffc107;
+        color: #F7B500;
         font-weight: 600;
+      }
+      .message-preview {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #F7B500;
+        margin: 15px 0;
+        font-style: italic;
+        color: #495057;
+      }
+      .otp-box {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 8px;
+        text-align: center;
+        margin: 25px 0;
+        border: 2px solid #F7B500;
+      }
+      .otp-code {
+        color: #000;
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: 8px;
+        margin: 0;
+      }
+      .warning-box {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 20px 0;
+        border-left: 4px solid #F7B500;
+      }
+      .warning-box p {
+        color: #856404;
+        margin: 0;
+        font-size: 14px;
       }
       @media only screen and (max-width: 600px) {
         .email-container {
@@ -92,17 +137,28 @@
         .header {
           padding: 20px 15px;
         }
+        .brand-name {
+          font-size: 20px;
+        }
+        .logo {
+          height: 32px;
+        }
+        .otp-code {
+          font-size: 28px;
+          letter-spacing: 4px;
+        }
       }
     </style>
   </head>
 
   <body>
     <div class="email-container">
-    <div class="header">
-      <a href="https://carboncube-ke.com" class="logo">
-        <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya Logo" />
-      </a>
-    </div>
+      <div class="header">
+        <div class="logo-container">
+          <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya Logo" class="logo" />
+          <h1 class="brand-name">ARBONCUBE</h1>
+        </div>
+      </div>
       
       <div class="content">
         <%= yield %>
@@ -111,7 +167,7 @@
       <div class="footer">
         <p><strong>Carbon Cube Kenya</strong></p>
         <p>9th Floor, CMS Africa, Kilimani, Nairobi, Kenya</p>
-        <p>Phone: +254 712 990 524 | Email: info@carboncube-ke.com</p>
+        <p>Phone: +254 712 990 524 | Email: noreply@carboncube-ke.com</p>
         <p>© 2025 Carbon Cube Kenya. All rights reserved.</p>
       </div>
     </div>

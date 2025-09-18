@@ -82,6 +82,14 @@ class Seller < ApplicationRecord
   def ads_count
     ads.where(deleted: false).count
   end
+  
+  def deleted?
+    deleted == true
+  end
+  
+  def user_type
+    'seller'
+  end
 
   private
 

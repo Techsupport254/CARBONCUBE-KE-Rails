@@ -1,0 +1,43 @@
+<h1 style="color: #000; margin-bottom: 20px;">You have a new message</h1>
+
+<p style="font-size: 16px; margin-bottom: 20px;">Dear <strong><%= @recipient_name %></strong>,</p>
+
+<p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">You've received a new message from <span class="highlight"><%= @sender_name %></span> on Carbon Cube Kenya.</p>
+
+<div class="contact-info">
+  <h3>Message Preview</h3>
+  <div class="message-preview">
+    <p style="margin: 0;">
+      "<%= truncate(@message.content, length: 150, omission: '...') %>"
+    </p>
+  </div>
+  
+  <% if @ad.present? %>
+    <p style="margin: 10px 0;"><strong>Product:</strong> <span class="highlight"><%= @ad.title %></span></p>
+  <% end %>
+  
+  <p style="margin: 10px 0;"><strong>Sent:</strong> <%= @message.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+  <a href="<%= @conversation_url %>" class="button">Reply to Message</a>
+</div>
+
+<div class="contact-info">
+  <h3>Quick Actions</h3>
+  <p>• <strong>Reply instantly</strong> - Continue your conversation seamlessly</p>
+  <p>• <strong>View full conversation</strong> - See the complete message history</p>
+  <p>• <strong>Manage your messages</strong> - Stay organized with our messaging system</p>
+</div>
+
+<p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">Don't miss out on important conversations! Click the button above to respond to your message.</p>
+
+<p style="font-size: 16px; margin-top: 30px;">Best regards,<br>
+<strong>The Carbon Cube Kenya Team</strong></p>
+
+<hr style="border: none; border-top: 2px solid #F7B500; margin: 30px 0;">
+<p style="font-size: 12px; color: #6c757d;">
+  This is an automated notification. To manage your email preferences, 
+  <a href="https://carboncube-ke.com/email-preferences" style="color: #F7B500;">click here</a>.
+  If you're not expecting this message, please contact support.
+</p>
