@@ -1,32 +1,66 @@
-<h1 style="color: #000; margin-bottom: 20px;">Document Expiry Reminder</h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Expiry Reminder - Carbon Cube Kenya</title>
+  </head>
 
-<p style="font-size: 16px; margin-bottom: 20px;">Hello <strong><%= @seller.fullname %></strong>,</p>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; margin: 0; padding: 0;">
+    <div style="max-width: 620px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+      <div style="background: #1f2937; color: #fff; text-align: center; padding: 25px 20px;">
+        <div style="text-align: center; margin-bottom: 10px; width: 100%;">
+          <div style="display: inline-block; vertical-align: middle;">
+            <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" style="height: 50px; vertical-align: middle; margin-right: 8px;" />
+            <span style="font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 1px; vertical-align: middle;">ARBONCUBE</span>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: #9ca3af;">Kenya's Most Trusted Online Marketplace</p>
+      </div>
+      
+      <div style="padding: 30px 25px;">
+        <h1 style="color: #111827; margin-bottom: 20px; font-size: 24px;">Document Expiry Reminder</h1>
 
-<p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">This is a friendly reminder that your uploaded document (<span class="highlight"><%= @seller.document_type.name %></span>) is set to expire on <span class="highlight"><%= @seller.document_expiry_date.strftime('%B %d, %Y') %></span>.</p>
+        <p style="font-size: 16px; margin-bottom: 20px; text-align: left;">Hello <strong><%= @seller.fullname %></strong>,</p>
 
-<div class="contact-info">
-  <h3>Action Required</h3>
-  <p>To ensure uninterrupted access and compliance, kindly update your document before the expiry date.</p>
-  <p><strong>Document Type:</strong> <%= @seller.document_type.name %></p>
-  <p><strong>Expiry Date:</strong> <%= @seller.document_expiry_date.strftime('%B %d, %Y') %></p>
-</div>
+        <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">This is a friendly reminder that your uploaded document (<span style="color: #fbbf24; font-weight: 600;"><%= @seller.document_type.name %></span>) is set to expire on <span style="color: #fbbf24; font-weight: 600;"><%= @seller.document_expiry_date.strftime('%B %d, %Y') %></span>.</p>
 
-<div style="text-align: center; margin: 30px 0;">
-  <a href="https://carboncube-ke.com/seller/documents" class="button">Update Document</a>
-</div>
+        <div style="background: #f9fafb; padding: 18px; border-radius: 8px; margin: 20px 0; font-size: 15px; color: #374151;">
+          <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #111827; text-align: left;">Action Required</h3>
+          <p>To ensure uninterrupted access and compliance, kindly update your document before the expiry date.</p>
+          <p><strong>Document Type:</strong> <%= @seller.document_type.name %></p>
+          <p><strong>Expiry Date:</strong> <%= @seller.document_expiry_date.strftime('%B %d, %Y') %></p>
+        </div>
 
-<div class="contact-info">
-  <h3>Why This Matters</h3>
-  <p>• <strong>Account Verification</strong> - Keep your seller account verified and active</p>
-  <p>• <strong>Compliance</strong> - Meet regulatory requirements for your business</p>
-  <p>• <strong>Uninterrupted Service</strong> - Avoid any service disruptions</p>
-</div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://carboncube-ke.com/seller/documents" style="display: inline-block; padding: 12px 24px; background: #fbbf24; color: #111827; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Update Document</a>
+        </div>
 
-<p style="font-size: 16px; margin-top: 30px;">Best regards,<br>
-<strong>The Carbon Cube Kenya Team</strong></p>
+        <div style="background: #f9fafb; padding: 18px; border-radius: 8px; margin: 20px 0; font-size: 15px; color: #374151;">
+          <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #111827; text-align: left;">Why This Matters</h3>
+          <p>• <strong>Account Verification</strong> - Keep your seller account verified and active</p>
+          <p>• <strong>Compliance</strong> - Meet regulatory requirements for your business</p>
+          <p>• <strong>Uninterrupted Service</strong> - Avoid any service disruptions</p>
+        </div>
 
-<hr style="border: none; border-top: 2px solid #F7B500; margin: 30px 0;">
-<p style="font-size: 12px; color: #6c757d;">
-  This is an automated reminder. If you have already updated your document, please ignore this email.
-  For assistance, contact us at +254 712 990 524.
-</p>
+        <p style="font-size: 16px; margin-top: 30px;">Best regards,<br>
+        <strong>The Carbon Cube Kenya Team</strong></p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="font-size: 12px; color: #6b7280;">
+          This is an automated reminder. If you have already updated your document, please ignore this email.
+          For assistance, contact us at +254 712 990 524.
+        </p>
+      </div>
+      
+      <div style="background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; width: 100%; box-sizing: border-box;">
+        <div style="margin-bottom: 15px;">
+          <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" style="height: 25px; width: 25px; opacity: 0.7;" />
+        </div>
+        <p><strong>Carbon Cube Kenya</strong> | 9th Floor, CMS Africa, Nairobi</p>
+        <p>Phone: +254 712 990 524 | Email: <%= ENV['BREVO_EMAIL'] %></p>
+        <p>© 2025 Carbon Cube Kenya. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -47,6 +47,11 @@ class AuthenticationController < ApplicationController
       end
       
 
+      # Update last active timestamp for sellers
+      if role == 'seller' && @user.respond_to?(:update_last_active!)
+        @user.update_last_active!
+      end
+
       # Create token with appropriate ID field and remember_me flag
       token_payload = if role == 'seller'
         { seller_id: @user.id, email: @user.email, role: role, remember_me: remember_me }
@@ -129,6 +134,35 @@ class AuthenticationController < ApplicationController
       token: new_token,
       message: 'Token refreshed successfully'
     }, status: :ok
+  end
+
+  def logout
+    token = request.headers['Authorization']&.split(' ')&.last
+    
+    if token
+      # Extract user info before blacklisting
+      begin
+        payload = JsonWebToken.decode(token)
+        user_id = payload[:user_id] || payload[:seller_id]
+        role = payload[:role]
+        
+        # Update last_active_at for sellers before logout
+        if role == 'seller' && user_id
+          seller = Seller.find_by(id: user_id)
+          seller&.update_last_active!
+        end
+        
+        # Blacklist the token
+        JwtService.blacklist_token(token)
+        
+        render json: { message: 'Logged out successfully' }, status: :ok
+      rescue StandardError => e
+        Rails.logger.error "Logout error: #{e.message}"
+        render json: { error: 'Invalid token' }, status: :unauthorized
+      end
+    else
+      render json: { error: 'No token provided' }, status: :bad_request
+    end
   end
 
   private

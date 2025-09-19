@@ -3,13 +3,86 @@ class Admin::SellersController < ApplicationController
   before_action :set_seller, only: [:block, :unblock, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
 
   def index
-    if params[:search_query].present?
-      @sellers = Seller.where("phone_number = :query OR id = :query", query: params[:search_query])
-    else
-      @sellers = Seller.all
+    # Base query
+    sellers_query = Seller.all
+    
+    # Enhanced search functionality
+    if params[:query].present?
+      search_term = params[:query].strip
+      sellers_query = sellers_query.where(
+        "fullname ILIKE :search OR 
+         phone_number ILIKE :search OR 
+         email ILIKE :search OR 
+         enterprise_name ILIKE :search OR 
+         location ILIKE :search OR 
+         id::text = :exact_search",
+        search: "%#{search_term}%",
+        exact_search: search_term
+      )
     end
-  
-    render json: @sellers.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked])
+    
+    # Filter by status
+    if params[:status].present?
+      case params[:status]
+      when 'active'
+        sellers_query = sellers_query.where(blocked: false)
+      when 'blocked'
+        sellers_query = sellers_query.where(blocked: true)
+      end
+    end
+    
+    # Sorting - default to last_active_at desc to show most recently active users first
+    sort_by = params[:sort_by] || 'last_active_at'
+    sort_order = params[:sort_order] || 'desc'
+    
+    # Validate sort parameters
+    allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at]
+    allowed_sort_orders = %w[asc desc]
+    
+    sort_by = 'id' unless allowed_sort_fields.include?(sort_by)
+    sort_order = 'asc' unless allowed_sort_orders.include?(sort_order)
+    
+    # Handle sorting - use last_active_at instead of last_activity
+    sort_by = 'last_active_at' if sort_by == 'last_activity'
+    sellers_query = sellers_query.order("#{sort_by} #{sort_order}")
+    
+    # Pagination
+    page = params[:page]&.to_i || 1
+    per_page = params[:per_page]&.to_i || 20
+    
+    # Validate pagination parameters
+    page = 1 if page < 1
+    per_page = [per_page, 100].min # Max 100 per page
+    per_page = 20 if per_page < 1
+    
+    total_count = sellers_query.count
+    offset = (page - 1) * per_page
+    
+    @sellers = sellers_query.limit(per_page).offset(offset)
+    
+    # Prepare sellers data with last_active_at
+    @sellers_data = @sellers.map do |seller|
+      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :created_at, :updated_at, :last_active_at])
+    end
+    
+    # Calculate pagination metadata
+    total_pages = (total_count.to_f / per_page).ceil
+    has_next_page = page < total_pages
+    has_prev_page = page > 1
+    
+    render json: {
+      sellers: @sellers_data,
+      pagination: {
+        current_page: page,
+        per_page: per_page,
+        total_count: total_count,
+        total_pages: total_pages,
+        has_next_page: has_next_page,
+        has_prev_page: has_prev_page,
+        next_page: has_next_page ? page + 1 : nil,
+        prev_page: has_prev_page ? page - 1 : nil
+      }
+    }
   end
   
 
@@ -214,15 +287,21 @@ class Admin::SellersController < ApplicationController
                       .count
                       .keys.first rescue "Unknown"
 
-    category_comparison = Seller.joins(:ads)
-                      .joins("JOIN categories_sellers ON sellers.id = categories_sellers.seller_id")
-                      .where("categories_sellers.category_id = ?", seller.category.id)
-                      .group("sellers.id")
-                      .count
-                      .sort_by { |_seller_id, ad_count| -ad_count }
-                      .to_h
+    # Handle sellers without categories
+    if seller.category.present?
+      category_comparison = Seller.joins(:ads)
+                        .joins("JOIN categories_sellers ON sellers.id = categories_sellers.seller_id")
+                        .where("categories_sellers.category_id = ?", seller.category.id)
+                        .group("sellers.id")
+                        .count
+                        .sort_by { |_seller_id, ad_count| -ad_count }
+                        .to_h
 
-    seller_category_rank = category_comparison.keys.index(seller.id).to_i + 1 rescue nil
+      seller_category_rank = category_comparison.keys.index(seller.id).to_i + 1 rescue nil
+    else
+      category_comparison = {}
+      seller_category_rank = nil
+    end
   
     # Customer Interest & Conversion
     wishlist_to_click_ratio = (click_event_counts["Add-to-Wish-List"].to_f / total_clicks * 100).round(2) rescue 0
@@ -289,7 +368,7 @@ class Admin::SellersController < ApplicationController
       ad_approval_rate: ad_approval_rate,
   
       # Competitor & Category Insights
-      seller_category: seller.category.name,
+      seller_category: seller.category&.name || "No Category",
       top_performing_category: top_category,
       category_rank: seller_category_rank,
   

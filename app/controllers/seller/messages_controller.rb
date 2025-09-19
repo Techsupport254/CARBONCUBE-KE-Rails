@@ -66,6 +66,8 @@ class Seller::MessagesController < ApplicationController
     @message.status = Message::STATUS_SENT
 
     if @message.save
+      # Update seller's last active timestamp when sending a message
+      @current_user.update_last_active!
       # Message broadcasting is handled by the Message model's after_create callback
       render json: @message.as_json(include: :sender), status: :created
     else

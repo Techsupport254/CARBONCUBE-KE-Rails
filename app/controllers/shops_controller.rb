@@ -7,17 +7,18 @@ class ShopsController < ApplicationController
     # Replace hyphens with spaces and handle special characters
     enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
     
-    # First try exact match with case insensitive
+    # First try exact match with case insensitive and normalized spaces
+    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
     @shop = Seller.includes(:seller_tier, :tier)
                   .where(deleted: false)
-                  .where('LOWER(enterprise_name) = ?', enterprise_name.downcase)
+                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
                   .first
     
-    # If no exact match, try partial match
+    # If no exact match, try partial match with normalized spaces
     unless @shop
       @shop = Seller.includes(:seller_tier, :tier)
                     .where(deleted: false)
-                    .where('LOWER(enterprise_name) ILIKE ?', "%#{enterprise_name.downcase}%")
+                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
                     .first
     end
     
@@ -125,17 +126,18 @@ class ShopsController < ApplicationController
     # Convert slug back to enterprise name format for searching
     enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
     
-    # First try exact match with case insensitive
+    # First try exact match with case insensitive and normalized spaces
+    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
     @shop = Seller.includes(:seller_tier, :tier)
                   .where(deleted: false)
-                  .where('LOWER(enterprise_name) = ?', enterprise_name.downcase)
+                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
                   .first
     
-    # If no exact match, try partial match
+    # If no exact match, try partial match with normalized spaces
     unless @shop
       @shop = Seller.includes(:seller_tier, :tier)
                     .where(deleted: false)
-                    .where('LOWER(enterprise_name) ILIKE ?', "%#{enterprise_name.downcase}%")
+                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
                     .first
     end
     
@@ -244,17 +246,18 @@ class ShopsController < ApplicationController
     # Convert slug back to enterprise name format for searching
     enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
     
-    # First try exact match with case insensitive
+    # First try exact match with case insensitive and normalized spaces
+    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
     @shop = Seller.includes(:seller_tier, :tier)
                   .where(deleted: false)
-                  .where('LOWER(enterprise_name) = ?', enterprise_name.downcase)
+                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
                   .first
     
-    # If no exact match, try partial match
+    # If no exact match, try partial match with normalized spaces
     unless @shop
       @shop = Seller.includes(:seller_tier, :tier)
                     .where(deleted: false)
-                    .where('LOWER(enterprise_name) ILIKE ?', "%#{enterprise_name.downcase}%")
+                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
                     .first
     end
     

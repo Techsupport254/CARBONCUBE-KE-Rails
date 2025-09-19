@@ -1,5 +1,5 @@
 class OtpMailer < ApplicationMailer
-  default from: 'noreply@carboncube-ke.com'
+  default from: ENV['BREVO_EMAIL']
 
   def send_otp
     @email = params[:email]

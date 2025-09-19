@@ -73,6 +73,8 @@ class Seller::AdsController < ApplicationController
       Rails.logger.info "📝 Ad built with media: #{@ad.media.inspect}"
 
       if @ad.save
+        # Update seller's last active timestamp when creating an ad
+        current_seller.update_last_active!
         Rails.logger.info "✅ Ad saved successfully with ID: #{@ad.id}"
         render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :created
       else
@@ -113,6 +115,8 @@ class Seller::AdsController < ApplicationController
     end
 
     if updated
+      # Update seller's last active timestamp when updating an ad
+      current_seller.update_last_active!
       render json: ad.as_json(include: [:category, :reviews], methods: [:mean_rating])
     else
       render json: { error: ad.errors.full_messages }, status: :unprocessable_entity

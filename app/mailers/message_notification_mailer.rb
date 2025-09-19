@@ -1,5 +1,5 @@
 class MessageNotificationMailer < ApplicationMailer
-  default from: 'noreply@carboncube-ke.com'
+  default from: ENV['BREVO_EMAIL']
 
   # Send new message notification to recipient
   def new_message_notification(message, recipient)
@@ -22,7 +22,7 @@ class MessageNotificationMailer < ApplicationMailer
     mail(
       to: @recipient.email,
       subject: "New message from #{@sender_name} on Carbon Cube Kenya",
-      reply_to: ENV['BREVO_EMAIL'] || 'noreply@carboncube-ke.com'
+      reply_to: ENV['BREVO_EMAIL']
     )
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_18_090155) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -132,6 +132,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_090155) do
     t.index ["expires_at"], name: "index_best_sellers_cache_on_expires_at"
   end
 
+  create_table "best_sellers_caches", force: :cascade do |t|
+    t.string "cache_key", null: false
+    t.jsonb "data", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cache_key"], name: "index_best_sellers_caches_on_cache_key", unique: true
+    t.index ["expires_at"], name: "index_best_sellers_caches_on_expires_at"
+  end
+
   create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
     t.string "fullname", null: false
     t.string "username", null: false
@@ -220,6 +230,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_090155) do
     t.datetime "updated_at", null: false
     t.integer "inquirer_seller_id"
     t.index ["ad_id", "buyer_id", "seller_id", "inquirer_seller_id"], name: "index_conversations_on_all_participants_and_ad", unique: true
+    t.index ["ad_id", "buyer_id", "seller_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["ad_id"], name: "index_conversations_on_ad_id"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
@@ -531,6 +542,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_090155) do
     t.date "document_expiry_date"
     t.boolean "document_verified", default: false
     t.integer "ads_count", default: 0, null: false
+    t.datetime "last_active_at"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"

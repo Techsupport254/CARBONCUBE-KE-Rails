@@ -69,7 +69,7 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  config.action_mailer.raise_delivery_errors = true
 
   config.action_mailer.perform_caching = false
 
@@ -77,16 +77,32 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
     address: 'smtp-relay.brevo.com',
-    port: 587,
+    port: 2525,  # Try port 2525 instead of 587
     domain: 'carboncube-ke.com',
     user_name: ENV['BREVO_SMTP_USER'],
     password: ENV['BREVO_SMTP_PASSWORD'],
     authentication: 'login',
-    enable_starttls_auto: true
+    enable_starttls_auto: false,  # Disable STARTTLS for port 2525
+    # Alternative SSL settings
+    openssl_verify_mode: 'none',
+    ssl: false,
+    tls: false
   }
 
   config.action_mailer.default_options = {
-    from: 'noreply@carboncube-ke.com'
+    from: ENV['BREVO_EMAIL'],
+    reply_to: ENV['BREVO_EMAIL']
+  }
+  
+  # Enable detailed SMTP logging
+  config.action_mailer.logger = Rails.logger
+  config.action_mailer.perform_deliveries = true
+  
+  # Set default URL options for email links
+  config.action_mailer.default_url_options = {
+    host: 'localhost',
+    port: 3000,
+    protocol: 'http'
   }
 
   # Print deprecation notices to the Rails logger.

@@ -19,9 +19,10 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
 
-  # Email and username validation routes
+  # Email, username, and phone validation routes
   post 'email/exists', to: 'email#exists'
   post 'username/exists', to: 'email#username_exists'
+  post 'phone/exists', to: 'email#phone_exists'
   
   # Contact form routes
   post 'contact/submit', to: 'contact#submit'
@@ -51,6 +52,7 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
   post 'auth/login', to: 'authentication#login'
   post 'auth/refresh', to: 'authentication#refresh_token'
+  post 'auth/logout', to: 'authentication#logout'
   resources :banners, only: [:index]
   resources :ads, only: [:index, :show] do
     get 'reviews', to: 'reviews#index', on: :member
@@ -174,6 +176,15 @@ Rails.application.routes.draw do
 
     resources :categories
     resources :subcategories
+    
+    # Seller Communications
+    resources :seller_communications, only: [] do
+      collection do
+        post 'send_general_update'
+        post 'send_to_test_seller'
+        post 'send_bulk_emails'
+      end
+    end
     resources :ads do
       collection do
         get 'search'
