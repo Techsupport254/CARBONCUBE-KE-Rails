@@ -60,11 +60,11 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def media_urls
-    object.media || [] # Safely return the array of URLs or empty array
+    object.valid_media_urls # Return only valid media URLs
   end
 
   def first_media_url
-    object.media&.first # Safely return the first URL or nil
+    object.first_valid_media_url # Return the first valid media URL
   end
 
   def category_id

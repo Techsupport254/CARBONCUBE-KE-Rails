@@ -19,7 +19,7 @@ class Buyer::AdsController < ApplicationController
       cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}"
       
       @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
-        ads_query = Ad.active.joins(:seller)
+        ads_query = Ad.active.with_valid_images.joins(:seller)
                      .where(sellers: { blocked: false, deleted: false })
                      .where(flagged: false)
                      .joins(seller: { seller_tier: :tier })
@@ -35,7 +35,7 @@ class Buyer::AdsController < ApplicationController
         ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
         ads_query
-          .order('tier_priority ASC, ads.created_at DESC')
+          .order('tier_priority ASC, RANDOM()')
           .limit(per_page).offset((page - 1) * per_page)
       end
     end
@@ -43,13 +43,13 @@ class Buyer::AdsController < ApplicationController
     # Calculate total count for pagination
     total_count = if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
       # For balanced ads, we need to count all active ads
-      Ad.active.joins(:seller)
+      Ad.active.with_valid_images.joins(:seller)
          .where(sellers: { blocked: false, deleted: false })
          .where(flagged: false)
          .count
     else
       # For filtered ads, count with same filters
-      ads_query = Ad.active.joins(:seller)
+      ads_query = Ad.active.with_valid_images.joins(:seller)
                     .where(sellers: { blocked: false, deleted: false })
                     .where(flagged: false)
       
@@ -101,7 +101,7 @@ class Buyer::AdsController < ApplicationController
     ads_per_page = 24 if ads_per_page < 1 || ads_per_page > 100
     shops_per_page = 10 if shops_per_page < 1 || shops_per_page > 50
 
-    ads = Ad.active.joins(:seller, :category, :subcategory)
+    ads = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
             .where(sellers: { blocked: false, deleted: false })
             .where(flagged: false)
 
@@ -163,7 +163,7 @@ class Buyer::AdsController < ApplicationController
                         WHEN 2 THEN 3
                         WHEN 1 THEN 4
                         ELSE 5
-                      END ASC, ads.created_at DESC'))
+                      END ASC, RANDOM()'))
       .limit(ads_per_page)
       .offset((ads_page - 1) * ads_per_page)
 
@@ -222,7 +222,7 @@ class Buyer::AdsController < ApplicationController
                     end
         
         # Product count score (more products = higher score)
-        product_count = Ad.active.where(seller_id: shop.id, flagged: false).count
+        product_count = Ad.active.with_valid_images.where(seller_id: shop.id, flagged: false).count
         product_score = [product_count * 2, 50].min # Cap at 50 points
         
         # Rating score (if reviews exist) - get overall average for the seller
@@ -322,7 +322,7 @@ class Buyer::AdsController < ApplicationController
 
     # Fetch ads that share either the same category or subcategory
     # Apply the same filters as the main ads endpoint
-    related_ads = Ad.active
+    related_ads = Ad.active.with_valid_images
                     .joins(:seller, seller: { seller_tier: :tier })
                     .where(sellers: { blocked: false })
                     .where(flagged: false)
@@ -347,7 +347,7 @@ class Buyer::AdsController < ApplicationController
                               WHEN 2 THEN 3
                               WHEN 1 THEN 4
                               ELSE 5
-                            END ASC, ads.created_at DESC'))
+                            END ASC, RANDOM()'))
                     .limit(10) # Limit to 10 related ads for performance
 
     render json: related_ads, each_serializer: AdSerializer
@@ -372,14 +372,14 @@ class Buyer::AdsController < ApplicationController
     end
     
     # Get total count for this subcategory
-    total_count = Ad.active
+    total_count = Ad.active.with_valid_images
       .joins(:seller)
       .where(sellers: { blocked: false })
       .where(flagged: false)
       .where(subcategory_id: subcategory_id)
       .count
     
-    ads = Ad.active
+    ads = Ad.active.with_valid_images
       .joins(:seller, seller: { seller_tier: :tier })
       .where(sellers: { blocked: false })
       .where(flagged: false)
@@ -397,7 +397,7 @@ class Buyer::AdsController < ApplicationController
                 WHEN 2 THEN 3
                 WHEN 1 THEN 4
                 ELSE 5
-              END ASC, ads.created_at DESC'))  # Strict hierarchical order
+              END ASC, RANDOM()'))  # Random order within tier priority
       .limit(per_page)
       .offset((page - 1) * per_page)
       .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
@@ -441,7 +441,7 @@ class Buyer::AdsController < ApplicationController
       subcategory = Subcategory.find_by(id: subcategory_id)
       if subcategory
         # Get total count for this subcategory
-        total_count = Ad.active
+        total_count = Ad.active.with_valid_images
           .joins(:seller)
           .where(sellers: { blocked: false, deleted: false })
           .where(flagged: false)
@@ -450,7 +450,7 @@ class Buyer::AdsController < ApplicationController
         
         subcategory_counts[subcategory.id] = total_count
         
-        subcategory_ads = Ad.active
+        subcategory_ads = Ad.active.with_valid_images
            .joins(:seller, seller: { seller_tier: :tier })
            .where(sellers: { blocked: false, deleted: false })
            .where(flagged: false)
@@ -462,7 +462,7 @@ class Buyer::AdsController < ApplicationController
                      WHEN 2 THEN 3
                      WHEN 1 THEN 4
                      ELSE 5
-                   END ASC, ads.created_at DESC'))  # Strict hierarchical order
+                   END ASC, RANDOM()'))  # Random order within tier priority
            .limit(ads_per_subcategory)
            .offset((page - 1) * ads_per_subcategory)
         
@@ -473,7 +473,7 @@ class Buyer::AdsController < ApplicationController
       categories.each do |category|
         category.subcategories.each do |subcategory|
           # Get total count for this subcategory
-          total_count = Ad.active
+          total_count = Ad.active.with_valid_images
             .joins(:seller)
             .where(sellers: { blocked: false, deleted: false })
             .where(flagged: false)
@@ -483,7 +483,7 @@ class Buyer::AdsController < ApplicationController
           subcategory_counts[subcategory.id] = total_count
           
           # Get ads for this subcategory, ordered by tier priority first, then by creation date
-          subcategory_ads = Ad.active
+          subcategory_ads = Ad.active.with_valid_images
              .joins(:seller, seller: { seller_tier: :tier })
              .where(sellers: { blocked: false, deleted: false })
              .where(flagged: false)
@@ -495,7 +495,7 @@ class Buyer::AdsController < ApplicationController
                        WHEN 2 THEN 3
                        WHEN 1 THEN 4
                        ELSE 5
-                     END ASC, ads.created_at DESC'))  # Strict hierarchical order
+                     END ASC, RANDOM()'))  # Random order within tier priority
              .limit(ads_per_subcategory)
           
           all_ads.concat(subcategory_ads)

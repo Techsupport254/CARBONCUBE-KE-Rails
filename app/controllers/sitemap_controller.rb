@@ -3,12 +3,12 @@ class SitemapController < ApplicationController
   # Dedicated endpoint for sitemap generation - returns all active ads
   def ads
     # Get all active ads without pagination limits for sitemap generation
-    @ads = Ad.active
+    @ads = Ad.active.with_valid_images
              .joins(:seller)
              .where(sellers: { blocked: false, deleted: false })
              .where(flagged: false)
              .includes(:category, :subcategory, seller: { seller_tier: :tier })
-             .order(created_at: :desc)
+             .order(Arel.sql('RANDOM()'))
 
     render json: @ads
   end

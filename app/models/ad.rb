@@ -9,6 +9,7 @@ class Ad < ApplicationRecord
 
   scope :active, -> { where(deleted: false) }
   scope :deleted, -> { where(deleted: true) }
+  scope :with_valid_images, -> { where.not(media: [nil, [], ""]) }
 
   belongs_to :seller
   belongs_to :category
@@ -135,7 +136,40 @@ class Ad < ApplicationRecord
 
   def wishlist_count
     wish_lists.count
-  end  
+  end
+
+  # Check if ad has valid images
+  def has_valid_images?
+    return false if media.blank?
+    
+    # Check if media is an array and not empty
+    return false unless media.is_a?(Array) && media.any?
+    
+    # Check if all media URLs are valid (not nil, not empty, and properly formatted)
+    media.all? do |url|
+      url.present? && 
+      url.is_a?(String) && 
+      url.strip.length > 0 &&
+      (url.start_with?('http://') || url.start_with?('https://'))
+    end
+  end
+
+  # Get only valid media URLs
+  def valid_media_urls
+    return [] unless has_valid_images?
+    
+    media.select do |url|
+      url.present? && 
+      url.is_a?(String) && 
+      url.strip.length > 0 &&
+      (url.start_with?('http://') || url.start_with?('https://'))
+    end
+  end
+
+  # Get first valid media URL
+  def first_valid_media_url
+    valid_media_urls.first
+  end
 
   private
 

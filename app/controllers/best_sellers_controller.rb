@@ -59,7 +59,7 @@ class BestSellersController < ApplicationController
   def calculate_best_sellers_fast(limit)
     # Ultra-simplified approach to minimize database connections
     # Get recent active ads with basic info only
-    ads_data = Ad.active
+    ads_data = Ad.active.with_valid_images
                  .joins(:seller, :category, :subcategory)
                  .joins("LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id")
                  .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
