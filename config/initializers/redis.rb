@@ -32,6 +32,10 @@ module RedisConnection
     def expire(key, ttl)
       current.expire(key, ttl)
     end
+    
+    def keys(pattern)
+      current.keys(pattern)
+    end
   end
 end
 
