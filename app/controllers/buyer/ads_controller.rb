@@ -320,14 +320,17 @@ class Buyer::AdsController < ApplicationController
     # Use @ad from before_action instead of finding it again
     ad = @ad
 
+    Rails.logger.info "Fetching related ads for ad ID: #{ad.id}, category: #{ad.category_id}, subcategory: #{ad.subcategory_id}"
+
     # Fetch ads that share either the same category or subcategory
     # Apply the same filters as the main ads endpoint
     related_ads = Ad.active.with_valid_images
                     .joins(:seller, seller: { seller_tier: :tier })
-                    .where(sellers: { blocked: false })
+                    .where(sellers: { blocked: false, deleted: false })
                     .where(flagged: false)
                     .where.not(id: ad.id)
                     .where('ads.category_id = ? OR ads.subcategory_id = ?', ad.category_id, ad.subcategory_id)
+                    .where('ads.id != ?', ad.id) # Double check to exclude current ad
                     .select('ads.*, CASE tiers.id
                               WHEN 4 THEN 1
                               WHEN 3 THEN 2
@@ -350,7 +353,17 @@ class Buyer::AdsController < ApplicationController
                             END ASC, RANDOM()'))
                     .limit(10) # Limit to 10 related ads for performance
 
-    render json: related_ads, each_serializer: AdSerializer
+    Rails.logger.info "Found #{related_ads.count} related ads"
+    Rails.logger.info "Related ad IDs: #{related_ads.pluck(:id)}"
+    
+    # Final validation: ensure no related ad has the same ID as the current ad
+    filtered_related_ads = related_ads.reject { |related_ad| related_ad.id == ad.id }
+    
+    if filtered_related_ads.length != related_ads.length
+      Rails.logger.warn "Filtered out #{related_ads.length - filtered_related_ads.length} ads that matched current ad ID"
+    end
+
+    render json: filtered_related_ads, each_serializer: AdSerializer
   end
 
 
