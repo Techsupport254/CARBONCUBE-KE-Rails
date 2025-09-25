@@ -39,17 +39,22 @@ class Seller::AdsController < ApplicationController
 
   def create
     begin
+      Rails.logger.info "🚀 Starting ad creation process"
+      Rails.logger.info "📊 Request params: #{params[:ad].inspect}"
+      
       seller_tier = current_seller.seller_tier
 
       unless seller_tier && seller_tier.tier
+        Rails.logger.error "❌ No active subscription tier for seller #{current_seller.id}"
         return render json: { error: "You do not have an active subscription tier. Please upgrade your account to post ads." }, status: :forbidden
       end
 
       ad_limit = seller_tier.tier.ads_limit || 0
-      # Rails.logger.info "🔍 Current seller tier: #{seller_tier.tier.name} with ad limit: #{ad_limit}"
+      Rails.logger.info "🔍 Current seller tier: #{seller_tier.tier.name} with ad limit: #{ad_limit}"
       current_ads_count = current_seller.ads.count
 
       if current_ads_count >= ad_limit
+        Rails.logger.error "❌ Ad limit reached for seller #{current_seller.id}: #{current_ads_count}/#{ad_limit}"
         return render json: { error: "Ad creation limit reached for your current tier (#{ad_limit} ads max)." }, status: :forbidden
       end
 
@@ -69,6 +74,7 @@ class Seller::AdsController < ApplicationController
         Rails.logger.info "📸 No images provided for this ad"
       end
 
+      Rails.logger.info "📝 Building ad with params: #{ad_params.inspect}"
       @ad = current_seller.ads.build(ad_params)
       Rails.logger.info "📝 Ad built with media: #{@ad.media.inspect}"
 
@@ -79,11 +85,12 @@ class Seller::AdsController < ApplicationController
         render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :created
       else
         Rails.logger.error "❌ Ad save failed: #{@ad.errors.full_messages.join(', ')}"
+        Rails.logger.error "❌ Ad attributes: #{@ad.attributes.inspect}"
         render json: { errors: @ad.errors.full_messages }, status: :unprocessable_entity
       end
     rescue => e
-      Rails.logger.error "Error creating ad: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
+      Rails.logger.error "❌ Error creating ad: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
       render json: { error: "Failed to create ad. Please try again." }, status: :internal_server_error
     end
   end
@@ -199,6 +206,7 @@ class Seller::AdsController < ApplicationController
   def process_and_upload_images(images)
     uploaded_urls = []
     Rails.logger.info "🖼️ Processing #{Array(images).length} images for upload"
+    Rails.logger.info "🔧 Cloudinary config - Cloud: #{ENV['CLOUDINARY_CLOUD_NAME']}, Preset: #{ENV['UPLOAD_PRESET']}"
 
     begin
       Array(images).each do |image|
@@ -211,20 +219,33 @@ class Seller::AdsController < ApplicationController
             next
           end
           
+          # Check Cloudinary configuration
+          unless ENV['UPLOAD_PRESET'].present?
+            Rails.logger.error "❌ UPLOAD_PRESET environment variable is not set"
+            raise "UPLOAD_PRESET not configured"
+          end
+          
           # Upload original image directly to Cloudinary without any processing
-          uploaded_image = Cloudinary::Uploader.upload(image.tempfile.path, upload_preset: ENV['UPLOAD_PRESET'])
+          Rails.logger.info "🚀 Uploading to Cloudinary with preset: #{ENV['UPLOAD_PRESET']}"
+          uploaded_image = Cloudinary::Uploader.upload(
+            image.tempfile.path, 
+            upload_preset: ENV['UPLOAD_PRESET']
+          )
           Rails.logger.info "🚀 Uploaded to Cloudinary: #{uploaded_image['secure_url']}"
 
           uploaded_urls << uploaded_image["secure_url"]
         rescue => e
           Rails.logger.error "❌ Error uploading image #{image.original_filename}: #{e.message}"
+          Rails.logger.error "❌ Error class: #{e.class}"
           Rails.logger.error e.backtrace.join("\n")
+          # Don't fail completely, just skip this image
         end
       end
     rescue => e
       Rails.logger.error "❌ Error in process_and_upload_images: #{e.message}"
+      Rails.logger.error "❌ Error class: #{e.class}"
       Rails.logger.error e.backtrace.join("\n")
-      return [] # Return empty array instead of failing
+      raise e # Re-raise to be caught by the calling method
     end
 
     Rails.logger.info "✅ Successfully uploaded #{uploaded_urls.length} images"
