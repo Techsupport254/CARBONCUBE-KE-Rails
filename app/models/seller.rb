@@ -31,7 +31,9 @@ class Seller < ApplicationRecord
   validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
   validates :location, presence: true
   validates :business_registration_number, length: { minimum: 1 }, allow_blank: true, uniqueness: true, allow_nil: true
-  validates :username, presence: true, uniqueness: true, allow_blank: true
+  validates :username, presence: true, uniqueness: true, allow_blank: true,
+            format: { with: /\A[a-zA-Z0-9_]{3,20}\z/, 
+                      message: "must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)" }
   validates :age_group, presence: true
   validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
   validate :password_strength, if: :password_required?

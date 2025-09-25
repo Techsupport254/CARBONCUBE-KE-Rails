@@ -19,13 +19,24 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
 
-  # Email, username, and phone validation routes
+  # Email, username, phone, and business validation routes
   post 'email/exists', to: 'email#exists'
   post 'username/exists', to: 'email#username_exists'
   post 'phone/exists', to: 'email#phone_exists'
+  post 'business_name/exists', to: 'email#business_name_exists'
+  post 'business_number/exists', to: 'email#business_number_exists'
+  
+  # Validation routes for frontend
+  post 'validate_phone', to: 'email#phone_exists'
+  post 'validate_email', to: 'email#exists'
+  post 'validate_username', to: 'email#username_exists'
   
   # Contact form routes
   post 'contact/submit', to: 'contact#submit'
+  
+  # Data deletion request routes
+  post 'data_deletion/request', to: 'data_deletion#create'
+  get 'data_deletion/status/:token', to: 'data_deletion#status'
   
   # Unified conversations and messages endpoints for all user types
   resources :conversations, only: [:index, :show, :create] do
@@ -53,6 +64,11 @@ Rails.application.routes.draw do
   post 'auth/login', to: 'authentication#login'
   post 'auth/refresh', to: 'authentication#refresh_token'
   post 'auth/logout', to: 'authentication#logout'
+  
+  # Google OAuth routes
+  post 'auth/google', to: 'authentication#google_oauth'
+  post 'auth/google_one_tap', to: 'authentication#google_one_tap'
+  get 'auth/google_oauth2/callback', to: 'authentication#google_oauth_callback'
   resources :banners, only: [:index]
   resources :ads, only: [:index, :show] do
     get 'reviews', to: 'reviews#index', on: :member

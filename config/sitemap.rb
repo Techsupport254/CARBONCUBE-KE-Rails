@@ -4,6 +4,11 @@ SitemapGenerator::Sitemap.public_path = 'public/'
 SitemapGenerator::Sitemap.sitemaps_path = 'sitemaps/'
 SitemapGenerator::Sitemap.compress = true
 
+# Ensure all URLs use HTTPS and canonical format
+SitemapGenerator::Sitemap.adapter = SitemapGenerator::FileAdapter.new
+SitemapGenerator::Sitemap.include_root = false
+SitemapGenerator::Sitemap.include_index = false
+
 SitemapGenerator::Sitemap.create do
   # Homepage (highest priority)
   add root_path, priority: 1.0, changefreq: 'daily'

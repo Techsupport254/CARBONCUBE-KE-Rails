@@ -6,7 +6,9 @@ class Buyer::ProfilesController < ApplicationController
 
   # GET /buyer/profile
   def show
-    render json: current_buyer.as_json
+    buyer_data = current_buyer.as_json
+    buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+    render json: buyer_data
   end
 
   # PATCH/PUT /buyer/profile
@@ -60,7 +62,9 @@ class Buyer::ProfilesController < ApplicationController
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       
       if current_buyer.update(update_params)
-        render json: current_buyer.as_json
+        buyer_data = current_buyer.as_json
+        buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+        render json: buyer_data
       else
         Rails.logger.error "Update failed: #{current_buyer.errors.full_messages}"
         render json: current_buyer.errors, status: :unprocessable_entity
@@ -108,7 +112,9 @@ class Buyer::ProfilesController < ApplicationController
 
   # Updated buyer_params to permit top-level parameters
   def buyer_params
-    params.permit(:fullname, :username, :phone_number, :email, :location, :zipcode, :gender, :city)
+    params.permit(:fullname, :username, :phone_number, :email, :location, :zipcode, :gender, :city, 
+                  :county_id, :sub_county_id, :age_group_id, :income_id, :employment_id, 
+                  :education_id, :sector_id)
   end
 
   # DRY Upload Handler

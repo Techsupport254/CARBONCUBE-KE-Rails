@@ -24,12 +24,14 @@ class Buyer < ApplicationRecord
 
   validates :fullname, presence: true
   validates :email, presence: true, uniqueness: { case_sensitive: false }
-  validates :username, presence: true, uniqueness: true
+  validates :username, presence: true, uniqueness: true, 
+            format: { with: /\A[a-zA-Z0-9_]{3,20}\z/, 
+                      message: "must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)" }
   validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
   validate :password_strength, if: :password_required?
   validates :age_group, presence: true
   # validates :zipcode, presence: true
-  validates :city, presence: true
+  # validates :city, presence: true
   # validates :sub_county, presence: true
   validates :gender, inclusion: { in: %w(Male Female Other) }
   # validates :location, presence: true
@@ -61,6 +63,36 @@ class Buyer < ApplicationRecord
   
   def user_type
     'buyer'
+  end
+
+  def profile_completion_percentage
+    # All fields (required + optional) for a more realistic completion percentage
+    all_fields = [
+      # Required fields
+      fullname.present?,
+      username.present?,
+      email.present?,
+      phone_number.present?,
+      gender.present?,
+      age_group_id.present?,
+      # Optional fields
+      location.present?,
+      city.present?,
+      county_id.present?,
+      sub_county_id.present?,
+      zipcode.present?,
+      profile_picture.present?,
+      income_id.present?,
+      employment_id.present?,
+      education_id.present?,
+      sector_id.present?
+    ]
+
+    # Calculate completion based on all fields
+    completed_fields = all_fields.count(true)
+    total_completion = (completed_fields.to_f / all_fields.length * 100).round
+
+    total_completion
   end
 
   private

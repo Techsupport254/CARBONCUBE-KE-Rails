@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_22_114343) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -53,6 +53,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.string "password_digest"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
+    t.index ["provider", "uid"], name: "index_admins_on_provider_and_uid", unique: true
   end
 
   create_table "ads", force: :cascade do |t|
@@ -150,7 +156,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.string "phone_number", limit: 10, null: false
     t.bigint "age_group_id", null: false
     t.string "zipcode"
-    t.string "city", null: false
+    t.string "city"
     t.string "gender", default: "Male", null: false
     t.string "location"
     t.string "profile_picture"
@@ -164,12 +170,18 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "deleted", default: false, null: false
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
     t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"
     t.index ["education_id"], name: "index_buyers_on_education_id"
     t.index ["employment_id"], name: "index_buyers_on_employment_id"
     t.index ["income_id"], name: "index_buyers_on_income_id"
+    t.index ["provider", "uid"], name: "index_buyers_on_provider_and_uid", unique: true
     t.index ["sector_id"], name: "index_buyers_on_sector_id"
     t.index ["sub_county_id"], name: "index_buyers_on_sub_county_id"
     t.index ["username"], name: "index_buyers_on_username"
@@ -246,6 +258,27 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.datetime "updated_at", null: false
     t.index ["county_code"], name: "index_counties_on_county_code", unique: true
     t.index ["name"], name: "index_counties_on_name", unique: true
+  end
+
+  create_table "data_deletion_requests", force: :cascade do |t|
+    t.string "full_name", null: false
+    t.string "email", null: false
+    t.string "phone"
+    t.string "account_type", null: false
+    t.text "reason"
+    t.string "status", default: "pending", null: false
+    t.string "token", null: false
+    t.datetime "requested_at", null: false
+    t.datetime "verified_at"
+    t.datetime "processed_at"
+    t.text "rejection_reason"
+    t.text "admin_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_data_deletion_requests_on_email"
+    t.index ["requested_at"], name: "index_data_deletion_requests_on_requested_at"
+    t.index ["status"], name: "index_data_deletion_requests_on_status"
+    t.index ["token"], name: "index_data_deletion_requests_on_token", unique: true
   end
 
   create_table "document_types", force: :cascade do |t|
@@ -479,6 +512,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.string "password_digest"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
+    t.index ["provider", "uid"], name: "index_sales_users_on_provider_and_uid", unique: true
   end
 
   create_table "sectors", force: :cascade do |t|
@@ -543,6 +582,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.boolean "document_verified", default: false
     t.integer "ads_count", default: 0, null: false
     t.datetime "last_active_at"
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.datetime "oauth_expires_at"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -552,6 +596,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_18_191359) do
     t.index ["county_id"], name: "index_sellers_on_county_id"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
+    t.index ["provider", "uid"], name: "index_sellers_on_provider_and_uid", unique: true
     t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"
     t.index ["username"], name: "index_sellers_on_username", unique: true, where: "((username IS NOT NULL) AND ((username)::text <> ''::text))"
   end

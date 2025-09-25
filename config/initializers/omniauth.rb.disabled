@@ -1,0 +1,25 @@
+# OmniAuth configuration is disabled for API-only Rails app
+# We use manual OAuth flow instead
+# 
+# If you need to re-enable OmniAuth middleware, uncomment the following:
+# Rails.application.config.middleware.use OmniAuth::Builder do
+#   provider :google_oauth2, 
+#            ENV['GOOGLE_CLIENT_ID'], 
+#            ENV['GOOGLE_CLIENT_SECRET'],
+#            {
+#              name: 'google',
+#              scope: 'email,profile,openid,https://www.googleapis.com/auth/user.birthday.read,https://www.googleapis.com/auth/user.phonenumbers.read,https://www.googleapis.com/auth/user.addresses.read,https://www.googleapis.com/auth/contacts.readonly,https://www.googleapis.com/auth/calendar.readonly,https://www.googleapis.com/auth/drive.metadata.readonly',
+#              prompt: 'select_account',
+#              image_aspect_ratio: 'square',
+#              image_size: 200,
+#              access_type: 'offline',
+#              include_granted_scopes: true,
+#              hd: nil, # Allow any domain
+#              skip_jwt: false
+#            }
+# end
+# 
+# # Configure OmniAuth for API-only mode
+# OmniAuth.config.allowed_request_methods = [:post, :get]
+# OmniAuth.config.silence_get_warning = true
+# OmniAuth.config.full_host = ENV['REACT_APP_BACKEND_URL'] || 'http://localhost:3001'

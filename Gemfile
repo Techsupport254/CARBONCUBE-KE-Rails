@@ -49,6 +49,10 @@ gem 'jwt'
 # HTTP client for API requests
 gem 'httparty'
 
+# Google APIs for OAuth
+gem 'google-apis-oauth2_v2'
+gem 'googleauth'
+
 # Dry validation for form validation
 gem 'dry-validation'
 

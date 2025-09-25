@@ -37,6 +37,9 @@ module CarbonecomRails
 
     config.api_only = true
     
+    # Enable sessions for OAuth flow
+    config.session_store :cookie_store, key: '_carboncube_session'
+    
     # Enable Action Cable for API-only Rails app
     config.action_cable.disable_request_forgery_protection = true
     config.action_cable.mount_path = '/cable'
@@ -44,6 +47,7 @@ module CarbonecomRails
     # Action Cable configuration
     config.action_cable.url = 'ws://localhost:3001/cable'
     config.action_cable.allowed_request_origins = ['http://localhost:3000', 'https://localhost:3000']
+    config.action_cable.logger = Rails.logger
     
     # WebSocket fallback configuration
     config.websocket_enabled = ENV.fetch('WEBSOCKET_ENABLED', 'true') == 'true'
