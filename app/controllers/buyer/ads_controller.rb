@@ -11,19 +11,26 @@ class Buyer::AdsController < ApplicationController
     # For the home page, get a balanced distribution of ads across subcategories
     # Only use balanced distribution if explicitly requested AND no category filtering
     if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
-      result = get_balanced_ads(per_page)
+      # Use longer cache for home page balanced ads
+      cache_key = "balanced_ads_#{per_page}_#{Date.current.strftime('%Y%m%d%H')}"
+      
+      result = Rails.cache.fetch(cache_key, expires_in: 2.hours) do
+        get_balanced_ads(per_page)
+      end
       @ads = result[:ads]
       @subcategory_counts = result[:subcategory_counts]
     else
       # Use caching for better performance
       cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}"
       
-      @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
-        ads_query = Ad.active.with_valid_images.joins(:seller)
+      @ads = Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+        ads_query = Ad.active.with_valid_images
+                     .joins(:seller, :category, :subcategory)
+                     .joins(seller: { seller_tier: :tier })
+                     .includes(:category, :subcategory, seller: { seller_tier: :tier })
                      .where(sellers: { blocked: false, deleted: false })
                      .where(flagged: false)
-                     .joins(seller: { seller_tier: :tier })
-                     .select('ads.*, CASE tiers.id
+                     .select('ads.id, ads.title, ads.price, ads.media, ads.created_at, ads.subcategory_id, ads.category_id, ads.seller_id, CASE tiers.id
                                WHEN 4 THEN 1
                                WHEN 3 THEN 2
                                WHEN 2 THEN 3
@@ -35,7 +42,7 @@ class Buyer::AdsController < ApplicationController
         ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
         ads_query
-          .order('tier_priority ASC, RANDOM()')
+          .order('RANDOM()')
           .limit(per_page).offset((page - 1) * per_page)
       end
     end
@@ -59,9 +66,50 @@ class Buyer::AdsController < ApplicationController
       ads_query.count
     end
 
+    # Include best sellers for home page (balanced=true)
+    best_sellers = []
+    if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
+      best_sellers = calculate_best_sellers_fast(20) # Get 20 best sellers
+    end
+
+    # Optimize response with minimal data for faster transfer
+    optimized_ads = @ads.map do |ad|
+      # Calculate tier priority from seller tier
+      tier_priority = case ad.seller&.seller_tier&.tier&.id
+                     when 4 then 1
+                     when 3 then 2
+                     when 2 then 3
+                     when 1 then 4
+                     else 5
+                     end
+      
+      {
+        id: ad.id,
+        title: ad.title,
+        price: ad.price,
+        media: ad.media,
+        created_at: ad.created_at,
+        subcategory_id: ad.subcategory_id,
+        category_id: ad.category_id,
+        seller_id: ad.seller_id,
+        tier_priority: tier_priority,
+        # Include tier info for frontend components
+        seller_tier: ad.seller&.seller_tier&.tier&.id || 1,
+        seller_tier_name: ad.seller&.seller_tier&.tier&.name || "Free",
+        # Include essential seller info
+        seller_name: ad.seller&.fullname,
+        category_name: ad.category&.name,
+        subcategory_name: ad.subcategory&.name
+      }
+    end
+
+    # Add cache headers for faster transfer
+    response.headers['Cache-Control'] = 'public, max-age=1800' # 30 minutes cache
+    
     render json: {
-      ads: @ads.map { |ad| AdSerializer.new(ad).as_json },
+      ads: optimized_ads,
       subcategory_counts: @subcategory_counts || {},
+      best_sellers: best_sellers,
       pagination: {
         current_page: page,
         per_page: per_page,
@@ -108,15 +156,26 @@ class Buyer::AdsController < ApplicationController
     if query.present?
       query_words = query.split(/\s+/)
       query_words.each do |word|
-        ads = ads.where(
-        'ads.title ILIKE :word
-          OR ads.description ILIKE :word
-          OR categories.name ILIKE :word
-          OR subcategories.name ILIKE :word
-          OR sellers.enterprise_name ILIKE :word',
-       word: "%#{word}%"
-)
-
+        # Create multiple search patterns for broader matching
+        search_patterns = [
+          "%#{word}%",           # Exact word match
+          "%#{word[0..-2]}%",    # Remove last character (drill -> dril)
+          "%#{word[0..-3]}%",    # Remove last 2 characters (driller -> drill)
+          "%#{word}s%",          # Add 's' (drill -> drills)
+          "%#{word}er%",         # Add 'er' (drill -> driller)
+          "%#{word}ing%",        # Add 'ing' (drill -> drilling)
+          "%#{word}ed%",         # Add 'ed' (drill -> drilled)
+        ]
+        
+        # Build conditions using array of patterns
+        conditions = search_patterns.map { |pattern|
+          'ads.title ILIKE ? OR ads.description ILIKE ? OR categories.name ILIKE ? OR subcategories.name ILIKE ? OR sellers.enterprise_name ILIKE ?'
+        }.join(' OR ')
+        
+        # Flatten the patterns array for the parameters
+        pattern_params = search_patterns.flat_map { |pattern| [pattern, pattern, pattern, pattern, pattern] }
+        
+        ads = ads.where(conditions, *pattern_params)
       end
     end
 
@@ -170,10 +229,25 @@ class Buyer::AdsController < ApplicationController
     # Enhanced shop search - find shops that match query OR have products matching the query
     matching_shops = []
     if query.present?
-      # Find shops that match the search query by name
+      # Find shops that match the search query by name with broad matching
+      query_words = query.split(/\s+/)
+      shop_patterns = []
+      
+      query_words.each do |word|
+        shop_patterns += [
+          "%#{word}%",           # Exact word match
+          "%#{word[0..-2]}%",    # Remove last character
+          "%#{word[0..-3]}%",    # Remove last 2 characters
+          "%#{word}s%",          # Add 's'
+          "%#{word}er%",         # Add 'er'
+          "%#{word}ing%",        # Add 'ing'
+          "%#{word}ed%",         # Add 'ed'
+        ]
+      end
+      
       name_matching_shops = Seller.joins(:seller_tier)
                                  .where(blocked: false, deleted: false)
-                                 .where('enterprise_name ILIKE ?', "%#{query}%")
+                                 .where(shop_patterns.map { 'enterprise_name ILIKE ?' }.join(' OR '), *shop_patterns)
                                  .includes(:seller_tier)
       
       # Find shops that have products matching the search query
@@ -469,13 +543,7 @@ class Buyer::AdsController < ApplicationController
            .where(flagged: false)
            .where(subcategory_id: subcategory.id)
            .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-           .order(Arel.sql('CASE tiers.id
-                     WHEN 4 THEN 1
-                     WHEN 3 THEN 2
-                     WHEN 2 THEN 3
-                     WHEN 1 THEN 4
-                     ELSE 5
-                   END ASC, RANDOM()'))  # Random order within tier priority
+           .order('RANDOM()')  # Pure randomization
            .limit(ads_per_subcategory)
            .offset((page - 1) * ads_per_subcategory)
         
@@ -502,13 +570,7 @@ class Buyer::AdsController < ApplicationController
              .where(flagged: false)
              .where(subcategory_id: subcategory.id)
              .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-             .order(Arel.sql('CASE tiers.id
-                       WHEN 4 THEN 1
-                       WHEN 3 THEN 2
-                       WHEN 2 THEN 3
-                       WHEN 1 THEN 4
-                       ELSE 5
-                     END ASC, RANDOM()'))  # Random order within tier priority
+             .order('RANDOM()')  # Pure randomization
              .limit(ads_per_subcategory)
           
           all_ads.concat(subcategory_ads)
@@ -539,5 +601,136 @@ class Buyer::AdsController < ApplicationController
 
   def ad_params
     params.require(:ad).permit(:title, :description, { media: [] }, :subcategory_id, :category_id, :seller_id, :price, :brand, :manufacturer, :item_length, :item_width, :item_height, :item_weight, :weight_unit, :condition)
+  end
+
+  def calculate_best_sellers_fast(limit)
+    # Optimized approach with minimal data for faster response
+    # Use caching for best sellers calculation
+    cache_key = "best_sellers_optimized_#{limit}_#{Date.current.strftime('%Y%m%d')}"
+    
+    Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+      # Get ads with essential data only for faster queries
+      ads_data = Ad.active.with_valid_images
+                   .joins(:seller, :category, :subcategory)
+                   .joins("LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id")
+                   .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
+                   .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
+                   .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
+                   .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
+                   .where(sellers: { blocked: false, deleted: false })
+                   .where(flagged: false)
+                   .select("
+                     ads.id,
+                     ads.title,
+                     ads.price,
+                     ads.media,
+                     ads.created_at,
+                     sellers.fullname as seller_name,
+                     sellers.id as seller_id,
+                     categories.name as category_name,
+                     subcategories.name as subcategory_name,
+                     COALESCE(tiers.id, 1) as seller_tier_id,
+                     COALESCE(tiers.name, 'Free') as seller_tier_name,
+                     COUNT(DISTINCT wish_lists.id) as wishlist_count,
+                     COUNT(DISTINCT reviews.id) as review_count,
+                     COALESCE(AVG(reviews.rating), 0) as avg_rating,
+                     COUNT(DISTINCT click_events.id) as click_count
+                   ")
+                   .group("ads.id, sellers.id, categories.id, subcategories.id, tiers.id")
+                   .order('ads.created_at DESC')
+                   .limit(limit * 3) # Reduced multiplier for faster queries
+    
+    return [] if ads_data.empty?
+    
+    # Enhanced scoring with meaningful metrics
+    scored_ads = ads_data.map do |ad|
+      # Base scores
+      tier_bonus = calculate_tier_bonus(ad.seller_tier_id.to_i)
+      recency_score = calculate_recency_score(ad.created_at)
+      
+      # Engagement metrics
+      wishlist_score = calculate_wishlist_score(ad.wishlist_count.to_i)
+      rating_score = calculate_rating_score(ad.avg_rating.to_f, ad.review_count.to_i)
+      click_score = calculate_click_score(ad.click_count.to_i)
+      
+      # Weighted comprehensive score
+      comprehensive_score = (
+        (recency_score * 0.25) +      # 25% - Recency
+        (tier_bonus * 0.15) +         # 15% - Seller tier
+        (wishlist_score * 0.25) +     # 25% - Wishlist additions
+        (rating_score * 0.20) +       # 20% - Ratings & reviews
+        (click_score * 0.15)          # 15% - Click engagement
+      )
+      
+      {
+        ad_id: ad.id,
+        id: ad.id,  # Add id field for consistency
+        title: ad.title,
+        price: ad.price.to_f,
+        media: ad.media,
+        created_at: ad.created_at,
+        seller_name: ad.seller_name,
+        seller_id: ad.seller_id,
+        category_name: ad.category_name,
+        subcategory_name: ad.subcategory_name,
+        seller_tier: ad.seller_tier_id,  # Use seller_tier instead of seller_tier_id
+        seller_tier_name: ad.seller_tier_name,
+        metrics: {
+          avg_rating: ad.avg_rating.to_f.round(2),
+          review_count: ad.review_count.to_i,
+          total_clicks: ad.click_count.to_i,
+          wishlist_count: ad.wishlist_count.to_i
+        },
+        comprehensive_score: comprehensive_score.round(2)
+      }
+    end
+    
+      # Sort by comprehensive score and return top results
+      scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(limit)
+    end
+  end
+
+  def calculate_tier_bonus(seller_tier_id)
+    case seller_tier_id
+    when 4 then 15
+    when 3 then 8
+    when 2 then 4
+    else 0
+    end
+  end
+
+  def calculate_recency_score(created_at)
+    days_old = (Time.current - created_at) / 1.day
+    case days_old
+    when 0..7 then 8
+    when 8..30 then 5
+    when 31..90 then 3
+    when 91..365 then 1
+    else 0
+    end
+  end
+
+  def calculate_wishlist_score(wishlist_count)
+    return 0 if wishlist_count <= 0
+    # Logarithmic scaling for wishlist additions
+    Math.log10(wishlist_count + 1) * 20
+  end
+
+  def calculate_rating_score(avg_rating, review_count)
+    return 0 if review_count <= 0 || avg_rating <= 0
+    
+    # Rating score based on average rating
+    rating_score = (avg_rating / 5.0) * 30
+    
+    # Review count bonus (more reviews = more reliable)
+    count_bonus = Math.log10(review_count + 1) * 10
+    
+    rating_score + count_bonus
+  end
+
+  def calculate_click_score(click_count)
+    return 0 if click_count <= 0
+    # Logarithmic scaling for clicks
+    Math.log10(click_count + 1) * 15
   end
 end

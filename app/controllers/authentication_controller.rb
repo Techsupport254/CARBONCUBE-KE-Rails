@@ -174,6 +174,11 @@ class AuthenticationController < ApplicationController
       return
     end
 
+    # For GSI popup authentication, use 'postmessage' as redirect_uri
+    if redirect_uri == 'postmessage'
+      redirect_uri = 'postmessage'
+    end
+
     oauth_service = GoogleOauthService.new(auth_code, redirect_uri)
     result = oauth_service.authenticate
 
@@ -232,109 +237,6 @@ class AuthenticationController < ApplicationController
     end
   end
 
-  def google_one_tap
-    credential = params[:credential]
-    
-    Rails.logger.info "Google One Tap: Received credential: #{credential.present? ? 'Present' : 'Missing'}"
-    
-    unless credential
-      render json: { success: false, error: 'Credential is required' }, status: :bad_request
-      return
-    end
-
-    begin
-      # Verify the Google ID token by calling Google's tokeninfo endpoint
-      response = HTTParty.get("https://oauth2.googleapis.com/tokeninfo", {
-        query: { id_token: credential }
-      })
-      
-      unless response.success?
-        Rails.logger.error "Google One Tap: Token verification failed - #{response.code}: #{response.body}"
-        render json: { success: false, error: 'Invalid Google token' }, status: :unauthorized
-        return
-      end
-      
-      token_info = JSON.parse(response.body)
-      Rails.logger.info "Google One Tap: Token verified for user: #{token_info['email']}"
-      
-      # Verify the token is for our client
-      unless token_info['aud'] == ENV['GOOGLE_CLIENT_ID']
-        Rails.logger.error "Google One Tap: Token audience mismatch. Expected: #{ENV['GOOGLE_CLIENT_ID']}, Got: #{token_info['aud']}"
-        render json: { success: false, error: 'Token audience mismatch' }, status: :unauthorized
-        return
-      end
-      
-      # Extract user information
-      user_info = {
-        email: token_info['email'],
-        name: token_info['name'],
-        picture: token_info['picture'],
-        verified_email: token_info['email_verified']
-      }
-      
-      # Find or create user
-      Rails.logger.info "Google One Tap: Looking for user with email: #{user_info[:email]}"
-      user = find_or_create_user_from_google_info(user_info)
-      
-      if user
-        Rails.logger.info "Google One Tap: User found/created: #{user.class.name} ID: #{user.id}"
-        role = determine_role(user)
-        
-        # Block login if the user is soft-deleted
-        if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
-          render json: { success: false, error: 'Your account has been deleted. Please contact support.' }, status: :unauthorized
-          return
-        end
-
-        # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
-        if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'seller' && user.county&.county_code.to_i != 47
-          render json: {
-            success: false,
-            error: 'Access restricted during pilot phase. Only Nairobi-based sellers can log in.'
-          }, status: :forbidden
-          return
-        end
-
-        user_response = {
-          id: user.id,
-          email: user.email,
-          role: role
-        }
-        
-        # Add name fields based on user type
-        if user.respond_to?(:fullname) && user.fullname.present?
-          user_response[:name] = user.fullname
-        elsif user.respond_to?(:username) && user.username.present?
-          user_response[:name] = user.username
-        end
-      
-        # Only include username for users that have this field (Buyer, Seller, Admin)
-        if user.respond_to?(:username) && user.username.present?
-          user_response[:username] = user.username
-        end
-        
-        # Only include profile picture for users that have this field (Buyer, Seller)
-        if user.respond_to?(:profile_picture) && user.profile_picture.present?
-          user_response[:profile_picture] = user.profile_picture
-        end
-
-        # Create token with appropriate ID field
-        token_payload = if role == 'seller'
-          { seller_id: user.id, email: user.email, role: role, remember_me: true }
-        else
-          { user_id: user.id, email: user.email, role: role, remember_me: true }
-        end
-        
-        token = JsonWebToken.encode(token_payload)
-        render json: { success: true, token: token, user: user_response }, status: :ok
-      else
-        render json: { success: false, error: 'Failed to create or find user' }, status: :unauthorized
-      end
-    rescue => e
-      Rails.logger.error "Google One Tap error: #{e.message}"
-      render json: { success: false, error: 'Authentication failed' }, status: :unauthorized
-    end
-  end
 
   def google_oauth_callback
     # This method handles the callback from Google OAuth
@@ -428,6 +330,147 @@ class AuthenticationController < ApplicationController
       Rails.logger.error "Google OAuth callback error: #{e.message}"
       redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Authentication failed')}"
       redirect_to redirect_url, allow_other_host: true
+    end
+  end
+
+  def google_oauth_popup_callback
+    # Handle popup-based OAuth callback
+    code = params[:code]
+    state = params[:state]
+    error = params[:error]
+    
+    if error
+      # Handle OAuth error - send error message to parent window
+      render html: "<script>
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'GOOGLE_AUTH_ERROR',
+            error: '#{error}'
+          }, '*');
+        }
+        window.close();
+      </script>".html_safe
+      return
+    end
+    
+    unless code
+      # No code received
+      render html: "<script>
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'GOOGLE_AUTH_ERROR',
+            error: 'No authorization code received'
+          }, '*');
+        }
+        window.close();
+      </script>".html_safe
+      return
+    end
+    
+    # Process the OAuth code
+    begin
+      redirect_uri = ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/popup_callback"
+      oauth_service = GoogleOauthService.new(code, redirect_uri)
+      result = oauth_service.authenticate
+      
+      if result[:success]
+        user = result[:user]
+        role = determine_role(user)
+        
+        # Block login if the user is soft-deleted
+        if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
+          render html: "<script>
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: 'Your account has been deleted. Please contact support.'
+              }, '*');
+            }
+            window.close();
+          </script>".html_safe
+          return
+        end
+
+        # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
+        if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'seller' && user.county&.county_code.to_i != 47
+          render html: "<script>
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: 'Access restricted during pilot phase. Only Nairobi-based sellers can log in.'
+              }, '*');
+            }
+            window.close();
+          </script>".html_safe
+          return
+        end
+
+        user_response = {
+          id: user.id,
+          email: user.email,
+          role: role
+        }
+        
+        # Add name fields based on user type
+        if user.respond_to?(:fullname) && user.fullname.present?
+          user_response[:name] = user.fullname
+        elsif user.respond_to?(:username) && user.username.present?
+          user_response[:name] = user.username
+        end
+        
+        # Only include username for users that have this field (Buyer, Seller, Admin)
+        if user.respond_to?(:username) && user.username.present?
+          user_response[:username] = user.username
+        end
+        
+        # Only include profile picture for users that have this field (Buyer, Seller)
+        if user.respond_to?(:profile_picture) && user.profile_picture.present?
+          user_response[:profile_picture] = user.profile_picture
+        end
+
+        # Create token with appropriate ID field
+        token_payload = if role == 'seller'
+          { seller_id: user.id, email: user.email, role: role, remember_me: true }
+        else
+          { user_id: user.id, email: user.email, role: role, remember_me: true }
+        end
+        
+        token = JsonWebToken.encode(token_payload)
+        
+        # Send success message to parent window
+        render html: "<script>
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'GOOGLE_AUTH_SUCCESS',
+              token: '#{token}',
+              user: #{user_response.to_json}
+            }, '*');
+          }
+          window.close();
+        </script>".html_safe
+      else
+        # Authentication failed
+        render html: "<script>
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'GOOGLE_AUTH_ERROR',
+              error: '#{result[:error] || 'Authentication failed'}'
+            }, '*');
+          }
+          window.close();
+        </script>".html_safe
+      end
+    rescue => e
+      Rails.logger.error "Google OAuth popup callback error: #{e.message}"
+      render html: "<script>
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'GOOGLE_AUTH_ERROR',
+            error: 'Authentication failed'
+          }, '*');
+        }
+        window.close();
+      </script>".html_safe
     end
   end
 

@@ -30,13 +30,16 @@ class GoogleOauthService
   private
 
   def exchange_code_for_token
+    # For GSI popup authentication, use 'postmessage' as redirect_uri
+    redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
+    
     response = HTTParty.post(GOOGLE_TOKEN_URL, {
       body: {
         client_id: ENV['GOOGLE_CLIENT_ID'],
         client_secret: ENV['GOOGLE_CLIENT_SECRET'],
         code: @auth_code,
         grant_type: 'authorization_code',
-        redirect_uri: @redirect_uri
+        redirect_uri: redirect_uri
       },
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     })

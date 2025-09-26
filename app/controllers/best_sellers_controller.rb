@@ -1,5 +1,7 @@
 class BestSellersController < ApplicationController
   # GET /best_sellers
+  # @deprecated This endpoint is deprecated. Best sellers are now included in the buyer/ads endpoint.
+  # Use /buyer/ads?balanced=true instead.
   def index
     limit = params[:limit]&.to_i || 20
     limit = [limit, 100].min # Cap at 100 for performance
@@ -16,6 +18,8 @@ class BestSellersController < ApplicationController
   end
 
   # GET /best_sellers/global
+  # @deprecated This endpoint is deprecated. Best sellers are now included in the buyer/ads endpoint.
+  # Use /buyer/ads?balanced=true instead.
   def global
     limit = params[:limit]&.to_i || 50
     limit = [limit, 200].min # Cap at 200 for performance
@@ -57,12 +61,15 @@ class BestSellersController < ApplicationController
   private
 
   def calculate_best_sellers_fast(limit)
-    # Ultra-simplified approach to minimize database connections
-    # Get recent active ads with basic info only
+    # Enhanced approach with meaningful metrics
+    # Get ads with comprehensive data including wishlist, ratings, and clicks
     ads_data = Ad.active.with_valid_images
                  .joins(:seller, :category, :subcategory)
                  .joins("LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id")
                  .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
+                 .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
+                 .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
+                 .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
                  .where(sellers: { blocked: false, deleted: false })
                  .where(flagged: false)
                  .select("
@@ -78,20 +85,37 @@ class BestSellersController < ApplicationController
                    categories.name as category_name,
                    subcategories.name as subcategory_name,
                    COALESCE(tiers.id, 1) as seller_tier_id,
-                   COALESCE(tiers.name, 'Free') as seller_tier_name
+                   COALESCE(tiers.name, 'Free') as seller_tier_name,
+                   COUNT(DISTINCT wish_lists.id) as wishlist_count,
+                   COUNT(DISTINCT reviews.id) as review_count,
+                   COALESCE(AVG(reviews.rating), 0) as avg_rating,
+                   COUNT(DISTINCT click_events.id) as click_count
                  ")
+                 .group("ads.id, sellers.id, categories.id, subcategories.id, tiers.id")
                  .order('ads.created_at DESC')
-                 .limit(limit * 3) # Get more than needed for basic scoring
+                 .limit(limit * 5) # Get more for better scoring
     
     return [] if ads_data.empty?
     
-    # Simple scoring based on recency and tier only (no additional DB queries)
+    # Enhanced scoring with meaningful metrics
     scored_ads = ads_data.map do |ad|
+      # Base scores
       tier_bonus = calculate_tier_bonus(ad.seller_tier_id.to_i)
       recency_score = calculate_recency_score(ad.created_at)
       
-      # Simple score: mostly recency with small tier bonus
-      simple_score = (recency_score * 0.8) + (tier_bonus * 0.2)
+      # Engagement metrics
+      wishlist_score = calculate_wishlist_score(ad.wishlist_count.to_i)
+      rating_score = calculate_rating_score(ad.avg_rating.to_f, ad.review_count.to_i)
+      click_score = calculate_click_score(ad.click_count.to_i)
+      
+      # Weighted comprehensive score
+      comprehensive_score = (
+        (recency_score * 0.25) +      # 25% - Recency
+        (tier_bonus * 0.15) +         # 15% - Seller tier
+        (wishlist_score * 0.25) +     # 25% - Wishlist additions
+        (rating_score * 0.20) +       # 20% - Ratings & reviews
+        (click_score * 0.15)          # 15% - Click engagement
+      )
       
       {
         ad_id: ad.id,
@@ -108,15 +132,16 @@ class BestSellersController < ApplicationController
         seller_tier_id: ad.seller_tier_id,
         seller_tier_name: ad.seller_tier_name,
         metrics: {
-          avg_rating: 0.0,
-          review_count: 0,
-          total_clicks: 0
+          avg_rating: ad.avg_rating.to_f.round(2),
+          review_count: ad.review_count.to_i,
+          total_clicks: ad.click_count.to_i,
+          wishlist_count: ad.wishlist_count.to_i
         },
-        comprehensive_score: simple_score.round(2)
+        comprehensive_score: comprehensive_score.round(2)
       }
     end
     
-    # Sort by simple score and return top results
+    # Sort by comprehensive score and return top results
     scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(limit)
   end
 
@@ -161,6 +186,30 @@ class BestSellersController < ApplicationController
     when 91..365 then 1
     else 0
     end
+  end
+
+  def calculate_wishlist_score(wishlist_count)
+    return 0 if wishlist_count <= 0
+    # Logarithmic scaling for wishlist additions
+    Math.log10(wishlist_count + 1) * 20
+  end
+
+  def calculate_rating_score(avg_rating, review_count)
+    return 0 if review_count <= 0 || avg_rating <= 0
+    
+    # Rating score based on average rating
+    rating_score = (avg_rating / 5.0) * 30
+    
+    # Review count bonus (more reviews = more reliable)
+    count_bonus = Math.log10(review_count + 1) * 10
+    
+    rating_score + count_bonus
+  end
+
+  def calculate_click_score(click_count)
+    return 0 if click_count <= 0
+    # Logarithmic scaling for clicks
+    Math.log10(click_count + 1) * 15
   end
 
   def current_admin
