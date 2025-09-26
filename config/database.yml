@@ -25,7 +25,7 @@ test:
 
 production:
   <<: *default
-  pool: 5 # Reduce from 10 to 5 for Supabase
+  pool: 15 # Increase to 15 for better concurrency
   timeout: 10000 # Increase from 5000 to 10000
   connect_timeout: 30 # Increase from 10 to 30
   checkout_timeout: 5 # Add checkout timeout
