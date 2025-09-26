@@ -10,9 +10,7 @@ class HealthController < ApplicationController
       status: 'healthy',
       response_time: "#{response_time}ms",
       connection_pool: {
-        size: ActiveRecord::Base.connection_pool.size,
-        available: ActiveRecord::Base.connection_pool.available_count,
-        waiting: ActiveRecord::Base.connection_pool.num_waiting
+        size: ActiveRecord::Base.connection_pool.size
       }
     }
   rescue => e
