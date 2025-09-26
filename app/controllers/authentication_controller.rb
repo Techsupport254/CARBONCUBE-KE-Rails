@@ -169,7 +169,17 @@ class AuthenticationController < ApplicationController
     auth_code = params[:code]
     redirect_uri = params[:redirect_uri] || ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/callback"
     
+    # Production debugging
+    Rails.logger.info "🔍 Google OAuth Request Debug:"
+    Rails.logger.info "📝 Auth code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
+    Rails.logger.info "🔗 Redirect URI: #{redirect_uri}"
+    Rails.logger.info "🌐 Request origin: #{request.origin}"
+    Rails.logger.info "🌐 Request host: #{request.host}"
+    Rails.logger.info "🔑 GOOGLE_CLIENT_ID: #{ENV['GOOGLE_CLIENT_ID'] ? 'Set' : 'Missing'}"
+    Rails.logger.info "🔐 GOOGLE_CLIENT_SECRET: #{ENV['GOOGLE_CLIENT_SECRET'] ? 'Set' : 'Missing'}"
+    
     unless auth_code
+      Rails.logger.error "❌ No authorization code provided"
       render json: { errors: ['Authorization code is required'] }, status: :bad_request
       return
     end

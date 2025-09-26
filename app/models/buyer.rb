@@ -37,6 +37,9 @@ class Buyer < ApplicationRecord
   # validates :location, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
+  
+  # Custom validation for OAuth users to ensure they have a phone number
+  validate :oauth_phone_number_validation, if: :oauth_user?
 
   attribute :cart_total_price, :decimal, default: 0
 
@@ -106,6 +109,16 @@ class Buyer < ApplicationRecord
 
   def normalize_email
     self.email = email.to_s.strip.downcase
+  end
+
+  def oauth_phone_number_validation
+    # For OAuth users, we still need a phone number for the system to work
+    # but we can be more lenient about the format
+    if phone_number.blank?
+      errors.add(:phone_number, "is required for OAuth users")
+    elsif phone_number.present? && !phone_number.match?(/\A\d{10}\z/)
+      errors.add(:phone_number, "must be exactly 10 digits")
+    end
   end
 
   def password_strength

@@ -9,21 +9,36 @@ class GoogleOauthService
   end
 
   def authenticate
+    Rails.logger.info "🚀 Starting Google OAuth authentication"
+    Rails.logger.info "📝 Auth code: #{@auth_code[0..10]}..." if @auth_code
+    Rails.logger.info "🔗 Redirect URI: #{@redirect_uri}"
+    
     # Step 1: Exchange authorization code for access token
     access_token = exchange_code_for_token
     
-    return { success: false, error: 'Failed to get access token' } unless access_token
+    unless access_token
+      Rails.logger.error "❌ Failed to get access token"
+      return { success: false, error: 'Failed to get access token' }
+    end
     
     # Step 2: Get user info from Google
     user_info = get_user_info(access_token)
     
-    return { success: false, error: 'Failed to get user info' } unless user_info
+    unless user_info
+      Rails.logger.error "❌ Failed to get user info"
+      return { success: false, error: 'Failed to get user info' }
+    end
     
     # Step 3: Find or create user
+    Rails.logger.info "👤 Finding or creating user for email: #{user_info['email']}"
     user = find_or_create_user(user_info)
     
-    return { success: false, error: 'Failed to create user' } unless user
+    unless user
+      Rails.logger.error "❌ Failed to create user"
+      return { success: false, error: 'Failed to create user' }
+    end
     
+    Rails.logger.info "✅ Google OAuth authentication successful for user: #{user.email}"
     { success: true, user: user, access_token: access_token }
   end
 
@@ -32,6 +47,9 @@ class GoogleOauthService
   def exchange_code_for_token
     # For GSI popup authentication, use 'postmessage' as redirect_uri
     redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
+    
+    Rails.logger.info "🔄 Exchanging code for token with redirect_uri: #{redirect_uri}"
+    Rails.logger.info "🔑 Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
     
     response = HTTParty.post(GOOGLE_TOKEN_URL, {
       body: {
@@ -44,19 +62,44 @@ class GoogleOauthService
       headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     })
     
-    return nil unless response.success?
+    Rails.logger.info "📡 Google token response status: #{response.code}"
+    Rails.logger.info "📡 Google token response body: #{response.body}"
     
-    JSON.parse(response.body)['access_token']
+    unless response.success?
+      Rails.logger.error "❌ Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
+      return nil
+    end
+    
+    token_data = JSON.parse(response.body)
+    access_token = token_data['access_token']
+    
+    if access_token.nil?
+      Rails.logger.error "❌ No access token in response: #{token_data}"
+      return nil
+    end
+    
+    Rails.logger.info "✅ Successfully obtained access token"
+    access_token
   end
 
   def get_user_info(access_token)
+    Rails.logger.info "👤 Fetching user info from Google"
+    
     response = HTTParty.get(GOOGLE_USER_INFO_URL, {
       headers: { 'Authorization' => "Bearer #{access_token}" }
     })
     
-    return nil unless response.success?
+    Rails.logger.info "📡 Google user info response status: #{response.code}"
+    Rails.logger.info "📡 Google user info response body: #{response.body}"
     
-    JSON.parse(response.body)
+    unless response.success?
+      Rails.logger.error "❌ Failed to get user info. Status: #{response.code}, Body: #{response.body}"
+      return nil
+    end
+    
+    user_info = JSON.parse(response.body)
+    Rails.logger.info "✅ Successfully obtained user info: #{user_info['email']}"
+    user_info
   end
 
   def find_or_create_user(user_info)
@@ -112,12 +155,17 @@ class GoogleOauthService
     # Create as buyer by default for Google OAuth users
     phone_number = extract_phone_number(user_info)
     
-    # If no phone number from Google, we need to handle this differently
-    # For now, we'll create the user without a phone number and let them add it later
+    # If no phone number from Google, generate a placeholder
+    # This is needed because the validation runs before the record is saved
+    if phone_number.blank?
+      phone_number = generate_placeholder_phone
+    end
+    
     user_attributes = {
       fullname: user_info['name'] || user_info['email'].split('@').first,
       email: user_info['email'],
       username: generate_unique_username(user_info['name'] || user_info['email'].split('@').first),
+      phone_number: phone_number, # Always provide a phone number for validation
       provider: provider,
       uid: uid,
       oauth_token: user_info['access_token'],
@@ -127,16 +175,17 @@ class GoogleOauthService
       profile_picture: user_info['picture'] # Set profile picture from Google
     }
     
-    # Only add phone number if we have one from Google
-    user_attributes[:phone_number] = phone_number if phone_number.present?
+    Rails.logger.info "🆕 Creating new OAuth user with attributes: #{user_attributes.except(:oauth_token, :oauth_expires_at)}"
     
     user = Buyer.create!(user_attributes)
     
+    Rails.logger.info "✅ Successfully created OAuth user: #{user.email}"
     user
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "Failed to create OAuth user: #{e.message}"
+    Rails.logger.error "❌ Failed to create OAuth user: #{e.message}"
     Rails.logger.error "User info: #{user_info.inspect}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
+    Rails.logger.error "User attributes: #{user_attributes.inspect}"
     nil
   end
 

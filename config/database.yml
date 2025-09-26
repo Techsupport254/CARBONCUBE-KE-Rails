@@ -25,6 +25,16 @@ test:
 
 production:
   <<: *default
+  pool: 5 # Reduce from 10 to 5 for Supabase
+  timeout: 10000 # Increase from 5000 to 10000
+  connect_timeout: 30 # Increase from 10 to 30
+  checkout_timeout: 5 # Add checkout timeout
+  reaping_frequency: 10 # Add reaping frequency
+  idle_timeout: 300 # Add idle timeout
   sslmode: require
   ssl: true
   url: <%= ENV['DATABASE_URL'] %>
+  variables:
+    statement_timeout: 60000 # Increase from 30000 to 60000
+    lock_timeout: 20000 # Increase from 10000 to 20000
+    idle_in_transaction_session_timeout: 300000

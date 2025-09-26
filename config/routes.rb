@@ -2,6 +2,9 @@
 Rails.application.routes.draw do
   # Health check endpoints
   get '/health', to: 'health#show'
+  get '/health/database', to: 'health#database'
+  get '/health/redis', to: 'health#redis'
+  get '/health/overall', to: 'health#overall'
   # Health check endpoints
   get '/health/websocket', to: 'health#websocket_status'
   get '/health/overall', to: 'health#overall_health'
