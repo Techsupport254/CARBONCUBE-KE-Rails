@@ -451,14 +451,22 @@ class AuthenticationController < ApplicationController
       return user
     end
 
-    # Create new buyer by default
-    Buyer.create!(
+    # Create new buyer by default with all required fields
+    phone_number = extract_phone_number(user_info)
+    
+    user_attributes = {
       email: email,
       fullname: user_info[:name] || email.split('@').first,
+      username: generate_unique_username(user_info[:name] || email.split('@').first),
       profile_picture: user_info[:picture],
-      password: SecureRandom.hex(20), # Random password since they'll use Google
-      password_confirmation: SecureRandom.hex(20)
-    )
+      age_group_id: calculate_age_group(user_info),
+      gender: extract_gender(user_info)
+    }
+    
+    # Only add phone number if we have one from Google
+    user_attributes[:phone_number] = phone_number if phone_number.present?
+    
+    Buyer.create!(user_attributes)
   rescue => e
     Rails.logger.error "Error creating user: #{e.message}"
     nil
@@ -478,6 +486,92 @@ class AuthenticationController < ApplicationController
       # Otherwise, assume it's an ID number - no longer supported
       nil
     end
+  end
+
+  def generate_unique_username(name)
+    base_username = name.downcase.gsub(/[^a-z0-9]/, '').first(15)
+    username = base_username
+    counter = 1
+    
+    while Buyer.exists?(username: username) || Seller.exists?(username: username) || 
+          Admin.exists?(username: username)
+      username = "#{base_username}#{counter}"
+      counter += 1
+    end
+    
+    username
+  end
+
+  def generate_placeholder_phone
+    # Generate a placeholder phone number that won't conflict
+    loop do
+      phone = "0#{rand(100000000..999999999)}"
+      break phone unless Buyer.exists?(phone_number: phone) || Seller.exists?(phone_number: phone)
+    end
+  end
+
+  def extract_phone_number(user_info)
+    # Google OAuth doesn't provide user's own phone number in basic profile
+    # The phone number scope is for accessing user's contacts, not their own number
+    # Return nil to indicate no phone number available
+    nil
+  end
+
+  def extract_gender(user_info)
+    # Get gender from Google profile
+    gender = user_info[:gender]
+    
+    case gender&.downcase
+    when 'male', 'm'
+      'Male'
+    when 'female', 'f'
+      'Female'
+    else
+      'Male' # Default to Male if not specified or unrecognized
+    end
+  end
+
+  def calculate_age_group(user_info)
+    # Get birthday from Google profile
+    birthday = user_info[:birthday] || user_info[:birth_date]
+    
+    if birthday.present?
+      begin
+        # Parse birthday (Google provides in YYYY-MM-DD format)
+        birth_date = Date.parse(birthday)
+        age = calculate_age(birth_date)
+        
+        # Map age to age group
+        case age
+        when 18..25
+          AgeGroup.find_by(name: '18-25')&.id || 1
+        when 26..35
+          AgeGroup.find_by(name: '26-35')&.id || 2
+        when 36..45
+          AgeGroup.find_by(name: '36-45')&.id || 3
+        when 46..55
+          AgeGroup.find_by(name: '46-55')&.id || 4
+        when 56..65
+          AgeGroup.find_by(name: '56-65')&.id || 5
+        else
+          AgeGroup.find_by(name: '65+')&.id || 6
+        end
+      rescue => e
+        Rails.logger.warn "Failed to parse birthday: #{birthday}, error: #{e.message}"
+        # Default to first age group if parsing fails
+        AgeGroup.first&.id || 1
+      end
+    else
+      # No birthday provided, default to first age group
+      AgeGroup.first&.id || 1
+    end
+  end
+
+  def calculate_age(birth_date)
+    today = Date.current
+    age = today.year - birth_date.year
+    age -= 1 if today.month < birth_date.month || (today.month == birth_date.month && today.day < birth_date.day)
+    age
   end
 
   def find_user_by_id_and_role(user_id, role)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_22_114343) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_25_105252) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -153,7 +153,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_22_114343) do
     t.string "username", null: false
     t.string "password_digest"
     t.string "email", null: false
-    t.string "phone_number", limit: 10, null: false
+    t.string "phone_number", limit: 10
     t.bigint "age_group_id", null: false
     t.string "zipcode"
     t.string "city"
@@ -181,6 +181,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_22_114343) do
     t.index ["education_id"], name: "index_buyers_on_education_id"
     t.index ["employment_id"], name: "index_buyers_on_employment_id"
     t.index ["income_id"], name: "index_buyers_on_income_id"
+    t.index ["phone_number"], name: "index_buyers_on_phone_number", unique: true, where: "(phone_number IS NOT NULL)"
     t.index ["provider", "uid"], name: "index_buyers_on_provider_and_uid", unique: true
     t.index ["sector_id"], name: "index_buyers_on_sector_id"
     t.index ["sub_county_id"], name: "index_buyers_on_sub_county_id"

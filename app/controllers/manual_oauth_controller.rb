@@ -10,7 +10,7 @@ class ManualOauthController < ApplicationController
       "client_id=#{ENV['GOOGLE_CLIENT_ID']}&" +
       "redirect_uri=#{ENV['GOOGLE_REDIRECT_URI'] || "#{ENV['REACT_APP_BACKEND_URL'] || 'http://localhost:3001'}/auth/google_oauth2/callback"}&" +
       "response_type=code&" +
-      "scope=email%20profile%20openid&" +
+      "scope=email%20profile%20openid%20https://www.googleapis.com/auth/user.birthday.read&" +
       "state=#{role}&" +
       "access_type=offline&" +
       "prompt=select_account"

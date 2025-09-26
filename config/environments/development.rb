@@ -43,6 +43,9 @@ Rails.application.configure do
   config.action_cable.url = 'ws://localhost:3001/cable'
   config.action_cable.allowed_request_origins = [/http:\/\/*/, /https:\/\/*/]
   
+  # Enable Action Cable in development
+  config.action_cable.disable_request_forgery_protection = true
+  
   # Disable force SSL in development
   config.force_ssl = false
   

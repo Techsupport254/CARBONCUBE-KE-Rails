@@ -27,6 +27,9 @@ gem "rack-cors"
 # Redis for Action Cable in production
 gem 'redis', '~> 5.0'
 
+# AnyCable for high-performance WebSockets
+gem 'anycable-rails', '~> 1.4'
+
 # PgSearch for full-text search
 gem 'pg_search'
 

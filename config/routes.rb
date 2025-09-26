@@ -68,6 +68,7 @@ Rails.application.routes.draw do
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
   post 'auth/google_one_tap', to: 'authentication#google_one_tap'
+  get 'auth/google_oauth2/initiate', to: 'manual_oauth#google_oauth2_initiate'
   get 'auth/google_oauth2/callback', to: 'authentication#google_oauth_callback'
   resources :banners, only: [:index]
   resources :ads, only: [:index, :show] do

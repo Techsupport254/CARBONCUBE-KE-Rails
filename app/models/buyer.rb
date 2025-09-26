@@ -2,7 +2,7 @@
 class Buyer < ApplicationRecord
   before_validation :normalize_email
 
-  has_secure_password
+  has_secure_password validations: false
 
   has_many :reviews
   has_many :cart_items
@@ -36,7 +36,7 @@ class Buyer < ApplicationRecord
   validates :gender, inclusion: { in: %w(Male Female Other) }
   # validates :location, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
-            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }
+            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
 
   attribute :cart_total_price, :decimal, default: 0
 
@@ -54,7 +54,14 @@ class Buyer < ApplicationRecord
   end
 
   def password_required?
+    # OAuth users don't need passwords
+    return false if provider.present? || uid.present?
+    
     new_record? || password.present?
+  end
+
+  def oauth_user?
+    provider.present? || uid.present?
   end
   
   def deleted?
