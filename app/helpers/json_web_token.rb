@@ -33,9 +33,4 @@ class JsonWebToken
         { success: false, error: 'Token validation failed' }
     end
 
-    # Legacy method for backward compatibility - returns nil on error
-    def self.decode_legacy(token)
-        result = decode(token)
-        result[:success] ? result[:payload] : nil
-    end
 end

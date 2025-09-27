@@ -1,4 +1,25 @@
 class SitemapController < ApplicationController
+  # GET /sitemap
+  # Main sitemap endpoint - returns XML sitemap
+  def index
+    @ads = Ad.active.with_valid_images
+             .joins(:seller)
+             .where(sellers: { blocked: false, deleted: false })
+             .where(flagged: false)
+             .includes(:category, :subcategory, seller: { seller_tier: :tier })
+             .limit(1000) # Limit for performance
+
+    @sellers = Seller.where(blocked: false, deleted: false)
+                     .includes(:seller_tier)
+                     .limit(500)
+
+    @categories = Category.includes(:subcategories)
+
+    respond_to do |format|
+      format.xml { render layout: false }
+    end
+  end
+
   # GET /sitemap/ads
   # Dedicated endpoint for sitemap generation - returns all active ads
   def ads

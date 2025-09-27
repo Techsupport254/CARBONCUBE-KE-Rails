@@ -5,6 +5,7 @@ class AdsController < ApplicationController
     per_page = [per_page, 500].min # Cap at 500 for performance
     
     # Fetch ads from all active sellers (not just premium) with valid images
+    # No caching to ensure true randomization on each request
     @ads = Ad.active.with_valid_images.joins(:seller)
              .where(sellers: { blocked: false, deleted: false })
              .where(flagged: false)

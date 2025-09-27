@@ -7,9 +7,6 @@ class WebsocketMessageValidator < Dry::Validation::Contract
     ->(value) { Time.parse(value.to_s) rescue false }
   end
   
-  def self.non_empty_string
-    ->(value) { value.is_a?(String) && !value.strip.empty? }
-  end
 end
 
 # Validator for conversation messages

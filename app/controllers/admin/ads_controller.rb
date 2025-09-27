@@ -96,29 +96,6 @@ class Admin::AdsController < ApplicationController
     head :no_content
   end
 
-  # POST /admin/ads/:id/notify
-  def notify_seller
-    @ad = Ad.find(params[:id])
-
-    if @ad
-      # Here you would implement the logic to notify the seller, e.g., sending an email
-      # For simplicity, let's assume we are saving notification data in a Notification model.
-
-      notification_params = {
-        ad_id: @ad.id,
-        seller_id: @ad.seller_id,
-        options: params[:options],
-        notes: params[:notes]
-      }
-
-      # Save notification details (you'll need to create a Notification model for this)
-      Notification.create(notification_params)
-      
-      render json: { message: 'Notification sent successfully' }, status: :ok
-    else
-      render json: { error: 'Ad not found' }, status: :not_found
-    end
-  end
 
 # GET /admin/ads/search
 def search

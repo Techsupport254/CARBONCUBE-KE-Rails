@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://carboncube-ke.com/</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Static Pages -->
+  <url>
+    <loc>https://carboncube-ke.com/about-us</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/contact-us</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/terms-and-conditions</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/privacy</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/faqs</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/become-a-seller</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/how-to-shop</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://carboncube-ke.com/how-to-pay</loc>
+    <lastmod><%= Date.current.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Categories -->
+  <% @categories.each do |category| %>
+  <url>
+    <loc>https://carboncube-ke.com/categories/<%= category.id %></loc>
+    <lastmod><%= category.updated_at.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <% end %>
+
+  <!-- Ads -->
+  <% @ads.each do |ad| %>
+  <url>
+    <loc>https://carboncube-ke.com/ads/<%= ad.id %></loc>
+    <lastmod><%= ad.updated_at.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <% end %>
+
+  <!-- Sellers/Shops -->
+  <% @sellers.each do |seller| %>
+  <url>
+    <loc>https://carboncube-ke.com/shop/<%= seller.enterprise_name&.downcase&.gsub(/\s+/, '-') || seller.id %></loc>
+    <lastmod><%= seller.updated_at.strftime('%Y-%m-%d') %></lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <% end %>
+</urlset>

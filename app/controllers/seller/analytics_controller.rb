@@ -471,18 +471,6 @@ class Seller::AnalyticsController < ApplicationController
 
 
 
-  #================================================= COMPETITOR STATS =================================================#
-  # Competitor Stats
-  def calculate_competitor_stats
-    category_id = current_seller.ads.select(:category_id).distinct.pluck(:category_id).first
-    return [] unless category_id
-
-    {
-      revenue_share: calculate_revenue_share(category_id),
-      top_competitor_ads: fetch_top_competitor_ads(category_id),
-      competitor_average_price: calculate_competitor_average_price(category_id)
-    }
-  end
 
   def calculate_revenue_share(category_id)
     # Since orders are removed, return zero revenue share

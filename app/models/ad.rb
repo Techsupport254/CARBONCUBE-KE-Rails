@@ -5,7 +5,6 @@ class Ad < ApplicationRecord
 
   pg_search_scope :search_by_title_and_description, against: [:title, :description], using: { tsearch: { prefix: true }, trigram: {}}
 
-  scope :all_products, -> { unscope(:where).all }
 
   scope :active, -> { where(deleted: false) }
   scope :deleted, -> { where(deleted: true) }
@@ -18,7 +17,6 @@ class Ad < ApplicationRecord
   has_many :reviews, dependent: :destroy
   has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
-  has_many :buyers, through: :bookmarks
   has_many :click_events
   has_many :conversations, dependent: :destroy
 
@@ -70,25 +68,6 @@ class Ad < ApplicationRecord
     end
   end
 
-  # Efficient method to get review statistics
-  def review_stats
-    if reviews.loaded?
-      total_reviews = reviews.size
-      return { total: 0, average: 0.0 } if total_reviews == 0
-      
-      total_rating = reviews.sum(&:rating)
-      average_rating = total_rating.to_f / total_reviews
-      
-      { total: total_reviews, average: average_rating }
-    else
-      total_reviews = reviews.count
-      return { total: 0, average: 0.0 } if total_reviews == 0
-      
-      average_rating = reviews.average(:rating).to_f
-      
-      { total: total_reviews, average: average_rating }
-    end
-  end
   
   def media_urls
     media&.map { |url| url } || []

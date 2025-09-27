@@ -11,19 +11,24 @@ class Buyer::AdsController < ApplicationController
     # For the home page, get a balanced distribution of ads across subcategories
     # Only use balanced distribution if explicitly requested AND no category filtering
     if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
-      # Use longer cache for home page balanced ads
-      cache_key = "balanced_ads_#{per_page}_#{Date.current.strftime('%Y%m%d%H')}"
+      # Use shorter cache with randomization factor for home page balanced ads
+      cache_key = "balanced_ads_#{per_page}_#{Date.current.strftime('%Y%m%d%H%M')}"
       
-      result = Rails.cache.fetch(cache_key, expires_in: 2.hours) do
+      result = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
         get_balanced_ads(per_page)
       end
       @ads = result[:ads]
       @subcategory_counts = result[:subcategory_counts]
     else
-      # Use caching for better performance
-      cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}"
-      
-      @ads = Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+      # Check if randomization is explicitly requested or if we should disable caching
+      if params[:randomize] == 'true' || params[:no_cache] == 'true'
+        # No caching for truly randomized results on each request
+        @ads = fetch_ads_without_cache(per_page, page)
+      else
+        # Use minimal caching with randomization factor
+        cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}_#{Time.current.to_i / 60}"
+        
+        @ads = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
         ads_query = Ad.active.with_valid_images
                      .joins(:seller, :category, :subcategory)
                      .joins(seller: { seller_tier: :tier })
@@ -41,9 +46,9 @@ class Buyer::AdsController < ApplicationController
         ads_query = filter_by_category(ads_query) if params[:category_id].present?
         ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
-        ads_query
-          .order('RANDOM()')
-          .limit(per_page).offset((page - 1) * per_page)
+        # Enhanced randomization with multiple factors for better distribution
+        get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
+        end
       end
     end
 
@@ -509,6 +514,39 @@ class Buyer::AdsController < ApplicationController
 
   private
 
+  # Enhanced randomization method that ensures different results on each request
+  def get_randomized_ads(ads_query, limit)
+    # Add multiple randomization factors for better distribution
+    ads_query.order(
+      Arel.sql('RANDOM()'),
+      Arel.sql('ads.created_at DESC'),
+      Arel.sql('ads.id')
+    ).limit(limit)
+  end
+
+  # Fetch ads without any caching for true randomization
+  def fetch_ads_without_cache(per_page, page)
+    ads_query = Ad.active.with_valid_images
+                 .joins(:seller, :category, :subcategory)
+                 .joins(seller: { seller_tier: :tier })
+                 .includes(:category, :subcategory, seller: { seller_tier: :tier })
+                 .where(sellers: { blocked: false, deleted: false })
+                 .where(flagged: false)
+                 .select('ads.id, ads.title, ads.price, ads.media, ads.created_at, ads.subcategory_id, ads.category_id, ads.seller_id, CASE tiers.id
+                           WHEN 4 THEN 1
+                           WHEN 3 THEN 2
+                           WHEN 2 THEN 3
+                           WHEN 1 THEN 4
+                           ELSE 5
+                         END AS tier_priority')
+
+    ads_query = filter_by_category(ads_query) if params[:category_id].present?
+    ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+
+    # Enhanced randomization with multiple factors for better distribution
+    get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
+  end
+
   def get_balanced_ads(per_page)
     # Get all categories with their subcategories
     categories = Category.includes(:subcategories).all
@@ -543,7 +581,7 @@ class Buyer::AdsController < ApplicationController
            .where(flagged: false)
            .where(subcategory_id: subcategory.id)
            .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-           .order('RANDOM()')  # Pure randomization
+           .order(Arel.sql('RANDOM()'))  # Pure randomization
            .limit(ads_per_subcategory)
            .offset((page - 1) * ads_per_subcategory)
         
@@ -570,7 +608,7 @@ class Buyer::AdsController < ApplicationController
              .where(flagged: false)
              .where(subcategory_id: subcategory.id)
              .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-             .order('RANDOM()')  # Pure randomization
+             .order(Arel.sql('RANDOM()'))  # Pure randomization
              .limit(ads_per_subcategory)
           
           all_ads.concat(subcategory_ads)

@@ -64,13 +64,6 @@ class TokenValidationService
     Time.at(decoded_result[:payload][:exp])
   end
 
-  # Get time until token expires
-  def time_until_expiry
-    expires_at = token_expires_at
-    return nil unless expires_at
-
-    expires_at - Time.current
-  end
 
   private
 

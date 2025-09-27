@@ -1,5 +1,10 @@
 
 Rails.application.routes.draw do
+  # SEO Redirects - Handle common URL issues
+  get '/home', to: redirect('/', status: 301)
+  get '/seller-', to: redirect('/become-a-seller', status: 301)
+  get '/search', to: redirect('/', status: 301)
+  
   # Health check endpoints
   get '/health', to: 'health#show'
   get '/health/database', to: 'health#database'
@@ -79,6 +84,7 @@ Rails.application.routes.draw do
   end
   
   # Sitemap generation endpoints (public)
+  get 'sitemap', to: 'sitemap#index'
   get 'sitemap/ads', to: 'sitemap#ads'
   get 'sitemap/sellers', to: 'sitemap#sellers'
   get 'sitemap/categories', to: 'sitemap#categories'
