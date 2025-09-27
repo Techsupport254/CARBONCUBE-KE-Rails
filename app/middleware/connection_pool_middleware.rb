@@ -5,12 +5,7 @@ class ConnectionPoolMiddleware
 
   def call(env)
     # Skip middleware for WebSocket connections (ActionCable)
-    # Debug: Log the request details
-    logger = Rails.logger || Logger.new(STDOUT)
-    logger.info "ConnectionPoolMiddleware: PATH_INFO=#{env['PATH_INFO']}, HTTP_UPGRADE=#{env['HTTP_UPGRADE']}"
-    
     if env['PATH_INFO'] == '/cable' || env['HTTP_UPGRADE'] == 'websocket'
-      logger.info "Skipping middleware for WebSocket connection"
       return @app.call(env)
     end
     
