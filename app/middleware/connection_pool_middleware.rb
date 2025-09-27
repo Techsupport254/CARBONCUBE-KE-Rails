@@ -4,7 +4,12 @@ class ConnectionPoolMiddleware
   end
 
   def call(env)
-    # Ensure connections are properly managed
+    # Skip middleware for WebSocket connections (ActionCable)
+    if env['PATH_INFO'] == '/cable' || env['HTTP_UPGRADE'] == 'websocket'
+      return @app.call(env)
+    end
+    
+    # Ensure connections are properly managed for regular HTTP requests
     ActiveRecord::Base.connection_pool.with_connection do
       @app.call(env)
     end
