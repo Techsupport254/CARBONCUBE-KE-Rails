@@ -675,7 +675,7 @@ class Buyer::AdsController < ApplicationController
                      COUNT(DISTINCT click_events.id) as click_count
                    ")
                    .group("ads.id, sellers.id, categories.id, subcategories.id, tiers.id")
-                   .order('ads.created_at DESC')
+                   .order('RANDOM()')
                    .limit(limit * 3) # Reduced multiplier for faster queries
     
     return [] if ads_data.empty?

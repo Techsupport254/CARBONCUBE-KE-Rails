@@ -52,7 +52,7 @@ class ShopsController < ApplicationController
                 .joins(:category, :subcategory, seller: { seller_tier: :tier })
                 .left_joins(:reviews)
                 .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-                .order('tiers.id DESC, ads.created_at DESC')
+                .order('tiers.id DESC, RANDOM()')
                 .offset((page - 1) * per_page)
                 .limit(per_page)
     

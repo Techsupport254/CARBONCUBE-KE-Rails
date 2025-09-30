@@ -1,5 +1,5 @@
 class MessageNotificationMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
 
   # Send new message notification to recipient
   def new_message_notification(message, recipient)

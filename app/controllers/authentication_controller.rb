@@ -189,10 +189,11 @@ class AuthenticationController < ApplicationController
       redirect_uri = 'postmessage'
     end
 
-    oauth_service = GoogleOauthService.new(auth_code, redirect_uri)
-    result = oauth_service.authenticate
+    begin
+      oauth_service = GoogleOauthService.new(auth_code, redirect_uri)
+      result = oauth_service.authenticate
 
-    if result[:success]
+      if result[:success]
       user = result[:user]
       role = determine_role(user)
       
@@ -243,7 +244,12 @@ class AuthenticationController < ApplicationController
       token = JsonWebToken.encode(token_payload)
       render json: { token: token, user: user_response }, status: :ok
     else
-      render json: { errors: ['Authentication failed'] }, status: :unauthorized
+      render json: { errors: [result[:error] || 'Authentication failed'] }, status: :unauthorized
+    end
+    rescue => e
+      Rails.logger.error "❌ Google OAuth controller error: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      render json: { errors: ['Internal server error during authentication'] }, status: :internal_server_error
     end
   end
 

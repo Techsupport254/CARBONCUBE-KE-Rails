@@ -92,7 +92,7 @@ class BestSellersController < ApplicationController
                    COUNT(DISTINCT click_events.id) as click_count
                  ")
                  .group("ads.id, sellers.id, categories.id, subcategories.id, tiers.id")
-                 .order('ads.created_at DESC')
+                 .order('RANDOM()')
                  .limit(limit * 5) # Get more for better scoring
     
     return [] if ads_data.empty?

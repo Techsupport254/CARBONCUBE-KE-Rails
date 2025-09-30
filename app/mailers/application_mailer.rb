@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: ENV['BREVO_EMAIL']
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
   
   # Add headers to improve deliverability
   before_action :add_deliverability_headers

@@ -1,5 +1,5 @@
 class SellerCommunicationsMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
   
   # Use our custom job for better logging
   def self.delivery_job

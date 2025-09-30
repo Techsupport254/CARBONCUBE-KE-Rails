@@ -1,4 +1,6 @@
 # app/services/google_oauth_service.rb
+require 'httparty'
+
 class GoogleOauthService
   GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
@@ -9,97 +11,121 @@ class GoogleOauthService
   end
 
   def authenticate
-    Rails.logger.info "🚀 Starting Google OAuth authentication"
-    Rails.logger.info "📝 Auth code: #{@auth_code[0..10]}..." if @auth_code
-    Rails.logger.info "🔗 Redirect URI: #{@redirect_uri}"
-    
-    # Step 1: Exchange authorization code for access token
-    access_token = exchange_code_for_token
-    
-    unless access_token
-      Rails.logger.error "❌ Failed to get access token"
-      return { success: false, error: 'Failed to get access token' }
+    begin
+      Rails.logger.info "🚀 Starting Google OAuth authentication"
+      Rails.logger.info "📝 Auth code: #{@auth_code[0..10]}..." if @auth_code
+      Rails.logger.info "🔗 Redirect URI: #{@redirect_uri}"
+      
+      # Step 1: Exchange authorization code for access token
+      access_token = exchange_code_for_token
+      
+      unless access_token
+        Rails.logger.error "❌ Failed to get access token"
+        return { success: false, error: 'Failed to get access token' }
+      end
+      
+      # Step 2: Get user info from Google
+      user_info = get_user_info(access_token)
+      
+      unless user_info
+        Rails.logger.error "❌ Failed to get user info"
+        return { success: false, error: 'Failed to get user info' }
+      end
+      
+      # Step 3: Find or create user
+      Rails.logger.info "👤 Finding or creating user for email: #{user_info['email']}"
+      user = find_or_create_user(user_info)
+      
+      unless user
+        Rails.logger.error "❌ Failed to create user"
+        return { success: false, error: 'Failed to create user' }
+      end
+      
+      Rails.logger.info "✅ Google OAuth authentication successful for user: #{user.email}"
+      { success: true, user: user, access_token: access_token }
+    rescue => e
+      Rails.logger.error "❌ Google OAuth authentication failed: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      { success: false, error: "Authentication failed: #{e.message}" }
     end
-    
-    # Step 2: Get user info from Google
-    user_info = get_user_info(access_token)
-    
-    unless user_info
-      Rails.logger.error "❌ Failed to get user info"
-      return { success: false, error: 'Failed to get user info' }
-    end
-    
-    # Step 3: Find or create user
-    Rails.logger.info "👤 Finding or creating user for email: #{user_info['email']}"
-    user = find_or_create_user(user_info)
-    
-    unless user
-      Rails.logger.error "❌ Failed to create user"
-      return { success: false, error: 'Failed to create user' }
-    end
-    
-    Rails.logger.info "✅ Google OAuth authentication successful for user: #{user.email}"
-    { success: true, user: user, access_token: access_token }
   end
 
   private
 
   def exchange_code_for_token
-    # For GSI popup authentication, use 'postmessage' as redirect_uri
-    redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
-    
-    Rails.logger.info "🔄 Exchanging code for token with redirect_uri: #{redirect_uri}"
-    Rails.logger.info "🔑 Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
-    
-    response = HTTParty.post(GOOGLE_TOKEN_URL, {
-      body: {
-        client_id: ENV['GOOGLE_CLIENT_ID'],
-        client_secret: ENV['GOOGLE_CLIENT_SECRET'],
-        code: @auth_code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirect_uri
-      },
-      headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
-    })
-    
-    Rails.logger.info "📡 Google token response status: #{response.code}"
-    Rails.logger.info "📡 Google token response body: #{response.body}"
-    
-    unless response.success?
-      Rails.logger.error "❌ Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
-      return nil
+    begin
+      # For GSI popup authentication, use 'postmessage' as redirect_uri
+      redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
+      
+      Rails.logger.info "🔄 Exchanging code for token with redirect_uri: #{redirect_uri}"
+      Rails.logger.info "🔑 Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
+      
+      # Validate required environment variables
+      unless ENV['GOOGLE_CLIENT_ID'].present? && ENV['GOOGLE_CLIENT_SECRET'].present?
+        Rails.logger.error "❌ Missing Google OAuth credentials"
+        return nil
+      end
+      
+      response = HTTParty.post(GOOGLE_TOKEN_URL, {
+        body: {
+          client_id: ENV['GOOGLE_CLIENT_ID'],
+          client_secret: ENV['GOOGLE_CLIENT_SECRET'],
+          code: @auth_code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirect_uri
+        },
+        headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
+      })
+      
+      Rails.logger.info "📡 Google token response status: #{response.code}"
+      Rails.logger.info "📡 Google token response body: #{response.body}"
+      
+      unless response.success?
+        Rails.logger.error "❌ Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
+        return nil
+      end
+      
+      token_data = JSON.parse(response.body)
+      access_token = token_data['access_token']
+      
+      if access_token.nil?
+        Rails.logger.error "❌ No access token in response: #{token_data}"
+        return nil
+      end
+      
+      Rails.logger.info "✅ Successfully obtained access token"
+      access_token
+    rescue => e
+      Rails.logger.error "❌ Error exchanging code for token: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      nil
     end
-    
-    token_data = JSON.parse(response.body)
-    access_token = token_data['access_token']
-    
-    if access_token.nil?
-      Rails.logger.error "❌ No access token in response: #{token_data}"
-      return nil
-    end
-    
-    Rails.logger.info "✅ Successfully obtained access token"
-    access_token
   end
 
   def get_user_info(access_token)
-    Rails.logger.info "👤 Fetching user info from Google"
-    
-    response = HTTParty.get(GOOGLE_USER_INFO_URL, {
-      headers: { 'Authorization' => "Bearer #{access_token}" }
-    })
-    
-    Rails.logger.info "📡 Google user info response status: #{response.code}"
-    Rails.logger.info "📡 Google user info response body: #{response.body}"
-    
-    unless response.success?
-      Rails.logger.error "❌ Failed to get user info. Status: #{response.code}, Body: #{response.body}"
-      return nil
+    begin
+      Rails.logger.info "👤 Fetching user info from Google"
+      
+      response = HTTParty.get(GOOGLE_USER_INFO_URL, {
+        headers: { 'Authorization' => "Bearer #{access_token}" }
+      })
+      
+      Rails.logger.info "📡 Google user info response status: #{response.code}"
+      Rails.logger.info "📡 Google user info response body: #{response.body}"
+      
+      unless response.success?
+        Rails.logger.error "❌ Failed to get user info. Status: #{response.code}, Body: #{response.body}"
+        return nil
+      end
+      
+      user_info = JSON.parse(response.body)
+      Rails.logger.info "✅ Successfully obtained user info: #{user_info['email']}"
+      user_info
+    rescue => e
+      Rails.logger.error "❌ Error getting user info: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      nil
     end
-    
-    user_info = JSON.parse(response.body)
-    Rails.logger.info "✅ Successfully obtained user info: #{user_info['email']}"
-    user_info
   end
 
   def find_or_create_user(user_info)

@@ -1,5 +1,5 @@
 class DataDeletionMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
 
   # Send data deletion request notification to admin
   def admin_notification

@@ -1,5 +1,5 @@
 class ContactMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
 
   # Send contact form submission to admin
   def contact_form

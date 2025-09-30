@@ -1,5 +1,5 @@
 class OtpMailer < ApplicationMailer
-  default from: ENV['BREVO_EMAIL']
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
 
   def send_otp
     @email = params[:email]
