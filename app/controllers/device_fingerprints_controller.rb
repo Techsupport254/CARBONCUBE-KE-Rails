@@ -19,7 +19,7 @@ class DeviceFingerprintsController < ApplicationController
       device_fingerprint.assign_attributes(
         hardware_fingerprint: hardware_fingerprint,
         user_agent: user_agent,
-        last_seen: Time.at(timestamp / 1000) if timestamp,
+        last_seen: timestamp ? Time.at(timestamp / 1000) : nil,
         updated_at: Time.current
       )
       
