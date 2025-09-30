@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_25_105252) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -280,6 +280,16 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_25_105252) do
     t.index ["requested_at"], name: "index_data_deletion_requests_on_requested_at"
     t.index ["status"], name: "index_data_deletion_requests_on_status"
     t.index ["token"], name: "index_data_deletion_requests_on_token", unique: true
+  end
+
+  create_table "device_fingerprints", force: :cascade do |t|
+    t.string "device_id"
+    t.text "hardware_fingerprint"
+    t.text "user_agent"
+    t.datetime "last_seen"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_id"], name: "index_device_fingerprints_on_device_id", unique: true
   end
 
   create_table "document_types", force: :cascade do |t|

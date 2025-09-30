@@ -121,7 +121,8 @@ class InternalUserExclusion < ApplicationRecord
       requester_name: attributes[:requester_name],
       device_description: attributes[:device_description],
       user_agent: attributes[:user_agent],
-      status: 'pending'
+      status: 'pending',
+      additional_info: attributes[:additional_info] # Store IP and other metadata
     )
   end
   
@@ -136,6 +137,10 @@ class InternalUserExclusion < ApplicationRecord
         status: 'approved',
         approved_at: Time.current
       )
+      
+      # Create additional IP-based exclusion for enhanced persistence
+      # This ensures the device remains excluded even if the device hash changes
+      create_ip_based_exclusion_if_needed
     end
   rescue => e
     errors.add(:base, "Failed to approve request: #{e.message}")
@@ -154,6 +159,49 @@ class InternalUserExclusion < ApplicationRecord
   end
   
   private
+  
+  # Create IP-based exclusion for enhanced persistence when approving removal requests
+  def create_ip_based_exclusion_if_needed
+    return unless additional_info.present?
+    
+    # Extract IP information from additional_info
+    ip_info = additional_info['ip_info'] || additional_info[:ip_info]
+    return unless ip_info.present?
+    
+    # Get all IP addresses that were captured during the request
+    all_ips = ip_info['all_ips'] || ip_info[:all_ips] || []
+    return if all_ips.empty?
+    
+    # Create IP-based exclusions for each captured IP
+    all_ips.each do |ip|
+      next if ip.blank?
+      
+      # Create IP-based exclusion if it doesn't already exist
+      existing_ip_exclusion = InternalUserExclusion.find_by(
+        identifier_type: 'ip_range',
+        identifier_value: ip
+      )
+      
+      unless existing_ip_exclusion
+        InternalUserExclusion.create!(
+          identifier_type: 'ip_range',
+          identifier_value: ip,
+          reason: "IP-based exclusion created from approved removal request (#{identifier_value})",
+          active: true,
+          status: 'approved',
+          approved_at: Time.current,
+          additional_info: {
+            created_from_removal_request: true,
+            original_device_hash: identifier_value,
+            requester_name: requester_name
+          }
+        )
+      end
+    end
+  rescue => e
+    # Log error but don't fail the approval process
+    Rails.logger.error "Failed to create IP-based exclusions: #{e.message}"
+  end
   
   # Check if IP is in range (supports CIDR notation and simple ranges)
   def self.ip_in_range?(ip, range)

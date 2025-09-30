@@ -99,7 +99,74 @@ class InternalUserExclusionsController < ApplicationController
   def check_status
     device_hash = params[:device_hash]
     
-    # First, try exact match
+    # First, check for IP-based exclusions with multiple IP sources
+    client_ip = request.remote_ip || request.ip
+    forwarded_ip = request.env['HTTP_X_FORWARDED_FOR']
+    real_ip = request.env['HTTP_X_REAL_IP']
+    
+    ip_sources = [client_ip, forwarded_ip, real_ip].compact.uniq
+    ip_record = nil
+    matched_ip = nil
+    
+    # Check each IP source
+    ip_sources.each do |ip|
+      next if ip.blank?
+      
+      record = InternalUserExclusion.where(
+        identifier_type: 'ip_range', 
+        identifier_value: ip,
+        active: true
+      ).first
+      
+      if record
+        ip_record = record
+        matched_ip = ip
+        break
+      end
+    end
+    
+    if ip_record
+      # If this is an IP-based exclusion, also create a device-based exclusion for persistence
+      if device_hash.present?
+        device_exclusion = InternalUserExclusion.find_or_create_by(
+          identifier_type: 'device_hash',
+          identifier_value: device_hash
+        ) do |e|
+          e.reason = "Device excluded via IP-based exclusion (#{matched_ip})"
+          e.active = true
+          e.status = 'approved'
+          e.approved_at = Time.current
+        end
+        
+        # Update existing device exclusion if it exists
+        if device_exclusion.persisted? && !device_exclusion.active?
+          device_exclusion.update!(
+            reason: "Device excluded via IP-based exclusion (#{matched_ip})",
+            active: true,
+            status: 'approved',
+            approved_at: Time.current
+          )
+        end
+      end
+      
+      render json: {
+        status: 'approved',
+        message: 'Your IP address is excluded from tracking',
+        request_id: ip_record.id,
+        created_at: ip_record.created_at,
+        rejection_reason: nil,
+        approved_at: ip_record.approved_at || ip_record.created_at,
+        rejected_at: nil,
+        device_hash: device_hash,
+        exclusion_type: 'ip_based',
+        ip_address: matched_ip,
+        all_ips: ip_sources,
+        device_exclusion_created: device_hash.present?
+      }, status: :ok
+      return
+    end
+    
+    # Then, try exact device hash match
     record = InternalUserExclusion.where(identifier_type: 'device_hash', identifier_value: device_hash).first
     
     # If no exact match, try to find records that start with the base hash
@@ -149,6 +216,57 @@ class InternalUserExclusionsController < ApplicationController
         request_id: nil,
         created_at: nil,
         device_hash: device_hash
+      }, status: :ok
+    end
+  end
+  
+  # GET /internal_user_exclusions/check_ip
+  def check_ip
+    # Get all possible IP addresses
+    client_ip = request.remote_ip || request.ip
+    forwarded_ip = request.env['HTTP_X_FORWARDED_FOR']
+    real_ip = request.env['HTTP_X_REAL_IP']
+    
+    # Check for IP-based exclusions with multiple IP sources
+    ip_sources = [client_ip, forwarded_ip, real_ip].compact.uniq
+    
+    ip_record = nil
+    matched_ip = nil
+    
+    # Check each IP source
+    ip_sources.each do |ip|
+      next if ip.blank?
+      
+      # Check exact match
+      record = InternalUserExclusion.where(
+        identifier_type: 'ip_range', 
+        identifier_value: ip,
+        active: true
+      ).first
+      
+      if record
+        ip_record = record
+        matched_ip = ip
+        break
+      end
+    end
+    
+    if ip_record
+      render json: {
+        excluded: true,
+        ip_address: matched_ip,
+        all_ips: ip_sources,
+        exclusion_id: ip_record.id,
+        reason: ip_record.reason,
+        created_at: ip_record.created_at,
+        exclusion_type: 'ip_based'
+      }, status: :ok
+    else
+      render json: {
+        excluded: false,
+        ip_address: client_ip,
+        all_ips: ip_sources,
+        message: 'IP address not excluded'
       }, status: :ok
     end
   end
@@ -203,7 +321,25 @@ class InternalUserExclusionsController < ApplicationController
   private
   
   def request_params
-    params.permit(:requester_name, :device_description, :device_hash, :user_agent, :additional_info)
+    # Capture user's IP for potential future use
+    client_ip = request.remote_ip || request.ip
+    forwarded_ip = request.env['HTTP_X_FORWARDED_FOR']
+    real_ip = request.env['HTTP_X_REAL_IP']
+    
+    ip_info = {
+      client_ip: client_ip,
+      forwarded_ip: forwarded_ip,
+      real_ip: real_ip,
+      all_ips: [client_ip, forwarded_ip, real_ip].compact.uniq
+    }
+    
+    # Merge IP information into additional_info
+    additional_info = params[:additional_info] || {}
+    additional_info[:ip_info] = ip_info
+    
+    params.permit(:requester_name, :device_description, :device_hash, :user_agent).merge(
+      additional_info: additional_info
+    )
   end
   
   def get_status_message(request)

@@ -178,7 +178,16 @@ Rails.application.routes.draw do
   resources :internal_user_exclusions, only: [:create] do
     collection do
       get 'check/:device_hash', to: 'internal_user_exclusions#check_status'
+      get 'check_ip', to: 'internal_user_exclusions#check_ip'
       patch 'update_status/:device_hash', to: 'internal_user_exclusions#update_status'
+    end
+  end
+
+  # Routes for device fingerprint persistence
+  resources :device_fingerprints, only: [] do
+    collection do
+      post 'store', to: 'device_fingerprints#store'
+      post 'recover', to: 'device_fingerprints#recover'
     end
   end
 
