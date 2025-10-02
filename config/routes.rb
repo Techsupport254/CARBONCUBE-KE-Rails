@@ -87,6 +87,17 @@ Rails.application.routes.draw do
   get 'sitemap', to: 'sitemap#index'
   get 'sitemap/ads', to: 'sitemap#ads'
   get 'sitemap/sellers', to: 'sitemap#sellers'
+  
+  # Issue tracking endpoints
+  resources :issues, only: [:index, :show, :create] do
+    member do
+      post :add_comment
+      post :add_attachment
+    end
+    collection do
+      get :statistics
+    end
+  end
   get 'sitemap/categories', to: 'sitemap#categories'
   get 'sitemap/subcategories', to: 'sitemap#subcategories'
   get 'sitemap/stats', to: 'sitemap#stats'
@@ -211,6 +222,19 @@ Rails.application.routes.draw do
 
     resources :categories
     resources :subcategories
+    
+    # Issue Management
+    resources :issues, only: [:show, :update, :destroy] do
+      member do
+        post :assign
+        post :add_comment
+        post :add_attachment
+      end
+      collection do
+        get :index, action: :admin_index
+        get :statistics
+      end
+    end
     
     # Seller Communications
     resources :seller_communications, only: [] do

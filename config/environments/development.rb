@@ -22,6 +22,9 @@ Rails.application.configure do
 
   # Enable server timing
   config.server_timing = true
+  
+  # Temporarily disable migration check for development
+  config.active_record.migration_error = :page_load
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.

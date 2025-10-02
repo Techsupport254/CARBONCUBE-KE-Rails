@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Comment Added to Issue <%= @issue_number %></title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .header p {
+      margin: 8px 0 0 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .greeting {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: #374151;
+    }
+    .issue-info {
+      background-color: #f3f4f6;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #f59e0b;
+    }
+    .issue-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 10px 0;
+    }
+    .issue-meta {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 5px 0;
+    }
+    .comment-section {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .comment-header {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+    .comment-content {
+      font-size: 15px;
+      color: #374151;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .footer {
+      background-color: #f9fafb;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer a {
+      color: #f59e0b;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>New Comment Added</h1>
+      <p>Issue #<%= @issue_number %> has received a new comment</p>
+    </div>
+    
+    <div class="content">
+      <div class="greeting">
+        Hello <%= @user_name %>,
+      </div>
+      
+      <p>A new comment has been added to your issue. Here are the details:</p>
+      
+      <div class="issue-info">
+        <div class="issue-title"><%= @issue_title %></div>
+        <div class="issue-meta">Issue #<%= @issue_number %></div>
+        <div class="issue-meta">Status: <%= @issue.status.humanize %></div>
+        <div class="issue-meta">Priority: <%= @issue.priority.humanize %></div>
+      </div>
+      
+      <div class="comment-section">
+        <div class="comment-header">
+          <strong>New Comment by <%= @commenter_name %> (<%= @commenter_type %>)</strong><br>
+          <small>Posted on <%= @commented_at %></small>
+        </div>
+        <div class="comment-content"><%= @comment_content %></div>
+      </div>
+      
+      <p>You can view the full issue and all comments by clicking the button below:</p>
+      
+      <div style="text-align: center;">
+        <a href="<%= @tracking_url %>" class="cta-button">View Issue #<%= @issue_number %></a>
+      </div>
+      
+      <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
+        If you have any questions or need further assistance, please don't hesitate to contact our support team.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p>This email was sent by Carbon Cube Kenya</p>
+      <p>
+        <a href="<%= @tracking_url %>">View Issues</a> | 
+        <a href="mailto:support@carboncube.co.ke">Contact Support</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

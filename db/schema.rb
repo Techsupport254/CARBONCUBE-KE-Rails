@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_02_101949) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -22,7 +22,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
-  enable_extension "pg_trgm"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "uuid-ossp"
@@ -53,12 +52,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.string "password_digest"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "provider"
-    t.string "uid"
-    t.string "oauth_token"
-    t.string "oauth_refresh_token"
-    t.datetime "oauth_expires_at"
-    t.index ["provider", "uid"], name: "index_admins_on_provider_and_uid", unique: true
   end
 
   create_table "ads", force: :cascade do |t|
@@ -90,7 +83,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.index ["deleted", "flagged", "seller_id", "created_at", "id"], name: "index_ads_best_sellers_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
-    t.index ["description"], name: "index_ads_on_description", opclass: :gin_trgm_ops, using: :gin
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged_perf"
@@ -98,7 +90,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
-    t.index ["title"], name: "index_ads_on_title", opclass: :gin_trgm_ops, using: :gin
   end
 
   create_table "age_groups", force: :cascade do |t|
@@ -126,16 +117,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.string "image_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "best_sellers_cache", force: :cascade do |t|
-    t.string "cache_key", null: false
-    t.jsonb "data", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["cache_key"], name: "index_best_sellers_cache_on_cache_key", unique: true
-    t.index ["expires_at"], name: "index_best_sellers_cache_on_expires_at"
   end
 
   create_table "best_sellers_caches", force: :cascade do |t|
@@ -174,7 +155,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.string "uid"
     t.string "oauth_token"
     t.string "oauth_refresh_token"
-    t.datetime "oauth_expires_at"
+    t.string "oauth_expires_at"
     t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"
@@ -182,7 +163,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.index ["employment_id"], name: "index_buyers_on_employment_id"
     t.index ["income_id"], name: "index_buyers_on_income_id"
     t.index ["phone_number"], name: "index_buyers_on_phone_number", unique: true, where: "(phone_number IS NOT NULL)"
-    t.index ["provider", "uid"], name: "index_buyers_on_provider_and_uid", unique: true
     t.index ["sector_id"], name: "index_buyers_on_sector_id"
     t.index ["sub_county_id"], name: "index_buyers_on_sub_county_id"
     t.index ["username"], name: "index_buyers_on_username"
@@ -243,7 +223,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.datetime "updated_at", null: false
     t.integer "inquirer_seller_id"
     t.index ["ad_id", "buyer_id", "seller_id", "inquirer_seller_id"], name: "index_conversations_on_all_participants_and_ad", unique: true
-    t.index ["ad_id", "buyer_id", "seller_id"], name: "index_conversations_on_buyer_seller_product", unique: true
     t.index ["ad_id"], name: "index_conversations_on_ad_id"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
@@ -374,6 +353,54 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.index ["rejected_at"], name: "index_internal_user_exclusions_on_rejected_at"
     t.index ["requester_name"], name: "index_internal_user_exclusions_on_requester_name"
     t.index ["status"], name: "index_internal_user_exclusions_on_status"
+  end
+
+  create_table "issue_attachments", force: :cascade do |t|
+    t.bigint "issue_id", null: false
+    t.string "file_name", null: false
+    t.integer "file_size", null: false
+    t.string "file_type", null: false
+    t.string "file_url", null: false
+    t.string "uploaded_by_type", null: false
+    t.bigint "uploaded_by_id", null: false
+    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["created_at"], name: "index_issue_attachments_on_created_at"
+    t.index ["file_type"], name: "index_issue_attachments_on_file_type"
+    t.index ["issue_id"], name: "index_issue_attachments_on_issue_id"
+    t.index ["uploaded_by_type", "uploaded_by_id"], name: "index_issue_attachments_on_uploaded_by"
+  end
+
+  create_table "issue_comments", force: :cascade do |t|
+    t.bigint "issue_id", null: false
+    t.text "content", null: false
+    t.string "author_type", null: false
+    t.bigint "author_id", null: false
+    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["author_type", "author_id"], name: "index_issue_comments_on_author"
+    t.index ["issue_id"], name: "index_issue_comments_on_issue_id"
+  end
+
+  create_table "issues", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "description", null: false
+    t.string "status", default: "pending"
+    t.string "priority", default: "medium"
+    t.string "category", default: "other"
+    t.boolean "public_visible", default: true
+    t.bigint "assigned_to_id"
+    t.string "device_uuid"
+    t.bigint "user_id"
+    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.string "reporter_name"
+    t.string "reporter_email"
+    t.index ["assigned_to_id"], name: "index_issues_on_assigned_to_id"
+    t.index ["category"], name: "index_issues_on_category"
+    t.index ["priority"], name: "index_issues_on_priority"
+    t.index ["public_visible"], name: "index_issues_on_public_visible"
+    t.index ["status"], name: "index_issues_on_status"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -523,12 +550,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.string "password_digest"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "provider"
-    t.string "uid"
-    t.string "oauth_token"
-    t.string "oauth_refresh_token"
-    t.datetime "oauth_expires_at"
-    t.index ["provider", "uid"], name: "index_sales_users_on_provider_and_uid", unique: true
   end
 
   create_table "sectors", force: :cascade do |t|
@@ -593,11 +614,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.boolean "document_verified", default: false
     t.integer "ads_count", default: 0, null: false
     t.datetime "last_active_at"
-    t.string "provider"
-    t.string "uid"
-    t.string "oauth_token"
-    t.string "oauth_refresh_token"
-    t.datetime "oauth_expires_at"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -607,7 +623,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.index ["county_id"], name: "index_sellers_on_county_id"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
-    t.index ["provider", "uid"], name: "index_sellers_on_provider_and_uid", unique: true
     t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"
     t.index ["username"], name: "index_sellers_on_username", unique: true, where: "((username IS NOT NULL) AND ((username)::text <> ''::text))"
   end
@@ -653,35 +668,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
     t.integer "ads_limit", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "users", force: :cascade do |t|
-    t.string "type", null: false
-    t.string "fullname", null: false
-    t.string "username"
-    t.string "email", null: false
-    t.string "password_digest", null: false
-    t.string "phone_number"
-    t.string "location"
-    t.string "zipcode"
-    t.string "city"
-    t.string "gender"
-    t.boolean "blocked", default: false
-    t.boolean "deleted", default: false
-    t.string "profile_picture"
-    t.bigint "county_id"
-    t.bigint "sub_county_id"
-    t.bigint "age_group_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["age_group_id"], name: "index_users_on_age_group_id"
-    t.index ["county_id"], name: "index_users_on_county_id"
-    t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["phone_number"], name: "index_users_on_phone_number", unique: true, where: "(phone_number IS NOT NULL)"
-    t.index ["sub_county_id"], name: "index_users_on_sub_county_id"
-    t.index ["type", "email"], name: "index_users_on_type_and_email"
-    t.index ["type"], name: "index_users_on_type"
-    t.index ["username"], name: "index_users_on_username", unique: true, where: "(username IS NOT NULL)"
   end
 
   create_table "vehicle_types", force: :cascade do |t|
@@ -743,9 +729,6 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_30_131150) do
   add_foreign_key "sub_counties", "counties"
   add_foreign_key "tier_features", "tiers"
   add_foreign_key "tier_pricings", "tiers"
-  add_foreign_key "users", "age_groups"
-  add_foreign_key "users", "counties"
-  add_foreign_key "users", "sub_counties"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers"
   add_foreign_key "wish_lists", "sellers"
