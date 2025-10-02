@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_02_111016) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_02_111355) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -161,6 +161,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_02_111016) do
     t.string "oauth_token"
     t.string "oauth_refresh_token"
     t.string "oauth_expires_at"
+    t.text "description"
     t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"

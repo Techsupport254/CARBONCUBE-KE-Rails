@@ -4,6 +4,7 @@ require 'httparty'
 class GoogleOauthService
   GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
+  GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
   
   def initialize(auth_code, redirect_uri)
     @auth_code = auth_code
@@ -24,8 +25,8 @@ class GoogleOauthService
         return { success: false, error: 'Failed to get access token' }
       end
       
-      # Step 2: Get user info from Google
-      user_info = get_user_info(access_token)
+      # Step 2: Get comprehensive user info from Google
+      user_info = get_comprehensive_user_info(access_token)
       
       unless user_info
         Rails.logger.error "❌ Failed to get user info"
@@ -102,9 +103,34 @@ class GoogleOauthService
     end
   end
 
-  def get_user_info(access_token)
+  def get_comprehensive_user_info(access_token)
     begin
-      Rails.logger.info "👤 Fetching user info from Google"
+      Rails.logger.info "👤 Fetching comprehensive user info from Google"
+      
+      # Get basic profile info
+      basic_info = get_basic_user_info(access_token)
+      return nil unless basic_info
+      
+      # Get detailed info from People API
+      detailed_info = get_detailed_user_info(access_token)
+      
+      # Merge the information
+      comprehensive_info = basic_info.merge(detailed_info || {})
+      
+      Rails.logger.info "✅ Successfully obtained comprehensive user info: #{comprehensive_info['email']}"
+      Rails.logger.info "📊 Available data: #{comprehensive_info.keys.join(', ')}"
+      
+      comprehensive_info
+    rescue => e
+      Rails.logger.error "❌ Error getting comprehensive user info: #{e.message}"
+      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      nil
+    end
+  end
+
+  def get_basic_user_info(access_token)
+    begin
+      Rails.logger.info "👤 Fetching basic user info from Google"
       
       response = HTTParty.get(GOOGLE_USER_INFO_URL, {
         headers: { 'Authorization' => "Bearer #{access_token}" }
@@ -114,18 +140,144 @@ class GoogleOauthService
       Rails.logger.info "📡 Google user info response body: #{response.body}"
       
       unless response.success?
-        Rails.logger.error "❌ Failed to get user info. Status: #{response.code}, Body: #{response.body}"
+        Rails.logger.error "❌ Failed to get basic user info. Status: #{response.code}, Body: #{response.body}"
         return nil
       end
       
       user_info = JSON.parse(response.body)
-      Rails.logger.info "✅ Successfully obtained user info: #{user_info['email']}"
+      Rails.logger.info "✅ Successfully obtained basic user info: #{user_info['email']}"
       user_info
     rescue => e
-      Rails.logger.error "❌ Error getting user info: #{e.message}"
+      Rails.logger.error "❌ Error getting basic user info: #{e.message}"
       Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
       nil
     end
+  end
+
+  def get_detailed_user_info(access_token)
+    begin
+      Rails.logger.info "👤 Fetching detailed user info from Google People API"
+      
+      # Request comprehensive user data from People API
+      person_fields = [
+        'names',           # Full name, given name, family name
+        'photos',          # Profile pictures
+        'phoneNumbers',   # Phone numbers
+        'addresses',       # Physical addresses
+        'birthdays',      # Birthday information
+        'genders',        # Gender information
+        'ageRanges',      # Age range
+        'locales',        # Language preferences
+        'organizations',  # Work information
+        'occupations',    # Job titles
+        'biographies'     # About/bio information
+      ].join(',')
+      
+      response = HTTParty.get(GOOGLE_PEOPLE_API_URL, {
+        headers: { 'Authorization' => "Bearer #{access_token}" },
+        query: { personFields: person_fields }
+      })
+      
+      Rails.logger.info "📡 Google People API response status: #{response.code}"
+      Rails.logger.info "📡 Google People API response body: #{response.body}"
+      
+      unless response.success?
+        Rails.logger.warn "⚠️ Failed to get detailed user info from People API. Status: #{response.code}, Body: #{response.body}"
+        return {}
+      end
+      
+      detailed_info = JSON.parse(response.body)
+      Rails.logger.info "✅ Successfully obtained detailed user info from People API"
+      
+      # Extract and format the detailed information
+      extract_detailed_info(detailed_info)
+    rescue => e
+      Rails.logger.warn "⚠️ Error getting detailed user info from People API: #{e.message}"
+      Rails.logger.warn "⚠️ Backtrace: #{e.backtrace.join("\n")}"
+      {}
+    end
+  end
+
+  def extract_detailed_info(people_data)
+    extracted = {}
+    
+    # Extract names
+    if people_data['names']&.any?
+      name_info = people_data['names'].first
+      extracted['given_name'] = name_info['givenName']
+      extracted['family_name'] = name_info['familyName']
+      extracted['display_name'] = name_info['displayName']
+    end
+    
+    # Extract photos (profile pictures)
+    if people_data['photos']&.any?
+      photo_info = people_data['photos'].first
+      extracted['picture'] = photo_info['url']
+      extracted['picture_metadata'] = {
+        'default' => photo_info['default'],
+        'metadata' => photo_info['metadata']
+      }
+    end
+    
+    # Extract phone numbers
+    if people_data['phoneNumbers']&.any?
+      phone_info = people_data['phoneNumbers'].first
+      extracted['phone_number'] = phone_info['value']
+      extracted['phone_type'] = phone_info['type']
+    end
+    
+    # Extract addresses
+    if people_data['addresses']&.any?
+      address_info = people_data['addresses'].first
+      extracted['address'] = {
+        'formatted' => address_info['formattedValue'],
+        'street' => address_info['streetAddress'],
+        'city' => address_info['city'],
+        'region' => address_info['region'],
+        'postal_code' => address_info['postalCode'],
+        'country' => address_info['country']
+      }
+    end
+    
+    # Extract birthday
+    if people_data['birthdays']&.any?
+      birthday_info = people_data['birthdays'].first
+      if birthday_info['date']
+        date = birthday_info['date']
+        extracted['birthday'] = "#{date['year']}-#{date['month']}-#{date['day']}"
+      end
+    end
+    
+    # Extract gender
+    if people_data['genders']&.any?
+      gender_info = people_data['genders'].first
+      extracted['gender'] = gender_info['value']
+    end
+    
+    # Extract age range
+    if people_data['ageRanges']&.any?
+      age_info = people_data['ageRanges'].first
+      extracted['age_range'] = age_info['ageRange']
+    end
+    
+    # Extract work information
+    if people_data['organizations']&.any?
+      org_info = people_data['organizations'].first
+      extracted['work_info'] = {
+        'company' => org_info['name'],
+        'title' => org_info['title'],
+        'department' => org_info['department']
+      }
+    end
+    
+    # Extract biography
+    if people_data['biographies']&.any?
+      bio_info = people_data['biographies'].first
+      extracted['biography'] = bio_info['value']
+    end
+    
+    Rails.logger.info "📊 Extracted detailed info: #{extracted.keys.join(', ')}"
+    extracted
   end
 
   def find_or_create_user(user_info)
@@ -187,25 +339,45 @@ class GoogleOauthService
       phone_number = generate_placeholder_phone
     end
     
+    # Extract comprehensive user information
+    fullname = user_info['display_name'] || user_info['name'] || user_info['given_name'] || user_info['email'].split('@').first
+    profile_picture = user_info['picture'] || user_info['photo_url']
+    
+    # Extract location information
+    location_info = extract_location_info(user_info)
+    
     user_attributes = {
-      fullname: user_info['name'] || user_info['email'].split('@').first,
+      fullname: fullname,
       email: user_info['email'],
-      username: generate_unique_username(user_info['name'] || user_info['email'].split('@').first),
-      phone_number: phone_number, # Always provide a phone number for validation
+      username: generate_unique_username(fullname),
+      phone_number: phone_number,
       provider: provider,
       uid: uid,
       oauth_token: user_info['access_token'],
       oauth_expires_at: Time.current + 1.hour,
       age_group_id: calculate_age_group(user_info),
       gender: extract_gender(user_info),
-      profile_picture: user_info['picture'] # Set profile picture from Google
+      profile_picture: profile_picture,
+      location: location_info[:location],
+      city: location_info[:city],
+      zipcode: location_info[:zipcode]
     }
     
-    Rails.logger.info "🆕 Creating new OAuth user with attributes: #{user_attributes.except(:oauth_token, :oauth_expires_at)}"
+    # Add additional information if available
+    if user_info['biography'].present?
+      user_attributes[:description] = user_info['biography']
+    end
+    
+    Rails.logger.info "🆕 Creating new OAuth user with comprehensive attributes"
+    Rails.logger.info "📊 User data: #{user_attributes.except(:oauth_token, :oauth_expires_at).inspect}"
     
     user = Buyer.create!(user_attributes)
     
     Rails.logger.info "✅ Successfully created OAuth user: #{user.email}"
+    Rails.logger.info "📸 Profile picture: #{user.profile_picture}"
+    Rails.logger.info "📍 Location: #{user.location}"
+    Rails.logger.info "🏙️ City: #{user.city}"
+    
     user
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "❌ Failed to create OAuth user: #{e.message}"
@@ -238,10 +410,43 @@ class GoogleOauthService
   end
 
   def extract_phone_number(user_info)
-    # Google OAuth doesn't provide user's own phone number in basic profile
-    # The phone number scope is for accessing user's contacts, not their own number
-    # Return nil to indicate no phone number available
-    nil
+    # Try to get phone number from People API data
+    phone_number = user_info['phone_number']
+    
+    if phone_number.present?
+      # Clean and format the phone number
+      cleaned_phone = phone_number.gsub(/[^\d+]/, '')
+      
+      # If it starts with +, keep it as is, otherwise add + if it looks international
+      if cleaned_phone.start_with?('+')
+        cleaned_phone
+      elsif cleaned_phone.length > 10
+        "+#{cleaned_phone}"
+      else
+        cleaned_phone
+      end
+    else
+      nil
+    end
+  end
+
+  def extract_location_info(user_info)
+    location_info = { location: nil, city: nil, zipcode: nil }
+    
+    # Extract from address information
+    if user_info['address'].present?
+      address = user_info['address']
+      location_info[:location] = address['formatted'] || address['street']
+      location_info[:city] = address['city']
+      location_info[:zipcode] = address['postal_code']
+    end
+    
+    # Fallback to basic location if available
+    if location_info[:location].blank? && user_info['locale'].present?
+      location_info[:location] = user_info['locale']
+    end
+    
+    location_info
   end
 
   def extract_gender(user_info)
