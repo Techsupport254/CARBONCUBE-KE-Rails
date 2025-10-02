@@ -5,15 +5,12 @@ class SendSellerCommunicationJob < ApplicationJob
     # Log to both Rails logger and Sidekiq logger for visibility
     log_message = "=== SELLER COMMUNICATION JOB START ==="
     Rails.logger.info log_message
-    puts log_message
     
     log_message = "Job ID: #{job_id} | Seller ID: #{seller_id} | Email Type: #{email_type}"
     Rails.logger.info log_message
-    puts log_message
     
     log_message = "Job Queue: #{queue_name} | Priority: #{priority}"
     Rails.logger.info log_message
-    puts log_message
     
     seller = Seller.find_by(id: seller_id)
     
@@ -25,11 +22,9 @@ class SendSellerCommunicationJob < ApplicationJob
     
     log_message = "Seller found: #{seller.fullname} | Email: #{seller.email}"
     Rails.logger.info log_message
-    puts log_message
     
     log_message = "Target Email Address: #{seller.email}"
     Rails.logger.info log_message
-    puts log_message
     
     Rails.logger.info "Seller Enterprise: #{seller.enterprise_name}"
     Rails.logger.info "Seller Location: #{seller.location}"
@@ -53,15 +48,12 @@ class SendSellerCommunicationJob < ApplicationJob
       
       log_message = "✅ Successfully sent #{email_type} email to #{seller.email}"
       Rails.logger.info log_message
-      puts log_message
       
       log_message = "📧 Email delivery completed for: #{seller.email}"
       Rails.logger.info log_message
-      puts log_message
       
       log_message = "=== SELLER COMMUNICATION JOB COMPLETED ==="
       Rails.logger.info log_message
-      puts log_message
       
     rescue => e
       Rails.logger.error "SendSellerCommunicationJob: Failed to send email to seller #{seller_id}: #{e.message}"

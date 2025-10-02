@@ -112,11 +112,10 @@ class Buyer < ApplicationRecord
   end
 
   def oauth_phone_number_validation
-    # For OAuth users, we still need a phone number for the system to work
-    # but we can be more lenient about the format
+    # For OAuth users, phone number is required for user creation
     if phone_number.blank?
       errors.add(:phone_number, "is required for OAuth users")
-    elsif phone_number.present? && !phone_number.match?(/\A\d{10}\z/)
+    elsif !phone_number.match?(/\A\d{10}\z/)
       errors.add(:phone_number, "must be exactly 10 digits")
     end
   end

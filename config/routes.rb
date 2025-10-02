@@ -14,6 +14,9 @@ Rails.application.routes.draw do
   get '/health/websocket', to: 'health#websocket_status'
   get '/health/overall', to: 'health#overall_health'
   
+  # Proxy endpoints
+  get '/proxy-image', to: 'proxy#proxy_image'
+  
   # Best sellers routes
   resources :best_sellers, only: [:index] do
     collection do
@@ -75,6 +78,8 @@ Rails.application.routes.draw do
   
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
+  post 'auth/complete_oauth_registration', to: 'authentication#complete_oauth_registration'
+  post 'auth/complete_registration', to: 'authentication#complete_registration'
   get 'auth/google_oauth2/initiate', to: 'manual_oauth#google_oauth2_initiate'
   get 'auth/google_oauth2/callback', to: 'authentication#google_oauth_callback'
   get 'auth/google_oauth2/popup_callback', to: 'authentication#google_oauth_popup_callback'

@@ -18,7 +18,7 @@ class AdminAuthorizeApiRequest
     end
     
     payload = decoded_result[:payload]
-    admin_id = payload[:user_id]
+    admin_id = payload[:admin_id] || payload[:user_id] # Support both for backward compatibility
     admin_email = payload[:email]
     role = payload[:role]
 

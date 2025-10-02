@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Carbon Cube Kenya</title>
+  </head>
+
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; margin: 0; padding: 0;">
+    <div style="max-width: 620px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+      <div style="background: #1f2937; color: #fff; text-align: center; padding: 20px 18px;">
+        <div style="text-align: center; margin-bottom: 8px; width: 100%;">
+          <div style="display: inline-block; vertical-align: middle;">
+            <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" style="height: 35px; vertical-align: middle; margin-right: 6px;" />
+            <span style="font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 1px; vertical-align: middle;">CARBONCUBE</span>
+          </div>
+        </div>
+        <p style="margin: 0; font-size: 10px; color: #9ca3af;">Kenya's Most Trusted Online Marketplace</p>
+      </div>
+      
+      <div style="padding: 20px 18px;">
+        <h1 style="color: #1f2937; margin-bottom: 15px; font-size: 18px;">Welcome to Carbon Cube Kenya! 🎉</h1>
+
+        <p style="font-size: 14px; margin-bottom: 15px; text-align: left; color: #374151;">Hello <strong><%= @name %></strong>,</p>
+
+        <p style="font-size: 14px; line-height: 1.5; margin-bottom: 15px; color: #374151;">Welcome to <span style="color: #fbbf24; font-weight: 600;">Carbon Cube Kenya</span> - Kenya's premier online marketplace! We're thrilled to have you join our community of buyers and sellers.</p>
+
+        <p style="font-size: 14px; line-height: 1.5; margin-bottom: 15px; color: #374151;">Your account has been successfully created and you're now ready to explore all that Carbon Cube Kenya has to offer.</p>
+
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 13px; color: #374151;">
+          <h3 style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">What you can do now:</h3>
+          
+          <% if @user_type == 'buyer' %>
+            <p>🛒 <strong>Browse products:</strong> Discover thousands of products from verified sellers</p>
+            <p>💬 <strong>Chat with sellers:</strong> Communicate directly about products and services</p>
+            <p>❤️ <strong>Save favorites:</strong> Create wishlists of items you love</p>
+            <p>🔒 <strong>Shop safely:</strong> Enjoy buyer protection on all transactions</p>
+          <% elsif @user_type == 'seller' %>
+            <p>📦 <strong>List products:</strong> Reach thousands of potential buyers</p>
+            <p>🏪 <strong>Your shop:</strong> <a href="https://carboncube-ke.com/shop/<%= @user.enterprise_name.downcase.gsub(/\s+/, '-') %>" style="color: #fbbf24; text-decoration: none; font-weight: 600;">https://carboncube-ke.com/shop/<%= @user.enterprise_name.downcase.gsub(/\s+/, '-') %></a></p>
+            <p>📊 <strong>Track sales:</strong> Monitor your business performance</p>
+            <p>💬 <strong>Connect with buyers:</strong> Build relationships with customers</p>
+            <p>📈 <strong>Grow your business:</strong> Use our marketplace tools to expand</p>
+          <% else %>
+            <p>🎯 <strong>Access dashboard:</strong> Manage your account and preferences</p>
+            <p>⚡ <strong>Fast transactions:</strong> Enjoy quick and secure payments</p>
+            <p>🛡️ <strong>Security features:</strong> Benefit from our protection systems</p>
+          <% end %>
+        </div>
+
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="<%= @dashboard_url %>" style="display: inline-block; padding: 12px 24px; background: #fbbf24; color: #111827; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 5px;">Get Started Now</a>
+          <% if @user_type == 'seller' && @user.respond_to?(:enterprise_name) && @user.enterprise_name.present? %>
+            <a href="https://carboncube-ke.com/shop/<%= @user.enterprise_name.downcase.gsub(/\s+/, '-') %>" style="display: inline-block; padding: 10px 20px; background: #ffffff; color: #374151; text-decoration: none; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600; font-size: 13px; margin: 5px;">View My Shop</a>
+          <% end %>
+          <a href="<%= @login_url %>" style="display: inline-block; padding: 10px 20px; background: #ffffff; color: #374151; text-decoration: none; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600; font-size: 13px; margin: 5px;">Sign In</a>
+        </div>
+
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 13px; color: #374151;">
+          <h3 style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">Need Help Getting Started?</h3>
+          <p>Our support team is here to help you make the most of your Carbon Cube Kenya experience.</p>
+          <p><strong>Email:</strong> <span style="color: #fbbf24; font-weight: 600;"><%= @support_email %></span></p>
+          <p><strong>Phone:</strong> <span style="color: #fbbf24; font-weight: 600;"><%= @support_phone %></span></p>
+        </div>
+
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 13px; color: #374151;">
+          <h3 style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">Account Details</h3>
+          <p><strong>Email:</strong> <%= @user.email %></p>
+          <p><strong>Account Type:</strong> <%= @user_type.capitalize %></p>
+          <p><strong>Joined:</strong> <%= @timestamp %></p>
+        </div>
+
+        <p style="font-size: 14px; margin-top: 25px; color: #374151;">Best regards,<br>
+        <strong>The Carbon Cube Kenya Team</strong></p>
+
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;">
+        <p style="font-size: 10px; color: #6b7280;">
+          This is an automated message. Please do not reply to this email.
+          If you need assistance, please contact us at +254 712 990 524.
+        </p>
+      </div>
+      
+      <div style="background: #f9fafb; padding: 15px; text-align: center; font-size: 10px; color: #6b7280; border-top: 1px solid #e5e7eb; width: 100%; box-sizing: border-box;">
+        <div style="margin-bottom: 15px;">
+          <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" style="height: 25px; width: 25px; opacity: 0.7;" />
+        </div>
+        <p><strong>Carbon Cube Kenya</strong> | 9th Floor, CMS Africa, Nairobi</p>
+        <p>Phone: +254 712 990 524 | Email: <%= ENV['BREVO_EMAIL'] %></p>
+        <p>© 2025 Carbon Cube Kenya. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

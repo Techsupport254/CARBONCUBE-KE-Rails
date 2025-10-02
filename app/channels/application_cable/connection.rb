@@ -408,10 +408,8 @@ module ApplicationCable
                     end
         
         WebsocketService.track_metric("websocket.connections.user_type.#{user_type}")
-        puts "WebSocket: Connection tracking completed for user #{current_user.id}"
         Rails.logger.info "WebSocket: Connection tracking completed for user #{current_user.id}"
       rescue => e
-        puts "WebSocket: Connection tracking failed: #{e.message}"
         Rails.logger.warn "WebSocket: Connection tracking failed: #{e.message}"
         # Continue without tracking
       end

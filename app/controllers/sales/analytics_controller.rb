@@ -145,17 +145,12 @@ class Sales::AnalyticsController < ApplicationController
     start_date = params[:start_date]
     end_date = params[:end_date]
     
-    puts "=== SOURCE ANALYTICS REQUEST ==="
-    puts "Start date: #{start_date}"
-    puts "End date: #{end_date}"
     
     # Build date filter
     date_filter = nil
     if start_date && end_date
       date_filter = { start_date: start_date, end_date: end_date }
-      puts "Date filter: #{date_filter}"
     else
-      puts "No date filter provided"
     end
     
     # Get source tracking data with optional date filtering

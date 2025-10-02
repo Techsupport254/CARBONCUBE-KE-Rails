@@ -11,7 +11,9 @@ class SalesAuthorizeApiRequest
     decoded_result = JsonWebToken.decode(token)
     
     if decoded_result[:success]
-      SalesUser.find_by(id: decoded_result[:payload][:user_id])
+      payload = decoded_result[:payload]
+      sales_id = payload[:sales_id] || payload[:user_id] # Support both for backward compatibility
+      SalesUser.find_by(id: sales_id)
     else
       Rails.logger.warn("JWT validation failed: #{decoded_result[:error]}")
       nil

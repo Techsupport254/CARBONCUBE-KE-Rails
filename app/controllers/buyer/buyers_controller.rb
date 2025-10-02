@@ -29,6 +29,15 @@ class Buyer::BuyersController < ApplicationController
       @buyer = Buyer.new(buyer_params)
 
       if @buyer.save
+        # Send welcome email
+        begin
+          WelcomeMailer.welcome_email(@buyer).deliver_now
+          puts "✅ Welcome email sent to: #{@buyer.email}"
+        rescue => e
+          puts "❌ Failed to send welcome email: #{e.message}"
+          # Don't fail the registration if email fails
+        end
+        
         token = JsonWebToken.encode(user_id: @buyer.id, email: @buyer.email, role: 'Buyer')
         render json: { token: token, buyer: @buyer }, status: :created
       else

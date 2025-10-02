@@ -101,6 +101,17 @@ class Seller::SellersController < ApplicationController
     # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
 
     if @seller.save
+      # Send welcome email
+      begin
+        WelcomeMailer.welcome_email(@seller).deliver_now
+        puts "✅ Welcome email sent to: #{@seller.email}"
+        Rails.logger.info "✅ Welcome email sent to: #{@seller.email}"
+      rescue => e
+        puts "❌ Failed to send welcome email: #{e.message}"
+        Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
+        # Don't fail the registration if email fails
+      end
+      
       # Assign Premium tier expiring at midnight on January 1, 2026 (last day of 2025) for 2025 registrations
       current_year = Date.current.year
       if current_year == 2025

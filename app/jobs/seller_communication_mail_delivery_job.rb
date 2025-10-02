@@ -5,15 +5,12 @@ class SellerCommunicationMailDeliveryJob < ApplicationJob
     # Log to both Rails logger and stdout for Sidekiq visibility
     log_message = "=== CUSTOM MAILER JOB START ==="
     Rails.logger.info log_message
-    puts log_message
     
     log_message = "Mailer: #{mailer_class} | Method: #{mailer_method} | Delivery: #{delivery_method}"
     Rails.logger.info log_message
-    puts log_message
     
     log_message = "Args: #{args.inspect}"
     Rails.logger.info log_message
-    puts log_message
     
     # Extract seller from various argument formats
     seller = extract_seller_from_args(args)
@@ -21,7 +18,6 @@ class SellerCommunicationMailDeliveryJob < ApplicationJob
     if seller
       log_message = "📧 Sending email to: #{seller.email} (#{seller.fullname})"
       Rails.logger.info log_message
-      puts log_message
       
       begin
         # Call the mailer with seller parameter
@@ -30,24 +26,20 @@ class SellerCommunicationMailDeliveryJob < ApplicationJob
         
         log_message = "✅ Email delivered successfully!"
         Rails.logger.info log_message
-        puts log_message
         
       rescue => e
         log_message = "❌ Email delivery failed: #{e.message}"
         Rails.logger.error log_message
-        puts log_message
         raise e
       end
     else
       log_message = "❌ No seller found in arguments"
       Rails.logger.error log_message
-      puts log_message
       raise "No seller found in job arguments"
     end
     
     log_message = "=== CUSTOM MAILER JOB END ==="
     Rails.logger.info log_message
-    puts log_message
   end
 
   private
