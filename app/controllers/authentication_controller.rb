@@ -619,7 +619,7 @@ class AuthenticationController < ApplicationController
       puts "📝 Complete registration request received"
       
       # Get the form data from the request
-      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture)
+      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id)
       
       puts "📝 Form data: #{form_data.inspect}"
       
@@ -654,6 +654,8 @@ class AuthenticationController < ApplicationController
         user_attributes[:username] = form_data[:username] if form_data[:username].present?
         user_attributes[:email] = form_data[:email] if form_data[:email].present?
         user_attributes[:profile_picture] = form_data[:profile_picture] if form_data[:profile_picture].present?
+        user_attributes[:county_id] = form_data[:county_id] if form_data[:county_id].present?
+        user_attributes[:sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
         
         # Handle age group
         if form_data[:age_group].present?
@@ -706,6 +708,8 @@ class AuthenticationController < ApplicationController
         user_attributes[:gender] = form_data[:gender] if form_data[:gender].present?
         user_attributes[:username] = form_data[:username] if form_data[:username].present?
         user_attributes[:profile_picture] = form_data[:profile_picture] if form_data[:profile_picture].present?
+        user_attributes[:county_id] = form_data[:county_id] if form_data[:county_id].present?
+        user_attributes[:sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
         
         # Handle age group
         if form_data[:age_group].present?
@@ -1078,6 +1082,8 @@ class AuthenticationController < ApplicationController
         update_attributes[:location] = params[:location] if params[:location].present?
         update_attributes[:city] = params[:city] if params[:city].present?
         update_attributes[:zipcode] = params[:zipcode] if params[:zipcode].present?
+        update_attributes[:county_id] = params[:county_id] if params[:county_id].present?
+        update_attributes[:sub_county_id] = params[:sub_county_id] if params[:sub_county_id].present?
 
         user.update!(update_attributes)
       end
