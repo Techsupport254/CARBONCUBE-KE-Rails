@@ -64,7 +64,9 @@ class ManualOauthController < ApplicationController
     }
     
     # Use the OAuth account linking service
-    service = OauthAccountLinkingService.new(auth_hash, state)
+    user_ip = request.remote_ip
+    Rails.logger.info "🌐 User IP: #{user_ip}"
+    service = OauthAccountLinkingService.new(auth_hash, state, user_ip)
     result = service.call
 
     if result[:success]

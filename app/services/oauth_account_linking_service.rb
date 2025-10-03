@@ -1,6 +1,6 @@
 # app/services/oauth_account_linking_service.rb
 class OauthAccountLinkingService
-  def initialize(auth_hash, role = 'buyer')
+  def initialize(auth_hash, role = 'buyer', user_ip = nil)
     @auth_hash = auth_hash
     @role = role
     @provider = auth_hash[:provider]
@@ -8,6 +8,7 @@ class OauthAccountLinkingService
     @email = auth_hash.dig(:info, :email)
     @name = auth_hash.dig(:info, :name)
     @picture = auth_hash.dig(:info, :image)
+    @user_ip = user_ip
   end
 
   def call
@@ -82,6 +83,7 @@ class OauthAccountLinkingService
 
   def create_buyer
     phone_number = extract_phone_number
+    location_data = get_user_location_data
     
     user_attributes = {
       fullname: @name || @email.split('@').first,
@@ -95,7 +97,11 @@ class OauthAccountLinkingService
       # Use Google profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
-      profile_picture: @picture # Set profile picture from OAuth
+      profile_picture: @picture, # Set profile picture from OAuth
+      # Add location data
+      location: location_data[:location],
+      city: location_data[:city],
+      zipcode: location_data[:zipcode]
     }
     
     # Only add phone number if we have one from Google
@@ -261,5 +267,32 @@ class OauthAccountLinkingService
     age = today.year - birth_date.year
     age -= 1 if today.month < birth_date.month || (today.month == birth_date.month && today.day < birth_date.day)
     age
+  end
+
+  def get_user_location_data
+    location_data = { location: nil, city: nil, zipcode: nil }
+    
+    return location_data unless @user_ip.present?
+    
+    begin
+      # Use ip-api.com to get location from user's IP
+      api_url = "http://ip-api.com/json/#{@user_ip}"
+      response = HTTParty.get(api_url, timeout: 5)
+      
+      if response.success?
+        ip_data = JSON.parse(response.body)
+        if ip_data['status'] == 'success'
+          location_data[:city] = ip_data['city']
+          location_data[:location] = "#{ip_data['city']}, #{ip_data['regionName']}, #{ip_data['country']}"
+          location_data[:zipcode] = ip_data['zip']
+          
+          Rails.logger.info "🌐 User location detected: #{location_data[:location]}"
+        end
+      end
+    rescue => e
+      Rails.logger.warn "Failed to get location from IP: #{e.message}"
+    end
+    
+    location_data
   end
 end

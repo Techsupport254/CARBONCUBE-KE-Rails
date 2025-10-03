@@ -6,9 +6,10 @@ class GoogleOauthService
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
   GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
   
-  def initialize(auth_code, redirect_uri)
+  def initialize(auth_code, redirect_uri, user_ip = nil)
     @auth_code = auth_code
     @redirect_uri = redirect_uri
+    @user_ip = user_ip
   end
 
   def authenticate
@@ -185,7 +186,7 @@ class GoogleOauthService
       end
       
       # Method 2: IP-based geolocation (we'll implement this)
-      ip_location = get_location_from_ip
+      ip_location = get_location_from_ip(@user_ip)
       if ip_location
         location_info['ip_location'] = ip_location
         puts "🌐 IP-based location: #{ip_location.inspect}"
@@ -564,14 +565,24 @@ class GoogleOauthService
   end
 
   # Method 2: IP-based geolocation
-  def get_location_from_ip
+  def get_location_from_ip(user_ip = nil)
     begin
       puts "🌐 Getting location from IP address..."
       Rails.logger.info "🌐 Getting location from IP address..."
       
-      # Get user's IP address (you might need to pass this from the controller)
-      # For now, we'll use a free IP geolocation service
-      response = HTTParty.get('http://ip-api.com/json/', timeout: 5)
+      # Use user's IP if provided, otherwise fallback to server IP
+      ip_to_check = user_ip || request&.remote_ip
+      puts "🌐 Using IP: #{ip_to_check}"
+      Rails.logger.info "🌐 Using IP: #{ip_to_check}"
+      
+      # Use ip-api.com with specific IP
+      api_url = if ip_to_check.present? && ip_to_check != '127.0.0.1' && ip_to_check != '::1'
+        "http://ip-api.com/json/#{ip_to_check}"
+      else
+        'http://ip-api.com/json/'
+      end
+      
+      response = HTTParty.get(api_url, timeout: 5)
       
       if response.success?
         ip_data = JSON.parse(response.body)

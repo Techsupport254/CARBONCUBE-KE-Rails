@@ -190,7 +190,9 @@ class AuthenticationController < ApplicationController
 
     begin
       Rails.logger.info "🔄 Creating Google OAuth service..."
-      oauth_service = GoogleOauthService.new(auth_code, redirect_uri)
+      user_ip = request.remote_ip
+      Rails.logger.info "🌐 User IP: #{user_ip}"
+      oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip)
       
       Rails.logger.info "🔄 Calling authenticate method..."
       result = oauth_service.authenticate
@@ -310,7 +312,9 @@ class AuthenticationController < ApplicationController
     # Process the OAuth code
     begin
       redirect_uri = ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/callback"
-      oauth_service = GoogleOauthService.new(code, redirect_uri)
+      user_ip = request.remote_ip
+      Rails.logger.info "🌐 User IP: #{user_ip}"
+      oauth_service = GoogleOauthService.new(code, redirect_uri, user_ip)
       result = oauth_service.authenticate
       
       if result[:success]
@@ -464,7 +468,9 @@ class AuthenticationController < ApplicationController
     # Process the OAuth code
     begin
       redirect_uri = ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/popup_callback"
-      oauth_service = GoogleOauthService.new(code, redirect_uri)
+      user_ip = request.remote_ip
+      Rails.logger.info "🌐 User IP: #{user_ip}"
+      oauth_service = GoogleOauthService.new(code, redirect_uri, user_ip)
       result = oauth_service.authenticate
       
       if result[:success]
