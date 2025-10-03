@@ -1,70 +1,8 @@
 class SeedIssueEnumsAndData < ActiveRecord::Migration[7.1]
   def up
-    # Update existing issues to use proper string values instead of numeric
-    # Map numeric values to proper string enums
-    
-    # Status mapping: 0 = pending, 1 = in_progress, etc.
-    execute <<-SQL
-      UPDATE issues 
-      SET status = CASE 
-        WHEN status = '0' THEN 'pending'
-        WHEN status = '1' THEN 'in_progress' 
-        WHEN status = '2' THEN 'completed'
-        WHEN status = '3' THEN 'closed'
-        WHEN status = '4' THEN 'rejected'
-        WHEN status = '5' THEN 'urgent'
-        ELSE 'pending'
-      END
-      WHERE status IN ('0', '1', '2', '3', '4', '5');
-    SQL
-
-    # Priority mapping: 0 = low, 1 = medium, 2 = high, 3 = urgent
-    execute <<-SQL
-      UPDATE issues 
-      SET priority = CASE 
-        WHEN priority = '0' THEN 'low'
-        WHEN priority = '1' THEN 'medium'
-        WHEN priority = '2' THEN 'high'
-        WHEN priority = '3' THEN 'urgent'
-        ELSE 'medium'
-      END
-      WHERE priority IN ('0', '1', '2', '3');
-    SQL
-
-    # Category mapping: 0 = bug, 1 = feature_request, 2 = improvement, etc.
-    execute <<-SQL
-      UPDATE issues 
-      SET category = CASE 
-        WHEN category = '0' THEN 'bug'
-        WHEN category = '1' THEN 'feature_request'
-        WHEN category = '2' THEN 'improvement'
-        WHEN category = '3' THEN 'security'
-        WHEN category = '4' THEN 'performance'
-        WHEN category = '5' THEN 'ui_ux'
-        WHEN category = '6' THEN 'other'
-        ELSE 'other'
-      END
-      WHERE category IN ('0', '1', '2', '3', '4', '5', '6');
-    SQL
-
-    # Set default values for any NULL values
-    execute <<-SQL
-      UPDATE issues 
-      SET status = 'pending' 
-      WHERE status IS NULL;
-    SQL
-
-    execute <<-SQL
-      UPDATE issues 
-      SET priority = 'medium' 
-      WHERE priority IS NULL;
-    SQL
-
-    execute <<-SQL
-      UPDATE issues 
-      SET category = 'other' 
-      WHERE category IS NULL;
-    SQL
+    # Skip data migration since issues table is empty
+    # This migration was designed for existing data conversion
+    puts "Skipping data migration - no existing issues to convert"
   end
 
   def down

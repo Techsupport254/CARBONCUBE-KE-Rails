@@ -20,7 +20,7 @@ class CreateIssues < ActiveRecord::Migration[7.0]
     add_index :issues, :priority
     add_index :issues, :category
     add_index :issues, :public_visible
-    add_index :issues, :assigned_to_id
+    # add_index :issues, :assigned_to_id  # Already created by references
     add_index :issues, :reporter_email
     add_index :issues, :created_at
     add_index :issues, [:status, :priority]

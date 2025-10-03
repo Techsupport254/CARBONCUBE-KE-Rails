@@ -8,7 +8,7 @@ class AddDeviceUuidAndUserToIssues < ActiveRecord::Migration[7.1]
     add_index :issues, :user_id
     add_index :issues, [:user_id, :user_type]
     
-    # Add foreign key constraint for user_id
-    add_foreign_key :issues, :users, column: :user_id, on_delete: :nullify
+    # Skip foreign key constraint since this is a polymorphic association
+    # add_foreign_key :issues, :users, column: :user_id, on_delete: :nullify
   end
 end

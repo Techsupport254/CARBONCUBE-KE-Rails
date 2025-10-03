@@ -11,7 +11,7 @@ class CreateIssueAttachments < ActiveRecord::Migration[7.0]
       t.timestamps
     end
     
-    add_index :issue_attachments, :issue_id
+    # add_index :issue_attachments, :issue_id  # Already created by references
     add_index :issue_attachments, [:uploaded_by_type, :uploaded_by_id]
     add_index :issue_attachments, :file_type
     add_index :issue_attachments, :created_at
