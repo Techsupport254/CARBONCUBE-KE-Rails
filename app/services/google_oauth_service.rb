@@ -14,183 +14,42 @@ class GoogleOauthService
 
   def authenticate
     begin
-      puts "🚨 GOOGLE OAUTH SERVICE AUTHENTICATE CALLED!"
-      Rails.logger.info "🚨 GOOGLE OAUTH SERVICE AUTHENTICATE CALLED!"
-      
-      puts "🚀 Starting Google OAuth authentication"
-      Rails.logger.info "🚀 Starting Google OAuth authentication"
-      puts "📝 Auth code: #{@auth_code[0..10]}..." if @auth_code
-      Rails.logger.info "📝 Auth code: #{@auth_code[0..10]}..." if @auth_code
-      puts "🔗 Redirect URI: #{@redirect_uri}"
-      Rails.logger.info "🔗 Redirect URI: #{@redirect_uri}"
+      Rails.logger.info "Starting Google OAuth authentication"
       
       # Step 1: Exchange authorization code for access token
-      puts "🔄 Step 1: Exchanging authorization code for access token..."
-      Rails.logger.info "🔄 Step 1: Exchanging authorization code for access token..."
       access_token = exchange_code_for_token
       
       unless access_token
-        puts "❌ Failed to get access token"
-        Rails.logger.error "❌ Failed to get access token"
+        Rails.logger.error "Failed to get access token"
         return { success: false, error: 'Failed to get access token' }
       end
       
-      puts "✅ Access token obtained: #{access_token[0..20]}..."
-      Rails.logger.info "✅ Access token obtained: #{access_token[0..20]}..."
+      Rails.logger.info "Access token obtained successfully"
       
       # Step 2: Get comprehensive user info from Google
-      puts "🔄 Step 2: Getting user info from Google..."
-      Rails.logger.info "🔄 Step 2: Getting user info from Google..."
       user_info = get_comprehensive_user_info(access_token)
       
       unless user_info
-        puts "❌ Failed to get user info"
-        Rails.logger.error "❌ Failed to get user info"
+        Rails.logger.error "Failed to get user info"
         return { success: false, error: 'Failed to get user info' }
       end
       
-      puts "✅ User info obtained from Google"
-      Rails.logger.info "✅ User info obtained from Google"
+      Rails.logger.info "User info obtained from Google"
       
-      # Step 3: Log ALL Google data (comprehensive logging)
-      puts "=" * 100
-      puts "📊 GOOGLE OAUTH DATA LOGGING"
-      puts "=" * 100
-      Rails.logger.info "=" * 100
-      Rails.logger.info "📊 GOOGLE OAUTH DATA LOGGING"
-      Rails.logger.info "=" * 100
+      # Step 3: Process location data
       
-      puts "🔑 Access Token: #{access_token}"
-      Rails.logger.info "🔑 Access Token: #{access_token}"
-      
-      puts "📊 COMPREHENSIVE USER DATA FROM GOOGLE:"
-      Rails.logger.info "📊 COMPREHENSIVE USER DATA FROM GOOGLE:"
-      
-      # Log all user data with detailed breakdown
-      user_info.each do |key, value|
-        puts "  #{key}: #{value.inspect}"
-        Rails.logger.info "  #{key}: #{value.inspect}"
-      end
-      
-      puts "=" * 50
-      puts "📱 DETAILED USER INFORMATION BREAKDOWN:"
-      puts "=" * 50
-      Rails.logger.info "=" * 50
-      Rails.logger.info "📱 DETAILED USER INFORMATION BREAKDOWN:"
-      Rails.logger.info "=" * 50
-      
-      # Name information
-      if user_info['name']
-        puts "👤 NAME: #{user_info['name']}"
-        Rails.logger.info "👤 NAME: #{user_info['name']}"
-      end
-      if user_info['given_name']
-        puts "👤 GIVEN NAME: #{user_info['given_name']}"
-        Rails.logger.info "👤 GIVEN NAME: #{user_info['given_name']}"
-      end
-      if user_info['family_name']
-        puts "👤 FAMILY NAME: #{user_info['family_name']}"
-        Rails.logger.info "👤 FAMILY NAME: #{user_info['family_name']}"
-      end
-      
-      # Email information
-      if user_info['email']
-        puts "📧 EMAIL: #{user_info['email']}"
-        Rails.logger.info "📧 EMAIL: #{user_info['email']}"
-      end
-      if user_info['email_verified']
-        puts "📧 EMAIL VERIFIED: #{user_info['email_verified']}"
-        Rails.logger.info "📧 EMAIL VERIFIED: #{user_info['email_verified']}"
-      end
-      
-      # Phone numbers
-      if user_info['phone_numbers']
-        puts "📞 PHONE NUMBERS:"
-        Rails.logger.info "📞 PHONE NUMBERS:"
-        user_info['phone_numbers'].each_with_index do |phone, index|
-          puts "  #{index + 1}. #{phone}"
-          Rails.logger.info "  #{index + 1}. #{phone}"
-        end
-      end
-      
-      # Addresses
-      if user_info['addresses']
-        puts "🏠 ADDRESSES:"
-        Rails.logger.info "🏠 ADDRESSES:"
-        user_info['addresses'].each_with_index do |address, index|
-          puts "  #{index + 1}. #{address}"
-          Rails.logger.info "  #{index + 1}. #{address}"
-        end
-      end
-      
-      # Gender
-      if user_info['gender']
-        puts "⚧ GENDER: #{user_info['gender']}"
-        Rails.logger.info "⚧ GENDER: #{user_info['gender']}"
-      end
-      
-      # Birthday
-      if user_info['birthday']
-        puts "🎂 BIRTHDAY: #{user_info['birthday']}"
-        Rails.logger.info "🎂 BIRTHDAY: #{user_info['birthday']}"
-      end
-      
-      # Age range
-      if user_info['age_range']
-        puts "📅 AGE RANGE: #{user_info['age_range']}"
-        Rails.logger.info "📅 AGE RANGE: #{user_info['age_range']}"
-      end
-      
-      # Profile picture
-      if user_info['picture']
-        puts "🖼️ PROFILE PICTURE: #{user_info['picture']}"
-        Rails.logger.info "🖼️ PROFILE PICTURE: #{user_info['picture']}"
-      end
-      
-      # Google ID
-      if user_info['id']
-        puts "🆔 GOOGLE ID: #{user_info['id']}"
-        Rails.logger.info "🆔 GOOGLE ID: #{user_info['id']}"
-      end
-      
-      # Locale
-      if user_info['locale']
-        puts "🌍 LOCALE: #{user_info['locale']}"
-        Rails.logger.info "🌍 LOCALE: #{user_info['locale']}"
-      end
-      
-      # Organization
-      if user_info['organization']
-        puts "🏢 ORGANIZATION: #{user_info['organization']}"
-        Rails.logger.info "🏢 ORGANIZATION: #{user_info['organization']}"
-      end
-      
-      puts "=" * 100
-      puts "✅ Google OAuth data logged successfully"
-      puts "=" * 100
-      Rails.logger.info "=" * 100
-      Rails.logger.info "✅ Google OAuth data logged successfully"
-      Rails.logger.info "=" * 100
-      
-      # Add workaround for missing address data
-      puts "🔧 IMPLEMENTING MULTIPLE LOCATION DATA SOLUTIONS:"
-      Rails.logger.info "🔧 IMPLEMENTING MULTIPLE LOCATION DATA SOLUTIONS:"
-      
+      # Try to get location from multiple sources
       location_info = {}
       
       # Method 1: Try to get location from user's locale
       if user_info['locale']
         location_info['locale'] = user_info['locale']
-        puts "🌍 Found locale: #{user_info['locale']}"
-        Rails.logger.info "🌍 Found locale: #{user_info['locale']}"
       end
       
-      # Method 2: IP-based geolocation (we'll implement this)
+      # Method 2: IP-based geolocation
       ip_location = get_location_from_ip(@user_ip)
       if ip_location
         location_info['ip_location'] = ip_location
-        puts "🌐 IP-based location: #{ip_location.inspect}"
-        Rails.logger.info "🌐 IP-based location: #{ip_location.inspect}"
       end
       
       # Method 3: Google Maps Geocoding API (if we have any location data)
@@ -198,8 +57,6 @@ class GoogleOauthService
         geocoded_location = get_location_from_geocoding(location_info)
         if geocoded_location
           location_info['geocoded_location'] = geocoded_location
-          puts "🗺️ Geocoded location: #{geocoded_location.inspect}"
-          Rails.logger.info "🗺️ Geocoded location: #{geocoded_location.inspect}"
         end
       end
       
@@ -212,19 +69,13 @@ class GoogleOauthService
         "User input form (fallback)"
       ]
       
-      puts "📋 Comprehensive location data: #{location_info.inspect}"
-      Rails.logger.info "📋 Comprehensive location data: #{location_info.inspect}"
-      
       # Step 4: Register or Login User
-      puts "🔄 Step 4: Registering or logging in user..."
-      Rails.logger.info "🔄 Step 4: Registering or logging in user..."
       
       # Check if user exists in any model
       existing_user = find_existing_user(user_info['email'])
       
       if existing_user
-        puts "✅ Existing user found: #{existing_user.class.name} - #{existing_user.email}"
-        Rails.logger.info "✅ Existing user found: #{existing_user.class.name} - #{existing_user.email}"
+        Rails.logger.info "Existing user found: #{existing_user.class.name} - #{existing_user.email}"
         
         # Generate JWT token for existing user
         token = generate_jwt_token(existing_user)
@@ -237,16 +88,14 @@ class GoogleOauthService
           location_data: location_info
         }
       else
-        puts "🆕 Creating new buyer user..."
-        Rails.logger.info "🆕 Creating new buyer user..."
+        Rails.logger.info "Creating new buyer user"
         
         # Create new buyer user
         new_buyer = create_buyer_user(user_info, location_info)
         
         # Check if this is a missing fields case
         if new_buyer.respond_to?(:missing_fields) && new_buyer.missing_fields.any?
-          puts "📝 Missing required fields detected: #{new_buyer.missing_fields.join(', ')}"
-          Rails.logger.info "📝 Missing required fields detected: #{new_buyer.missing_fields.join(', ')}"
+          Rails.logger.info "Missing required fields detected: #{new_buyer.missing_fields.join(', ')}"
           
           {
             success: false,
@@ -255,17 +104,14 @@ class GoogleOauthService
             user_data: new_buyer.user_data_for_modal
           }
         elsif new_buyer.persisted?
-          puts "✅ New buyer created successfully: #{new_buyer.email}"
-          Rails.logger.info "✅ New buyer created successfully: #{new_buyer.email}"
+          Rails.logger.info "New buyer created successfully: #{new_buyer.email}"
           
           # Send welcome email
           begin
             WelcomeMailer.welcome_email(new_buyer).deliver_now
-            puts "✅ Welcome email sent to: #{new_buyer.email}"
-            Rails.logger.info "✅ Welcome email sent to: #{new_buyer.email}"
+            Rails.logger.info "Welcome email sent to: #{new_buyer.email}"
           rescue => e
-            puts "❌ Failed to send welcome email: #{e.message}"
-            Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
+            Rails.logger.error "Failed to send welcome email: #{e.message}"
             # Don't fail the registration if email fails
           end
           
@@ -280,15 +126,13 @@ class GoogleOauthService
             location_data: location_info
           }
         else
-          puts "❌ Failed to create buyer: #{new_buyer.errors.full_messages.join(', ')}"
-          Rails.logger.error "❌ Failed to create buyer: #{new_buyer.errors.full_messages.join(', ')}"
+          Rails.logger.error "Failed to create buyer: #{new_buyer.errors.full_messages.join(', ')}"
           
           # Check if it's a missing required fields error
           missing_fields = determine_missing_fields(new_buyer.errors, user_info)
           
           if missing_fields.any?
-            puts "📝 Missing required fields detected: #{missing_fields.join(', ')}"
-            Rails.logger.info "📝 Missing required fields detected: #{missing_fields.join(', ')}"
+            Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
             
             {
               success: false,
@@ -305,8 +149,8 @@ class GoogleOauthService
         end
       end
     rescue => e
-      Rails.logger.error "❌ Google OAuth error: #{e.message}"
-      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      Rails.logger.error "Google OAuth error: #{e.message}"
+      Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
       { success: false, error: "Authentication failed: #{e.message}" }
     end
   end
@@ -357,8 +201,7 @@ class GoogleOauthService
 
   # Create new buyer user
   def create_buyer_user(user_info, location_info)
-    puts "🆕 Creating buyer with data:"
-    Rails.logger.info "🆕 Creating buyer with data:"
+    Rails.logger.info "Creating buyer with data"
     
     # Extract phone number (use the first available phone)
     phone_number = user_info['phone_number'] || user_info['phone_numbers']&.first&.dig('value')
@@ -404,8 +247,7 @@ class GoogleOauthService
       sub_county_id: 1, # Default sub_county - you should map this from location
     }
 
-    puts "📋 Buyer attributes: #{buyer_attributes.inspect}"
-    Rails.logger.info "📋 Buyer attributes: #{buyer_attributes.inspect}"
+    Rails.logger.info "Buyer attributes: #{buyer_attributes.inspect}"
 
     # Check for ALL required fields that would prevent user creation
     missing_fields = []
@@ -418,8 +260,7 @@ class GoogleOauthService
     
     # If we have missing required fields, return missing fields info for complete registration
     if missing_fields.any?
-      puts "📝 Missing required fields detected: #{missing_fields.join(', ')}"
-      Rails.logger.info "📝 Missing required fields detected: #{missing_fields.join(', ')}"
+      Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
       
       # Create a buyer object that will fail validation but contains the missing fields info
       buyer = Buyer.new(buyer_attributes)
@@ -433,17 +274,13 @@ class GoogleOauthService
     buyer = Buyer.new(buyer_attributes)
     
     if buyer.save
-      puts "✅ Buyer created successfully: #{buyer.email}"
-      Rails.logger.info "✅ Buyer created successfully: #{buyer.email}"
+      Rails.logger.info "Buyer created successfully: #{buyer.email}"
     else
-      puts "❌ Buyer creation failed: #{buyer.errors.full_messages.join(', ')}"
-      Rails.logger.error "❌ Buyer creation failed: #{buyer.errors.full_messages.join(', ')}"
+      Rails.logger.error "Buyer creation failed: #{buyer.errors.full_messages.join(', ')}"
       
       # Log detailed validation errors for debugging
-      puts "🔍 Detailed validation errors:"
-      Rails.logger.info "🔍 Detailed validation errors:"
+      Rails.logger.info "Detailed validation errors:"
       buyer.errors.each do |field, messages|
-        puts "  #{field}: #{messages.join(', ')}"
         Rails.logger.info "  #{field}: #{messages.join(', ')}"
       end
     end
@@ -453,8 +290,7 @@ class GoogleOauthService
 
   # Generate JWT token for user
   def generate_jwt_token(user)
-    puts "🔑 Generating JWT token for #{user.class.name}: #{user.email}"
-    Rails.logger.info "🔑 Generating JWT token for #{user.class.name}: #{user.email}"
+    Rails.logger.info "Generating JWT token for #{user.class.name}: #{user.email}"
     
     # Create payload with remember_me for Google OAuth users (30 days)
     payload = {
@@ -478,8 +314,7 @@ class GoogleOauthService
     # Generate token using JsonWebToken.encode which respects remember_me flag
     token = JsonWebToken.encode(payload)
     
-    puts "✅ JWT token generated successfully with remember_me (30 days)"
-    Rails.logger.info "✅ JWT token generated successfully with remember_me (30 days)"
+    Rails.logger.info "JWT token generated successfully with remember_me (30 days)"
     
     token
   end
@@ -564,13 +399,11 @@ class GoogleOauthService
   # Method 2: IP-based geolocation
   def get_location_from_ip(user_ip = nil)
     begin
-      puts "🌐 Getting location from IP address..."
-      Rails.logger.info "🌐 Getting location from IP address..."
+      Rails.logger.info "Getting location from IP address"
       
       # Use user's IP if provided, otherwise fallback to server IP
       ip_to_check = user_ip || request&.remote_ip
-      puts "🌐 Using IP: #{ip_to_check}"
-      Rails.logger.info "🌐 Using IP: #{ip_to_check}"
+      Rails.logger.info "Using IP: #{ip_to_check}"
       
       # Use ip-api.com with specific IP
       api_url = if ip_to_check.present? && ip_to_check != '127.0.0.1' && ip_to_check != '::1'
@@ -597,17 +430,14 @@ class GoogleOauthService
           'ip' => ip_data['query']
         }
         
-        puts "✅ IP location data retrieved: #{location_data['city']}, #{location_data['country']}"
-        Rails.logger.info "✅ IP location data retrieved: #{location_data['city']}, #{location_data['country']}"
+        Rails.logger.info "IP location data retrieved: #{location_data['city']}, #{location_data['country']}"
         location_data
       else
-        puts "❌ Failed to get IP location: #{response.code}"
-        Rails.logger.error "❌ Failed to get IP location: #{response.code}"
+        Rails.logger.error "Failed to get IP location: #{response.code}"
         nil
       end
     rescue => e
-      puts "❌ IP geolocation error: #{e.message}"
-      Rails.logger.error "❌ IP geolocation error: #{e.message}"
+      Rails.logger.error "IP geolocation error: #{e.message}"
       nil
     end
   end
@@ -615,8 +445,7 @@ class GoogleOauthService
   # Method 3: Google Maps Geocoding API
   def get_location_from_geocoding(location_info)
     begin
-      puts "🗺️ Getting location from Google Maps Geocoding API..."
-      Rails.logger.info "🗺️ Getting location from Google Maps Geocoding API..."
+      Rails.logger.info "Getting location from Google Maps Geocoding API"
       
       # Use Google Maps Geocoding API to get more detailed location
       # This requires a Google Maps API key
@@ -629,8 +458,7 @@ class GoogleOauthService
         
         if address_parts.any?
           address_string = address_parts.join(', ')
-          puts "📍 Geocoding address: #{address_string}"
-          Rails.logger.info "📍 Geocoding address: #{address_string}"
+          Rails.logger.info "Geocoding address: #{address_string}"
           
           # Use Google Maps Geocoding API
           geocoding_url = "https://maps.googleapis.com/maps/api/geocode/json"
@@ -654,52 +482,43 @@ class GoogleOauthService
                 'address_components' => result['address_components']
               }
               
-              puts "✅ Geocoded location: #{geocoded_location['formatted_address']}"
-              Rails.logger.info "✅ Geocoded location: #{geocoded_location['formatted_address']}"
+              Rails.logger.info "Geocoded location: #{geocoded_location['formatted_address']}"
               geocoded_location
             else
-              puts "❌ Geocoding failed: #{geocoding_data['status']}"
-              Rails.logger.error "❌ Geocoding failed: #{geocoding_data['status']}"
+              Rails.logger.error "Geocoding failed: #{geocoding_data['status']}"
               nil
             end
           else
-            puts "❌ Geocoding API request failed: #{response.code}"
-            Rails.logger.error "❌ Geocoding API request failed: #{response.code}"
+            Rails.logger.error "Geocoding API request failed: #{response.code}"
             nil
           end
         else
-          puts "❌ No address data available for geocoding"
-          Rails.logger.error "❌ No address data available for geocoding"
+          Rails.logger.error "No address data available for geocoding"
           nil
         end
       else
-        puts "❌ Google Maps API key not configured"
-        Rails.logger.error "❌ Google Maps API key not configured"
+        Rails.logger.error "Google Maps API key not configured"
         nil
       end
     rescue => e
-      puts "❌ Geocoding error: #{e.message}"
-      Rails.logger.error "❌ Geocoding error: #{e.message}"
+      Rails.logger.error "Geocoding error: #{e.message}"
       nil
     end
   end
 
   def exchange_code_for_token
     begin
-      puts "🔄 EXCHANGING CODE FOR TOKEN..."
-      Rails.logger.info "🔄 EXCHANGING CODE FOR TOKEN..."
+      Rails.logger.info "Exchanging code for token"
       
       # For GSI popup authentication, use 'postmessage' as redirect_uri
       redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
       
-      puts "🔄 Exchanging code for token with redirect_uri: #{redirect_uri}"
-      Rails.logger.info "🔄 Exchanging code for token with redirect_uri: #{redirect_uri}"
-      puts "🔑 Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
-      Rails.logger.info "🔑 Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
+      Rails.logger.info "Exchanging code for token with redirect_uri: #{redirect_uri}"
+      Rails.logger.info "Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
       
       # Validate required environment variables
       unless ENV['GOOGLE_CLIENT_ID'].present? && ENV['GOOGLE_CLIENT_SECRET'].present?
-        Rails.logger.error "❌ Missing Google OAuth credentials"
+        Rails.logger.error "Missing Google OAuth credentials"
         return nil
       end
       
@@ -714,14 +533,11 @@ class GoogleOauthService
         headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
       })
       
-      puts "📡 Google token response status: #{response.code}"
-      Rails.logger.info "📡 Google token response status: #{response.code}"
-      puts "📡 Google token response body: #{response.body}"
-      Rails.logger.info "📡 Google token response body: #{response.body}"
+      Rails.logger.info "Google token response status: #{response.code}"
+      Rails.logger.info "Google token response body: #{response.body}"
       
       unless response.success?
-        puts "❌ Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
-        Rails.logger.error "❌ Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
+        Rails.logger.error "Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
         return nil
       end
       
@@ -744,33 +560,26 @@ class GoogleOauthService
 
   def get_comprehensive_user_info(access_token)
     begin
-      puts "👤 Fetching comprehensive user info from Google"
-      Rails.logger.info "👤 Fetching comprehensive user info from Google"
+      Rails.logger.info "Fetching comprehensive user info from Google"
       
       # Get basic profile info
-      puts "🔄 Getting basic user info..."
-      Rails.logger.info "🔄 Getting basic user info..."
+      Rails.logger.info "Getting basic user info"
       basic_info = get_basic_user_info(access_token)
       return nil unless basic_info
       
-      puts "✅ Basic user info obtained: #{basic_info['email']}"
-      Rails.logger.info "✅ Basic user info obtained: #{basic_info['email']}"
+      Rails.logger.info "Basic user info obtained: #{basic_info['email']}"
       
       # Get detailed info from People API
-      puts "🔄 Getting detailed user info from People API..."
-      Rails.logger.info "🔄 Getting detailed user info from People API..."
+      Rails.logger.info "Getting detailed user info from People API"
       detailed_info = get_detailed_user_info(access_token)
       
-      puts "✅ Detailed user info obtained: #{detailed_info ? 'Yes' : 'No'}"
-      Rails.logger.info "✅ Detailed user info obtained: #{detailed_info ? 'Yes' : 'No'}"
+      Rails.logger.info "Detailed user info obtained: #{detailed_info ? 'Yes' : 'No'}"
       
       # Merge the information
       comprehensive_info = basic_info.merge(detailed_info || {})
       
-      puts "✅ Successfully obtained comprehensive user info: #{comprehensive_info['email']}"
-      Rails.logger.info "✅ Successfully obtained comprehensive user info: #{comprehensive_info['email']}"
-      puts "📊 Available data: #{comprehensive_info.keys.join(', ')}"
-      Rails.logger.info "📊 Available data: #{comprehensive_info.keys.join(', ')}"
+      Rails.logger.info "Successfully obtained comprehensive user info: #{comprehensive_info['email']}"
+      Rails.logger.info "Available data: #{comprehensive_info.keys.join(', ')}"
       
       comprehensive_info
     rescue => e
@@ -782,37 +591,33 @@ class GoogleOauthService
 
   def get_basic_user_info(access_token)
     begin
-      puts "👤 Fetching basic user info from Google"
-      Rails.logger.info "👤 Fetching basic user info from Google"
+      Rails.logger.info "Fetching basic user info from Google"
       
       response = HTTParty.get(GOOGLE_USER_INFO_URL, {
         headers: { 'Authorization' => "Bearer #{access_token}" }
       })
       
-      puts "📡 Google user info response status: #{response.code}"
-      Rails.logger.info "📡 Google user info response status: #{response.code}"
-      puts "📡 Google user info response body: #{response.body}"
-      Rails.logger.info "📡 Google user info response body: #{response.body}"
+      Rails.logger.info "Google user info response status: #{response.code}"
+      Rails.logger.info "Google user info response body: #{response.body}"
       
       unless response.success?
-        Rails.logger.error "❌ Failed to get basic user info. Status: #{response.code}, Body: #{response.body}"
+        Rails.logger.error "Failed to get basic user info. Status: #{response.code}, Body: #{response.body}"
         return nil
       end
       
       user_info = JSON.parse(response.body)
-      Rails.logger.info "✅ Successfully obtained basic user info: #{user_info['email']}"
+      Rails.logger.info "Successfully obtained basic user info: #{user_info['email']}"
       user_info
     rescue => e
-      Rails.logger.error "❌ Error getting basic user info: #{e.message}"
-      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
+      Rails.logger.error "Error getting basic user info: #{e.message}"
+      Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
       nil
     end
   end
 
   def get_detailed_user_info(access_token)
     begin
-      puts "👤 Fetching detailed user info from Google People API"
-      Rails.logger.info "👤 Fetching detailed user info from Google People API"
+      Rails.logger.info "Fetching detailed user info from Google People API"
       
       # Request comprehensive user data from People API
       person_fields = [
@@ -836,157 +641,65 @@ class GoogleOauthService
         query: { personFields: person_fields }
       })
       
-      puts "📡 Google People API response status: #{response.code}"
-      Rails.logger.info "📡 Google People API response status: #{response.code}"
-      puts "📡 Google People API response body: #{response.body}"
-      Rails.logger.info "📡 Google People API response body: #{response.body}"
+      Rails.logger.info "Google People API response status: #{response.code}"
+      Rails.logger.info "Google People API response body: #{response.body}"
       
       unless response.success?
-        puts "⚠️ Failed to get detailed user info from People API. Status: #{response.code}, Body: #{response.body}"
-        Rails.logger.warn "⚠️ Failed to get detailed user info from People API. Status: #{response.code}, Body: #{response.body}"
-        puts "⚠️ This might be because People API is not enabled in Google Cloud Console"
-        Rails.logger.warn "⚠️ This might be because People API is not enabled in Google Cloud Console"
-        puts "⚠️ Or the user has not granted permission for these scopes"
-        Rails.logger.warn "⚠️ Or the user has not granted permission for these scopes"
+        Rails.logger.warn "Failed to get detailed user info from People API. Status: #{response.code}, Body: #{response.body}"
+        Rails.logger.warn "This might be because People API is not enabled in Google Cloud Console"
+        Rails.logger.warn "Or the user has not granted permission for these scopes"
         return {}
       end
       
       detailed_info = JSON.parse(response.body)
-      puts "✅ Successfully obtained detailed user info from People API"
-      Rails.logger.info "✅ Successfully obtained detailed user info from People API"
-      puts "📊 People API data keys: #{detailed_info.keys.join(', ')}"
-      Rails.logger.info "📊 People API data keys: #{detailed_info.keys.join(', ')}"
+      Rails.logger.info "Successfully obtained detailed user info from People API"
+      Rails.logger.info "People API data keys: #{detailed_info.keys.join(', ')}"
       
       # Log what data is actually available
-      puts "🔍 DETAILED PEOPLE API DATA ANALYSIS:"
-      Rails.logger.info "🔍 DETAILED PEOPLE API DATA ANALYSIS:"
+      Rails.logger.info "Detailed People API data analysis:"
       detailed_info.each do |key, value|
         if value.is_a?(Array)
-          puts "  #{key}: #{value.length} items"
           Rails.logger.info "  #{key}: #{value.length} items"
         else
-          puts "  #{key}: #{value.class} - #{value.inspect[0..100]}..."
           Rails.logger.info "  #{key}: #{value.class} - #{value.inspect[0..100]}..."
         end
       end
       
-      # CRITICAL: Check if this is a Google People API limitation
-      puts "🚨 GOOGLE PEOPLE API ADDRESS LIMITATION CHECK:"
-      Rails.logger.info "🚨 GOOGLE PEOPLE API ADDRESS LIMITATION CHECK:"
-      puts "📋 Requested person fields: #{person_fields}"
-      Rails.logger.info "📋 Requested person fields: #{person_fields}"
-      puts "📋 Available fields in response: #{detailed_info.keys.join(', ')}"
-      Rails.logger.info "📋 Available fields in response: #{detailed_info.keys.join(', ')}"
-      
       # Check if addresses field exists but is empty
       if detailed_info.key?('addresses')
-        puts "✅ 'addresses' field exists in response"
-        Rails.logger.info "✅ 'addresses' field exists in response"
+        Rails.logger.info "'addresses' field exists in response"
         if detailed_info['addresses'].nil? || detailed_info['addresses'].empty?
-          puts "❌ 'addresses' field is empty - This is a Google People API limitation!"
-          Rails.logger.info "❌ 'addresses' field is empty - This is a Google People API limitation!"
-          puts "💡 Google People API often doesn't return address data even when it exists in the profile"
-          Rails.logger.info "💡 Google People API often doesn't return address data even when it exists in the profile"
+          Rails.logger.info "'addresses' field is empty - This is a Google People API limitation!"
+          Rails.logger.info "Google People API often doesn't return address data even when it exists in the profile"
         end
       else
-        puts "❌ 'addresses' field not found in response"
-        Rails.logger.info "❌ 'addresses' field not found in response"
-        puts "🚨 GOOGLE PEOPLE API ADDRESS LIMITATION CONFIRMED!"
-        Rails.logger.info "🚨 GOOGLE PEOPLE API ADDRESS LIMITATION CONFIRMED!"
-        puts "📋 This is a known issue with Google People API - it often doesn't return address data"
-        Rails.logger.info "📋 This is a known issue with Google People API - it often doesn't return address data"
-        puts "💡 Alternative solutions:"
-        Rails.logger.info "💡 Alternative solutions:"
-        puts "   1. Use Google Maps Geocoding API for address data"
-        Rails.logger.info "   1. Use Google Maps Geocoding API for address data"
-        puts "   2. Request address data directly from user in your app"
-        Rails.logger.info "   2. Request address data directly from user in your app"
-        puts "   3. Use Google Places API for location services"
-        Rails.logger.info "   3. Use Google Places API for location services"
+        Rails.logger.info "'addresses' field not found in response"
+        Rails.logger.info "This is a known issue with Google People API - it often doesn't return address data"
       end
       
       # Log specific data that should be available
       if detailed_info['phoneNumbers']&.any?
-        Rails.logger.info "📞 Phone numbers found: #{detailed_info['phoneNumbers'].length}"
+        Rails.logger.info "Phone numbers found: #{detailed_info['phoneNumbers'].length}"
       else
-        Rails.logger.info "📞 No phone numbers found in People API response"
-      end
-      
-      # Check for addresses in multiple possible fields
-      puts "🔍 CHECKING FOR ADDRESS DATA IN PEOPLE API RESPONSE:"
-      Rails.logger.info "🔍 CHECKING FOR ADDRESS DATA IN PEOPLE API RESPONSE:"
-      
-      # Check addresses field
-      if detailed_info['addresses']&.any?
-        puts "📍 Addresses found: #{detailed_info['addresses'].length}"
-        Rails.logger.info "📍 Addresses found: #{detailed_info['addresses'].length}"
-        detailed_info['addresses'].each_with_index do |address, index|
-          puts "  #{index + 1}. #{address.inspect}"
-          Rails.logger.info "  #{index + 1}. #{address.inspect}"
-        end
-      else
-        puts "📍 No 'addresses' field found"
-        Rails.logger.info "📍 No 'addresses' field found"
-      end
-      
-      # Check residences field
-      if detailed_info['residences']&.any?
-        puts "🏠 Residences found: #{detailed_info['residences'].length}"
-        Rails.logger.info "🏠 Residences found: #{detailed_info['residences'].length}"
-        detailed_info['residences'].each_with_index do |residence, index|
-          puts "  #{index + 1}. #{residence.inspect}"
-          Rails.logger.info "  #{index + 1}. #{residence.inspect}"
-        end
-      else
-        puts "🏠 No 'residences' field found"
-        Rails.logger.info "🏠 No 'residences' field found"
-      end
-      
-      # Check locations field
-      if detailed_info['locations']&.any?
-        puts "🌍 Locations found: #{detailed_info['locations'].length}"
-        Rails.logger.info "🌍 Locations found: #{detailed_info['locations'].length}"
-        detailed_info['locations'].each_with_index do |location, index|
-          puts "  #{index + 1}. #{location.inspect}"
-          Rails.logger.info "  #{index + 1}. #{location.inspect}"
-        end
-      else
-        puts "🌍 No 'locations' field found"
-        Rails.logger.info "🌍 No 'locations' field found"
-      end
-      
-      # Check if any address-related data exists
-      address_keys = detailed_info.keys.select { |key| key.downcase.include?('address') || key.downcase.include?('location') || key.downcase.include?('residence') }
-      if address_keys.any?
-        puts "🔍 Found address-related keys: #{address_keys.join(', ')}"
-        Rails.logger.info "🔍 Found address-related keys: #{address_keys.join(', ')}"
-        address_keys.each do |key|
-          puts "  #{key}: #{detailed_info[key].inspect}"
-          Rails.logger.info "  #{key}: #{detailed_info[key].inspect}"
-        end
-      else
-        puts "❌ NO ADDRESS DATA FOUND - This is the issue!"
-        Rails.logger.info "❌ NO ADDRESS DATA FOUND - This is the issue!"
-        puts "❌ The Google People API is not returning address data despite having addresses in Google profile"
-        Rails.logger.info "❌ The Google People API is not returning address data despite having addresses in Google profile"
+        Rails.logger.info "No phone numbers found in People API response"
       end
       
       if detailed_info['genders']&.any?
-        Rails.logger.info "⚧ Gender found: #{detailed_info['genders'].first['value']}"
+        Rails.logger.info "Gender found: #{detailed_info['genders'].first['value']}"
       else
-        Rails.logger.info "⚧ No gender found in People API response"
+        Rails.logger.info "No gender found in People API response"
       end
       
       # Extract and format the detailed information
       extracted_info = extract_detailed_info(detailed_info)
-      Rails.logger.info "📊 Extracted detailed info keys: #{extracted_info.keys.join(', ')}"
-      Rails.logger.info "📊 Extracted phone: #{extracted_info['phone_number'] || 'Not found'}"
-      Rails.logger.info "📊 Extracted gender: #{extracted_info['gender'] || 'Not found'}"
-      Rails.logger.info "📊 Extracted address: #{extracted_info['address'] ? 'Found' : 'Not found'}"
+      Rails.logger.info "Extracted detailed info keys: #{extracted_info.keys.join(', ')}"
+      Rails.logger.info "Extracted phone: #{extracted_info['phone_number'] || 'Not found'}"
+      Rails.logger.info "Extracted gender: #{extracted_info['gender'] || 'Not found'}"
+      Rails.logger.info "Extracted address: #{extracted_info['address'] ? 'Found' : 'Not found'}"
       extracted_info
     rescue => e
-      Rails.logger.warn "⚠️ Error getting detailed user info from People API: #{e.message}"
-      Rails.logger.warn "⚠️ Backtrace: #{e.backtrace.join("\n")}"
+      Rails.logger.warn "Error getting detailed user info from People API: #{e.message}"
+      Rails.logger.warn "Backtrace: #{e.backtrace.join("\n")}"
       {}
     end
   end
@@ -1069,7 +782,7 @@ class GoogleOauthService
       extracted['biography'] = bio_info['value']
     end
     
-    Rails.logger.info "📊 Extracted detailed info: #{extracted.keys.join(', ')}"
+    Rails.logger.info "Extracted detailed info: #{extracted.keys.join(', ')}"
     extracted
   end
 
@@ -1079,7 +792,7 @@ class GoogleOauthService
     uid = user_info['id']
     
     # Log all available Google user data for debugging
-    Rails.logger.info "📊 Complete Google user info structure:"
+    Rails.logger.info "Complete Google user info structure:"
     user_info.each do |key, value|
       Rails.logger.info "   #{key}: #{value.inspect}"
     end
@@ -1130,58 +843,58 @@ class GoogleOauthService
       if user.respond_to?(:profile_picture) && user.profile_picture.blank? && user_info['picture'].present?
         fixed_profile_picture = fix_google_profile_picture_url(user_info['picture'])
         update_attributes[:profile_picture] = fixed_profile_picture
-        Rails.logger.info "📸 Updating profile picture for existing user: #{user.email}"
-        Rails.logger.info "📸 Fixed profile picture URL: #{fixed_profile_picture}"
+        Rails.logger.info "Updating profile picture for existing user: #{user.email}"
+        Rails.logger.info "Fixed profile picture URL: #{fixed_profile_picture}"
       elsif user.respond_to?(:profile_picture) && user.profile_picture.present?
-        Rails.logger.info "📸 User already has profile picture, keeping existing: #{user.email}"
+        Rails.logger.info "User already has profile picture, keeping existing: #{user.email}"
       end
       
       # Update fullname if user doesn't have one and Google provides one
       if user.respond_to?(:fullname) && user.fullname.blank? && (user_info['display_name'].present? || user_info['name'].present?)
         update_attributes[:fullname] = user_info['display_name'] || user_info['name']
-        Rails.logger.info "👤 Updating fullname for existing user: #{user.email}"
+        Rails.logger.info "Updating fullname for existing user: #{user.email}"
       elsif user.respond_to?(:fullname) && user.fullname.present?
-        Rails.logger.info "👤 User already has fullname, keeping existing: #{user.email}"
+        Rails.logger.info "User already has fullname, keeping existing: #{user.email}"
       end
       
       # Update phone number if user doesn't have one and Google provides one
       if user.respond_to?(:phone_number) && user.phone_number.blank? && user_info['phone_number'].present?
         update_attributes[:phone_number] = user_info['phone_number']
-        Rails.logger.info "📞 Updating phone number for existing user: #{user.email}"
+        Rails.logger.info "Updating phone number for existing user: #{user.email}"
       elsif user.respond_to?(:phone_number) && user.phone_number.present?
-        Rails.logger.info "📞 User already has phone number, keeping existing: #{user.email}"
+        Rails.logger.info "User already has phone number, keeping existing: #{user.email}"
       end
       
       # Update location if user doesn't have one and Google provides one
       if user.respond_to?(:location) && user.location.blank? && user_info['address'].present?
         update_attributes[:location] = user_info['address']
-        Rails.logger.info "📍 Updating location for existing user: #{user.email}"
+        Rails.logger.info "Updating location for existing user: #{user.email}"
       elsif user.respond_to?(:location) && user.location.present?
-        Rails.logger.info "📍 User already has location, keeping existing: #{user.email}"
+        Rails.logger.info "User already has location, keeping existing: #{user.email}"
       end
       
       # Update city if user doesn't have one and Google provides one
       if user.respond_to?(:city) && user.city.blank? && user_info['city'].present?
         update_attributes[:city] = user_info['city']
-        Rails.logger.info "🏙️ Updating city for existing user: #{user.email}"
+        Rails.logger.info "Updating city for existing user: #{user.email}"
       elsif user.respond_to?(:city) && user.city.present?
-        Rails.logger.info "🏙️ User already has city, keeping existing: #{user.email}"
+        Rails.logger.info "User already has city, keeping existing: #{user.email}"
       end
       
       # Update zipcode if user doesn't have one and Google provides one
       if user.respond_to?(:zipcode) && user.zipcode.blank? && user_info['zipcode'].present?
         update_attributes[:zipcode] = user_info['zipcode']
-        Rails.logger.info "📮 Updating zipcode for existing user: #{user.email}"
+        Rails.logger.info "Updating zipcode for existing user: #{user.email}"
       elsif user.respond_to?(:zipcode) && user.zipcode.present?
-        Rails.logger.info "📮 User already has zipcode, keeping existing: #{user.email}"
+        Rails.logger.info "User already has zipcode, keeping existing: #{user.email}"
       end
       
       # Update gender if user doesn't have one and Google provides one
       if user.respond_to?(:gender) && user.gender.blank? && user_info['gender'].present?
         update_attributes[:gender] = user_info['gender']
-        Rails.logger.info "⚧ Updating gender for existing user: #{user.email}"
+        Rails.logger.info "Updating gender for existing user: #{user.email}"
       elsif user.respond_to?(:gender) && user.gender.present?
-        Rails.logger.info "⚧ User already has gender, keeping existing: #{user.email}"
+        Rails.logger.info "User already has gender, keeping existing: #{user.email}"
       end
       
       # Update age group if user doesn't have one and Google provides birthday
@@ -1190,13 +903,13 @@ class GoogleOauthService
         age_group_id = calculate_age_group_from_birthday(birthday)
         if age_group_id.present?
           update_attributes[:age_group_id] = age_group_id
-          Rails.logger.info "🎂 Updating age group for existing user: #{user.email}"
+          Rails.logger.info "Updating age group for existing user: #{user.email}"
         end
       elsif user.respond_to?(:age_group_id) && user.age_group_id.present?
-        Rails.logger.info "🎂 User already has age group, keeping existing: #{user.email}"
+        Rails.logger.info "User already has age group, keeping existing: #{user.email}"
       end
       
-      Rails.logger.info "🔄 Updating existing user with attributes: #{update_attributes.keys.join(', ')}"
+      Rails.logger.info "Updating existing user with attributes: #{update_attributes.keys.join(', ')}"
       user.update!(update_attributes)
     end
   end
@@ -1212,9 +925,9 @@ class GoogleOauthService
     fullname = extract_best_name(user_info)
     profile_picture = fix_google_profile_picture_url(user_info['picture'] || user_info['photo_url'])
     
-    Rails.logger.info "📸 Profile picture from Google: #{profile_picture.present? ? 'Available' : 'Not available'}"
-    Rails.logger.info "📸 Fixed profile picture URL: #{profile_picture}" if profile_picture.present?
-    Rails.logger.info "👤 Full name from Google: #{fullname || 'MISSING - will be required in frontend'}"
+    Rails.logger.info "Profile picture from Google: #{profile_picture.present? ? 'Available' : 'Not available'}"
+    Rails.logger.info "Fixed profile picture URL: #{profile_picture}" if profile_picture.present?
+    Rails.logger.info "Full name from Google: #{fullname || 'MISSING - will be required in frontend'}"
     
     # Extract location information
     location_info = extract_location_info(user_info)
@@ -1247,13 +960,13 @@ class GoogleOauthService
       user_attributes[:description] = user_info['biography']
     end
     
-    Rails.logger.info "🆕 Creating new OAuth user with comprehensive attributes"
-    Rails.logger.info "📊 User data: #{user_attributes.except(:oauth_token, :oauth_expires_at).inspect}"
-    Rails.logger.info "📞 Phone number being stored: #{phone_number || 'Not available'}"
-    Rails.logger.info "⚧ Gender being stored: #{gender || 'Not available'}"
-    Rails.logger.info "📍 Location being stored: #{location_info[:location] || 'Not available'}"
-    Rails.logger.info "🏙️ City being stored: #{location_info[:city] || 'Not available'}"
-    Rails.logger.info "📮 Zipcode being stored: #{location_info[:zipcode] || 'Not available'}"
+    Rails.logger.info "Creating new OAuth user with comprehensive attributes"
+    Rails.logger.info "User data: #{user_attributes.except(:oauth_token, :oauth_expires_at).inspect}"
+    Rails.logger.info "Phone number being stored: #{phone_number || 'Not available'}"
+    Rails.logger.info "Gender being stored: #{gender || 'Not available'}"
+    Rails.logger.info "Location being stored: #{location_info[:location] || 'Not available'}"
+    Rails.logger.info "City being stored: #{location_info[:city] || 'Not available'}"
+    Rails.logger.info "Zipcode being stored: #{location_info[:zipcode] || 'Not available'}"
     
     # For OAuth users, we'll allow incomplete data and let user complete it later
     # Set defaults for required fields that are missing
@@ -1266,14 +979,14 @@ class GoogleOauthService
     
     user = Buyer.create!(user_attributes)
     
-    Rails.logger.info "✅ Successfully created OAuth user: #{user.email}"
-    Rails.logger.info "📸 Profile picture: #{user.profile_picture}"
-    Rails.logger.info "📍 Location: #{user.location}"
-    Rails.logger.info "🏙️ City: #{user.city}"
+    Rails.logger.info "Successfully created OAuth user: #{user.email}"
+    Rails.logger.info "Profile picture: #{user.profile_picture}"
+    Rails.logger.info "Location: #{user.location}"
+    Rails.logger.info "City: #{user.city}"
     
     user
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "❌ Failed to create OAuth user: #{e.message}"
+    Rails.logger.error "Failed to create OAuth user: #{e.message}"
     Rails.logger.error "User info: #{user_info.inspect}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
     Rails.logger.error "User attributes: #{user_attributes.inspect}"
