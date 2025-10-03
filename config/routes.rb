@@ -81,7 +81,7 @@ Rails.application.routes.draw do
   post 'auth/complete_oauth_registration', to: 'authentication#complete_oauth_registration'
   post 'auth/complete_registration', to: 'authentication#complete_registration'
   get 'auth/google_oauth2/initiate', to: 'manual_oauth#google_oauth2_initiate'
-  get 'auth/google_oauth2/callback', to: 'authentication#google_oauth_callback'
+  get 'auth/google_oauth2/callback', to: 'manual_oauth#google_oauth2_callback'
   get 'auth/google_oauth2/popup_callback', to: 'authentication#google_oauth_popup_callback'
   resources :banners, only: [:index]
   resources :ads, only: [:index, :show] do

@@ -7,7 +7,7 @@ class ManualOauthController < ApplicationController
     
     # Redirect to Google OAuth manually
     google_oauth_url = "https://accounts.google.com/oauth/authorize?" +
-      "client_id=#{ENV['GOOGLE_CLIENT_ID']}&" +
+      "client_id=#{ENV['GOOGLE_OAUTH_CLIENT_ID']}&" +
       "redirect_uri=#{ENV['GOOGLE_REDIRECT_URI'] || "#{ENV['REACT_APP_BACKEND_URL'] || 'http://localhost:3001'}/auth/google_oauth2/callback"}&" +
       "response_type=code&" +
       "scope=email%20profile%20openid%20https://www.googleapis.com/auth/user.birthday.read&" +
@@ -109,8 +109,8 @@ class ManualOauthController < ApplicationController
     request = Net::HTTP::Post.new(uri)
     request['Content-Type'] = 'application/x-www-form-urlencoded'
     request.body = URI.encode_www_form({
-      client_id: ENV['GOOGLE_CLIENT_ID'],
-      client_secret: ENV['GOOGLE_CLIENT_SECRET'],
+      client_id: ENV['GOOGLE_OAUTH_CLIENT_ID'],
+      client_secret: ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
       code: code,
       grant_type: 'authorization_code',
       redirect_uri: ENV['GOOGLE_REDIRECT_URI'] || "#{ENV['REACT_APP_BACKEND_URL'] || 'http://localhost:3001'}/auth/google_oauth2/callback"
