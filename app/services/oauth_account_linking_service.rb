@@ -101,7 +101,9 @@ class OauthAccountLinkingService
       # Add location data
       location: location_data[:location],
       city: location_data[:city],
-      zipcode: location_data[:zipcode]
+      zipcode: location_data[:zipcode],
+      county_id: location_data[:county_id],
+      sub_county_id: location_data[:sub_county_id]
     }
     
     # Only add phone number if we have one from Google
@@ -270,7 +272,13 @@ class OauthAccountLinkingService
   end
 
   def get_user_location_data
-    location_data = { location: nil, city: nil, zipcode: nil }
+    location_data = { 
+      location: nil, 
+      city: nil, 
+      zipcode: nil, 
+      county_id: nil, 
+      sub_county_id: nil 
+    }
     
     return location_data unless @user_ip.present?
     
@@ -282,9 +290,21 @@ class OauthAccountLinkingService
       if response.success?
         ip_data = JSON.parse(response.body)
         if ip_data['status'] == 'success'
-          location_data[:city] = ip_data['city']
-          location_data[:location] = "#{ip_data['city']}, #{ip_data['regionName']}, #{ip_data['country']}"
+          city = ip_data['city']
+          region = ip_data['regionName']
+          country = ip_data['country']
+          
+          location_data[:city] = city
+          location_data[:location] = "#{city}, #{region}, #{country}"
           location_data[:zipcode] = ip_data['zip']
+          
+          # Map to Kenyan counties and sub-counties
+          county_mapping = map_to_kenyan_county(city, region, country)
+          if county_mapping
+            location_data[:county_id] = county_mapping[:county_id]
+            location_data[:sub_county_id] = county_mapping[:sub_county_id]
+            Rails.logger.info "🗺️ Mapped to Kenyan location: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
+          end
           
           Rails.logger.info "🌐 User location detected: #{location_data[:location]}"
         end
@@ -294,5 +314,117 @@ class OauthAccountLinkingService
     end
     
     location_data
+  end
+
+  def map_to_kenyan_county(city, region, country)
+    return nil unless country&.downcase&.include?('kenya')
+    
+    # Normalize city and region names for matching
+    city_normalized = city&.downcase&.strip
+    region_normalized = region&.downcase&.strip
+    
+    Rails.logger.info "🗺️ Mapping location: City='#{city}', Region='#{region}', Country='#{country}'"
+    
+    # Direct city to county mapping for major Kenyan cities
+    city_county_mapping = {
+      'nairobi' => 'Nairobi',
+      'mombasa' => 'Mombasa',
+      'kisumu' => 'Kisumu',
+      'nakuru' => 'Nakuru',
+      'eldoret' => 'Uasin Gishu',
+      'thika' => 'Kiambu',
+      'malindi' => 'Kilifi',
+      'kitale' => 'Trans Nzoia',
+      'garissa' => 'Garissa',
+      'kakamega' => 'Kakamega',
+      'meru' => 'Meru',
+      'kisii' => 'Kisii',
+      'nyeri' => 'Nyeri',
+      'machakos' => 'Machakos',
+      'kericho' => 'Kericho',
+      'lamu' => 'Lamu',
+      'bomet' => 'Bomet',
+      'vihiga' => 'Vihiga',
+      'baringo' => 'Baringo',
+      'bungoma' => 'Bungoma',
+      'busia' => 'Busia',
+      'embu' => 'Embu',
+      'homa bay' => 'Homa Bay',
+      'isiolo' => 'Isiolo',
+      'kajiado' => 'Kajiado',
+      'kilifi' => 'Kilifi',
+      'kirinyaga' => 'Kirinyaga',
+      'kitui' => 'Kitui',
+      'kwale' => 'Kwale',
+      'laikipia' => 'Laikipia',
+      'lamu' => 'Lamu',
+      'makueni' => 'Makueni',
+      'mandera' => 'Mandera',
+      'marsabit' => 'Marsabit',
+      'murang\'a' => 'Murang\'a',
+      'muranga' => 'Murang\'a',
+      'nyamira' => 'Nyamira',
+      'nyandarua' => 'Nyandarua',
+      'nyeri' => 'Nyeri',
+      'samburu' => 'Samburu',
+      'siaya' => 'Siaya',
+      'taita taveta' => 'Taita Taveta',
+      'tana river' => 'Tana River',
+      'tharaka nithi' => 'Tharaka Nithi',
+      'trans nzoia' => 'Trans Nzoia',
+      'turkana' => 'Turkana',
+      'uasin gishu' => 'Uasin Gishu',
+      'vihiga' => 'Vihiga',
+      'wajir' => 'Wajir',
+      'west pokot' => 'West Pokot'
+    }
+    
+    # Try to find county by city name
+    county_name = city_county_mapping[city_normalized]
+    
+    # If not found by city, try by region
+    if county_name.nil?
+      county_name = city_county_mapping[region_normalized]
+    end
+    
+    # If still not found, try partial matching
+    if county_name.nil?
+      city_county_mapping.each do |key, value|
+        if city_normalized&.include?(key) || key.include?(city_normalized)
+          county_name = value
+          break
+        end
+      end
+    end
+    
+    if county_name
+      county = County.find_by(name: county_name)
+      if county
+        # For now, use the first sub-county of the county
+        # In a more sophisticated system, you could use additional logic to determine the specific sub-county
+        sub_county = county.sub_counties.first
+        
+        Rails.logger.info "🗺️ Found county: #{county.name} (ID: #{county.id})"
+        Rails.logger.info "🗺️ Using sub-county: #{sub_county&.name} (ID: #{sub_county&.id})"
+        
+        return {
+          county_id: county.id,
+          sub_county_id: sub_county&.id
+        }
+      end
+    end
+    
+    # Default to Nairobi if no mapping found
+    Rails.logger.info "🗺️ No county mapping found, defaulting to Nairobi"
+    nairobi_county = County.find_by(name: 'Nairobi')
+    if nairobi_county
+      nairobi_sub_county = nairobi_county.sub_counties.first
+      return {
+        county_id: nairobi_county.id,
+        sub_county_id: nairobi_sub_county&.id
+      }
+    end
+    
+    nil
   end
 end
