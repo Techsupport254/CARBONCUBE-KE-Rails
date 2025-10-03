@@ -75,6 +75,7 @@ Rails.application.routes.draw do
   post 'auth/login', to: 'authentication#login'
   post 'auth/refresh', to: 'authentication#refresh_token'
   post 'auth/logout', to: 'authentication#logout'
+  get 'auth/me', to: 'authentication#me'
   
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
@@ -319,6 +320,20 @@ Rails.application.routes.draw do
         post 'reject'
       end
     end
+    
+    # Google Merchant API management
+    resources :google_merchant, only: [] do
+      collection do
+        get 'status'
+        get 'test_connection'
+        get 'ads'
+        post 'sync_all'
+      end
+      member do
+        post 'sync_ad'
+      end
+    end
+    
     # Removal requests are now handled through internal_user_exclusions
     # The existing internal_user_exclusions resource above handles both exclusions and removal requests
   end
@@ -335,6 +350,7 @@ Rails.application.routes.draw do
         get 'buyer_details/summary', to: 'buyer_details#summary'
       end
     end
+
 
     resources :categories, only: [:index, :show]
     get 'categories', to: 'categories#index'
@@ -436,6 +452,7 @@ Rails.application.routes.draw do
         get :unread_counts, on: :collection
       end
     end
+
 
 
 

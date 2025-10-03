@@ -8,13 +8,20 @@ class JwtService
   ALGORITHM = 'HS256'
   
   # Token expiration times
-  ACCESS_TOKEN_EXPIRY = 1.hour
+  ACCESS_TOKEN_EXPIRY = 24.hours
   REFRESH_TOKEN_EXPIRY = 30.days
   WEBSOCKET_TOKEN_EXPIRY = 2.hours
 
   class << self
     # Encode a JWT token
-    def encode(payload, exp = ACCESS_TOKEN_EXPIRY.from_now)
+    def encode(payload, exp = nil)
+      # Use remember_me flag to determine expiration
+      if payload[:remember_me] == true
+        exp ||= REFRESH_TOKEN_EXPIRY.from_now
+      else
+        exp ||= ACCESS_TOKEN_EXPIRY.from_now
+      end
+      
       # Add standard claims
       payload[:exp] = exp.to_i
       payload[:iat] = Time.current.to_i

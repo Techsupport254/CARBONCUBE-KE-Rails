@@ -18,6 +18,10 @@ gem "bootsnap", require: false
 # Load environment variables from .env files
 gem "dotenv-rails"
 
+# Google Authentication for Merchant API
+gem "googleauth"
+gem "google-apis-content_v2_1"
+
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem "rack-cors"
 

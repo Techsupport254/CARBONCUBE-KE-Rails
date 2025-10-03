@@ -37,6 +37,10 @@ class Ad < ApplicationRecord
   # Callbacks for cache invalidation
   after_save :invalidate_caches
   after_destroy :invalidate_caches
+  
+  # Google Merchant API sync callbacks
+  after_save :schedule_google_merchant_sync, if: :should_sync_to_google_merchant?
+  after_destroy :schedule_google_merchant_delete
 
   # Soft delete
   def flag
@@ -150,7 +154,95 @@ class Ad < ApplicationRecord
     valid_media_urls.first
   end
 
+  # Google Merchant API integration methods
+  def google_merchant_data
+    {
+      offerId: id.to_s,
+      contentLanguage: 'en',
+      feedLabel: 'primary',
+      productAttributes: {
+        title: title,
+        description: description,
+        link: product_url,
+        imageLink: first_valid_media_url,
+        availability: 'IN_STOCK',
+        price: {
+          amountMicros: (price * 1000000).to_i.to_s,
+          currencyCode: 'KES'
+        },
+        condition: google_condition,
+        brand: brand.present? ? brand : nil
+      }.compact
+    }
+  end
+
+  def product_url
+    slug = create_slug(title)
+    "https://carboncube-ke.com/ads/#{slug}?id=#{id}"
+  end
+
+  def google_condition
+    case condition
+    when 'brand_new' then 'NEW'
+    when 'second_hand' then 'USED'
+    when 'refurbished' then 'REFURBISHED'
+    else 'NEW'
+    end
+  end
+
+  def sync_to_google_merchant
+    GoogleMerchantService.sync_ad(self)
+  end
+
+  def valid_for_google_merchant?
+    return false if deleted?
+    return false if flagged?
+    return false unless seller
+    return false if seller.blocked?
+    return false if seller.deleted?
+    return false unless has_valid_images?
+    return false if title.blank?
+    return false if description.blank?
+    return false if price.blank? || price <= 0
+    
+    true
+  end
+
   private
+
+  def create_slug(title)
+    return "product-#{Time.current.to_i}" if title.blank?
+    
+    title.downcase
+         .gsub(/[^a-z0-9\s]/, '')
+         .gsub(/\s+/, '-')
+         .strip
+  end
+
+  def schedule_google_merchant_sync
+    # Schedule sync job with a small delay to avoid overwhelming the API
+    GoogleMerchantSyncJob.set(wait: 5.seconds).perform_later(id, 'sync')
+  end
+
+  def schedule_google_merchant_delete
+    # Schedule delete job immediately
+    GoogleMerchantSyncJob.perform_later(id, 'delete')
+  end
+
+  def should_sync_to_google_merchant?
+    # Only sync if the ad is valid and relevant fields have changed
+    return false unless valid_for_google_merchant?
+    
+    # Check if any relevant fields have changed
+    saved_change_to_title? || 
+    saved_change_to_description? || 
+    saved_change_to_price? || 
+    saved_change_to_media? ||
+    saved_change_to_condition? ||
+    saved_change_to_brand? ||
+    saved_change_to_deleted? ||
+    saved_change_to_flagged?
+  end
 
   def invalidate_caches
     # Invalidate related caches when ad is updated or deleted

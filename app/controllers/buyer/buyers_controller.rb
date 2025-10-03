@@ -38,7 +38,8 @@ class Buyer::BuyersController < ApplicationController
           # Don't fail the registration if email fails
         end
         
-        token = JsonWebToken.encode(user_id: @buyer.id, email: @buyer.email, role: 'Buyer')
+        # New buyers get remember_me by default for better user experience
+        token = JsonWebToken.encode(user_id: @buyer.id, email: @buyer.email, role: 'Buyer', remember_me: true)
         render json: { token: token, buyer: @buyer }, status: :created
       else
         logger.debug "Buyer Errors: #{@buyer.errors.full_messages}"

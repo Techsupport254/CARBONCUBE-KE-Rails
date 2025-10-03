@@ -37,8 +37,8 @@ module CarbonecomRails
 
     config.api_only = true
     
-    # Enable sessions for OAuth flow
-    config.session_store :cookie_store, key: '_carboncube_session'
+    # Sessions are not needed for API-only apps with JWT authentication
+    # OAuth flow uses redirects with tokens, not sessions
     
     # Enable Action Cable for API-only Rails app
     config.action_cable.disable_request_forgery_protection = true

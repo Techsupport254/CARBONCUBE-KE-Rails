@@ -121,18 +121,20 @@ class AuthenticationController < ApplicationController
       return
     end
 
-    # Generate new token with remember_me flag
+    # Generate new token with remember_me flag and appropriate expiration
     token_payload = if role == 'seller'
       { seller_id: user.id, email: user.email, role: role, remember_me: remember_me }
     else
       { user_id: user.id, email: user.email, role: role, remember_me: remember_me }
     end
     
+    # Use JsonWebToken.encode which now respects remember_me flag
     new_token = JsonWebToken.encode(token_payload)
 
     render json: { 
       token: new_token,
-      message: 'Token refreshed successfully'
+      message: 'Token refreshed successfully',
+      remember_me: remember_me
     }, status: :ok
   end
 
@@ -163,6 +165,69 @@ class AuthenticationController < ApplicationController
     else
       render json: { error: 'No token provided' }, status: :bad_request
     end
+  end
+
+  def me
+    # This method validates the current user session and returns user info
+    token_validation = TokenValidationService.new(request.headers)
+    validation_result = token_validation.validate_token
+    
+    unless validation_result[:success]
+      render json: { 
+        error: 'Invalid or expired token',
+        error_type: 'invalid_token'
+      }, status: :unauthorized
+      return
+    end
+
+    payload = validation_result[:payload]
+    user_id = payload[:user_id] || payload[:seller_id]
+    role = payload[:role]
+
+    # Find the user
+    user = find_user_by_id_and_role(user_id, role)
+    unless user
+      render json: { 
+        error: 'User not found',
+        error_type: 'user_not_found'
+      }, status: :not_found
+      return
+    end
+
+    # Check if user is deleted
+    if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
+      render json: { 
+        error: 'Account has been deleted',
+        error_type: 'account_deleted'
+      }, status: :unauthorized
+      return
+    end
+
+    # Build user response
+    user_response = {
+      id: user.id,
+      email: user.email,
+      role: role
+    }
+    
+    # Add name fields based on user type
+    if user.respond_to?(:fullname) && user.fullname.present?
+      user_response[:name] = user.fullname
+    elsif user.respond_to?(:username) && user.username.present?
+      user_response[:name] = user.username
+    end
+    
+    # Only include username for users that have this field (Buyer, Seller, Admin)
+    if user.respond_to?(:username) && user.username.present?
+      user_response[:username] = user.username
+    end
+    
+    # Only include profile picture for users that have this field (Buyer, Seller)
+    if user.respond_to?(:profile_picture) && user.profile_picture.present?
+      user_response[:profile_picture] = user.profile_picture
+    end
+
+    render json: { user: user_response }, status: :ok
   end
 
   def google_oauth
@@ -407,13 +472,14 @@ class AuthenticationController < ApplicationController
           user_response[:biography] = user.description
         end
 
-        # Create token with appropriate ID field
+        # Create token with appropriate ID field - Google OAuth users get remember_me by default
         token_payload = if role == 'seller'
           { seller_id: user.id, email: user.email, role: role, remember_me: true }
         else
           { user_id: user.id, email: user.email, role: role, remember_me: true }
         end
         
+        # Use JsonWebToken.encode which now respects remember_me flag (30 days for Google OAuth)
         token = JsonWebToken.encode(token_payload)
         
         # Redirect to frontend with token and user data

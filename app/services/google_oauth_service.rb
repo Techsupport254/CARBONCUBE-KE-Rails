@@ -456,14 +456,11 @@ class GoogleOauthService
     puts "🔑 Generating JWT token for #{user.class.name}: #{user.email}"
     Rails.logger.info "🔑 Generating JWT token for #{user.class.name}: #{user.email}"
     
-    # Set token expiration (24 hours)
-    exp = 24.hours.from_now.to_i
-    
-    # Create payload - only include the appropriate ID field
+    # Create payload with remember_me for Google OAuth users (30 days)
     payload = {
       email: user.email,
       role: user.user_type || user.class.name.downcase,
-      exp: exp
+      remember_me: true  # Google OAuth users get remember_me by default
     }
     
     # Add appropriate ID field based on user type
@@ -478,11 +475,11 @@ class GoogleOauthService
       payload[:user_id] = user.id
     end
     
-    # Generate token
+    # Generate token using JsonWebToken.encode which respects remember_me flag
     token = JsonWebToken.encode(payload)
     
-    puts "✅ JWT token generated successfully"
-    Rails.logger.info "✅ JWT token generated successfully"
+    puts "✅ JWT token generated successfully with remember_me (30 days)"
+    Rails.logger.info "✅ JWT token generated successfully with remember_me (30 days)"
     
     token
   end

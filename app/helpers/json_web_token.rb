@@ -5,7 +5,13 @@ class JsonWebToken
     
     ALGORITHM = 'HS256'
 
-    def self.encode(payload, exp = 24.hours.from_now)
+    def self.encode(payload, exp = nil)
+        # Use remember_me flag to determine expiration
+        if payload[:remember_me] == true
+            exp ||= 30.days.from_now
+        else
+            exp ||= 24.hours.from_now
+        end
         payload[:exp] = exp.to_i
         JWT.encode(payload, SECRET_KEY, ALGORITHM)
     end

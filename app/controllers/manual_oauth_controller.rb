@@ -73,13 +73,14 @@ class ManualOauthController < ApplicationController
       user = result[:user]
       role = determine_role(user)
       
-      # Generate JWT token
+      # Generate JWT token - Google OAuth users get remember_me by default
       token_payload = if role == 'seller'
         { seller_id: user.id, email: user.email, role: role, remember_me: true }
       else
         { user_id: user.id, email: user.email, role: role, remember_me: true }
       end
       
+      # Use JsonWebToken.encode which now respects remember_me flag (30 days for Google OAuth)
       token = JsonWebToken.encode(token_payload)
       user_response = build_user_response(user, role)
       
