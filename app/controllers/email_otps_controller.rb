@@ -22,11 +22,15 @@ class EmailOtpsController < ApplicationController
 
     record = EmailOtp.find_by(email: email, otp_code: otp_code)
 
-    if record && record.expires_at > Time.now
+    if record.nil?
+      render json: { verified: false, error: "Invalid OTP" }, status: :unauthorized
+    elsif record.verified?
+      render json: { verified: false, error: "OTP has already been used" }, status: :unauthorized
+    elsif record.expires_at <= Time.now
+      render json: { verified: false, error: "OTP has expired" }, status: :unauthorized
+    else
       record.update!(verified: true)
       render json: { verified: true }
-    else
-      render json: { verified: false, error: "Invalid or expired OTP" }, status: :unauthorized
     end
   end
 end

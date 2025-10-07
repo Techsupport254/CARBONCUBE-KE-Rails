@@ -37,11 +37,33 @@ class Seller::SellersController < ApplicationController
   # POST /seller/signup
   def create
     seller_email = params[:seller][:email].downcase.strip
+    otp_code = params[:otp]
+    
     # Rails.logger.info "🔍 Checking if buyer exists with email: #{seller_email}"
 
     if Buyer.exists?(email: seller_email)
       Rails.logger.error "Email already used by buyer: #{seller_email}"
       return render json: { errors: ['Email is already in use by a buyer'] }, status: :unprocessable_entity
+    end
+
+    # Verify OTP if provided
+    if otp_code.present?
+      otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
+      
+      if otp_record.nil?
+        Rails.logger.error "Invalid OTP for email: #{seller_email}"
+        return render json: { errors: ['Invalid OTP'] }, status: :unauthorized
+      elsif otp_record.verified?
+        Rails.logger.error "OTP already used for email: #{seller_email}"
+        return render json: { errors: ['OTP has already been used'] }, status: :unauthorized
+      elsif otp_record.expires_at <= Time.now
+        Rails.logger.error "OTP expired for email: #{seller_email}"
+        return render json: { errors: ['OTP has expired'] }, status: :unauthorized
+      else
+        # Mark OTP as verified
+        otp_record.update!(verified: true)
+        Rails.logger.info "✅ OTP verified for email: #{seller_email}"
+      end
     end
 
     uploaded_document_url = nil

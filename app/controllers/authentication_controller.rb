@@ -283,12 +283,12 @@ class AuthenticationController < ApplicationController
       Rails.logger.info "🔧 GoogleOauthService.new(#{auth_code ? auth_code[0..10] + '...' : 'nil'}, #{redirect_uri}, #{user_ip}, #{role}, #{location_data.inspect})"
       
       # Add timeout to prevent hanging requests
-      Timeout::timeout(30) do
+      result = Timeout::timeout(30) do
         oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip, role, location_data)
         Rails.logger.info "✅ GoogleOauthService created successfully"
         
         Rails.logger.info "🔄 Calling authenticate method..."
-        result = oauth_service.authenticate
+        oauth_service.authenticate
       end
       
       Rails.logger.info "🔄 OAuth service result: #{result.inspect}"
