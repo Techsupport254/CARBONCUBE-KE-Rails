@@ -1,6 +1,10 @@
 class HealthController < ApplicationController
   skip_before_action :verify_authenticity_token, raise: false
   
+  def show
+    render json: { status: 'healthy', message: 'Server is running' }
+  end
+  
   def database
     start_time = Time.current
     ActiveRecord::Base.connection.execute("SELECT 1")

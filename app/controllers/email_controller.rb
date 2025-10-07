@@ -85,8 +85,9 @@ class EmailController < ApplicationController
     render json: { exists: false, error: 'Internal server error' }, status: :internal_server_error
   end
 
-  # POST /phone/exists
+  # POST /phone/exists or GET /check_phone
   def phone_exists
+    # Handle both GET and POST requests
     phone_number = params[:phone_number]&.strip
     
     if phone_number.blank?

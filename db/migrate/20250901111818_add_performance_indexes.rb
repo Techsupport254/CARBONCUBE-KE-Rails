@@ -19,10 +19,32 @@ class AddPerformanceIndexes < ActiveRecord::Migration[7.1]
     
     # Composite index for ads with seller joins
     add_index :ads, [:deleted, :flagged, :seller_id, :created_at], name: 'index_ads_on_deleted_flagged_seller_created_at' unless index_exists?(:ads, [:deleted, :flagged, :seller_id, :created_at], name: 'index_ads_on_deleted_flagged_seller_created_at')
+    
+    # Additional performance indexes for optimized queries
+    add_index :ads, [:deleted, :flagged, :created_at, :id], name: 'index_ads_performance_main' unless index_exists?(:ads, [:deleted, :flagged, :created_at, :id], name: 'index_ads_performance_main')
+    add_index :ads, [:category_id, :deleted, :flagged, :created_at], name: 'index_ads_category_performance' unless index_exists?(:ads, [:category_id, :deleted, :flagged], name: 'index_ads_category_performance')
+    add_index :ads, [:subcategory_id, :deleted, :flagged, :created_at], name: 'index_ads_subcategory_performance' unless index_exists?(:ads, [:subcategory_id, :deleted, :flagged, :created_at], name: 'index_ads_subcategory_performance')
+    
+    # Indexes for seller tiers optimization
+    add_index :seller_tiers, [:seller_id, :tier_id], name: 'index_seller_tiers_seller_tier' unless index_exists?(:seller_tiers, [:seller_id, :tier_id], name: 'index_seller_tiers_seller_tier')
+    add_index :tiers, :id, name: 'index_tiers_on_id' unless index_exists?(:tiers, :id, name: 'index_tiers_on_id')
+    
+    # Indexes for media validation queries
+    add_index :ads, [:media], name: 'index_ads_on_media', using: 'gin' unless index_exists?(:ads, [:media], name: 'index_ads_on_media')
+    
+    # Partial indexes for active ads only (most common query)
+    add_index :ads, [:created_at], name: 'index_ads_active_created_at', where: 'deleted = false AND flagged = false' unless index_exists?(:ads, [:created_at], name: 'index_ads_active_created_at')
   end
 
   def down
     # Remove indexes in reverse order
+    remove_index :ads, name: 'index_ads_active_created_at' if index_exists?(:ads, name: 'index_ads_active_created_at')
+    remove_index :ads, name: 'index_ads_on_media' if index_exists?(:ads, name: 'index_ads_on_media')
+    remove_index :tiers, name: 'index_tiers_on_id' if index_exists?(:tiers, name: 'index_tiers_on_id')
+    remove_index :seller_tiers, name: 'index_seller_tiers_seller_tier' if index_exists?(:seller_tiers, name: 'index_seller_tiers_seller_tier')
+    remove_index :ads, name: 'index_ads_subcategory_performance' if index_exists?(:ads, name: 'index_ads_subcategory_performance')
+    remove_index :ads, name: 'index_ads_category_performance' if index_exists?(:ads, name: 'index_ads_category_performance')
+    remove_index :ads, name: 'index_ads_performance_main' if index_exists?(:ads, name: 'index_ads_performance_main')
     remove_index :ads, name: 'index_ads_on_deleted_flagged_seller_created_at' if index_exists?(:ads, name: 'index_ads_on_deleted_flagged_seller_created_at')
     remove_index :subcategories, name: 'index_subcategories_on_category_id_name' if index_exists?(:subcategories, name: 'index_subcategories_on_category_id_name')
     remove_index :categories, name: 'index_categories_on_name' if index_exists?(:categories, name: 'index_categories_on_name')

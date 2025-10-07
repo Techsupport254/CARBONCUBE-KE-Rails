@@ -30,15 +30,17 @@ class GoogleMerchantService
       end
     end
     
-    # Sync all active ads to Google Merchant Center
+    # Sync all premium ads to Google Merchant Center
     def sync_all_active_ads
-      Rails.logger.info "Starting bulk sync of all active ads to Google Merchant Center"
+      Rails.logger.info "Starting bulk sync of all premium ads to Google Merchant Center"
       
       ads = Ad.active
+               .joins(seller: { seller_tier: :tier })
                .includes(:seller)
                .where(sellers: { blocked: false, deleted: false })
                .where(flagged: false)
                .where.not(media: [nil, [], ""])
+               .where(tiers: { id: 4 }) # Premium tier only
       
       success_count = 0
       failure_count = 0

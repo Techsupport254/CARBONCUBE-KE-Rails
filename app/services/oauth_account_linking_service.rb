@@ -1,6 +1,6 @@
 # app/services/oauth_account_linking_service.rb
 class OauthAccountLinkingService
-  def initialize(auth_hash, role = 'buyer', user_ip = nil)
+  def initialize(auth_hash, role = 'Buyer', user_ip = nil)
     @auth_hash = auth_hash
     @role = role
     @provider = auth_hash[:provider]
@@ -9,6 +9,14 @@ class OauthAccountLinkingService
     @name = auth_hash.dig(:info, :name)
     @picture = auth_hash.dig(:info, :image)
     @user_ip = user_ip
+    
+    # Debug: Log the profile picture information
+    Rails.logger.info "🔍 OAuth Account Linking Service Debug:"
+    Rails.logger.info "   Provider: #{@provider}"
+    Rails.logger.info "   Email: #{@email}"
+    Rails.logger.info "   Name: #{@name}"
+    Rails.logger.info "   Picture: #{@picture.inspect}"
+    Rails.logger.info "   Auth hash info: #{auth_hash[:info].inspect}"
   end
 
   def call
@@ -85,6 +93,9 @@ class OauthAccountLinkingService
     phone_number = extract_phone_number
     location_data = get_user_location_data
     
+    # Fix Google profile picture URL to make it publicly accessible
+    profile_picture = fix_google_profile_picture_url(@picture) if @picture.present?
+    
     user_attributes = {
       fullname: @name || @email.split('@').first,
       email: @email,
@@ -97,7 +108,7 @@ class OauthAccountLinkingService
       # Use Google profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
-      profile_picture: @picture, # Set profile picture from OAuth
+      profile_picture: profile_picture, # Set fixed profile picture from OAuth
       # Add location data
       location: location_data[:location],
       city: location_data[:city],
@@ -119,6 +130,9 @@ class OauthAccountLinkingService
   def create_seller
     phone_number = extract_phone_number
     
+    # Fix Google profile picture URL to make it publicly accessible
+    profile_picture = fix_google_profile_picture_url(@picture) if @picture.present?
+    
     user_attributes = {
       fullname: @name || @email.split('@').first,
       email: @email,
@@ -131,7 +145,7 @@ class OauthAccountLinkingService
       # Use Google profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
-      profile_picture: @picture # Set profile picture from OAuth
+      profile_picture: profile_picture # Set fixed profile picture from OAuth
     }
     
     # Only add phone number if we have one from Google
@@ -426,5 +440,33 @@ class OauthAccountLinkingService
     end
     
     nil
+  end
+
+  # Fix Google profile picture URL to make it publicly accessible
+  def fix_google_profile_picture_url(original_url)
+    return nil if original_url.blank?
+    
+    Rails.logger.info "🔧 Original profile picture URL: #{original_url}"
+    
+    # Google profile picture URLs often need modification to be publicly accessible
+    # Remove size restrictions and make the URL publicly accessible
+    fixed_url = original_url.dup
+    
+    # Remove size parameters that might cause access issues
+    fixed_url = fixed_url.gsub(/=s\d+/, '=s0') # Change size to 0 (full size)
+    fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s0') # Remove width/height restrictions
+    fixed_url = fixed_url.gsub(/=c\d+/, '=s0') # Remove crop restrictions
+    
+    # Ensure the URL is publicly accessible
+    if fixed_url.include?('googleusercontent.com')
+      # For Google profile pictures, ensure we have the right format
+      fixed_url = fixed_url.gsub(/=s\d+/, '=s0') if fixed_url.include?('=s')
+    end
+    
+    Rails.logger.info "🔧 Fixed profile picture URL: #{fixed_url}"
+    fixed_url
+  rescue => e
+    Rails.logger.error "❌ Error fixing profile picture URL: #{e.message}"
+    original_url # Return original URL if fixing fails
   end
 end

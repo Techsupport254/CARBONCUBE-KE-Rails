@@ -17,6 +17,9 @@ Rails.application.routes.draw do
   # Proxy endpoints
   get '/proxy-image', to: 'proxy#proxy_image'
   
+  # Profile picture caching endpoints
+  get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
+  
   # Best sellers routes
   resources :best_sellers, only: [:index] do
     collection do
@@ -36,6 +39,11 @@ Rails.application.routes.draw do
   post 'phone/exists', to: 'email#phone_exists'
   post 'business_name/exists', to: 'email#business_name_exists'
   post 'business_number/exists', to: 'email#business_number_exists'
+  
+  # GET routes for easier frontend integration
+  get 'check_phone', to: 'email#phone_exists'
+  get 'check_email', to: 'email#exists'
+  get 'check_username', to: 'email#username_exists'
   
   # Validation routes for frontend
   post 'validate_phone', to: 'email#phone_exists'
@@ -85,6 +93,7 @@ Rails.application.routes.draw do
   get 'auth/google_oauth2/callback', to: 'manual_oauth#google_oauth2_callback'
   get 'auth/google_oauth2/popup_callback', to: 'authentication#google_oauth_popup_callback'
   resources :banners, only: [:index]
+  resources :categories, only: [:index, :show]
   resources :ads, only: [:index, :show] do
     get 'reviews', to: 'reviews#index', on: :member
   end

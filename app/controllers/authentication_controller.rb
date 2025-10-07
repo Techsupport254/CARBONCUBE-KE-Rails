@@ -1,5 +1,6 @@
 class AuthenticationController < ApplicationController
   skip_before_action :verify_authenticity_token, raise: false
+  require 'timeout'
 
   def login
     identifier = params[:email] || params[:identifier] || params[:authentication]&.[](:email)
@@ -16,7 +17,7 @@ class AuthenticationController < ApplicationController
       end
 
       # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
-      if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'seller' && @user.county&.county_code.to_i != 47
+      if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'Seller' && @user.county&.county_code.to_i != 47
         render json: {
           errors: ['Access restricted during pilot phase. Only Nairobi-based sellers can log in.']
         }, status: :forbidden
@@ -48,12 +49,12 @@ class AuthenticationController < ApplicationController
       
 
       # Update last active timestamp for sellers
-      if role == 'seller' && @user.respond_to?(:update_last_active!)
+      if role == 'Seller' && @user.respond_to?(:update_last_active!)
         @user.update_last_active!
       end
 
       # Create token with appropriate ID field and remember_me flag
-      token_payload = if role == 'seller'
+      token_payload = if role == 'Seller'
         { seller_id: @user.id, email: @user.email, role: role, remember_me: remember_me }
       else
         { user_id: @user.id, email: @user.email, role: role, remember_me: remember_me }
@@ -122,7 +123,7 @@ class AuthenticationController < ApplicationController
     end
 
     # Generate new token with remember_me flag and appropriate expiration
-    token_payload = if role == 'seller'
+    token_payload = if role == 'Seller'
       { seller_id: user.id, email: user.email, role: role, remember_me: remember_me }
     else
       { user_id: user.id, email: user.email, role: role, remember_me: remember_me }
@@ -149,7 +150,7 @@ class AuthenticationController < ApplicationController
         role = payload[:role]
         
         # Update last_active_at for sellers before logout
-        if role == 'seller' && user_id
+        if role == 'Seller' && user_id
           seller = Seller.find_by(id: user_id)
           seller&.update_last_active!
         end
@@ -234,9 +235,26 @@ class AuthenticationController < ApplicationController
     puts "🚨 GOOGLE OAUTH METHOD CALLED!"
     Rails.logger.info "🚨 GOOGLE OAUTH METHOD CALLED!"
     
+    # Rate limiting: prevent multiple OAuth calls from same IP
+    client_ip = request.remote_ip
+    cache_key = "google_oauth_#{client_ip}_#{params[:code]}"
+    
+    if Rails.cache.exist?(cache_key)
+      Rails.logger.warn "🚫 Duplicate OAuth request blocked for IP: #{client_ip}"
+      render json: { 
+        success: false, 
+        error: 'Duplicate request detected. Please wait a moment and try again.' 
+      }, status: :too_many_requests
+      return
+    end
+    
+    # Set cache for 30 seconds to prevent duplicate calls
+    Rails.cache.write(cache_key, true, expires_in: 30.seconds)
+    
     auth_code = params[:code]
     redirect_uri = params[:redirect_uri] || ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/callback"
     location_data = params[:location_data] # Get location data from frontend
+    role = params[:role] || 'Buyer' # Get role from request parameters
     
     puts "🔍 Google OAuth Request Debug:"
     Rails.logger.info "🔍 Google OAuth Request Debug:"
@@ -246,6 +264,10 @@ class AuthenticationController < ApplicationController
     Rails.logger.info "🔗 Redirect URI: #{redirect_uri}"
     puts "🌍 Location data from frontend: #{location_data.inspect}"
     Rails.logger.info "🌍 Location data from frontend: #{location_data.inspect}"
+    puts "👤 Role from params: #{role}"
+    Rails.logger.info "👤 Role from params: #{role}"
+    puts "📊 All params: #{params.inspect}"
+    Rails.logger.info "📊 All params: #{params.inspect}"
     
     unless auth_code
       Rails.logger.error "❌ No authorization code provided"
@@ -257,10 +279,17 @@ class AuthenticationController < ApplicationController
       Rails.logger.info "🔄 Creating Google OAuth service..."
       user_ip = request.remote_ip
       Rails.logger.info "🌐 User IP: #{user_ip}"
-      oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip)
+      Rails.logger.info "👤 Role: #{role}"
+      Rails.logger.info "🔧 GoogleOauthService.new(#{auth_code ? auth_code[0..10] + '...' : 'nil'}, #{redirect_uri}, #{user_ip}, #{role}, #{location_data.inspect})"
       
-      Rails.logger.info "🔄 Calling authenticate method..."
-      result = oauth_service.authenticate
+      # Add timeout to prevent hanging requests
+      Timeout::timeout(30) do
+        oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip, role, location_data)
+        Rails.logger.info "✅ GoogleOauthService created successfully"
+        
+        Rails.logger.info "🔄 Calling authenticate method..."
+        result = oauth_service.authenticate
+      end
       
       Rails.logger.info "🔄 OAuth service result: #{result.inspect}"
 
@@ -276,9 +305,21 @@ class AuthenticationController < ApplicationController
         return
       end
 
-      # Check if result is a Buyer object with missing fields
-      if result.is_a?(Buyer) && result.respond_to?(:missing_fields) && result.missing_fields.any?
-        Rails.logger.info "📝 Missing fields detected from Buyer object: #{result.missing_fields}"
+      # Check if result is a hash with not_registered
+      if result.is_a?(Hash) && result[:not_registered] && result[:user_data]
+        Rails.logger.info "📝 User not registered: #{result[:error]}"
+        render json: {
+          success: false,
+          error: result[:error],
+          not_registered: true,
+          user_data: result[:user_data]
+        }, status: :unprocessable_entity
+        return
+      end
+
+      # Check if result is a user object with missing fields
+      if (result.is_a?(Buyer) || result.is_a?(Seller)) && result.respond_to?(:missing_fields) && result.missing_fields.any?
+        Rails.logger.info "📝 Missing fields detected from #{result.class.name} object: #{result.missing_fields}"
         render json: {
           success: false,
           error: "Missing required fields: #{result.missing_fields.join(', ')}",
@@ -309,19 +350,11 @@ class AuthenticationController < ApplicationController
             new_user: true
           }
         else
-          Rails.logger.info "📊 Google OAuth data logged successfully"
+          Rails.logger.error "❌ Unexpected OAuth result format: #{result.inspect}"
           render json: {
-            success: true,
-            message: "Google OAuth data logged successfully",
-            data_logged: true,
-            token: "data-logging-mode",
-            user: {
-              id: "data-logging",
-              email: "data-logging@example.com",
-              name: "Data Logging Mode",
-              role: "data-logging"
-            }
-          }
+            success: false,
+            error: "Unexpected authentication result"
+          }, status: :internal_server_error
         end
       else
         Rails.logger.error "❌ Google OAuth failed: #{result[:error]}"
@@ -344,6 +377,9 @@ class AuthenticationController < ApplicationController
           }, status: :unprocessable_entity
         end
       end
+    rescue Timeout::Error => e
+      Rails.logger.error "❌ Google OAuth timeout: #{e.message}"
+      render json: { error: "Authentication request timed out. Please try again." }, status: :request_timeout
     rescue => e
       Rails.logger.error "❌ Google OAuth error: #{e.message}"
       render json: { error: "Authentication failed: #{e.message}" }, status: :internal_server_error
@@ -405,6 +441,15 @@ class AuthenticationController < ApplicationController
         
         role = determine_role(user)
         
+        # Check for role mismatch - if user is trying to authenticate as a different role
+        requested_role = params[:role] || 'Buyer'
+        if role != requested_role
+          Rails.logger.error "❌ Role mismatch: User #{user.email} is a #{role} but trying to authenticate as #{requested_role}"
+          redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape("You are already registered as a #{role}. Please sign in with your existing account.")}"
+          redirect_to redirect_url, allow_other_host: true
+          return
+        end
+        
         # Block login if the user is soft-deleted
         if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
           redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Your account has been deleted. Please contact support.')}"
@@ -413,7 +458,7 @@ class AuthenticationController < ApplicationController
         end
 
         # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
-        if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'seller' && user.county&.county_code.to_i != 47
+        if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'Seller' && user.county&.county_code.to_i != 47
           redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Access restricted during pilot phase. Only Nairobi-based sellers can log in.')}"
           redirect_to redirect_url, allow_other_host: true
           return
@@ -473,7 +518,7 @@ class AuthenticationController < ApplicationController
         end
 
         # Create token with appropriate ID field - Google OAuth users get remember_me by default
-        token_payload = if role == 'seller'
+        token_payload = if role == 'Seller'
           { seller_id: user.id, email: user.email, role: role, remember_me: true }
         else
           { user_id: user.id, email: user.email, role: role, remember_me: true }
@@ -535,23 +580,50 @@ class AuthenticationController < ApplicationController
     begin
       redirect_uri = ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/popup_callback"
       user_ip = request.remote_ip
+      role = state || 'Buyer' # Get role from state parameter, default to buyer
       Rails.logger.info "🌐 User IP: #{user_ip}"
-      oauth_service = GoogleOauthService.new(code, redirect_uri, user_ip)
+      Rails.logger.info "👤 Role from state: #{role}"
+      oauth_service = GoogleOauthService.new(code, redirect_uri, user_ip, role)
       result = oauth_service.authenticate
       
       if result[:success]
         Rails.logger.info "🔍 OAuth result: #{result.inspect}"
         
-        # Simple data logging mode - always return success
-        Rails.logger.info "📊 Data logging mode - returning success response"
-        render json: {
-          success: true,
-          message: "Google OAuth data logged successfully",
-          data_logged: true,
-          token: nil,
-          user: nil
-        }
-        return
+        # Get user from result
+        user = result[:user]
+        
+        # Safety check - if user is nil, return error
+        if user.nil?
+          Rails.logger.error "❌ User is nil in OAuth result"
+          render html: "<script>
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: 'User creation failed'
+              }, '*');
+            }
+            window.close();
+          </script>".html_safe
+          return
+        end
+        
+        role = determine_role(user)
+        
+        # Check for role mismatch - if user is trying to authenticate as a different role
+        requested_role = state || 'Buyer'
+        if role != requested_role
+          Rails.logger.error "❌ Role mismatch: User #{user.email} is a #{role} but trying to authenticate as #{requested_role}"
+          render html: "<script>
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: 'You are already registered as a #{role}. Please sign in with your existing account.'
+              }, '*');
+            }
+            window.close();
+          </script>".html_safe
+          return
+        end
         
         # Block login if the user is soft-deleted
         if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
@@ -568,7 +640,7 @@ class AuthenticationController < ApplicationController
         end
 
         # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
-        if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'seller' && user.county&.county_code.to_i != 47
+        if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'Seller' && user.county&.county_code.to_i != 47
           render html: "<script>
             if (window.opener) {
               window.opener.postMessage({
@@ -581,6 +653,7 @@ class AuthenticationController < ApplicationController
           return
         end
 
+        # Build user response
         user_response = {
           id: user.id,
           email: user.email,
@@ -633,13 +706,14 @@ class AuthenticationController < ApplicationController
           user_response[:biography] = user.description
         end
 
-        # Create token with appropriate ID field
-        token_payload = if role == 'seller'
+        # Create token with appropriate ID field - Google OAuth users get remember_me by default
+        token_payload = if role == 'Seller'
           { seller_id: user.id, email: user.email, role: role, remember_me: true }
         else
           { user_id: user.id, email: user.email, role: role, remember_me: true }
         end
         
+        # Use JsonWebToken.encode which now respects remember_me flag (30 days for Google OAuth)
         token = JsonWebToken.encode(token_payload)
         
         # Send success message to parent window
@@ -682,22 +756,37 @@ class AuthenticationController < ApplicationController
   # Complete registration with missing fields
   def complete_registration
     begin
-      puts "📝 Complete registration request received"
+      Rails.logger.info "📝 Complete registration request received"
+      Rails.logger.info "📝 Params: #{params.inspect}"
       
-      # Get the form data from the request
-      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id)
+      # Get the form data from the request - allow more fields for Google OAuth
+      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id, :age_group_id, :birthday, :given_name, :family_name, :display_name, :provider, :uid, :user_type, :enterprise_name, :business_registration_number, :document_type_id, :description)
       
-      puts "📝 Form data: #{form_data.inspect}"
+      Rails.logger.info "📝 Form data: #{form_data.inspect}"
+      
+      # Determine user type (default to buyer if not specified)
+      user_type = form_data[:user_type] || 'Buyer'
+      Rails.logger.info "📝 User type: #{user_type}"
       
       # Find the user by email (assuming email is provided)
-      user = Buyer.find_by(email: form_data[:email])
+      user = case user_type
+             when 'seller'
+               Seller.find_by(email: form_data[:email])
+             else
+               Buyer.find_by(email: form_data[:email])
+             end
       
       if user.nil?
         puts "📝 User not found, creating new user with provided data"
         
         # Check if phone number already exists for another user
         if form_data[:phone_number].present?
-          existing_user_with_phone = Buyer.find_by(phone_number: form_data[:phone_number])
+          existing_user_with_phone = case user_type
+                                     when 'seller'
+                                       Seller.find_by(phone_number: form_data[:phone_number])
+                                     else
+                                       Buyer.find_by(phone_number: form_data[:phone_number])
+                                     end
           if existing_user_with_phone
             puts "❌ Phone number already exists for another user: #{form_data[:phone_number]}"
             render json: {
@@ -711,7 +800,7 @@ class AuthenticationController < ApplicationController
         # Create new user with the provided data
         user_attributes = {}
         
-        # Map form data to user attributes
+        # Common attributes for both buyer and seller
         user_attributes[:fullname] = form_data[:fullname] if form_data[:fullname].present?
         user_attributes[:phone_number] = form_data[:phone_number] if form_data[:phone_number].present?
         user_attributes[:location] = form_data[:location] if form_data[:location].present?
@@ -720,11 +809,26 @@ class AuthenticationController < ApplicationController
         user_attributes[:username] = form_data[:username] if form_data[:username].present?
         user_attributes[:email] = form_data[:email] if form_data[:email].present?
         user_attributes[:profile_picture] = form_data[:profile_picture] if form_data[:profile_picture].present?
+        user_attributes[:provider] = form_data[:provider] if form_data[:provider].present?
+        user_attributes[:uid] = form_data[:uid] if form_data[:uid].present?
         user_attributes[:county_id] = form_data[:county_id] if form_data[:county_id].present?
         user_attributes[:sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
         
-        # Handle age group
-        if form_data[:age_group].present?
+        # Seller-specific attributes
+        if user_type == 'seller'
+          # Generate unique enterprise name to avoid duplicates
+          if form_data[:enterprise_name].present?
+            user_attributes[:enterprise_name] = generate_unique_enterprise_name(form_data[:enterprise_name])
+          end
+          user_attributes[:business_registration_number] = form_data[:business_registration_number] if form_data[:business_registration_number].present?
+          user_attributes[:document_type_id] = form_data[:document_type_id] if form_data[:document_type_id].present?
+          user_attributes[:description] = form_data[:description] if form_data[:description].present?
+        end
+        
+        # Handle age group - support both age_group (name) and age_group_id
+        if form_data[:age_group_id].present?
+          user_attributes[:age_group_id] = form_data[:age_group_id]
+        elsif form_data[:age_group].present?
           age_group = AgeGroup.find_by(name: form_data[:age_group])
           if age_group
             user_attributes[:age_group_id] = age_group.id
@@ -732,13 +836,38 @@ class AuthenticationController < ApplicationController
         end
         
         # Create the user as OAuth user (no password required)
-        user_attributes[:provider] = 'google' # Mark as OAuth user
-        user_attributes[:uid] = SecureRandom.hex(16) # Generate a random UID for OAuth users
+        user_attributes[:provider] = form_data[:provider] || 'google' # Mark as OAuth user
+        user_attributes[:uid] = form_data[:uid] || SecureRandom.hex(16) # Use provided UID or generate one
         
-        user = Buyer.new(user_attributes)
+        # Create the appropriate user type
+        user = case user_type
+               when 'seller'
+                 Seller.new(user_attributes)
+               else
+                 Buyer.new(user_attributes)
+               end
         
         if user.save
           puts "✅ User created successfully: #{user.email}"
+          
+          # Handle seller-specific setup
+          if user_type == 'seller'
+            # Check if user should get 2025 premium status
+            if should_get_2025_premium?
+              create_2025_premium_tier(user)
+            else
+              # Create default seller tier for non-2025 users
+              default_tier = Tier.find_by(name: 'Free') || Tier.first
+              if default_tier
+                user.seller_tier = SellerTier.create!(
+                  seller: user,
+                  tier: default_tier,
+                  duration_months: 0 # Free tier has no expiration
+                )
+                Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+              end
+            end
+          end
         else
           puts "❌ Failed to create user: #{user.errors.full_messages.join(', ')}"
           render json: {
@@ -752,7 +881,12 @@ class AuthenticationController < ApplicationController
         
         # Check if phone number already exists for another user (excluding current user)
         if form_data[:phone_number].present?
-          existing_user_with_phone = Buyer.find_by(phone_number: form_data[:phone_number])
+          existing_user_with_phone = case user_type
+                                     when 'seller'
+                                       Seller.find_by(phone_number: form_data[:phone_number])
+                                     else
+                                       Buyer.find_by(phone_number: form_data[:phone_number])
+                                     end
           if existing_user_with_phone && existing_user_with_phone.id != user.id
             puts "❌ Phone number already exists for another user: #{form_data[:phone_number]}"
             render json: {
@@ -766,7 +900,7 @@ class AuthenticationController < ApplicationController
         # Update existing user with the provided data
         user_attributes = {}
         
-        # Map form data to user attributes
+        # Common attributes for both buyer and seller
         user_attributes[:fullname] = form_data[:fullname] if form_data[:fullname].present?
         user_attributes[:phone_number] = form_data[:phone_number] if form_data[:phone_number].present?
         user_attributes[:location] = form_data[:location] if form_data[:location].present?
@@ -776,6 +910,14 @@ class AuthenticationController < ApplicationController
         user_attributes[:profile_picture] = form_data[:profile_picture] if form_data[:profile_picture].present?
         user_attributes[:county_id] = form_data[:county_id] if form_data[:county_id].present?
         user_attributes[:sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
+        
+        # Seller-specific attributes
+        if user_type == 'seller'
+          user_attributes[:enterprise_name] = form_data[:enterprise_name] if form_data[:enterprise_name].present?
+          user_attributes[:business_registration_number] = form_data[:business_registration_number] if form_data[:business_registration_number].present?
+          user_attributes[:document_type_id] = form_data[:document_type_id] if form_data[:document_type_id].present?
+          user_attributes[:description] = form_data[:description] if form_data[:description].present?
+        end
         
         # Handle age group
         if form_data[:age_group].present?
@@ -789,6 +931,14 @@ class AuthenticationController < ApplicationController
         puts "🔄 Updating user with attributes: #{user_attributes.inspect}"
         if user.update(user_attributes)
           puts "✅ User updated successfully: #{user.email}"
+          
+          # Handle seller-specific setup for 2025 premium
+          if user_type == 'seller' && should_get_2025_premium?
+            # Check if seller already has a tier, if not create premium tier
+            unless user.seller_tier.present?
+              create_2025_premium_tier(user)
+            end
+          end
         else
           puts "❌ Failed to update user: #{user.errors.full_messages.join(', ')}"
           render json: {
@@ -801,11 +951,17 @@ class AuthenticationController < ApplicationController
       
       # Generate JWT token using JsonWebToken service
       token_payload = {
-        user_id: user.id,
         email: user.email,
-        role: 'buyer',
+        role: user_type == 'seller' ? 'Seller' : 'Buyer',
         remember_me: true
       }
+      
+      # Add appropriate ID field based on user type
+      if user_type == 'seller'
+        token_payload[:seller_id] = user.id
+      else
+        token_payload[:user_id] = user.id
+      end
       
       token = JsonWebToken.encode(token_payload)
       
@@ -818,18 +974,27 @@ class AuthenticationController < ApplicationController
         # Don't fail the registration if email fails
       end
       
+      # Prepare user response data
+      user_response = {
+        id: user.id,
+        email: user.email,
+        fullname: user.fullname,
+        username: user.username,
+        role: user.user_type,
+        profile_picture: user.profile_picture
+      }
+      
+      # Add seller-specific fields if applicable
+      if user_type == 'seller'
+        user_response[:enterprise_name] = user.enterprise_name if user.respond_to?(:enterprise_name)
+        user_response[:business_registration_number] = user.business_registration_number if user.respond_to?(:business_registration_number)
+      end
+      
       render json: {
         success: true,
         message: "Registration completed successfully",
         token: token,
-        user: {
-          id: user.id,
-          email: user.email,
-          fullname: user.fullname,
-          username: user.username,
-          role: user.user_type,
-          profile_picture: user.profile_picture
-        }
+        user: user_response
       }
       
     rescue => e
@@ -843,6 +1008,52 @@ class AuthenticationController < ApplicationController
   end
 
   private
+
+  # Check if user should get premium status for 2025 registrations
+  def should_get_2025_premium?
+    current_year = Time.current.year
+    Rails.logger.info "🔍 Checking 2025 premium status: current_year=#{current_year}, is_2025=#{current_year == 2025}"
+    current_year == 2025
+  end
+
+  # Get premium tier for 2025 users
+  def get_premium_tier
+    Tier.find_by(name: 'Premium')
+  end
+
+  # Create seller tier for 2025 premium users
+  def create_2025_premium_tier(seller)
+    Rails.logger.info "🔍 create_2025_premium_tier called for seller: #{seller.email}"
+    
+    unless should_get_2025_premium?
+      Rails.logger.info "❌ Not 2025, skipping premium tier assignment"
+      return
+    end
+    
+    premium_tier = get_premium_tier
+    unless premium_tier
+      Rails.logger.error "❌ Premium tier not found in database"
+      return
+    end
+    
+    Rails.logger.info "✅ Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
+    
+    # Calculate expiry date (end of 2025)
+    expires_at = Time.new(2025, 12, 31, 23, 59, 59)
+    
+    # Create seller tier with premium status until end of 2025
+    seller_tier = SellerTier.create!(
+      seller: seller,
+      tier: premium_tier,
+      duration_months: 12, # Full year
+      expires_at: expires_at
+    )
+    
+    Rails.logger.info "✅ Premium tier assigned to seller #{seller.email} until end of 2025 (SellerTier ID: #{seller_tier.id})"
+  rescue => e
+    Rails.logger.error "❌ Error creating premium tier: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+  end
 
   def find_or_create_user_from_google_info(user_info)
     email = user_info[:email]
@@ -1041,7 +1252,7 @@ class AuthenticationController < ApplicationController
 
   def find_user_by_id_and_role(user_id, role)
     case role
-    when 'buyer'
+    when 'Buyer'
       Buyer.find_by(id: user_id)
     when 'seller'
       Seller.find_by(id: user_id)
@@ -1056,11 +1267,11 @@ class AuthenticationController < ApplicationController
 
   def determine_role(user)
     case user
-    when Buyer then 'buyer'
-    when Seller then 'seller'
-    when Admin then 'admin'
-    when SalesUser then 'sales'
-    else 'unknown'
+    when Buyer then 'Buyer'
+    when Seller then 'Seller'
+    when Admin then 'Admin'
+    when SalesUser then 'Sales'
+    else 'Unknown'
     end
   end
 
@@ -1083,40 +1294,142 @@ class AuthenticationController < ApplicationController
     username
   end
 
+  # Generate unique enterprise name to avoid duplicates
+  def generate_unique_enterprise_name(base_name)
+    return 'Business' if base_name.blank?
+    
+    # Clean the base name
+    clean_name = base_name.strip.gsub(/[^a-zA-Z0-9\s]/, '')
+    return 'Business' if clean_name.blank?
+    
+    enterprise_name = clean_name
+    counter = 1
+    
+    while Seller.exists?(enterprise_name: enterprise_name)
+      enterprise_name = "#{clean_name} #{counter}"
+      counter += 1
+    end
+    
+    enterprise_name
+  end
+
   def complete_oauth_registration
     begin
+      Rails.logger.info "📝 Complete OAuth registration request received"
+      Rails.logger.info "📝 Params: #{params.inspect}"
+      
       # Check if this is a new user creation with missing fields
       if params[:missing_fields].present?
-        # Create new user with provided data
-        user_attributes = {
-          fullname: params[:fullname],
-          email: params[:email],
-          username: params[:username] || generate_username(params[:email]),
-          phone_number: params[:phone_number],
-          gender: params[:gender] || 'Other',
-          city: params[:city],
-          location: params[:location],
-          profile_picture: params[:profile_picture],
-          provider: 'google',
-          uid: params[:uid],
-          age_group_id: params[:age_group_id] || 1,
-          county_id: params[:county_id] || 1,
-          sub_county_id: params[:sub_county_id] || 1
-        }
+        # Determine user type from role parameter
+        user_type = params[:role] || 'Buyer'
+        
+        if user_type == 'seller'
+          # Create seller with provided data
+          user_attributes = {
+            fullname: params[:fullname],
+            email: params[:email],
+            username: params[:username] || generate_username(params[:email]),
+            phone_number: params[:phone_number],
+            gender: params[:gender] || 'Other',
+            city: params[:city],
+            location: params[:location],
+            profile_picture: params[:profile_picture],
+            provider: 'google',
+            uid: params[:uid] || SecureRandom.hex(16),
+                 enterprise_name: params[:enterprise_name] || params[:fullname],
+                 business_type: params[:business_type] || 'Other',
+                 county_id: params[:county_id],
+                 sub_county_id: params[:sub_county_id],
+                 age_group_id: params[:age_group_id] || 1
+          }
 
-        # Create the buyer
-        user = Buyer.new(user_attributes)
+          Rails.logger.info "📝 Seller attributes: #{user_attributes.inspect}"
+
+          # Create the seller
+          user = Seller.new(user_attributes)
+        else
+          # Create buyer with provided data
+          user_attributes = {
+            fullname: params[:fullname],
+            email: params[:email],
+            username: params[:username] || generate_username(params[:email]),
+            phone_number: params[:phone_number],
+            gender: params[:gender] || 'Other',
+            city: params[:city],
+            location: params[:location],
+            profile_picture: params[:profile_picture],
+            provider: 'google',
+            uid: params[:uid] || SecureRandom.hex(16),
+            age_group_id: params[:age_group_id] || 1,
+            county_id: params[:county_id],
+            sub_county_id: params[:sub_county_id]
+          }
+
+          Rails.logger.info "📝 Buyer attributes: #{user_attributes.inspect}"
+
+          # Create the buyer
+          user = Buyer.new(user_attributes)
+        end
         
         if user.save
-          puts "✅ Buyer created successfully with missing fields: #{user.email}"
-          Rails.logger.info "✅ Buyer created successfully with missing fields: #{user.email}"
+          puts "✅ #{user_type.capitalize} created successfully with missing fields: #{user.email}"
+          Rails.logger.info "✅ #{user_type.capitalize} created successfully with missing fields: #{user.email}"
+          
+          # Create default seller tier for sellers
+          if user_type == 'seller'
+            default_tier = Tier.find_by(name: 'Free') || Tier.first
+            if default_tier
+              user.seller_tier = SellerTier.create!(
+                seller: user,
+                tier: default_tier,
+                duration_months: 0 # Free tier has no expiration
+              )
+              Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+            end
+          end
         else
-          puts "❌ Failed to create buyer: #{user.errors.full_messages.join(', ')}"
-          Rails.logger.error "❌ Failed to create buyer: #{user.errors.full_messages.join(', ')}"
+          puts "❌ Failed to create #{user_type}: #{user.errors.full_messages.join(', ')}"
+          Rails.logger.error "❌ Failed to create #{user_type}: #{user.errors.full_messages.join(', ')}"
+          
+          # Check for specific validation errors and provide better error messages
+          error_messages = []
+          user.errors.each do |field, message|
+            case field.to_s
+            when 'phone_number'
+              if message.include?('required for OAuth users')
+                error_messages << "Phone number is required for Google OAuth users"
+              elsif message.include?('exactly 10 digits')
+                error_messages << "Phone number must be exactly 10 digits"
+              else
+                error_messages << "Phone number: #{message}"
+              end
+            when 'username'
+              if message.include?('3-20 characters')
+                error_messages << "Username must be 3-20 characters"
+              elsif message.include?('letters, numbers, and underscores')
+                error_messages << "Username can only contain letters, numbers, and underscores"
+              else
+                error_messages << "Username: #{message}"
+              end
+            when 'enterprise_name'
+              error_messages << "Business name is required"
+            when 'location'
+              error_messages << "Location is required"
+            when 'county_id'
+              error_messages << "County is required"
+            when 'sub_county_id'
+              error_messages << "Sub-county is required"
+            when 'age_group_id'
+              error_messages << "Age group is required"
+            else
+              error_messages << "#{field.to_s.humanize}: #{message}"
+            end
+          end
           
           render json: { 
             success: false, 
-            error: "Failed to create user: #{user.errors.full_messages.join(', ')}" 
+            error: "Failed to create user: #{error_messages.join(', ')}",
+            validation_errors: user.errors.full_messages
           }, status: :unprocessable_entity
           return
         end
@@ -1155,12 +1468,20 @@ class AuthenticationController < ApplicationController
       end
 
       # Generate new token with complete user data
+      user_role = user.is_a?(Seller) ? 'seller' : 'Buyer'
       token_payload = {
         user_id: user.id,
         email: user.email,
-        role: 'buyer',
+        role: user_role,
         remember_me: true
       }
+      
+      # Add appropriate ID field based on user type
+      if user.is_a?(Seller)
+        token_payload[:seller_id] = user.id
+      else
+        token_payload[:user_id] = user.id
+      end
       
       token = JsonWebToken.encode(token_payload)
       
@@ -1168,7 +1489,7 @@ class AuthenticationController < ApplicationController
       user_response = {
         id: user.id,
         email: user.email,
-        role: 'buyer',
+        role: user_role,
         name: user.fullname || user.username,
         username: user.username,
         profile_picture: user.profile_picture

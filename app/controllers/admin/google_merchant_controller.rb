@@ -4,15 +4,19 @@ class Admin::GoogleMerchantController < ApplicationController
   
   # GET /admin/google_merchant/status
   def status
-    render json: {
-      status: 'Google Merchant API integration is configured',
-      last_sync: last_sync_time,
-      total_ads: Ad.active.count,
-      valid_ads: Ad.active.joins(:seller)
+    # Get premium ads only (tier_id = 4)
+    premium_ads = Ad.active
+                    .joins(seller: { seller_tier: :tier })
                     .where(sellers: { blocked: false, deleted: false })
                     .where(flagged: false)
                     .where.not(media: [nil, [], ""])
-                    .count
+                    .where(tiers: { id: 4 })
+    
+    render json: {
+      status: 'Google Merchant API integration is configured',
+      last_sync: last_sync_time,
+      total_premium_ads: premium_ads.count,
+      valid_premium_ads: premium_ads.select { |ad| ad.valid_for_google_merchant? }.count
     }
   end
   
@@ -95,12 +99,14 @@ class Admin::GoogleMerchantController < ApplicationController
     per_page = params[:per_page]&.to_i || 50
     per_page = [per_page, 100].min # Cap at 100
     
+    # Get premium ads only (tier_id = 4)
     ads = Ad.active
-            .joins(:seller)
+            .joins(seller: { seller_tier: :tier })
             .where(sellers: { blocked: false, deleted: false })
             .where(flagged: false)
             .where.not(media: [nil, [], ""])
-            .includes(:seller, :category, :subcategory)
+            .where(tiers: { id: 4 })
+            .includes(:seller, :category, :subcategory, seller: { seller_tier: :tier })
             .order(created_at: :desc)
             .offset((page - 1) * per_page)
             .limit(per_page)
@@ -109,30 +115,44 @@ class Admin::GoogleMerchantController < ApplicationController
       {
         id: ad.id,
         title: ad.title,
+        description: ad.description,
         price: ad.price,
+        brand: ad.brand,
+        manufacturer: ad.manufacturer,
+        condition: ad.condition,
+        media: ad.media,
+        first_image: ad.first_valid_media_url,
         seller: {
           id: ad.seller.id,
-          enterprise_name: ad.seller.enterprise_name
+          enterprise_name: ad.seller.enterprise_name,
+          tier_name: ad.seller.seller_tier&.tier&.name
         },
         category: ad.category&.name,
         subcategory: ad.subcategory&.name,
         valid_for_google_merchant: ad.valid_for_google_merchant?,
         product_url: ad.product_url,
+        google_merchant_data: ad.google_merchant_data,
         created_at: ad.created_at,
         updated_at: ad.updated_at
       }
     end
+    
+    # Count total premium ads
+    total_premium_ads = Ad.active
+                          .joins(seller: { seller_tier: :tier })
+                          .where(sellers: { blocked: false, deleted: false })
+                          .where(flagged: false)
+                          .where.not(media: [nil, [], ""])
+                          .where(tiers: { id: 4 })
+                          .count
     
     render json: {
       ads: ads_data,
       pagination: {
         page: page,
         per_page: per_page,
-        total: Ad.active.joins(:seller)
-                  .where(sellers: { blocked: false, deleted: false })
-                  .where(flagged: false)
-                  .where.not(media: [nil, [], ""])
-                  .count
+        total: total_premium_ads,
+        total_pages: (total_premium_ads.to_f / per_page).ceil
       }
     }
   end

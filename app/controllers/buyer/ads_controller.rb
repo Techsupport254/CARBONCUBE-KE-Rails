@@ -4,9 +4,10 @@ class Buyer::AdsController < ApplicationController
 
   # GET /buyer/ads
   def index
-    per_page = params[:per_page]&.to_i || 24
-    per_page = 500 if per_page > 500
-    page = params[:page].to_i.positive? ? params[:page].to_i : 1
+    PerformanceMonitor.track_api_performance('buyer_ads_index') do
+      per_page = params[:per_page]&.to_i || 24
+      per_page = 500 if per_page > 500
+      page = params[:page].to_i.positive? ? params[:page].to_i : 1
 
     # For the home page, get a balanced distribution of ads across subcategories
     # Only use balanced distribution if explicitly requested AND no category filtering
@@ -29,25 +30,20 @@ class Buyer::AdsController < ApplicationController
         cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}_#{Time.current.to_i / 60}"
         
         @ads = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
-        ads_query = Ad.active.with_valid_images
-                     .joins(:seller, :category, :subcategory)
-                     .joins(seller: { seller_tier: :tier })
-                     .includes(:category, :subcategory, seller: { seller_tier: :tier })
-                     .where(sellers: { blocked: false, deleted: false })
-                     .where(flagged: false)
-                     .select('ads.id, ads.title, ads.price, ads.media, ads.created_at, ads.subcategory_id, ads.category_id, ads.seller_id, CASE tiers.id
-                               WHEN 4 THEN 1
-                               WHEN 3 THEN 2
-                               WHEN 2 THEN 3
-                               WHEN 1 THEN 4
-                               ELSE 5
-                             END AS tier_priority')
+          # Use optimized query with proper ActiveRecord objects
+          ads_query = Ad.active.with_valid_images
+                       .joins(:seller, :category, :subcategory)
+                       .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
+                       .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
+                       .where(sellers: { blocked: false, deleted: false })
+                       .where(flagged: false)
+                       .includes(:category, :subcategory, seller: { seller_tier: :tier })
 
-        ads_query = filter_by_category(ads_query) if params[:category_id].present?
-        ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+          ads_query = filter_by_category(ads_query) if params[:category_id].present?
+          ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
 
-        # Enhanced randomization with multiple factors for better distribution
-        get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
+          # Enhanced randomization with multiple factors for better distribution
+          get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
         end
       end
     end
@@ -77,7 +73,7 @@ class Buyer::AdsController < ApplicationController
       best_sellers = calculate_best_sellers_fast(20) # Get 20 best sellers
     end
 
-    # Optimize response with minimal data for faster transfer
+    # Optimize response with pre-calculated data for faster transfer
     optimized_ads = @ads.map do |ad|
       # Calculate tier priority from seller tier
       tier_priority = case ad.seller&.seller_tier&.tier&.id
@@ -111,17 +107,18 @@ class Buyer::AdsController < ApplicationController
     # Add cache headers for faster transfer
     response.headers['Cache-Control'] = 'public, max-age=1800' # 30 minutes cache
     
-    render json: {
-      ads: optimized_ads,
-      subcategory_counts: @subcategory_counts || {},
-      best_sellers: best_sellers,
-      pagination: {
-        current_page: page,
-        per_page: per_page,
-        total_count: total_count,
-        total_pages: (total_count.to_f / per_page).ceil
+      render json: {
+        ads: optimized_ads,
+        subcategory_counts: @subcategory_counts || {},
+        best_sellers: best_sellers,
+        pagination: {
+          current_page: page,
+          per_page: per_page,
+          total_count: total_count,
+          total_pages: (total_count.to_f / per_page).ceil
+        }
       }
-    }
+    end
   end
 
   # GET /buyer/ads/:id
@@ -526,19 +523,14 @@ class Buyer::AdsController < ApplicationController
 
   # Fetch ads without any caching for true randomization
   def fetch_ads_without_cache(per_page, page)
+    # Use optimized query with proper ActiveRecord objects
     ads_query = Ad.active.with_valid_images
                  .joins(:seller, :category, :subcategory)
-                 .joins(seller: { seller_tier: :tier })
-                 .includes(:category, :subcategory, seller: { seller_tier: :tier })
+                 .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
+                 .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
                  .where(sellers: { blocked: false, deleted: false })
                  .where(flagged: false)
-                 .select('ads.id, ads.title, ads.price, ads.media, ads.created_at, ads.subcategory_id, ads.category_id, ads.seller_id, CASE tiers.id
-                           WHEN 4 THEN 1
-                           WHEN 3 THEN 2
-                           WHEN 2 THEN 3
-                           WHEN 1 THEN 4
-                           ELSE 5
-                         END AS tier_priority')
+                 .includes(:category, :subcategory, seller: { seller_tier: :tier })
 
     ads_query = filter_by_category(ads_query) if params[:category_id].present?
     ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?

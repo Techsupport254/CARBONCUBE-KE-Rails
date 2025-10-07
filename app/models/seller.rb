@@ -2,7 +2,7 @@
 class Seller < ApplicationRecord
   before_validation :normalize_email
 
-  has_secure_password
+  has_secure_password validations: false
   has_and_belongs_to_many :categories
   has_many :ads
   has_many :reviews, through: :ads
@@ -26,7 +26,7 @@ class Seller < ApplicationRecord
   validates :sub_county_id, presence: true
   validates :fullname, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
-            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }
+            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
   validates :location, presence: true
@@ -85,7 +85,14 @@ class Seller < ApplicationRecord
   end
 
   def password_required?
+    # OAuth users don't need passwords
+    return false if provider.present? || uid.present?
+    
     new_record? || password.present?
+  end
+
+  def oauth_user?
+    provider.present? || uid.present?
   end
 
   def ads_count

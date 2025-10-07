@@ -45,3 +45,6 @@ credentials.yaml
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 /config/master.key
+
+# Google Merchant credentials
+/config/google-merchant-key.json

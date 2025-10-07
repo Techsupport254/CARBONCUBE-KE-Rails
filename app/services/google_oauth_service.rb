@@ -6,10 +6,21 @@ class GoogleOauthService
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
   GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
   
-  def initialize(auth_code, redirect_uri, user_ip = nil)
+  def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil)
+    Rails.logger.info "🔧 GoogleOauthService#initialize called with:"
+    Rails.logger.info "  - auth_code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
+    Rails.logger.info "  - redirect_uri: #{redirect_uri}"
+    Rails.logger.info "  - user_ip: #{user_ip}"
+    Rails.logger.info "  - role: #{role.inspect} (#{role.class})"
+    Rails.logger.info "  - location_data: #{location_data.inspect}"
+    
     @auth_code = auth_code
     @redirect_uri = redirect_uri
     @user_ip = user_ip
+    @role = role
+    @location_data = location_data
+    
+    Rails.logger.info "✅ GoogleOauthService initialized with @role = #{@role.inspect}"
   end
 
   def authenticate
@@ -46,17 +57,21 @@ class GoogleOauthService
         location_info['locale'] = user_info['locale']
       end
       
-      # Method 2: IP-based geolocation
+      # Method 2: IP-based geolocation with county/sub-county mapping
       ip_location = get_location_from_ip(@user_ip)
       if ip_location
-        location_info['ip_location'] = ip_location
+        # Enhance IP location with county/sub-county mapping
+        enhanced_location = enhance_location_with_county_mapping(ip_location)
+        location_info['ip_location'] = enhanced_location
       end
       
       # Method 3: Google Maps Geocoding API (if we have any location data)
       if location_info['locale'] || location_info['ip_location']
         geocoded_location = get_location_from_geocoding(location_info)
         if geocoded_location
-          location_info['geocoded_location'] = geocoded_location
+          # Enhance geocoded location with county/sub-county mapping
+          enhanced_geocoded = enhance_location_with_county_mapping(geocoded_location)
+          location_info['geocoded_location'] = enhanced_geocoded
         end
       end
       
@@ -77,6 +92,21 @@ class GoogleOauthService
       if existing_user
         Rails.logger.info "Existing user found: #{existing_user.class.name} - #{existing_user.email}"
         
+        # Check for role mismatch - if user is trying to authenticate as a different role
+        existing_role = determine_user_role(existing_user)
+        requested_role = @role || 'Buyer'
+        
+        if existing_role != requested_role
+          Rails.logger.error "❌ Role mismatch: User #{existing_user.email} is a #{existing_role} but trying to authenticate as #{requested_role}"
+          return {
+            success: false,
+            error: "You are already registered as a #{existing_role}. Please sign in with your existing account.",
+            role_mismatch: true,
+            existing_role: existing_role,
+            requested_role: requested_role
+          }
+        end
+        
         # Generate JWT token for existing user
         token = generate_jwt_token(existing_user)
         
@@ -88,64 +118,24 @@ class GoogleOauthService
           location_data: location_info
         }
       else
-        Rails.logger.info "Creating new buyer user"
+        Rails.logger.info "No existing user found - attempting to create new user"
         
-        # Create new buyer user
-        new_buyer = create_buyer_user(user_info, location_info)
+        # Try to create a new user - this will return missing fields if any are missing
+        user_type = determine_user_type_from_context
+        Rails.logger.info "Creating new #{user_type} user"
         
-        # Check if this is a missing fields case
-        if new_buyer.respond_to?(:missing_fields) && new_buyer.missing_fields.any?
-          Rails.logger.info "Missing required fields detected: #{new_buyer.missing_fields.join(', ')}"
-          
+        if user_type == 'buyer'
+          create_buyer_user(user_info, location_info)
+        elsif user_type == 'seller'
+          create_seller_user(user_info, location_info)
+        else
+          Rails.logger.error "Unknown user type: #{user_type}"
           {
             success: false,
-            error: "Missing required fields: #{new_buyer.missing_fields.join(', ')}",
-            missing_fields: new_buyer.missing_fields,
-            user_data: new_buyer.user_data_for_modal
+            error: "Invalid user type. Please try again.",
+            not_registered: true,
+            user_data: format_user_data_for_modal(user_info, location_info)
           }
-        elsif new_buyer.persisted?
-          Rails.logger.info "New buyer created successfully: #{new_buyer.email}"
-          
-          # Send welcome email
-          begin
-            WelcomeMailer.welcome_email(new_buyer).deliver_now
-            Rails.logger.info "Welcome email sent to: #{new_buyer.email}"
-          rescue => e
-            Rails.logger.error "Failed to send welcome email: #{e.message}"
-            # Don't fail the registration if email fails
-          end
-          
-          # Generate JWT token for new user
-          token = generate_jwt_token(new_buyer)
-          
-          { 
-            success: true, 
-            user: format_user_response(new_buyer), 
-            token: token,
-            new_user: true,
-            location_data: location_info
-          }
-        else
-          Rails.logger.error "Failed to create buyer: #{new_buyer.errors.full_messages.join(', ')}"
-          
-          # Check if it's a missing required fields error
-          missing_fields = determine_missing_fields(new_buyer.errors, user_info)
-          
-          if missing_fields.any?
-            Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
-            
-            {
-              success: false,
-              error: "Missing required fields: #{missing_fields.join(', ')}",
-              missing_fields: missing_fields,
-              user_data: format_user_data_for_modal(user_info, location_info)
-            }
-          else
-            {
-              success: false,
-              error: "Failed to create user: #{new_buyer.errors.full_messages.join(', ')}"
-            }
-          end
         end
       end
     rescue => e
@@ -160,22 +150,257 @@ class GoogleOauthService
     # Extract the best available name from Google
     fullname = extract_best_name(user_info)
     
+    # Extract and fix profile picture URL from Google
+    profile_picture = nil
+    if user_info['picture'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['picture'])
+    elsif user_info['photo_url'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
+    elsif user_info['image'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['image'])
+    end
+    
+    # Extract comprehensive location data - no fallbacks, only use actual detected data
+    city = location_info.dig('ip_location', 'city') || 
+           location_info.dig('geocoded_location', 'city') || 
+           location_info.dig('address_from_coordinates', 'city')
+    
+    # Fix city name based on county mapping if we have better county information
+    city = fix_city_based_on_county(city, location_info)
+    
+    location = location_info.dig('ip_location', 'formatted_address') || 
+               location_info.dig('geocoded_location', 'formatted_address') || 
+               location_info.dig('address_from_coordinates', 'formatted_address')
+    
+    # Extract phone number from multiple sources
+    phone_number = user_info['phone_number'] || 
+                   user_info['phone_numbers']&.first&.dig('value') ||
+                   nil
+    
+    # Clean phone number if present
+    if phone_number.present?
+      phone_number = phone_number.gsub(/\D/, '') # Remove non-digits
+      # Remove country code if present (254 for Kenya)
+      phone_number = phone_number[3..-1] if phone_number.start_with?('254') && phone_number.length == 12
+      phone_number = phone_number[1..-1] if phone_number.start_with?('0') && phone_number.length == 11
+      phone_number = "0#{phone_number}" if phone_number.length == 9 && phone_number.start_with?('7')
+    end
+    
+    # Extract gender with proper formatting
+    gender = user_info['gender']&.capitalize || 'Male'
+    
+    # Extract birthday and calculate age group
+    birthday = user_info['birthday'] || user_info['birth_date']
+    age_group_id = calculate_age_group(user_info) if birthday.present?
+    
+    # Generate username from name
+    username = generate_unique_username(fullname)
+    
+    # For seller-specific data
+    enterprise_name = fullname # Use fullname as default enterprise name
+    business_type = 'Other' # Default business type
+    
     {
+      # Basic user info
       fullname: fullname,
       email: user_info['email'],
-      profile_picture: fix_google_profile_picture_url(user_info['picture']),
-      gender: user_info['gender']&.capitalize,
-      birthday: user_info['birthday'],
-      # Location data from various sources
-      city: location_info.dig('ip_location', 'city') || location_info.dig('address_from_coordinates', 'city'),
-      location: location_info.dig('ip_location', 'region_name') || location_info.dig('address_from_coordinates', 'formatted_address'),
-      # Any other relevant data
-      phone_number: user_info['phone_number'],
-      username: generate_unique_username(fullname)
+      username: username,
+      profile_picture: profile_picture,
+      gender: gender,
+      birthday: birthday,
+      age_group_id: age_group_id,
+      
+      # Contact info
+      phone_number: phone_number,
+      
+      # Location data - only use actual detected data, no fallbacks
+      city: city,
+      location: location,
+      county_id: location_info.dig('ip_location', 'county_id'),
+      sub_county_id: location_info.dig('ip_location', 'sub_county_id'),
+      
+      # Seller-specific data
+      enterprise_name: enterprise_name,
+      business_type: business_type,
+      
+      # Additional Google data
+      given_name: user_info['given_name'],
+      family_name: user_info['family_name'],
+      display_name: user_info['display_name'],
+      
+      # Location sources for debugging
+      location_sources: location_info['location_sources'] || []
     }
   end
 
   private
+
+  # Determine user type from OAuth context
+  def determine_user_type_from_context
+    # Use the role parameter passed during initialization
+    # Default to 'buyer' only if role is nil or empty
+    Rails.logger.info "🔍 Determining user type - @role: #{@role.inspect}"
+    Rails.logger.info "🔍 @role.class: #{@role.class}"
+    Rails.logger.info "🔍 @role.nil?: #{@role.nil?}"
+    Rails.logger.info "🔍 @role.empty?: #{@role.empty? if @role.respond_to?(:empty?)}"
+    
+    # Convert to string and downcase for consistency
+    role_string = @role.to_s.downcase
+    Rails.logger.info "🔍 Role string: #{role_string}"
+    
+    return 'buyer' if role_string.nil? || role_string.empty?
+    Rails.logger.info "🔍 User type determined as: #{role_string}"
+    role_string
+  end
+
+  # Create new seller user
+  def create_seller_user(user_info, location_info)
+    Rails.logger.info "Creating seller with data"
+    
+    # Extract phone number (use the first available phone)
+    phone_number = user_info['phone_number'] || user_info['phone_numbers']&.first&.dig('value')
+    
+    # Clean phone number (remove spaces, +, etc.)
+    if phone_number
+      phone_number = phone_number.gsub(/\D/, '') # Remove non-digits
+      # Remove country code if present (254 for Kenya)
+      phone_number = phone_number[3..-1] if phone_number.start_with?('254') && phone_number.length == 12
+      phone_number = phone_number[1..-1] if phone_number.start_with?('0') && phone_number.length == 11
+    end
+
+    # Generate username from email
+    username = user_info['email'].split('@').first.gsub(/[^a-zA-Z0-9_]/, '')
+    # Ensure username is unique
+    original_username = username
+    counter = 1
+    while Seller.exists?(username: username)
+      username = "#{original_username}#{counter}"
+      counter += 1
+    end
+
+    # Get location data
+    city = location_info.dig('ip_location', 'city') || location_info.dig('geocoded_location', 'city')
+    location = location_info.dig('ip_location', 'formatted_address') || location_info.dig('geocoded_location', 'formatted_address') 
+    # Extract and fix profile picture URL from Google
+    profile_picture = nil
+    if user_info['picture'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['picture'])
+    elsif user_info['photo_url'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
+    elsif user_info['image'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['image'])
+    end
+
+    # Generate unique enterprise name
+    base_enterprise_name = user_info['name'] || user_info['display_name'] || 'Business'
+    enterprise_name = generate_unique_enterprise_name(base_enterprise_name)
+
+    # Create seller attributes
+    seller_attributes = {
+      fullname: user_info['name'] || user_info['display_name'],
+      email: user_info['email'],
+      username: username,
+      phone_number: phone_number,
+      gender: user_info['gender']&.capitalize || 'Other',
+      city: city,
+      location: location,
+      profile_picture: profile_picture,
+      provider: 'google',
+      uid: user_info['id'],
+      # Set seller-specific fields - only use actual data
+      enterprise_name: enterprise_name,
+      county_id: location_info.dig('ip_location', 'county_id'),
+      sub_county_id: location_info.dig('ip_location', 'sub_county_id'),
+      age_group_id: calculate_age_group(user_info)
+    }
+
+    Rails.logger.info "Seller attributes: #{seller_attributes.inspect}"
+
+    # Check for ALL required fields that would prevent user creation
+    missing_fields = []
+    
+    # Required fields for seller creation (based on Seller model validations)
+    missing_fields << 'fullname' if seller_attributes[:fullname].blank?
+    missing_fields << 'phone_number' if seller_attributes[:phone_number].blank?
+    missing_fields << 'enterprise_name' if seller_attributes[:enterprise_name].blank?
+    missing_fields << 'age_group_id' if seller_attributes[:age_group_id].blank?
+    missing_fields << 'county_id' if seller_attributes[:county_id].blank?
+    missing_fields << 'sub_county_id' if seller_attributes[:sub_county_id].blank?
+    missing_fields << 'location' if seller_attributes[:location].blank?
+    
+    # If we have missing required fields, return missing fields info for complete registration
+    if missing_fields.any?
+      Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
+      
+      # Create a seller object that will fail validation but contains the missing fields info
+      seller = Seller.new(seller_attributes)
+      service_instance = self
+      seller.define_singleton_method(:missing_fields) { missing_fields }
+      seller.define_singleton_method(:user_data_for_modal) { service_instance.format_user_data_for_modal(user_info, location_info) }
+      return seller
+    end
+
+    # Create the seller
+    seller = Seller.new(seller_attributes)
+    
+    if seller.save
+      Rails.logger.info "Seller created successfully: #{seller.email}"
+      
+      # Handle seller tier assignment
+      if should_get_2025_premium?
+        create_2025_premium_tier(seller)
+      else
+        # Create default seller tier (Free tier)
+        default_tier = Tier.find_by(name: 'Free') || Tier.first
+        if default_tier
+          seller.seller_tier = SellerTier.create!(
+            seller: seller,
+            tier: default_tier,
+            duration_months: 0 # Free tier has no expiration
+          )
+          Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+        end
+      end
+      
+      # Cache the profile picture after user creation to avoid rate limiting
+      if seller.profile_picture.present? && seller.profile_picture.include?('googleusercontent.com')
+        Rails.logger.info "🔄 Attempting to cache profile picture for seller #{seller.id}: #{seller.profile_picture}"
+        cache_service = ProfilePictureCacheService.new
+        cached_url = cache_service.cache_google_profile_picture(seller.profile_picture, seller.id)
+        
+        if cached_url.present?
+          seller.update_column(:profile_picture, cached_url)
+          Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
+        else
+          Rails.logger.warn "⚠️ Failed to cache profile picture for seller #{seller.id}"
+        end
+      else
+        Rails.logger.info "ℹ️ No Google profile picture to cache for seller #{seller.id}: #{seller.profile_picture}"
+      end
+      
+      # Generate JWT token for new user
+      token = generate_jwt_token(seller)
+      
+      # Return success response
+      { 
+        success: true, 
+        user: format_user_response(seller), 
+        token: token,
+        new_user: true
+      }
+    else
+      Rails.logger.error "Seller creation failed: #{seller.errors.full_messages.join(', ')}"
+      
+      # Log detailed validation errors for debugging
+      Rails.logger.info "Detailed validation errors:"
+      seller.errors.each do |field, messages|
+        Rails.logger.info "  #{field}: #{messages.join(', ')}"
+      end
+      
+      # Return the seller object with missing fields (this will be handled by the controller)
+      seller
+    end
+  end
 
   # Find existing user in any model (Buyer or Seller)
   def find_existing_user(email)
@@ -199,9 +424,29 @@ class GoogleOauthService
     nil
   end
 
+  # Determine the role of an existing user
+  def determine_user_role(user)
+    case user.class.name
+    when 'Admin'
+      'Admin'
+    when 'SalesUser'
+      'Sales'
+    when 'Seller'
+      'Seller'
+    when 'Buyer'
+      'Buyer'
+    else
+      'Buyer' # default fallback
+    end
+  end
+
   # Create new buyer user
   def create_buyer_user(user_info, location_info)
     Rails.logger.info "Creating buyer with data"
+    Rails.logger.info "🔍 Profile picture data in create_buyer_user:"
+    Rails.logger.info "   user_info['profile_picture']: #{user_info['profile_picture'].inspect}"
+    Rails.logger.info "   user_info[:profile_picture]: #{user_info[:profile_picture].inspect}"
+    Rails.logger.info "   user_info['picture']: #{user_info['picture'].inspect}"
     
     # Extract phone number (use the first available phone)
     phone_number = user_info['phone_number'] || user_info['phone_numbers']&.first&.dig('value')
@@ -225,8 +470,22 @@ class GoogleOauthService
     end
 
     # Get location data
-    city = location_info.dig('ip_location', 'city') || location_info.dig('geocoded_location', 'city') || 'Nairobi'
-    location = location_info.dig('ip_location', 'formatted_address') || location_info.dig('geocoded_location', 'formatted_address') || city
+    city = location_info.dig('ip_location', 'city') || location_info.dig('geocoded_location', 'city')
+    location = location_info.dig('ip_location', 'formatted_address') || location_info.dig('geocoded_location', 'formatted_address') 
+    # Extract and fix profile picture URL from Google
+    profile_picture = nil
+    if user_info['picture'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['picture'])
+      Rails.logger.info "📸 Profile picture from 'picture' field: #{profile_picture}"
+    elsif user_info['photo_url'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
+      Rails.logger.info "📸 Profile picture from 'photo_url' field: #{profile_picture}"
+    elsif user_info['image'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['image'])
+      Rails.logger.info "📸 Profile picture from 'image' field: #{profile_picture}"
+    else
+      Rails.logger.warn "⚠️ No profile picture found in Google user info"
+    end
 
     # Create buyer attributes
     buyer_attributes = {
@@ -237,14 +496,13 @@ class GoogleOauthService
       gender: user_info['gender']&.capitalize || 'Other',
       city: city,
       location: location,
-      profile_picture: user_info['picture'],
+      profile_picture: profile_picture,
       provider: 'google',
       uid: user_info['id'],
-      # Set default age group (you might want to calculate this from birthday)
-      age_group_id: 1, # Default age group - you should set this based on birthday
-      # Set default county and sub_county (you might want to map this from location)
-      county_id: 1, # Default county - you should map this from location
-      sub_county_id: 1, # Default sub_county - you should map this from location
+      # Use actual detected data - no hardcoded defaults
+      age_group_id: calculate_age_group(user_info),
+      county_id: location_info.dig('ip_location', 'county_id'),
+      sub_county_id: location_info.dig('ip_location', 'sub_county_id')
     }
 
     Rails.logger.info "Buyer attributes: #{buyer_attributes.inspect}"
@@ -256,7 +514,9 @@ class GoogleOauthService
     missing_fields << 'fullname' if buyer_attributes[:fullname].blank?
     missing_fields << 'phone_number' if buyer_attributes[:phone_number].blank?
     missing_fields << 'gender' if buyer_attributes[:gender].blank?
-    missing_fields << 'age_group' if buyer_attributes[:age_group_id].blank?
+    missing_fields << 'age_group_id' if buyer_attributes[:age_group_id].blank?
+    missing_fields << 'county_id' if buyer_attributes[:county_id].blank?
+    missing_fields << 'sub_county_id' if buyer_attributes[:sub_county_id].blank?
     
     # If we have missing required fields, return missing fields info for complete registration
     if missing_fields.any?
@@ -275,6 +535,33 @@ class GoogleOauthService
     
     if buyer.save
       Rails.logger.info "Buyer created successfully: #{buyer.email}"
+      
+      # Cache the profile picture after user creation to avoid rate limiting
+      if buyer.profile_picture.present? && buyer.profile_picture.include?('googleusercontent.com')
+        Rails.logger.info "🔄 Attempting to cache profile picture for buyer #{buyer.id}: #{buyer.profile_picture}"
+        cache_service = ProfilePictureCacheService.new
+        cached_url = cache_service.cache_google_profile_picture(buyer.profile_picture, buyer.id)
+        
+        if cached_url.present?
+          buyer.update_column(:profile_picture, cached_url)
+          Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
+        else
+          Rails.logger.warn "⚠️ Failed to cache profile picture for buyer #{buyer.id}"
+        end
+      else
+        Rails.logger.info "ℹ️ No Google profile picture to cache for buyer #{buyer.id}: #{buyer.profile_picture}"
+      end
+      
+      # Generate JWT token for new user
+      token = generate_jwt_token(buyer)
+      
+      # Return success response
+      { 
+        success: true, 
+        user: format_user_response(buyer), 
+        token: token,
+        new_user: true
+      }
     else
       Rails.logger.error "Buyer creation failed: #{buyer.errors.full_messages.join(', ')}"
       
@@ -283,9 +570,10 @@ class GoogleOauthService
       buyer.errors.each do |field, messages|
         Rails.logger.info "  #{field}: #{messages.join(', ')}"
       end
+      
+      # Return the buyer object with missing fields (this will be handled by the controller)
+      buyer
     end
-
-    buyer
   end
 
   # Generate JWT token for user
@@ -396,50 +684,421 @@ class GoogleOauthService
     username
   end
 
-  # Method 2: IP-based geolocation
+  # Fix city name based on county information
+  def fix_city_based_on_county(city, location_info)
+    return city unless city.present?
+    
+    # Get county information from location data
+    county_id = location_info.dig('ip_location', 'county_id') || 
+                location_info.dig('geocoded_location', 'county_id')
+    
+    return city unless county_id.present?
+    
+    begin
+      county = County.find_by(id: county_id)
+      return city unless county.present?
+      
+      # If we detected a county but the city doesn't match, use the county's capital
+      county_capital = county.capital
+      
+      # Only override if the detected city doesn't make sense for the county
+      if should_override_city(city, county)
+        Rails.logger.info "🗺️ Overriding city '#{city}' with county capital '#{county_capital}' for #{county.name}"
+        return county_capital
+      end
+      
+      city
+    rescue => e
+      Rails.logger.error "Error fixing city based on county: #{e.message}"
+      city
+    end
+  end
+
+  # Determine if we should override the detected city
+  def should_override_city(detected_city, county)
+    detected_city_normalized = detected_city.downcase.strip
+    county_name_normalized = county.name.downcase
+    
+    # Override if detected city is a major city that doesn't belong to this county
+    major_city_mismatches = {
+      'nairobi' => ['kiambu', 'machakos', 'kajiado'], # Nairobi is often detected for nearby counties
+      'mombasa' => ['kilifi', 'kwale'], # Mombasa is often detected for coastal counties
+      'kisumu' => ['siaya', 'vihiga', 'kakamega'] # Kisumu is often detected for western counties
+    }
+    
+    # Check if detected city is a major city that doesn't belong to this county
+    major_city_mismatches.each do |major_city, excluded_counties|
+      if detected_city_normalized == major_city && excluded_counties.include?(county_name_normalized)
+        return true
+      end
+    end
+    
+    # Override if detected city is clearly wrong (e.g., Nairobi detected for Kiambu)
+    if detected_city_normalized == 'nairobi' && county_name_normalized == 'kiambu'
+      return true
+    end
+    
+    # Override if detected city is a major city but county is not the major city's county
+    if detected_city_normalized == 'nairobi' && county_name_normalized != 'nairobi'
+      return true
+    end
+    
+    false
+  end
+
+  # Enhance location data with county/sub-county mapping
+  def enhance_location_with_county_mapping(location_data)
+    return location_data unless location_data.present?
+    
+    begin
+      city = location_data['city']
+      region = location_data['region_name']
+      country = location_data['country']
+      
+      # Only map if it's Kenya
+      if country&.downcase&.include?('kenya')
+        county_mapping = map_to_kenyan_county(city, region, country)
+        if county_mapping
+          location_data['county_id'] = county_mapping[:county_id]
+          location_data['sub_county_id'] = county_mapping[:sub_county_id]
+          Rails.logger.info "🗺️ Enhanced location with county mapping: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
+        end
+      end
+      
+      location_data
+    rescue => e
+      Rails.logger.error "Error enhancing location with county mapping: #{e.message}"
+      location_data
+    end
+  end
+
+  # Map location to Kenyan county and sub-county
+  def map_to_kenyan_county(city, region, country)
+    return nil unless country&.downcase&.include?('kenya')
+    
+    # Normalize city and region names for matching
+    city_normalized = city&.downcase&.strip
+    region_normalized = region&.downcase&.strip
+    
+    Rails.logger.info "🗺️ Mapping location: City='#{city}', Region='#{region}', Country='#{country}'"
+    
+    # Direct city to county mapping for major Kenyan cities
+    city_county_mapping = {
+      'nairobi' => 'Nairobi',
+      'mombasa' => 'Mombasa',
+      'kisumu' => 'Kisumu',
+      'nakuru' => 'Nakuru',
+      'eldoret' => 'Uasin Gishu',
+      'thika' => 'Kiambu',
+      'malindi' => 'Kilifi',
+      'kitale' => 'Trans Nzoia',
+      'garissa' => 'Garissa',
+      'kakamega' => 'Kakamega',
+      'meru' => 'Meru',
+      'kisii' => 'Kisii',
+      'nyeri' => 'Nyeri',
+      'machakos' => 'Machakos',
+      'kericho' => 'Kericho',
+      'lamu' => 'Lamu',
+      'bomet' => 'Bomet',
+      'vihiga' => 'Vihiga',
+      'baringo' => 'Baringo',
+      'bungoma' => 'Bungoma',
+      'busia' => 'Busia',
+      'embu' => 'Embu',
+      'homa bay' => 'Homa Bay',
+      'isiolo' => 'Isiolo',
+      'kajiado' => 'Kajiado',
+      'kilifi' => 'Kilifi',
+      'kirinyaga' => 'Kirinyaga',
+      'kitui' => 'Kitui',
+      'kwale' => 'Kwale',
+      'laikipia' => 'Laikipia',
+      'makueni' => 'Makueni',
+      'mandera' => 'Mandera',
+      'marsabit' => 'Marsabit',
+      'murang\'a' => 'Murang\'a',
+      'muranga' => 'Murang\'a',
+      'nyamira' => 'Nyamira',
+      'nyandarua' => 'Nyandarua',
+      'samburu' => 'Samburu',
+      'siaya' => 'Siaya',
+      'taita taveta' => 'Taita Taveta',
+      'tana river' => 'Tana River',
+      'tharaka nithi' => 'Tharaka Nithi',
+      'trans nzoia' => 'Trans Nzoia',
+      'turkana' => 'Turkana',
+      'uasin gishu' => 'Uasin Gishu',
+      'wajir' => 'Wajir',
+      'west pokot' => 'West Pokot'
+    }
+    
+    # Try to find county by city name
+    county_name = city_county_mapping[city_normalized]
+    
+    # If not found by city, try by region
+    if county_name.nil?
+      county_name = city_county_mapping[region_normalized]
+    end
+    
+    # If still not found, try partial matching
+    if county_name.nil?
+      city_county_mapping.each do |key, value|
+        if city_normalized&.include?(key) || key.include?(city_normalized)
+          county_name = value
+          break
+        end
+      end
+    end
+    
+    if county_name
+      county = County.find_by(name: county_name)
+      if county
+        # Try to find the most appropriate sub-county based on city name
+        sub_county = find_best_sub_county(county, city, region)
+        
+        Rails.logger.info "🗺️ Found county: #{county.name} (ID: #{county.id})"
+        Rails.logger.info "🗺️ Using sub-county: #{sub_county&.name} (ID: #{sub_county&.id})"
+        
+        return {
+          county_id: county.id,
+          sub_county_id: sub_county&.id
+        }
+      end
+    end
+    
+    Rails.logger.info "🗺️ No county mapping found for: #{city}, #{region}"
+    nil
+  end
+
+  # Find the best sub-county based on city/region name
+  def find_best_sub_county(county, city, region)
+    return county.sub_counties.first unless city.present?
+    
+    city_normalized = city.downcase.strip
+    region_normalized = region&.downcase&.strip
+    
+    # Try to find sub-county by exact name match
+    sub_county = county.sub_counties.find { |sc| sc.name.downcase == city_normalized }
+    return sub_county if sub_county
+    
+    # Try to find sub-county by partial name match
+    sub_county = county.sub_counties.find { |sc| 
+      sc.name.downcase.include?(city_normalized) || city_normalized.include?(sc.name.downcase)
+    }
+    return sub_county if sub_county
+    
+    # Try to find sub-county by region match
+    if region_normalized
+      sub_county = county.sub_counties.find { |sc| 
+        sc.name.downcase.include?(region_normalized) || region_normalized.include?(sc.name.downcase)
+      }
+      return sub_county if sub_county
+    end
+    
+    # Fallback to first sub-county
+    county.sub_counties.first
+  end
+
+  # Method 2: Enhanced IP-based geolocation with multiple services
   def get_location_from_ip(user_ip = nil)
     begin
-      Rails.logger.info "Getting location from IP address"
+      Rails.logger.info "Getting location from IP address using multiple services"
       
       # Use user's IP if provided, otherwise fallback to server IP
       ip_to_check = user_ip || request&.remote_ip
       Rails.logger.info "Using IP: #{ip_to_check}"
       
-      # Use ip-api.com with specific IP
-      api_url = if ip_to_check.present? && ip_to_check != '127.0.0.1' && ip_to_check != '::1'
-        "http://ip-api.com/json/#{ip_to_check}"
-      else
-        'http://ip-api.com/json/'
-      end
+      # Skip localhost IPs
+      return nil if ip_to_check == '127.0.0.1' || ip_to_check == '::1'
       
-      response = HTTParty.get(api_url, timeout: 5)
+      # Try multiple geolocation services for better accuracy
+      location_data = try_multiple_geolocation_services(ip_to_check)
       
-      if response.success?
-        ip_data = JSON.parse(response.body)
-        location_data = {
-          'country' => ip_data['country'],
-          'country_code' => ip_data['countryCode'],
-          'region' => ip_data['region'],
-          'region_name' => ip_data['regionName'],
-          'city' => ip_data['city'],
-          'zip' => ip_data['zip'],
-          'latitude' => ip_data['lat'],
-          'longitude' => ip_data['lon'],
-          'timezone' => ip_data['timezone'],
-          'isp' => ip_data['isp'],
-          'ip' => ip_data['query']
-        }
-        
-        Rails.logger.info "IP location data retrieved: #{location_data['city']}, #{location_data['country']}"
+      if location_data
+        Rails.logger.info "Location data retrieved: #{location_data['city']}, #{location_data['country']}"
         location_data
       else
-        Rails.logger.error "Failed to get IP location: #{response.code}"
+        Rails.logger.error "Failed to get location from any service"
         nil
       end
     rescue => e
       Rails.logger.error "IP geolocation error: #{e.message}"
       nil
     end
+  end
+
+  # Try multiple geolocation services for better accuracy
+  def try_multiple_geolocation_services(ip)
+    services = [
+      { name: 'ip-api.com', method: :get_location_from_ip_api },
+      { name: 'ipinfo.io', method: :get_location_from_ipinfo },
+      { name: 'ipapi.co', method: :get_location_from_ipapi }
+    ]
+    
+    results = []
+    
+    services.each do |service|
+      begin
+        Rails.logger.info "Trying #{service[:name]} for IP: #{ip}"
+        result = send(service[:method], ip)
+        if result
+          results << result.merge('service' => service[:name])
+          Rails.logger.info "✅ #{service[:name]} success: #{result['city']}, #{result['country']}"
+        else
+          Rails.logger.warn "❌ #{service[:name]} failed"
+        end
+      rescue => e
+        Rails.logger.error "❌ #{service[:name]} error: #{e.message}"
+      end
+    end
+    
+    # Return the best result based on confidence and accuracy
+    select_best_location_result(results)
+  end
+
+  # Get location from ip-api.com
+  def get_location_from_ip_api(ip)
+    api_url = "http://ip-api.com/json/#{ip}"
+    response = HTTParty.get(api_url, timeout: 5)
+    
+    if response.success?
+      data = JSON.parse(response.body)
+      return nil if data['status'] == 'fail'
+      
+      {
+        'country' => data['country'],
+        'country_code' => data['countryCode'],
+        'region' => data['region'],
+        'region_name' => data['regionName'],
+        'city' => data['city'],
+        'zip' => data['zip'],
+        'latitude' => data['lat'],
+        'longitude' => data['lon'],
+        'timezone' => data['timezone'],
+        'isp' => data['isp'],
+        'ip' => data['query'],
+        'confidence' => 0.8 # High confidence for ip-api.com
+      }
+    end
+  rescue => e
+    Rails.logger.error "ip-api.com error: #{e.message}"
+    nil
+  end
+
+  # Get location from ipinfo.io
+  def get_location_from_ipinfo(ip)
+    api_url = "https://ipinfo.io/#{ip}/json"
+    response = HTTParty.get(api_url, timeout: 5)
+    
+    if response.success?
+      data = JSON.parse(response.body)
+      return nil if data['error']
+      
+      # Parse region (format: "Nairobi, Kenya" or "Nairobi County, Kenya")
+      region_parts = data['region']&.split(',') || []
+      region_name = region_parts.first&.strip
+      
+      {
+        'country' => data['country'],
+        'country_code' => data['country'],
+        'region' => region_name,
+        'region_name' => region_name,
+        'city' => data['city'],
+        'zip' => data['postal'],
+        'latitude' => data['loc']&.split(',')&.first,
+        'longitude' => data['loc']&.split(',')&.last,
+        'timezone' => data['timezone'],
+        'isp' => data['org'],
+        'ip' => data['ip'],
+        'confidence' => 0.9 # Very high confidence for ipinfo.io
+      }
+    end
+  rescue => e
+    Rails.logger.error "ipinfo.io error: #{e.message}"
+    nil
+  end
+
+  # Get location from ipapi.co
+  def get_location_from_ipapi(ip)
+    api_url = "https://ipapi.co/#{ip}/json/"
+    response = HTTParty.get(api_url, timeout: 5)
+    
+    if response.success?
+      data = JSON.parse(response.body)
+      return nil if data['error']
+      
+      {
+        'country' => data['country_name'],
+        'country_code' => data['country_code'],
+        'region' => data['region_code'],
+        'region_name' => data['region'],
+        'city' => data['city'],
+        'zip' => data['postal'],
+        'latitude' => data['latitude'],
+        'longitude' => data['longitude'],
+        'timezone' => data['timezone'],
+        'isp' => data['org'],
+        'ip' => data['ip'],
+        'confidence' => 0.85 # High confidence for ipapi.co
+      }
+    end
+  rescue => e
+    Rails.logger.error "ipapi.co error: #{e.message}"
+    nil
+  end
+
+  # Select the best location result from multiple services
+  def select_best_location_result(results)
+    return nil if results.empty?
+    
+    # Sort by confidence score
+    best_result = results.max_by { |r| r['confidence'] }
+    
+    # If we have multiple results, try to find consensus
+    if results.length > 1
+      consensus_result = find_location_consensus(results)
+      best_result = consensus_result if consensus_result
+    end
+    
+    # Remove service field before returning
+    best_result.delete('service')
+    best_result.delete('confidence')
+    
+    Rails.logger.info "Selected best location: #{best_result['city']}, #{best_result['country']} (confidence: #{best_result['confidence'] || 'unknown'})"
+    best_result
+  end
+
+  # Find consensus among multiple location results
+  def find_location_consensus(results)
+    # Group by country first
+    country_groups = results.group_by { |r| r['country'] }
+    
+    # If all results agree on country, look for city consensus
+    if country_groups.length == 1
+      country = country_groups.keys.first
+      city_groups = results.group_by { |r| r['city'] }
+      
+      # If we have city consensus, use it
+      if city_groups.length == 1
+        Rails.logger.info "Consensus found: #{city_groups.keys.first}, #{country}"
+        return results.first
+      end
+      
+      # If no city consensus, prefer results that don't default to major cities
+      non_major_city_results = results.reject do |r|
+        major_cities = ['nairobi', 'mombasa', 'kisumu']
+        major_cities.include?(r['city']&.downcase)
+      end
+      
+      if non_major_city_results.any?
+        Rails.logger.info "Preferring non-major city result: #{non_major_city_results.first['city']}"
+        return non_major_city_results.first
+      end
+    end
+    
+    # Return the highest confidence result
+    results.max_by { |r| r['confidence'] }
   end
 
   # Method 3: Google Maps Geocoding API
@@ -840,11 +1499,27 @@ class GoogleOauthService
       }
       
       # Update profile picture if user doesn't have one and Google provides one
-      if user.respond_to?(:profile_picture) && user.profile_picture.blank? && user_info['picture'].present?
-        fixed_profile_picture = fix_google_profile_picture_url(user_info['picture'])
-        update_attributes[:profile_picture] = fixed_profile_picture
-        Rails.logger.info "Updating profile picture for existing user: #{user.email}"
-        Rails.logger.info "Fixed profile picture URL: #{fixed_profile_picture}"
+      if user.respond_to?(:profile_picture) && user.profile_picture.blank?
+        # Try multiple sources for profile picture
+        profile_picture = nil
+        if user_info['picture'].present?
+          profile_picture = fix_google_profile_picture_url(user_info['picture'])
+          Rails.logger.info "📸 Profile picture from 'picture' field: #{profile_picture}"
+        elsif user_info['photo_url'].present?
+          profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
+          Rails.logger.info "📸 Profile picture from 'photo_url' field: #{profile_picture}"
+        elsif user_info['image'].present?
+          profile_picture = fix_google_profile_picture_url(user_info['image'])
+          Rails.logger.info "📸 Profile picture from 'image' field: #{profile_picture}"
+        end
+        
+        if profile_picture.present?
+          update_attributes[:profile_picture] = profile_picture
+          Rails.logger.info "Updating profile picture for existing user: #{user.email}"
+          Rails.logger.info "Fixed profile picture URL: #{profile_picture}"
+        else
+          Rails.logger.warn "⚠️ No profile picture found in Google user info for existing user: #{user.email}"
+        end
       elsif user.respond_to?(:profile_picture) && user.profile_picture.present?
         Rails.logger.info "User already has profile picture, keeping existing: #{user.email}"
       end
@@ -911,6 +1586,17 @@ class GoogleOauthService
       
       Rails.logger.info "Updating existing user with attributes: #{update_attributes.keys.join(', ')}"
       user.update!(update_attributes)
+      
+      # Cache the profile picture after update to avoid rate limiting
+      if user.profile_picture.present? && user.profile_picture.include?('googleusercontent.com')
+        cache_service = ProfilePictureCacheService.new
+        cached_url = cache_service.cache_google_profile_picture(user.profile_picture, user.id)
+        
+        if cached_url.present?
+          user.update_column(:profile_picture, cached_url)
+          Rails.logger.info "✅ Profile picture cached and updated for existing user: #{cached_url}"
+        end
+      end
     end
   end
 
@@ -923,7 +1609,27 @@ class GoogleOauthService
     
     # Extract comprehensive user information
     fullname = extract_best_name(user_info)
-    profile_picture = fix_google_profile_picture_url(user_info['picture'] || user_info['photo_url'])
+    
+    # Debug: Log all available user info to see what Google is providing
+    Rails.logger.info "🔍 Complete Google user info received:"
+    user_info.each do |key, value|
+      Rails.logger.info "   #{key}: #{value.inspect}"
+    end
+    
+    # Try multiple sources for profile picture
+    profile_picture = nil
+    if user_info['picture'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['picture'])
+      Rails.logger.info "📸 Profile picture from 'picture' field: #{profile_picture}"
+    elsif user_info['photo_url'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
+      Rails.logger.info "📸 Profile picture from 'photo_url' field: #{profile_picture}"
+    elsif user_info['image'].present?
+      profile_picture = fix_google_profile_picture_url(user_info['image'])
+      Rails.logger.info "📸 Profile picture from 'image' field: #{profile_picture}"
+    else
+      Rails.logger.warn "⚠️ No profile picture found in Google user info"
+    end
     
     Rails.logger.info "Profile picture from Google: #{profile_picture.present? ? 'Available' : 'Not available'}"
     Rails.logger.info "Fixed profile picture URL: #{profile_picture}" if profile_picture.present?
@@ -1036,6 +1742,25 @@ class GoogleOauthService
     username
   end
 
+  # Generate unique enterprise name to avoid duplicates
+  def generate_unique_enterprise_name(base_name)
+    return 'Business' if base_name.blank?
+    
+    # Clean the base name
+    clean_name = base_name.strip.gsub(/[^a-zA-Z0-9\s]/, '')
+    return 'Business' if clean_name.blank?
+    
+    enterprise_name = clean_name
+    counter = 1
+    
+    while Seller.exists?(enterprise_name: enterprise_name)
+      enterprise_name = "#{clean_name} #{counter}"
+      counter += 1
+    end
+    
+    enterprise_name
+  end
+
   def generate_placeholder_phone
     # Generate a placeholder phone number that won't conflict
     # Use 10-digit format (Kenya mobile format: 07XXXXXXXX)
@@ -1046,12 +1771,17 @@ class GoogleOauthService
   end
 
   def extract_phone_number(user_info)
-    # Try to get phone number from People API data
-    phone_number = user_info['phone_number']
+    # Try multiple sources for phone number
+    phone_number = user_info['phone_number'] || 
+                   user_info['phone_numbers']&.first&.dig('value') ||
+                   user_info['phone'] ||
+                   nil
     
     if phone_number.present?
       # Clean and format the phone number
       cleaned_phone = phone_number.gsub(/[^\d+]/, '')
+      
+      Rails.logger.info "🔍 Extracted phone number: #{phone_number} -> cleaned: #{cleaned_phone}"
       
       # Validate phone number format
       if cleaned_phone.start_with?('+')
@@ -1060,7 +1790,9 @@ class GoogleOauthService
           # Remove +254 and keep the last 10 digits
           local_number = cleaned_phone[4..-1]
           if local_number.length == 9 && local_number.start_with?('7')
-            "0#{local_number}"
+            formatted_phone = "0#{local_number}"
+            Rails.logger.info "✅ Formatted international phone: #{formatted_phone}"
+            formatted_phone
           else
             Rails.logger.warn "❌ Invalid Kenya phone number format: #{cleaned_phone}"
             nil
@@ -1071,15 +1803,19 @@ class GoogleOauthService
         end
       elsif cleaned_phone.length == 10 && cleaned_phone.start_with?('0')
         # Already in correct format
+        Rails.logger.info "✅ Phone number already in correct format: #{cleaned_phone}"
         cleaned_phone
       elsif cleaned_phone.length == 9 && cleaned_phone.start_with?('7')
         # Add leading zero
-        "0#{cleaned_phone}"
+        formatted_phone = "0#{cleaned_phone}"
+        Rails.logger.info "✅ Added leading zero: #{formatted_phone}"
+        formatted_phone
       else
         Rails.logger.warn "❌ Invalid phone number format: #{cleaned_phone}"
         nil
       end
     else
+      Rails.logger.warn "⚠️ No phone number found in Google user info"
       nil
     end
   end
@@ -1087,19 +1823,63 @@ class GoogleOauthService
   def extract_location_info(user_info)
     location_info = { location: nil, city: nil, zipcode: nil }
     
-    # Extract from address information
-    if user_info['address'].present?
-      address = user_info['address']
-      location_info[:location] = address['formatted'] || address['street']
-      location_info[:city] = address['city']
-      location_info[:zipcode] = address['postal_code']
+    # First, try to use location data from frontend if available
+    if @location_data.present? && @location_data['data'].present?
+      Rails.logger.info "🌍 Using location data from frontend: #{@location_data.inspect}"
+      
+      # Try browser location first
+      if @location_data['data']['browser_location'].present?
+        browser_loc = @location_data['data']['browser_location']
+        location_info[:city] = browser_loc['city'] if browser_loc['city'].present?
+        location_info[:location] = "#{browser_loc['city']}, #{browser_loc['region'] || 'Kenya'}" if browser_loc['city'].present?
+      end
+      
+      # Try address from coordinates
+      if @location_data['data']['address_from_coordinates'].present?
+        addr = @location_data['data']['address_from_coordinates']
+        location_info[:city] = addr['city'] if addr['city'].present?
+        location_info[:location] = addr['formatted_address'] if addr['formatted_address'].present?
+      end
+      
+      # Try IP location as fallback
+      if @location_data['data']['ip_location'].present?
+        ip_loc = @location_data['data']['ip_location']
+        location_info[:city] = ip_loc['city'] if ip_loc['city'].present? && location_info[:city].blank?
+        location_info[:location] = "#{ip_loc['city']}, #{ip_loc['regionName'] || 'Kenya'}" if ip_loc['city'].present? && location_info[:location].blank?
+      end
     end
     
-    # Fallback to basic location if available
-    if location_info[:location].blank? && user_info['locale'].present?
-      location_info[:location] = user_info['locale']
+    # Fallback to Google user info if frontend location data is not available
+    if location_info[:location].blank?
+      # Extract from address information
+      if user_info['address'].present?
+        address = user_info['address']
+        location_info[:location] = address['formatted'] || address['street']
+        location_info[:city] = address['city']
+        location_info[:zipcode] = address['postal_code']
+      end
+      
+      # Extract from addresses array if present
+      if user_info['addresses'].present? && user_info['addresses'].is_a?(Array) && user_info['addresses'].any?
+        address = user_info['addresses'].first
+        location_info[:location] = address['formattedValue'] || address['streetAddress'] || location_info[:location]
+        location_info[:city] = address['city'] || location_info[:city]
+        location_info[:zipcode] = address['postalCode'] || location_info[:zipcode]
+      end
+      
+      # Fallback to basic location if available
+      if location_info[:location].blank? && user_info['locale'].present?
+        location_info[:location] = user_info['locale']
+      end
     end
     
+    # Extract from residences if available
+    if user_info['residences'].present? && user_info['residences'].is_a?(Array) && user_info['residences'].any?
+      residence = user_info['residences'].first
+      location_info[:location] = residence['value'] || location_info[:location]
+    end
+    
+    Rails.logger.info "🔍 Extracted location info: #{location_info.inspect}"
     location_info
   end
 
@@ -1198,25 +1978,35 @@ class GoogleOauthService
 
   private
 
-  # Fix Google profile picture URL to make it publicly accessible
-  def fix_google_profile_picture_url(original_url)
+  # Fix Google profile picture URL and cache it to avoid rate limiting
+  def fix_google_profile_picture_url(original_url, user_id = nil)
     return nil if original_url.blank?
     
     Rails.logger.info "🔧 Original profile picture URL: #{original_url}"
     
-    # Google profile picture URLs often need modification to be publicly accessible
-    # Remove size restrictions and make the URL publicly accessible
+    # If we have a user_id, try to cache the image to avoid rate limiting
+    if user_id.present?
+      cache_service = ProfilePictureCacheService.new
+      cached_url = cache_service.get_or_cache_profile_picture(original_url, user_id)
+      
+      if cached_url.present?
+        Rails.logger.info "✅ Using cached profile picture: #{cached_url}"
+        return cached_url
+      end
+    end
+    
+    # Fallback to fixing the original URL if caching fails
     fixed_url = original_url.dup
     
     # Remove size parameters that might cause access issues
-    fixed_url = fixed_url.gsub(/=s\d+/, '=s0') # Change size to 0 (full size)
-    fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s0') # Remove width/height restrictions
-    fixed_url = fixed_url.gsub(/=c\d+/, '=s0') # Remove crop restrictions
+    fixed_url = fixed_url.gsub(/=s\d+/, '=s400') # Set to a reasonable size (400px)
+    fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s400') # Remove width/height restrictions
+    fixed_url = fixed_url.gsub(/=c\d+/, '=s400') # Remove crop restrictions
     
     # Ensure the URL is publicly accessible
     if fixed_url.include?('googleusercontent.com')
       # For Google profile pictures, ensure we have the right format
-      fixed_url = fixed_url.gsub(/=s\d+/, '=s0') if fixed_url.include?('=s')
+      fixed_url = fixed_url.gsub(/=s\d+/, '=s400') if fixed_url.include?('=s')
     end
     
     Rails.logger.info "🔧 Fixed profile picture URL: #{fixed_url}"
@@ -1224,5 +2014,51 @@ class GoogleOauthService
   rescue => e
     Rails.logger.error "❌ Error fixing profile picture URL: #{e.message}"
     original_url # Return original URL if fixing fails
+  end
+
+  # Check if user should get premium status for 2025 registrations
+  def should_get_2025_premium?
+    current_year = Time.current.year
+    Rails.logger.info "🔍 GoogleOauthService checking 2025 premium status: current_year=#{current_year}, is_2025=#{current_year == 2025}"
+    current_year == 2025
+  end
+
+  # Get premium tier for 2025 users
+  def get_premium_tier
+    Tier.find_by(name: 'Premium')
+  end
+
+  # Create seller tier for 2025 premium users
+  def create_2025_premium_tier(seller)
+    Rails.logger.info "🔍 GoogleOauthService create_2025_premium_tier called for seller: #{seller.email}"
+    
+    unless should_get_2025_premium?
+      Rails.logger.info "❌ GoogleOauthService: Not 2025, skipping premium tier assignment"
+      return
+    end
+    
+    premium_tier = get_premium_tier
+    unless premium_tier
+      Rails.logger.error "❌ GoogleOauthService: Premium tier not found in database"
+      return
+    end
+    
+    Rails.logger.info "✅ GoogleOauthService: Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
+    
+    # Calculate expiry date (end of 2025)
+    expires_at = Time.new(2025, 12, 31, 23, 59, 59)
+    
+    # Create seller tier with premium status until end of 2025
+    seller_tier = SellerTier.create!(
+      seller: seller,
+      tier: premium_tier,
+      duration_months: 12, # Full year
+      expires_at: expires_at
+    )
+    
+    Rails.logger.info "✅ GoogleOauthService: Premium tier assigned to seller #{seller.email} until end of 2025 (SellerTier ID: #{seller_tier.id})"
+  rescue => e
+    Rails.logger.error "❌ GoogleOauthService: Error creating premium tier: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
   end
 end

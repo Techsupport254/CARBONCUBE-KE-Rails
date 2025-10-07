@@ -165,13 +165,20 @@ class Ad < ApplicationRecord
         description: description,
         link: product_url,
         imageLink: first_valid_media_url,
-        availability: 'IN_STOCK',
+        availability: availability_status,
         price: {
           amountMicros: (price * 1000000).to_i.to_s,
           currencyCode: 'KES'
         },
         condition: google_condition,
-        brand: brand.present? ? brand : nil
+        brand: brand.present? ? brand : nil,
+        # Additional recommended fields
+        category: category&.name,
+        subcategory: subcategory&.name,
+        manufacturer: manufacturer.present? ? manufacturer : nil,
+        # Weight and dimensions if available
+        weight: item_weight.present? ? "#{item_weight} #{weight_unit.downcase}" : nil,
+        dimensions: dimensions_string
       }.compact
     }
   end
@@ -190,6 +197,17 @@ class Ad < ApplicationRecord
     end
   end
 
+  def availability_status
+    # For now, assume all active ads are in stock
+    # This could be enhanced with actual inventory tracking
+    'IN_STOCK'
+  end
+
+  def dimensions_string
+    return nil unless item_length.present? && item_width.present? && item_height.present?
+    "#{item_length} x #{item_width} x #{item_height} cm"
+  end
+
   def sync_to_google_merchant
     GoogleMerchantService.sync_ad(self)
   end
@@ -204,6 +222,8 @@ class Ad < ApplicationRecord
     return false if title.blank?
     return false if description.blank?
     return false if price.blank? || price <= 0
+    return false if brand.blank? # Brand is required by Google Merchant
+    return false if first_valid_media_url.blank? # Image is required
     
     true
   end

@@ -1,6 +1,26 @@
 class ConversationsChannel < ApplicationCable::Channel
   include ActionView::Helpers::SanitizeHelper
   
+
+  def unsubscribed
+    begin
+      log_channel_activity('unsubscribed')
+      track_message_metric('unsubscribed')
+      
+      # Broadcast offline status
+      user = connection.current_user || find_user_from_params
+      broadcast_presence_update('offline', user) if user
+      
+      # Clean up connection tracking
+      if user
+        WebsocketService.remove_connection_data(user.id, connection.session_id)
+      end
+    rescue => e
+      Rails.logger.warn "ConversationsChannel unsubscribed error: #{e.message}"
+      # Don't raise the error to prevent subscription cleanup issues
+    end
+  end
+
   def subscribed
     # Try to get user from connection, fallback to subscription params
     user = connection.current_user || find_user_from_params
@@ -23,25 +43,9 @@ class ConversationsChannel < ApplicationCable::Channel
     
     # Broadcast online status
     broadcast_presence_update('online', user)
-  end
-
-  def unsubscribed
-    begin
-      log_channel_activity('unsubscribed')
-      track_message_metric('unsubscribed')
-      
-      # Broadcast offline status
-      user = connection.current_user || find_user_from_params
-      broadcast_presence_update('offline', user) if user
-      
-      # Clean up connection tracking
-      if user
-        WebsocketService.remove_connection_data(user.id, connection.session_id)
-      end
-    rescue => e
-      Rails.logger.warn "ConversationsChannel unsubscribed error: #{e.message}"
-      # Don't raise the error to prevent subscription cleanup issues
-    end
+  rescue => e
+    Rails.logger.error "ConversationsChannel subscribed error: #{e.message}"
+    reject
   end
 
   def receive(data)

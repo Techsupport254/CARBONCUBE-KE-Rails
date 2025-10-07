@@ -3,7 +3,7 @@ class ManualOauthController < ApplicationController
 
   def google_oauth2_initiate
     # Store the role in a way that can be passed to the OAuth flow
-    role = params[:role] || 'buyer'
+    role = params[:role] || 'Buyer'
     
     # Redirect to Google OAuth manually
     google_oauth_url = "https://accounts.google.com/oauth/authorize?" +
@@ -74,7 +74,7 @@ class ManualOauthController < ApplicationController
       role = determine_role(user)
       
       # Generate JWT token - Google OAuth users get remember_me by default
-      token_payload = if role == 'seller'
+      token_payload = if role == 'Seller'
         { seller_id: user.id, email: user.email, role: role, remember_me: true }
       else
         { user_id: user.id, email: user.email, role: role, remember_me: true }
@@ -145,6 +145,12 @@ class ManualOauthController < ApplicationController
     request = Net::HTTP::Get.new(uri)
     response = http.request(request)
     data = JSON.parse(response.body)
+    
+    # Debug: Log the complete response from Google
+    Rails.logger.info "🔍 Complete Google userinfo response:"
+    data.each do |key, value|
+      Rails.logger.info "   #{key}: #{value.inspect}"
+    end
     
     if data['error']
       { error: data['error']['message'] }
