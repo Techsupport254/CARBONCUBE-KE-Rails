@@ -48,9 +48,13 @@ class GoogleMerchantSyncJob < ApplicationJob
   def delete_ad_from_google_merchant(ad)
     Rails.logger.info "Deleting ad #{ad.id} from Google Merchant Center"
     
-    # TODO: Implement delete functionality
-    # This would call Google Merchant API to remove the product
-    # For now, just log the action
-    Rails.logger.info "Delete action for ad #{ad.id} - implementation pending"
+    success = GoogleMerchantService.delete_product(ad)
+    
+    if success
+      Rails.logger.info "Successfully deleted ad #{ad.id} from Google Merchant Center"
+    else
+      Rails.logger.error "Failed to delete ad #{ad.id} from Google Merchant Center"
+      raise "Failed to delete ad #{ad.id} from Google Merchant Center"
+    end
   end
 end

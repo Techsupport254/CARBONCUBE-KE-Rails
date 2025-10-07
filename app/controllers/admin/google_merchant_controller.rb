@@ -23,14 +23,34 @@ class Admin::GoogleMerchantController < ApplicationController
   # POST /admin/google_merchant/sync_all
   def sync_all
     begin
-      result = GoogleMerchantService.sync_all_active_ads
+      # Get premium ads only (tier_id = 4)
+      premium_ads = Ad.active
+                      .joins(seller: { seller_tier: :tier })
+                      .where(sellers: { blocked: false, deleted: false })
+                      .where(flagged: false)
+                      .where.not(media: [nil, [], ""])
+                      .where(tiers: { id: 4 })
+      
+      # Queue background jobs for each ad
+      job_count = 0
+      premium_ads.find_each do |ad|
+        if ad.valid_for_google_merchant?
+          GoogleMerchantSyncJob.perform_later(ad.id, 'sync')
+          job_count += 1
+        end
+      end
+      
+      # Store sync initiation time
+      Rails.cache.write('google_merchant_last_sync', Time.current)
       
       render json: {
         success: true,
-        message: "Bulk sync initiated",
-        result: result
+        message: "Bulk sync initiated for #{job_count} ads",
+        total_ads: premium_ads.count,
+        queued_jobs: job_count
       }
     rescue => e
+      Rails.logger.error "Error initiating bulk sync: #{e.message}"
       render json: {
         success: false,
         error: e.message
@@ -44,19 +64,13 @@ class Admin::GoogleMerchantController < ApplicationController
       ad = Ad.find(params[:id])
       
       if ad.valid_for_google_merchant?
-        success = GoogleMerchantService.sync_ad(ad)
+        # Queue background job instead of processing synchronously
+        GoogleMerchantSyncJob.perform_later(ad.id, 'sync')
         
-        if success
-          render json: {
-            success: true,
-            message: "Ad #{ad.id} synced successfully"
-          }
-        else
-          render json: {
-            success: false,
-            error: "Failed to sync ad #{ad.id}"
-          }, status: :unprocessable_entity
-        end
+        render json: {
+          success: true,
+          message: "Ad #{ad.id} sync queued for processing"
+        }
       else
         render json: {
           success: false,
@@ -69,6 +83,7 @@ class Admin::GoogleMerchantController < ApplicationController
         error: "Ad not found"
       }, status: :not_found
     rescue => e
+      Rails.logger.error "Error queuing sync for ad #{params[:id]}: #{e.message}"
       render json: {
         success: false,
         error: e.message
@@ -79,16 +94,120 @@ class Admin::GoogleMerchantController < ApplicationController
   # GET /admin/google_merchant/test_connection
   def test_connection
     begin
-      GoogleMerchantService.test_connection
+      result = GoogleMerchantService.test_connection
       
-      render json: {
-        success: true,
-        message: "Connection test completed"
-      }
+      if result[:success]
+        render json: {
+          success: true,
+          message: result[:message],
+          details: result[:details]
+        }
+      else
+        render json: {
+          success: false,
+          error: result[:error],
+          details: result[:details]
+        }, status: :unprocessable_entity
+      end
     rescue => e
+      Rails.logger.error "Error testing Google Merchant connection: #{e.message}"
       render json: {
         success: false,
-        error: e.message
+        error: "Connection test failed",
+        details: e.message
+      }, status: :internal_server_error
+    end
+  end
+  
+  # POST /admin/google_merchant/cleanup_duplicates
+  def cleanup_duplicates
+    begin
+      Rails.logger.info "Starting duplicate cleanup process..."
+      
+      result = GoogleMerchantService.cleanup_duplicates
+      
+      if result[:success]
+        render json: {
+          success: true,
+          message: result[:message],
+          deleted_count: result[:deleted_count],
+          duplicates_found: result[:duplicates_found],
+          total_products: result[:total_products],
+          duplicates_by_offer_id: result[:duplicates_by_offer_id],
+          duplicates_by_base_id: result[:duplicates_by_base_id],
+          products_by_offer_id: result[:products_by_offer_id],
+          products_by_base_id: result[:products_by_base_id],
+          errors: result[:errors]
+        }
+      else
+        render json: {
+          success: false,
+          error: result[:error]
+        }, status: :unprocessable_entity
+      end
+    rescue => e
+      Rails.logger.error "Error cleaning up duplicates: #{e.message}"
+      render json: {
+        success: false,
+        error: "Cleanup failed",
+        details: e.message
+      }, status: :internal_server_error
+    end
+  end
+  
+  # GET /admin/google_merchant/debug_products
+  def debug_products
+    begin
+      # First check configuration
+      config_info = {
+        sync_enabled: Rails.application.config.google_merchant_sync[:enabled],
+        account_id: Rails.application.config.google_merchant_account_id,
+        service_account_key_path: Rails.application.config.google_service_account_key_path,
+        key_file_exists: File.exist?(Rails.application.config.google_service_account_key_path || ''),
+        env_sync_enabled: ENV['GOOGLE_MERCHANT_SYNC_ENABLED']
+      }
+      
+      result = GoogleMerchantService.list_all_products
+      
+      if result[:error]
+        render json: {
+          success: false,
+          error: result[:error],
+          config: config_info
+        }, status: :unprocessable_entity
+      else
+        # Show first few products for debugging
+        sample_products = result[:products].first(5).map do |product|
+          creation_time = begin
+            product.creation_time
+          rescue
+            'N/A'
+          end
+          
+          {
+            id: product.id,
+            offer_id: product.offer_id,
+            title: product.title,
+            creation_time: creation_time
+          }
+        end
+        
+        render json: {
+          success: true,
+          total_products: result[:total],
+          sample_products: sample_products,
+          all_offer_ids: result[:products].map(&:offer_id).uniq.first(10),
+          config: config_info,
+          note: result[:note]
+        }
+      end
+    rescue => e
+      Rails.logger.error "Error debugging products: #{e.message}"
+      render json: {
+        success: false,
+        error: "Debug failed",
+        details: e.message,
+        config: config_info
       }, status: :internal_server_error
     end
   end
@@ -130,6 +249,7 @@ class Admin::GoogleMerchantController < ApplicationController
         category: ad.category&.name,
         subcategory: ad.subcategory&.name,
         valid_for_google_merchant: ad.valid_for_google_merchant?,
+        validation_errors: ad.google_merchant_validation_errors,
         product_url: ad.product_url,
         google_merchant_data: ad.google_merchant_data,
         created_at: ad.created_at,

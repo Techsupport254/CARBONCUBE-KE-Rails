@@ -219,13 +219,80 @@ class Ad < ApplicationRecord
     return false if seller.blocked?
     return false if seller.deleted?
     return false unless has_valid_images?
-    return false if title.blank?
-    return false if description.blank?
+    return false if title.blank? || title.length < 10
+    return false if description.blank? || description.length < 20
     return false if price.blank? || price <= 0
-    return false if brand.blank? # Brand is required by Google Merchant
-    return false if first_valid_media_url.blank? # Image is required
+    return false if price > 1000000
+    return false if brand.blank?
+    return false if category.blank?
+    return false if condition.blank?
     
     true
+  end
+  
+  def google_merchant_validation_errors
+    errors = []
+    
+    if deleted?
+      errors << "Ad is deleted"
+    end
+    
+    if flagged?
+      errors << "Ad is flagged"
+    end
+    
+    unless seller
+      errors << "No seller associated"
+    else
+      if seller.blocked?
+        errors << "Seller is blocked"
+      end
+      if seller.deleted?
+        errors << "Seller is deleted"
+      end
+    end
+    
+    unless has_valid_images?
+      errors << "Valid product images are required"
+    end
+    
+    if title.blank?
+      errors << "Title is required"
+    elsif title.length < 10
+      errors << "Title too short (minimum 10 characters)"
+    elsif title.length > 150
+      errors << "Title too long (maximum 150 characters)"
+    end
+    
+    if description.blank?
+      errors << "Description is required"
+    elsif description.length < 20
+      errors << "Description too short (minimum 20 characters)"
+    elsif description.length > 5000
+      errors << "Description too long (maximum 5000 characters)"
+    end
+    
+    if price.blank?
+      errors << "Price is required"
+    elsif price <= 0
+      errors << "Price must be greater than 0"
+    elsif price > 1000000
+      errors << "Price too high (maximum 1,000,000 KES)"
+    end
+    
+    if brand.blank?
+      errors << "Brand is required"
+    end
+    
+    if category.blank?
+      errors << "Category is required"
+    end
+    
+    if condition.blank?
+      errors << "Product condition is required"
+    end
+    
+    errors
   end
 
   private

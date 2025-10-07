@@ -336,7 +336,9 @@ Rails.application.routes.draw do
         get 'status'
         get 'test_connection'
         get 'ads'
+        get 'debug_products'
         post 'sync_all'
+        post 'cleanup_duplicates'
       end
       member do
         post 'sync_ad'
