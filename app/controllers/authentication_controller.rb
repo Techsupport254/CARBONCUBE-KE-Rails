@@ -1468,7 +1468,7 @@ class AuthenticationController < ApplicationController
       end
 
       # Generate new token with complete user data
-      user_role = user.is_a?(Seller) ? 'seller' : 'Buyer'
+      user_role = user.is_a?(Seller) ? 'Seller' : 'Buyer'
       token_payload = {
         user_id: user.id,
         email: user.email,
