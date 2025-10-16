@@ -92,20 +92,9 @@ class GoogleOauthService
       if existing_user
         Rails.logger.info "Existing user found: #{existing_user.class.name} - #{existing_user.email}"
         
-        # Check for role mismatch - if user is trying to authenticate as a different role
-        existing_role = determine_user_role(existing_user)
-        requested_role = @role || 'Buyer'
-        
-        if existing_role != requested_role
-          Rails.logger.error "❌ Role mismatch: User #{existing_user.email} is a #{existing_role} but trying to authenticate as #{requested_role}"
-          return {
-            success: false,
-            error: "You are already registered as a #{existing_role}. Please sign in with your existing account.",
-            role_mismatch: true,
-            existing_role: existing_role,
-            requested_role: requested_role
-          }
-        end
+        # For existing users, always allow login regardless of role
+        # Role mismatch checks should only happen during registration
+        Rails.logger.info "✅ Allowing login for existing user: #{existing_user.email}"
         
         # Generate JWT token for existing user
         token = generate_jwt_token(existing_user)
@@ -123,6 +112,11 @@ class GoogleOauthService
         # Try to create a new user - this will return missing fields if any are missing
         user_type = determine_user_type_from_context
         Rails.logger.info "Creating new #{user_type} user"
+        
+        # Check for role mismatch during registration (user creation)
+        # This should only happen when creating new accounts, not during login
+        requested_role = @role || 'Buyer'
+        Rails.logger.info "🔍 Registration attempt for role: #{requested_role}"
         
         if user_type == 'buyer'
           create_buyer_user(user_info, location_info)
@@ -256,6 +250,20 @@ class GoogleOauthService
   # Create new seller user
   def create_seller_user(user_info, location_info)
     Rails.logger.info "Creating seller with data"
+    
+    # Check if user already exists as a different role (registration conflict)
+    email = user_info['email']
+    existing_buyer = Buyer.find_by(email: email)
+    if existing_buyer
+      Rails.logger.error "❌ Registration conflict: User #{email} already exists as a Buyer"
+      return {
+        success: false,
+        error: "This email is already registered as a Buyer. Please sign in with your existing account or use a different email address.",
+        role_mismatch: true,
+        existing_role: 'Buyer',
+        requested_role: 'Seller'
+      }
+    end
     
     # Extract phone number (use the first available phone)
     phone_number = user_info['phone_number'] || user_info['phone_numbers']&.first&.dig('value')
@@ -443,6 +451,20 @@ class GoogleOauthService
   # Create new buyer user
   def create_buyer_user(user_info, location_info)
     Rails.logger.info "Creating buyer with data"
+    
+    # Check if user already exists as a different role (registration conflict)
+    email = user_info['email']
+    existing_seller = Seller.find_by(email: email)
+    if existing_seller
+      Rails.logger.error "❌ Registration conflict: User #{email} already exists as a Seller"
+      return {
+        success: false,
+        error: "This email is already registered as a Seller. Please sign in with your existing account or use a different email address.",
+        role_mismatch: true,
+        existing_role: 'Seller',
+        requested_role: 'Buyer'
+      }
+    end
     Rails.logger.info "🔍 Profile picture data in create_buyer_user:"
     Rails.logger.info "   user_info['profile_picture']: #{user_info['profile_picture'].inspect}"
     Rails.logger.info "   user_info[:profile_picture]: #{user_info[:profile_picture].inspect}"

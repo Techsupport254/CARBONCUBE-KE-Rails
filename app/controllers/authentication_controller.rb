@@ -441,14 +441,9 @@ class AuthenticationController < ApplicationController
         
         role = determine_role(user)
         
-        # Check for role mismatch - if user is trying to authenticate as a different role
-        requested_role = params[:role] || 'Buyer'
-        if role != requested_role
-          Rails.logger.error "❌ Role mismatch: User #{user.email} is a #{role} but trying to authenticate as #{requested_role}"
-          redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape("You are already registered as a #{role}. Please sign in with your existing account.")}"
-          redirect_to redirect_url, allow_other_host: true
-          return
-        end
+        # Role mismatch checks are now handled in the GoogleOauthService
+        # For existing users, we allow login regardless of role
+        Rails.logger.info "✅ User #{user.email} authenticated successfully as #{role}"
         
         # Block login if the user is soft-deleted
         if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
@@ -609,21 +604,9 @@ class AuthenticationController < ApplicationController
         
         role = determine_role(user)
         
-        # Check for role mismatch - if user is trying to authenticate as a different role
-        requested_role = state || 'Buyer'
-        if role != requested_role
-          Rails.logger.error "❌ Role mismatch: User #{user.email} is a #{role} but trying to authenticate as #{requested_role}"
-          render html: "<script>
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'GOOGLE_AUTH_ERROR',
-                error: 'You are already registered as a #{role}. Please sign in with your existing account.'
-              }, '*');
-            }
-            window.close();
-          </script>".html_safe
-          return
-        end
+        # Role mismatch checks are now handled in the GoogleOauthService
+        # For existing users, we allow login regardless of role
+        Rails.logger.info "✅ User #{user.email} authenticated successfully as #{role}"
         
         # Block login if the user is soft-deleted
         if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?

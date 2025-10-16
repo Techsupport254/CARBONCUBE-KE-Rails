@@ -1,5 +1,5 @@
 # config/sitemap.rb
-SitemapGenerator::Sitemap.default_host = "https://carboncube-ke.com"
+SitemapGenerator::Sitemap.default_host = "https://carboncube-ke.com/"
 SitemapGenerator::Sitemap.public_path = 'public/'
 SitemapGenerator::Sitemap.sitemaps_path = 'sitemaps/'
 SitemapGenerator::Sitemap.compress = true
