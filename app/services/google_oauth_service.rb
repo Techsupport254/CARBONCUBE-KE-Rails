@@ -1195,18 +1195,18 @@ class GoogleOauthService
       redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
       
       Rails.logger.info "Exchanging code for token with redirect_uri: #{redirect_uri}"
-      Rails.logger.info "Using client_id: #{ENV['GOOGLE_CLIENT_ID']}"
+      Rails.logger.info "Using client_id: #{ENV['GOOGLE_OAUTH_CLIENT_ID']}"
       
       # Validate required environment variables
-      unless ENV['GOOGLE_CLIENT_ID'].present? && ENV['GOOGLE_CLIENT_SECRET'].present?
+      unless ENV['GOOGLE_OAUTH_CLIENT_ID'].present? && ENV['GOOGLE_OAUTH_CLIENT_SECRET'].present?
         Rails.logger.error "Missing Google OAuth credentials"
         return nil
       end
       
       response = HTTParty.post(GOOGLE_TOKEN_URL, {
         body: {
-          client_id: ENV['GOOGLE_CLIENT_ID'],
-          client_secret: ENV['GOOGLE_CLIENT_SECRET'],
+          client_id: ENV['GOOGLE_OAUTH_CLIENT_ID'],
+          client_secret: ENV['GOOGLE_OAUTH_CLIENT_SECRET'],
           code: @auth_code,
           grant_type: 'authorization_code',
           redirect_uri: redirect_uri
