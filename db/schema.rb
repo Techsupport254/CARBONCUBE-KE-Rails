@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_07_090824) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -137,14 +137,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_090824) do
 
   create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
     t.string "fullname", null: false
-    t.string "username", null: false
+    t.string "username"
     t.string "password_digest"
     t.string "email", null: false
-    t.string "phone_number", limit: 10
-    t.bigint "age_group_id", null: false
+    t.string "phone_number", limit: 10, null: false
+    t.bigint "age_group_id"
     t.string "zipcode"
     t.string "city"
-    t.string "gender", default: "Male", null: false
+    t.string "gender"
     t.string "location"
     t.string "profile_picture"
     t.boolean "blocked", default: false
@@ -437,6 +437,74 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_090824) do
     t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
   end
 
+  create_table "offer_ads", force: :cascade do |t|
+    t.bigint "offer_id", null: false
+    t.bigint "ad_id", null: false
+    t.decimal "discount_percentage", precision: 5, scale: 2, null: false
+    t.decimal "original_price", precision: 10, scale: 2, null: false
+    t.decimal "discounted_price", precision: 10, scale: 2, null: false
+    t.boolean "is_active", default: true, null: false
+    t.text "seller_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ad_id"], name: "index_offer_ads_on_ad_id"
+    t.index ["discount_percentage"], name: "index_offer_ads_on_discount_percentage"
+    t.index ["is_active"], name: "index_offer_ads_on_is_active"
+    t.index ["offer_id", "ad_id"], name: "index_offer_ads_on_offer_id_and_ad_id", unique: true
+    t.index ["offer_id", "is_active"], name: "index_offer_ads_on_offer_id_and_is_active"
+    t.index ["offer_id"], name: "index_offer_ads_on_offer_id"
+  end
+
+  create_table "offers", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.string "offer_type", null: false
+    t.string "status", default: "draft"
+    t.string "banner_color", default: "#dc2626"
+    t.string "badge_color", default: "#fbbf24"
+    t.string "icon_name"
+    t.text "banner_image_url"
+    t.text "hero_image_url"
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.boolean "is_recurring", default: false
+    t.string "recurrence_pattern"
+    t.json "recurrence_config"
+    t.decimal "discount_percentage", precision: 5, scale: 2
+    t.decimal "fixed_discount_amount", precision: 10, scale: 2
+    t.string "discount_type"
+    t.json "discount_config"
+    t.json "target_categories"
+    t.json "target_sellers"
+    t.json "target_products"
+    t.string "eligibility_criteria"
+    t.decimal "minimum_order_amount", precision: 10, scale: 2
+    t.integer "max_uses_per_customer"
+    t.integer "total_usage_limit"
+    t.integer "priority", default: 0
+    t.boolean "featured", default: false
+    t.boolean "show_on_homepage", default: true
+    t.boolean "show_badge", default: true
+    t.string "badge_text", default: "SALE"
+    t.text "cta_text", default: "Shop Now"
+    t.text "terms_and_conditions"
+    t.integer "view_count", default: 0
+    t.integer "click_count", default: 0
+    t.integer "conversion_count", default: 0
+    t.decimal "revenue_generated", precision: 12, scale: 2, default: "0.0"
+    t.integer "seller_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["end_time"], name: "index_offers_on_end_time"
+    t.index ["featured"], name: "index_offers_on_featured"
+    t.index ["offer_type"], name: "index_offers_on_offer_type"
+    t.index ["priority"], name: "index_offers_on_priority"
+    t.index ["seller_id"], name: "index_offers_on_seller_id"
+    t.index ["start_time"], name: "index_offers_on_start_time"
+    t.index ["status", "start_time", "end_time"], name: "index_offers_on_status_and_start_time_and_end_time"
+    t.index ["status"], name: "index_offers_on_status"
+  end
+
   create_table "password_otps", force: :cascade do |t|
     t.string "otp_digest"
     t.datetime "otp_sent_at"
@@ -521,6 +589,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_090824) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "seller_reply"
+    t.json "images", default: []
     t.index ["ad_id", "rating"], name: "index_reviews_on_ad_id_rating"
     t.index ["ad_id"], name: "index_reviews_on_ad_id"
     t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
@@ -616,7 +685,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_090824) do
     t.bigint "sub_county_id", null: false
     t.string "email"
     t.string "profile_picture"
-    t.bigint "age_group_id", null: false
+    t.bigint "age_group_id"
     t.string "zipcode"
     t.string "city"
     t.string "gender", default: "Male"
@@ -732,6 +801,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_07_090824) do
   add_foreign_key "conversations", "sellers", column: "inquirer_seller_id"
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations"
+  add_foreign_key "offer_ads", "ads"
+  add_foreign_key "offer_ads", "offers"
   add_foreign_key "payment_transactions", "sellers"
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"

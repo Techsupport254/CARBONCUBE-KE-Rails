@@ -1,6 +1,7 @@
 # app/models/buyer.rb
 class Buyer < ApplicationRecord
   before_validation :normalize_email
+  before_validation :generate_username_from_fullname
 
   has_secure_password validations: false
 
@@ -29,11 +30,10 @@ class Buyer < ApplicationRecord
                       message: "must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)" }
   validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
   validate :password_strength, if: :password_required?
-  validates :age_group, presence: true
   # validates :zipcode, presence: true
   # validates :city, presence: true
   # validates :sub_county, presence: true
-  validates :gender, inclusion: { in: %w(Male Female Other) }
+  validates :gender, inclusion: { in: %w(Male Female Other) }, allow_blank: true
   # validates :location, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
@@ -109,6 +109,40 @@ class Buyer < ApplicationRecord
 
   def normalize_email
     self.email = email.to_s.strip.downcase
+  end
+
+  def generate_username_from_fullname
+    # Only generate if username is blank and fullname is present
+    return if username.present? || fullname.blank?
+    
+    # Extract first name from fullname
+    first_name = fullname.to_s.strip.split.first
+    
+    # Clean the first name: remove special characters and spaces
+    base_username = first_name.downcase.gsub(/[^a-z0-9]/, '')
+    
+    # Ensure minimum length of 3 characters
+    base_username = "user#{rand(100..999)}" if base_username.length < 3
+    
+    # Truncate to 15 characters to leave room for numbers
+    base_username = base_username[0..14]
+    
+    # Check for uniqueness and append numbers if needed
+    generated_username = base_username
+    counter = 1
+    
+    while Buyer.exists?(username: generated_username) || Seller.exists?(username: generated_username)
+      generated_username = "#{base_username}#{counter}"
+      counter += 1
+      
+      # If it gets too long, start over with a random suffix
+      if generated_username.length > 20
+        generated_username = "#{base_username[0..14]}#{rand(10..99)}"
+        break
+      end
+    end
+    
+    self.username = generated_username
   end
 
   def oauth_phone_number_validation

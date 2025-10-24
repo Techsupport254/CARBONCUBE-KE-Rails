@@ -1,8 +1,9 @@
 class AdSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :price, :brand, :condition, :manufacturer,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
-             :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_name, 
-             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority
+             :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name, 
+             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
+             :flash_sale_info
 
   has_one :seller, serializer: SellerSerializer
   has_many :reviews, if: :include_reviews?
@@ -113,5 +114,42 @@ class AdSerializer < ActiveModel::Serializer
 
   def include_reviews?
     instance_options[:include_reviews] == true
+  end
+
+  def flash_sale_info
+    # Find active or scheduled offer that includes this ad (any offer type)
+    active_offer_ad = OfferAd.joins(:offer)
+                             .where(ad_id: object.id)
+                             .where(offers: { 
+                               status: ['active', 'scheduled']
+                             })
+                             .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
+                             .order('offers.start_time ASC')
+                             .first
+    
+    return nil unless active_offer_ad
+    
+    offer = active_offer_ad.offer
+    
+    {
+      active: offer.status == 'active',
+      scheduled: offer.status == 'scheduled',
+      offer_id: offer.id,
+      offer_name: offer.name,
+      offer_type: offer.offer_type,
+      discount_type: offer.discount_type,
+      original_price: active_offer_ad.original_price,
+      discounted_price: active_offer_ad.discounted_price,
+      discount_percentage: active_offer_ad.discount_percentage,
+      savings_amount: active_offer_ad.savings_amount,
+      seller_notes: active_offer_ad.seller_notes,
+      start_time: offer.start_time,
+      end_time: offer.end_time,
+      time_remaining: offer.time_remaining,
+      badge_color: offer.badge_color,
+      banner_color: offer.banner_color,
+      # Bulk offer specific fields
+      minimum_order_amount: offer.minimum_order_amount
+    }
   end
 end

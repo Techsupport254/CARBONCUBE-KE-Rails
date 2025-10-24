@@ -118,6 +118,14 @@ class Seller::SellersController < ApplicationController
     @seller.document_url = uploaded_document_url if uploaded_document_url
     @seller.profile_picture = uploaded_profile_picture_url if uploaded_profile_picture_url
 
+    # Auto-generate username from fullname if not provided
+    if @seller.username.blank? && @seller.fullname.present?
+      base_username = @seller.fullname.strip.split(/\s+/).first.downcase.gsub(/[^a-z0-9]/, '')
+      unique_username = generate_unique_username(base_username)
+      @seller.username = unique_username
+      Rails.logger.info "🔧 Auto-generated username: #{unique_username}"
+    end
+
     # Rails.logger.info "📝 Seller Params: #{seller_params.to_h.except(:password, :password_confirmation).inspect}"
     # Rails.logger.info "📂 Document URL: #{@seller.document_url}"
     # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
@@ -139,8 +147,15 @@ class Seller::SellersController < ApplicationController
       if current_year == 2025
         # Set exact expiry date to midnight on January 1, 2026 (00:00 2026-01-01)
         expiry_date = DateTime.new(2026, 1, 1, 0, 0, 0)
-        Rails.logger.info "🎉 2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date}"
-        SellerTier.create(seller_id: @seller.id, tier_id: 4, duration_months: 0, expires_at: expiry_date)
+        
+        # Calculate remaining months until end of 2025
+        current_date = Time.current
+        end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
+        remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
+        duration_months = (remaining_days / 30.44).ceil # Average days per month
+        
+        Rails.logger.info "🎉 2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (#{remaining_days} days, ~#{duration_months} months)"
+        SellerTier.create(seller_id: @seller.id, tier_id: 4, duration_months: duration_months, expires_at: expiry_date)
       else
         # Default free tier for other years
         Rails.logger.info "📝 #{current_year} Registration: Assigning Free tier to seller #{@seller.id}"
@@ -239,6 +254,28 @@ class Seller::SellersController < ApplicationController
   def upload_file_only(file)
     uploaded = Cloudinary::Uploader.upload(file.tempfile.path, resource_type: "raw", upload_preset: ENV['UPLOAD_PRESET'], folder: "business_permits")
     uploaded["secure_url"]
+  end
+
+  # Generate a unique username from base username
+  def generate_unique_username(base_username)
+    # Start with base username
+    username = base_username
+    counter = 1
+    
+    # If username already exists, append a number
+    while Seller.exists?(username: username) || Buyer.exists?(username: username)
+      username = "#{base_username}#{counter}"
+      counter += 1
+      
+      # Add random suffix if counter gets too high (avoid sequential numbers)
+      if counter > 100
+        random_suffix = SecureRandom.random_number(9999)
+        username = "#{base_username}#{random_suffix}"
+        break unless Seller.exists?(username: username) || Buyer.exists?(username: username)
+      end
+    end
+    
+    username
   end
 
 end

@@ -12,6 +12,7 @@ class Seller < ApplicationRecord
   has_many :conversations
   has_many :password_otps, as: :otpable, dependent: :destroy
   has_many :seller_documents, dependent: :destroy
+  has_many :offers, dependent: :destroy
   has_one :categories_seller
   has_one :category, through: :categories_seller
   has_one :seller_tier
@@ -19,7 +20,7 @@ class Seller < ApplicationRecord
   
   belongs_to :county
   belongs_to :sub_county
-  belongs_to :age_group
+  belongs_to :age_group, optional: true
   belongs_to :document_type, optional: true
 
   validates :county_id, presence: true
@@ -31,10 +32,10 @@ class Seller < ApplicationRecord
   validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
   validates :location, presence: true
   validates :business_registration_number, length: { minimum: 1 }, allow_blank: true, uniqueness: true, allow_nil: true
-  validates :username, presence: true, uniqueness: true, allow_blank: true,
+  validates :username, uniqueness: true, allow_blank: true,
             format: { with: /\A[a-zA-Z0-9_]{3,20}\z/, 
-                      message: "must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)" }
-  validates :age_group, presence: true
+                      message: "must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)" },
+            if: -> { username.present? }
   validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
   validate :password_strength, if: :password_required?
   # validates :tier, inclusion: { in: %w[Free Basic Standard Premium] }

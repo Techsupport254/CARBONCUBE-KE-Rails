@@ -18,6 +18,8 @@ class Ad < ApplicationRecord
   has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :click_events
+  has_many :offer_ads, dependent: :destroy
+  has_many :offers, through: :offer_ads
   has_many :conversations, dependent: :destroy
 
   accepts_nested_attributes_for :category
