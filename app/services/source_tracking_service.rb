@@ -183,10 +183,21 @@ class SourceTrackingService
 
   def parse_utm_params
     {
-      utm_source: @params[:utm_source],
-      utm_medium: @params[:utm_medium],
-      utm_campaign: @params[:utm_campaign]
+      utm_source: sanitize_utm_param(@params[:utm_source]),
+      utm_medium: sanitize_utm_param(@params[:utm_medium]),
+      utm_campaign: sanitize_utm_param(@params[:utm_campaign])
     }
+  end
+
+  def sanitize_utm_param(value)
+    return nil if value.blank?
+    
+    # Handle duplicate parameters (e.g., "google,google" or "cpc,cpc")
+    # Rails concatenates duplicate params with comma, so we split and take first
+    sanitized = value.to_s.split(',').first&.strip
+    
+    # Return nil if empty after sanitization
+    sanitized.present? ? sanitized : nil
   end
 
   def parse_referrer
@@ -354,8 +365,13 @@ class SourceTrackingService
   def self.sanitize_source(source)
     return 'direct' unless source.present?
     
+    # Handle duplicate parameters (e.g., "google,google")
+    # Rails concatenates duplicate params with comma, so we split and take first
+    source_value = source.to_s.split(',').first&.strip
+    return 'direct' unless source_value.present?
+    
     # Sanitize and normalize source names
-    sanitized = source.to_s.strip.downcase
+    sanitized = source_value.downcase
     
     result = case sanitized
     when 'fb', 'facebook'
