@@ -41,6 +41,10 @@ class Buyer::AdsController < ApplicationController
 
           ads_query = filter_by_category(ads_query) if params[:category_id].present?
           ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+          ads_query = filter_by_price_range(ads_query) if params[:price_range].present? && params[:price_range] != 'All'
+          ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
+          ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
+          ads_query = filter_by_search(ads_query) if params[:search].present?
 
           # Enhanced randomization with multiple factors for better distribution
           get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
@@ -63,6 +67,10 @@ class Buyer::AdsController < ApplicationController
       
       ads_query = filter_by_category(ads_query) if params[:category_id].present?
       ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+      ads_query = filter_by_price_range(ads_query) if params[:price_range].present? && params[:price_range] != 'All'
+      ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
+      ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
+      ads_query = filter_by_search(ads_query) if params[:search].present?
       
       ads_query.count
     end
@@ -127,6 +135,7 @@ class Buyer::AdsController < ApplicationController
       :category,
       :subcategory,
       :reviews,
+      :offer_ads,
       seller: { seller_tier: :tier }
     ).find(params[:id])
     render json: @ad, serializer: AdSerializer, include_reviews: true
@@ -156,28 +165,142 @@ class Buyer::AdsController < ApplicationController
             .where(flagged: false)
 
     if query.present?
-      query_words = query.split(/\s+/)
+      query_words = query.split(/\s+/).reject(&:blank?)
+      
+      # Build relevance-based search conditions
+      # Priority 1: Exact word matches in title (highest relevance)
+      # Priority 2: Exact word matches in description
+      # Priority 3: Partial matches in title
+      # Priority 4: Partial matches in description
+      # Priority 5: Category/subcategory matches
+      # Priority 6: Seller name matches
+      
+      title_conditions = []
+      description_conditions = []
+      category_conditions = []
+      seller_conditions = []
+      
       query_words.each do |word|
-        # Create multiple search patterns for broader matching
+        # Create multiple search patterns for better matching
         search_patterns = [
-          "%#{word}%",           # Exact word match
-          "%#{word[0..-2]}%",    # Remove last character (drill -> dril)
-          "%#{word[0..-3]}%",    # Remove last 2 characters (driller -> drill)
-          "%#{word}s%",          # Add 's' (drill -> drills)
-          "%#{word}er%",         # Add 'er' (drill -> driller)
-          "%#{word}ing%",        # Add 'ing' (drill -> drilling)
-          "%#{word}ed%",         # Add 'ed' (drill -> drilled)
+          "% #{word} %",           # Exact word match with spaces
+          "%#{word}%",             # Partial match anywhere
+          "%#{word[0..-2]}%",      # Remove last character (driller -> drille)
+          "%#{word[0..-3]}%",      # Remove last 2 characters (driller -> drill)
+          "%#{word[0..-4]}%",      # Remove last 3 characters (drilling -> drill)
+          "%#{word}s%",            # Add 's' (drill -> drills)
+          "%#{word}er%",           # Add 'er' (drill -> driller)
+          "%#{word}ing%",          # Add 'ing' (drill -> drilling)
+          "%#{word}ed%",           # Add 'ed' (drill -> drilled)
         ]
         
-        # Build conditions using array of patterns
-        conditions = search_patterns.map { |pattern|
-          'ads.title ILIKE ? OR ads.description ILIKE ? OR categories.name ILIKE ? OR subcategories.name ILIKE ? OR sellers.enterprise_name ILIKE ?'
-        }.join(' OR ')
+        # Title matches (highest priority)
+        search_patterns.each do |pattern|
+          title_conditions << "ads.title ILIKE ?"
+        end
         
-        # Flatten the patterns array for the parameters
-        pattern_params = search_patterns.flat_map { |pattern| [pattern, pattern, pattern, pattern, pattern] }
+        # Description matches (second priority)
+        search_patterns.each do |pattern|
+          description_conditions << "ads.description ILIKE ?"
+        end
         
-        ads = ads.where(conditions, *pattern_params)
+        # Category and subcategory matches
+        search_patterns.each do |pattern|
+          category_conditions << "categories.name ILIKE ?"
+          category_conditions << "subcategories.name ILIKE ?"
+        end
+        
+        # Seller name matches
+        search_patterns.each do |pattern|
+          seller_conditions << "sellers.enterprise_name ILIKE ?"
+        end
+      end
+      
+      # Build the main search condition with relevance weighting
+      search_conditions = []
+      search_params = []
+      
+      # Title matches (highest priority)
+      if title_conditions.any?
+        search_conditions << "(#{title_conditions.join(' OR ')})"
+        query_words.each do |word|
+          # Add all search patterns for title matching
+          search_params << "% #{word} %"           # Exact match
+          search_params << "%#{word}%"             # Partial match
+          search_params << "%#{word[0..-2]}%"     # Remove last char
+          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
+          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
+          search_params << "%#{word}s%"            # Add 's'
+          search_params << "%#{word}er%"           # Add 'er'
+          search_params << "%#{word}ing%"          # Add 'ing'
+          search_params << "%#{word}ed%"           # Add 'ed'
+        end
+      end
+      
+      # Description matches (second priority)
+      if description_conditions.any?
+        search_conditions << "(#{description_conditions.join(' OR ')})"
+        query_words.each do |word|
+          # Add all search patterns for description matching
+          search_params << "% #{word} %"           # Exact match
+          search_params << "%#{word}%"             # Partial match
+          search_params << "%#{word[0..-2]}%"     # Remove last char
+          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
+          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
+          search_params << "%#{word}s%"            # Add 's'
+          search_params << "%#{word}er%"           # Add 'er'
+          search_params << "%#{word}ing%"          # Add 'ing'
+          search_params << "%#{word}ed%"           # Add 'ed'
+        end
+      end
+      
+      # Category matches (third priority)
+      if category_conditions.any?
+        search_conditions << "(#{category_conditions.join(' OR ')})"
+        query_words.each do |word|
+          # Add all search patterns for category matching
+          search_params << "% #{word} %"           # Exact match
+          search_params << "%#{word}%"             # Partial match
+          search_params << "%#{word[0..-2]}%"     # Remove last char
+          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
+          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
+          search_params << "%#{word}s%"            # Add 's'
+          search_params << "%#{word}er%"           # Add 'er'
+          search_params << "%#{word}ing%"          # Add 'ing'
+          search_params << "%#{word}ed%"           # Add 'ed'
+          # Add again for subcategory
+          search_params << "% #{word} %"           # Exact match
+          search_params << "%#{word}%"             # Partial match
+          search_params << "%#{word[0..-2]}%"     # Remove last char
+          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
+          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
+          search_params << "%#{word}s%"            # Add 's'
+          search_params << "%#{word}er%"           # Add 'er'
+          search_params << "%#{word}ing%"          # Add 'ing'
+          search_params << "%#{word}ed%"           # Add 'ed'
+        end
+      end
+      
+      # Seller matches (lowest priority)
+      if seller_conditions.any?
+        search_conditions << "(#{seller_conditions.join(' OR ')})"
+        query_words.each do |word|
+          # Add all search patterns for seller matching
+          search_params << "% #{word} %"           # Exact match
+          search_params << "%#{word}%"             # Partial match
+          search_params << "%#{word[0..-2]}%"     # Remove last char
+          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
+          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
+          search_params << "%#{word}s%"            # Add 's'
+          search_params << "%#{word}er%"           # Add 'er'
+          search_params << "%#{word}ing%"          # Add 'ing'
+          search_params << "%#{word}ed%"           # Add 'ed'
+        end
+      end
+      
+      # Apply the search conditions
+      if search_conditions.any?
+        ads = ads.where(search_conditions.join(' OR '), *search_params)
       end
     end
 
@@ -202,31 +325,75 @@ class Buyer::AdsController < ApplicationController
     # Get total count for pagination
     ads_total_count = ads.count
     
-    ads = ads
-      .joins(:seller, seller: { seller_tier: :tier })
-      .select('ads.*, 
-               CASE tiers.id
-                 WHEN 4 THEN 1
-                 WHEN 3 THEN 2
-                 WHEN 2 THEN 3
-                 WHEN 1 THEN 4
-                 ELSE 5
-               END AS tier_priority')
-      .includes(
-        :category,
-        :subcategory,
-        :reviews,
-        seller: { seller_tier: :tier }
-      )
-      .order(Arel.sql('CASE tiers.id
-                        WHEN 4 THEN 1
-                        WHEN 3 THEN 2
-                        WHEN 2 THEN 3
-                        WHEN 1 THEN 4
-                        ELSE 5
-                      END ASC, RANDOM()'))
-      .limit(ads_per_page)
-      .offset((ads_page - 1) * ads_per_page)
+    # Build relevance scoring for search results
+    if query.present?
+      # Use a simpler approach with better ordering
+      ads = ads
+        .joins(:seller, seller: { seller_tier: :tier })
+        .select('ads.*, 
+                 CASE tiers.id
+                   WHEN 4 THEN 1
+                   WHEN 3 THEN 2
+                   WHEN 2 THEN 3
+                   WHEN 1 THEN 4
+                   ELSE 5
+                 END AS tier_priority')
+        .includes(
+          :category,
+          :subcategory,
+          :reviews,
+          seller: { seller_tier: :tier }
+        )
+        .order(Arel.sql("
+          CASE 
+            WHEN ads.title ILIKE '% #{query} %' THEN 1
+            WHEN ads.title ILIKE '%#{query}%' THEN 2
+            WHEN ads.description ILIKE '% #{query} %' THEN 3
+            WHEN ads.description ILIKE '%#{query}%' THEN 4
+            WHEN categories.name ILIKE '%#{query}%' THEN 5
+            WHEN subcategories.name ILIKE '%#{query}%' THEN 6
+            WHEN sellers.enterprise_name ILIKE '%#{query}%' THEN 7
+            ELSE 8
+          END ASC,
+          CASE tiers.id
+            WHEN 4 THEN 1
+            WHEN 3 THEN 2
+            WHEN 2 THEN 3
+            WHEN 1 THEN 4
+            ELSE 5
+          END ASC,
+          RANDOM()
+        "))
+        .limit(ads_per_page)
+        .offset((ads_page - 1) * ads_per_page)
+    else
+      # For non-search queries, use the original ordering
+      ads = ads
+        .joins(:seller, seller: { seller_tier: :tier })
+        .select('ads.*, 
+                 CASE tiers.id
+                   WHEN 4 THEN 1
+                   WHEN 3 THEN 2
+                   WHEN 2 THEN 3
+                   WHEN 1 THEN 4
+                   ELSE 5
+                 END AS tier_priority')
+        .includes(
+          :category,
+          :subcategory,
+          :reviews,
+          seller: { seller_tier: :tier }
+        )
+        .order(Arel.sql('CASE tiers.id
+                          WHEN 4 THEN 1
+                          WHEN 3 THEN 2
+                          WHEN 2 THEN 3
+                          WHEN 1 THEN 4
+                          ELSE 5
+                        END ASC, RANDOM()'))
+        .limit(ads_per_page)
+        .offset((ads_page - 1) * ads_per_page)
+    end
 
     # Enhanced shop search - find shops that match query OR have products matching the query
     matching_shops = []
@@ -249,7 +416,7 @@ class Buyer::AdsController < ApplicationController
       
       name_matching_shops = Seller.joins(:seller_tier)
                                  .where(blocked: false, deleted: false)
-                                 .where(shop_patterns.map { 'enterprise_name ILIKE ?' }.join(' OR '), *shop_patterns)
+                                 .where((shop_patterns.map { 'enterprise_name ILIKE ?' } + shop_patterns.map { 'fullname ILIKE ?' }).join(' OR '), *shop_patterns, *shop_patterns)
                                  .includes(:seller_tier)
       
       # Find shops that have products matching the search query
@@ -534,6 +701,10 @@ class Buyer::AdsController < ApplicationController
 
     ads_query = filter_by_category(ads_query) if params[:category_id].present?
     ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+    ads_query = filter_by_price_range(ads_query) if params[:price_range].present? && params[:price_range] != 'All'
+    ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
+    ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
+    ads_query = filter_by_search(ads_query) if params[:search].present?
 
     # Enhanced randomization with multiple factors for better distribution
     get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
@@ -627,6 +798,69 @@ class Buyer::AdsController < ApplicationController
 
   def filter_by_subcategory(ads_query)
     ads_query.where(subcategory_id: params[:subcategory_id])
+  end
+
+  # Filter by price range
+  # Expected formats: "0-1000", "1000-5000", "5000-10000", "10000-25000", "25000+"
+  def filter_by_price_range(ads_query)
+    price_range = params[:price_range]
+    
+    if price_range.include?('-')
+      # Range format: "1000-5000"
+      min_price, max_price = price_range.split('-').map(&:to_f)
+      ads_query.where('ads.price >= ? AND ads.price <= ?', min_price, max_price)
+    elsif price_range.include?('+')
+      # Minimum only format: "25000+"
+      min_price = price_range.gsub('+', '').to_f
+      ads_query.where('ads.price >= ?', min_price)
+    else
+      ads_query
+    end
+  end
+
+  # Filter by condition
+  # Ad.condition enum: { brand_new: 0, second_hand: 1, refurbished: 2 }
+  def filter_by_condition(ads_query)
+    condition_param = params[:condition].downcase.gsub(/\s+/, '_')
+    
+    case condition_param
+    when 'brand_new', 'new'
+      ads_query.where(condition: :brand_new)
+    when 'second_hand', 'used'
+      ads_query.where(condition: :second_hand)
+    when 'refurbished'
+      ads_query.where(condition: :refurbished)
+    else
+      ads_query
+    end
+  end
+
+  # Filter by location (seller's county or city)
+  def filter_by_location(ads_query)
+    location_param = params[:location]
+    
+    # Try to find county by name first
+    county = County.find_by('name ILIKE ?', location_param)
+    
+    if county
+      # Filter by seller's county
+      ads_query.where(sellers: { county_id: county.id })
+    else
+      # Fallback: search by seller's city or location text field
+      ads_query.where('sellers.city ILIKE ? OR sellers.location ILIKE ?', "%#{location_param}%", "%#{location_param}%")
+    end
+  end
+
+  # Filter by search term (within category context)
+  def filter_by_search(ads_query)
+    search_term = params[:search].strip
+    
+    ads_query.where(
+      'ads.title ILIKE ? OR ads.description ILIKE ? OR ads.brand ILIKE ?',
+      "%#{search_term}%",
+      "%#{search_term}%",
+      "%#{search_term}%"
+    )
   end
 
   def ad_params

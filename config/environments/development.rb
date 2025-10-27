@@ -83,16 +83,13 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
     address: 'smtp-relay.brevo.com',
-    port: 2525,  # Try port 2525 instead of 587
+    port: 587,  # Standard SMTP port with STARTTLS
     domain: 'carboncube-ke.com',
     user_name: ENV['BREVO_SMTP_USER'],
     password: ENV['BREVO_SMTP_PASSWORD'],
-    authentication: 'login',
-    enable_starttls_auto: false,  # Disable STARTTLS for port 2525
-    # Alternative SSL settings
-    openssl_verify_mode: 'none',
-    ssl: false,
-    tls: false
+    authentication: :plain,
+    enable_starttls_auto: true,  # Enable STARTTLS for secure connection
+    openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE  # Skip certificate verification in development
   }
 
   config.action_mailer.default_options = {

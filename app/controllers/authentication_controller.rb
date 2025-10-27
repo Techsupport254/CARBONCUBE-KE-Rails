@@ -16,6 +16,12 @@ class AuthenticationController < ApplicationController
         return
       end
 
+      # Block login if the seller is blocked
+      if @user.is_a?(Seller) && @user.blocked?
+        render json: { errors: ['Your account has been blocked. Please contact support.'] }, status: :unauthorized
+        return
+      end
+
       # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
       if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'Seller' && @user.county&.county_code.to_i != 47
         render json: {
@@ -122,6 +128,15 @@ class AuthenticationController < ApplicationController
       return
     end
 
+    # Check if seller is blocked
+    if user.is_a?(Seller) && user.blocked?
+      render json: { 
+        error: 'Account has been blocked',
+        error_type: 'account_blocked'
+      }, status: :unauthorized
+      return
+    end
+
     # Generate new token with remember_me flag and appropriate expiration
     token_payload = if role == 'Seller'
       { seller_id: user.id, email: user.email, role: role, remember_me: remember_me }
@@ -200,6 +215,15 @@ class AuthenticationController < ApplicationController
       render json: { 
         error: 'Account has been deleted',
         error_type: 'account_deleted'
+      }, status: :unauthorized
+      return
+    end
+
+    # Check if seller is blocked
+    if user.is_a?(Seller) && user.blocked?
+      render json: { 
+        error: 'Account has been blocked',
+        error_type: 'account_blocked'
       }, status: :unauthorized
       return
     end
@@ -452,6 +476,13 @@ class AuthenticationController < ApplicationController
           return
         end
 
+        # Block login if the seller is blocked
+        if user.is_a?(Seller) && user.blocked?
+          redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Your account has been blocked. Please contact support.')}"
+          redirect_to redirect_url, allow_other_host: true
+          return
+        end
+
         # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
         if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'Seller' && user.county&.county_code.to_i != 47
           redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Access restricted during pilot phase. Only Nairobi-based sellers can log in.')}"
@@ -615,6 +646,20 @@ class AuthenticationController < ApplicationController
               window.opener.postMessage({
                 type: 'GOOGLE_AUTH_ERROR',
                 error: 'Your account has been deleted. Please contact support.'
+              }, '*');
+            }
+            window.close();
+          </script>".html_safe
+          return
+        end
+
+        # Block login if the seller is blocked
+        if user.is_a?(Seller) && user.blocked?
+          render html: "<script>
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: 'Your account has been blocked. Please contact support.'
               }, '*');
             }
             window.close();
@@ -1021,18 +1066,24 @@ class AuthenticationController < ApplicationController
     
     Rails.logger.info "✅ Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
     
-    # Calculate expiry date (end of 2025)
-    expires_at = Time.new(2025, 12, 31, 23, 59, 59)
+    # Calculate expiry date (end of 2025) - expires at midnight on January 1, 2026
+    expires_at = Time.new(2026, 1, 1, 0, 0, 0)
+    
+    # Calculate remaining months until end of 2025
+    current_date = Time.current
+    end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
+    remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
+    duration_months = (remaining_days / 30.44).ceil # Average days per month
     
     # Create seller tier with premium status until end of 2025
     seller_tier = SellerTier.create!(
       seller: seller,
       tier: premium_tier,
-      duration_months: 12, # Full year
+      duration_months: duration_months,
       expires_at: expires_at
     )
     
-    Rails.logger.info "✅ Premium tier assigned to seller #{seller.email} until end of 2025 (SellerTier ID: #{seller_tier.id})"
+    Rails.logger.info "✅ Premium tier assigned to seller #{seller.email} until end of 2025 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
   rescue => e
     Rails.logger.error "❌ Error creating premium tier: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
@@ -1358,16 +1409,22 @@ class AuthenticationController < ApplicationController
           puts "✅ #{user_type.capitalize} created successfully with missing fields: #{user.email}"
           Rails.logger.info "✅ #{user_type.capitalize} created successfully with missing fields: #{user.email}"
           
-          # Create default seller tier for sellers
+          # Create seller tier for sellers
           if user_type == 'seller'
-            default_tier = Tier.find_by(name: 'Free') || Tier.first
-            if default_tier
-              user.seller_tier = SellerTier.create!(
-                seller: user,
-                tier: default_tier,
-                duration_months: 0 # Free tier has no expiration
-              )
-              Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+            # Check if user should get 2025 premium status
+            if should_get_2025_premium?
+              create_2025_premium_tier(user)
+            else
+              # Create default seller tier for non-2025 users
+              default_tier = Tier.find_by(name: 'Free') || Tier.first
+              if default_tier
+                user.seller_tier = SellerTier.create!(
+                  seller: user,
+                  tier: default_tier,
+                  duration_months: 0 # Free tier has no expiration
+                )
+                Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+              end
             end
           end
         else

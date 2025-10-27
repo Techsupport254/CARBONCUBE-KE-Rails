@@ -18,6 +18,7 @@ class Buyer::BuyersController < ApplicationController
     logger.debug "Buyer Params Received: #{buyer_params.inspect}"
 
     buyer_email = buyer_params[:email].downcase.strip
+    otp_code = params[:otp]
 
     if Seller.exists?(email: buyer_email)
       render json: { errors: ['Email is already in use by a seller'] }, status: :unprocessable_entity
@@ -26,9 +27,32 @@ class Buyer::BuyersController < ApplicationController
     elsif Buyer.exists?(username: buyer_params[:username])
       render json: { errors: ['Username has already been taken'] }, status: :unprocessable_entity
     else
+      # Verify OTP if provided
+      if otp_code.present?
+        otp_record = EmailOtp.find_by(email: buyer_email, otp_code: otp_code)
+        
+        if otp_record.nil?
+          logger.error "Invalid OTP for email: #{buyer_email}"
+          return render json: { errors: ['Invalid OTP'] }, status: :unauthorized
+        elsif otp_record.verified?
+          logger.error "OTP already used for email: #{buyer_email}"
+          return render json: { errors: ['OTP has already been used'] }, status: :unauthorized
+        elsif otp_record.expires_at <= Time.now
+          logger.error "OTP expired for email: #{buyer_email}"
+          return render json: { errors: ['OTP has expired'] }, status: :unauthorized
+        end
+      end
+
       @buyer = Buyer.new(buyer_params)
 
       if @buyer.save
+        # Only mark OTP as verified after successful buyer creation
+        if otp_code.present?
+          otp_record = EmailOtp.find_by(email: buyer_email, otp_code: otp_code)
+          otp_record.update!(verified: true) if otp_record
+          logger.info "✅ OTP verified for email: #{buyer_email}"
+        end
+
         # Send welcome email
         begin
           WelcomeMailer.welcome_email(@buyer).deliver_now

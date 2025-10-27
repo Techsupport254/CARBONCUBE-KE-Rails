@@ -535,10 +535,7 @@ class GoogleOauthService
     # Required fields for user creation (based on Buyer model validations)
     missing_fields << 'fullname' if buyer_attributes[:fullname].blank?
     missing_fields << 'phone_number' if buyer_attributes[:phone_number].blank?
-    missing_fields << 'gender' if buyer_attributes[:gender].blank?
-    missing_fields << 'age_group_id' if buyer_attributes[:age_group_id].blank?
-    missing_fields << 'county_id' if buyer_attributes[:county_id].blank?
-    missing_fields << 'sub_county_id' if buyer_attributes[:sub_county_id].blank?
+    # Note: gender, age_group_id, county_id, and sub_county_id are now optional for buyers
     
     # If we have missing required fields, return missing fields info for complete registration
     if missing_fields.any?
@@ -2067,18 +2064,24 @@ class GoogleOauthService
     
     Rails.logger.info "✅ GoogleOauthService: Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
     
-    # Calculate expiry date (end of 2025)
-    expires_at = Time.new(2025, 12, 31, 23, 59, 59)
+    # Calculate expiry date (end of 2025) - expires at midnight on January 1, 2026
+    expires_at = Time.new(2026, 1, 1, 0, 0, 0)
+    
+    # Calculate remaining months until end of 2025
+    current_date = Time.current
+    end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
+    remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
+    duration_months = (remaining_days / 30.44).ceil # Average days per month
     
     # Create seller tier with premium status until end of 2025
     seller_tier = SellerTier.create!(
       seller: seller,
       tier: premium_tier,
-      duration_months: 12, # Full year
+      duration_months: duration_months,
       expires_at: expires_at
     )
     
-    Rails.logger.info "✅ GoogleOauthService: Premium tier assigned to seller #{seller.email} until end of 2025 (SellerTier ID: #{seller_tier.id})"
+    Rails.logger.info "✅ GoogleOauthService: Premium tier assigned to seller #{seller.email} until end of 2025 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
   rescue => e
     Rails.logger.error "❌ GoogleOauthService: Error creating premium tier: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")

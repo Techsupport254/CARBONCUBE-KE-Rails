@@ -46,7 +46,7 @@ class Seller::SellersController < ApplicationController
       return render json: { errors: ['Email is already in use by a buyer'] }, status: :unprocessable_entity
     end
 
-    # Verify OTP if provided
+    # Verify OTP if provided (but don't mark as verified yet)
     if otp_code.present?
       otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
       
@@ -59,11 +59,8 @@ class Seller::SellersController < ApplicationController
       elsif otp_record.expires_at <= Time.now
         Rails.logger.error "OTP expired for email: #{seller_email}"
         return render json: { errors: ['OTP has expired'] }, status: :unauthorized
-      else
-        # Mark OTP as verified
-        otp_record.update!(verified: true)
-        Rails.logger.info "✅ OTP verified for email: #{seller_email}"
       end
+      # Don't mark as verified yet - wait until seller is successfully saved
     end
 
     uploaded_document_url = nil
@@ -131,6 +128,13 @@ class Seller::SellersController < ApplicationController
     # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
 
     if @seller.save
+      # Only mark OTP as verified after successful seller creation
+      if otp_code.present?
+        otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
+        otp_record.update!(verified: true) if otp_record
+        Rails.logger.info "✅ OTP verified for email: #{seller_email}"
+      end
+
       # Send welcome email
       begin
         WelcomeMailer.welcome_email(@seller).deliver_now

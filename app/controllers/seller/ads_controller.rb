@@ -3,6 +3,7 @@ class Seller::AdsController < ApplicationController
   
   before_action :authenticate_seller
   before_action :set_ad, only: [:show, :update, :destroy]
+  before_action :load_ad_with_offer, only: [:show]
 
 
   # app/controllers/seller/ads_controller.rb
@@ -29,9 +30,34 @@ class Seller::AdsController < ApplicationController
       buyer_details = { error: "Failed to fetch buyer details" }
     end
     
+    # Build ad JSON with offer information
+    ad_json = @ad.as_json(include: [:category, :subcategory], methods: [:mean_rating])
+    
+    # Add offer information if exists (including scheduled offers for seller view)
+    active_offer_ad = @ad.offer_ads.joins(:offer)
+                        .where(is_active: true)
+                        .where('offers.end_time > ?', DateTime.now)
+                        .where("offers.status IN ('active', 'scheduled', 'paused')")
+                        .includes(:offer)
+                        .order('offers.start_time ASC')
+                        .first
+    
+    if active_offer_ad
+      ad_json[:discount_percentage] = active_offer_ad.discount_percentage
+      ad_json[:discounted_price] = active_offer_ad.discounted_price
+      ad_json[:offer_start_date] = active_offer_ad.offer.start_time
+      ad_json[:offer_end_date] = active_offer_ad.offer.end_time
+      ad_json[:offer_description] = active_offer_ad.seller_notes || active_offer_ad.offer.description
+      ad_json[:offer_type] = active_offer_ad.offer.offer_type
+      ad_json[:offer_status] = active_offer_ad.offer.status
+      ad_json[:offer_name] = active_offer_ad.offer.name
+      ad_json[:offer_id] = active_offer_ad.offer.id
+      ad_json[:minimum_quantity] = active_offer_ad.offer.minimum_order_amount
+    end
+    
     # Render the complete ad data with reviews and buyer details
     render json: {
-      **@ad.as_json(include: [:category, :subcategory], methods: [:mean_rating]),
+      **ad_json,
       reviews: reviews.as_json(include: [:buyer]),
       buyer_details: buyer_details
     }
@@ -138,6 +164,188 @@ class Seller::AdsController < ApplicationController
     end
   end
 
+  # POST /seller/ads/:id/offer
+  def create_offer
+    ad = current_seller.ads.find_by(id: params[:id])
+    return render json: { error: 'Ad not found' }, status: :not_found unless ad
+
+    begin
+      ActiveRecord::Base.transaction do
+        # Validate required parameters
+        unless params[:discount_percentage].present? && params[:offer_end_date].present?
+          return render json: { 
+            error: 'discount_percentage and offer_end_date are required' 
+          }, status: :unprocessable_entity
+        end
+
+        discount = params[:discount_percentage].to_f
+        if discount <= 0 || discount >= 100
+          return render json: { 
+            error: 'Discount percentage must be between 1 and 99' 
+          }, status: :unprocessable_entity
+        end
+
+        # Parse and validate dates
+        begin
+          end_time = DateTime.parse(params[:offer_end_date])
+        rescue ArgumentError
+          return render json: { 
+            error: 'Invalid offer_end_date format' 
+          }, status: :unprocessable_entity
+        end
+
+        # Parse start date or default to now
+        start_time = if params[:offer_start_date].present?
+          begin
+            DateTime.parse(params[:offer_start_date])
+          rescue ArgumentError
+            return render json: { 
+              error: 'Invalid offer_start_date format' 
+            }, status: :unprocessable_entity
+          end
+        else
+          DateTime.now
+        end
+
+        if end_time <= start_time
+          return render json: { 
+            error: 'Offer end date must be after start date' 
+          }, status: :unprocessable_entity
+        end
+
+        # Get offer type and status from params or use defaults
+        offer_type = params[:offer_type].presence || 'limited_time_offer'
+        offer_status = params[:offer_status].presence || 'active'
+        
+        # Auto-determine status based on dates if not explicitly set
+        if offer_status == 'active'
+          if start_time > DateTime.now
+            offer_status = 'scheduled'
+          elsif end_time < DateTime.now
+            offer_status = 'expired'
+          end
+        end
+
+        # Check if ad already has an active offer
+        existing_offer_ad = ad.offer_ads.joins(:offer)
+                              .where(is_active: true)
+                              .where('offers.end_time > ?', DateTime.now)
+                              .first
+
+        if existing_offer_ad
+          # Update existing offer
+          offer = existing_offer_ad.offer
+          offer.update!(
+            description: params[:offer_description].presence || offer.description,
+            offer_type: offer_type,
+            start_time: start_time,
+            end_time: end_time,
+            status: offer_status,
+            discount_percentage: discount
+          )
+          
+          # Update offer_ad discount
+          existing_offer_ad.update!(
+            discount_percentage: discount,
+            original_price: ad.price,
+            discounted_price: ad.price * (1 - discount / 100.0),
+            seller_notes: params[:offer_description]
+          )
+        else
+          # Create new offer
+          offer_name = params[:offer_name].presence || "#{ad.title.truncate(30)} - Special Offer"
+          offer = current_seller.offers.create!(
+            name: offer_name,
+            description: params[:offer_description].presence || "Special discount on #{ad.title}",
+            offer_type: offer_type,
+            discount_type: 'percentage',
+            status: offer_status,
+            start_time: start_time,
+            end_time: end_time,
+            discount_percentage: discount,
+            show_on_homepage: false,
+            featured: false,
+            priority: 0
+          )
+
+          # Create offer_ad association
+          OfferAd.create!(
+            offer: offer,
+            ad: ad,
+            discount_percentage: discount,
+            original_price: ad.price,
+            discounted_price: ad.price * (1 - discount / 100.0),
+            is_active: true,
+            seller_notes: params[:offer_description]
+          )
+        end
+
+        # Fetch the updated ad with offer information
+        ad.reload
+        active_offer_ad = ad.offer_ads.joins(:offer)
+                            .where(is_active: true)
+                            .where('offers.end_time > ?', DateTime.now)
+                            .includes(:offer)
+                            .first
+
+        ad_json = ad.as_json(include: [:category, :subcategory], methods: [:mean_rating])
+        
+        if active_offer_ad
+          ad_json[:discount_percentage] = active_offer_ad.discount_percentage
+          ad_json[:discounted_price] = active_offer_ad.discounted_price
+          ad_json[:offer_start_date] = active_offer_ad.offer.start_time
+          ad_json[:offer_end_date] = active_offer_ad.offer.end_time
+          ad_json[:offer_description] = active_offer_ad.seller_notes || active_offer_ad.offer.description
+          ad_json[:offer_type] = active_offer_ad.offer.offer_type
+          ad_json[:offer_status] = active_offer_ad.offer.status
+          ad_json[:offer_name] = active_offer_ad.offer.name
+          ad_json[:offer_id] = active_offer_ad.offer.id
+        end
+
+        render json: ad_json, status: :ok
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { error: e.message }, status: :unprocessable_entity
+    rescue => e
+      Rails.logger.error "Error creating offer: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Failed to create offer' }, status: :internal_server_error
+    end
+  end
+
+  # DELETE /seller/ads/:id/offer
+  def remove_offer
+    ad = current_seller.ads.find_by(id: params[:id])
+    return render json: { error: 'Ad not found' }, status: :not_found unless ad
+
+    begin
+      # Find active offer_ad for this ad
+      offer_ad = ad.offer_ads.joins(:offer)
+                    .where(is_active: true)
+                    .where('offers.end_time > ?', DateTime.now)
+                    .first
+
+      if offer_ad
+        # Deactivate the offer_ad
+        offer_ad.update!(is_active: false)
+        
+        # If the offer has no other active ads, deactivate the offer too
+        offer = offer_ad.offer
+        if offer.offer_ads.where(is_active: true).count == 0
+          offer.update!(status: 'paused')
+        end
+      end
+
+      # Return ad without offer information
+      ad_json = ad.as_json(include: [:category, :subcategory], methods: [:mean_rating])
+      render json: ad_json, status: :ok
+    rescue => e
+      Rails.logger.error "Error removing offer: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Failed to remove offer' }, status: :internal_server_error
+    end
+  end
+
   # app/controllers/seller/ads_controller.rb
   def restore
     ad = current_seller.ads.deleted.find_by(id: params[:id])
@@ -174,6 +382,13 @@ class Seller::AdsController < ApplicationController
 
     @ad = @seller.ads.find_by(id: params[:id])
     render json: { error: 'Ad not found' }, status: :not_found unless @ad
+  end
+
+  def load_ad_with_offer
+    # Preload offer_ads and offers for efficiency
+    if @ad
+      @ad = Ad.includes(offer_ads: :offer).find(@ad.id)
+    end
   end
 
   def ad_params

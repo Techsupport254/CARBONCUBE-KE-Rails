@@ -310,6 +310,18 @@ Rails.application.routes.draw do
     resources :faqs
     resources :banners
     resources :promotions, except: [:new, :edit]
+    resources :offers, except: [:new, :edit] do
+      member do
+        post :activate
+        post :pause
+        post :approve
+      end
+      collection do
+        get :analytics
+        post :bulk_actions
+        get :templates
+      end
+    end
     get 'identify', to: 'admins#identify'
     resource :profile, only: [:show, :update] do
       collection do
@@ -359,12 +371,30 @@ Rails.application.routes.draw do
         put 'restore'
         get 'buyer_details', to: 'buyer_details#show'
         get 'buyer_details/summary', to: 'buyer_details#summary'
+        post 'offer', to: 'ads#create_offer'
+        delete 'offer', to: 'ads#remove_offer'
       end
     end
 
 
     resources :categories, only: [:index, :show]
     get 'categories', to: 'categories#index'
+    
+    # Seller Offers Management
+    resources :offers, except: [:new, :edit] do
+      member do
+        post :activate
+        post :pause
+        post :add_ads
+        delete :remove_ads
+      end
+      collection do
+        get :offer_types
+        get :templates
+        get :my_ads
+        get :analytics
+      end
+    end
     get 'subcategories', to: 'subcategories#index'
     resources :analytics, only: [:index]
     resources :reviews, only: [:index, :show] do
@@ -436,6 +466,27 @@ Rails.application.routes.draw do
     end
     
     post 'validate_coupon', to: 'promotions#validate_coupon'
+    
+    # Offers routes
+    resources :offers, only: [:index, :show] do
+      member do
+        post :track_click
+      end
+      collection do
+        get :active_offers
+        get :featured_offers
+        get :upcoming_offers
+        get :by_type
+        get :calendar
+        get :search
+        get :black_friday
+        get :cyber_monday
+        get :flash_sales
+        get :clearance
+        get :seasonal
+        get :holiday
+      end
+    end
 
     resources :ads, only: [:index, :show] do
       collection do

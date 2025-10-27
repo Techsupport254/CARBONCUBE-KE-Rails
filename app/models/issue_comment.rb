@@ -51,6 +51,6 @@ class IssueComment < ApplicationRecord
   private
   
   def send_comment_notification
-    IssueMailer.comment_added(self).deliver_later
+    IssueMailer.comment_added(self).deliver_now
   end
 end
