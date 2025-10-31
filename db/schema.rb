@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_31_224014) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -137,14 +137,14 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
 
   create_table "buyers", id: :bigint, default: -> { "nextval('purchasers_id_seq'::regclass)" }, force: :cascade do |t|
     t.string "fullname", null: false
-    t.string "username"
+    t.string "username", null: false
     t.string "password_digest"
     t.string "email", null: false
-    t.string "phone_number", limit: 10, null: false
+    t.string "phone_number", limit: 10
     t.bigint "age_group_id"
     t.string "zipcode"
     t.string "city"
-    t.string "gender"
+    t.string "gender", default: "Male", null: false
     t.string "location"
     t.string "profile_picture"
     t.boolean "blocked", default: false
@@ -295,7 +295,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
     t.string "email"
     t.string "otp_code"
     t.datetime "expires_at"
-    t.boolean "verified"
+    t.boolean "verified", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -370,12 +370,13 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
     t.string "file_url", null: false
     t.string "uploaded_by_type", null: false
     t.bigint "uploaded_by_id", null: false
-    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_issue_attachments_on_created_at"
     t.index ["file_type"], name: "index_issue_attachments_on_file_type"
     t.index ["issue_id"], name: "index_issue_attachments_on_issue_id"
     t.index ["uploaded_by_type", "uploaded_by_id"], name: "index_issue_attachments_on_uploaded_by"
+    t.index ["uploaded_by_type", "uploaded_by_id"], name: "index_issue_attachments_on_uploaded_by_type_and_uploaded_by_id"
   end
 
   create_table "issue_comments", force: :cascade do |t|
@@ -383,31 +384,45 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
     t.text "content", null: false
     t.string "author_type", null: false
     t.bigint "author_id", null: false
-    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.boolean "is_internal", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["author_type", "author_id"], name: "index_issue_comments_on_author"
+    t.index ["author_type", "author_id"], name: "index_issue_comments_on_author_type_and_author_id"
+    t.index ["created_at"], name: "index_issue_comments_on_created_at"
+    t.index ["is_internal"], name: "index_issue_comments_on_is_internal"
     t.index ["issue_id"], name: "index_issue_comments_on_issue_id"
   end
 
   create_table "issues", force: :cascade do |t|
-    t.string "title", null: false
+    t.string "title", limit: 200, null: false
     t.text "description", null: false
-    t.string "status", default: "pending"
-    t.string "priority", default: "medium"
-    t.string "category", default: "other"
+    t.string "reporter_name", limit: 100, null: false
+    t.string "reporter_email", null: false
+    t.integer "status", default: 0, null: false
+    t.integer "priority", default: 1, null: false
+    t.integer "category", default: 0, null: false
     t.boolean "public_visible", default: true
     t.bigint "assigned_to_id"
-    t.string "device_uuid"
+    t.datetime "resolved_at", precision: nil
+    t.text "resolution_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "device_uuid", null: false
     t.bigint "user_id"
-    t.datetime "created_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at", precision: nil, default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.string "reporter_name"
-    t.string "reporter_email"
+    t.string "user_type"
     t.index ["assigned_to_id"], name: "index_issues_on_assigned_to_id"
+    t.index ["category", "status"], name: "index_issues_on_category_and_status"
     t.index ["category"], name: "index_issues_on_category"
+    t.index ["created_at"], name: "index_issues_on_created_at"
+    t.index ["device_uuid"], name: "index_issues_on_device_uuid"
     t.index ["priority"], name: "index_issues_on_priority"
     t.index ["public_visible"], name: "index_issues_on_public_visible"
+    t.index ["reporter_email"], name: "index_issues_on_reporter_email"
+    t.index ["status", "priority"], name: "index_issues_on_status_and_priority"
     t.index ["status"], name: "index_issues_on_status"
+    t.index ["user_id", "user_type"], name: "index_issues_on_user_id_and_user_type"
+    t.index ["user_id"], name: "index_issues_on_user_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -799,6 +814,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_24_115416) do
   add_foreign_key "conversations", "buyers"
   add_foreign_key "conversations", "sellers"
   add_foreign_key "conversations", "sellers", column: "inquirer_seller_id"
+  add_foreign_key "issue_attachments", "issues"
+  add_foreign_key "issue_comments", "issues"
+  add_foreign_key "issues", "admins", column: "assigned_to_id"
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations"
   add_foreign_key "offer_ads", "ads"

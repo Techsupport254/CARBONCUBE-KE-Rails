@@ -4,8 +4,45 @@ class Admin::MessagesController < ApplicationController
 
   # GET /admin/conversations/:conversation_id/messages
   def index
-    @messages = @conversation.messages.includes(:sender).order(created_at: :asc)
-    render json: @messages, each_serializer: MessageSerializer
+    # Get all messages from this conversation, including ad info
+    all_messages = @conversation.messages.order(created_at: :asc)
+    
+    # Include ad information for each message
+    messages_with_ads = all_messages.map do |message|
+      message_data = {
+        id: message.id,
+        content: message.content,
+        created_at: message.created_at,
+        sender_type: message.sender_type,
+        sender_id: message.sender_id,
+        ad_id: message.ad_id,
+        product_context: message.product_context,
+        status: message.status,
+        read_at: message.read_at,
+        delivered_at: message.delivered_at
+      }
+      
+      if message.ad_id
+        ad = Ad.find_by(id: message.ad_id)
+        if ad
+          message_data[:ad] = {
+            id: ad.id,
+            title: ad.title,
+            price: ad.price,
+            first_media_url: ad.media.first,
+            category: ad.category&.name,
+            subcategory: ad.subcategory&.name
+          }
+        end
+      end
+      
+      message_data
+    end
+    
+    render json: {
+      messages: messages_with_ads,
+      total_messages: messages_with_ads.count
+    }
   end
 
   # POST /admin/conversations/:conversation_id/messages

@@ -6,7 +6,7 @@ class Seller::ProfilesController < ApplicationController
 
   # GET /seller/profile
   def show
-    render json: @seller
+    render json: @seller, serializer: SellerSerializer
   end
 
   # PATCH/PUT /seller/profile
@@ -111,7 +111,12 @@ class Seller::ProfilesController < ApplicationController
       if params[:newPassword] == params[:confirmPassword]
         # Update the password
         if current_seller.update(password: params[:newPassword])
-          render json: { message: 'Password updated successfully' }, status: :ok
+          # Password changed successfully - session should be cleared on frontend
+          # Return response indicating session invalidation
+          render json: { 
+            message: 'Password updated successfully',
+            session_invalidated: true
+          }, status: :ok
         else
           render json: { errors: current_seller.errors.full_messages }, status: :unprocessable_entity
         end

@@ -381,11 +381,16 @@ class PresenceChannel < ApplicationCable::Channel
       message = Message.find_by(id: message_id)
       return unless message
       
+      # Don't mark your own messages as read
+      return if message.sender == connection.current_user
+      
       # Update message read status
-      message.update(read_at: Time.current, status: 'read')
+      message.mark_as_read!
       
       # Broadcast read receipt to sender
       broadcast_read_receipt(message)
+      
+      Rails.logger.info "PresenceChannel: Marked message #{message_id} as read"
     rescue => e
       Rails.logger.warn "PresenceChannel: Error handling message read for ID #{message_id}: #{e.message}"
     end
@@ -398,11 +403,16 @@ class PresenceChannel < ApplicationCable::Channel
       message = Message.find_by(id: message_id)
       return unless message
       
+      # Don't mark your own messages as delivered
+      return if message.sender == connection.current_user
+      
       # Update message delivered status
-      message.update(delivered_at: Time.current, status: 'delivered')
+      message.mark_as_delivered!
       
       # Broadcast delivery receipt to sender
       broadcast_delivery_receipt(message)
+      
+      Rails.logger.info "PresenceChannel: Marked message #{message_id} as delivered"
     rescue => e
       Rails.logger.warn "PresenceChannel: Error handling message delivered for ID #{message_id}: #{e.message}"
     end

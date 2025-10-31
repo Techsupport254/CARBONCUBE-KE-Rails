@@ -6,21 +6,23 @@ class GoogleOauthService
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
   GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
   
-  def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil)
+  def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil, is_registration = false)
     Rails.logger.info "🔧 GoogleOauthService#initialize called with:"
     Rails.logger.info "  - auth_code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
     Rails.logger.info "  - redirect_uri: #{redirect_uri}"
     Rails.logger.info "  - user_ip: #{user_ip}"
     Rails.logger.info "  - role: #{role.inspect} (#{role.class})"
     Rails.logger.info "  - location_data: #{location_data.inspect}"
+    Rails.logger.info "  - is_registration: #{is_registration.inspect}"
     
     @auth_code = auth_code
     @redirect_uri = redirect_uri
     @user_ip = user_ip
     @role = role
     @location_data = location_data
+    @is_registration = is_registration
     
-    Rails.logger.info "✅ GoogleOauthService initialized with @role = #{@role.inspect}"
+    Rails.logger.info "✅ GoogleOauthService initialized with @role = #{@role.inspect}, @is_registration = #{@is_registration.inspect}"
   end
 
   def authenticate
@@ -92,8 +94,57 @@ class GoogleOauthService
       if existing_user
         Rails.logger.info "Existing user found: #{existing_user.class.name} - #{existing_user.email}"
         
-        # For existing users, always allow login regardless of role
-        # Role mismatch checks should only happen during registration
+        # Block login if the user is soft-deleted
+        if (existing_user.is_a?(Buyer) || existing_user.is_a?(Seller)) && existing_user.deleted?
+          Rails.logger.warn "🚫 Login blocked: Account deleted for #{existing_user.email}"
+          return {
+            success: false,
+            error: 'Your account has been deleted. Please contact support.'
+          }
+        end
+
+        # Block login if the user is blocked (both Buyer and Seller)
+        if existing_user.is_a?(Buyer) && existing_user.blocked?
+          Rails.logger.warn "🚫 Login blocked: Account blocked for buyer #{existing_user.email}"
+          return {
+            success: false,
+            error: 'Your account has been blocked. Please contact support.'
+          }
+        end
+
+        if existing_user.is_a?(Seller) && existing_user.blocked?
+          Rails.logger.warn "🚫 Login blocked: Account blocked for seller #{existing_user.email}"
+          return {
+            success: false,
+            error: 'Your account has been blocked. Please contact support.'
+          }
+        end
+        
+        # During registration, always require confirmation before auto-login, regardless of role match
+        if @is_registration
+          requested_role = @role.to_s.downcase.strip
+          existing_role = existing_user.is_a?(Seller) ? 'seller' : 'buyer'
+          
+          Rails.logger.warn "⚠️ Registration mode: existing #{existing_role} account found (requested: #{requested_role})"
+          # Always generate token but return account_exists flag so frontend can show confirmation first
+          # This prevents automatic login during registration, even if roles match
+          token = generate_jwt_token(existing_user)
+          user_response = format_user_response(existing_user)
+          
+          return {
+            success: true,
+            message: "A #{existing_role} account with this email already exists.",
+            token: token,
+            user: user_response,
+            account_exists: true,
+            existing_account_type: existing_role,
+            email: existing_user.email,
+            existing_user: true,
+            location_data: location_info
+          }
+        end
+        
+        # For existing users in login mode, or when role matches during registration, allow login
         Rails.logger.info "✅ Allowing login for existing user: #{existing_user.email}"
         
         # Generate JWT token for existing user
@@ -534,8 +585,8 @@ class GoogleOauthService
     
     # Required fields for user creation (based on Buyer model validations)
     missing_fields << 'fullname' if buyer_attributes[:fullname].blank?
-    missing_fields << 'phone_number' if buyer_attributes[:phone_number].blank?
-    # Note: gender, age_group_id, county_id, and sub_county_id are now optional for buyers
+    # Note: phone_number, gender, age_group_id, county_id, and sub_county_id are now optional for buyers
+    # Users can verify their accounts later
     
     # If we have missing required fields, return missing fields info for complete registration
     if missing_fields.any?
@@ -655,8 +706,6 @@ class GoogleOauthService
     # Check validation errors
     errors.each do |field, messages|
       case field.to_s
-      when 'phone_number'
-        missing_fields << 'phone_number' if messages.include?('is required for OAuth users')
       when 'location'
         missing_fields << 'location' if messages.include?("can't be blank")
       when 'city'

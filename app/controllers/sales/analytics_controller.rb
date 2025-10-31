@@ -3,9 +3,29 @@ class Sales::AnalyticsController < ApplicationController
   before_action :authenticate_sales_user
 
   def index
+    # Get list of excluded emails for filtering
+    excluded_emails = InternalUserExclusion.active
+                                           .by_type('email_domain')
+                                           .pluck(:identifier_value)
+    
     # Get all data without time filtering for totals
     all_sellers = Seller.where(deleted: false)
-    all_buyers = Buyer.where(deleted: false)
+    all_buyers = excluded_emails.any? ? 
+      Buyer.where(deleted: false).where.not('LOWER(email) IN (?)', excluded_emails.map(&:downcase)) :
+      Buyer.where(deleted: false)
+    
+    # Separate buyers by signup method (Google OAuth vs Regular)
+    # Google OAuth users have a provider value (typically 'google')
+    google_oauth_buyers = all_buyers.where.not(provider: nil).where("provider != ''")
+    # Regular users have no provider (nil or empty string)
+    regular_buyers = all_buyers.where("provider IS NULL OR provider = ''")
+    
+    # Separate sellers by signup method (Google OAuth vs Regular)
+    # Google OAuth users have a provider value (typically 'google')
+    google_oauth_sellers = all_sellers.where.not(provider: nil).where("provider != ''")
+    # Regular users have no provider (nil or empty string)
+    regular_sellers = all_sellers.where("provider IS NULL OR provider = ''")
+    
     all_ads = Ad.where(deleted: false)
     all_reviews = Review.all
     all_wishlists = WishList.all
@@ -19,36 +39,56 @@ class Sales::AnalyticsController < ApplicationController
       .joins(:seller)
       .where(tier_id: 1, sellers: { deleted: false })
     
-    # Get click events without time filtering for totals
+    # Get click events without time filtering for totals (excluding internal users)
     all_ad_clicks = ClickEvent.where(event_type: 'Ad-Click')
     all_buyer_ad_clicks = ClickEvent
       .joins(:buyer)
       .where(event_type: 'Ad-Click')
       .where(buyers: { deleted: false })
+      .where.not('LOWER(buyers.email) IN (?)', excluded_emails.map(&:downcase)) # Exclude internal users
+    all_buyer_reveal_clicks = ClickEvent
+      .joins(:buyer)
+      .where(event_type: 'Reveal-Seller-Details')
+      .where(buyers: { deleted: false })
+      .where.not('LOWER(buyers.email) IN (?)', excluded_emails.map(&:downcase)) # Exclude internal users
     all_reveal_clicks = ClickEvent.where(event_type: 'Reveal-Seller-Details')
     
-    # Get ALL data with timestamps for frontend filtering (no 30-day restriction)
-    sellers_with_timestamps = all_sellers.pluck(:created_at)
-    buyers_with_timestamps = all_buyers.pluck(:created_at)
-    ads_with_timestamps = all_ads.pluck(:created_at)
-    reviews_with_timestamps = all_reviews.pluck(:created_at)
-    wishlists_with_timestamps = all_wishlists.pluck(:created_at)
+    # Convert all timestamps to ISO 8601 format for proper JavaScript Date parsing
+    sellers_with_timestamps = all_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    buyers_with_timestamps = all_buyers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    
+    # Separate timestamps by signup method for time-series tracking
+    google_oauth_buyers_with_timestamps = google_oauth_buyers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    regular_buyers_with_timestamps = regular_buyers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    google_oauth_sellers_with_timestamps = google_oauth_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    regular_sellers_with_timestamps = regular_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    
+    ads_with_timestamps = all_ads.pluck(:created_at).map { |ts| ts&.iso8601 }
+    reviews_with_timestamps = all_reviews.pluck(:created_at).map { |ts| ts&.iso8601 }
+    wishlists_with_timestamps = all_wishlists.pluck(:created_at).map { |ts| ts&.iso8601 }
     
     # Get seller tiers with timestamps
     paid_seller_tiers_with_timestamps = all_paid_seller_tiers
       .pluck('sellers.created_at')
+      .map { |ts| ts&.iso8601 }
     
     unpaid_seller_tiers_with_timestamps = all_unpaid_seller_tiers
       .pluck('sellers.created_at')
+      .map { |ts| ts&.iso8601 }
     
     # Get click events with timestamps
-    ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at)
+    ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
     buyer_ad_clicks_with_timestamps = all_buyer_ad_clicks
       .pluck('click_events.created_at')
+      .map { |ts| ts&.iso8601 }
+    
+    buyer_reveal_clicks_with_timestamps = all_buyer_reveal_clicks
+      .pluck('click_events.created_at')
+      .map { |ts| ts&.iso8601 }
     
     # Get reveal clicks with timestamps (include both authenticated and unauthenticated users)
-    reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at)
+    reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
     # Get category click events with timestamps (include all data)
     category_click_events_with_timestamps = Category.joins(ads: :click_events)
@@ -73,13 +113,84 @@ class Sales::AnalyticsController < ApplicationController
         category_data[category_name][:reveal_clicks] += 1
       end
       
-      category_data[category_name][:timestamps] << record.created_at
+      category_data[category_name][:timestamps] << record.created_at&.iso8601
     end
     
     # Convert to array format
     category_click_events = category_data.map do |category_name, data|
       {
         category_name: category_name,
+        ad_clicks: data[:ad_clicks],
+        wish_list_clicks: data[:wish_list_clicks],
+        reveal_clicks: data[:reveal_clicks],
+        timestamps: data[:timestamps]
+      }
+    end
+
+    # Get subcategory click events with timestamps (include all data)
+    subcategory_click_events_with_timestamps = Subcategory
+      .joins(:category)
+      .joins('INNER JOIN ads ON ads.subcategory_id = subcategories.id')
+      .joins('INNER JOIN click_events ON click_events.ad_id = ads.id')
+      .where('ads.deleted = ?', false)
+      .select('subcategories.id AS subcategory_id,
+              subcategories.name AS subcategory_name,
+              categories.id AS category_id,
+              categories.name AS category_name,
+              click_events.event_type,
+              click_events.created_at')
+      .order('categories.name, subcategories.name')
+    
+    # Process subcategory data grouped by category
+    subcategory_data = {}
+    subcategory_click_events_with_timestamps.each do |record|
+      category_name = record.category_name
+      subcategory_name = record.subcategory_name
+      key = "#{category_name}::#{subcategory_name}"
+      
+      subcategory_data[key] ||= { 
+        category_name: category_name,
+        subcategory_name: subcategory_name,
+        ad_clicks: 0, 
+        wish_list_clicks: 0, 
+        reveal_clicks: 0, 
+        timestamps: [] 
+      }
+      
+      case record.event_type
+      when 'Ad-Click'
+        subcategory_data[key][:ad_clicks] += 1
+      when 'Add-to-Wish-List'
+        subcategory_data[key][:wish_list_clicks] += 1
+      when 'Reveal-Seller-Details'
+        subcategory_data[key][:reveal_clicks] += 1
+      end
+      
+      subcategory_data[key][:timestamps] << record.created_at&.iso8601
+    end
+    
+    # Get ads count for each subcategory
+    subcategory_ads_counts = Subcategory
+      .joins(:category)
+      .joins(:ads)
+      .where(ads: { deleted: false })
+      .group('subcategories.id, subcategories.name, subcategories.category_id, categories.id, categories.name')
+      .select('subcategories.id AS subcategory_id,
+              subcategories.name AS subcategory_name,
+              categories.name AS category_name,
+              COUNT(ads.id) AS ads_count')
+      .each_with_object({}) do |record, hash|
+        key = "#{record.category_name}::#{record.subcategory_name}"
+        hash[key] = record.ads_count.to_i
+      end
+    
+    # Convert to array format with ads_count
+    subcategory_click_events = subcategory_data.values.map do |data|
+      key = "#{data[:category_name]}::#{data[:subcategory_name]}"
+      {
+        category_name: data[:category_name],
+        subcategory_name: data[:subcategory_name],
+        ads_count: subcategory_ads_counts[key] || 0,
         ad_clicks: data[:ad_clicks],
         wish_list_clicks: data[:wish_list_clicks],
         reveal_clicks: data[:reveal_clicks],
@@ -106,8 +217,16 @@ class Sales::AnalyticsController < ApplicationController
       unpaid_seller_tiers_with_timestamps: unpaid_seller_tiers_with_timestamps,
       ad_clicks_with_timestamps: ad_clicks_with_timestamps,
       buyer_ad_clicks_with_timestamps: buyer_ad_clicks_with_timestamps,
+      buyer_reveal_clicks_with_timestamps: buyer_reveal_clicks_with_timestamps,
       reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
       category_click_events: category_click_events,
+      subcategory_click_events: subcategory_click_events,
+      
+      # Signup method breakdown timestamps (for time-series tracking)
+      google_oauth_buyers_with_timestamps: google_oauth_buyers_with_timestamps,
+      regular_buyers_with_timestamps: regular_buyers_with_timestamps,
+      google_oauth_sellers_with_timestamps: google_oauth_sellers_with_timestamps,
+      regular_sellers_with_timestamps: regular_sellers_with_timestamps,
       
       # Pre-calculated totals for initial display (all time)
       total_sellers: all_sellers.count,
@@ -119,7 +238,22 @@ class Sales::AnalyticsController < ApplicationController
       without_subscription: all_unpaid_seller_tiers.count,
       total_ads_clicks: all_ad_clicks.count,
       buyer_ad_clicks: all_buyer_ad_clicks.count,
+      buyer_reveal_clicks: all_buyer_reveal_clicks.count,
       total_reveal_clicks: all_reveal_clicks.count,
+      
+      # Signup method breakdown totals
+      signup_method_breakdown: {
+        buyers: {
+          google_oauth: google_oauth_buyers.count,
+          regular: regular_buyers.count,
+          total: all_buyers.count
+        },
+        sellers: {
+          google_oauth: google_oauth_sellers.count,
+          regular: regular_sellers.count,
+          total: all_sellers.count
+        }
+      },
       
       # Source tracking analytics
       source_analytics: source_analytics,
@@ -129,6 +263,86 @@ class Sales::AnalyticsController < ApplicationController
     }
     
     render json: response_data
+  end
+
+  def recent_users
+    user_type = params[:type] || 'buyers' # Default to buyers
+    limit = params[:limit]&.to_i || 10
+    
+    if user_type == 'sellers'
+      users = Seller.where(deleted: false)
+                    .includes(:seller_tier, :tier, :ads, :reviews)
+                    .order(created_at: :desc)
+                    .limit(limit)
+      
+      users_data = users.map do |seller|
+        active_ads = seller.ads.where(deleted: false).count
+        total_reviews = seller.reviews.count
+        avg_rating = seller.calculate_mean_rating
+        tier_name = seller.seller_tier&.tier&.name || 'Free'
+        signup_method = seller.oauth_user? ? 'google_oauth' : 'regular'
+        
+        {
+          id: seller.id,
+          name: seller.fullname,
+          enterprise_name: seller.enterprise_name,
+          email: seller.email,
+          phone: seller.phone_number,
+          location: seller.location,
+          profile_picture: seller.profile_picture,
+          created_at: seller.created_at&.iso8601,
+          type: 'seller',
+          signup_method: signup_method,
+          stats: {
+            ads_count: active_ads,
+            reviews_count: total_reviews,
+            avg_rating: avg_rating.round(1),
+            tier: tier_name
+          }
+        }
+      end
+    else
+      users = Buyer.where(deleted: false)
+                   .includes(:click_events, :wish_lists, :reviews)
+                   .order(created_at: :desc)
+                   .limit(limit)
+      
+      # Get list of excluded emails for filtering
+      excluded_emails = InternalUserExclusion.active
+                                             .by_type('email_domain')
+                                             .pluck(:identifier_value)
+      
+      # Filter out excluded buyers
+      users = users.where.not('LOWER(buyers.email) IN (?)', excluded_emails.map(&:downcase)) if excluded_emails.any?
+      
+      users_data = users.map do |buyer|
+        clicks_count = buyer.click_events.where(event_type: 'Ad-Click').count
+        reveals_count = buyer.click_events.where(event_type: 'Reveal-Seller-Details').count
+        wishlist_count = buyer.wish_lists.count
+        reviews_count = buyer.reviews.count
+        signup_method = buyer.oauth_user? ? 'google_oauth' : 'regular'
+        
+        {
+          id: buyer.id,
+          name: buyer.fullname,
+          email: buyer.email,
+          phone: buyer.phone_number,
+          location: buyer.location,
+          profile_picture: buyer.profile_picture,
+          created_at: buyer.created_at&.iso8601,
+          type: 'buyer',
+          signup_method: signup_method,
+          stats: {
+            clicks_count: clicks_count,
+            reveals_count: reveals_count,
+            wishlist_count: wishlist_count,
+            reviews_count: reviews_count
+          }
+        }
+      end
+    end
+    
+    render json: { users: users_data, type: user_type, count: users_data.count }
   end
 
   private
@@ -184,8 +398,9 @@ class Sales::AnalyticsController < ApplicationController
     if date_filter
       visit_timestamps = Analytic.date_range(date_filter[:start_date], date_filter[:end_date])
                                  .pluck(:created_at)
+                                 .map { |ts| ts&.iso8601 }
     else
-      visit_timestamps = Analytic.all.pluck(:created_at)
+      visit_timestamps = Analytic.all.pluck(:created_at).map { |ts| ts&.iso8601 }
     end
     
     # Get unique visitors trend with date filtering

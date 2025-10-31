@@ -172,6 +172,7 @@ Rails.application.routes.draw do
   # Routes for password OTPs
   post '/password_resets/request_otp', to: 'password_resets#request_otp'
   post '/password_resets/verify_otp', to: 'password_resets#verify_otp'
+  post '/password_resets/reset_password', to: 'password_resets#reset_password'
 
   # Sign-Up OTP routes
   resources :email_otps, only: [:create] do
@@ -192,6 +193,7 @@ Rails.application.routes.draw do
   # Route for shop pages
   get 'shop/:slug', to: 'shops#show', as: :shop
   get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
+  post 'shop/:slug/reviews', to: 'shops#create_review', as: :create_shop_review
   get 'shop/:slug/meta', to: 'shops#meta_tags', as: :shop_meta_tags
 
   # Catch-all route for missing static files (like images)
@@ -507,7 +509,13 @@ Rails.application.routes.draw do
 
 #for sales
     namespace :sales do
-      resources :analytics, only: [:index]  # Dashboard data
+      resources :analytics, only: [:index] do
+        collection do
+          get :recent_users
+        end
+      end
+      resources :reviews, only: [:index]
+      resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
       resources :conversations, only: [:index, :show, :create] do
         resources :messages, only: [:index, :create]
         get :unread_count, on: :collection

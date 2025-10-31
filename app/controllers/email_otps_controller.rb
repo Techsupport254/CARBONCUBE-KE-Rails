@@ -8,7 +8,12 @@ class EmailOtpsController < ApplicationController
 
     EmailOtp.where(email: email).delete_all # remove old OTPs
 
-    EmailOtp.create!(email: email, otp_code: otp_code, expires_at: expires_at)
+    EmailOtp.create!(
+      email: email, 
+      otp_code: otp_code, 
+      expires_at: expires_at,
+      verified: false # Explicitly set to false
+    )
 
     # Send email (you can use ActionMailer or external provider)
     begin
@@ -39,9 +44,9 @@ class EmailOtpsController < ApplicationController
 
     if record.nil?
       render json: { verified: false, error: "Invalid OTP" }, status: :unauthorized
-    elsif record.verified?
+    elsif record.verified == true
       render json: { verified: false, error: "OTP has already been used" }, status: :unauthorized
-    elsif record.expires_at <= Time.now
+    elsif record.expires_at.present? && record.expires_at <= Time.now
       render json: { verified: false, error: "OTP has expired" }, status: :unauthorized
     else
       record.update!(verified: true)

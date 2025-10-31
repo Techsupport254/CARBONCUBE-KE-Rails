@@ -1,7 +1,7 @@
 class Ad < ApplicationRecord
   include PgSearch::Model
 
-  enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2 }
+  enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3 }
 
   pg_search_scope :search_by_title_and_description, against: [:title, :description], using: { tsearch: { prefix: true }, trigram: {}}
 
@@ -195,6 +195,7 @@ class Ad < ApplicationRecord
     when 'brand_new' then 'NEW'
     when 'second_hand' then 'USED'
     when 'refurbished' then 'REFURBISHED'
+    when 'x_japan' then 'NEW' # X-Japan treated as new condition for Google Merchant
     else 'NEW'
     end
   end

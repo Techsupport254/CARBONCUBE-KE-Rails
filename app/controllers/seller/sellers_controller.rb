@@ -47,16 +47,17 @@ class Seller::SellersController < ApplicationController
     end
 
     # Verify OTP if provided (but don't mark as verified yet)
+    otp_record = nil
     if otp_code.present?
       otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
       
       if otp_record.nil?
         Rails.logger.error "Invalid OTP for email: #{seller_email}"
         return render json: { errors: ['Invalid OTP'] }, status: :unauthorized
-      elsif otp_record.verified?
+      elsif otp_record.verified == true
         Rails.logger.error "OTP already used for email: #{seller_email}"
         return render json: { errors: ['OTP has already been used'] }, status: :unauthorized
-      elsif otp_record.expires_at <= Time.now
+      elsif otp_record.expires_at.present? && otp_record.expires_at <= Time.now
         Rails.logger.error "OTP expired for email: #{seller_email}"
         return render json: { errors: ['OTP has expired'] }, status: :unauthorized
       end
@@ -127,26 +128,29 @@ class Seller::SellersController < ApplicationController
     # Rails.logger.info "📂 Document URL: #{@seller.document_url}"
     # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
 
-    if @seller.save
-      # Only mark OTP as verified after successful seller creation
-      if otp_code.present?
-        otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
-        otp_record.update!(verified: true) if otp_record
-        Rails.logger.info "✅ OTP verified for email: #{seller_email}"
+    # Wrap seller creation, OTP verification, and tier assignment in a transaction
+    # If any step fails, rollback everything to ensure data consistency
+    # This ensures OTP is only marked verified if seller is successfully created
+    success = false
+    ActiveRecord::Base.transaction do
+      # Step 1: Save seller
+      unless @seller.save
+        Rails.logger.error "Seller creation failed: #{@seller.errors.full_messages.inspect}"
+        raise ActiveRecord::Rollback
       end
 
-      # Send welcome email
-      begin
-        WelcomeMailer.welcome_email(@seller).deliver_now
-        puts "✅ Welcome email sent to: #{@seller.email}"
-        Rails.logger.info "✅ Welcome email sent to: #{@seller.email}"
-      rescue => e
-        puts "❌ Failed to send welcome email: #{e.message}"
-        Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
-        # Don't fail the registration if email fails
+      # Step 2: Mark OTP as verified (only after seller is saved)
+      if otp_code.present? && otp_record
+        begin
+          otp_record.update!(verified: true)
+          Rails.logger.info "✅ OTP verified for email: #{seller_email}"
+        rescue => e
+          Rails.logger.error "Failed to mark OTP as verified: #{e.message}"
+          raise ActiveRecord::Rollback
+        end
       end
-      
-      # Assign Premium tier expiring at midnight on January 1, 2026 (last day of 2025) for 2025 registrations
+
+      # Step 3: Assign tier (must succeed for transaction to complete)
       current_year = Date.current.year
       if current_year == 2025
         # Set exact expiry date to midnight on January 1, 2026 (00:00 2026-01-01)
@@ -159,18 +163,43 @@ class Seller::SellersController < ApplicationController
         duration_months = (remaining_days / 30.44).ceil # Average days per month
         
         Rails.logger.info "🎉 2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (#{remaining_days} days, ~#{duration_months} months)"
-        SellerTier.create(seller_id: @seller.id, tier_id: 4, duration_months: duration_months, expires_at: expiry_date)
+        seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 4, duration_months: duration_months, expires_at: expiry_date)
+        unless seller_tier.save
+          Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
+          raise ActiveRecord::Rollback
+        end
       else
         # Default free tier for other years
         Rails.logger.info "📝 #{current_year} Registration: Assigning Free tier to seller #{@seller.id}"
-        SellerTier.create(seller_id: @seller.id, tier_id: 1, duration_months: 0)
+        seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 1, duration_months: 0)
+        unless seller_tier.save
+          Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
+          raise ActiveRecord::Rollback
+        end
       end
+
+      # If we reach here, all steps succeeded
+      success = true
+    end
+
+    if success
+      # Send welcome email (outside transaction to avoid blocking)
+      begin
+        WelcomeMailer.welcome_email(@seller).deliver_now
+        puts "✅ Welcome email sent to: #{@seller.email}"
+        Rails.logger.info "✅ Welcome email sent to: #{@seller.email}"
+      rescue => e
+        puts "❌ Failed to send welcome email: #{e.message}"
+        Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
+        # Don't fail the registration if email fails
+      end
+      
       # New sellers get remember_me by default for better user experience
       token = JsonWebToken.encode(seller_id: @seller.id, email: @seller.email, role: 'Seller', remember_me: true)
       # Rails.logger.info "Seller created successfully: #{@seller.id}"
       render json: { token: token, seller: @seller }, status: :created
     else
-      Rails.logger.error "Seller creation failed: #{@seller.errors.full_messages.inspect}"
+      Rails.logger.error "Seller creation transaction failed: #{@seller.errors.full_messages.inspect}"
       render json: @seller.errors, status: :unprocessable_entity
     end
   end

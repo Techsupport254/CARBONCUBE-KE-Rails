@@ -819,7 +819,7 @@ class Buyer::AdsController < ApplicationController
   end
 
   # Filter by condition
-  # Ad.condition enum: { brand_new: 0, second_hand: 1, refurbished: 2 }
+  # Ad.condition enum: { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3 }
   def filter_by_condition(ads_query)
     condition_param = params[:condition].downcase.gsub(/\s+/, '_')
     
@@ -830,6 +830,8 @@ class Buyer::AdsController < ApplicationController
       ads_query.where(condition: :second_hand)
     when 'refurbished'
       ads_query.where(condition: :refurbished)
+    when 'x_japan', 'x-japan'
+      ads_query.where(condition: :x_japan)
     else
       ads_query
     end

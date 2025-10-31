@@ -30,6 +30,7 @@ gem "rack-cors"
 
 # Redis for Action Cable in production
 gem 'redis', '~> 5.0'
+gem 'connection_pool', '~> 2.4'
 
 # AnyCable for high-performance WebSockets
 gem 'anycable-rails', '~> 1.4'

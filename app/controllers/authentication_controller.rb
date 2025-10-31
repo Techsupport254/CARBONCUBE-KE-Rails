@@ -3,9 +3,13 @@ class AuthenticationController < ApplicationController
   require 'timeout'
 
   def login
-    identifier = params[:email] || params[:identifier] || params[:authentication]&.[](:email)
+    email = params[:email]
+    unless email.present?
+      render json: { errors: ['Email is required'] }, status: :bad_request
+      return
+    end
     remember_me = params[:remember_me] == true || params[:remember_me] == 'true'
-    @user = find_user_by_identifier(identifier)
+    @user = find_user_by_email(email)
 
     if @user&.authenticate(params[:password])
       role = determine_role(@user)
@@ -16,7 +20,12 @@ class AuthenticationController < ApplicationController
         return
       end
 
-      # Block login if the seller is blocked
+      # Block login if the user is blocked (both Buyer and Seller)
+      if @user.is_a?(Buyer) && @user.blocked?
+        render json: { errors: ['Your account has been blocked. Please contact support.'] }, status: :unauthorized
+        return
+      end
+
       if @user.is_a?(Seller) && @user.blocked?
         render json: { errors: ['Your account has been blocked. Please contact support.'] }, status: :unauthorized
         return
@@ -128,7 +137,15 @@ class AuthenticationController < ApplicationController
       return
     end
 
-    # Check if seller is blocked
+    # Check if user is blocked (both Buyer and Seller)
+    if user.is_a?(Buyer) && user.blocked?
+      render json: { 
+        error: 'Account has been blocked',
+        error_type: 'account_blocked'
+      }, status: :unauthorized
+      return
+    end
+
     if user.is_a?(Seller) && user.blocked?
       render json: { 
         error: 'Account has been blocked',
@@ -219,7 +236,15 @@ class AuthenticationController < ApplicationController
       return
     end
 
-    # Check if seller is blocked
+    # Check if user is blocked (both Buyer and Seller)
+    if user.is_a?(Buyer) && user.blocked?
+      render json: { 
+        error: 'Account has been blocked',
+        error_type: 'account_blocked'
+      }, status: :unauthorized
+      return
+    end
+
     if user.is_a?(Seller) && user.blocked?
       render json: { 
         error: 'Account has been blocked',
@@ -256,9 +281,6 @@ class AuthenticationController < ApplicationController
   end
 
   def google_oauth
-    puts "🚨 GOOGLE OAUTH METHOD CALLED!"
-    Rails.logger.info "🚨 GOOGLE OAUTH METHOD CALLED!"
-    
     # Rate limiting: prevent multiple OAuth calls from same IP
     client_ip = request.remote_ip
     cache_key = "google_oauth_#{client_ip}_#{params[:code]}"
@@ -279,20 +301,7 @@ class AuthenticationController < ApplicationController
     redirect_uri = params[:redirect_uri] || ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/callback"
     location_data = params[:location_data] # Get location data from frontend
     role = params[:role] || 'Buyer' # Get role from request parameters
-    
-    puts "🔍 Google OAuth Request Debug:"
-    Rails.logger.info "🔍 Google OAuth Request Debug:"
-    puts "📝 Auth code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
-    Rails.logger.info "📝 Auth code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
-    puts "🔗 Redirect URI: #{redirect_uri}"
-    Rails.logger.info "🔗 Redirect URI: #{redirect_uri}"
-    puts "🌍 Location data from frontend: #{location_data.inspect}"
-    Rails.logger.info "🌍 Location data from frontend: #{location_data.inspect}"
-    puts "👤 Role from params: #{role}"
-    Rails.logger.info "👤 Role from params: #{role}"
-    puts "📊 All params: #{params.inspect}"
-    Rails.logger.info "📊 All params: #{params.inspect}"
-    
+    is_registration = params[:is_registration] == 'true' || params[:is_registration] == true # Check if this is registration mode
     unless auth_code
       Rails.logger.error "❌ No authorization code provided"
       render json: { errors: ['Authorization code is required'] }, status: :bad_request
@@ -308,8 +317,8 @@ class AuthenticationController < ApplicationController
       
       # Add timeout to prevent hanging requests
       result = Timeout::timeout(30) do
-        oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip, role, location_data)
-        Rails.logger.info "✅ GoogleOauthService created successfully"
+        oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip, role, location_data, is_registration)
+        Rails.logger.info "✅ GoogleOauthService created successfully with is_registration=#{is_registration}"
         
         Rails.logger.info "🔄 Calling authenticate method..."
         oauth_service.authenticate
@@ -355,7 +364,71 @@ class AuthenticationController < ApplicationController
 
       # Handle the OAuth service result
       if result[:success]
+        # Extract user object from result to check status
+        user = result[:user]
+        
+        # Need to find the actual user object if we only have user data hash
+        if user.is_a?(Hash) && user[:id].present?
+          user_id = user[:id]
+          # Try to determine role from the user hash, fallback to finding by id
+          role = user[:role] || user[:user_type] || 'Buyer'
+          # Normalize role format
+          role = case role.to_s.downcase
+                 when 'buyer', 'purchaser' then 'Buyer'
+                 when 'seller', 'vendor' then 'Seller'
+                 when 'admin' then 'Admin'
+                 when 'sales' then 'Sales'
+                 else 'Buyer'
+                 end
+          actual_user = find_user_by_id_and_role(user_id, role)
+          user = actual_user if actual_user
+        end
+        
+        # Block login if the user is soft-deleted
+        if user && (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
+          render json: { 
+            success: false,
+            error: 'Your account has been deleted. Please contact support.' 
+          }, status: :unauthorized
+          return
+        end
+
+        # Block login if the user is blocked (both Buyer and Seller)
+        if user
+          if user.is_a?(Buyer) && user.blocked?
+            render json: { 
+              success: false,
+              error: 'Your account has been blocked. Please contact support.' 
+            }, status: :unauthorized
+            return
+          elsif user.is_a?(Seller) && user.blocked?
+            render json: { 
+              success: false,
+              error: 'Your account has been blocked. Please contact support.' 
+            }, status: :unauthorized
+            return
+          end
+        end
+        
         if result[:existing_user]
+          # If this is registration mode and an existing user is found, inform user but still provide token for sign in
+          if is_registration
+            user_type = result[:user][:role] || result[:user][:user_type] || 'Buyer'
+            account_type = user_type.downcase == 'seller' ? 'seller' : 'buyer'
+            Rails.logger.info "⚠️ Registration attempt with existing #{account_type} account: #{result[:user][:email]}"
+            render json: {
+              success: true,
+              message: "A #{account_type} account with this email already exists.",
+              token: result[:token],
+              user: result[:user],
+              account_exists: true,
+              existing_account_type: account_type,
+              email: result[:user][:email],
+              existing_user: true
+            }
+            return
+          end
+          
           Rails.logger.info "✅ Existing user logged in successfully"
           render json: {
             success: true,
@@ -476,7 +549,13 @@ class AuthenticationController < ApplicationController
           return
         end
 
-        # Block login if the seller is blocked
+        # Block login if the user is blocked (both Buyer and Seller)
+        if user.is_a?(Buyer) && user.blocked?
+          redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Your account has been blocked. Please contact support.')}"
+          redirect_to redirect_url, allow_other_host: true
+          return
+        end
+
         if user.is_a?(Seller) && user.blocked?
           redirect_url = "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Your account has been blocked. Please contact support.')}"
           redirect_to redirect_url, allow_other_host: true
@@ -653,7 +732,20 @@ class AuthenticationController < ApplicationController
           return
         end
 
-        # Block login if the seller is blocked
+        # Block login if the user is blocked (both Buyer and Seller)
+        if user.is_a?(Buyer) && user.blocked?
+          render html: "<script>
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'GOOGLE_AUTH_ERROR',
+                error: 'Your account has been blocked. Please contact support.'
+              }, '*');
+            }
+            window.close();
+          </script>".html_safe
+          return
+        end
+
         if user.is_a?(Seller) && user.blocked?
           render html: "<script>
             if (window.opener) {
@@ -977,6 +1069,31 @@ class AuthenticationController < ApplicationController
         end
       end
       
+      # Check if user is deleted or blocked before generating token
+      if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
+        render json: {
+          success: false,
+          error: 'Your account has been deleted. Please contact support.'
+        }, status: :unauthorized
+        return
+      end
+
+      if user.is_a?(Buyer) && user.blocked?
+        render json: {
+          success: false,
+          error: 'Your account has been blocked. Please contact support.'
+        }, status: :unauthorized
+        return
+      end
+
+      if user.is_a?(Seller) && user.blocked?
+        render json: {
+          success: false,
+          error: 'Your account has been blocked. Please contact support.'
+        }, status: :unauthorized
+        return
+      end
+      
       # Generate JWT token using JsonWebToken service
       token_payload = {
         email: user.email,
@@ -1118,12 +1235,15 @@ class AuthenticationController < ApplicationController
       fullname: fullname,
       username: generate_unique_username(fullname),
       profile_picture: user_info[:picture],
-      age_group_id: calculate_age_group(user_info),
       gender: extract_gender(user_info)
     }
     
     # Only add phone number if we have one from Google
     user_attributes[:phone_number] = phone_number if phone_number.present?
+    
+    # Only add age_group_id if we can calculate it
+    age_group_id = calculate_age_group(user_info)
+    user_attributes[:age_group_id] = age_group_id if age_group_id.present?
     
     Buyer.create!(user_attributes)
   rescue => e
@@ -1131,20 +1251,12 @@ class AuthenticationController < ApplicationController
     nil
   end
 
-  def find_user_by_identifier(identifier)
-    if identifier.include?('@')
-      # Assume it's an email if it contains '@'
-      Buyer.find_by(email: identifier) ||
-      Seller.find_by(email: identifier) ||
-      Admin.find_by(email: identifier) ||
-      SalesUser.find_by(email: identifier)
-    elsif identifier.match?(/\A\d{10}\z/)
-      # Assume phone number if it's 10 digits - no longer supported
-      nil
-    else
-      # Otherwise, assume it's an ID number - no longer supported
-      nil
-    end
+  def find_user_by_email(email)
+    # Only search by email
+    Buyer.find_by(email: email) ||
+    Seller.find_by(email: email) ||
+    Admin.find_by(email: email) ||
+    SalesUser.find_by(email: email)
   end
 
   # Extract the best available name from Google user info
@@ -1436,11 +1548,11 @@ class AuthenticationController < ApplicationController
           user.errors.each do |field, message|
             case field.to_s
             when 'phone_number'
-              if message.include?('required for OAuth users')
-                error_messages << "Phone number is required for Google OAuth users"
-              elsif message.include?('exactly 10 digits')
+              # Phone number is optional, only validate format if provided
+              if message.include?('exactly 10 digits')
                 error_messages << "Phone number must be exactly 10 digits"
-              else
+              elsif !message.include?('required')
+                # Only show error if it's not about being required (since it's optional now)
                 error_messages << "Phone number: #{message}"
               end
             when 'username'

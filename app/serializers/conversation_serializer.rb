@@ -1,12 +1,66 @@
 class ConversationSerializer < ActiveModel::Serializer
-  attributes :id, :admin_id, :buyer_id, :seller_id, :ad_id, :created_at, :updated_at, :inquirer_seller_id, :last_message
+  attributes :id, :admin_id, :buyer_id, :seller_id, :ad_id, :created_at, :updated_at, :inquirer_seller_id, :last_message,
+             :admin, :buyer, :seller, :inquirer_seller, :ad
 
-  belongs_to :admin
-  belongs_to :buyer
-  belongs_to :seller
-  belongs_to :inquirer_seller
-  belongs_to :ad
-  # has_many :messages
+  def admin
+    return nil unless object.admin
+    {
+      id: object.admin.id,
+      fullname: object.admin.fullname,
+      username: object.admin.username,
+      email: object.admin.email,
+      profile_picture: nil  # Admin model doesn't have profile_picture
+    }
+  end
+
+  def buyer
+    return nil unless object.buyer
+    {
+      id: object.buyer.id,
+      fullname: object.buyer.fullname,
+      username: object.buyer.username,
+      email: object.buyer.email,
+      phone_number: object.buyer.phone_number,
+      profile_picture: object.buyer.profile_picture
+    }
+  end
+
+  def seller
+    return nil unless object.seller
+    {
+      id: object.seller.id,
+      fullname: object.seller.fullname,
+      username: object.seller.username,
+      enterprise_name: object.seller.enterprise_name,
+      email: object.seller.email,
+      phone_number: object.seller.phone_number,
+      profile_picture: object.seller.profile_picture
+    }
+  end
+
+  def inquirer_seller
+    return nil unless object.inquirer_seller
+    {
+      id: object.inquirer_seller.id,
+      fullname: object.inquirer_seller.fullname,
+      username: object.inquirer_seller.username,
+      enterprise_name: object.inquirer_seller.enterprise_name,
+      email: object.inquirer_seller.email,
+      phone_number: object.inquirer_seller.phone_number,
+      profile_picture: object.inquirer_seller.profile_picture
+    }
+  end
+
+  def ad
+    return nil unless object.ad
+    {
+      id: object.ad.id,
+      title: object.ad.title,
+      price: object.ad.price,
+      description: object.ad.description,
+      media: object.ad.media
+    }
+  end
 
   def last_message
     message = object.messages.order(created_at: :desc).first

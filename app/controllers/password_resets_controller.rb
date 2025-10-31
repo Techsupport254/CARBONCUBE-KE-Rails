@@ -1,10 +1,37 @@
 class PasswordResetsController < ApplicationController
+  # Rate limiting: prevent duplicate requests within 60 seconds
+  RATE_LIMIT_WINDOW = 60.seconds
+
   def request_otp
     email = params[:email]
+    request_id = params[:request_id] || "default-#{Time.current.to_i}" # Fallback if not provided
+
     user = find_user_by_email(email)
 
     if user
-      PasswordOtp.generate_and_send_otp(user)
+      # Check if we've recently sent an OTP for this email with the same request_id
+      # This prevents duplicate emails from being sent in quick succession
+      cache_key = "password_reset_otp:#{email}:#{request_id}"
+      
+      # Use Redis directly for rate limiting (since Redis is already configured)
+      begin
+        if RedisConnection.exists?(cache_key)
+          # Already sent for this request_id recently
+          render json: { message: 'OTP sent' }, status: :ok
+          return
+        end
+        
+        # Generate and send OTP
+        PasswordOtp.generate_and_send_otp(user)
+        
+        # Cache this request for 60 seconds to prevent duplicates
+        RedisConnection.setex(cache_key, RATE_LIMIT_WINDOW.to_i, '1')
+      rescue => e
+        # If Redis fails, still send OTP but log the error
+        Rails.logger.warn "Could not use Redis for rate limiting: #{e.message}"
+        PasswordOtp.generate_and_send_otp(user)
+      end
+      
       render json: { message: 'OTP sent' }, status: :ok
     else
       render json: { error: 'Email not found' }, status: :not_found
@@ -12,6 +39,24 @@ class PasswordResetsController < ApplicationController
   end
 
   def verify_otp
+    email = params[:email]
+    otp = params[:otp]
+
+    user = find_user_by_email(email)
+    return render json: { error: 'User not found' }, status: :not_found unless user
+
+    # Get the most recent OTP record
+    otp_record = user.password_otps.order(created_at: :desc).first
+
+    if otp_record&.valid_otp?(otp)
+      # OTP is valid - just verify it, don't reset password yet
+      render json: { message: 'OTP verified successfully' }, status: :ok
+    else
+      render json: { error: 'Invalid or expired OTP' }, status: :unauthorized
+    end
+  end
+
+  def reset_password
     email = params[:email]
     otp = params[:otp]
     new_password = params[:new_password]

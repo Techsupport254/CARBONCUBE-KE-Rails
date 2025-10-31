@@ -1,12 +1,22 @@
 # Redis configuration for the application
 REDIS_URL = ENV['REDIS_URL'] || 'redis://localhost:6379/0'
 
-# Configure Redis connection - Redis 5.x doesn't have Redis.current
-# We'll create a module to provide this functionality
+# Configure Redis connection pool for better performance
+# Redis 5.x uses redis-client which has simpler configuration
 module RedisConnection
   class << self
+    def pool
+      @pool ||= ConnectionPool.new(size: 10, timeout: 5) do
+        Redis.new(url: REDIS_URL, timeout: 5)
+      end
+    end
+
     def current
-      @current ||= Redis.new(url: REDIS_URL)
+      @current ||= Redis.new(url: REDIS_URL, timeout: 5)
+    end
+    
+    def with
+      pool.with { |conn| yield conn }
     end
     
     def ping
@@ -14,35 +24,43 @@ module RedisConnection
     end
     
     def setex(key, ttl, value)
-      current.setex(key, ttl, value)
+      with { |conn| conn.setex(key, ttl, value) }
     end
     
     def get(key)
-      current.get(key)
+      with { |conn| conn.get(key) }
     end
     
     def del(key)
-      current.del(key)
+      with { |conn| conn.del(key) }
     end
     
     def incrby(key, value)
-      current.incrby(key, value)
+      with { |conn| conn.incrby(key, value) }
     end
     
     def expire(key, ttl)
-      current.expire(key, ttl)
+      with { |conn| conn.expire(key, ttl) }
+    end
+    
+    def exists?(key)
+      with { |conn| conn.exists?(key) }
     end
     
     def keys(pattern)
-      current.keys(pattern)
+      with { |conn| conn.keys(pattern) }
     end
   end
 end
 
-# Test connection
+# Eagerly initialize Redis connection pool at startup
 begin
+  # Initialize the pool
+  RedisConnection.pool
+  # Test connection
   RedisConnection.ping
-  Rails.logger.info "Redis connection established successfully"
+  Rails.logger.info "✅ Redis connection pool initialized successfully"
 rescue => e
-  Rails.logger.warn "Redis connection failed: #{e.message}"
+  Rails.logger.error "❌ Redis connection failed: #{e.message}"
+  Rails.logger.error "Please ensure Redis is running: redis-server"
 end

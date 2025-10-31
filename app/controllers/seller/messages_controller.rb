@@ -3,6 +3,43 @@ class Seller::MessagesController < ApplicationController
   before_action :set_conversation
 
   def index
+    # Handle seller-to-admin conversations
+    if @conversation.admin_id.present?
+      # This is a seller-admin conversation, just return messages from this conversation
+      all_messages = @conversation.messages.order(created_at: :asc)
+      messages_with_ads = all_messages.map do |message|
+        message_data = {
+          id: message.id,
+          content: message.content,
+          created_at: message.created_at,
+          sender_type: message.sender_type,
+          sender_id: message.sender_id,
+          ad_id: message.ad_id,
+          product_context: message.product_context
+        }
+        
+        if message.ad_id
+          ad = Ad.find(message.ad_id)
+          message_data[:ad] = {
+            id: ad.id,
+            title: ad.title,
+            price: ad.price,
+            first_media_url: ad.media.first,
+            category: ad.category&.name,
+            subcategory: ad.subcategory&.name
+          }
+        end
+        
+        message_data
+      end
+      
+      render json: {
+        messages: messages_with_ads,
+        total_messages: messages_with_ads.count
+      }
+      return
+    end
+    
     # Get all conversations with the same participant (buyer or inquirer_seller)
     if @conversation.buyer_id.present?
       # Regular buyer conversation

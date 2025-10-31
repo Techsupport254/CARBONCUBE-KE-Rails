@@ -173,7 +173,7 @@ class Buyer::ConversationsController < ApplicationController
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Admin'])
+                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
                                 .where(read_at: nil)
                                 .count
       
@@ -199,7 +199,7 @@ class Buyer::ConversationsController < ApplicationController
     
     # Count unread messages (messages not sent by buyer and not read)
     unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Admin'] })
+                               .where(messages: { sender_type: ['Seller', 'Admin', 'SalesUser'] })
                                .where(messages: { read_at: nil })
                                .count
     

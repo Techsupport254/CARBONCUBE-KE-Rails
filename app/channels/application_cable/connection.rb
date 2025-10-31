@@ -225,9 +225,9 @@ module ApplicationCable
         seller_id = payload['seller_id'].to_i
         role = payload['role']
         
-        # Verify the role matches
-        if role && role != 'Seller'
-          Rails.logger.error "WebSocket: Token has seller_id but role is #{role}, not seller"
+        # Verify the role matches (case-insensitive)
+        if role && role.to_s.downcase != 'seller'
+          Rails.logger.error "WebSocket: Token has seller_id but role is #{role}, expected seller"
           return nil
         end
         

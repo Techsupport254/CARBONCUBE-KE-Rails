@@ -28,7 +28,7 @@ class SellerAuthorizeApiRequest
 
     # Check if the token is actually for a seller
     if role && role.downcase != 'seller'
-      Rails.logger.error "SellerAuthorizeApiRequest: Token is for #{role}, not seller. Email: #{seller_email}"
+      Rails.logger.debug "SellerAuthorizeApiRequest: Token is for #{role}, not seller. Email: #{seller_email}"
       raise ExceptionHandler::InvalidToken, "Token is for #{role}, not seller"
     end
 

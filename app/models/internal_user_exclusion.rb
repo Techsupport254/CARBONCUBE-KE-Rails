@@ -77,10 +77,20 @@ class InternalUserExclusion < ApplicationRecord
     false
   end
   
-  # Check if an email domain is excluded
+  # Check if an email domain or exact email is excluded
   def self.email_domain_excluded?(email)
     return false if email.blank?
     
+    email_lower = email.downcase
+    
+    # First check for exact email match
+    if active.by_type('email_domain')
+         .where('LOWER(identifier_value) = ?', email_lower)
+         .exists?
+      return true
+    end
+    
+    # Then check for domain match
     domain = email.split('@').last&.downcase
     return false if domain.blank?
     

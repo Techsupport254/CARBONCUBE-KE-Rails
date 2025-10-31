@@ -378,7 +378,7 @@ class GoogleMerchantService
     return "new" if condition.blank?
     
     case condition.downcase
-    when "brand_new", "new", "unused"
+    when "brand_new", "new", "unused", "x_japan", "x-japan"
       "new"
     when "used", "second_hand", "pre_owned"
       "used"

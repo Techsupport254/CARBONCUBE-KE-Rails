@@ -206,6 +206,8 @@ class ShopsController < ApplicationController
         id: review.id,
         rating: review.rating,
         review: review.review,
+        comment: review.review, # Also include as 'comment' for frontend compatibility
+        images: review.images || [],
         seller_reply: review.seller_reply,
         created_at: review.created_at,
         updated_at: review.updated_at,
@@ -441,6 +443,158 @@ class ShopsController < ApplicationController
     render json: { error: 'Shop not found' }, status: :not_found
   end
 
+  # POST /shop/:slug/reviews
+  def create_review
+    # Find shop by slug
+    slug = params[:slug]
+    enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
+    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
+    
+    @shop = Seller.includes(:seller_tier, :tier)
+                  .where(deleted: false)
+                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
+                  .first
+    
+    unless @shop
+      @shop = Seller.includes(:seller_tier, :tier)
+                    .where(deleted: false)
+                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
+                    .first
+    end
+    
+    unless @shop
+      begin
+        shop_id = slug.to_i
+        if shop_id > 0
+          @shop = Seller.includes(:seller_tier, :tier)
+                        .where(deleted: false)
+                        .find(shop_id)
+        end
+      rescue ActiveRecord::RecordNotFound
+        # Ignore
+      end
+    end
+    
+    unless @shop
+      render json: { error: 'Shop not found' }, status: :not_found
+      return
+    end
+
+    # Authenticate buyer
+    begin
+      buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
+      @current_buyer = buyer_auth.result
+    rescue => e
+      @current_buyer = nil
+    end
+
+    unless @current_buyer&.is_a?(Buyer)
+      render json: { error: 'Only buyers can create reviews' }, status: :forbidden
+      return
+    end
+
+    # Determine which ad to review
+    ad = nil
+    if params[:review][:product_id].present?
+      # Find the specific ad by product_id (which is actually ad_id)
+      ad = @shop.ads.active.find_by(id: params[:review][:product_id])
+      unless ad
+        render json: { error: 'Product not found' }, status: :not_found
+        return
+      end
+    else
+      # If no product_id provided, use the shop's first active ad
+      # This allows general shop reviews
+      ad = @shop.ads.active.where(flagged: false).first
+      unless ad
+        render json: { error: 'No products available for review. Please select a specific product.' }, status: :unprocessable_entity
+        return
+      end
+    end
+
+    # Process and upload images if present
+    if params[:review][:images].present? && params[:review][:images].is_a?(Array)
+      begin
+        uploaded_images = process_and_upload_review_images(params[:review][:images])
+        params[:review][:images] = uploaded_images
+      rescue => e
+        Rails.logger.error "Error processing review images: #{e.message}"
+        return render json: { error: "Failed to process images. Please try again." }, status: :unprocessable_entity
+      end
+    else
+      params[:review][:images] = []
+    end
+
+    # Create the review
+    review_attrs = review_params
+    # Map 'comment' to 'review' if comment is provided (for shop reviews)
+    review_attrs[:review] = review_attrs[:comment] if review_attrs[:comment].present? && review_attrs[:review].blank?
+    review_attrs.delete(:comment) # Remove comment as it's not a model field
+    
+    @review = ad.reviews.new(review_attrs)
+    @review.buyer = @current_buyer
+
+    if @review.save
+      render json: @review.as_json(include: :buyer), status: :created
+    else
+      render json: @review.errors, status: :unprocessable_entity
+    end
+  end
+
   private
+
+  def review_params
+    params.require(:review).permit(:rating, :review, :comment, images: [])
+  end
+
+  # Upload review images to Cloudinary (same method as Buyer::ReviewsController)
+  def process_and_upload_review_images(images)
+    uploaded_urls = []
+    Rails.logger.info "🖼️ Processing #{Array(images).length} review images for upload"
+
+    begin
+      Array(images).each do |image|
+        begin
+          # Skip if it's already a URL (shouldn't happen, but safety check)
+          if image.is_a?(String)
+            uploaded_urls << image
+            next
+          end
+
+          Rails.logger.info "📤 Processing review image: #{image.original_filename} (#{image.size} bytes)"
+          
+          unless image.tempfile && File.exist?(image.tempfile.path)
+            Rails.logger.error "❌ Tempfile not found for image: #{image.original_filename}"
+            next
+          end
+          
+          unless ENV['UPLOAD_PRESET'].present?
+            Rails.logger.error "❌ UPLOAD_PRESET environment variable is not set"
+            raise "UPLOAD_PRESET not configured"
+          end
+          
+          # Upload to Cloudinary
+          Rails.logger.info "🚀 Uploading review image to Cloudinary"
+          uploaded_image = Cloudinary::Uploader.upload(
+            image.tempfile.path,
+            upload_preset: ENV['UPLOAD_PRESET'],
+            folder: "review_images"
+          )
+          Rails.logger.info "✅ Uploaded review image: #{uploaded_image['secure_url']}"
+
+          uploaded_urls << uploaded_image["secure_url"]
+        rescue => e
+          Rails.logger.error "❌ Error uploading review image #{image.original_filename}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+        end
+      end
+    rescue => e
+      Rails.logger.error "❌ Error in process_and_upload_review_images: #{e.message}"
+      raise e
+    end
+
+    Rails.logger.info "✅ Successfully uploaded #{uploaded_urls.length} review images"
+    uploaded_urls
+  end
 
 end

@@ -26,7 +26,7 @@ class BuyerAuthorizeApiRequest
 
     # Check if the token is actually for a buyer
     if role && role.downcase != 'buyer'
-      Rails.logger.error "BuyerAuthorizeApiRequest: Token is for #{role}, not buyer. Email: #{buyer_email}"
+      Rails.logger.debug "BuyerAuthorizeApiRequest: Token is for #{role}, not buyer. Email: #{buyer_email}"
       raise ExceptionHandler::InvalidToken, "Token is for #{role}, not buyer"
     end
 

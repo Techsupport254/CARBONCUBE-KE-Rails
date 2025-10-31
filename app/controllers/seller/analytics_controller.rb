@@ -4,34 +4,37 @@ class Seller::AnalyticsController < ApplicationController
   def index
     begin
       # Get seller's tier_id
-      tier_id = current_seller.seller_tier&.tier_id
+      tier_id = current_seller.seller_tier&.tier_id || 1
 
       Rails.logger.info "Analytics request for seller #{current_seller.id} with tier #{tier_id}"
 
-      # Prepare the response based on the seller's tier
+      # Base response data - always include these fields for dashboard
       response_data = {
-      tier_id: tier_id, # Include tier_id in the response
-      total_orders: calculate_total_orders,
-      total_ads: calculate_total_ads
-    }
+        tier_id: tier_id,
+        total_orders: calculate_total_orders,
+        total_ads: calculate_total_ads,
+        total_reviews: calculate_total_reviews,
+        average_rating: calculate_average_rating,
+        total_ads_wishlisted: calculate_total_ads_wishlisted
+      }
 
-    # Add more data based on the seller's tier
-    case tier_id
-    when 1 # Free tier
-      response_data.merge!(calculate_free_tier_data)
-    when 2 # Basic tier
-      response_data.merge!(calculate_basic_tier_data)
-    when 3 # Standard tier
-      response_data.merge!(calculate_standard_tier_data)
-      response_data.merge!(click_events_stats: top_click_event_stats)
-    when 4 # Premium tier
-      response_data.merge!(calculate_premium_tier_data)
-    else
-      render json: { error: 'Invalid tier' }, status: 400
-      return
-    end
+      # Add more data based on the seller's tier
+      case tier_id
+      when 1 # Free tier
+        # Free tier already has base data above
+      when 2 # Basic tier
+        response_data.merge!(calculate_basic_tier_data)
+      when 3 # Standard tier
+        response_data.merge!(calculate_standard_tier_data)
+        response_data.merge!(click_events_stats: top_click_event_stats)
+      when 4 # Premium tier
+        response_data.merge!(calculate_premium_tier_data)
+      else
+        render json: { error: 'Invalid tier' }, status: 400
+        return
+      end
 
-    render json: response_data
+      render json: response_data
     rescue => e
       Rails.logger.error "Analytics error for seller #{current_seller&.id}: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
@@ -553,6 +556,10 @@ class Seller::AnalyticsController < ApplicationController
 
   def calculate_total_reviews
     current_seller.reviews.count
+  end
+
+  def calculate_total_ads_wishlisted
+    WishList.joins(:ad).where(ads: { seller_id: current_seller.id }).count
   end
 
   def calculate_sales_performance

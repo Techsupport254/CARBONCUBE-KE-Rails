@@ -8,7 +8,7 @@ class MessagesController < ApplicationController
       fetch_buyer_messages
     when 'Seller'
       fetch_seller_messages
-    when 'Admin'
+    when 'Admin', 'SalesUser'
       fetch_admin_messages
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
@@ -17,7 +17,8 @@ class MessagesController < ApplicationController
 
   def mark_as_read
     begin
-      message = @conversation.messages.find(params[:message_id])
+      message_id = params[:id] || params[:message_id]
+      message = @conversation.messages.find(message_id)
       
       if message && message.sender != @current_user
         message.mark_as_read!
@@ -36,10 +37,10 @@ class MessagesController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
       # Message doesn't exist - return success to prevent frontend errors
-      Rails.logger.info "Message #{params[:message_id]} not found in conversation #{@conversation.id}, likely deleted"
+      Rails.logger.info "Message #{message_id} not found in conversation #{@conversation.id}, likely deleted"
       render json: { 
         success: true, 
-        message_id: params[:message_id], 
+        message_id: message_id, 
         status: 'not_found',
         note: 'Message no longer exists' 
       }
@@ -48,7 +49,8 @@ class MessagesController < ApplicationController
 
   def mark_as_delivered
     begin
-      message = @conversation.messages.find(params[:message_id])
+      message_id = params[:id] || params[:message_id]
+      message = @conversation.messages.find(message_id)
       
       if message && message.sender != @current_user
         message.mark_as_delivered!
@@ -67,10 +69,10 @@ class MessagesController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
       # Message doesn't exist - return success to prevent frontend errors
-      Rails.logger.info "Message #{params[:message_id]} not found in conversation #{@conversation.id}, likely deleted"
+      Rails.logger.info "Message #{message_id} not found in conversation #{@conversation.id}, likely deleted"
       render json: { 
         success: true, 
-        message_id: params[:message_id], 
+        message_id: message_id, 
         status: 'not_found',
         note: 'Message no longer exists' 
       }
@@ -79,7 +81,8 @@ class MessagesController < ApplicationController
 
   def status
     begin
-      message = @conversation.messages.find(params[:message_id])
+      message_id = params[:id] || params[:message_id]
+      message = @conversation.messages.find(message_id)
       
       if message
         render json: {
@@ -95,7 +98,7 @@ class MessagesController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
       # Message doesn't exist - return not found status
-      Rails.logger.info "Message #{params[:message_id]} not found in conversation #{@conversation.id}, likely deleted"
+      Rails.logger.info "Message #{message_id} not found in conversation #{@conversation.id}, likely deleted"
       render json: { 
         error: 'Message not found',
         message_id: params[:message_id],
@@ -191,7 +194,7 @@ class MessagesController < ApplicationController
 
   def authenticate_user
     # Try authenticating as different user types
-    @current_user = authenticate_seller || authenticate_buyer || authenticate_admin
+    @current_user = authenticate_seller || authenticate_buyer || authenticate_admin || authenticate_sales_user
     
     unless @current_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
@@ -224,13 +227,19 @@ class MessagesController < ApplicationController
     nil
   end
 
+  def authenticate_sales_user
+    SalesAuthorizeApiRequest.new(request.headers).result
+  rescue
+    nil
+  end
+
   def set_conversation
     @conversation = case @current_user.class.name
                    when 'Buyer'
                      find_buyer_conversation
                    when 'Seller'
                      find_seller_conversation
-                   when 'Admin'
+                   when 'Admin', 'SalesUser'
                      find_admin_conversation
                    end
 
@@ -283,6 +292,23 @@ class MessagesController < ApplicationController
   end
 
   def fetch_seller_messages
+    # Handle seller-to-admin conversations
+    if @conversation.admin_id.present?
+      # This is a seller-admin conversation, just return messages from this conversation
+      all_messages = @conversation.messages.order(created_at: :asc)
+      messages_with_ads = all_messages.map do |message|
+        message_data = build_message_data(message)
+        add_ad_information(message_data, message)
+        message_data
+      end
+      
+      render json: {
+        messages: messages_with_ads,
+        total_messages: messages_with_ads.count
+      }
+      return
+    end
+    
     # Get all conversations with the same participant (buyer or inquirer_seller)
     if @conversation.buyer_id.present?
       # Regular buyer conversation
@@ -321,8 +347,20 @@ class MessagesController < ApplicationController
   end
 
   def fetch_admin_messages
-    @messages = @conversation.messages.includes(:sender).order(created_at: :asc)
-    render json: @messages, each_serializer: MessageSerializer
+    # Get all messages from this conversation, including ad info
+    all_messages = @conversation.messages.order(created_at: :asc)
+    
+    # Include ad information for each message
+    messages_with_ads = all_messages.map do |message|
+      message_data = build_message_data(message)
+      add_ad_information(message_data, message)
+      message_data
+    end
+    
+    render json: {
+      messages: messages_with_ads,
+      total_messages: messages_with_ads.count
+    }
   end
 
   def build_message_data(message)
@@ -333,7 +371,10 @@ class MessagesController < ApplicationController
       sender_type: message.sender_type,
       sender_id: message.sender_id,
       ad_id: message.ad_id,
-      product_context: message.product_context
+      product_context: message.product_context,
+      status: message.status,
+      read_at: message.read_at,
+      delivered_at: message.delivered_at
     }
   end
 

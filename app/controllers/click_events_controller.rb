@@ -8,31 +8,44 @@ class ClickEventsController < ApplicationController
       return
     end
 
-    # Prepare metadata with device fingerprinting information
-    metadata = click_event_params[:metadata] || {}
-    
-    # Add device fingerprinting data to metadata if provided
-    if params[:device_hash].present?
-      metadata[:device_hash] = params[:device_hash]
-    end
-    if params[:user_agent].present?
-      metadata[:user_agent] = params[:user_agent]
-    end
-    
-    # Create click event with processed parameters
-    click_event = ClickEvent.new(
-      event_type: click_event_params[:event_type],
-      ad_id: click_event_params[:ad_id],
-      metadata: metadata
-    )
+    # Wrap entire operation in transaction for ACID compliance
+    # This ensures metadata preparation and record creation are atomic
+    ActiveRecord::Base.transaction do
+      # Prepare metadata with device fingerprinting information
+      metadata = click_event_params[:metadata] || {}
+      
+      # Add device fingerprinting data to metadata if provided
+      if params[:device_hash].present?
+        metadata[:device_hash] = params[:device_hash]
+      end
+      if params[:user_agent].present?
+        metadata[:user_agent] = params[:user_agent]
+      end
+      
+      # Create click event with processed parameters
+      click_event = ClickEvent.new(
+        event_type: click_event_params[:event_type],
+        ad_id: click_event_params[:ad_id],
+        metadata: metadata
+      )
 
-    # Set buyer_id to nil if authentication failed
-    click_event.buyer_id = @current_user&.id
+      # Set buyer_id to nil if authentication failed
+      click_event.buyer_id = @current_user&.id
 
-    if click_event.save
+      # Use save! to raise exception on failure for proper rollback
+      click_event.save!
       render json: { message: 'Click logged successfully' }, status: :created
-    else
-      render json: { errors: click_event.errors.full_messages }, status: :unprocessable_entity
+    rescue ActiveRecord::RecordInvalid => e
+      # Validation failures don't require rollback (nothing was saved)
+      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
+    rescue StandardError => e
+      # Log error for debugging
+      Rails.logger.error "Click event creation failed: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      # Manually rollback transaction to ensure data consistency
+      ActiveRecord::Base.connection.rollback_db_transaction
+      # Render error response
+      render json: { errors: ['Failed to log click event'] }, status: :internal_server_error
     end
   end
 

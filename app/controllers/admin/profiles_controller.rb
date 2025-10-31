@@ -24,7 +24,12 @@ class Admin::ProfilesController < ApplicationController
       if params[:newPassword] == params[:confirmPassword]
         # Update the password
         if current_admin.update(password: params[:newPassword])
-          render json: { message: 'Password updated successfully' }, status: :ok
+          # Password changed successfully - session should be cleared on frontend
+          # Return response indicating session invalidation
+          render json: { 
+            message: 'Password updated successfully',
+            session_invalidated: true
+          }, status: :ok
         else
           render json: { errors: current_admin.errors.full_messages }, status: :unprocessable_entity
         end

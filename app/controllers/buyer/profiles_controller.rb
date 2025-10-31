@@ -8,6 +8,9 @@ class Buyer::ProfilesController < ApplicationController
   def show
     buyer_data = current_buyer.as_json
     buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+    # Ensure timestamps are included
+    buyer_data[:created_at] = current_buyer.created_at
+    buyer_data[:updated_at] = current_buyer.updated_at
     render json: buyer_data
   end
 
@@ -64,6 +67,9 @@ class Buyer::ProfilesController < ApplicationController
       if current_buyer.update(update_params)
         buyer_data = current_buyer.as_json
         buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+        # Ensure timestamps are included
+        buyer_data[:created_at] = current_buyer.created_at
+        buyer_data[:updated_at] = current_buyer.updated_at
         render json: buyer_data
       else
         Rails.logger.error "Update failed: #{current_buyer.errors.full_messages}"
@@ -84,7 +90,12 @@ class Buyer::ProfilesController < ApplicationController
       if params[:newPassword] == params[:confirmPassword]
         # Update the password
         if current_buyer.update(password: params[:newPassword])
-          render json: { message: 'Password updated successfully' }, status: :ok
+          # Password changed successfully - session should be cleared on frontend
+          # Return response indicating session invalidation
+          render json: { 
+            message: 'Password updated successfully',
+            session_invalidated: true
+          }, status: :ok
         else
           render json: { errors: current_buyer.errors.full_messages }, status: :unprocessable_entity
         end

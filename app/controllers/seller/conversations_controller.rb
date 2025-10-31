@@ -17,8 +17,14 @@ class Seller::ConversationsController < ApplicationController
         # Current seller is the ad owner, group by the inquirer
         if conv.buyer_id.present?
           "buyer_#{conv.buyer_id}"
-        else
+        elsif conv.inquirer_seller_id.present?
           "inquirer_seller_#{conv.inquirer_seller_id}"
+        elsif conv.admin_id.present?
+          # Admin-initiated conversation with seller
+          "admin_#{conv.admin_id}"
+        else
+          # Fallback: no participant
+          "unknown_#{conv.id}"
         end
       elsif conv.inquirer_seller_id == @current_seller.id
         # Current seller is the inquirer, group by the ad owner
@@ -161,7 +167,7 @@ class Seller::ConversationsController < ApplicationController
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
-                                .where(sender_type: ['Buyer', 'Admin'])
+                                .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
                                 .where(read_at: nil)
                                 .count
       
@@ -187,7 +193,7 @@ class Seller::ConversationsController < ApplicationController
     
     # Count unread messages (messages not sent by seller and not read)
     unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Buyer', 'Admin'] })
+                               .where(messages: { sender_type: ['Buyer', 'Admin', 'SalesUser'] })
                                .where(messages: { read_at: nil })
                                .count
     

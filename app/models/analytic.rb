@@ -1,4 +1,7 @@
 class Analytic < ApplicationRecord
+  # Normalize source before saving to prevent duplicate entries like "google,google"
+  before_save :normalize_source_field
+  
   # Validations - removed conditional validation that was causing 422 errors
   # validates :source, presence: true, if: :source_required?
   
@@ -31,27 +34,12 @@ class Analytic < ApplicationRecord
   
   # Class methods for analytics
   def self.source_distribution(date_filter = nil)
-    # Compute 'direct' as visits without utm_source and without referrer
+    # Use the source column directly, which is already calculated when visits are tracked
+    # This is more accurate and simpler than trying to reconstruct from utm_source/referrer
     scope = filtered_scope(date_filter)
-
-    direct_count = scope
-      .where(utm_source: [nil, ''])
-      .where(referrer: [nil, ''])
-      .count
-
-    # External sources are those with utm_source present or referrer present
-    # Group them by normalized source, defaulting to 'other' when blank
-    external_counts = scope
-      .where.not(utm_source: [nil, '']).or(
-        scope.where.not(referrer: [nil, ''])
-      )
-      .group(Arel.sql("COALESCE(NULLIF(utm_source, ''), 'other')"))
-      .count
-
-    # Ensure direct bucket exists
-    external_counts['direct'] = (external_counts['direct'] || 0) + direct_count
-
-    external_counts
+    
+    # Group by the source column, defaulting to 'direct' if source is blank
+    scope.group(Arel.sql("COALESCE(NULLIF(source, ''), 'direct')")).count
   end
   
   def self.utm_source_distribution(date_filter = nil)
@@ -158,5 +146,14 @@ class Analytic < ApplicationRecord
       new_visitors: new_visitors_count(date_filter),
       avg_visits_per_visitor: avg_visits_per_visitor
     }
+  end
+  
+  private
+  
+  def normalize_source_field
+    return unless source.present?
+    
+    # Use the same normalization logic as SourceTrackingService
+    self.source = SourceTrackingService.sanitize_source(source)
   end
 end

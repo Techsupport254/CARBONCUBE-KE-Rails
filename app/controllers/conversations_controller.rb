@@ -96,41 +96,80 @@ class ConversationsController < ApplicationController
   private
 
   def authenticate_user
-    # Try authenticating as different user types
-    Rails.logger.info "ConversationsController: Attempting authentication..."
+    # Extract token from Authorization header
+    token = request.headers['Authorization']&.split(' ')&.last
     
-    @current_user = authenticate_seller || authenticate_buyer || authenticate_admin || authenticate_sales
-    
-    if @current_user
-      Rails.logger.info "ConversationsController: Authenticated as #{@current_user.class.name} with ID #{@current_user.id}"
-    else
-      Rails.logger.error "ConversationsController: Authentication failed for all user types"
-      render json: { error: 'Not Authorized' }, status: :unauthorized
+    unless token
+      Rails.logger.warn "ConversationsController: No token provided in Authorization header"
+      render json: { error: 'Not Authorized - No token provided' }, status: :unauthorized
+      return
     end
-  end
-
-  def authenticate_seller
-    SellerAuthorizeApiRequest.new(request.headers).result
-  rescue
-    nil
-  end
-
-  def authenticate_buyer
-    BuyerAuthorizeApiRequest.new(request.headers).result
-  rescue
-    nil
-  end
-
-  def authenticate_admin
-    AdminAuthorizeApiRequest.new(request.headers).result
-  rescue
-    nil
-  end
-
-  def authenticate_sales
-    SalesAuthorizeApiRequest.new(request.headers).result
-  rescue
-    nil
+    
+    begin
+      # Decode token to get user info
+      result = JsonWebToken.decode(token)
+      
+      # Check if decoding was successful
+      unless result[:success]
+        Rails.logger.warn "ConversationsController: Token decode failed - #{result[:error]}"
+        render json: { error: result[:error] || 'Invalid token' }, status: :unauthorized
+        return
+      end
+      
+      # Extract the actual payload
+      decoded = result[:payload]
+      
+      # Extract role
+      role = (decoded[:role] || decoded['role'])&.downcase
+      Rails.logger.info "ConversationsController: Authenticating user with role: #{role}"
+      
+      # Find the user based on role and extract appropriate ID
+      @current_user = nil
+      user_id = nil
+      
+      case role
+      when 'seller'
+        user_id = decoded[:seller_id] || decoded['seller_id']
+        @current_user = Seller.find_by(id: user_id) if user_id
+        Rails.logger.info "ConversationsController: Found seller #{user_id}" if @current_user
+        
+      when 'buyer'
+        user_id = decoded[:buyer_id] || decoded['buyer_id'] || decoded[:user_id] || decoded['user_id']
+        @current_user = Buyer.find_by(id: user_id) if user_id
+        Rails.logger.info "ConversationsController: Found buyer #{user_id}" if @current_user
+        
+      when 'admin'
+        # Admin tokens use user_id, not admin_id (same as buyers)
+        user_id = decoded[:user_id] || decoded['user_id'] || decoded[:admin_id] || decoded['admin_id']
+        @current_user = Admin.find_by(id: user_id) if user_id
+        Rails.logger.info "ConversationsController: Found admin #{user_id}" if @current_user
+        
+      when 'sales', 'salesuser'
+        # Sales tokens use user_id, not sales_id (same as buyers/admins)
+        user_id = decoded[:user_id] || decoded['user_id'] || decoded[:sales_id] || decoded['sales_id']
+        @current_user = SalesUser.find_by(id: user_id) if user_id
+        Rails.logger.info "ConversationsController: Found sales user #{user_id}" if @current_user
+        
+      else
+        Rails.logger.warn "ConversationsController: Invalid user role: #{role}"
+        render json: { error: "Invalid user role: #{role}" }, status: :unauthorized
+        return
+      end
+      
+      unless @current_user
+        Rails.logger.warn "ConversationsController: User not found for role: #{role}, id: #{user_id}"
+        Rails.logger.warn "ConversationsController: Decoded token keys: #{decoded.keys}"
+        render json: { error: 'User not found' }, status: :unauthorized
+      end
+      
+    rescue JWT::DecodeError => e
+      Rails.logger.warn "ConversationsController: JWT decode error - #{e.message}"
+      render json: { error: 'Invalid token format' }, status: :unauthorized
+    rescue => e
+      Rails.logger.error "ConversationsController: Authentication error: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.first(5).join("\n")
+      render json: { error: 'Authentication failed' }, status: :unauthorized
+    end
   end
 
 
@@ -241,14 +280,23 @@ class ConversationsController < ApplicationController
     # Group and format as per seller controller logic
     grouped_conversations = @conversations.group_by do |conv|
       if conv.seller_id == @current_user.id
+        # Current seller is the ad owner, group by the inquirer
         if conv.buyer_id.present?
           "buyer_#{conv.buyer_id}"
-        else
+        elsif conv.inquirer_seller_id.present?
           "inquirer_seller_#{conv.inquirer_seller_id}"
+        elsif conv.admin_id.present?
+          # Admin-initiated conversation with seller
+          "admin_#{conv.admin_id}"
+        else
+          # Fallback: no participant
+          "unknown_#{conv.id}"
         end
       elsif conv.inquirer_seller_id == @current_user.id
+        # Current seller is the inquirer, group by the ad owner
         "seller_#{conv.seller_id}"
       else
+        # Current seller is the buyer, group by the ad owner
         "seller_#{conv.seller_id}"
       end
     end
@@ -406,7 +454,7 @@ class ConversationsController < ApplicationController
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Admin'])
+                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
                                 .where(read_at: nil)
                                 .count
       
@@ -434,7 +482,7 @@ class ConversationsController < ApplicationController
     
     unread_counts = conversations.map do |conversation|
       # For seller-to-seller conversations, count messages not sent by current user
-      # For regular conversations, count messages from buyers and admins
+      # For regular conversations, count messages from buyers, admins, and sales users
       if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
         # Seller-to-seller conversation: count messages not sent by current user
         unread_count = conversation.messages
@@ -442,9 +490,9 @@ class ConversationsController < ApplicationController
                                   .where(read_at: nil)
                                   .count
       else
-        # Regular conversation: count messages from buyers and admins
+        # Regular conversation: count messages from buyers, admins, and sales users
         unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin'])
+                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
                                   .where(read_at: nil)
                                   .count
       end
@@ -492,7 +540,7 @@ class ConversationsController < ApplicationController
     conversations = Conversation.where(buyer_id: @current_user.id)
     
     unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Admin'] })
+                               .where(messages: { sender_type: ['Seller', 'Admin', 'SalesUser'] })
                                .where(messages: { read_at: nil })
                                .count
     
@@ -516,9 +564,9 @@ class ConversationsController < ApplicationController
                                   .where(read_at: nil)
                                   .count
       else
-        # Regular conversation: count messages from buyers and admins
+        # Regular conversation: count messages from buyers, admins, and sales users
         unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin'])
+                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
                                   .where(read_at: nil)
                                   .count
       end

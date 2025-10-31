@@ -450,6 +450,7 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   bootsnap
   cloudinary
+  connection_pool (~> 2.4)
   debug
   dotenv-rails
   dry-validation
