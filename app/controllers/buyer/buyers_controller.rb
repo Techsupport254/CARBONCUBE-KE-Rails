@@ -48,11 +48,8 @@ class Buyer::BuyersController < ApplicationController
       @buyer = Buyer.new(buyer_params)
 
       if @buyer.save
-        # Only mark OTP as verified after successful buyer creation (if OTP was provided)
-        if otp_code.present? && otp_record
-          otp_record.update!(verified: true)
-          logger.info "✅ OTP verified for email: #{buyer_email}"
-        end
+        # Email verification is optional - users can verify their email later if they choose
+        # OTP is validated if provided but not automatically marked as verified
 
         # Send welcome email
         begin

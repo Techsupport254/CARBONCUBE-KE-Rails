@@ -146,7 +146,7 @@ class JwtService
       ttl = exp - Time.current.to_i
 
       if ttl > 0
-        Redis.current.setex("blacklisted_token:#{jti}", ttl, true)
+        RedisConnection.setex("blacklisted_token:#{jti}", ttl, 'true')
         
         # Also invalidate associated session
         if payload['session_id']
@@ -163,7 +163,7 @@ class JwtService
     # Check if token is blacklisted
     def blacklisted?(jti)
       return false unless jti
-      Redis.current.exists("blacklisted_token:#{jti}")
+      RedisConnection.exists?("blacklisted_token:#{jti}")
     rescue StandardError => e
       Rails.logger.warn "Blacklist check failed: #{e.message}"
       false # Fail open for availability
@@ -172,7 +172,7 @@ class JwtService
     # Validate WebSocket session
     def valid_websocket_session?(payload)
       session_key = "user_session:#{payload['user_id']}:#{payload['session_id']}"
-      session_data = Redis.current.get(session_key)
+      session_data = RedisConnection.get(session_key)
       
       return false unless session_data
       
@@ -227,21 +227,25 @@ class JwtService
       }
 
       # Store with expiration
-      Redis.current.setex(session_key, WEBSOCKET_TOKEN_EXPIRY.to_i, session_data.to_json)
+      RedisConnection.setex(session_key, WEBSOCKET_TOKEN_EXPIRY.to_i, session_data.to_json)
       
       # Track active sessions per user
       user_sessions_key = "user_sessions:#{payload[:user_id]}"
-      Redis.current.sadd(user_sessions_key, payload[:session_id])
-      Redis.current.expire(user_sessions_key, WEBSOCKET_TOKEN_EXPIRY.to_i)
+      RedisConnection.with do |conn|
+        conn.sadd(user_sessions_key, payload[:session_id])
+        conn.expire(user_sessions_key, WEBSOCKET_TOKEN_EXPIRY.to_i)
+      end
     end
 
     # Invalidate a user session
     def invalidate_session(session_id, user_id)
       session_key = "user_session:#{user_id}:#{session_id}"
-      Redis.current.del(session_key)
+      RedisConnection.del(session_key)
       
       user_sessions_key = "user_sessions:#{user_id}"
-      Redis.current.srem(user_sessions_key, session_id)
+      RedisConnection.with do |conn|
+        conn.srem(user_sessions_key, session_id)
+      end
     end
   end
 end

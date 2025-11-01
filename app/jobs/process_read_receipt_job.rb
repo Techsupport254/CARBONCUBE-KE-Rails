@@ -35,7 +35,6 @@ class ProcessReadReceiptJob < ApplicationJob
     Rails.logger.info "Updated message status to: #{message.status}"
     
     # Set Redis data
-    redis = Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379')
     read_key = "message_read:#{message.id}:#{reader.id}"
     read_data = {
       message_id: message.id,
@@ -44,11 +43,11 @@ class ProcessReadReceiptJob < ApplicationJob
       read_at: Time.current.iso8601
     }
     
-    redis.setex(read_key, 86400 * 7, read_data.to_json)
+    RedisConnection.setex(read_key, 86400 * 7, read_data.to_json)
     Rails.logger.info "Set Redis data"
     
     # Verify Redis
-    retrieved = redis.get(read_key)
+    retrieved = RedisConnection.get(read_key)
     Rails.logger.info "Retrieved from Redis: #{retrieved}"
     
     Rails.logger.info "Successfully processed read receipt for message #{message_id}"

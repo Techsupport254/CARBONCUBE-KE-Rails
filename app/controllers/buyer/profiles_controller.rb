@@ -8,6 +8,9 @@ class Buyer::ProfilesController < ApplicationController
   def show
     buyer_data = current_buyer.as_json
     buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+    # Check if email is verified
+    email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
+    buyer_data[:email_verified] = email_verified
     # Ensure timestamps are included
     buyer_data[:created_at] = current_buyer.created_at
     buyer_data[:updated_at] = current_buyer.updated_at
@@ -67,6 +70,9 @@ class Buyer::ProfilesController < ApplicationController
       if current_buyer.update(update_params)
         buyer_data = current_buyer.as_json
         buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+        # Check if email is verified
+        email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
+        buyer_data[:email_verified] = email_verified
         # Ensure timestamps are included
         buyer_data[:created_at] = current_buyer.created_at
         buyer_data[:updated_at] = current_buyer.updated_at
@@ -104,6 +110,56 @@ class Buyer::ProfilesController < ApplicationController
       end
     else
       render json: { error: 'Current password is incorrect' }, status: :unauthorized
+    end
+  end
+
+  # POST /buyer/profile/request-verification
+  def request_verification
+    email = current_buyer.email
+    fullname = current_buyer.fullname
+    otp_code = rand.to_s[2..7] # 6-digit code
+    expires_at = 10.minutes.from_now
+
+    # Remove old OTPs for this email
+    EmailOtp.where(email: email).delete_all
+
+    # Create new OTP
+    EmailOtp.create!(
+      email: email,
+      otp_code: otp_code,
+      expires_at: expires_at,
+      verified: false
+    )
+
+    # Send email
+    begin
+      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_now
+      Rails.logger.info "✅ Verification OTP email sent successfully to #{email}"
+    rescue => e
+      Rails.logger.error "❌ Failed to send verification OTP email: #{e.message}"
+      # Don't fail the request if email fails
+    end
+
+    response = { message: "Verification code sent to your email" }
+    render json: response, status: :ok
+  end
+
+  # POST /buyer/profile/verify-email
+  def verify_email
+    email = current_buyer.email
+    otp_code = params[:otp_code]
+
+    record = EmailOtp.find_by(email: email, otp_code: otp_code)
+
+    if record.nil?
+      render json: { verified: false, error: "Invalid verification code" }, status: :unprocessable_entity
+    elsif record.verified == true
+      render json: { verified: false, error: "This code has already been used" }, status: :unprocessable_entity
+    elsif record.expires_at.present? && record.expires_at <= Time.now
+      render json: { verified: false, error: "Verification code has expired" }, status: :unprocessable_entity
+    else
+      record.update!(verified: true)
+      render json: { verified: true, message: "Email verified successfully" }, status: :ok
     end
   end
   

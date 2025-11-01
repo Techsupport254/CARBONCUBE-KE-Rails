@@ -21,18 +21,10 @@ class EmailOtpsController < ApplicationController
       Rails.logger.info "OTP email sent successfully to #{email}"
     rescue => e
       Rails.logger.error "Failed to send OTP email: #{e.message}"
-      # In development, log the OTP code for testing
-      if Rails.env.development?
-        Rails.logger.info "🔐 Development OTP Code for #{email}: #{otp_code}"
-        puts "🔐 Development OTP Code for #{email}: #{otp_code}"
-      end
       # Don't fail the request if email fails - still return success
     end
 
-    # In development, include OTP in response for testing
     response = { message: "OTP sent to #{email}" }
-    response[:otp_code] = otp_code if Rails.env.development?
-    
     render json: response, status: :ok
   end
 

@@ -198,7 +198,7 @@ class Message < ApplicationRecord
     cache_key = "online_user_#{user_type}_#{recipient.id}"
     
     # Check both Rails cache and Redis for online status
-    Rails.cache.exist?(cache_key) || RedisConnection.exists(cache_key)
+    Rails.cache.exist?(cache_key) || RedisConnection.exists?(cache_key)
   rescue => e
     Rails.logger.warn "Failed to check online status for #{user_type}_#{recipient.id}: #{e.message}"
     false

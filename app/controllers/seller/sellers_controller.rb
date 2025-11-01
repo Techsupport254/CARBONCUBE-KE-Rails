@@ -128,9 +128,8 @@ class Seller::SellersController < ApplicationController
     # Rails.logger.info "📂 Document URL: #{@seller.document_url}"
     # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
 
-    # Wrap seller creation, OTP verification, and tier assignment in a transaction
+    # Wrap seller creation and tier assignment in a transaction
     # If any step fails, rollback everything to ensure data consistency
-    # This ensures OTP is only marked verified if seller is successfully created
     success = false
     ActiveRecord::Base.transaction do
       # Step 1: Save seller
@@ -139,18 +138,10 @@ class Seller::SellersController < ApplicationController
         raise ActiveRecord::Rollback
       end
 
-      # Step 2: Mark OTP as verified (only after seller is saved)
-      if otp_code.present? && otp_record
-        begin
-          otp_record.update!(verified: true)
-          Rails.logger.info "✅ OTP verified for email: #{seller_email}"
-        rescue => e
-          Rails.logger.error "Failed to mark OTP as verified: #{e.message}"
-          raise ActiveRecord::Rollback
-        end
-      end
+      # Email verification is optional - users can verify their email later if they choose
+      # OTP is validated if provided but not automatically marked as verified
 
-      # Step 3: Assign tier (must succeed for transaction to complete)
+      # Step 2: Assign tier (must succeed for transaction to complete)
       current_year = Date.current.year
       if current_year == 2025
         # Set exact expiry date to midnight on January 1, 2026 (00:00 2026-01-01)

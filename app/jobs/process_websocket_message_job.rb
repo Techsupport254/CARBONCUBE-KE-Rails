@@ -166,8 +166,7 @@ class ProcessWebsocketMessageJob < ApplicationJob
       
       # Update Redis cache for quick access
       cache_key = "conversation_activity:#{conversation.id}"
-      redis = Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379/0')
-      redis.setex(cache_key, 3600, Time.current.to_i)
+      RedisConnection.setex(cache_key, 3600, Time.current.to_i)
     rescue StandardError => e
       Rails.logger.warn "Failed to update conversation activity: #{e.message}"
       # Continue without Redis cache update
@@ -229,8 +228,8 @@ class ProcessWebsocketMessageJob < ApplicationJob
   
   def increment_metric(metric_name, value = 1)
     metric_key = "metrics:#{metric_name}:#{Date.current}"
-    Redis.current.incrby(metric_key, value)
-    Redis.current.expire(metric_key, 86400)
+    RedisConnection.incrby(metric_key, value)
+    RedisConnection.expire(metric_key, 86400)
   rescue StandardError => e
     Rails.logger.debug "Metric tracking failed: #{e.message}"
   end

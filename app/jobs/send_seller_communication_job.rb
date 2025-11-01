@@ -40,6 +40,12 @@ class SendSellerCommunicationJob < ApplicationJob
         Rails.logger.info "About to deliver email..."
         mail.deliver_now
         Rails.logger.info "Email delivered successfully!"
+      when 'black_friday'
+        mail = SellerCommunicationsMailer.with(seller: seller).black_friday_email
+        Rails.logger.info "Mailer called successfully"
+        Rails.logger.info "About to deliver email..."
+        mail.deliver_now
+        Rails.logger.info "Email delivered successfully!"
       else
         Rails.logger.error "SendSellerCommunicationJob: Unknown email type '#{email_type}'"
         Rails.logger.error "=== SELLER COMMUNICATION JOB FAILED ==="

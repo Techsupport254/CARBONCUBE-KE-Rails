@@ -11,7 +11,7 @@ module ApplicationCable
       return false unless user
       
       rate_limit_key = "rate_limit:#{user.id}:#{self.class.name}"
-      current_count = Redis.current.get(rate_limit_key).to_i
+      current_count = RedisConnection.get(rate_limit_key).to_i
       
       if current_count >= RATE_LIMIT_MAX_REQUESTS
         Rails.logger.warn "Rate limit exceeded for user #{user.id} on #{self.class.name}"
@@ -19,9 +19,11 @@ module ApplicationCable
         return true
       end
       
-      Redis.current.multi do |multi|
-        multi.incr(rate_limit_key)
-        multi.expire(rate_limit_key, RATE_LIMIT_WINDOW)
+      RedisConnection.with do |conn|
+        conn.multi do |multi|
+          multi.incr(rate_limit_key)
+          multi.expire(rate_limit_key, RATE_LIMIT_WINDOW)
+        end
       end
       
       false
@@ -79,8 +81,8 @@ module ApplicationCable
     
     def increment_metric(metric_name, value = 1)
       metric_key = "metrics:#{metric_name}:#{Date.current}"
-      Redis.current.incrby(metric_key, value)
-      Redis.current.expire(metric_key, 86400)
+      RedisConnection.incrby(metric_key, value)
+      RedisConnection.expire(metric_key, 86400)
     rescue StandardError => e
       Rails.logger.debug "Metric tracking failed: #{e.message}"
     end

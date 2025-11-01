@@ -6,7 +6,11 @@ class Seller::ProfilesController < ApplicationController
 
   # GET /seller/profile
   def show
-    render json: @seller, serializer: SellerSerializer
+    seller_data = SellerSerializer.new(@seller).as_json
+    # Check if email is verified
+    email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+    seller_data[:email_verified] = email_verified
+    render json: seller_data
   end
 
   # PATCH/PUT /seller/profile
@@ -91,7 +95,11 @@ class Seller::ProfilesController < ApplicationController
       update_params[:document_url] = uploaded_document_url if uploaded_document_url
       
       if @seller.update(update_params)
-        render json: @seller
+        seller_data = SellerSerializer.new(@seller).as_json
+        # Check if email is verified
+        email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+        seller_data[:email_verified] = email_verified
+        render json: seller_data
       else
         Rails.logger.error "Seller update failed with errors: #{@seller.errors.full_messages.join(', ')}"
         render json: { errors: @seller.errors.full_messages }, status: :unprocessable_entity

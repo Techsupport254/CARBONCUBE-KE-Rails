@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Friday Sale - Carbon Cube Kenya</title>
+  </head>
+
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; margin: 0; padding: 0;">
+    <div style="max-width: 620px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+      
+      <!-- BLACK FRIDAY HEADER BANNER -->
+      <div style="text-align: center; background: #ffffff;">
+        <img src="https://res.cloudinary.com/dvczs0agl/image/upload/v1762001656/banner-06_zvywd3.jpg" alt="Black Friday is Coming - Carbon Cube Kenya" style="width: 100%; max-width: 620px; height: auto; display: block; margin: 0; border: none;" />
+      </div>
+      
+      <div style="padding: 20px 18px;">
+        <div style="font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 15px; text-align: left;">
+          Dear <%= @seller.fullname %>,
+        </div>
+
+        <div style="font-size: 14px; color: #374151; margin-bottom: 20px; line-height: 1.6; text-align: left;">
+          <strong style="color: #dc2626;">Black November</strong> is here! Thousands of buyers are ready to shop. Don't miss this opportunity to maximize your sales.
+        </div>
+
+        <% if @top_products.any? %>
+        <!-- TOP PRODUCTS SHOWCASE -->
+        <div style="margin: 20px 0;">
+          <h4 style="margin: 0 0 15px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">
+            Here are your top products that could benefit from Black November discounts:
+          </h4>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <% @top_products.each do |product| %>
+                <td style="padding: 8px; width: 33.33%; vertical-align: top;">
+                  <div style="background: #f9fafb; padding: 10px; border-radius: 8px;">
+                    <div style="width: 100%; border-radius: 6px; overflow: hidden; background: #e5e7eb; margin-bottom: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
+                      <% if product.first_media_url.present? %>
+                        <img src="<%= product.first_media_url %>" alt="<%= product.title %>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; display: block;" />
+                      <% else %>
+                        <div style="color: #9ca3af; font-size: 32px;">📦</div>
+                      <% end %>
+                    </div>
+                    <h5 style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #111827; text-align: left; line-height: 1.4;">
+                      <%= product.title&.truncate(35) %>
+                    </h5>
+                    <p style="margin: 0 0 3px; font-size: 11px; color: #6b7280; text-align: left;">
+                      <%= product.category&.name&.truncate(25) %>
+                    </p>
+                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #dc2626; text-align: left;">
+                      <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                    </p>
+                  </div>
+                </td>
+              <% end %>
+            </tr>
+          </table>
+        </div>
+        <% end %>
+
+        <!-- QUICK TIPS -->
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px; color: #374151;">
+          <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">Quick Tips to Boost Sales:</h4>
+          <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+            <li>Add Black Friday discounts to your products</li>
+            <li>Upload fresh, high-quality images</li>
+            <li>Share your shop link on social media</li>
+            <li>Respond to inquiries quickly</li>
+          </ul>
+        </div>
+
+        <!-- SHOP LINK -->
+        <div style="background: #fee2e2; padding: 15px; margin: 15px 0 20px; border-radius: 8px; font-size: 13px; text-align: center; word-break: break-all;">
+          <strong style="display: block; margin-bottom: 8px; color: #991b1b;">🛒 Your Shop:</strong>
+          <a href="https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>" style="color: #dc2626; text-decoration: none; font-weight: 700;">
+            https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>
+          </a>
+        </div>
+
+        <!-- CTA BUTTONS -->
+        <div style="text-align: center; margin: 30px 0 20px;">
+          <a href="https://carboncube-ke.com/seller/ads" style="display: inline-block; padding: 14px 32px; margin: 0 8px 10px 0; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px; background: #dc2626; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Update My Products Now</a>
+          <a href="https://carboncube-ke.com/deals-guide" style="display: inline-block; padding: 14px 32px; margin: 0 8px 10px 0; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px; background: #1f2937; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Deals Guide</a>
+        </div>
+
+        <p style="text-align:center; font-size:12px; color:#6b7280;">
+          Best regards,<br><strong>The Carbon Cube Kenya Team</strong>
+        </p>
+      </div>
+      
+      <!-- FOOTER -->
+      <div style="background: #f9fafb; padding: 15px; text-align: center; font-size: 10px; color: #6b7280; border-top: 1px solid #e5e7eb; width: 100%; box-sizing: border-box;">
+        <div style="margin-bottom: 15px;">
+          <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" style="height: 25px; width: 25px; opacity: 0.7;" />
+        </div>
+        <p><strong>Carbon Cube Kenya</strong> | 9th Floor, CMS Africa, Nairobi</p>
+        <p>Phone: +254 712 990 524 | Email: <%= ENV['BREVO_EMAIL'] %></p>
+        <p>© 2025 Carbon Cube Kenya. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>
+
