@@ -46,21 +46,26 @@ class SourceTrackingController < ApplicationController
   end
 
   def analytics
-    # Always return all data - filtering will be done on frontend
+    # Always exclude internal users from analytics
+    base_scope = Analytic.excluding_internal_users
+    
+    # Always return all data - filtering will be done on frontend (but excluding internal users)
     source_distribution = Analytic.source_distribution
     utm_source_distribution = Analytic.utm_source_distribution
     utm_medium_distribution = Analytic.utm_medium_distribution
     utm_campaign_distribution = Analytic.utm_campaign_distribution
+    utm_content_distribution = Analytic.utm_content_distribution
+    utm_term_distribution = Analytic.utm_term_distribution
     referrer_distribution = Analytic.referrer_distribution
     
-    # Get total visits (all-time)
-    total_visits = Analytic.count
+    # Get total visits (all-time, excluding internal users)
+    total_visits = base_scope.count
     
-    # Get all visits with timestamps for frontend filtering
-    visit_timestamps = Analytic.all.pluck(:created_at)
+    # Get all visits with timestamps for frontend filtering (excluding internal users)
+    visit_timestamps = base_scope.pluck(:created_at)
     
-    # Get visits by day for all time
-    daily_visits = Analytic.all
+    # Get visits by day for all time (excluding internal users)
+    daily_visits = base_scope
                            .group("DATE(created_at)")
                            .order("DATE(created_at)")
                            .count
@@ -71,6 +76,8 @@ class SourceTrackingController < ApplicationController
       utm_source_distribution: utm_source_distribution,
       utm_medium_distribution: utm_medium_distribution,
       utm_campaign_distribution: utm_campaign_distribution,
+      utm_content_distribution: utm_content_distribution,
+      utm_term_distribution: utm_term_distribution,
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
       visit_timestamps: visit_timestamps,

@@ -40,18 +40,23 @@ class Sales::AnalyticsController < ApplicationController
       .where(tier_id: 1, sellers: { deleted: false })
     
     # Get click events without time filtering for totals (excluding internal users)
-    all_ad_clicks = ClickEvent.where(event_type: 'Ad-Click')
+    # Note: buyer_ad_clicks includes ALL clicks (guest + authenticated), not just buyer clicks
+    # This is for "Buyer Engagement" which should show total engagement, including guests
+    all_ad_clicks = ClickEvent.excluding_internal_users.where(event_type: 'Ad-Click')
+    # buyer_ad_clicks includes ALL clicks (guest + authenticated) excluding internal users
+    # The excluding_internal_users scope already handles email exclusions via left_joins
+    # We only need to ensure deleted buyers are excluded (guest clicks have buyer_id = nil, so they're included)
     all_buyer_ad_clicks = ClickEvent
-      .joins(:buyer)
+      .excluding_internal_users
       .where(event_type: 'Ad-Click')
-      .where(buyers: { deleted: false })
-      .where.not('LOWER(buyers.email) IN (?)', excluded_emails.map(&:downcase)) # Exclude internal users
+      .left_joins(:buyer)
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
     all_buyer_reveal_clicks = ClickEvent
-      .joins(:buyer)
+      .excluding_internal_users
       .where(event_type: 'Reveal-Seller-Details')
-      .where(buyers: { deleted: false })
-      .where.not('LOWER(buyers.email) IN (?)', excluded_emails.map(&:downcase)) # Exclude internal users
-    all_reveal_clicks = ClickEvent.where(event_type: 'Reveal-Seller-Details')
+      .left_joins(:buyer)
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
+    all_reveal_clicks = ClickEvent.excluding_internal_users.where(event_type: 'Reveal-Seller-Details')
     
     # Convert all timestamps to ISO 8601 format for proper JavaScript Date parsing
     sellers_with_timestamps = all_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -79,6 +84,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get click events with timestamps
     ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
+    # buyer_ad_clicks_with_timestamps includes all clicks (guest + authenticated) for "Buyer Engagement"
     buyer_ad_clicks_with_timestamps = all_buyer_ad_clicks
       .pluck('click_events.created_at')
       .map { |ts| ts&.iso8601 }
@@ -90,13 +96,62 @@ class Sales::AnalyticsController < ApplicationController
     # Get reveal clicks with timestamps (include both authenticated and unauthenticated users)
     reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
-    # Get category click events with timestamps (include all data)
-    category_click_events_with_timestamps = Category.joins(ads: :click_events)
+    # Get category click events with timestamps (excluding internal users)
+    # We need to apply exclusion conditions directly since merge() conflicts with joins
+    excluded_device_hashes = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
+    excluded_email_domains = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
+    excluded_user_agents = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
+    
+    category_query = Category
+      .joins(ads: :click_events)
+      .joins('LEFT OUTER JOIN buyers ON buyers.id = click_events.buyer_id')
       .where(ads: { deleted: false })
+    
+    # Apply exclusion conditions if any exist
+    if excluded_device_hashes.any? || excluded_email_domains.any? || excluded_user_agents.any?
+      excluded_device_hashes.each do |hash|
+        category_query = category_query.where(
+          "COALESCE(click_events.metadata->>'device_hash', '') NOT LIKE ? AND COALESCE(click_events.metadata->>'device_hash', '') != ?",
+          "#{hash}%", hash
+        )
+      end
+      
+      excluded_email_domains.each do |email_pattern|
+        email_pattern_lower = email_pattern.downcase
+        category_query = category_query.where(
+          "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') != ?)",
+          email_pattern_lower, email_pattern_lower
+        )
+        if email_pattern.include?('@')
+          domain = email_pattern.split('@').last&.downcase
+          if domain.present?
+            category_query = category_query.where(
+              "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
+              "%@#{domain}", "%@#{domain}"
+            )
+          end
+        else
+          category_query = category_query.where(
+            "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
+            "%@#{email_pattern_lower}", "%@#{email_pattern_lower}"
+          )
+        end
+      end
+      
+      excluded_user_agents.each do |pattern|
+        category_query = category_query.where(
+          "click_events.metadata->>'user_agent' IS NULL OR click_events.metadata->>'user_agent' !~* ?",
+          pattern
+        )
+      end
+    end
+    
+    category_click_events_with_timestamps = category_query
       .select('categories.name AS category_name, 
               click_events.event_type,
               click_events.created_at')
       .order('categories.name')
+      .to_a  # Execute query and load records into array
     
     # Process category data
     category_data = {}
@@ -127,12 +182,54 @@ class Sales::AnalyticsController < ApplicationController
       }
     end
 
-    # Get subcategory click events with timestamps (include all data)
-    subcategory_click_events_with_timestamps = Subcategory
+    # Get subcategory click events with timestamps (excluding internal users)
+    subcategory_query = Subcategory
       .joins(:category)
       .joins('INNER JOIN ads ON ads.subcategory_id = subcategories.id')
       .joins('INNER JOIN click_events ON click_events.ad_id = ads.id')
+      .joins('LEFT OUTER JOIN buyers ON buyers.id = click_events.buyer_id')
       .where('ads.deleted = ?', false)
+    
+    # Apply exclusion conditions if any exist (reuse variables from above)
+    if excluded_device_hashes.any? || excluded_email_domains.any? || excluded_user_agents.any?
+      excluded_device_hashes.each do |hash|
+        subcategory_query = subcategory_query.where(
+          "COALESCE(click_events.metadata->>'device_hash', '') NOT LIKE ? AND COALESCE(click_events.metadata->>'device_hash', '') != ?",
+          "#{hash}%", hash
+        )
+      end
+      
+      excluded_email_domains.each do |email_pattern|
+        email_pattern_lower = email_pattern.downcase
+        subcategory_query = subcategory_query.where(
+          "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') != ?)",
+          email_pattern_lower, email_pattern_lower
+        )
+        if email_pattern.include?('@')
+          domain = email_pattern.split('@').last&.downcase
+          if domain.present?
+            subcategory_query = subcategory_query.where(
+              "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
+              "%@#{domain}", "%@#{domain}"
+            )
+          end
+        else
+          subcategory_query = subcategory_query.where(
+            "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
+            "%@#{email_pattern_lower}", "%@#{email_pattern_lower}"
+          )
+        end
+      end
+      
+      excluded_user_agents.each do |pattern|
+        subcategory_query = subcategory_query.where(
+          "click_events.metadata->>'user_agent' IS NULL OR click_events.metadata->>'user_agent' !~* ?",
+          pattern
+        )
+      end
+    end
+    
+    subcategory_click_events_with_timestamps = subcategory_query
       .select('subcategories.id AS subcategory_id,
               subcategories.name AS subcategory_name,
               categories.id AS category_id,
@@ -140,6 +237,7 @@ class Sales::AnalyticsController < ApplicationController
               click_events.event_type,
               click_events.created_at')
       .order('categories.name, subcategories.name')
+      .to_a  # Execute query and load records into array
     
     # Process subcategory data grouped by category
     subcategory_data = {}
@@ -372,6 +470,8 @@ class Sales::AnalyticsController < ApplicationController
     utm_source_distribution = Analytic.utm_source_distribution(date_filter)
     utm_medium_distribution = Analytic.utm_medium_distribution(date_filter)
     utm_campaign_distribution = Analytic.utm_campaign_distribution(date_filter)
+    utm_content_distribution = Analytic.utm_content_distribution(date_filter)
+    utm_term_distribution = Analytic.utm_term_distribution(date_filter)
     referrer_distribution = Analytic.referrer_distribution(date_filter)
     
     # Get visitor engagement metrics with date filtering
@@ -381,26 +481,26 @@ class Sales::AnalyticsController < ApplicationController
     unique_visitors_by_source = Analytic.unique_visitors_by_source(date_filter)
     visits_by_source = Analytic.visits_by_source(date_filter)
     
-    # Get visits by day with date filtering
+    # Get visits by day with date filtering (excluding internal users)
     if date_filter
-      daily_visits = Analytic.date_range(date_filter[:start_date], date_filter[:end_date])
+      daily_visits = Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
                              .group("DATE(created_at)")
                              .order("DATE(created_at)")
                              .count
     else
-      daily_visits = Analytic.all
+      daily_visits = Analytic.excluding_internal_users
                              .group("DATE(created_at)")
                              .order("DATE(created_at)")
                              .count
     end
     
-    # Get visit timestamps with date filtering
+    # Get visit timestamps with date filtering (excluding internal users)
     if date_filter
-      visit_timestamps = Analytic.date_range(date_filter[:start_date], date_filter[:end_date])
+      visit_timestamps = Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
                                  .pluck(:created_at)
                                  .map { |ts| ts&.iso8601 }
     else
-      visit_timestamps = Analytic.all.pluck(:created_at).map { |ts| ts&.iso8601 }
+      visit_timestamps = Analytic.excluding_internal_users.pluck(:created_at).map { |ts| ts&.iso8601 }
     end
     
     # Get unique visitors trend with date filtering
@@ -422,6 +522,8 @@ class Sales::AnalyticsController < ApplicationController
       utm_source_distribution: utm_source_distribution,
       utm_medium_distribution: utm_medium_distribution,
       utm_campaign_distribution: utm_campaign_distribution,
+      utm_content_distribution: utm_content_distribution,
+      utm_term_distribution: utm_term_distribution,
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
       visit_timestamps: visit_timestamps,
@@ -432,8 +534,8 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def get_device_analytics
-    # Get device analytics for ALL time (no 30-day restriction)
-    all_analytics = Analytic.all
+    # Get device analytics for ALL time (no 30-day restriction), excluding internal users
+    all_analytics = Analytic.excluding_internal_users
     
     # Device type distribution
     device_types = {}

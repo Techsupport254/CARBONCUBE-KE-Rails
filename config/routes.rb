@@ -516,6 +516,11 @@ Rails.application.routes.draw do
           get :recent_users
         end
       end
+      resources :click_events, only: [] do
+        collection do
+          get :analytics
+        end
+      end
       resources :reviews, only: [:index]
       resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
       resources :conversations, only: [:index, :show, :create] do

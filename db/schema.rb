@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_31_224014) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_02_084944) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -117,6 +117,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_31_224014) do
     t.string "utm_campaign"
     t.text "user_agent"
     t.string "ip_address"
+    t.string "utm_content"
+    t.string "utm_term"
   end
 
   create_table "banners", force: :cascade do |t|

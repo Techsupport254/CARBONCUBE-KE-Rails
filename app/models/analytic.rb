@@ -22,13 +22,89 @@ class Analytic < ApplicationRecord
       all
     end
   }
+
+  # Scope to exclude internal users from analytics
+  # This matches the logic in InternalUserExclusion.should_exclude?
+  scope :excluding_internal_users, -> {
+    # Get all active exclusion identifiers
+    device_hash_exclusions = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
+    email_domain_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
+    user_agent_exclusions = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
+    
+    # If no exclusions configured, return all
+    return all if device_hash_exclusions.empty? && email_domain_exclusions.empty? && user_agent_exclusions.empty?
+    
+    # Start with all records
+    query = all
+    
+    # Exclude by device hash (from data->>'device_fingerprint')
+    if device_hash_exclusions.any?
+      device_hash_exclusions.each do |exclusion_hash|
+        # Exclude if device_fingerprint matches exclusion exactly or starts with it
+        query = query.where(
+          "COALESCE(data->>'device_fingerprint', '') NOT LIKE ? AND COALESCE(data->>'device_fingerprint', '') != ?",
+          "#{exclusion_hash}%",
+          exclusion_hash
+        )
+        
+        # Also exclude device hashes that are variations of the exclusion hash
+        base_exclusion = exclusion_hash.gsub(/\d+$/, '')
+        if base_exclusion != exclusion_hash && base_exclusion.present?
+          query = query.where("COALESCE(data->>'device_fingerprint', '') NOT LIKE ?", "#{base_exclusion}%")
+        end
+      end
+    end
+    
+    # Exclude by email (from data->>'user_email' or data->>'email')
+    if email_domain_exclusions.any?
+      email_domain_exclusions.each do |email_pattern|
+        email_pattern_lower = email_pattern.downcase
+        
+        # Check for exact email match first
+        query = query.where(
+          "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') != ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') != ?)",
+          email_pattern_lower,
+          email_pattern_lower
+        )
+        
+        # Check for domain match (if email_pattern contains @, extract domain; otherwise use as-is)
+        if email_pattern.include?('@')
+          domain = email_pattern.split('@').last&.downcase
+          if domain.present?
+            query = query.where(
+              "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') NOT LIKE ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') NOT LIKE ?)",
+              "%@#{domain}",
+              "%@#{domain}"
+            )
+          end
+        else
+          # Domain-only exclusion
+          query = query.where(
+            "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') NOT LIKE ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') NOT LIKE ?)",
+            "%@#{email_pattern_lower}",
+            "%@#{email_pattern_lower}"
+          )
+        end
+      end
+    end
+    
+    # Exclude by user agent (regex pattern)
+    if user_agent_exclusions.any?
+      user_agent_exclusions.each do |pattern|
+        query = query.where("user_agent IS NULL OR user_agent !~* ?", pattern)
+      end
+    end
+    
+    query
+  }
   
-  # Helper method to get filtered scope
+  # Helper method to get filtered scope (excluding internal users)
   def self.filtered_scope(date_filter)
+    base_scope = excluding_internal_users
     if date_filter && date_filter.is_a?(Hash) && date_filter[:start_date] && date_filter[:end_date]
-      date_range(date_filter[:start_date], date_filter[:end_date])
+      base_scope.date_range(date_filter[:start_date], date_filter[:end_date])
     else
-      recent(30)
+      base_scope.recent(30)
     end
   end
   
@@ -58,17 +134,25 @@ class Analytic < ApplicationRecord
     filtered_scope(date_filter).where.not(utm_campaign: [nil, '']).group(:utm_campaign).count
   end
   
+  def self.utm_content_distribution(date_filter = nil)
+    filtered_scope(date_filter).where.not(utm_content: [nil, '']).group(:utm_content).count
+  end
+  
+  def self.utm_term_distribution(date_filter = nil)
+    filtered_scope(date_filter).where.not(utm_term: [nil, '']).group(:utm_term).count
+  end
+  
   def self.referrer_distribution(date_filter = nil)
     filtered_scope(date_filter).where.not(referrer: [nil, '']).group(:referrer).count
   end
 
-  # Unique visitor tracking methods
+  # Unique visitor tracking methods (excluding internal users)
   def self.unique_visitors_count(days = 30)
-    recent(days).where("data->>'visitor_id' IS NOT NULL").distinct.count("data->>'visitor_id'")
+    excluding_internal_users.recent(days).where("data->>'visitor_id' IS NOT NULL").distinct.count("data->>'visitor_id'")
   end
 
   def self.total_visits_count(days = 30)
-    recent(days).count
+    excluding_internal_users.recent(days).count
   end
 
   def self.unique_visitors_by_source(date_filter = nil)
@@ -91,7 +175,7 @@ class Analytic < ApplicationRecord
   end
 
   def self.visits_trend(days = 30)
-    recent(days)
+    excluding_internal_users.recent(days)
       .group("DATE(created_at)")
       .order("DATE(created_at)")
       .count

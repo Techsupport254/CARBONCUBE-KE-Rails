@@ -31,6 +31,8 @@ class SourceTrackingService
         utm_source: utm_params[:utm_source],
         utm_medium: utm_params[:utm_medium],
         utm_campaign: utm_params[:utm_campaign],
+        utm_content: utm_params[:utm_content],
+        utm_term: utm_params[:utm_term],
         user_agent: @user_agent,
         ip_address: @ip_address,
         data: {
@@ -49,7 +51,11 @@ class SourceTrackingService
           session_id: @params[:session_id],
           visitor_id: @params[:visitor_id],
           is_unique_visit: @params[:is_unique_visit] == 'true',
-          visit_count: @params[:visit_count]
+          visit_count: @params[:visit_count],
+          # Platform click IDs for SEO and paid ads tracking
+          gclid: @params[:gclid], # Google Click ID
+          fbclid: @params[:fbclid], # Facebook Click ID
+          msclkid: @params[:msclkid] # Microsoft Click ID
         }
       )
       
@@ -72,19 +78,32 @@ class SourceTrackingService
   private
 
   def parse_source_from_params
-    # Check for UTM source
+    # Priority 1: UTM source (highest priority - campaign tracking)
     if @params[:utm_source].present?
       source = self.class.sanitize_source(@params[:utm_source])
       return source
     end
     
-    # Check referrer domain and map to proper source
+    # Priority 2: Check for platform click IDs (Google, Facebook, etc.)
+    # These indicate paid advertising campaigns from specific platforms
+    if @params[:gclid].present?
+      return 'google' # Google Ads click
+    end
+    if @params[:fbclid].present?
+      return 'facebook' # Facebook click
+    end
+    if @params[:msclkid].present?
+      return 'microsoft' # Microsoft Ads click
+    end
+    
+    # Priority 3: Check referrer domain and map to proper source
+    # This handles organic search, social media, etc.
     referrer_source = parse_referrer_source
     if referrer_source.present?
       return referrer_source
     end
     
-    # Default to 'direct'
+    # Default to 'direct' if no source indicators found
     'direct'
   end
 
@@ -185,7 +204,9 @@ class SourceTrackingService
     {
       utm_source: sanitize_utm_param(@params[:utm_source]),
       utm_medium: sanitize_utm_param(@params[:utm_medium]),
-      utm_campaign: sanitize_utm_param(@params[:utm_campaign])
+      utm_campaign: sanitize_utm_param(@params[:utm_campaign]),
+      utm_content: sanitize_utm_param(@params[:utm_content]),
+      utm_term: sanitize_utm_param(@params[:utm_term])
     }
   end
 
