@@ -41,6 +41,31 @@ class AdSearchesController < ApplicationController
     user_agent = request.user_agent
     ip_address = request.remote_ip
     email = @current_user&.email
+    
+    # Check if current user is an admin - exclude all admin users
+    begin
+      admin = AdminAuthorizeApiRequest.new(request.headers).result
+      if admin&.is_a?(Admin)
+        return true
+      end
+      email = admin&.email if email.blank? && admin
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+      # Not an admin, continue
+    rescue
+      # Unexpected error, continue
+    end
+    
+    # Check if current user is sales@example.com
+    begin
+      sales_user = SalesAuthorizeApiRequest.new(request.headers).result
+      if sales_user
+        sales_email = sales_user.email
+        return true if sales_email&.downcase == 'sales@example.com'
+        email = sales_email if email.blank?
+      end
+    rescue
+      # Not a sales user, continue
+    end
 
     # Check against exclusion rules
     InternalUserExclusion.should_exclude?(

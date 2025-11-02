@@ -94,9 +94,55 @@ class SourceTrackingController < ApplicationController
     device_hash = params[:device_hash]
     user_agent = request.user_agent
     ip_address = request.remote_ip
-    email = nil # No user authentication for source tracking
+    
+    # Optionally check for authenticated users (admin, sales, buyer, seller)
+    # This allows exclusion based on user email/role without requiring authentication
+    email = nil
+    user = nil
+    
+    # Try to get authenticated user (optional - don't fail if not authenticated)
+    begin
+      user = AdminAuthorizeApiRequest.new(request.headers).result
+      email = user&.email
+      # Exclude all admin users
+      return true if user&.is_a?(Admin)
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+      # Not an admin, continue checking other user types
+    rescue
+      # Unexpected error, continue
+    end
+    
+    begin
+      sales_user = SalesAuthorizeApiRequest.new(request.headers).result
+      if sales_user
+        email = sales_user.email
+        # Exclude sales@example.com specifically
+        return true if email&.downcase == 'sales@example.com'
+      end
+    rescue
+      # SalesAuthorizeApiRequest doesn't raise exceptions, just returns nil
+      # Not a sales user, continue
+    end
+    
+    begin
+      buyer = BuyerAuthorizeApiRequest.new(request.headers).result
+      email = buyer&.email if buyer && email.blank?
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+      # Not a buyer, continue
+    rescue
+      # Unexpected error, continue
+    end
+    
+    begin
+      seller = SellerAuthorizeApiRequest.new(request.headers).result
+      email = seller&.email if seller && email.blank?
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+      # Not a seller, continue
+    rescue
+      # Unexpected error, continue
+    end
 
-    # Check against exclusion rules
+    # Check against exclusion rules (device hash, IP, user agent, email)
     InternalUserExclusion.should_exclude?(
       device_hash: device_hash,
       user_agent: user_agent,

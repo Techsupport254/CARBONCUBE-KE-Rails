@@ -144,4 +144,30 @@ InternalUserExclusion.find_or_create_by(
   exclusion.active = true
 end
 
+# Email-based exclusions
+InternalUserExclusion.find_or_create_by(
+  identifier_type: 'email_domain',
+  identifier_value: 'sales@example.com'
+) do |exclusion|
+  exclusion.reason = 'Exclude sales@example.com from tracking'
+  exclusion.active = true
+end
+
+InternalUserExclusion.find_or_create_by(
+  identifier_type: 'email_domain',
+  identifier_value: 'shangwejunior5@gmail.com'
+) do |exclusion|
+  exclusion.reason = 'Exclude shangwejunior5@gmail.com from tracking'
+  exclusion.active = true
+end
+
+# Exclude all emails with @example.com domain
+InternalUserExclusion.find_or_create_by(
+  identifier_type: 'email_domain',
+  identifier_value: 'example.com'
+) do |exclusion|
+  exclusion.reason = 'Exclude all emails with @example.com domain from tracking and analytics'
+  exclusion.active = true
+end
+
 puts "Created #{InternalUserExclusion.count} internal user exclusions"

@@ -3,16 +3,16 @@ class Sales::AnalyticsController < ApplicationController
   before_action :authenticate_sales_user
 
   def index
-    # Get list of excluded emails for filtering
-    excluded_emails = InternalUserExclusion.active
-                                           .by_type('email_domain')
-                                           .pluck(:identifier_value)
+    # Get list of excluded emails/domains for filtering
+    excluded_email_patterns = InternalUserExclusion.active
+                                                    .by_type('email_domain')
+                                                    .pluck(:identifier_value)
     
     # Get all data without time filtering for totals
-    all_sellers = Seller.where(deleted: false)
-    all_buyers = excluded_emails.any? ? 
-      Buyer.where(deleted: false).where.not('LOWER(email) IN (?)', excluded_emails.map(&:downcase)) :
-      Buyer.where(deleted: false)
+    # Exclude sellers with excluded email domains
+    all_sellers = exclude_emails_by_pattern(Seller.where(deleted: false), excluded_email_patterns)
+    # Exclude buyers with excluded email domains
+    all_buyers = exclude_emails_by_pattern(Buyer.where(deleted: false), excluded_email_patterns)
     
     # Separate buyers by signup method (Google OAuth vs Regular)
     # Google OAuth users have a provider value (typically 'google')
@@ -373,6 +373,14 @@ class Sales::AnalyticsController < ApplicationController
                     .order(created_at: :desc)
                     .limit(limit)
       
+      # Get list of excluded email patterns for filtering
+      excluded_email_patterns = InternalUserExclusion.active
+                                                     .by_type('email_domain')
+                                                     .pluck(:identifier_value)
+      
+      # Filter out excluded sellers (by exact email or domain)
+      users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?
+      
       users_data = users.map do |seller|
         active_ads = seller.ads.where(deleted: false).count
         total_reviews = seller.reviews.count
@@ -405,13 +413,13 @@ class Sales::AnalyticsController < ApplicationController
                    .order(created_at: :desc)
                    .limit(limit)
       
-      # Get list of excluded emails for filtering
-      excluded_emails = InternalUserExclusion.active
-                                             .by_type('email_domain')
-                                             .pluck(:identifier_value)
+      # Get list of excluded email patterns for filtering
+      excluded_email_patterns = InternalUserExclusion.active
+                                                     .by_type('email_domain')
+                                                     .pluck(:identifier_value)
       
-      # Filter out excluded buyers
-      users = users.where.not('LOWER(buyers.email) IN (?)', excluded_emails.map(&:downcase)) if excluded_emails.any?
+      # Filter out excluded buyers (by exact email or domain)
+      users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?
       
       users_data = users.map do |buyer|
         clicks_count = buyer.click_events.where(event_type: 'Ad-Click').count
@@ -574,5 +582,27 @@ class Sales::AnalyticsController < ApplicationController
       screen_resolutions: screen_resolutions,
       total_devices: all_analytics.count
     }
+  end
+
+  # Helper method to exclude emails by pattern (exact match or domain match)
+  def exclude_emails_by_pattern(scope, email_patterns)
+    return scope if email_patterns.empty?
+    
+    query = scope
+    email_patterns.each do |pattern|
+      pattern_lower = pattern.downcase
+      
+      if pattern.include?('@')
+        # This is an exact email pattern (e.g., "sales@example.com")
+        # Only exclude this exact email, NOT all emails from that domain
+        query = query.where.not('LOWER(email) = ?', pattern_lower)
+      else
+        # This is a domain-only pattern (e.g., "example.com")
+        # Exclude all emails from this domain
+        query = query.where.not('LOWER(email) LIKE ?', "%@#{pattern_lower}")
+      end
+    end
+    
+    query
   end
 end

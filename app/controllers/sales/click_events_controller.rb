@@ -170,6 +170,41 @@ class Sales::ClickEventsController < ApplicationController
         }
       end.compact
 
+      # Apply additional email exclusions at SQL level for better performance
+      # The excluding_internal_users scope should already handle this, but we ensure it's applied
+      excluded_email_patterns = InternalUserExclusion.active
+                                                     .by_type('email_domain')
+                                                     .pluck(:identifier_value)
+      
+      if excluded_email_patterns.any?
+        excluded_email_patterns.each do |pattern|
+          pattern_lower = pattern.downcase
+          
+          # Exact email match
+          filtered_query = filtered_query.where(
+            "(metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') != ?)",
+            pattern_lower
+          )
+          
+          # Domain match
+          if pattern.include?('@')
+            domain = pattern.split('@').last&.downcase
+            if domain.present?
+              filtered_query = filtered_query.where(
+                "(metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT LIKE ?)",
+                "%@#{domain}"
+              )
+            end
+          else
+            # Domain-only pattern (e.g., "example.com")
+            filtered_query = filtered_query.where(
+              "(metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT LIKE ?)",
+              "%@#{pattern_lower}"
+            )
+          end
+        end
+      end
+      
       # Get recent click events with user details (with pagination)
       page = params[:page].to_i
       page = 1 if page < 1
@@ -177,13 +212,12 @@ class Sales::ClickEventsController < ApplicationController
       per_page = 50 if per_page < 1 || per_page > 100 # Default 50, max 100
       
       # Apply filters to paginated query
-      filtered_paginated_query = filtered_query
-      total_events_count = filtered_paginated_query.count
+      total_events_count = filtered_query.count
       total_pages = (total_events_count.to_f / per_page).ceil
       
       offset = (page - 1) * per_page
       
-      recent_click_events = filtered_paginated_query
+      recent_click_events = filtered_query
         .order(created_at: :desc)
         .offset(offset)
         .limit(per_page)
