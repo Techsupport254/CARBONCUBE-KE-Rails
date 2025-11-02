@@ -83,24 +83,52 @@ class InternalUserExclusion < ApplicationRecord
     
     email_lower = email.downcase
     
-    # First check for exact email match
+    # Hardcoded exclusions (always check these first, don't rely on database seeds)
+    hardcoded_excluded_emails = [
+      'sales@example.com',
+      'shangwejunior5@gmail.com'
+    ]
+    
+    # Check hardcoded exact email matches
+    return true if hardcoded_excluded_emails.any? { |excluded_email| email_lower == excluded_email.downcase }
+    
+    # Check hardcoded domain exclusions - exclude all @example.com emails
+    domain = email.split('@').last&.downcase
+    hardcoded_excluded_domains = ['example.com']
+    return true if domain.present? && hardcoded_excluded_domains.any? { |excluded_domain| domain == excluded_domain.downcase }
+    
+    # Then check database exclusions for exact email match
     if active.by_type('email_domain')
          .where('LOWER(identifier_value) = ?', email_lower)
          .exists?
       return true
     end
     
-    # Then check for domain match
-    domain = email.split('@').last&.downcase
-    return false if domain.blank?
-    
-    active.by_type('email_domain')
-         .where('LOWER(identifier_value) = ? OR identifier_value LIKE ?', domain, "%#{domain}%")
-         .exists?
+    # Then check database exclusions for domain match
+    if domain.present?
+      active.by_type('email_domain')
+           .where('LOWER(identifier_value) = ? OR identifier_value LIKE ?', domain, "%#{domain}%")
+           .exists?
+    else
+      false
+    end
   end
   
   # Check if any identifier matches exclusion criteria
-  def self.should_exclude?(device_hash: nil, user_agent: nil, ip_address: nil, email: nil)
+  def self.should_exclude?(device_hash: nil, user_agent: nil, ip_address: nil, email: nil, user_name: nil, role: nil)
+    # Hardcoded role-based exclusions (always exclude admin and sales users)
+    if role.present?
+      hardcoded_excluded_roles = ['admin', 'sales']
+      role_lower = role.to_s.downcase.strip
+      return true if hardcoded_excluded_roles.any? { |excluded_role| role_lower == excluded_role.downcase }
+    end
+    
+    # Hardcoded name-based exclusions
+    if user_name.present?
+      hardcoded_excluded_names = ['Sales']
+      return true if hardcoded_excluded_names.any? { |excluded_name| user_name.strip.downcase == excluded_name.downcase }
+    end
+    
     return true if device_hash_excluded?(device_hash)
     return true if user_agent_excluded?(user_agent)
     return true if ip_excluded?(ip_address)

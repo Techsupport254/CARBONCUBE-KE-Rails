@@ -42,29 +42,47 @@ class AdSearchesController < ApplicationController
     ip_address = request.remote_ip
     email = @current_user&.email
     
-    # Check if current user is an admin - exclude all admin users
+    role = nil
+    user_name = nil
+    
+    # Check if current user is an admin
     begin
       admin = AdminAuthorizeApiRequest.new(request.headers).result
       if admin&.is_a?(Admin)
-        return true
+        role = 'admin'
+        email = admin.email if email.blank?
+        user_name = admin.fullname if admin.respond_to?(:fullname)
       end
-      email = admin&.email if email.blank? && admin
     rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
       # Not an admin, continue
     rescue
       # Unexpected error, continue
     end
     
-    # Check if current user is sales@example.com
+    # Check if current user is a sales user
     begin
       sales_user = SalesAuthorizeApiRequest.new(request.headers).result
       if sales_user
+        role = 'sales'
         sales_email = sales_user.email
-        return true if sales_email&.downcase == 'sales@example.com'
+        user_name = sales_user.fullname if sales_user.respond_to?(:fullname)
         email = sales_email if email.blank?
       end
     rescue
       # Not a sales user, continue
+    end
+
+    # Get user name and role from current user if available
+    if @current_user
+      user_name = @current_user.fullname if @current_user.respond_to?(:fullname) && user_name.blank?
+      if role.blank?
+        case @current_user
+        when Buyer then role = 'buyer'
+        when Seller then role = 'seller'
+        when Admin then role = 'admin'
+        when SalesUser then role = 'sales'
+        end
+      end
     end
 
     # Check against exclusion rules
@@ -72,7 +90,9 @@ class AdSearchesController < ApplicationController
       device_hash: device_hash,
       user_agent: user_agent,
       ip_address: ip_address,
-      email: email
+      email: email,
+      user_name: user_name,
+      role: role
     )
   end
 end

@@ -18,16 +18,39 @@ class ClickEvent < ApplicationRecord
   # Scope to exclude internal users from analytics
   # This matches the logic in InternalUserExclusion.should_exclude?
   scope :excluding_internal_users, -> {
-    # Get all active exclusion identifiers
+    # Hardcoded exclusions (always apply these, don't rely on database)
+    hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
+    hardcoded_excluded_domains = ['example.com']
+    
+    # Get all active exclusion identifiers from database
     device_hash_exclusions = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
     email_domain_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
     user_agent_exclusions = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
     
-    # If no exclusions configured, return all
-    return all if device_hash_exclusions.empty? && email_domain_exclusions.empty? && user_agent_exclusions.empty?
+    # Merge hardcoded exclusions with database exclusions
+    all_email_exclusions = (hardcoded_excluded_emails + email_domain_exclusions).uniq
+    all_domain_exclusions = (hardcoded_excluded_domains + email_domain_exclusions.select { |e| !e.include?('@') }).uniq
     
-    # Start with all records
-    query = all
+    # Start with all records and join buyers table (needed for email exclusions)
+    query = all.left_joins(:buyer)
+    
+    # First apply hardcoded email exclusions
+    hardcoded_excluded_emails.each do |excluded_email|
+      query = query.where(
+        "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') != ?)",
+        excluded_email.downcase,
+        excluded_email.downcase
+      )
+    end
+    
+    # Apply hardcoded domain exclusions
+    hardcoded_excluded_domains.each do |excluded_domain|
+      query = query.where(
+        "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT LIKE ?)",
+        "%@#{excluded_domain.downcase}",
+        "%@#{excluded_domain.downcase}"
+      )
+    end
     
     # Exclude by device hash
     # Logic: If metadata device_hash starts with exclusion hash OR exclusion hash starts with device_hash base
@@ -51,11 +74,12 @@ class ClickEvent < ApplicationRecord
       end
     end
     
-    # Exclude by email (from buyers table or metadata)
+    # Exclude by email (from buyers table or metadata) - only process database exclusions not already covered by hardcoded
     # This matches InternalUserExclusion.email_domain_excluded? logic exactly
-    if email_domain_exclusions.any?
-      query = query.left_joins(:buyer)
-      email_domain_exclusions.each do |email_pattern|
+    # Note: buyers table is already joined above
+    database_only_email_exclusions = email_domain_exclusions - hardcoded_excluded_emails - hardcoded_excluded_domains
+    if database_only_email_exclusions.any?
+      database_only_email_exclusions.each do |email_pattern|
         email_pattern_lower = email_pattern.downcase
         
         # InternalUserExclusion.email_domain_excluded? does two checks:
@@ -114,11 +138,15 @@ class ClickEvent < ApplicationRecord
     device_hash = metadata_hash['device_hash'] || metadata_hash[:device_hash]
     user_agent = metadata_hash['user_agent'] || metadata_hash[:user_agent]
     email = buyer&.email || metadata_hash['user_email'] || metadata_hash[:user_email]
+    user_name = buyer&.fullname || metadata_hash['user_name'] || metadata_hash[:user_name]
+    role = metadata_hash['user_role'] || metadata_hash[:user_role]
     
     InternalUserExclusion.should_exclude?(
       device_hash: device_hash,
       user_agent: user_agent,
-      email: email
+      email: email,
+      user_name: user_name,
+      role: role
     )
   end
 end

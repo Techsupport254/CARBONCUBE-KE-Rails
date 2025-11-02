@@ -373,10 +373,12 @@ class Sales::AnalyticsController < ApplicationController
                     .order(created_at: :desc)
                     .limit(limit)
       
-      # Get list of excluded email patterns for filtering
-      excluded_email_patterns = InternalUserExclusion.active
+      # Get list of excluded email patterns for filtering (include hardcoded exclusions)
+      hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
+      hardcoded_excluded_domains = ['example.com']
+      excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + InternalUserExclusion.active
                                                      .by_type('email_domain')
-                                                     .pluck(:identifier_value)
+                                                     .pluck(:identifier_value)).uniq
       
       # Filter out excluded sellers (by exact email or domain)
       users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?
@@ -413,10 +415,12 @@ class Sales::AnalyticsController < ApplicationController
                    .order(created_at: :desc)
                    .limit(limit)
       
-      # Get list of excluded email patterns for filtering
-      excluded_email_patterns = InternalUserExclusion.active
+      # Get list of excluded email patterns for filtering (include hardcoded exclusions)
+      hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
+      hardcoded_excluded_domains = ['example.com']
+      excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + InternalUserExclusion.active
                                                      .by_type('email_domain')
-                                                     .pluck(:identifier_value)
+                                                     .pluck(:identifier_value)).uniq
       
       # Filter out excluded buyers (by exact email or domain)
       users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?

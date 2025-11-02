@@ -172,9 +172,12 @@ class Sales::ClickEventsController < ApplicationController
 
       # Apply additional email exclusions at SQL level for better performance
       # The excluding_internal_users scope should already handle this, but we ensure it's applied
-      excluded_email_patterns = InternalUserExclusion.active
+      # Include hardcoded exclusions
+      hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
+      hardcoded_excluded_domains = ['example.com']
+      excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + InternalUserExclusion.active
                                                      .by_type('email_domain')
-                                                     .pluck(:identifier_value)
+                                                     .pluck(:identifier_value)).uniq
       
       if excluded_email_patterns.any?
         excluded_email_patterns.each do |pattern|

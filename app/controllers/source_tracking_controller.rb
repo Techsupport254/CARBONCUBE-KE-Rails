@@ -99,13 +99,17 @@ class SourceTrackingController < ApplicationController
     # This allows exclusion based on user email/role without requiring authentication
     email = nil
     user = nil
+    role = nil
+    user_name = nil
     
     # Try to get authenticated user (optional - don't fail if not authenticated)
     begin
       user = AdminAuthorizeApiRequest.new(request.headers).result
-      email = user&.email
-      # Exclude all admin users
-      return true if user&.is_a?(Admin)
+      if user&.is_a?(Admin)
+        email = user.email
+        role = 'admin'
+        user_name = user.fullname if user.respond_to?(:fullname)
+      end
     rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
       # Not an admin, continue checking other user types
     rescue
@@ -116,8 +120,8 @@ class SourceTrackingController < ApplicationController
       sales_user = SalesAuthorizeApiRequest.new(request.headers).result
       if sales_user
         email = sales_user.email
-        # Exclude sales@example.com specifically
-        return true if email&.downcase == 'sales@example.com'
+        role = 'sales'
+        user_name = sales_user.fullname if sales_user.respond_to?(:fullname)
       end
     rescue
       # SalesAuthorizeApiRequest doesn't raise exceptions, just returns nil
@@ -126,7 +130,11 @@ class SourceTrackingController < ApplicationController
     
     begin
       buyer = BuyerAuthorizeApiRequest.new(request.headers).result
-      email = buyer&.email if buyer && email.blank?
+      if buyer
+        email = buyer.email if email.blank?
+        role = 'buyer' if role.blank?
+        user_name = buyer.fullname if buyer.respond_to?(:fullname) && user_name.blank?
+      end
     rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
       # Not a buyer, continue
     rescue
@@ -135,19 +143,25 @@ class SourceTrackingController < ApplicationController
     
     begin
       seller = SellerAuthorizeApiRequest.new(request.headers).result
-      email = seller&.email if seller && email.blank?
+      if seller
+        email = seller.email if seller && email.blank?
+        role = 'seller' if role.blank?
+        user_name = seller.fullname if seller.respond_to?(:fullname) && user_name.blank?
+      end
     rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
       # Not a seller, continue
     rescue
       # Unexpected error, continue
     end
 
-    # Check against exclusion rules (device hash, IP, user agent, email)
+    # Check against exclusion rules (device hash, IP, user agent, email, user_name, role)
     InternalUserExclusion.should_exclude?(
       device_hash: device_hash,
       user_agent: user_agent,
       ip_address: ip_address,
-      email: email
+      email: email,
+      user_name: user_name,
+      role: role
     )
   end
 end
