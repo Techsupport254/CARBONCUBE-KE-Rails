@@ -235,5 +235,64 @@ namespace :black_friday do
     puts ""
     puts "✅ Listed #{total_count} active sellers"
   end
+  
+  desc "SAFE TEST: Send Black Friday email ONLY to victorquaint (admin test)"
+  task send_victor_test: :environment do
+    puts "🚨 SAFE TEST MODE - ONLY VICTORQUAINT RECIPIENT 🚨"
+    puts "=" * 80
+    
+    # Find victorquaint by email
+    seller = Seller.find_by(email: 'victorquaint@gmail.com')
+    
+    if seller.nil?
+      puts "❌ Seller with email 'victorquaint@gmail.com' not found!"
+      puts ""
+      puts "Available sellers:"
+      Seller.where(deleted: [false, nil]).limit(10).each do |s|
+        puts "   - ID: #{s.id}, Email: #{s.email}, Name: #{s.fullname}"
+      end
+      exit 1
+    end
+    
+    puts "✅ Found seller: #{seller.fullname} (#{seller.enterprise_name})"
+    puts "📧 Email: #{seller.email}"
+    puts "🆔 ID: #{seller.id}"
+    puts ""
+    puts "📊 Seller Analytics:"
+    puts "   - Total Ads: #{seller.ads.where(deleted: false).count}"
+    puts "   - Total Reviews: #{seller.reviews.count}"
+    puts "   - Average Rating: #{seller.reviews.average(:rating)&.round(1) || 'N/A'}"
+    puts "   - Tier: #{seller.tier&.name || 'Free'}"
+    puts ""
+    puts "🚨 WARNING: This will send an email to #{seller.email}"
+    print "Continue? (yes/no): "
+    confirmation = STDIN.gets.chomp.downcase
+    
+    unless confirmation == 'y' || confirmation == 'yes'
+      puts "❌ Test cancelled by user."
+      exit 0
+    end
+    
+    puts ""
+    puts "📤 Sending Black Friday email..."
+    
+    begin
+      # Send immediately for testing
+      SellerCommunicationsMailer.with(seller: seller).black_friday_email.deliver_now
+      
+      puts "✅ Black Friday email sent successfully!"
+      puts "📧 Check #{seller.email} for the email"
+      
+    rescue => e
+      puts "❌ Error sending email: #{e.message}"
+      puts "📋 Full error:"
+      puts e.backtrace.first(10).join("\n")
+      exit 1
+    end
+    
+    puts ""
+    puts "🎉 Safe test completed successfully!"
+    puts "✅ Only victorquaint received the email"
+  end
 end
 
