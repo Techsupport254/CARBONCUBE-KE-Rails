@@ -4,6 +4,7 @@ class Sales::ConversationsController < ApplicationController
   def index
     # Fetch conversations where current sales user is involved
     @conversations = Conversation.where(admin_id: @current_user.id)
+                                .active_participants
                                 .includes(:admin, :seller, :buyer, :ad, :messages, ad: [:category, :subcategory])
                                 .order(updated_at: :desc)
     
@@ -44,14 +45,15 @@ class Sales::ConversationsController < ApplicationController
   end
 
   def show
-    @conversation = Conversation.find_by(id: params[:id], admin_id: @current_user.id)
+    @conversation = Conversation.active_participants
+                                .find_by(id: params[:id], admin_id: @current_user.id)
     
     if @conversation
       # Get all conversations with the same seller
       all_conversations_with_seller = Conversation.where(
         admin_id: @current_user.id,
         seller_id: @conversation.seller_id
-      )
+      ).active_participants
       
       # Get all messages from all conversations with this seller, including ad info
       all_messages = all_conversations_with_seller.flat_map(&:messages).sort_by(&:created_at)
@@ -158,10 +160,11 @@ class Sales::ConversationsController < ApplicationController
   def unread_counts
     # Get all conversations for the current sales user with unread message counts
     conversations = Conversation.where(admin_id: @current_user.id)
+                                .active_participants
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer'])
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                                 .where(read_at: nil)
                                 .count
       
@@ -184,11 +187,12 @@ class Sales::ConversationsController < ApplicationController
   def unread_count
     # Get all conversations for the current sales user
     conversations = Conversation.where(admin_id: @current_user.id)
+                                .active_participants
     
     # Count unread messages (messages not sent by sales user and not read)
     unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Buyer'] })
-                               .where(messages: { status: [nil, Message::STATUS_SENT] })
+                               .where(messages: { sender_type: ['Seller', 'Buyer', 'Purchaser'] })
+                               .where(messages: { read_at: nil })
                                .count
     
     render json: { count: unread_count }

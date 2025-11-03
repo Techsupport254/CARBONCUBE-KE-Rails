@@ -41,22 +41,27 @@ namespace :black_friday do
     
     puts ""
     puts "📤 Starting bulk email campaign..."
+    puts "   Sidekiq will process jobs in the background"
+    puts ""
     
     sent_count = 0
     failed_count = 0
     failed_sellers = []
+    start_time = Time.current
     
     # Process sellers in batches to avoid memory issues
     active_sellers.find_in_batches(batch_size: 50) do |seller_batch|
-      seller_batch.each do |seller|
+      seller_batch.each_with_index do |seller, index|
         begin
-          print "📧 Sending to #{seller.fullname} (#{seller.email})... "
-          
-          # Queue individual email job for each seller
+          # Queue individual email job for each seller via Sidekiq
           SendSellerCommunicationJob.perform_later(seller.id, 'black_friday')
           sent_count += 1
           
-          puts "✅ Queued"
+          # Show progress every 10 sellers to avoid too much output
+          if (sent_count + failed_count) % 10 == 0 || sent_count + failed_count == total_sellers
+            progress = ((sent_count + failed_count).to_f / total_sellers * 100).round(1)
+            puts "   📊 Progress: #{sent_count + failed_count}/#{total_sellers} (#{progress}%) - Queued #{sent_count} emails"
+          end
           
         rescue => e
           failed_count += 1
@@ -66,13 +71,15 @@ namespace :black_friday do
             error: e.message
           }
           
-          puts "❌ Failed: #{e.message}"
+          puts "   ❌ Failed to queue: #{seller.email} - #{e.message}"
         end
       end
       
-      # Small delay between batches to prevent overwhelming the system
-      sleep(1) if seller_batch.size == 50
+      # Small delay between batches to prevent overwhelming Redis
+      sleep(0.5) if seller_batch.size == 50
     end
+    
+    elapsed_time = Time.current - start_time
     
     puts ""
     puts "=" * 80
@@ -81,6 +88,7 @@ namespace :black_friday do
     puts "Total sellers: #{total_sellers}"
     puts "Successfully queued: #{sent_count}"
     puts "Failed to queue: #{failed_count}"
+    puts "Time taken: #{elapsed_time.round(2)} seconds"
     
     if failed_sellers.any?
       puts ""
@@ -91,8 +99,15 @@ namespace :black_friday do
     end
     
     puts ""
-    puts "🎉 Black Friday email campaign completed!"
-    puts "💡 Check your job queue or logs for processing status"
+    puts "✅ All emails have been queued to Sidekiq"
+    puts "📧 Sidekiq will process and send emails in the background"
+    puts ""
+    puts "💡 Monitor progress:"
+    puts "   - Check Sidekiq web UI (if configured)"
+    puts "   - View logs: tail -f tmp/sidekiq.log"
+    puts "   - Check queue: bundle exec rails runner \"require 'sidekiq/api'; puts Sidekiq::Queue.new('default').size\""
+    puts ""
+    puts "🎉 Black Friday email campaign queued successfully!"
   end
   
   desc "Send Black Friday email to a specific seller (for testing)"
@@ -236,21 +251,29 @@ namespace :black_friday do
     puts "✅ Listed #{total_count} active sellers"
   end
   
-  desc "SAFE TEST: Send Black Friday email ONLY to victorquaint (admin test)"
+  desc "SAFE TEST: Send Black Friday email ONLY to victorquaint@gmail.com (admin test)"
   task send_victor_test: :environment do
     puts "🚨 SAFE TEST MODE - ONLY VICTORQUAINT RECIPIENT 🚨"
     puts "=" * 80
+    puts "⚠️  This will ONLY send to: victorquaint@gmail.com"
+    puts ""
     
-    # Find victorquaint by email
+    # Find victorquaint by email - STRICT email matching
     seller = Seller.find_by(email: 'victorquaint@gmail.com')
     
     if seller.nil?
       puts "❌ Seller with email 'victorquaint@gmail.com' not found!"
       puts ""
-      puts "Available sellers:"
+      puts "Available sellers (first 10):"
       Seller.where(deleted: [false, nil]).limit(10).each do |s|
         puts "   - ID: #{s.id}, Email: #{s.email}, Name: #{s.fullname}"
       end
+      exit 1
+    end
+    
+    # Double-check email matches exactly
+    unless seller.email.downcase.strip == 'victorquaint@gmail.com'
+      puts "❌ Email mismatch! Found: #{seller.email}, Expected: victorquaint@gmail.com"
       exit 1
     end
     
@@ -275,13 +298,25 @@ namespace :black_friday do
     
     puts ""
     puts "📤 Sending Black Friday email..."
+    puts "📧 Recipient: #{seller.email} (#{seller.fullname})"
+    puts ""
     
     begin
       # Send immediately for testing
-      SellerCommunicationsMailer.with(seller: seller).black_friday_email.deliver_now
+      # This will appear as a NEW message (not threaded) due to unique subject and headers
+      mail = SellerCommunicationsMailer.with(seller: seller).black_friday_email
+      
+      puts "📋 Email Details:"
+      puts "   Subject: #{mail.subject}"
+      puts "   To: #{mail.to.join(', ')}"
+      puts "   From: #{mail.from.join(', ')}"
+      puts "   Message-ID: #{mail['Message-ID']}"
+      puts ""
+      
+      mail.deliver_now
       
       puts "✅ Black Friday email sent successfully!"
-      puts "📧 Check #{seller.email} for the email"
+      puts "📧 Check #{seller.email} for the email (should appear as NEW message)"
       
     rescue => e
       puts "❌ Error sending email: #{e.message}"
@@ -292,7 +327,7 @@ namespace :black_friday do
     
     puts ""
     puts "🎉 Safe test completed successfully!"
-    puts "✅ Only victorquaint received the email"
+    puts "✅ Only victorquaint@gmail.com received the email"
   end
 end
 

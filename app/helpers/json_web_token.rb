@@ -29,13 +29,15 @@ class JsonWebToken
         body = JWT.decode(token, SECRET_KEY, true, { algorithm: ALGORITHM })[0]
         { success: true, payload: HashWithIndifferentAccess.new(body) }
     rescue JWT::ExpiredSignature => e
-        Rails.logger.warn "JWT Decode Error: Token has expired - #{e.message}"
+        Rails.logger.debug "JWT Decode Error: Token has expired - #{e.message}"
         { success: false, error: 'Token has expired', expired: true }
     rescue JWT::DecodeError => e
-        Rails.logger.error "JWT Decode Error: #{e.message}"
+        # Only log decode errors at debug level - they might be expected (malformed tokens from clients)
+        Rails.logger.debug "JWT Decode Error: #{e.message}"
         { success: false, error: 'Invalid token format' }
     rescue => e
-        Rails.logger.error "JWT Decode Error: #{e.message}"
+        # Only log unexpected errors as warnings
+        Rails.logger.warn "JWT Decode Error: #{e.message}"
         { success: false, error: 'Token validation failed' }
     end
 

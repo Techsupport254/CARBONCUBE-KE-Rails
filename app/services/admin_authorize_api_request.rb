@@ -13,7 +13,12 @@ class AdminAuthorizeApiRequest
     decoded_result = decoded_token
     
     unless decoded_result[:success]
-      Rails.logger.error "AdminAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+      # Only log as error if token was provided but invalid (not just missing)
+      if decoded_result[:missing_token]
+        Rails.logger.debug "AdminAuthorizeApiRequest: No token provided"
+      else
+        Rails.logger.error "AdminAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+      end
       raise ExceptionHandler::InvalidToken, decoded_result[:error]
     end
     
@@ -48,10 +53,15 @@ class AdminAuthorizeApiRequest
       token = http_auth_header
       return { success: false, error: 'No token provided' } if token.blank?
       
-      Rails.logger.info "AdminAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
+      Rails.logger.debug "AdminAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
       JsonWebToken.decode(token)
+    rescue ExceptionHandler::MissingToken => e
+      # Missing token is normal for public endpoints, only log at debug level
+      Rails.logger.debug "AdminAuthorizeApiRequest: #{e.message}"
+      { success: false, error: 'No token provided', missing_token: true }
     rescue => e
-      Rails.logger.error "JWT Decode Error: #{e.message}"
+      # Only log as error if token was provided but invalid
+      Rails.logger.error "AdminAuthorizeApiRequest: JWT Decode Error: #{e.message}"
       { success: false, error: 'Token validation failed' }
     end
   end
@@ -60,6 +70,7 @@ class AdminAuthorizeApiRequest
     if @headers['Authorization'].present?
       @headers['Authorization'].split(' ').last
     else
+      # Don't log missing tokens - they're normal for public endpoints
       raise ExceptionHandler::MissingToken, 'Missing token'
     end
   end

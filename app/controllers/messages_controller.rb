@@ -249,12 +249,14 @@ class MessagesController < ApplicationController
   end
 
   def find_buyer_conversation
-    Conversation.find_by(id: params[:conversation_id], buyer_id: @current_user.id)
+    Conversation.active_participants
+                .find_by(id: params[:conversation_id], buyer_id: @current_user.id)
   end
 
   def find_seller_conversation
     # Find conversation where current seller is either the seller or the inquirer_seller
-    Conversation.where(
+    Conversation.active_participants
+                .where(
       id: params[:conversation_id]
     ).where(
       "(seller_id = ? OR inquirer_seller_id = ?)", 
@@ -265,7 +267,8 @@ class MessagesController < ApplicationController
 
   def find_admin_conversation
     # Admins can access any conversation
-    Conversation.find_by(id: params[:conversation_id])
+    Conversation.active_participants
+                .find_by(id: params[:conversation_id])
   end
 
   def fetch_buyer_messages
@@ -273,7 +276,7 @@ class MessagesController < ApplicationController
     all_conversations_with_seller = Conversation.where(
       buyer_id: @current_user.id,
       seller_id: @conversation.seller_id
-    )
+    ).active_participants
     
     # Get all messages from all conversations with this seller, including ad info
     all_messages = all_conversations_with_seller.flat_map(&:messages).sort_by(&:created_at)
@@ -315,19 +318,19 @@ class MessagesController < ApplicationController
       all_conversations_with_participant = Conversation.where(
         seller_id: @current_user.id,
         buyer_id: @conversation.buyer_id
-      )
+      ).active_participants
     elsif @conversation.inquirer_seller_id.present? && @conversation.seller_id == @current_user.id
       # Current user is the ad owner, inquirer_seller is the other participant
       all_conversations_with_participant = Conversation.where(
         seller_id: @current_user.id,
         inquirer_seller_id: @conversation.inquirer_seller_id
-      )
+      ).active_participants
     else
       # Current user is the inquirer_seller, seller is the other participant
       all_conversations_with_participant = Conversation.where(
         seller_id: @conversation.seller_id,
         inquirer_seller_id: @current_user.id
-      )
+      ).active_participants
     end
     
     # Get all messages from all conversations with this participant

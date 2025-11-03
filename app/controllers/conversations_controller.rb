@@ -210,6 +210,7 @@ class ConversationsController < ApplicationController
   def fetch_buyer_conversations
     # Implementation from buyer conversations controller
     @conversations = Conversation.where(buyer_id: @current_user.id)
+                                .active_participants
                                 .includes(:admin, :buyer, :seller, :ad, :messages)
                                 .order(updated_at: :desc)
     render json: @conversations, each_serializer: ConversationSerializer
@@ -274,7 +275,8 @@ class ConversationsController < ApplicationController
       @current_user.id, 
       @current_user.id,
       @current_user.id
-    ).includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+    ).active_participants
+     .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
      .order(updated_at: :desc)
     
     # Group and format as per seller controller logic
@@ -396,7 +398,8 @@ class ConversationsController < ApplicationController
 
   # Admin conversation methods
   def fetch_admin_conversations
-    @conversations = Conversation.all.includes(:admin, :buyer, :seller, :ad, :messages)
+    @conversations = Conversation.active_participants
+                                    .includes(:admin, :buyer, :seller, :ad, :messages)
                                     .order(updated_at: :desc)
     render json: @conversations, each_serializer: ConversationSerializer
   end
@@ -451,6 +454,7 @@ class ConversationsController < ApplicationController
   # Unread counts methods
   def fetch_buyer_unread_counts
     conversations = Conversation.where(buyer_id: @current_user.id)
+                                .active_participants
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
@@ -478,7 +482,7 @@ class ConversationsController < ApplicationController
       "(seller_id = ? OR inquirer_seller_id = ?)", 
       @current_user.id, 
       @current_user.id
-    )
+    ).active_participants
     
     unread_counts = conversations.map do |conversation|
       # For seller-to-seller conversations, count messages not sent by current user
@@ -514,10 +518,11 @@ class ConversationsController < ApplicationController
 
   def fetch_admin_unread_counts
     conversations = Conversation.where(admin_id: @current_user.id)
+                                .active_participants
     
     unread_counts = conversations.map do |conversation|
       unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer'])
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                                 .where(read_at: nil)
                                 .count
       
@@ -538,6 +543,7 @@ class ConversationsController < ApplicationController
 
   def fetch_buyer_unread_count
     conversations = Conversation.where(buyer_id: @current_user.id)
+                                .active_participants
     
     unread_count = conversations.joins(:messages)
                                .where(messages: { sender_type: ['Seller', 'Admin', 'SalesUser'] })
@@ -552,7 +558,7 @@ class ConversationsController < ApplicationController
       "(seller_id = ? OR inquirer_seller_id = ?)", 
       @current_user.id, 
       @current_user.id
-    )
+    ).active_participants
     
     # Calculate total unread count handling seller-to-seller conversations
     total_unread = 0
@@ -578,10 +584,11 @@ class ConversationsController < ApplicationController
 
   def fetch_admin_unread_count
     conversations = Conversation.where(admin_id: @current_user.id)
+                                .active_participants
     
     unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Buyer'] })
-                               .where(messages: { status: [nil, Message::STATUS_SENT] })
+                               .where(messages: { sender_type: ['Seller', 'Buyer', 'Purchaser'] })
+                               .where(messages: { read_at: nil })
                                .count
     
     render json: { count: unread_count }

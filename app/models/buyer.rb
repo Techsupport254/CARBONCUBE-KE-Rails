@@ -10,7 +10,7 @@ class Buyer < ApplicationRecord
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
   has_many :sent_messages, as: :sender, class_name: 'Message'
-  has_many :conversations
+  has_many :conversations, dependent: :destroy
   has_many :click_events
   has_many :ad_searches
   has_many :password_otps, as: :otpable, dependent: :destroy
@@ -44,6 +44,11 @@ class Buyer < ApplicationRecord
   # We don't enforce phone number requirement even for OAuth users
 
   attribute :cart_total_price, :decimal, default: 0
+
+  # Scopes
+  scope :active, -> { where(deleted: false, blocked: false) }
+  scope :not_deleted, -> { where(deleted: false) }
+  scope :not_blocked, -> { where(blocked: false) }
 
 
   def wish_list_ad(ad)

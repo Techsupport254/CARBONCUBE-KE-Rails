@@ -9,7 +9,7 @@ class Seller < ApplicationRecord
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
   has_many :sent_messages, as: :sender, class_name: 'Message'
-  has_many :conversations
+  has_many :conversations, dependent: :destroy
   has_many :password_otps, as: :otpable, dependent: :destroy
   has_many :seller_documents, dependent: :destroy
   has_many :offers, dependent: :destroy
@@ -39,6 +39,11 @@ class Seller < ApplicationRecord
   validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
   validate :password_strength, if: :password_required?
   # validates :tier, inclusion: { in: %w[Free Basic Standard Premium] }
+
+  # Scopes
+  scope :active, -> { where(deleted: false, blocked: false) }
+  scope :not_deleted, -> { where(deleted: false) }
+  scope :not_blocked, -> { where(blocked: false) }
 
   # Callbacks for cache invalidation
   after_save :invalidate_caches

@@ -13,7 +13,12 @@ class SellerAuthorizeApiRequest
     decoded_result = decoded_token
     
     unless decoded_result[:success]
-      Rails.logger.error "SellerAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+      # Only log as error if token was provided but invalid (not just missing)
+      if decoded_result[:missing_token]
+        Rails.logger.debug "SellerAuthorizeApiRequest: No token provided"
+      else
+        Rails.logger.error "SellerAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+      end
       raise ExceptionHandler::InvalidToken, decoded_result[:error]
     end
     
@@ -77,10 +82,15 @@ class SellerAuthorizeApiRequest
       token = http_auth_header
       return { success: false, error: 'No token provided' } if token.blank?
       
-      Rails.logger.info "SellerAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
+      Rails.logger.debug "SellerAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
       JsonWebToken.decode(token)
+    rescue ExceptionHandler::MissingToken => e
+      # Missing token is normal for public endpoints, only log at debug level
+      Rails.logger.debug "SellerAuthorizeApiRequest: #{e.message}"
+      { success: false, error: 'No token provided', missing_token: true }
     rescue => e
-      Rails.logger.error "JWT Decode Error: #{e.message}"
+      # Only log as error if token was provided but invalid
+      Rails.logger.error "SellerAuthorizeApiRequest: JWT Decode Error: #{e.message}"
       { success: false, error: 'Token validation failed' }
     end
   end
@@ -98,7 +108,7 @@ class SellerAuthorizeApiRequest
         return authorization_header
       end
     else
-      Rails.logger.debug "SellerAuthorizeApiRequest: Missing Authorization header"
+      # Don't log missing tokens - they're normal for public endpoints
       raise ExceptionHandler::MissingToken, 'Missing token'
     end
   end

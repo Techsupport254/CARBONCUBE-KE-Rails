@@ -5,6 +5,7 @@ class Admin::ConversationsController < ApplicationController
   # GET /admin/conversations
   def index
     @conversations = Conversation
+      .active_participants
       .includes(:admin, :buyer, :seller)
       .where(admin_id: current_admin.id)
     
@@ -32,6 +33,7 @@ class Admin::ConversationsController < ApplicationController
   def unread_count
     # Get all conversations for the current admin
     conversations = Conversation.where(admin_id: current_admin.id)
+                                .active_participants
     
     # Count unread messages (messages not sent by admin and not read)
     unread_count = conversations.joins(:messages)
@@ -60,7 +62,9 @@ class Admin::ConversationsController < ApplicationController
   end
 
   def set_conversation
-    @conversation = Conversation.includes(:admin, :buyer, :seller, messages: :sender).find(params[:id])
+    @conversation = Conversation.active_participants
+                                .includes(:admin, :buyer, :seller, messages: :sender)
+                                .find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Conversation not found" }, status: :not_found
   end

@@ -30,31 +30,48 @@
             Here are your top products that could benefit from Black November discounts:
           </h4>
           <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <% @top_products.each do |product| %>
-                <td style="padding: 8px; width: 33.33%; vertical-align: top;">
-                  <div style="background: #f9fafb; padding: 10px; border-radius: 8px;">
-                    <div style="width: 100%; border-radius: 6px; overflow: hidden; background: #e5e7eb; margin-bottom: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
-                      <% if product.first_media_url.present? %>
-                        <img src="<%= product.first_media_url %>" alt="<%= product.title %>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; display: block;" />
-                      <% else %>
-                        <div style="color: #9ca3af; font-size: 32px;">📦</div>
-                      <% end %>
+            <% @top_products.in_groups_of(2, false) do |products_row| %>
+              <tr>
+                <% products_row.each do |product| %>
+                  <td style="padding: 8px; width: 50%; vertical-align: top;">
+                    <div style="background: #f9fafb; padding: 10px; border-radius: 8px;">
+                      <div style="width: 100%; border-radius: 6px; overflow: hidden; background: #e5e7eb; margin-bottom: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
+                        <% if product.first_media_url.present? %>
+                          <img src="<%= product.first_media_url %>" alt="<%= product.title %>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; display: block;" />
+                        <% else %>
+                          <div style="color: #9ca3af; font-size: 32px;">📦</div>
+                        <% end %>
+                      </div>
+                      <h5 style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #111827; text-align: left; line-height: 1.4;">
+                        <%= product.title&.truncate(35) %>
+                      </h5>
+                      <p style="margin: 0 0 3px; font-size: 11px; color: #6b7280; text-align: left;">
+                        <%= product.category&.name&.truncate(25) %>
+                      </p>
+                      <p style="margin: 0; font-size: 14px; font-weight: 700; color: #dc2626; text-align: left;">
+                        <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                      </p>
                     </div>
-                    <h5 style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #111827; text-align: left; line-height: 1.4;">
-                      <%= product.title&.truncate(35) %>
-                    </h5>
-                    <p style="margin: 0 0 3px; font-size: 11px; color: #6b7280; text-align: left;">
-                      <%= product.category&.name&.truncate(25) %>
-                    </p>
-                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #dc2626; text-align: left;">
-                      <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
-                    </p>
-                  </div>
-                </td>
-              <% end %>
-            </tr>
+                  </td>
+                <% end %>
+                <!-- Fill empty cells if odd number of products -->
+                <% if products_row.size == 1 %>
+                  <td style="padding: 8px; width: 50%; vertical-align: top;"></td>
+                <% end %>
+              </tr>
+            <% end %>
           </table>
+        </div>
+        <% else %>
+        <!-- NO PRODUCTS MESSAGE -->
+        <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 10px;">📦</div>
+          <h4 style="margin: 0 0 10px; font-size: 16px; font-weight: 600; color: #92400e; text-align: center;">
+            Start Adding Products to Maximize Black November Sales!
+          </h4>
+          <p style="margin: 0; font-size: 13px; color: #78350f; text-align: center; line-height: 1.6;">
+            You don't have any products listed yet. Add your products now to take advantage of Black November and reach thousands of ready buyers!
+          </p>
         </div>
         <% end %>
 

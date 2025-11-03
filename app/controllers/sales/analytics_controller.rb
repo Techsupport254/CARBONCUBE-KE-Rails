@@ -39,24 +39,21 @@ class Sales::AnalyticsController < ApplicationController
       .joins(:seller)
       .where(tier_id: 1, sellers: { deleted: false })
     
-    # Get click events without time filtering for totals (excluding internal users)
-    # Note: buyer_ad_clicks includes ALL clicks (guest + authenticated), not just buyer clicks
-    # This is for "Buyer Engagement" which should show total engagement, including guests
-    all_ad_clicks = ClickEvent.excluding_internal_users.where(event_type: 'Ad-Click')
-    # buyer_ad_clicks includes ALL clicks (guest + authenticated) excluding internal users
-    # The excluding_internal_users scope already handles email exclusions via left_joins
-    # We only need to ensure deleted buyers are excluded (guest clicks have buyer_id = nil, so they're included)
-    all_buyer_ad_clicks = ClickEvent
+    # Get click events without time filtering for totals (excluding internal users and deleted buyers)
+    # Includes ALL clicks (guest + authenticated) for both "Total Ads Clicks" and "Buyer Engagement"
+    # Guest clicks have buyer_id = nil, so they're included in the query
+    all_ad_clicks = ClickEvent
       .excluding_internal_users
       .where(event_type: 'Ad-Click')
       .left_joins(:buyer)
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
-    all_buyer_reveal_clicks = ClickEvent
+    # Get reveal click events without time filtering for totals (excluding internal users and deleted buyers)
+    # Includes ALL reveal clicks (guest + authenticated) for both "Total Click Reveals" and "Buyer Engagement"
+    all_reveal_clicks = ClickEvent
       .excluding_internal_users
       .where(event_type: 'Reveal-Seller-Details')
       .left_joins(:buyer)
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
-    all_reveal_clicks = ClickEvent.excluding_internal_users.where(event_type: 'Reveal-Seller-Details')
     
     # Convert all timestamps to ISO 8601 format for proper JavaScript Date parsing
     sellers_with_timestamps = all_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -81,20 +78,13 @@ class Sales::AnalyticsController < ApplicationController
       .pluck('sellers.created_at')
       .map { |ts| ts&.iso8601 }
     
-    # Get click events with timestamps
+    # Get click events with timestamps (used for both "Total Ads Clicks" and "Buyer Engagement")
     ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
+    buyer_ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
-    # buyer_ad_clicks_with_timestamps includes all clicks (guest + authenticated) for "Buyer Engagement"
-    buyer_ad_clicks_with_timestamps = all_buyer_ad_clicks
-      .pluck('click_events.created_at')
-      .map { |ts| ts&.iso8601 }
-    
-    buyer_reveal_clicks_with_timestamps = all_buyer_reveal_clicks
-      .pluck('click_events.created_at')
-      .map { |ts| ts&.iso8601 }
-    
-    # Get reveal clicks with timestamps (include both authenticated and unauthenticated users)
+    # Get reveal clicks with timestamps (used for both "Total Click Reveals" and "Buyer Engagement")
     reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
+    buyer_reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
     # Get category click events with timestamps (excluding internal users)
     # We need to apply exclusion conditions directly since merge() conflicts with joins
@@ -335,8 +325,8 @@ class Sales::AnalyticsController < ApplicationController
       subscription_countdowns: all_paid_seller_tiers.count,
       without_subscription: all_unpaid_seller_tiers.count,
       total_ads_clicks: all_ad_clicks.count,
-      buyer_ad_clicks: all_buyer_ad_clicks.count,
-      buyer_reveal_clicks: all_buyer_reveal_clicks.count,
+      buyer_ad_clicks: all_ad_clicks.count, # Same as total_ads_clicks - both use the same query
+      buyer_reveal_clicks: all_reveal_clicks.count, # Same as total_reveal_clicks - both use the same query
       total_reveal_clicks: all_reveal_clicks.count,
       
       # Signup method breakdown totals

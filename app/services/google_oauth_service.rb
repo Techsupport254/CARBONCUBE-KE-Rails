@@ -1346,21 +1346,20 @@ class GoogleOauthService
     begin
       Rails.logger.info "Fetching detailed user info from Google People API"
       
-      # Request comprehensive user data from People API
+      # Request user data from People API (excluding location fields to avoid consent screens)
+      # Only request essential fields: names, photos, phone numbers, basic profile info
       person_fields = [
         'names',           # Full name, given name, family name
         'photos',          # Profile pictures
         'phoneNumbers',   # Phone numbers
-        'addresses',       # Physical addresses
         'birthdays',      # Birthday information
         'genders',        # Gender information
         'ageRanges',      # Age range
         'locales',        # Language preferences
         'organizations',  # Work information
         'occupations',    # Job titles
-        'biographies',    # About/bio information
-        'residences',     # Home addresses
-        'locations'       # Location information
+        'biographies'     # About/bio information
+        # Removed 'addresses', 'residences', 'locations' - not needed and cause consent screens
       ].join(',')
       
       response = HTTParty.get(GOOGLE_PEOPLE_API_URL, {
@@ -1392,17 +1391,9 @@ class GoogleOauthService
         end
       end
       
-      # Check if addresses field exists but is empty
-      if detailed_info.key?('addresses')
-        Rails.logger.info "'addresses' field exists in response"
-        if detailed_info['addresses'].nil? || detailed_info['addresses'].empty?
-          Rails.logger.info "'addresses' field is empty - This is a Google People API limitation!"
-          Rails.logger.info "Google People API often doesn't return address data even when it exists in the profile"
-        end
-      else
-        Rails.logger.info "'addresses' field not found in response"
-        Rails.logger.info "This is a known issue with Google People API - it often doesn't return address data"
-      end
+      # Address fields not requested - removed to avoid consent screens
+      # Location data will come from IP geolocation or frontend instead
+      Rails.logger.info "Address/location fields not requested from People API (intentionally excluded to avoid consent screens)"
       
       # Log specific data that should be available
       if detailed_info['phoneNumbers']&.any?
@@ -1422,7 +1413,7 @@ class GoogleOauthService
       Rails.logger.info "Extracted detailed info keys: #{extracted_info.keys.join(', ')}"
       Rails.logger.info "Extracted phone: #{extracted_info['phone_number'] || 'Not found'}"
       Rails.logger.info "Extracted gender: #{extracted_info['gender'] || 'Not found'}"
-      Rails.logger.info "Extracted address: #{extracted_info['address'] ? 'Found' : 'Not found'}"
+      # Address extraction disabled - location data comes from IP geolocation or frontend
       extracted_info
     rescue => e
       Rails.logger.warn "Error getting detailed user info from People API: #{e.message}"
@@ -1459,18 +1450,19 @@ class GoogleOauthService
       extracted['phone_type'] = phone_info['type']
     end
     
-    # Extract addresses
-    if people_data['addresses']&.any?
-      address_info = people_data['addresses'].first
-      extracted['address'] = {
-        'formatted' => address_info['formattedValue'],
-        'street' => address_info['streetAddress'],
-        'city' => address_info['city'],
-        'region' => address_info['region'],
-        'postal_code' => address_info['postalCode'],
-        'country' => address_info['country']
-      }
-    end
+    # Extract addresses (removed from API request to avoid consent screens)
+    # Address extraction disabled - location data should come from IP geolocation or frontend
+    # if people_data['addresses']&.any?
+    #   address_info = people_data['addresses'].first
+    #   extracted['address'] = {
+    #     'formatted' => address_info['formattedValue'],
+    #     'street' => address_info['streetAddress'],
+    #     'city' => address_info['city'],
+    #     'region' => address_info['region'],
+    #     'postal_code' => address_info['postalCode'],
+    #     'country' => address_info['country']
+    #   }
+    # end
     
     # Extract birthday
     if people_data['birthdays']&.any?

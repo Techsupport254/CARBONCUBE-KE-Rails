@@ -4,6 +4,7 @@ class OtpMailer < ApplicationMailer
   def send_otp
     @email = params[:email]
     @code = params[:code]
+    @fullname = params[:fullname] || @email.split('@').first
 
     mail(to: @email, subject: 'Email Verification - Carbon Cube Kenya')
   end
