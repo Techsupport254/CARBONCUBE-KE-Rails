@@ -12,10 +12,10 @@ end
 # Validator for conversation messages
 class ConversationMessageValidator < WebsocketMessageValidator
   params do
-    required(:conversation_id).filled(:integer)
+    required(:conversation_id).filled(:string)
     required(:content).filled(:string)
     required(:sender_type).filled(:string, included_in?: %w[Buyer Seller Admin])
-    required(:sender_id).filled { |v| v.is_a?(Integer) || v.is_a?(String) }
+    required(:sender_id).filled(:string)
     optional(:ad_id).maybe(:integer)
     optional(:product_context).maybe(:hash)
     optional(:message_type).filled(:string, included_in?: %w[text image file])
@@ -39,9 +39,9 @@ end
 class PresenceUpdateValidator < WebsocketMessageValidator
   params do
     required(:type).filled(:string, included_in?: %w[typing_start typing_stop message_read message_delivered online offline])
-    optional(:conversation_id).maybe(:integer)
+    optional(:conversation_id).maybe(:string)
     optional(:message_id).maybe(:integer)
-    optional(:user_id) { |v| v.nil? || v.is_a?(Integer) || v.is_a?(String) }
+    optional(:user_id).maybe(:string)
     optional(:timestamp).maybe(:string)
   end
   
