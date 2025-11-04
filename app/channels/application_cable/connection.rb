@@ -116,7 +116,7 @@ module ApplicationCable
       # Try to extract user info from subscription parameters if available
       if request.params[:user_type] && request.params[:user_id]
         user_type = request.params[:user_type]
-        user_id = request.params[:user_id].to_i
+        user_id = request.params[:user_id]
         
         Rails.logger.debug "WebSocket fallback: Trying to find user #{user_id} of type #{user_type}"
         
@@ -152,14 +152,22 @@ module ApplicationCable
             Rails.logger.debug "WebSocket fallback: Admin #{user_id} not found"
           end
         when 'sales'
+          Rails.logger.debug "WebSocket fallback: Attempting to find SalesUser with ID: #{user_id} (type: #{user_id.class.name})"
+          
+          # SalesUser uses UUID, so integer IDs won't work
+          if user_id.is_a?(Integer)
+            Rails.logger.warn "WebSocket fallback: SalesUser ID is an integer (#{user_id}), but SalesUsers use UUIDs. Token may be stale."
+          end
+          
           sales_user = SalesUser.find_by(id: user_id)
+          
           if sales_user
             self.current_user = sales_user
             self.session_id = SecureRandom.uuid
-            Rails.logger.info "WebSocket fallback: Successfully authenticated sales user #{sales_user.id}"
+            Rails.logger.info "WebSocket fallback: Successfully authenticated sales user #{sales_user.id} (type: #{sales_user.id.class.name}), email: #{sales_user.email}"
             return
           else
-            Rails.logger.debug "WebSocket fallback: Sales user #{user_id} not found"
+            Rails.logger.debug "WebSocket fallback: Sales user #{user_id} (type: #{user_id.class.name}) not found (SalesUsers use UUID format)"
           end
         else
           Rails.logger.debug "WebSocket fallback: Unknown user type: #{user_type}"
@@ -218,11 +226,13 @@ module ApplicationCable
     
     def find_user_from_token(payload)
       Rails.logger.info "WebSocket: Finding user from token payload: #{payload.inspect}"
+      Rails.logger.info "WebSocket: Token payload keys: #{payload.keys.inspect}"
+      Rails.logger.info "WebSocket: Token user_id: #{payload['user_id']} (type: #{payload['user_id'].class.name}), role: #{payload['role']}"
       
       # Handle different token formats based on user type
       # Sellers use seller_id field
       if payload['seller_id']
-        seller_id = payload['seller_id'].to_i
+        seller_id = payload['seller_id']
         role = payload['role']
         
         # Verify the role matches (case-insensitive)
@@ -236,9 +246,9 @@ module ApplicationCable
         if seller
           Rails.logger.info "WebSocket: Found seller: #{seller.id}, deleted: #{seller.deleted?}"
           return seller unless seller.deleted?
-          Rails.logger.error "WebSocket: Seller #{seller_id} is deleted"
+          Rails.logger.debug "WebSocket: Seller #{seller_id} is deleted (token may be stale)"
         else
-          Rails.logger.error "WebSocket: Seller #{seller_id} not found in database"
+          Rails.logger.debug "WebSocket: Seller #{seller_id} not found in database (token may be stale)"
         end
         return nil
       end
@@ -246,55 +256,70 @@ module ApplicationCable
       
       # Buyers, Admins, Sales use user_id field with role
       if payload['user_id']
-        user_id = payload['user_id'].to_i
+        user_id = payload['user_id']
         role = payload['role']
-        Rails.logger.info "WebSocket: Looking for user with ID: #{user_id}, role: #{role}"
+        user_id_type = user_id.class.name
         
-        # Try to find user in different models based on role
-        case role&.downcase
+        # Require role for direct lookup - don't search all databases
+        unless role.present?
+          Rails.logger.warn "WebSocket: Token has user_id but no role field. Cannot perform direct lookup. Token may be malformed."
+          Rails.logger.info "WebSocket: Will proceed with subscription-based auth"
+          return nil
+        end
+        
+        Rails.logger.info "WebSocket: Looking for user with ID: #{user_id} (type: #{user_id_type}), role: #{role} - using direct role-based lookup"
+        
+        # Direct lookup based on role - no fallback to search all models
+        case role.to_s.downcase
         when 'buyer'
           buyer = Buyer.find_by(id: user_id)
           if buyer
-            Rails.logger.info "WebSocket: Found buyer: #{buyer.id}, deleted: #{buyer.deleted?}"
+            Rails.logger.info "WebSocket: Found buyer: #{buyer.id} (type: #{buyer.id.class.name}), deleted: #{buyer.deleted?}"
             return buyer unless buyer.deleted?
-            Rails.logger.error "WebSocket: Buyer #{user_id} is deleted"
+            Rails.logger.debug "WebSocket: Buyer #{user_id} is deleted (token may be stale)"
           else
-            Rails.logger.error "WebSocket: Buyer #{user_id} not found in database"
+            Rails.logger.debug "WebSocket: Buyer #{user_id} not found in database (token may be stale)"
           end
         when 'admin'
           admin = Admin.find_by(id: user_id)
           if admin
-            Rails.logger.info "WebSocket: Found admin: #{admin.id}"
+            Rails.logger.info "WebSocket: Found admin: #{admin.id} (type: #{admin.id.class.name})"
             return admin
           else
-            Rails.logger.error "WebSocket: Admin #{user_id} not found in database"
+            Rails.logger.debug "WebSocket: Admin #{user_id} not found in database (token may be stale)"
           end
         when 'sales'
+          # SalesUser uses UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+          Rails.logger.info "WebSocket: Attempting to find SalesUser with ID: #{user_id} (type: #{user_id_type})"
+          
+          # SalesUser IDs are UUIDs, so we need to ensure proper format
+          # If user_id is an integer, it's likely from a stale token (pre-UUID migration)
+          if user_id.is_a?(Integer)
+            Rails.logger.warn "WebSocket: SalesUser ID is an integer (#{user_id}), but SalesUsers use UUIDs. Token may be stale from before UUID migration."
+            Rails.logger.info "WebSocket: User should log in again to get a fresh token with correct UUID"
+          end
+          
+          # Try direct lookup (works for both UUID strings and will fail gracefully for integers)
           sales_user = SalesUser.find_by(id: user_id)
+          
+          # Log all SalesUsers in database for debugging (only in development)
+          if Rails.env.development? && !sales_user
+            all_sales_users = SalesUser.limit(10).pluck(:id, :email)
+            Rails.logger.info "WebSocket: Sample SalesUser IDs in database: #{all_sales_users.map { |id, email| "#{id} (#{id.class.name}) - #{email}" }.join(', ')}"
+            Rails.logger.info "WebSocket: Token has user_id: #{user_id} (#{user_id_type}), but SalesUsers use UUID format"
+          end
+          
           if sales_user
-            Rails.logger.info "WebSocket: Found sales user: #{sales_user.id}"
+            Rails.logger.info "WebSocket: Found sales user: #{sales_user.id} (type: #{sales_user.id.class.name}), email: #{sales_user.email}"
             return sales_user
           else
-            Rails.logger.error "WebSocket: Sales user #{user_id} not found in database"
+            Rails.logger.warn "WebSocket: Sales user #{user_id} (type: #{user_id_type}) not found in database. This likely means the token is stale (from before UUID migration). User should log in again."
+            Rails.logger.info "WebSocket: Will proceed with subscription-based auth"
           end
         else
-          # Fallback: try all models if no specific role
-          Rails.logger.info "WebSocket: No specific role, trying all models"
-          buyer = Buyer.find_by(id: user_id)
-          if buyer && !buyer.deleted?
-            Rails.logger.info "WebSocket: Found buyer via fallback: #{buyer.id}"
-            return buyer
-          end
-          admin = Admin.find_by(id: user_id)
-          if admin
-            Rails.logger.info "WebSocket: Found admin via fallback: #{admin.id}"
-            return admin
-          end
-          sales_user = SalesUser.find_by(id: user_id)
-          if sales_user
-            Rails.logger.info "WebSocket: Found sales user via fallback: #{sales_user.id}"
-            return sales_user
-          end
+          # Unknown role - don't search all models, just log and return nil
+          Rails.logger.warn "WebSocket: Unknown role '#{role}' for user_id #{user_id}. Cannot perform lookup. Token may be malformed."
+          Rails.logger.info "WebSocket: Will proceed with subscription-based auth"
         end
       end
       

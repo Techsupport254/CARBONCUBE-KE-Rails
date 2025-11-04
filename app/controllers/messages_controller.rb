@@ -16,6 +16,21 @@ class MessagesController < ApplicationController
   end
 
   def mark_as_read
+    # Sales users should not mark messages as read in conversations they're just viewing
+    # They can only mark messages as read if they are a direct participant (admin_id matches)
+    if @current_user.is_a?(SalesUser)
+      # For Sales users, only allow marking as read if they are the admin of this conversation
+      # AND the message was sent to them (not by them)
+      unless @conversation.admin_id == @current_user.id
+        Rails.logger.info "Sales user #{@current_user.id} attempted to mark message as read in conversation #{@conversation.id} where they are not the admin"
+        render json: { 
+          error: 'Sales users cannot mark messages as read in conversations they are viewing',
+          success: false
+        }, status: :forbidden
+        return
+      end
+    end
+    
     begin
       message_id = params[:id] || params[:message_id]
       message = @conversation.messages.find(message_id)
@@ -25,6 +40,14 @@ class MessagesController < ApplicationController
         
         # Broadcast read receipt via WebSocket
         broadcast_read_receipt(message)
+        
+        # Update unread counts for all participants after marking as read
+        begin
+          UpdateUnreadCountsJob.perform_now(@conversation.id, message.id)
+        rescue StandardError => e
+          Rails.logger.warn "Failed to update unread counts after marking message as read: #{e.message}"
+          UpdateUnreadCountsJob.perform_later(@conversation.id, message.id)
+        end
         
         render json: { 
           success: true, 
@@ -48,6 +71,21 @@ class MessagesController < ApplicationController
   end
 
   def mark_as_delivered
+    # Sales users should not mark messages as delivered in conversations they're just viewing
+    # They can only mark messages as delivered if they are a direct participant (admin_id matches)
+    if @current_user.is_a?(SalesUser)
+      # For Sales users, only allow marking as delivered if they are the admin of this conversation
+      # AND the message was sent to them (not by them)
+      unless @conversation.admin_id == @current_user.id
+        Rails.logger.info "Sales user #{@current_user.id} attempted to mark message as delivered in conversation #{@conversation.id} where they are not the admin"
+        render json: { 
+          error: 'Sales users cannot mark messages as delivered in conversations they are viewing',
+          success: false
+        }, status: :forbidden
+        return
+      end
+    end
+    
     begin
       message_id = params[:id] || params[:message_id]
       message = @conversation.messages.find(message_id)
@@ -266,9 +304,19 @@ class MessagesController < ApplicationController
   end
 
   def find_admin_conversation
-    # Admins can access any conversation
-    Conversation.active_participants
-                .find_by(id: params[:conversation_id])
+    # Admins and Sales users can access any conversation
+    # But for Sales users, prefer conversations where they are the admin_id
+    if @current_user.is_a?(SalesUser)
+      # Try to find conversation where sales user is the admin_id first
+      conversation = Conversation.active_participants
+                                .find_by(id: params[:conversation_id], admin_id: @current_user.id)
+      
+      # If not found, allow access to any conversation (like admin)
+      conversation || Conversation.active_participants.find_by(id: params[:conversation_id])
+    else
+      # Admins can access any conversation
+      Conversation.active_participants.find_by(id: params[:conversation_id])
+    end
   end
 
   def fetch_buyer_messages

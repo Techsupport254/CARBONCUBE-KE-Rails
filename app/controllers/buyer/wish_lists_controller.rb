@@ -67,7 +67,12 @@ class Buyer::WishListsController < ApplicationController
       # Try buyer authentication first
       buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
       @current_user = buyer_auth.result
+    rescue ExceptionHandler::InvalidToken => e
+      Rails.logger.warn "Buyer::WishListsController: Buyer authentication failed: #{e.message}"
+      @current_user = nil
     rescue => e
+      Rails.logger.error "Buyer::WishListsController: Unexpected error during buyer authentication: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.first(5).join("\n")
       @current_user = nil
     end
 
@@ -76,13 +81,19 @@ class Buyer::WishListsController < ApplicationController
       begin
         seller_auth = SellerAuthorizeApiRequest.new(request.headers)
         @current_user = seller_auth.result
+      rescue ExceptionHandler::InvalidToken => e
+        Rails.logger.warn "Buyer::WishListsController: Seller authentication failed: #{e.message}"
+        @current_user = nil
       rescue => e
+        Rails.logger.error "Buyer::WishListsController: Unexpected error during seller authentication: #{e.class.name} - #{e.message}"
+        Rails.logger.error e.backtrace.first(5).join("\n")
         @current_user = nil
       end
     end
 
     # Allow both buyers and sellers to use wishlist functionality
     unless @current_user.is_a?(Buyer) || @current_user.is_a?(Seller)
+      Rails.logger.warn "Buyer::WishListsController: Authentication failed - user is #{@current_user.class.name rescue 'nil'}"
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end

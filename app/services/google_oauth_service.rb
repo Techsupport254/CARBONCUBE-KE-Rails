@@ -402,7 +402,38 @@ class GoogleOauthService
     # Create the seller
     seller = Seller.new(seller_attributes)
     
-    if seller.save
+    # Try to save, with retry logic for sequence sync issues
+    save_success = false
+    retry_count = 0
+    max_retries = 2
+    
+    begin
+      save_success = seller.save
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => e
+      if e.message.include?('vendors_pkey') || e.message.include?('duplicate key value') ||
+         (e.respond_to?(:cause) && e.cause.is_a?(PG::UniqueViolation) && e.cause.message.include?('vendors_pkey'))
+        Rails.logger.warn "⚠️ Sequence sync issue detected for sellers table, attempting to fix..."
+        
+        # Fix the sequence
+        ActiveRecord::Base.connection.execute(
+          "SELECT setval('vendors_id_seq', COALESCE((SELECT MAX(id) FROM sellers), 0) + 1, false);"
+        )
+        
+        retry_count += 1
+        if retry_count <= max_retries
+          Rails.logger.info "🔄 Retrying seller creation after sequence fix (attempt #{retry_count})"
+          seller = Seller.new(seller_attributes) # Create new instance
+          retry
+        else
+          Rails.logger.error "❌ Failed to create seller after #{max_retries} retries: #{e.message}"
+          raise
+        end
+      else
+        raise
+      end
+    end
+    
+    if save_success
       Rails.logger.info "Seller created successfully: #{seller.email}"
       
       # Handle seller tier assignment
@@ -603,7 +634,48 @@ class GoogleOauthService
     # Create the buyer
     buyer = Buyer.new(buyer_attributes)
     
-    if buyer.save
+    # Ensure UUID is set before saving (safety check in case callback doesn't fire)
+    buyer.id ||= SecureRandom.uuid if buyer.id.blank?
+    
+    Rails.logger.info "🔧 Buyer ID before save: #{buyer.id.inspect}"
+    
+    # Try to save, with retry logic for sequence sync issues
+    save_success = false
+    retry_count = 0
+    max_retries = 2
+    
+    begin
+      save_success = buyer.save
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => e
+      # After UUID migration, buyers.id is UUID and doesn't use sequences
+      # Handle duplicate key errors (which can happen with UUIDs too)
+      if e.message.include?('duplicate key value') || 
+         (e.respond_to?(:cause) && e.cause.is_a?(PG::UniqueViolation))
+        Rails.logger.warn "⚠️ Duplicate key violation detected for buyers table"
+        
+        # Check if it's a unique constraint violation on email or other unique fields
+        if e.message.include?('email') || e.message.include?('username') || e.message.include?('phone_number')
+          Rails.logger.error "❌ Unique constraint violation on email/username/phone: #{e.message}"
+          raise
+        else
+          # For other unique violations, try to find existing buyer
+          Rails.logger.warn "⚠️ Attempting to find existing buyer by email: #{buyer.email}"
+          existing_buyer = Buyer.find_by(email: buyer.email)
+          if existing_buyer
+            Rails.logger.info "✅ Found existing buyer: #{existing_buyer.id}"
+            buyer = existing_buyer
+            save_success = true
+          else
+            Rails.logger.error "❌ Failed to create buyer: #{e.message}"
+            raise
+          end
+        end
+      else
+        raise
+      end
+    end
+    
+    if save_success
       Rails.logger.info "Buyer created successfully: #{buyer.email}"
       
       # Cache the profile picture after user creation to avoid rate limiting

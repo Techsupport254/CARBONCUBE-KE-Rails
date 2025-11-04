@@ -72,7 +72,7 @@ class SellerCommunicationsMailer < ApplicationMailer
                            .limit(4)
     
     # Log to both Rails logger and stdout for Sidekiq visibility
-    log_message = "=== BLACK FRIDAY EMAIL START ==="
+    log_message = "=== PLATFORM NOTIFICATION EMAIL START ==="
     Rails.logger.info log_message
     
     log_message = "Seller ID: #{@seller.id} | Name: #{@seller.fullname} | Email: #{@seller.email}"
@@ -85,26 +85,29 @@ class SellerCommunicationsMailer < ApplicationMailer
     Rails.logger.info "Delivery Method: #{ActionMailer::Base.delivery_method}"
     Rails.logger.info "From Address: #{default_params[:from]}"
     
-    # Use simple transactional subject - exactly like OTP/Welcome emails
-    # NO promotional words, NO emoji - Gmail treats these as transactional (new messages)
-    subject_text = "Important Platform Update - Carbon Cube Kenya"
+    # Transactional subject - Platform notification format
+    # NO promotional words, NO emoji - Gmail treats these as transactional
+    timestamp = Time.current.strftime('%Y%m%d')
+    subject_text = "Platform Notification #{timestamp} - High Traffic Period Expected"
     
     # Generate unique Message-ID
-    timestamp = Time.current.to_i
+    timestamp_msg = Time.current.to_i
     random_id = SecureRandom.hex(8)
-    headers['Message-ID'] = "<#{timestamp}-#{random_id}@carboncube-ke.com>"
+    headers['Message-ID'] = "<#{timestamp_msg}-#{random_id}@carboncube-ke.com>"
     
-    # CRITICAL: Set headers BEFORE mail() to tell Gmail this is IMPORTANT/PERSONAL
-    # These headers force Gmail to show in Primary tab and trigger notifications
-    headers['X-Priority'] = '1'  # Highest priority (1=Highest, 3=Normal, 5=Lowest)
+    # CRITICAL: Set headers BEFORE mail() to tell Gmail this is TRANSACTIONAL/NOTIFICATION
+    # These headers force Gmail to show in Primary tab
+    headers['X-Priority'] = '1'  # Highest priority
     headers['Importance'] = 'High'  # High importance
     headers['X-MSMail-Priority'] = 'High'
     headers['X-Message-Flag'] = 'Important'
     
-    # Explicitly mark as personal/transactional (not promotional)
+    # Explicitly mark as transactional/notification (NOT promotional)
     headers['Precedence'] = nil  # No bulk precedence
-    headers['List-Unsubscribe'] = nil  # No list headers
+    headers['List-Unsubscribe'] = nil  # No list headers - critical for avoiding promotional
     headers['List-Unsubscribe-Post'] = nil
+    headers['List-Id'] = nil
+    headers['List-Post'] = nil
     headers['Auto-Submitted'] = nil  # Not auto-generated
     headers['X-Auto-Response-Suppress'] = 'All'
     
@@ -113,7 +116,6 @@ class SellerCommunicationsMailer < ApplicationMailer
     headers['References'] = nil
     
     # Generate HTML content for attachment (BEFORE mail() is called)
-    # We need to render the template to get the HTML string
     html_content = render_to_string(
       template: 'seller_communications_mailer/black_friday_email',
       layout: false,
@@ -121,8 +123,7 @@ class SellerCommunicationsMailer < ApplicationMailer
     )
     
     # Attach HTML preview file BEFORE creating mail message
-    # Users can download and open this HTML file separately if they want
-    attachment_filename = "black_friday_update_#{Time.current.strftime('%Y%m%d')}.html"
+    attachment_filename = "platform_notification_#{Time.current.strftime('%Y%m%d')}.html"
     attachments[attachment_filename] = {
       mime_type: 'text/html',
       content: html_content
@@ -138,13 +139,13 @@ class SellerCommunicationsMailer < ApplicationMailer
       format.html { render 'black_friday_email' }
     end
     
-    # CRITICAL: Force high priority and remove promotional markers
+    # CRITICAL: Force transactional headers and remove ALL promotional markers
     mail_message['X-Priority'] = '1'
     mail_message['Importance'] = 'High'
     mail_message['X-MSMail-Priority'] = 'High'
     mail_message['X-Message-Flag'] = 'Important'
     
-    # Remove ALL bulk/promotional markers
+    # Remove ALL bulk/promotional markers - this is critical for Gmail categorization
     mail_message['Precedence'] = nil
     mail_message['List-Unsubscribe'] = nil
     mail_message['List-Unsubscribe-Post'] = nil
@@ -159,7 +160,11 @@ class SellerCommunicationsMailer < ApplicationMailer
     # NO Reply-To (makes it appear as new message, not a reply)
     mail_message['Reply-To'] = nil
     
-    log_message = "=== BLACK FRIDAY EMAIL END ==="
+    # DISABLE EMAIL DELIVERY - Email will not be sent
+    mail_message.perform_deliveries = false
+    Rails.logger.info "⚠️  EMAIL DELIVERY DISABLED - Email will NOT be sent"
+    
+    log_message = "=== PLATFORM NOTIFICATION EMAIL END (DELIVERY DISABLED) ==="
     Rails.logger.info log_message
     
     mail_message

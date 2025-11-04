@@ -39,7 +39,14 @@ class Seller::ConversationsController < ApplicationController
     conversations_data = grouped_conversations.map do |participant_key, conversations|
       # Get the most recent conversation for this participant
       most_recent_conversation = conversations.max_by(&:updated_at)
-      last_message = most_recent_conversation.messages.last
+      
+      # Get all messages from all conversations in this group
+      all_messages = conversations.flat_map(&:messages).sort_by(&:created_at)
+      
+      # Skip this group if there are no messages
+      next nil if all_messages.empty?
+      
+      last_message = all_messages.last
 
       {
         id: most_recent_conversation.id,
@@ -58,7 +65,7 @@ class Seller::ConversationsController < ApplicationController
         last_message_time: last_message&.created_at,
         all_conversation_ids: conversations.map(&:id)
       }
-    end
+    end.compact
     
     render json: conversations_data
   end
@@ -89,13 +96,13 @@ class Seller::ConversationsController < ApplicationController
 
   def create
     # Prevent sellers from messaging their own ads
-    if params[:seller_id].to_i == @current_seller.id && params[:buyer_id].blank?
+    if params[:seller_id].present? && params[:seller_id] == @current_seller.id.to_s && params[:buyer_id].blank?
       render json: { error: 'You cannot message your own ads' }, status: :unprocessable_entity
       return
     end
 
     # Determine the conversation structure based on who is messaging
-    if params[:seller_id].to_i == @current_seller.id
+    if params[:seller_id].present? && params[:seller_id] == @current_seller.id.to_s
       # Current seller owns the ad - they are responding to a buyer/inquirer
       seller_id = @current_seller.id
       buyer_id = params[:buyer_id]
@@ -108,13 +115,20 @@ class Seller::ConversationsController < ApplicationController
     end
 
     # Find existing conversation or create new one
-    @conversation = Conversation.find_or_create_by(
-      seller_id: seller_id,
-      buyer_id: buyer_id,
-      inquirer_seller_id: inquirer_seller_id,
-      ad_id: params[:ad_id]
-    ) do |conv|
-      conv.admin_id = params[:admin_id] if params[:admin_id].present?
+    # Handle race conditions where multiple requests try to create the same conversation
+    begin
+      # Use the model method that handles race conditions properly
+      @conversation = Conversation.find_or_create_conversation!(
+        seller_id: seller_id,
+        buyer_id: buyer_id,
+        inquirer_seller_id: inquirer_seller_id,
+        admin_id: params[:admin_id].presence,
+        ad_id: params[:ad_id]
+      )
+    rescue => e
+      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}" if defined?(Rails.logger)
+      render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
+      return
     end
 
     # Create the message
@@ -165,15 +179,29 @@ class Seller::ConversationsController < ApplicationController
 
   # GET /seller/conversations/unread_counts
   def unread_counts
-    # Get all conversations for the current seller with unread message counts
-    conversations = Conversation.where(seller_id: @current_seller.id)
-                                .active_participants
+    # Get all conversations for the current seller (including seller-to-seller conversations)
+    conversations = Conversation.where(
+      "(seller_id = ? OR inquirer_seller_id = ?)", 
+      @current_seller.id, 
+      @current_seller.id
+    ).active_participants
     
     unread_counts = conversations.map do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                                .where(read_at: nil)
-                                .count
+      # For seller-to-seller conversations, count messages not sent by current user
+      # For regular conversations, count messages from buyers, admins, and sales users
+      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
+        # Seller-to-seller conversation: count messages not sent by current user
+        unread_count = conversation.messages
+                                  .where.not(sender_id: @current_seller.id)
+                                  .where(read_at: nil)
+                                  .count
+      else
+        # Regular conversation: count messages from buyers, admins, and sales users
+        unread_count = conversation.messages
+                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                                  .where(read_at: nil)
+                                  .count
+      end
       
       {
         conversation_id: conversation.id,
@@ -192,17 +220,34 @@ class Seller::ConversationsController < ApplicationController
 
   # GET /seller/conversations/unread_count
   def unread_count
-    # Get all conversations for the current seller
-    conversations = Conversation.where(seller_id: @current_seller.id)
-                                .active_participants
+    # Get all conversations for the current seller (including seller-to-seller conversations)
+    conversations = Conversation.where(
+      "(seller_id = ? OR inquirer_seller_id = ?)", 
+      @current_seller.id, 
+      @current_seller.id
+    ).active_participants
     
-    # Count unread messages (messages not sent by seller and not read)
-    unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Buyer', 'Admin', 'SalesUser'] })
-                               .where(messages: { read_at: nil })
-                               .count
+    # Calculate total unread count handling seller-to-seller conversations
+    # This avoids duplicate counting issues with joins
+    total_unread = 0
+    conversations.each do |conversation|
+      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
+        # Seller-to-seller conversation: count messages not sent by current user
+        unread_count = conversation.messages
+                                  .where.not(sender_id: @current_seller.id)
+                                  .where(read_at: nil)
+                                  .count
+      else
+        # Regular conversation: count messages from buyers, admins, and sales users
+        unread_count = conversation.messages
+                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                                  .where(read_at: nil)
+                                  .count
+      end
+      total_unread += unread_count
+    end
     
-    render json: { count: unread_count }
+    render json: { count: total_unread }
   end
 
   private

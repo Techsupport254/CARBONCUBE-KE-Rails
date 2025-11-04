@@ -1,5 +1,6 @@
 # app/models/seller.rb
 class Seller < ApplicationRecord
+  before_create :generate_uuid
   before_validation :normalize_email
 
   has_secure_password validations: false
@@ -119,6 +120,10 @@ class Seller < ApplicationRecord
   end
 
   private
+
+  def generate_uuid
+    self.id = SecureRandom.uuid if id.blank?
+  end
 
   def normalize_email
     self.email = email.to_s.strip.downcase

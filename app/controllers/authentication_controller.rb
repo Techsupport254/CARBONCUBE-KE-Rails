@@ -63,8 +63,8 @@ class AuthenticationController < ApplicationController
       end
       
 
-      # Update last active timestamp for sellers
-      if role == 'Seller' && @user.respond_to?(:update_last_active!)
+      # Update last active timestamp for sellers and buyers
+      if @user.respond_to?(:update_last_active!)
         @user.update_last_active!
       end
 
@@ -193,10 +193,12 @@ class AuthenticationController < ApplicationController
         render json: { message: 'Logged out successfully' }, status: :ok
       rescue StandardError => e
         Rails.logger.error "Logout error: #{e.message}"
-        render json: { error: 'Invalid token' }, status: :unauthorized
+        # Even if token is invalid, allow graceful logout
+        render json: { message: 'Logged out successfully' }, status: :ok
       end
     else
-      render json: { error: 'No token provided' }, status: :bad_request
+      # Allow graceful logout even without token (e.g., token already expired/cleared)
+      render json: { message: 'Logged out successfully' }, status: :ok
     end
   end
 

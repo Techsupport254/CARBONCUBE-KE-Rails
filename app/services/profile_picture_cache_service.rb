@@ -20,12 +20,40 @@ class ProfilePictureCacheService
       Rails.logger.info "🔄 Cache directory: #{@cache_dir}"
       Rails.logger.info "🔄 Target file path: #{file_path}"
       
-      # Use Net::HTTP to download the image
+      # Use Net::HTTP to download the image with proper SSL handling
       uri = URI(google_url)
-      response = Net::HTTP.get_response(uri)
+      http = Net::HTTP.new(uri.host, uri.port)
+      
+      # Configure SSL
+      if uri.scheme == 'https'
+        http.use_ssl = true
+        
+        # In development, skip SSL verification to avoid certificate issues
+        # This is safe for development but should never be used in production
+        if Rails.env.development?
+          http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        else
+          # Production: always verify SSL
+          http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+          # Try to use system certificate store if available
+          if File.exist?(OpenSSL::X509::DEFAULT_CERT_FILE)
+            http.ca_file = OpenSSL::X509::DEFAULT_CERT_FILE
+          elsif Dir.exist?(OpenSSL::X509::DEFAULT_CERT_DIR)
+            http.ca_path = OpenSSL::X509::DEFAULT_CERT_DIR
+          end
+        end
+      end
+      
+      # Set timeout
+      http.open_timeout = 10
+      http.read_timeout = 10
+      
+      request = Net::HTTP::Get.new(uri.request_uri)
+      request['User-Agent'] = 'Mozilla/5.0 (compatible; CarbonApp/1.0)'
+      
+      response = http.request(request)
       
       Rails.logger.info "🔄 Response code: #{response.code}"
-      Rails.logger.info "🔄 Response headers: #{response.to_hash}"
       
       if response.code == '200'
         # Save the image to our cache directory
@@ -41,9 +69,13 @@ class ProfilePictureCacheService
         "/cached_profile_pictures/#{filename}"
       else
         Rails.logger.error "❌ Failed to download profile picture: #{response.code} - #{response.message}"
-        Rails.logger.error "❌ Response body: #{response.body}"
         nil
       end
+    rescue OpenSSL::SSL::SSLError => e
+      Rails.logger.error "❌ SSL error caching profile picture: #{e.message}"
+      Rails.logger.error "💡 Tip: Try running 'brew install ca-certificates' or update Ruby certificates"
+      # Return nil so we can fall back to original URL
+      nil
     rescue => e
       Rails.logger.error "❌ Error caching profile picture: #{e.message}"
       Rails.logger.error "❌ Backtrace: #{e.backtrace.first(5).join('\n')}"

@@ -21,7 +21,8 @@ class ConversationSerializer < ActiveModel::Serializer
       username: object.buyer.username,
       email: object.buyer.email,
       phone_number: object.buyer.phone_number,
-      profile_picture: object.buyer.profile_picture
+      profile_picture: object.buyer.profile_picture,
+      last_active_at: object.buyer.last_active_at
     }
   end
 
@@ -34,7 +35,8 @@ class ConversationSerializer < ActiveModel::Serializer
       enterprise_name: object.seller.enterprise_name,
       email: object.seller.email,
       phone_number: object.seller.phone_number,
-      profile_picture: object.seller.profile_picture
+      profile_picture: object.seller.profile_picture,
+      last_active_at: object.seller.last_active_at
     }
   end
 
@@ -47,7 +49,8 @@ class ConversationSerializer < ActiveModel::Serializer
       enterprise_name: object.inquirer_seller.enterprise_name,
       email: object.inquirer_seller.email,
       phone_number: object.inquirer_seller.phone_number,
-      profile_picture: object.inquirer_seller.profile_picture
+      profile_picture: object.inquirer_seller.profile_picture,
+      last_active_at: object.inquirer_seller.last_active_at
     }
   end
 

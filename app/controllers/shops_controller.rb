@@ -3,38 +3,7 @@ class ShopsController < ApplicationController
     # Find shop by slug (enterprise_name converted to slug)
     slug = params[:slug]
     
-    # Convert slug back to enterprise name format for searching
-    # Replace hyphens with spaces and handle special characters
-    enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
-    
-    # First try exact match with case insensitive and normalized spaces
-    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
-    @shop = Seller.includes(:seller_tier, :tier)
-                  .where(deleted: false)
-                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
-                  .first
-    
-    # If no exact match, try partial match with normalized spaces
-    unless @shop
-      @shop = Seller.includes(:seller_tier, :tier)
-                    .where(deleted: false)
-                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
-                    .first
-    end
-    
-    # If still no match, try to find by ID as fallback (for backward compatibility)
-    unless @shop
-      begin
-        shop_id = slug.to_i
-        if shop_id > 0
-          @shop = Seller.includes(:seller_tier, :tier)
-                        .where(deleted: false)
-                        .find(shop_id)
-        end
-      rescue ActiveRecord::RecordNotFound
-        # Ignore and continue to error handling
-      end
-    end
+    @shop = find_shop_by_slug(slug)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -123,37 +92,7 @@ class ShopsController < ApplicationController
     # Find shop by slug (enterprise_name converted to slug)
     slug = params[:slug]
     
-    # Convert slug back to enterprise name format for searching
-    enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
-    
-    # First try exact match with case insensitive and normalized spaces
-    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
-    @shop = Seller.includes(:seller_tier, :tier)
-                  .where(deleted: false)
-                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
-                  .first
-    
-    # If no exact match, try partial match with normalized spaces
-    unless @shop
-      @shop = Seller.includes(:seller_tier, :tier)
-                    .where(deleted: false)
-                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
-                    .first
-    end
-    
-    # If still no match, try to find by ID as fallback
-    unless @shop
-      begin
-        shop_id = slug.to_i
-        if shop_id > 0
-          @shop = Seller.includes(:seller_tier, :tier)
-                        .where(deleted: false)
-                        .find(shop_id)
-        end
-      rescue ActiveRecord::RecordNotFound
-        # Ignore and continue to error handling
-      end
-    end
+    @shop = find_shop_by_slug(slug)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -245,37 +184,7 @@ class ShopsController < ApplicationController
     # Find shop by slug (enterprise_name converted to slug)
     slug = params[:slug]
     
-    # Convert slug back to enterprise name format for searching
-    enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
-    
-    # First try exact match with case insensitive and normalized spaces
-    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
-    @shop = Seller.includes(:seller_tier, :tier)
-                  .where(deleted: false)
-                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
-                  .first
-    
-    # If no exact match, try partial match with normalized spaces
-    unless @shop
-      @shop = Seller.includes(:seller_tier, :tier)
-                    .where(deleted: false)
-                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
-                    .first
-    end
-    
-    # If still no match, try to find by ID as fallback
-    unless @shop
-      begin
-        shop_id = slug.to_i
-        if shop_id > 0
-          @shop = Seller.includes(:seller_tier, :tier)
-                        .where(deleted: false)
-                        .find(shop_id)
-        end
-      rescue ActiveRecord::RecordNotFound
-        # Ignore and continue to error handling
-      end
-    end
+    @shop = find_shop_by_slug(slug)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -447,33 +356,8 @@ class ShopsController < ApplicationController
   def create_review
     # Find shop by slug
     slug = params[:slug]
-    enterprise_name = slug.gsub('-', ' ').gsub('_', ' ')
-    normalized_enterprise_name = enterprise_name.downcase.strip.squeeze(' ')
     
-    @shop = Seller.includes(:seller_tier, :tier)
-                  .where(deleted: false)
-                  .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
-                  .first
-    
-    unless @shop
-      @shop = Seller.includes(:seller_tier, :tier)
-                    .where(deleted: false)
-                    .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
-                    .first
-    end
-    
-    unless @shop
-      begin
-        shop_id = slug.to_i
-        if shop_id > 0
-          @shop = Seller.includes(:seller_tier, :tier)
-                        .where(deleted: false)
-                        .find(shop_id)
-        end
-      rescue ActiveRecord::RecordNotFound
-        # Ignore
-      end
-    end
+    @shop = find_shop_by_slug(slug)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -542,6 +426,81 @@ class ShopsController < ApplicationController
   end
 
   private
+
+  # Helper method to find shop by slug, handling special characters like apostrophes and newlines
+  def find_shop_by_slug(slug)
+    # Convert slug back to enterprise name format for searching
+    # Replace hyphens and underscores with spaces
+    enterprise_name_from_slug = slug.gsub('-', ' ').gsub('_', ' ')
+    
+    # Normalize the slug-derived name (remove special characters, normalize spaces)
+    # This matches how slugs are generated: special chars removed, spaces normalized
+    normalized_slug_name = normalize_shop_name(enterprise_name_from_slug)
+    
+    # Try multiple lookup strategies
+    
+    # Strategy 1: Exact match with normalized spaces (handles multi-spaces, newlines, etc.)
+    normalized_enterprise_name = enterprise_name_from_slug.downcase.strip.squeeze(' ')
+    shop = Seller.includes(:seller_tier, :tier)
+                 .where(deleted: false)
+                 .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
+                 .first
+    
+    # Strategy 2: Match by normalized name (removes special chars like apostrophes, newlines)
+    # This handles cases like "Rick's" -> "ricks" in the slug
+    unless shop
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where('LOWER(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\')) = ?', normalized_slug_name)
+                   .first
+    end
+    
+    # Strategy 3: Partial match with normalized spaces
+    unless shop
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
+                   .first
+    end
+    
+    # Strategy 4: Partial match with normalized name (removes special chars)
+    unless shop
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where('LOWER(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\')) ILIKE ?', "%#{normalized_slug_name}%")
+                   .first
+    end
+    
+    # Strategy 5: Try to find by ID as fallback (for backward compatibility)
+    unless shop
+      begin
+        shop_id = slug.to_i
+        if shop_id > 0
+          shop = Seller.includes(:seller_tier, :tier)
+                       .where(deleted: false)
+                       .find(shop_id)
+        end
+      rescue ActiveRecord::RecordNotFound
+        # Ignore and continue to return nil
+      end
+    end
+    
+    shop
+  end
+  
+  # Normalize shop name by removing special characters and normalizing spaces
+  # This matches the slug generation logic: remove special chars, normalize spaces
+  def normalize_shop_name(name)
+    return '' if name.blank?
+    
+    # Convert to lowercase, remove special characters (keep only alphanumeric and spaces)
+    # Then normalize spaces (replace multiple spaces/newlines with single space, trim)
+    normalized = name.to_s.downcase
+                    .gsub(/[^a-z0-9\s]/, '')  # Remove special characters (apostrophes, etc.)
+                    .gsub(/\s+/, ' ')         # Replace multiple spaces/newlines with single space
+                    .strip                     # Trim whitespace
+    normalized
+  end
 
   def review_params
     params.require(:review).permit(:rating, :review, :comment, images: [])

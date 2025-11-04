@@ -1,5 +1,14 @@
 class FixPurchasersIdSequence < ActiveRecord::Migration[7.1]
   def up
+    # Check if buyers.id is already UUID (from later migration)
+    buyers_id_type = ActiveRecord::Base.connection.columns('buyers').find { |c| c.name == 'id' }&.sql_type
+    
+    if buyers_id_type == 'uuid'
+      # Skip this migration if buyers.id is already UUID
+      puts "buyers.id is already UUID, skipping sequence fix..."
+      return
+    end
+    
     # Ensure the purchasers_id_seq sequence exists (it should from the buyers table definition)
     execute <<-SQL
       CREATE SEQUENCE IF NOT EXISTS purchasers_id_seq;

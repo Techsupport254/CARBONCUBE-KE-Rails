@@ -1,5 +1,6 @@
 # app/models/buyer.rb
 class Buyer < ApplicationRecord
+  before_create :generate_uuid
   before_validation :normalize_email
   before_validation :generate_username_from_fullname
 
@@ -82,6 +83,11 @@ class Buyer < ApplicationRecord
     'buyer'
   end
 
+  # Update last active timestamp
+  def update_last_active!
+    update_column(:last_active_at, Time.current)
+  end
+
   def profile_completion_percentage
     # All fields (required + optional) for a more realistic completion percentage
     all_fields = [
@@ -113,6 +119,16 @@ class Buyer < ApplicationRecord
   end
 
   private
+
+  def generate_uuid
+    if id.blank?
+      generated_id = SecureRandom.uuid
+      Rails.logger.info "🔧 Generating UUID for buyer: #{generated_id}"
+      self.id = generated_id
+    else
+      Rails.logger.info "🔧 Buyer already has UUID: #{id}"
+    end
+  end
 
   def normalize_email
     self.email = email.to_s.strip.downcase

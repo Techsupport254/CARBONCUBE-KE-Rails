@@ -97,18 +97,28 @@ class Sales::ConversationsController < ApplicationController
   end
 
   def create
+    # If seller_id is not provided but ad_id is, get seller_id from the ad
+    seller_id = params[:seller_id]
+    if params[:seller_id].blank? && params[:ad_id].present?
+      ad = Ad.find(params[:ad_id])
+      seller_id = ad.seller_id if ad
+    end
+    
     # Find existing conversation or create new one
-    @conversation = Conversation.find_or_create_by(
-      admin_id: @current_user.id,
-      seller_id: params[:seller_id],
-      buyer_id: params[:buyer_id],
-      ad_id: params[:ad_id]
-    ) do |conv|
-      # If seller_id is not provided but ad_id is, get seller_id from the ad
-      if params[:seller_id].blank? && params[:ad_id].present?
-        ad = Ad.find(params[:ad_id])
-        conv.seller_id = ad.seller_id
-      end
+    # Handle race conditions where multiple requests try to create the same conversation
+    begin
+      # Use the model method that handles race conditions properly
+      @conversation = Conversation.find_or_create_conversation!(
+        admin_id: @current_user.id,
+        seller_id: seller_id,
+        buyer_id: params[:buyer_id],
+        inquirer_seller_id: nil,
+        ad_id: params[:ad_id]
+      )
+    rescue => e
+      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}" if defined?(Rails.logger)
+      render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
+      return
     end
 
     # Create the message
@@ -189,13 +199,19 @@ class Sales::ConversationsController < ApplicationController
     conversations = Conversation.where(admin_id: @current_user.id)
                                 .active_participants
     
-    # Count unread messages (messages not sent by sales user and not read)
-    unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Buyer', 'Purchaser'] })
-                               .where(messages: { read_at: nil })
-                               .count
+    # Calculate total unread count by iterating through conversations
+    # This avoids duplicate counting issues with joins
+    total_unread = 0
+    conversations.each do |conversation|
+      # Count messages from sellers, buyers, and purchasers (not from sales users)
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
     
-    render json: { count: unread_count }
+    render json: { count: total_unread }
   end
 
   private

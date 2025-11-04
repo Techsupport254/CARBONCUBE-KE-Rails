@@ -6,6 +6,8 @@ class Message < ApplicationRecord
   validates :content, presence: true
 
   # Callbacks
+  after_create :update_conversation_timestamp
+  after_create :update_sender_last_active
   after_create :broadcast_new_message
   after_create :schedule_delivery_receipt
   after_create :send_message_notification_email
@@ -63,6 +65,21 @@ class Message < ApplicationRecord
     else
       '✓' # Single check for sent
     end
+  end
+
+  def update_conversation_timestamp
+    # Update the conversation's updated_at to reflect the new message
+    conversation.touch
+  end
+
+  def update_sender_last_active
+    # Update sender's last_active_at when they send a message
+    if sender.respond_to?(:update_last_active!)
+      sender.update_last_active!
+    end
+  rescue => e
+    Rails.logger.warn "Failed to update sender last_active_at: #{e.message}"
+    # Don't fail message creation if this fails
   end
 
   def schedule_delivery_receipt

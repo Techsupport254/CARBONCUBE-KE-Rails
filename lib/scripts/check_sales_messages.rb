@@ -34,9 +34,9 @@ unread_counts = []
 total_unread_messages = 0
 
 conversations.each do |conversation|
-  # Sales users count messages from sellers and buyers that are unread
+  # Sales users count messages from sellers, buyers, and purchasers that are unread
   unread_count = conversation.messages
-                            .where(sender_type: ['Seller', 'Buyer'])
+                            .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                             .where(read_at: nil)
                             .count
   
@@ -94,7 +94,7 @@ end
 puts "\n  Actual unread messages in database for this sales user:"
 conversations.each do |conv|
   unread = conv.messages
-               .where(sender_type: ['Seller', 'Buyer'])
+               .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                .where(read_at: nil)
   
   count = unread.count
@@ -116,7 +116,7 @@ SalesUser.all.each do |sales_user|
   
   user_conversations.each do |conv|
     user_unread_total += conv.messages
-                          .where(sender_type: ['Seller', 'Buyer'])
+                          .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                           .where(read_at: nil)
                           .count
   end
@@ -132,7 +132,7 @@ puts "=" * 80
 puts ""
 puts "Key Findings:"
 puts "  1. Sales users' conversations are stored with admin_id = sales_user.id"
-puts "  2. Unread messages are from 'Seller' or 'Buyer' sender types"
+puts "  2. Unread messages are from 'Seller', 'Buyer', or 'Purchaser' sender types"
 puts "  3. Messages are unread when read_at is nil"
 puts "  4. The /conversations/unread_counts endpoint should work for sales users"
 puts ""
