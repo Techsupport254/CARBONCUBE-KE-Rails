@@ -448,11 +448,30 @@ class ShopsController < ApplicationController
     
     # Strategy 2: Match by normalized name (removes special chars like apostrophes, newlines)
     # This handles cases like "Rick's" -> "ricks" in the slug
+    # Use a simpler approach: search for shops whose normalized name matches
     unless shop
+      # Try direct SQL match first (most efficient)
       shop = Seller.includes(:seller_tier, :tier)
                    .where(deleted: false)
-                   .where('LOWER(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\')) = ?', normalized_slug_name)
+                   .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) = ?', normalized_slug_name)
                    .first
+      
+      # Fallback: If SQL doesn't work (e.g., PostgreSQL regex issues), use Ruby normalization
+      # This is less efficient but more reliable for edge cases
+      unless shop
+        # Only search shops that could potentially match (same length or similar)
+        # This limits the search space significantly
+        potential_shops = Seller.includes(:seller_tier, :tier)
+                                .where(deleted: false)
+                                .where("LENGTH(LOWER(enterprise_name)) BETWEEN ? AND ?", 
+                                       normalized_slug_name.length - 2, 
+                                       normalized_slug_name.length + 2)
+        
+        shop = potential_shops.find do |seller|
+          normalized_db_name = normalize_shop_name(seller.enterprise_name || '')
+          normalized_db_name == normalized_slug_name
+        end
+      end
     end
     
     # Strategy 3: Partial match with normalized spaces
@@ -467,7 +486,7 @@ class ShopsController < ApplicationController
     unless shop
       shop = Seller.includes(:seller_tier, :tier)
                    .where(deleted: false)
-                   .where('LOWER(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\')) ILIKE ?', "%#{normalized_slug_name}%")
+                   .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_slug_name}%")
                    .first
     end
     
