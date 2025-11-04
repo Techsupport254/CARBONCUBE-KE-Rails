@@ -12,13 +12,18 @@ class Buyer::ConversationsController < ApplicationController
     grouped_conversations = @conversations.group_by(&:seller_id)
     
     # For each seller, get the most recent conversation and combine all messages
+    # Filter out groups that have no messages
     conversations_data = grouped_conversations.map do |seller_id, conversations|
-      # Get the most recent conversation for this seller
-      most_recent_conversation = conversations.max_by(&:updated_at)
-      
       # Get all messages from all conversations with this seller
       all_messages = conversations.flat_map(&:messages).sort_by(&:created_at)
+      
+      # Skip this group if there are no messages
+      next nil if all_messages.empty?
+      
       last_message = all_messages.last
+      
+      # Get the most recent conversation for this seller
+      most_recent_conversation = conversations.max_by(&:updated_at)
       
       # Get the most recent ad context (from the most recent conversation)
       current_ad = most_recent_conversation.ad
@@ -37,7 +42,7 @@ class Buyer::ConversationsController < ApplicationController
         last_message_time: last_message&.created_at,
         all_conversation_ids: conversations.map(&:id)
       }
-    end
+    end.compact
     
     render json: conversations_data
   end
@@ -110,17 +115,26 @@ class Buyer::ConversationsController < ApplicationController
     end
 
     # Find existing conversation or create new one
-    @conversation = Conversation.find_or_create_by(
-      buyer_id: buyer_id,
-      seller_id: seller_id,
-      ad_id: params[:ad_id]
-    ) do |conv|
-      conv.admin_id = params[:admin_id] if params[:admin_id].present?
+    # Handle race conditions where multiple requests try to create the same conversation
+    begin
       # If seller_id is not provided but ad_id is, get seller_id from the ad
       if params[:seller_id].blank? && params[:ad_id].present?
         ad = Ad.find(params[:ad_id])
-        conv.seller_id = ad.seller_id
+        seller_id = ad.seller_id if ad
       end
+      
+      # Use the model method that handles race conditions properly
+      @conversation = Conversation.find_or_create_conversation!(
+        buyer_id: buyer_id,
+        seller_id: seller_id,
+        inquirer_seller_id: nil,
+        admin_id: params[:admin_id].presence,
+        ad_id: params[:ad_id]
+      )
+    rescue => e
+      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}" if defined?(Rails.logger)
+      render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
+      return
     end
 
     # Create the message
@@ -202,13 +216,18 @@ class Buyer::ConversationsController < ApplicationController
     conversations = Conversation.where(buyer_id: @current_user.id)
                                 .active_participants
     
-    # Count unread messages (messages not sent by buyer and not read)
-    unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Admin', 'SalesUser'] })
-                               .where(messages: { read_at: nil })
-                               .count
+    # Calculate total unread count by iterating through conversations
+    # This avoids duplicate counting issues with joins
+    total_unread = 0
+    conversations.each do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
     
-    render json: { count: unread_count }
+    render json: { count: total_unread }
   end
 
   private

@@ -37,24 +37,39 @@ class BuyerAuthorizeApiRequest
 
     # Try to find buyer by ID first
     if buyer_id
+      Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for buyer with ID: #{buyer_id} (type: #{buyer_id.class.name})"
+      
+      # Check if buyer_id is numeric (old format) but database uses UUIDs
+      if buyer_id.is_a?(Integer) || buyer_id.is_a?(String) && buyer_id.match?(/^\d+$/)
+        Rails.logger.warn "BuyerAuthorizeApiRequest: Token contains numeric ID #{buyer_id}, but buyers now use UUIDs. Will try email lookup."
+      end
+      
       buyer = Buyer.find_by(id: buyer_id)
       if buyer && !buyer.deleted?
+        Rails.logger.debug "BuyerAuthorizeApiRequest: Found buyer: #{buyer.id} (type: #{buyer.id.class.name})"
         return buyer
       elsif buyer&.deleted?
         Rails.logger.error "BuyerAuthorizeApiRequest: Buyer #{buyer_id} is deleted"
+      else
+        Rails.logger.warn "BuyerAuthorizeApiRequest: Buyer with ID #{buyer_id} not found in database (may be old numeric ID, trying email...)"
       end
     end
 
-    # Try to find buyer by email if ID didn't work
+    # Try to find buyer by email if ID didn't work (this handles old tokens with numeric IDs)
     if buyer_email
+      Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for buyer with email: #{buyer_email}"
       buyer = Buyer.find_by(email: buyer_email)
       if buyer && !buyer.deleted?
+        Rails.logger.info "BuyerAuthorizeApiRequest: Found buyer by email: #{buyer.id} (UUID) - token had ID: #{buyer_id} (may be old numeric ID)"
         return buyer
       elsif buyer&.deleted?
         Rails.logger.error "BuyerAuthorizeApiRequest: Buyer with email #{buyer_email} is deleted"
+      else
+        Rails.logger.warn "BuyerAuthorizeApiRequest: Buyer with email #{buyer_email} not found in database"
       end
     end
 
+    Rails.logger.error "BuyerAuthorizeApiRequest: Could not find buyer with ID: #{buyer_id}, email: #{buyer_email}"
     raise ExceptionHandler::InvalidToken, 'Invalid token'
   end
 

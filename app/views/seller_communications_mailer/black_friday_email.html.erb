@@ -3,118 +3,298 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Friday Sale - Carbon Cube Kenya</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>High Traffic Period Alert - Carbon Cube Kenya</title>
+    <!--[if mso]>
+    <style type="text/css">
+      body, table, td {font-family: Arial, sans-serif !important;}
+    </style>
+    <![endif]-->
   </head>
 
-  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; margin: 0; padding: 0;">
-    <div style="max-width: 620px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
-      
-      <!-- BLACK FRIDAY HEADER BANNER -->
-      <div style="text-align: center; background: #ffffff;">
-        <img src="https://res.cloudinary.com/dvczs0agl/image/upload/v1762001656/banner-06_zvywd3.jpg" alt="Black Friday is Coming - Carbon Cube Kenya" style="width: 100%; max-width: 620px; height: auto; display: block; margin: 0; border: none;" />
-      </div>
-      
-      <div style="padding: 20px 18px;">
-        <div style="font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 15px; text-align: left;">
-          Dear <%= @seller.fullname %>,
-        </div>
+  <body style="margin: 0; padding: 0; background-color: #F9F8F2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #000000; -webkit-font-smoothing: antialiased;">
+    <!--[if mso]>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td>
+    <![endif]-->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F9F8F2;">
+      <tr>
+        <td align="center" style="padding: 0;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #F9F8F2;">
+            
+            <!-- BLACK FRIDAY HEADER BANNER IMAGE - FIRST -->
+            <tr>
+              <td align="center" style="padding: 0;">
+                <img src="https://res.cloudinary.com/dvczs0agl/image/upload/banner-06_zvywd3.jpg" alt="Black Friday" width="600" height="auto" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0; outline: none; text-decoration: none;" />
+              </td>
+            </tr>
 
-        <div style="font-size: 14px; color: #374151; margin-bottom: 20px; line-height: 1.6; text-align: left;">
-          <strong style="color: #dc2626;">Black November</strong> is here! Thousands of buyers are ready to shop. Don't miss this opportunity to maximize your sales.
-        </div>
+            <!-- LOGO SECTION -->
+            <tr>
+              <td align="center" style="padding: 16px 12px 12px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" valign="middle" style="padding: 0;">
+                      <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" width="32" height="32" style="display: block; border: 0; outline: none; text-decoration: none; vertical-align: middle;" />
+                    </td>
+                    <td align="left" valign="middle" style="padding-left: 8px;">
+                      <span style="font-size: 14px; font-weight: 600; color: #000000; letter-spacing: 1.5px; text-transform: uppercase; vertical-align: middle;">CARBON CUBE KENYA</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
 
-        <% if @top_products.any? %>
-        <!-- TOP PRODUCTS SHOWCASE -->
-        <div style="margin: 20px 0;">
-          <h4 style="margin: 0 0 15px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">
-            Here are your top products that could benefit from Black November discounts:
-          </h4>
-          <table style="width: 100%; border-collapse: collapse;">
-            <% @top_products.in_groups_of(2, false) do |products_row| %>
-              <tr>
-                <% products_row.each do |product| %>
-                  <td style="padding: 8px; width: 50%; vertical-align: top;">
-                    <div style="background: #f9fafb; padding: 10px; border-radius: 8px;">
-                      <div style="width: 100%; border-radius: 6px; overflow: hidden; background: #e5e7eb; margin-bottom: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;">
-                        <% if product.first_media_url.present? %>
-                          <img src="<%= product.first_media_url %>" alt="<%= product.title %>" style="max-width: 100%; max-height: 100%; width: auto; height: auto; display: block;" />
-                        <% else %>
-                          <div style="color: #9ca3af; font-size: 32px;">📦</div>
-                        <% end %>
+            <!-- HIGH TRAFFIC ALERT BANNER -->
+            <tr>
+              <td align="center" style="padding: 0 12px 12px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color: #000000; border-radius: 6px;">
+                  <tr>
+                    <td align="center" style="padding: 8px 20px;">
+                      <span style="font-size: 10px; font-weight: 600; color: #ffffff; letter-spacing: 1.5px; text-transform: uppercase;">HIGH TRAFFIC ALERT</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- MAIN HEADLINE -->
+            <tr>
+              <td align="center" style="padding: 12px 12px 16px;">
+                <div style="font-size: 42px; font-weight: 900; color: #000000; line-height: 1.1; letter-spacing: -1px; margin: 0; text-transform: uppercase;">
+                  BLACK<br>FRIDAY
+                </div>
+              </td>
+            </tr>
+
+            <!-- DISCOUNT SECTION -->
+            <tr>
+              <td align="center" style="padding: 0 12px 12px;">
+                <div style="font-size: 12px; font-weight: 600; color: #000000; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                  UP TO
+                </div>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                  <tr>
+                    <!-- 5 -->
+                    <td align="center" valign="middle" style="padding: 0 2px 0 0;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color: #000000; border-radius: 8px;">
+                        <tr>
+                          <td align="center" valign="middle" style="width: 55px; height: 70px; padding: 0;">
+                            <div style="font-size: 48px; font-weight: 900; line-height: 70px; color: #ffffff;">5</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <!-- 0 -->
+                    <td align="center" valign="middle" style="padding: 0 8px 0 2px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color: #000000; border-radius: 8px;">
+                        <tr>
+                          <td align="center" valign="middle" style="width: 55px; height: 70px; padding: 0;">
+                            <div style="font-size: 48px; font-weight: 900; line-height: 70px; color: #ffffff;">0</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <!-- % (ghosted) -->
+                    <td align="center" valign="baseline" style="padding: 0;">
+                      <span style="color: rgba(0, 0, 0, 0.15); font-size: 48px; font-weight: 900; line-height: 1;">%</span>
+                    </td>
+                  </tr>
+                </table>
+                <div style="font-size: 12px; font-weight: 600; color: #000000; letter-spacing: 1px; text-transform: uppercase; margin-top: 6px;">
+                  OFF
+                </div>
+              </td>
+            </tr>
+            
+            <!-- SUB COPY -->
+            <tr>
+              <td align="center" style="padding: 16px 16px 20px;">
+                <div style="font-size: 10px; font-weight: 400; color: #000000; letter-spacing: 0.5px; line-height: 1.5; text-transform: uppercase; max-width: 100%; margin: 0 auto;">
+                  EXPECTED INCREASE IN BUYER ACTIVITY DURING UPCOMING HIGH-TRAFFIC PERIOD<br>
+                  OPTIMIZE YOUR PRODUCT LISTINGS NOW TO MAXIMIZE VISIBILITY
+                </div>
+              </td>
+            </tr>
+
+            <!-- PRODUCTS SECTION -->
+            <% if @top_products.any? %>
+            <tr>
+              <td style="padding: 0 12px 20px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" style="padding-bottom: 12px;">
+                      <div style="font-size: 11px; font-weight: 600; color: #000000; letter-spacing: 1.5px; text-transform: uppercase;">
+                        YOUR TOP PRODUCTS
                       </div>
-                      <h5 style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #111827; text-align: left; line-height: 1.4;">
-                        <%= product.title&.truncate(35) %>
-                      </h5>
-                      <p style="margin: 0 0 3px; font-size: 11px; color: #6b7280; text-align: left;">
-                        <%= product.category&.name&.truncate(25) %>
-                      </p>
-                      <p style="margin: 0; font-size: 14px; font-weight: 700; color: #dc2626; text-align: left;">
-                        <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
-                      </p>
-                    </div>
-                  </td>
-                <% end %>
-                <!-- Fill empty cells if odd number of products -->
-                <% if products_row.size == 1 %>
-                  <td style="padding: 8px; width: 50%; vertical-align: top;"></td>
-                <% end %>
-              </tr>
+                    </td>
+                  </tr>
+                  <% @top_products.in_groups_of(2, false) do |products_row| %>
+                  <tr>
+                    <% products_row.each do |product| %>
+                    <td width="50%" align="center" valign="top" style="padding: 2px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; max-width: 280px;">
+                        <tr>
+                          <td align="center" style="padding: 8px;">
+                            <!-- Product Image -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td align="center" style="padding: 0 0 6px 0; background-color: #F9F8F2; border-radius: 8px;">
+                                  <% 
+                                    image_url = product.first_valid_media_url || product.first_media_url
+                                    # Optimize Cloudinary images for email: full width (264px), auto height, low quality, auto format
+                                    # This reduces file size significantly for faster email loading while maintaining aspect ratio
+                                    if image_url.present? && image_url.include?('res.cloudinary.com') && image_url.include?('/image/upload/')
+                                      begin
+                                        # Check if transformations already exist (they contain underscores like w_, h_, c_)
+                                        parts = image_url.split('/image/upload/')
+                                        if parts.length == 2
+                                          path_after_upload = parts[1]
+                                          # If path doesn't start with transformation params (no underscores in first segment), add optimizations
+                                          first_segment = path_after_upload.split('/').first
+                                          unless first_segment&.include?('_') || first_segment&.match?(/^v\d+$/)
+                                            # No transformations detected, add our optimized transformations
+                                            # Format: w_264,q_auto:low,f_auto
+                                            # w_264: width 264px (height auto maintains aspect ratio), q_auto:low: low quality, f_auto: auto format
+                                            image_url = image_url.sub('/image/upload/', '/image/upload/w_264,q_auto:low,f_auto/')
+                                          end
+                                        end
+                                      rescue => e
+                                        # If parsing fails, use original URL
+                                        Rails.logger.warn "Failed to optimize Cloudinary URL: #{e.message}"
+                                      end
+                                    end
+                                  %>
+                                  <% if image_url.present? %>
+                                  <img src="<%= image_url %>" alt="<%= product.title %>" width="264" style="display: block; width: 100%; max-width: 264px; height: auto; border: 0; outline: none; text-decoration: none; border-radius: 8px; background-color: #F9F8F2;" />
+                                  <% else %>
+                                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F9F8F2; border-radius: 8px;">
+                                    <tr>
+                                      <td align="center" valign="middle" style="padding: 40px 20px;">
+                                        <span style="color: #000000; font-size: 24px;">📦</span>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                  <% end %>
+                                </td>
+                              </tr>
+                            </table>
+                            
+                            <!-- Product Title -->
+                            <div style="font-size: 10px; font-weight: 600; color: #000000; margin-bottom: 4px; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.5px;">
+                              <%= product.title&.truncate(25) %>
+                            </div>
+                            
+                            <!-- Category -->
+                            <div style="font-size: 8px; color: rgba(0, 0, 0, 0.6); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                              <%= product.category&.name&.truncate(18) %>
+                            </div>
+                            
+                            <!-- Price -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                              <tr>
+                                <td align="center" style="background-color: #000000; padding: 6px 10px; border-radius: 6px;">
+                                  <span style="font-size: 11px; font-weight: 700; color: #ffffff;">
+                                    <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                                  </span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <% end %>
+                    <% if products_row.size == 1 %>
+                    <td width="50%" align="center" valign="top" style="padding: 2px;">
+                      <!-- Empty cell for alignment -->
+                    </td>
+                    <% end %>
+                  </tr>
+                  <% end %>
+                </table>
+              </td>
+            </tr>
             <% end %>
+
+            <!-- ADDITIONAL INFO -->
+            <tr>
+              <td align="center" style="padding: 0 16px 20px;">
+                <div style="font-size: 9px; font-weight: 400; color: rgba(0, 0, 0, 0.7); line-height: 1.6; text-transform: uppercase; letter-spacing: 0.5px; max-width: 100%;">
+                  VERIFY PRODUCT INFORMATION<br>
+                  UPDATE INVENTORY STATUS<br>
+                  ENSURE HIGH-QUALITY IMAGES<br>
+                  RESPOND PROMPTLY TO INQUIRIES
+                </div>
+              </td>
+            </tr>
+
+            <!-- CTA BUTTONS -->
+            <tr>
+              <td align="center" style="padding: 0 12px 24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                  <tr>
+                    <td align="center" style="padding: 0 6px 0 0;">
+                      <a href="https://carboncube-ke.com/seller/ads" style="display: inline-block; background-color: #000000; color: #ffffff; padding: 12px 20px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 8px; text-align: center; white-space: nowrap;">
+                        OPTIMIZE LISTINGS
+                      </a>
+                    </td>
+                    <td align="center" style="padding: 0 0 0 6px;">
+                      <a href="https://carboncube-ke.com/deals-guide" style="display: inline-block; background-color: #fbbf24; color: #000000; padding: 12px 20px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 8px; text-align: center; white-space: nowrap;">
+                        VIEW GUIDE
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            
+            <!-- FOOTER -->
+            <tr>
+              <td align="center" style="padding: 20px 12px; margin: 0 12px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                  <tr>
+                    <td align="center" valign="middle" style="padding-bottom: 12px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td align="center" valign="middle" style="padding: 0;">
+                            <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" width="28" height="28" style="display: block; border: 0; outline: none; text-decoration: none; vertical-align: middle;" />
+                          </td>
+                          <td align="left" valign="middle" style="padding-left: 8px;">
+                            <span style="font-size: 12px; font-weight: 600; color: #000000; letter-spacing: 1px; text-transform: uppercase; vertical-align: middle;">CARBON CUBE KENYA</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="font-size: 8px; font-weight: 400; color: rgba(0, 0, 0, 0.6); line-height: 1.6; text-transform: uppercase; letter-spacing: 0.5px;">
+                      9TH FLOOR, CMS AFRICA, NAIROBI<br>
+                      PHONE: +254 712 990 524<br>
+                      EMAIL: <%= ENV['BREVO_EMAIL'] %><br><br>
+                      THIS IS AN AUTOMATED BUSINESS NOTIFICATION<br>
+                      FROM YOUR SELLER ACCOUNT
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top: 16px; font-size: 7px; color: rgba(0, 0, 0, 0.5); text-transform: uppercase; letter-spacing: 0.5px;">
+                      © 2025 CARBON CUBE KENYA. ALL RIGHTS RESERVED.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
           </table>
-        </div>
-        <% else %>
-        <!-- NO PRODUCTS MESSAGE -->
-        <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 10px;">📦</div>
-          <h4 style="margin: 0 0 10px; font-size: 16px; font-weight: 600; color: #92400e; text-align: center;">
-            Start Adding Products to Maximize Black November Sales!
-          </h4>
-          <p style="margin: 0; font-size: 13px; color: #78350f; text-align: center; line-height: 1.6;">
-            You don't have any products listed yet. Add your products now to take advantage of Black November and reach thousands of ready buyers!
-          </p>
-        </div>
-        <% end %>
-
-        <!-- QUICK TIPS -->
-        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 13px; color: #374151;">
-          <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #111827; text-align: left;">Quick Tips to Boost Sales:</h4>
-          <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
-            <li>Add Black Friday discounts to your products</li>
-            <li>Upload fresh, high-quality images</li>
-            <li>Share your shop link on social media</li>
-            <li>Respond to inquiries quickly</li>
-          </ul>
-        </div>
-
-        <!-- SHOP LINK -->
-        <div style="background: #fee2e2; padding: 15px; margin: 15px 0 20px; border-radius: 8px; font-size: 13px; text-align: center; word-break: break-all;">
-          <strong style="display: block; margin-bottom: 8px; color: #991b1b;">🛒 Your Shop:</strong>
-          <a href="https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>" style="color: #dc2626; text-decoration: none; font-weight: 700;">
-            https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>
-          </a>
-        </div>
-
-        <!-- CTA BUTTONS -->
-        <div style="text-align: center; margin: 30px 0 20px;">
-          <a href="https://carboncube-ke.com/seller/ads" style="display: inline-block; padding: 14px 32px; margin: 0 8px 10px 0; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px; background: #dc2626; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Update My Products Now</a>
-          <a href="https://carboncube-ke.com/deals-guide" style="display: inline-block; padding: 14px 32px; margin: 0 8px 10px 0; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 15px; background: #1f2937; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Deals Guide</a>
-        </div>
-
-        <p style="text-align:center; font-size:12px; color:#6b7280;">
-          Best regards,<br><strong>The Carbon Cube Kenya Team</strong>
-        </p>
-      </div>
-      
-      <!-- FOOTER -->
-      <div style="background: #f9fafb; padding: 15px; text-align: center; font-size: 10px; color: #6b7280; border-top: 1px solid #e5e7eb; width: 100%; box-sizing: border-box;">
-        <div style="margin-bottom: 15px;">
-          <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya" style="height: 25px; width: 25px; opacity: 0.7;" />
-        </div>
-        <p><strong>Carbon Cube Kenya</strong> | 9th Floor, CMS Africa, Nairobi</p>
-        <p>Phone: +254 712 990 524 | Email: <%= ENV['BREVO_EMAIL'] %></p>
-        <p>© 2025 Carbon Cube Kenya. All rights reserved.</p>
-      </div>
-    </div>
+        </td>
+      </tr>
+    </table>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
   </body>
 </html>
 

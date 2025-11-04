@@ -127,6 +127,8 @@ class ConversationsChannel < ApplicationCable::Channel
       Seller.find_by(id: user_id)
     when 'admin'
       Admin.find_by(id: user_id)
+    when 'sales', 'salesuser'
+      SalesUser.find_by(id: user_id)
     else
       nil
     end

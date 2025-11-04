@@ -91,6 +91,8 @@ class PresenceChannel < ApplicationCable::Channel
     when 'heartbeat'
       # Update user's online status
       track_user_online(true)
+      # Update user's last_active_at timestamp
+      update_user_last_active
       # Process any pending delivery receipts
       process_pending_delivery_receipts
       # Send heartbeat response to confirm connection is alive
@@ -235,6 +237,17 @@ class PresenceChannel < ApplicationCable::Channel
       Rails.logger.warn "Failed to track user online status: #{e.message}"
       # Don't re-raise to prevent connection issues
     end
+  end
+
+  def update_user_last_active
+    # Update the user's last_active_at timestamp when they send a heartbeat
+    user = connection.current_user
+    if user.respond_to?(:update_last_active!)
+      user.update_last_active!
+    end
+  rescue => e
+    Rails.logger.warn "Failed to update user last_active_at: #{e.message}"
+    # Don't re-raise to prevent connection issues
   end
 
   def broadcast_online_status_change(online)
@@ -419,7 +432,7 @@ class PresenceChannel < ApplicationCable::Channel
   end
 
   def get_user_conversations
-    user_id = (@user_id || connection.current_user.id).to_i
+    user_id = @user_id || connection.current_user.id
     user_type = @user_type || get_user_type_from_connection
     
     case user_type.downcase

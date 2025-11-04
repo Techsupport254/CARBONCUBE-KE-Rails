@@ -29,6 +29,15 @@ class ConversationsController < ApplicationController
   end
 
   def create
+    Rails.logger.info "ConversationsController#create called with params: #{params.inspect}"
+    Rails.logger.info "ConversationsController#create current_user: #{@current_user&.class&.name}, id: #{@current_user&.id}"
+    
+    unless @current_user
+      Rails.logger.error "ConversationsController#create: No current_user set"
+      render json: { error: 'Authentication required' }, status: :unauthorized
+      return
+    end
+    
     case @current_user.class.name
     when 'Buyer'
       create_buyer_conversation
@@ -37,11 +46,14 @@ class ConversationsController < ApplicationController
     when 'Admin', 'SalesUser'
       create_admin_conversation
     else
+      Rails.logger.error "ConversationsController#create: Invalid user type: #{@current_user.class.name}"
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
   end
 
   def unread_counts
+    Rails.logger.info "ConversationsController#unread_counts: Current user class: #{@current_user.class.name}, ID: #{@current_user.id}"
+    
     case @current_user.class.name
     when 'Buyer'
       fetch_buyer_unread_counts
@@ -50,6 +62,7 @@ class ConversationsController < ApplicationController
     when 'Admin', 'SalesUser'
       fetch_admin_unread_counts
     else
+      Rails.logger.error "ConversationsController#unread_counts: Invalid user type: #{@current_user.class.name}"
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
     end
   end
@@ -79,7 +92,7 @@ class ConversationsController < ApplicationController
       next if parts.length != 2
       
       user_type = parts[0]
-      user_id = parts[1].to_i
+      user_id = parts[1]
       
       # Check if user is online using Rails cache
       cache_key = "online_user_#{user_type}_#{user_id}"
@@ -94,6 +107,27 @@ class ConversationsController < ApplicationController
   end
 
   private
+
+  def fix_conversations_sequence
+    begin
+      max_id = Conversation.maximum(:id) || 0
+      sequence_name = ActiveRecord::Base.connection.execute(
+        "SELECT pg_get_serial_sequence('conversations', 'id') as seq_name"
+      ).first['seq_name']
+      
+      if sequence_name
+        # Set sequence to max_id + 1 to ensure next ID is available
+        ActiveRecord::Base.connection.execute(
+          "SELECT setval('#{sequence_name}', #{max_id + 1}, false)"
+        )
+        Rails.logger.info "Fixed conversations_id_seq to #{max_id + 1} (max ID was #{max_id})"
+      else
+        Rails.logger.warn "Could not find sequence for conversations.id"
+      end
+    rescue => e
+      Rails.logger.error "Failed to fix conversations sequence: #{e.message}"
+    end
+  end
 
   def authenticate_user
     # Extract token from Authorization header
@@ -203,16 +237,21 @@ class ConversationsController < ApplicationController
   end
 
   def find_admin_conversation
-    Conversation.find_by(id: params[:id])
+    # For Sales users, allow access to any conversation
+    # For Admins, allow access to any conversation (they can see all)
+    Conversation.active_participants.find_by(id: params[:id])
   end
 
   # Buyer conversation methods
   def fetch_buyer_conversations
     # Implementation from buyer conversations controller
-    @conversations = Conversation.where(buyer_id: @current_user.id)
+    # Only return conversations that have at least one message
+    @conversations = Conversation.where("conversations.buyer_id = ?", @current_user.id)
                                 .active_participants
                                 .includes(:admin, :buyer, :seller, :ad, :messages)
-                                .order(updated_at: :desc)
+                                .joins(:messages)
+                                .distinct
+                                .order("conversations.updated_at DESC")
     render json: @conversations, each_serializer: ConversationSerializer
   end
 
@@ -221,23 +260,59 @@ class ConversationsController < ApplicationController
   end
 
   def create_buyer_conversation
+    Rails.logger.info "create_buyer_conversation called with params: #{params.inspect}"
+    Rails.logger.info "Current user: #{@current_user.class.name}, id: #{@current_user.id}, type: #{@current_user.id.class.name}"
+    
     # Determine buyer_id and seller_id based on current user type
     buyer_id = @current_user.id
     seller_id = params[:seller_id]
 
     # If seller_id is not provided but ad_id is, get seller_id from the ad
     if params[:seller_id].blank? && params[:ad_id].present?
-      ad = Ad.find(params[:ad_id])
-      seller_id = ad.seller_id
+      ad = Ad.find_by(id: params[:ad_id])
+      if ad
+        seller_id = ad.seller_id
+        Rails.logger.info "Got seller_id from ad: #{seller_id}, type: #{seller_id.class.name}"
+      else
+        Rails.logger.error "Ad not found: #{params[:ad_id]}"
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
     end
 
+    # Ensure seller_id is present
+    unless seller_id.present?
+      Rails.logger.error "seller_id is missing - params: #{params.inspect}"
+      render json: { error: 'seller_id is required' }, status: :unprocessable_entity
+      return
+    end
+
+    Rails.logger.info "Looking for conversation with buyer_id: #{buyer_id} (#{buyer_id.class.name}), seller_id: #{seller_id} (#{seller_id.class.name}), ad_id: #{params[:ad_id]}"
+
     # Find existing conversation or create new one
-    @conversation = Conversation.find_or_create_by(
-      buyer_id: buyer_id,
-      seller_id: seller_id,
-      ad_id: params[:ad_id]
-    ) do |conv|
-      conv.admin_id = params[:admin_id] if params[:admin_id].present?
+    # Handle race conditions where multiple requests try to create the same conversation
+    begin
+      # Use the model method that handles race conditions properly
+      @conversation = Conversation.find_or_create_conversation!(
+        buyer_id: buyer_id,
+        seller_id: seller_id,
+        ad_id: params[:ad_id],
+        inquirer_seller_id: nil,
+        admin_id: params[:admin_id].presence
+      )
+      Rails.logger.info "Found or created conversation: #{@conversation.id}"
+    rescue => e
+      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.first(10).join("\n")
+      render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
+      return
+    end
+    
+    # Check if conversation was actually created
+    unless @conversation
+      Rails.logger.error "Conversation was nil after find_or_create_conversation!"
+      render json: { error: 'Failed to create conversation due to race condition' }, status: :unprocessable_entity
+      return
     end
 
     # Ensure the conversation is saved and valid
@@ -270,14 +345,17 @@ class ConversationsController < ApplicationController
   # Seller conversation methods
   def fetch_seller_conversations
     # Implementation from seller conversations controller
+    # Only return conversations that have at least one message
     @conversations = Conversation.where(
-      "(seller_id = ? OR buyer_id = ? OR inquirer_seller_id = ?)", 
+      "(conversations.seller_id = ? OR conversations.buyer_id = ? OR conversations.inquirer_seller_id = ?)", 
       @current_user.id, 
       @current_user.id,
       @current_user.id
     ).active_participants
      .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
-     .order(updated_at: :desc)
+     .joins(:messages)
+     .distinct
+     .order("conversations.updated_at DESC")
     
     # Group and format as per seller controller logic
     grouped_conversations = @conversations.group_by do |conv|
@@ -322,7 +400,7 @@ class ConversationsController < ApplicationController
     Rails.logger.info "Seller conversation creation - Current user: #{@current_user.id}, Params: #{params.inspect}"
     
     # Prevent sellers from messaging their own ads
-    if params[:seller_id].to_i == @current_user.id && params[:buyer_id].blank?
+    if params[:seller_id].present? && params[:seller_id] == @current_user.id.to_s && params[:buyer_id].blank?
       Rails.logger.warn "Seller #{@current_user.id} trying to message their own ad"
       render json: { error: 'You cannot message your own ads' }, status: :unprocessable_entity
       return
@@ -331,7 +409,7 @@ class ConversationsController < ApplicationController
     # Additional validation: check if ad belongs to current user (prevent self-messaging via ad_id)
     if params[:ad_id].present?
       ad = Ad.find_by(id: params[:ad_id])
-      if ad && ad.seller_id == @current_user.id && (params[:seller_id].blank? || params[:seller_id].to_i == @current_user.id)
+      if ad && ad.seller_id == @current_user.id && (params[:seller_id].blank? || params[:seller_id] == @current_user.id.to_s)
         Rails.logger.warn "Seller #{@current_user.id} trying to message themselves via ad_id"
         render json: { error: 'You cannot message yourself about your own ads' }, status: :unprocessable_entity
         return
@@ -339,7 +417,7 @@ class ConversationsController < ApplicationController
     end
 
     # Determine the conversation structure based on who is messaging
-    if params[:seller_id].to_i == @current_user.id
+    if params[:seller_id].present? && params[:seller_id] == @current_user.id.to_s
       # Current seller owns the ad - they are responding to a buyer/inquirer
       seller_id = @current_user.id
       buyer_id = params[:buyer_id]
@@ -360,13 +438,22 @@ class ConversationsController < ApplicationController
     end
 
     # Find existing conversation or create new one
-    @conversation = Conversation.find_or_create_by(
-      seller_id: seller_id,
-      buyer_id: buyer_id,
-      inquirer_seller_id: inquirer_seller_id,
-      ad_id: params[:ad_id]
-    ) do |conv|
-      conv.admin_id = params[:admin_id] if params[:admin_id].present?
+    # Handle race conditions where multiple requests try to create the same conversation
+    begin
+      # Use the model method that handles race conditions properly
+      @conversation = Conversation.find_or_create_conversation!(
+        seller_id: seller_id,
+        buyer_id: buyer_id,
+        inquirer_seller_id: inquirer_seller_id,
+        ad_id: params[:ad_id],
+        admin_id: params[:admin_id].presence
+      )
+      Rails.logger.info "Found or created conversation: #{@conversation.id}"
+    rescue => e
+      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.first(10).join("\n")
+      render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
+      return
     end
 
     # Ensure the conversation is saved and valid
@@ -398,9 +485,24 @@ class ConversationsController < ApplicationController
 
   # Admin conversation methods
   def fetch_admin_conversations
-    @conversations = Conversation.active_participants
-                                    .includes(:admin, :buyer, :seller, :ad, :messages)
-                                    .order(updated_at: :desc)
+    # For Sales users, show all conversations (they can see all conversations like admins)
+    # For Admins, show conversations where they are the admin_id
+    if @current_user.is_a?(SalesUser)
+      # Sales users can see all conversations
+      @conversations = Conversation.active_participants
+                                      .includes(:admin, :buyer, :seller, :ad, :messages)
+                                      .joins(:messages)
+                                      .distinct
+                                      .order("conversations.updated_at DESC")
+    else
+      # Admins see conversations where they are assigned (admin_id)
+      @conversations = Conversation.where(admin_id: @current_user.id)
+                                      .active_participants
+                                      .includes(:admin, :buyer, :seller, :ad, :messages)
+                                      .joins(:messages)
+                                      .distinct
+                                      .order("conversations.updated_at DESC")
+    end
     render json: @conversations, each_serializer: ConversationSerializer
   end
 
@@ -417,12 +519,23 @@ class ConversationsController < ApplicationController
     end
 
     # Find existing conversation or create new one
-    @conversation = Conversation.find_or_create_by(
-      admin_id: @current_user.id,
-      seller_id: seller_id,
-      buyer_id: params[:buyer_id],
-      ad_id: params[:ad_id]
-    )
+    # Handle race conditions where multiple requests try to create the same conversation
+    begin
+      # Use the model method that handles race conditions properly
+      @conversation = Conversation.find_or_create_conversation!(
+        admin_id: @current_user.id,
+        seller_id: seller_id,
+        buyer_id: params[:buyer_id],
+        inquirer_seller_id: nil,
+        ad_id: params[:ad_id]
+      )
+      Rails.logger.info "Found or created conversation: #{@conversation.id}"
+    rescue => e
+      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.first(10).join("\n")
+      render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
+      return
+    end
 
     # Ensure the conversation is saved and valid
     unless @conversation.persisted?
@@ -478,11 +591,15 @@ class ConversationsController < ApplicationController
   end
 
   def fetch_seller_unread_counts
+    Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Current user: #{@current_user.class.name} #{@current_user.id}"
+    
     conversations = Conversation.where(
       "(seller_id = ? OR inquirer_seller_id = ?)", 
       @current_user.id, 
       @current_user.id
     ).active_participants
+    
+    Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Found #{conversations.count} conversations"
     
     unread_counts = conversations.map do |conversation|
       # For seller-to-seller conversations, count messages not sent by current user
@@ -501,30 +618,7 @@ class ConversationsController < ApplicationController
                                   .count
       end
       
-      {
-        conversation_id: conversation.id,
-        unread_count: unread_count
-      }
-    end
-    
-    # Count conversations with unread messages
-    conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
-    
-    render json: { 
-      unread_counts: unread_counts,
-      conversations_with_unread: conversations_with_unread
-    }
-  end
-
-  def fetch_admin_unread_counts
-    conversations = Conversation.where(admin_id: @current_user.id)
-                                .active_participants
-    
-    unread_counts = conversations.map do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
+      Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Conversation #{conversation.id} has #{unread_count} unread messages"
       
       {
         conversation_id: conversation.id,
@@ -534,6 +628,55 @@ class ConversationsController < ApplicationController
     
     # Count conversations with unread messages
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
+    
+    total_unread = unread_counts.sum { |item| item[:unread_count] || 0 }
+    Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Total unread: #{total_unread}, Conversations with unread: #{conversations_with_unread}"
+    
+    render json: { 
+      unread_counts: unread_counts,
+      conversations_with_unread: conversations_with_unread
+    }
+  end
+
+  def fetch_admin_unread_counts
+    Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Current user: #{@current_user.class.name} #{@current_user.id}"
+    
+    # For Sales users, show all conversations (they can see all conversations like admins)
+    # For Admins, show conversations where they are the admin_id
+    if @current_user.is_a?(SalesUser)
+      conversations = Conversation.active_participants
+      Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Sales user - showing all active conversations: #{conversations.count}"
+    else
+      conversations = Conversation.where(admin_id: @current_user.id)
+                                  .active_participants
+      Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Admin - Found #{conversations.count} conversations with admin_id=#{@current_user.id}"
+      
+      # If no conversations found with admin_id, check if there are any conversations at all for this user
+      if conversations.count == 0
+        all_conversations = Conversation.where(admin_id: @current_user.id)
+        Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Total conversations (including inactive): #{all_conversations.count}"
+      end
+    end
+    
+    unread_counts = conversations.map do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                                .where(read_at: nil)
+                                .count
+      
+      Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Conversation #{conversation.id} has #{unread_count} unread messages"
+      
+      {
+        conversation_id: conversation.id,
+        unread_count: unread_count
+      }
+    end
+    
+    # Count conversations with unread messages
+    conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
+    
+    total_unread = unread_counts.sum { |item| item[:unread_count] || 0 }
+    Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Total unread: #{total_unread}, Conversations with unread: #{conversations_with_unread}"
     
     render json: { 
       unread_counts: unread_counts,
@@ -545,12 +688,18 @@ class ConversationsController < ApplicationController
     conversations = Conversation.where(buyer_id: @current_user.id)
                                 .active_participants
     
-    unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Admin', 'SalesUser'] })
-                               .where(messages: { read_at: nil })
-                               .count
+    # Calculate total unread count by iterating through conversations
+    # This avoids duplicate counting issues with joins
+    total_unread = 0
+    conversations.each do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
     
-    render json: { count: unread_count }
+    render json: { count: total_unread }
   end
 
   def fetch_seller_unread_count
@@ -583,14 +732,28 @@ class ConversationsController < ApplicationController
   end
 
   def fetch_admin_unread_count
-    conversations = Conversation.where(admin_id: @current_user.id)
-                                .active_participants
+    # For Sales users, show all conversations (they can see all conversations like admins)
+    # For Admins, show conversations where they are the admin_id
+    if @current_user.is_a?(SalesUser)
+      conversations = Conversation.active_participants
+    else
+      # For Admin, conversations are stored with admin_id
+      conversations = Conversation.where(admin_id: @current_user.id)
+                                  .active_participants
+    end
     
-    unread_count = conversations.joins(:messages)
-                               .where(messages: { sender_type: ['Seller', 'Buyer', 'Purchaser'] })
-                               .where(messages: { read_at: nil })
-                               .count
+    # Calculate total unread count by iterating through conversations
+    # This avoids duplicate counting issues with joins
+    total_unread = 0
+    conversations.each do |conversation|
+      # Count messages from sellers, buyers, and purchasers (not from admin/sales users)
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
     
-    render json: { count: unread_count }
+    render json: { count: total_unread }
   end
 end

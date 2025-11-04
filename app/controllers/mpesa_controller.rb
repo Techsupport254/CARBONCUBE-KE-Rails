@@ -9,11 +9,10 @@ class MpesaController < ApplicationController
 
     # Check if this is a manual paybill payment
     if account_number&.start_with?("TIER")
-      # Extract tier and seller info from account reference
       parts = account_number.split("_")
       if parts.length >= 2
         tier_id = parts[0].gsub("TIER", "").to_i
-        seller_id = parts[1].to_i
+        seller_id = parts[1]
         
         seller = Seller.find_by(id: seller_id)
         tier = Tier.find_by(id: tier_id)
@@ -67,12 +66,11 @@ class MpesaController < ApplicationController
     transaction_id = data["TransID"]
     phone_number = data["MSISDN"]
 
-    # Extract tier and seller info from account reference
     parts = account_number.split("_")
     return unless parts.length >= 2
 
     tier_id = parts[0].gsub("TIER", "").to_i
-    seller_id = parts[1].to_i
+    seller_id = parts[1]
 
     seller = Seller.find_by(id: seller_id)
     tier = Tier.find_by(id: tier_id)

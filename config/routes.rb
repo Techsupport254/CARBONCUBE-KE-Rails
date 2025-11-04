@@ -511,6 +511,11 @@ Rails.application.routes.draw do
 
 #for sales
     namespace :sales do
+      resource :profile, only: [:show, :update] do
+        collection do
+          post 'change-password'
+        end
+      end
       resources :analytics, only: [:index] do
         collection do
           get :recent_users

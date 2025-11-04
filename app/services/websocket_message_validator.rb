@@ -15,7 +15,7 @@ class ConversationMessageValidator < WebsocketMessageValidator
     required(:conversation_id).filled(:integer)
     required(:content).filled(:string)
     required(:sender_type).filled(:string, included_in?: %w[Buyer Seller Admin])
-    required(:sender_id).filled(:integer)
+    required(:sender_id).filled { |v| v.is_a?(Integer) || v.is_a?(String) }
     optional(:ad_id).maybe(:integer)
     optional(:product_context).maybe(:hash)
     optional(:message_type).filled(:string, included_in?: %w[text image file])
@@ -41,7 +41,7 @@ class PresenceUpdateValidator < WebsocketMessageValidator
     required(:type).filled(:string, included_in?: %w[typing_start typing_stop message_read message_delivered online offline])
     optional(:conversation_id).maybe(:integer)
     optional(:message_id).maybe(:integer)
-    optional(:user_id).maybe(:integer)
+    optional(:user_id) { |v| v.nil? || v.is_a?(Integer) || v.is_a?(String) }
     optional(:timestamp).maybe(:string)
   end
   

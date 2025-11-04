@@ -38,37 +38,54 @@ class UpdateUnreadCountsJob < ApplicationJob
   private
   
   def update_participant_unread_counts(conversation, message)
-    # For buyer
+    # For buyer - calculate total unread across all their conversations
     if conversation.buyer_id
-      buyer_unread_count = calculate_unread_count_for_user(conversation, conversation.buyer_id, 'Buyer')
+      buyer_unread_count = calculate_total_unread_for_buyer(conversation.buyer_id)
       broadcast_unread_count_to_user('buyer', conversation.buyer_id, buyer_unread_count)
     end
     
-    # For seller
+    # For seller - calculate total unread across all their conversations
     if conversation.seller_id
-      seller_unread_count = calculate_unread_count_for_user(conversation, conversation.seller_id, 'Seller')
+      seller_unread_count = calculate_total_unread_for_seller(conversation.seller_id)
       broadcast_unread_count_to_user('seller', conversation.seller_id, seller_unread_count)
     end
     
-    # For inquirer seller (if different from main seller)
+    # For inquirer seller (if different from main seller) - calculate total unread
     if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
-      inquirer_unread_count = calculate_unread_count_for_user(conversation, conversation.inquirer_seller_id, 'Seller')
+      inquirer_unread_count = calculate_total_unread_for_seller(conversation.inquirer_seller_id)
       broadcast_unread_count_to_user('seller', conversation.inquirer_seller_id, inquirer_unread_count)
     end
     
-    # For admin (if present)
+    # For admin (if present) - calculate total unread across all their conversations
     if conversation.admin_id
-      admin_unread_count = calculate_unread_count_for_user(conversation, conversation.admin_id, 'Admin')
-      broadcast_unread_count_to_user('admin', conversation.admin_id, admin_unread_count)
+      admin = Admin.find_by(id: conversation.admin_id)
+      sales_user = SalesUser.find_by(id: conversation.admin_id)
+      
+      if admin
+        admin_unread_count = calculate_total_unread_for_admin(conversation.admin_id)
+        broadcast_unread_count_to_user('admin', conversation.admin_id, admin_unread_count)
+      elsif sales_user
+        sales_unread_count = calculate_total_unread_for_sales_user(sales_user.id)
+        broadcast_unread_count_to_user('sales', sales_user.id, sales_unread_count)
+      end
+    end
+    
+    # For Sales users viewing all conversations, broadcast total unread count
+    # This ensures they get real-time updates when messages arrive in any conversation
+    # We broadcast to all active Sales users so they see the updated total count
+    SalesUser.find_each do |sales_user|
+      # Calculate total unread count across all conversations for this sales user
+      total_unread = calculate_total_unread_for_sales_user(sales_user.id)
+      broadcast_unread_count_to_user('sales', sales_user.id, total_unread)
     end
   end
   
   def calculate_unread_count_for_user(conversation, user_id, user_type)
     case user_type
     when 'Buyer'
-      # Count messages from sellers and admins that are unread (read_at is nil)
+      # Count messages from sellers, admins, and sales users that are unread (read_at is nil)
       conversation.messages
-                  .where(sender_type: ['Seller', 'Admin'])
+                  .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
                   .where(read_at: nil)
                   .count
     when 'Seller'
@@ -80,21 +97,101 @@ class UpdateUnreadCountsJob < ApplicationJob
                     .where(read_at: nil)
                     .count
       else
-        # Regular conversation: count messages from buyers and admins
+        # Regular conversation: count messages from buyers, admins, and sales users
         conversation.messages
-                    .where(sender_type: ['Buyer', 'Admin'])
+                    .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
                     .where(read_at: nil)
                     .count
       end
     when 'Admin'
-      # Count messages from buyers and sellers that are unread (read_at is nil)
+      # Count messages from sellers, buyers, and purchasers that are unread (read_at is nil)
       conversation.messages
-                  .where(sender_type: ['Buyer', 'Seller'])
+                  .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                  .where(read_at: nil)
+                  .count
+    when 'SalesUser'
+      # For Sales users, count messages from sellers, buyers, and purchasers
+      conversation.messages
+                  .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                   .where(read_at: nil)
                   .count
     else
       0
     end
+  end
+  
+  def calculate_total_unread_for_buyer(buyer_id)
+    conversations = Conversation.where(buyer_id: buyer_id).active_participants
+    total_unread = 0
+    
+    conversations.each do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
+    
+    total_unread
+  end
+  
+  def calculate_total_unread_for_seller(seller_id)
+    conversations = Conversation.where(
+      "(seller_id = ? OR inquirer_seller_id = ?)", 
+      seller_id, 
+      seller_id
+    ).active_participants
+    
+    total_unread = 0
+    conversations.each do |conversation|
+      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
+        # Seller-to-seller conversation: count messages not sent by current user
+        unread_count = conversation.messages
+                                  .where.not(sender_id: seller_id)
+                                  .where(read_at: nil)
+                                  .count
+      else
+        # Regular conversation: count messages from buyers, admins, and sales users
+        unread_count = conversation.messages
+                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                                  .where(read_at: nil)
+                                  .count
+      end
+      total_unread += unread_count
+    end
+    
+    total_unread
+  end
+  
+  def calculate_total_unread_for_admin(admin_id)
+    conversations = Conversation.where(admin_id: admin_id).active_participants
+    total_unread = 0
+    
+    conversations.each do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
+    
+    total_unread
+  end
+  
+  def calculate_total_unread_for_sales_user(sales_user_id)
+    # Sales users see all conversations
+    conversations = Conversation.active_participants
+    total_unread = 0
+    
+    conversations.each do |conversation|
+      unread_count = conversation.messages
+                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                                .where(read_at: nil)
+                                .count
+      total_unread += unread_count
+    end
+    
+    total_unread
   end
   
   def broadcast_unread_count_to_user(user_type, user_id, unread_count)
