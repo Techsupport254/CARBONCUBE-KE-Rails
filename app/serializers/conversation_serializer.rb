@@ -21,7 +21,7 @@ class ConversationSerializer < ActiveModel::Serializer
       username: object.buyer.username,
       email: object.buyer.email,
       phone_number: object.buyer.phone_number,
-      profile_picture: object.buyer.profile_picture,
+      profile_picture: resolve_profile_picture(object.buyer.profile_picture),
       last_active_at: object.buyer.last_active_at
     }
   end
@@ -35,7 +35,7 @@ class ConversationSerializer < ActiveModel::Serializer
       enterprise_name: object.seller.enterprise_name,
       email: object.seller.email,
       phone_number: object.seller.phone_number,
-      profile_picture: object.seller.profile_picture,
+      profile_picture: resolve_profile_picture(object.seller.profile_picture),
       last_active_at: object.seller.last_active_at
     }
   end
@@ -49,9 +49,22 @@ class ConversationSerializer < ActiveModel::Serializer
       enterprise_name: object.inquirer_seller.enterprise_name,
       email: object.inquirer_seller.email,
       phone_number: object.inquirer_seller.phone_number,
-      profile_picture: object.inquirer_seller.profile_picture,
+      profile_picture: resolve_profile_picture(object.inquirer_seller.profile_picture),
       last_active_at: object.inquirer_seller.last_active_at
     }
+  end
+
+  private
+
+  # Avoid using cached profile pictures - always return nil for cached URLs
+  def resolve_profile_picture(url)
+    return nil if url.blank?
+    
+    # If it's a cached profile picture URL, don't use it (return nil to avoid 404 errors)
+    return nil if url.start_with?('/cached_profile_pictures/')
+    
+    # Return original Google URL or other valid URLs (but not cached ones)
+    url
   end
 
   def ad

@@ -1,29 +1,33 @@
 class Issue < ApplicationRecord
   include ActionView::Helpers::DateHelper
   # Enums for status and priority
+  # Note: Database columns are integers, so we use integer-based enums
+  # Status: 0=pending, 1=in_progress, 2=completed, 3=closed, 4=rejected
   enum status: { 
-    pending: 'pending', 
-    in_progress: 'in_progress', 
-    completed: 'completed', 
-    closed: 'closed',
-    rejected: 'rejected'
+    pending: 0, 
+    in_progress: 1, 
+    completed: 2, 
+    closed: 3,
+    rejected: 4
   }
   
+  # Priority: 0=low, 1=medium, 2=high, 3=urgent
   enum priority: { 
-    low: 'low', 
-    medium: 'medium', 
-    high: 'high', 
-    urgent: 'urgent'
+    low: 0, 
+    medium: 1, 
+    high: 2, 
+    urgent: 3
   }
   
+  # Category: 0=bug, 1=feature_request, 2=improvement, 3=security, 4=performance, 5=ui_ux, 6=other
   enum category: {
-    bug: 'bug',
-    feature_request: 'feature_request',
-    improvement: 'improvement',
-    security: 'security',
-    performance: 'performance',
-    ui_ux: 'ui_ux',
-    other: 'other'
+    bug: 0,
+    feature_request: 1,
+    improvement: 2,
+    security: 3,
+    performance: 4,
+    ui_ux: 5,
+    other: 6
   }
   
   # Validations

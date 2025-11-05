@@ -8,6 +8,10 @@ class Buyer::ProfilesController < ApplicationController
   def show
     buyer_data = current_buyer.as_json
     buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+    # Avoid using cached profile pictures - return nil for cached URLs
+    if buyer_data[:profile_picture]&.start_with?('/cached_profile_pictures/')
+      buyer_data[:profile_picture] = nil
+    end
     # Check if email is verified
     email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
     buyer_data[:email_verified] = email_verified
@@ -70,6 +74,10 @@ class Buyer::ProfilesController < ApplicationController
       if current_buyer.update(update_params)
         buyer_data = current_buyer.as_json
         buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
+        # Avoid using cached profile pictures - return nil for cached URLs
+        if buyer_data[:profile_picture]&.start_with?('/cached_profile_pictures/')
+          buyer_data[:profile_picture] = nil
+        end
         # Check if email is verified
         email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
         buyer_data[:email_verified] = email_verified

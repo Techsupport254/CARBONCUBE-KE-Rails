@@ -35,6 +35,11 @@ class IssuesController < ApplicationController
     @issue = Issue.new(issue_params)
     @issue.public_visible = true
     
+    # Set default values if not provided (to handle enum/string mismatches)
+    @issue.status ||= 'pending'
+    @issue.priority ||= 'medium'
+    @issue.category ||= 'bug'
+    
     # Set user if authenticated
     if current_user
       @issue.user = current_user
