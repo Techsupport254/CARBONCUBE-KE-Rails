@@ -62,7 +62,7 @@ class Admin::SellersController < ApplicationController
     
     # Prepare sellers data with last_active_at
     @sellers_data = @sellers.map do |seller|
-      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :created_at, :updated_at, :last_active_at])
+      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :created_at, :updated_at, :last_active_at, :profile_picture])
     end
     
     # Calculate pagination metadata
@@ -88,8 +88,21 @@ class Admin::SellersController < ApplicationController
 
   def show
     seller_data = @seller.as_json(
-      only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked],
-      methods: [:category_names]
+      only: [
+        :id, :fullname, :username, :description, :phone_number, :email, 
+        :enterprise_name, :location, :blocked, :profile_picture, :zipcode, 
+        :city, :gender, :business_registration_number, :document_url,
+        :document_verified, :document_expiry_date, :created_at, :updated_at,
+        :last_active_at, :deleted, :provider, :uid, :ads_count
+      ],
+      methods: [:category_names],
+      include: {
+        county: { only: [:id, :name, :capital, :county_code] },
+        sub_county: { only: [:id, :name] },
+        age_group: { only: [:id, :name] },
+        document_type: { only: [:id, :name] },
+        tier: { only: [:id, :name] }
+      }
     )
     analytics_data = fetch_analytics(@seller)
     seller_data.merge!(analytics: analytics_data)

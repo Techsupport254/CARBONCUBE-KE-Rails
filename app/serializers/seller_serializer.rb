@@ -11,4 +11,16 @@ class SellerSerializer < ActiveModel::Serializer
   def tier
     object.seller_tier&.tier
   end
+
+  # Avoid using cached profile pictures - always return nil for cached URLs
+  def profile_picture
+    url = object.profile_picture
+    return nil if url.blank?
+    
+    # If it's a cached profile picture URL, don't use it (return nil to avoid 404 errors)
+    return nil if url.start_with?('/cached_profile_pictures/')
+    
+    # Return original Google URL or other valid URLs (but not cached ones)
+    url
+  end
 end

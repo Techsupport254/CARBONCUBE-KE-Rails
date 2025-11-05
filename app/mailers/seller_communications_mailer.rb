@@ -85,9 +85,9 @@ class SellerCommunicationsMailer < ApplicationMailer
     Rails.logger.info "Delivery Method: #{ActionMailer::Base.delivery_method}"
     Rails.logger.info "From Address: #{default_params[:from]}"
     
-    # Transactional subject - Platform notification format
+    # Transactional subject - Platform notification format with unique timestamp to prevent threading
     # NO promotional words, NO emoji - Gmail treats these as transactional
-    timestamp = Time.current.strftime('%Y%m%d')
+    timestamp = Time.current.strftime('%Y%m%d%H%M%S')
     subject_text = "Platform Notification #{timestamp} - High Traffic Period Expected"
     
     # Generate unique Message-ID
@@ -160,11 +160,7 @@ class SellerCommunicationsMailer < ApplicationMailer
     # NO Reply-To (makes it appear as new message, not a reply)
     mail_message['Reply-To'] = nil
     
-    # DISABLE EMAIL DELIVERY - Email will not be sent
-    mail_message.perform_deliveries = false
-    Rails.logger.info "⚠️  EMAIL DELIVERY DISABLED - Email will NOT be sent"
-    
-    log_message = "=== PLATFORM NOTIFICATION EMAIL END (DELIVERY DISABLED) ==="
+    log_message = "=== PLATFORM NOTIFICATION EMAIL END ==="
     Rails.logger.info log_message
     
     mail_message

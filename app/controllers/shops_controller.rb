@@ -3,7 +3,32 @@ class ShopsController < ApplicationController
     # Find shop by slug (enterprise_name converted to slug)
     slug = params[:slug]
     
+    # Try to find by slug first
     @shop = find_shop_by_slug(slug)
+    
+    # If not found by slug and we have an ID parameter, try to find by ID (supports both numeric and UUID)
+    unless @shop
+      if params[:id].present?
+        begin
+          # Try UUID format first (if it contains hyphens, it's likely a UUID)
+          if params[:id].to_s.include?('-')
+            @shop = Seller.includes(:seller_tier, :tier)
+                         .where(deleted: false)
+                         .find_by(id: params[:id])
+          else
+            # Try numeric ID
+            shop_id = params[:id].to_i
+            if shop_id > 0
+              @shop = Seller.includes(:seller_tier, :tier)
+                           .where(deleted: false)
+                           .find_by(id: shop_id)
+            end
+          end
+        rescue ActiveRecord::RecordNotFound
+          # Ignore and continue
+        end
+      end
+    end
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found

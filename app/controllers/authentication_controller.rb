@@ -58,8 +58,10 @@ class AuthenticationController < ApplicationController
       end
       
       # Only include profile picture for users that have this field (Buyer, Seller)
+      # Avoid using cached profile pictures - return nil for cached URLs
       if @user.respond_to?(:profile_picture) && @user.profile_picture.present?
-        user_response[:profile_picture] = @user.profile_picture
+        profile_pic = @user.profile_picture
+        user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
       end
       
 
@@ -275,8 +277,10 @@ class AuthenticationController < ApplicationController
     end
     
     # Only include profile picture for users that have this field (Buyer, Seller)
+    # Avoid using cached profile pictures - return nil for cached URLs
     if user.respond_to?(:profile_picture) && user.profile_picture.present?
-      user_response[:profile_picture] = user.profile_picture
+      profile_pic = user.profile_picture
+      user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
     end
 
     render json: { user: user_response }, status: :ok
@@ -591,8 +595,10 @@ class AuthenticationController < ApplicationController
         end
         
         # Only include profile picture for users that have this field (Buyer, Seller)
+        # Avoid using cached profile pictures - return nil for cached URLs
         if user.respond_to?(:profile_picture) && user.profile_picture.present?
-          user_response[:profile_picture] = user.profile_picture
+          profile_pic = user.profile_picture
+          user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
         end
         
         # Include comprehensive Google OAuth data if available
@@ -795,8 +801,10 @@ class AuthenticationController < ApplicationController
         end
         
         # Only include profile picture for users that have this field (Buyer, Seller)
+        # Avoid using cached profile pictures - return nil for cached URLs
         if user.respond_to?(:profile_picture) && user.profile_picture.present?
-          user_response[:profile_picture] = user.profile_picture
+          profile_pic = user.profile_picture
+          user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
         end
         
         # Include comprehensive Google OAuth data if available
