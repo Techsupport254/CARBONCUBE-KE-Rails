@@ -59,10 +59,12 @@ gem 'httparty'
 
 # Google APIs for OAuth
 gem 'google-apis-oauth2_v2'
-gem 'googleauth'
 
 # Dry validation for form validation
 gem 'dry-validation'
+
+# User agent parser for better browser/OS/device detection
+gem 'user_agent_parser'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

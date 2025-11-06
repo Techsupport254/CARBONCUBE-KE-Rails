@@ -1,4 +1,6 @@
 # app/controllers/sales/analytics_controller.rb
+require 'set'
+
 class Sales::AnalyticsController < ApplicationController
   before_action :authenticate_sales_user
 
@@ -547,42 +549,91 @@ class Sales::AnalyticsController < ApplicationController
     # Get device analytics for ALL time (no 30-day restriction), excluding internal users
     all_analytics = Analytic.excluding_internal_users
     
-    # Device type distribution
-    device_types = {}
-    browsers = {}
-    operating_systems = {}
-    screen_resolutions = {}
+    # Hash to track unique sessions per device/browser/OS
+    device_type_sessions = Hash.new { |h, k| h[k] = Set.new }
+    browser_sessions = Hash.new { |h, k| h[k] = Set.new }
+    os_sessions = Hash.new { |h, k| h[k] = Set.new }
+    resolution_sessions = Hash.new { |h, k| h[k] = Set.new }
+    
+    # Hash to track unique visitors per device/browser/OS
+    device_type_visitors = Hash.new { |h, k| h[k] = Set.new }
+    browser_visitors = Hash.new { |h, k| h[k] = Set.new }
+    os_visitors = Hash.new { |h, k| h[k] = Set.new }
+    
+    # Total counts (for comparison)
+    device_types_total = {}
+    browsers_total = {}
+    operating_systems_total = {}
+    screen_resolutions_total = {}
     
     all_analytics.each do |analytic|
       next unless analytic.data && analytic.data['device']
       
       device_data = analytic.data['device']
+      session_id = analytic.data['session_id']
+      visitor_id = analytic.data['visitor_id']
       
-      # Count device types
+      # Normalize device type (old "Mobile" to "Phone")
       device_type = device_data['device_type'] || 'Unknown'
-      device_types[device_type] = (device_types[device_type] || 0) + 1
+      device_type = 'Phone' if device_type == 'Mobile'
       
-      # Count browsers
       browser = device_data['browser'] || 'Unknown'
-      browsers[browser] = (browsers[browser] || 0) + 1
-      
-      # Count operating systems
       os = device_data['os'] || 'Unknown'
-      operating_systems[os] = (operating_systems[os] || 0) + 1
+      resolution = analytic.data['screen_resolution']
       
-      # Count screen resolutions
-      if analytic.data['screen_resolution']
-        resolution = analytic.data['screen_resolution']
-        screen_resolutions[resolution] = (screen_resolutions[resolution] || 0) + 1
-      end
+      # Track unique sessions
+      device_type_sessions[device_type].add(session_id) if session_id.present?
+      browser_sessions[browser].add(session_id) if session_id.present?
+      os_sessions[os].add(session_id) if session_id.present?
+      resolution_sessions[resolution].add(session_id) if resolution.present? && session_id.present?
+      
+      # Track unique visitors
+      device_type_visitors[device_type].add(visitor_id) if visitor_id.present?
+      browser_visitors[browser].add(visitor_id) if visitor_id.present?
+      os_visitors[os].add(visitor_id) if visitor_id.present?
+      
+      # Track total counts
+      device_types_total[device_type] = (device_types_total[device_type] || 0) + 1
+      browsers_total[browser] = (browsers_total[browser] || 0) + 1
+      operating_systems_total[os] = (operating_systems_total[os] || 0) + 1
+      screen_resolutions_total[resolution] = (screen_resolutions_total[resolution] || 0) + 1 if resolution.present?
     end
     
+    # Convert Sets to counts
+    device_types_unique_sessions = device_type_sessions.transform_values(&:size)
+    browsers_unique_sessions = browser_sessions.transform_values(&:size)
+    operating_systems_unique_sessions = os_sessions.transform_values(&:size)
+    screen_resolutions_unique_sessions = resolution_sessions.transform_values(&:size)
+    
+    device_types_unique_visitors = device_type_visitors.transform_values(&:size)
+    browsers_unique_visitors = browser_visitors.transform_values(&:size)
+    operating_systems_unique_visitors = os_visitors.transform_values(&:size)
+    
+    total_sessions_count = all_analytics.where("data->>'session_id' IS NOT NULL").distinct.count("data->>'session_id'")
+    
     {
-      device_types: device_types,
-      browsers: browsers,
-      operating_systems: operating_systems,
-      screen_resolutions: screen_resolutions,
-      total_devices: all_analytics.count
+      # Unique sessions (primary metric - one per session)
+      device_types: device_types_unique_sessions,
+      browsers: browsers_unique_sessions,
+      operating_systems: operating_systems_unique_sessions,
+      screen_resolutions: screen_resolutions_unique_sessions,
+      
+      # Unique visitors (alternative metric - one per visitor across all sessions)
+      device_types_visitors: device_types_unique_visitors,
+      browsers_visitors: browsers_unique_visitors,
+      operating_systems_visitors: operating_systems_unique_visitors,
+      
+      # Total counts (for reference - should match unique sessions now with session-based tracking)
+      device_types_total: device_types_total,
+      browsers_total: browsers_total,
+      operating_systems_total: operating_systems_total,
+      screen_resolutions_total: screen_resolutions_total,
+      
+      # Summary stats
+      total_devices: total_sessions_count, # Total unique device sessions (for frontend compatibility)
+      total_sessions: total_sessions_count,
+      total_visitors: all_analytics.where("data->>'visitor_id' IS NOT NULL").distinct.count("data->>'visitor_id'"),
+      total_records: all_analytics.count
     }
   end
 

@@ -8,6 +8,20 @@ class SourceTrackingService
   end
 
   def track_visit
+    # Check for duplicate session tracking - only track once per session
+    session_id = @params[:session_id]
+    if session_id.present?
+      # Check if this session_id has already been tracked
+      existing_tracking = Analytic.where("data->>'session_id' = ?", session_id)
+                                   .where('created_at >= ?', 1.hour.ago) # Only check recent records
+                                   .first
+      
+      if existing_tracking
+        Rails.logger.info "Session #{session_id} already tracked, skipping duplicate"
+        return existing_tracking
+      end
+    end
+    
     # Parse source from URL parameters
     source = parse_source_from_params
     
@@ -315,19 +329,57 @@ class SourceTrackingService
   def parse_device_info
     return {} unless @user_agent.present?
     
-    # Parse user agent to extract device and browser information
-    user_agent = @user_agent.downcase
+    # Try using user_agent_parser gem first for better detection
+    device_info = {}
     
-    device_info = {
-      browser: detect_browser(user_agent),
-      browser_version: detect_browser_version(user_agent),
-      os: detect_os(user_agent),
-      os_version: detect_os_version(user_agent),
-      device_type: detect_device_type(user_agent),
-      is_mobile: mobile_device?(user_agent),
-      is_tablet: tablet_device?(user_agent),
-      is_desktop: desktop_device?(user_agent)
-    }
+    begin
+      require 'user_agent_parser'
+      parser = UserAgentParser.parse(@user_agent)
+      
+      # Extract browser information
+      browser_name = parser.family
+      browser_version = parser.version&.to_s
+      
+      # Extract OS information
+      os_family = parser.os&.family
+      os_version = parser.os&.version&.to_s
+      
+      # Normalize browser names
+      browser = normalize_browser_name(browser_name)
+      
+      # Normalize OS names
+      os = normalize_os_name(os_family)
+      
+      # Detect device type
+      user_agent_lower = @user_agent.downcase
+      device_type = detect_device_type(user_agent_lower)
+      
+      device_info = {
+        browser: browser || 'Unknown',
+        browser_version: browser_version,
+        os: os || 'Unknown',
+        os_version: os_version,
+        device_type: device_type,
+        is_mobile: mobile_device?(user_agent_lower),
+        is_tablet: tablet_device?(user_agent_lower),
+        is_desktop: desktop_device?(user_agent_lower)
+      }
+    rescue LoadError, StandardError => e
+      # Fallback to regex-based detection if gem is not available or fails
+      Rails.logger.warn "User agent parser failed, using fallback: #{e.message}"
+      user_agent = @user_agent.downcase
+      
+      device_info = {
+        browser: detect_browser(user_agent),
+        browser_version: detect_browser_version(user_agent),
+        os: detect_os(user_agent),
+        os_version: detect_os_version(user_agent),
+        device_type: detect_device_type(user_agent),
+        is_mobile: mobile_device?(user_agent),
+        is_tablet: tablet_device?(user_agent),
+        is_desktop: desktop_device?(user_agent)
+      }
+    end
     
     device_info
   end
@@ -350,20 +402,63 @@ class SourceTrackingService
     location_info
   end
 
+  def normalize_browser_name(browser_name)
+    return 'Unknown' unless browser_name.present?
+    
+    browser_lower = browser_name.downcase
+    case browser_lower
+    when /chrome|crios/
+      'Chrome'
+    when /firefox|fxios/
+      'Firefox'
+    when /safari|mobile safari/
+      'Safari'
+    when /edge|edgios|edg/
+      'Edge'
+    when /opera|opr|opios/
+      'Opera'
+    when /ie|trident|msie/
+      'Internet Explorer'
+    when /samsungbrowser|samsung internet/
+      'Samsung Internet'
+    when /ucbrowser|uc browser/
+      'UC Browser'
+    when /yandex|yabrowser/
+      'Yandex Browser'
+    when /brave/
+      'Brave'
+    when /vivaldi/
+      'Vivaldi'
+    else
+      browser_name # Return original if not recognized
+    end
+  end
+
   def detect_browser(user_agent)
     case user_agent
-    when /chrome/
+    when /chrome|crios|chromium/i
       'Chrome'
-    when /firefox/
+    when /firefox|fxios/i
       'Firefox'
-    when /safari/
-      'Safari'
-    when /edge/
+    when /safari/i
+      # Make sure it's not Chrome (Chrome includes Safari in UA)
+      user_agent.include?('chrome') ? 'Chrome' : 'Safari'
+    when /edge|edgios|edg/i
       'Edge'
-    when /opera/
+    when /opera|opr|opios/i
       'Opera'
-    when /ie|trident/
+    when /ie|trident|msie/i
       'Internet Explorer'
+    when /samsungbrowser|samsung internet/i
+      'Samsung Internet'
+    when /ucbrowser|uc browser/i
+      'UC Browser'
+    when /yandex|yabrowser/i
+      'Yandex Browser'
+    when /brave/i
+      'Brave'
+    when /vivaldi/i
+      'Vivaldi'
     else
       'Unknown'
     end
@@ -375,18 +470,52 @@ class SourceTrackingService
     version_match ? version_match[2] : nil
   end
 
-  def detect_os(user_agent)
-    case user_agent
+  def normalize_os_name(os_name)
+    return 'Unknown' unless os_name.present?
+    
+    os_lower = os_name.downcase
+    case os_lower
     when /windows/
       'Windows'
-    when /mac os x/
+    when /mac|macos|darwin/
       'macOS'
     when /android/
       'Android'
-    when /iphone|ipad|ipod/
+    when /ios|iphone os|ipad os/
       'iOS'
     when /linux/
       'Linux'
+    when /ubuntu/
+      'Linux'
+    when /fedora/
+      'Linux'
+    when /debian/
+      'Linux'
+    when /centos/
+      'Linux'
+    else
+      os_name # Return original if not recognized
+    end
+  end
+
+  def detect_os(user_agent)
+    case user_agent
+    when /windows nt|win32|win64|windows phone|windows mobile/i
+      'Windows'
+    when /mac os x|macintosh|darwin/i
+      'macOS'
+    when /android/i
+      'Android'
+    when /iphone os|ipad os|ipod|ios/i
+      'iOS'
+    when /linux|ubuntu|fedora|debian|centos/i
+      'Linux'
+    when /cros/i
+      'Chrome OS'
+    when /blackberry/i
+      'BlackBerry'
+    when /symbian/i
+      'Symbian'
     else
       'Unknown'
     end
@@ -409,8 +538,9 @@ class SourceTrackingService
   end
 
   def detect_device_type(user_agent)
+    # More comprehensive device type detection
     if mobile_device?(user_agent)
-      'Mobile'
+      'Phone'
     elsif tablet_device?(user_agent)
       'Tablet'
     elsif desktop_device?(user_agent)
@@ -421,14 +551,17 @@ class SourceTrackingService
   end
 
   def mobile_device?(user_agent)
-    user_agent.match?(/mobile|android.*mobile|iphone|ipod|blackberry|windows phone/i)
+    # Enhanced mobile detection patterns
+    user_agent.match?(/mobile|android.*mobile|iphone|ipod|blackberry|windows phone|windows mobile|iemobile|mobile safari|fennec|opera mini|opera mobi|ucweb|ucbrowser|samsung.*mobile|huawei.*mobile|xiaomi.*mobile|oppo|vivo|oneplus|realme|redmi/i)
   end
 
   def tablet_device?(user_agent)
-    user_agent.match?(/ipad|android(?!.*mobile)|tablet/i)
+    # Enhanced tablet detection - must check before mobile since tablets often include "mobile" in UA
+    user_agent.match?(/ipad|android(?!.*mobile)|tablet|playbook|kindle|silk|gt-p|gt-n|sm-t|nexus.*tablet|xoom|sch-i800|a100|a101|a200|a210|a211|a500|a501|a510|a511|a700|a701|b9700|b9710|b9730|b9740|b9750|b9760|b9770|b9780|b9790|b9800|b9810|b9820|b9830|b9840|b9850|b9860|b9870|b9880|b9890|b9900|b9910|b9920|b9930|b9940|b9950|b9960|b9970|b9980|b9990/i)
   end
 
   def desktop_device?(user_agent)
+    # Desktop if not mobile and not tablet
     !mobile_device?(user_agent) && !tablet_device?(user_agent)
   end
 
