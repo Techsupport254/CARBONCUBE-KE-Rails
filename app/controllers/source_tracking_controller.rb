@@ -59,7 +59,8 @@ class SourceTrackingController < ApplicationController
     referrer_distribution = Analytic.referrer_distribution
     
     # Get total visits (all-time, excluding internal users)
-    total_visits = base_scope.count
+    # Calculate as sum of source_distribution to match frontend expectations
+    total_visits = source_distribution.values.sum
     
     # Get all visits with timestamps for frontend filtering (excluding internal users)
     visit_timestamps = base_scope.pluck(:created_at)
@@ -70,9 +71,13 @@ class SourceTrackingController < ApplicationController
                            .order("DATE(created_at)")
                            .count
     
+    # Calculate "other" sources count (incomplete UTM - records with source='other')
+    other_sources_count = source_distribution['other'] || 0
+    
     render json: {
       total_visits: total_visits,
       source_distribution: source_distribution,
+      other_sources_count: other_sources_count,
       utm_source_distribution: utm_source_distribution,
       utm_medium_distribution: utm_medium_distribution,
       utm_campaign_distribution: utm_campaign_distribution,

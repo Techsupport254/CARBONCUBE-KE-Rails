@@ -45,7 +45,7 @@ class ShopsController < ApplicationController
                 .where(flagged: false)
                 .joins(:category, :subcategory, seller: { seller_tier: :tier })
                 .left_joins(:reviews)
-                .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+                .includes(:category, :subcategory, :reviews, offer_ads: :offer, seller: { seller_tier: :tier })
                 .order('tiers.id DESC, RANDOM()')
                 .offset((page - 1) * per_page)
                 .limit(per_page)

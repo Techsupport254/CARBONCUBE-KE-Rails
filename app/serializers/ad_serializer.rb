@@ -118,14 +118,44 @@ class AdSerializer < ActiveModel::Serializer
 
   def flash_sale_info
     # Find active or scheduled offer that includes this ad (any offer type)
-    active_offer_ad = OfferAd.joins(:offer)
-                             .where(ad_id: object.id)
-                             .where(offers: { 
-                               status: ['active', 'scheduled']
-                             })
-                             .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
-                             .order('offers.start_time ASC')
-                             .first
+    # First try to use preloaded associations if available (more efficient)
+    active_offer_ad = nil
+    
+    if object.association(:offer_ads).loaded?
+      # Use preloaded associations
+      active_offer_ad = object.offer_ads.find do |offer_ad|
+        offer = offer_ad.association(:offer).loaded? ? offer_ad.offer : offer_ad.offer
+        offer && 
+        ['active', 'scheduled'].include?(offer.status) &&
+        offer.end_time >= Time.current  # Only check end_time - allow scheduled offers before start
+      end
+      
+      # If found via associations, ensure offer is loaded
+      if active_offer_ad && !active_offer_ad.association(:offer).loaded?
+        active_offer_ad = active_offer_ad.reload(include: :offer)
+      end
+    end
+    
+    # Fallback to database query if associations not loaded or not found
+    unless active_offer_ad
+      # Debug: Log all offer_ads for this ad to see what's available
+      all_offer_ads = OfferAd.where(ad_id: object.id).includes(:offer)
+      Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - All OfferAds: #{all_offer_ads.map { |oa| { id: oa.id, offer_id: oa.offer_id, offer_status: oa.offer&.status, start_time: oa.offer&.start_time, end_time: oa.offer&.end_time } }.inspect}"
+      
+      # Include both active and scheduled offers
+      # Active offers: must have started (start_time <= now) and not ended (end_time >= now)
+      # Scheduled offers: can be shown before they start (start_time > now) as long as they haven't ended (end_time >= now)
+      active_offer_ad = OfferAd.joins(:offer)
+                               .where(ad_id: object.id)
+                               .where(offers: { 
+                                 status: ['active', 'scheduled']
+                               })
+                               .where('offers.end_time >= ?', Time.current)  # Only check end_time - allow scheduled offers before start
+                               .order('offers.start_time ASC')
+                               .first
+      
+      Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - Found active_offer_ad: #{active_offer_ad ? { id: active_offer_ad.id, offer_id: active_offer_ad.offer_id, discount: active_offer_ad.discount_percentage } : 'nil'}"
+    end
     
     return nil unless active_offer_ad
     
