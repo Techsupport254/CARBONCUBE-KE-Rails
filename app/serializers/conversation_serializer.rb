@@ -54,19 +54,6 @@ class ConversationSerializer < ActiveModel::Serializer
     }
   end
 
-  private
-
-  # Avoid using cached profile pictures - always return nil for cached URLs
-  def resolve_profile_picture(url)
-    return nil if url.blank?
-    
-    # If it's a cached profile picture URL, don't use it (return nil to avoid 404 errors)
-    return nil if url.start_with?('/cached_profile_pictures/')
-    
-    # Return original Google URL or other valid URLs (but not cached ones)
-    url
-  end
-
   def ad
     return nil unless object.ad
     {
@@ -101,5 +88,18 @@ class ConversationSerializer < ActiveModel::Serializer
       read_at: message.read_at,
       delivered_at: message.delivered_at
     }
+  end
+
+  private
+
+  # Avoid using cached profile pictures - always return nil for cached URLs
+  def resolve_profile_picture(url)
+    return nil if url.blank?
+    
+    # If it's a cached profile picture URL, don't use it (return nil to avoid 404 errors)
+    return nil if url.start_with?('/cached_profile_pictures/')
+    
+    # Return original Google URL or other valid URLs (but not cached ones)
+    url
   end
 end

@@ -2,6 +2,14 @@ class SendSellerCommunicationJob < ApplicationJob
   queue_as :default
 
   def perform(seller_id, email_type = 'general_update')
+    # BLOCK BLACK FRIDAY EMAILS - Prevent sending to avoid spam
+    if email_type == 'black_friday'
+      Rails.logger.warn "=== BLACK FRIDAY EMAIL BLOCKED ==="
+      Rails.logger.warn "SendSellerCommunicationJob: Black Friday emails are disabled. Email to seller #{seller_id} was blocked."
+      Rails.logger.warn "=== JOB CANCELLED ==="
+      return
+    end
+    
     # Log to both Rails logger and Sidekiq logger for visibility
     log_message = "=== SELLER COMMUNICATION JOB START ==="
     Rails.logger.info log_message

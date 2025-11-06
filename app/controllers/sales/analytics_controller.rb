@@ -512,13 +512,21 @@ class Sales::AnalyticsController < ApplicationController
     top_sources = source_distribution.sort_by { |_, count| -count }.first(10)
     top_referrers = referrer_distribution.sort_by { |_, count| -count }.first(10)
     
+    # Calculate total_visits as sum of source_distribution to match frontend expectations
+    # This ensures consistency: total_visits = sum of all source_distribution values
+    total_visits_from_sources = source_distribution.values.sum
+    
+    # Calculate "other" sources count (incomplete UTM - records with source='other')
+    other_sources_count = source_distribution['other'] || 0
+    
     {
-      total_visits: visitor_metrics[:total_visits],
+      total_visits: total_visits_from_sources,
       unique_visitors: visitor_metrics[:unique_visitors],
       returning_visitors: visitor_metrics[:returning_visitors],
       new_visitors: visitor_metrics[:new_visitors],
       avg_visits_per_visitor: visitor_metrics[:avg_visits_per_visitor],
       source_distribution: source_distribution,
+      other_sources_count: other_sources_count,
       unique_visitors_by_source: unique_visitors_by_source,
       visits_by_source: visits_by_source,
       utm_source_distribution: utm_source_distribution,

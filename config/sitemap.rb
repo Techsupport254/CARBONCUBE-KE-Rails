@@ -102,23 +102,40 @@ SitemapGenerator::Sitemap.create do
 
   # Categories (if you have a Category model)
   if defined?(Category)
-    Category.find_each do |category|
-      # Adjust the path based on your actual routes
-      add "/categories/#{category.id}", 
+    Category.includes(:subcategories).find_each do |category|
+      # Generate slug from category name
+      category_slug = if category.name.present?
+        category.name.downcase
+                  .gsub(/[^a-z0-9\s-]/, '')
+                  .gsub(/\s+/, '-')
+                  .gsub(/-+/, '-')
+                  .gsub(/^-|-$/, '')
+      else
+        "category-#{category.id}"
+      end
+      
+      # Add category page
+      add "/categories/#{category_slug}", 
           priority: 0.8, 
           changefreq: 'weekly',
           lastmod: category.updated_at
-    end
-  end
-
-  # Subcategories (if you have a Subcategory model)
-  if defined?(Subcategory)
-    Subcategory.find_each do |subcategory|
-      # Adjust the path based on your actual routes
-      add "/subcategories/#{subcategory.id}", 
-          priority: 0.7, 
-          changefreq: 'weekly',
-          lastmod: subcategory.updated_at
+      
+      # Add subcategory pages with correct format: /categories/{category-slug}/{subcategory-slug}
+      category.subcategories.each do |subcategory|
+        subcategory_slug = if subcategory.name.present?
+          subcategory.name.downcase
+                    .gsub(/[^a-z0-9\s-]/, '')
+                    .gsub(/\s+/, '-')
+                    .gsub(/-+/, '-')
+                    .gsub(/^-|-$/, '')
+        else
+          "subcategory-#{subcategory.id}"
+        end
+        add "/categories/#{category_slug}/#{subcategory_slug}", 
+            priority: 0.7, 
+            changefreq: 'weekly',
+            lastmod: subcategory.updated_at
+      end
     end
   end
 end

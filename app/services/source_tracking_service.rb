@@ -14,6 +14,18 @@ class SourceTrackingService
     # Parse UTM parameters
     utm_params = parse_utm_params
     
+    # If no UTM source but source is determined from referrer/click ID,
+    # set utm_source to match source for data consistency
+    # This ensures External Sources matches UTM Source Distribution
+    # EXCEPT for 'other' which shouldn't be in UTM Source Distribution
+    final_utm_source = utm_params[:utm_source]
+    if final_utm_source.blank? && source.present? && source != 'direct' && source != 'other'
+      # Only set utm_source if source is a valid UTM source name
+      # Exclude 'other' since it represents unknown referrers, not UTM-tracked traffic
+      # This maintains data integrity while ensuring consistency
+      final_utm_source = source
+    end
+    
     # Parse referrer
     referrer = parse_referrer
     
@@ -28,7 +40,7 @@ class SourceTrackingService
       analytic = Analytic.create!(
         source: source,
         referrer: referrer,
-        utm_source: utm_params[:utm_source],
+        utm_source: final_utm_source,
         utm_medium: utm_params[:utm_medium],
         utm_campaign: utm_params[:utm_campaign],
         utm_content: utm_params[:utm_content],
@@ -203,7 +215,7 @@ class SourceTrackingService
   def parse_utm_params
     {
       utm_source: sanitize_utm_param(@params[:utm_source]),
-      utm_medium: sanitize_utm_param(@params[:utm_medium]),
+      utm_medium: sanitize_utm_medium(@params[:utm_medium]),
       utm_campaign: sanitize_utm_param(@params[:utm_campaign]),
       utm_content: sanitize_utm_param(@params[:utm_content]),
       utm_term: sanitize_utm_param(@params[:utm_term])
@@ -216,9 +228,46 @@ class SourceTrackingService
     # Handle duplicate parameters (e.g., "google,google" or "cpc,cpc")
     # Rails concatenates duplicate params with comma, so we split and take first
     sanitized = value.to_s.split(',').first&.strip
+    return nil unless sanitized.present?
     
-    # Return nil if empty after sanitization
-    sanitized.present? ? sanitized : nil
+    # Normalize common source variations for consistency
+    # This ensures variations like 'fb', 'face', 'facebbo' become 'facebook' to match source column normalization
+    normalized = sanitized.downcase
+    case normalized
+    when 'fb', 'face', 'facebbo', 'facebook'
+      'facebook'
+    when 'ig', 'instagram'
+      'instagram'
+    when 'tw', 'x', 'twitter'
+      'twitter'
+    when 'li', 'linkedin'
+      'linkedin'
+    when 'yt', 'youtube'
+      'youtube'
+    when 'tt', 'tiktok'
+      'tiktok'
+    when 'sc', 'snapchat'
+      'snapchat'
+    else
+      sanitized
+    end
+  end
+
+  def sanitize_utm_medium(value)
+    return nil if value.blank?
+    
+    # Handle duplicate parameters
+    sanitized = value.to_s.split(',').first&.strip
+    return nil unless sanitized.present?
+    
+    # Normalize UTM medium values: 'social' and 'paid_social' -> 'paid social'
+    normalized = sanitized.downcase
+    case normalized
+    when 'social', 'paid_social', 'paid social'
+      'paid social'
+    else
+      sanitized
+    end
   end
 
   def parse_referrer
@@ -395,7 +444,7 @@ class SourceTrackingService
     sanitized = source_value.downcase
     
     result = case sanitized
-    when 'fb', 'facebook'
+    when 'fb', 'face', 'facebbo', 'facebook'
       'facebook'
     when 'ig', 'instagram'
       'instagram'

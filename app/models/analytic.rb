@@ -124,7 +124,8 @@ class Analytic < ApplicationRecord
     if date_filter && date_filter.is_a?(Hash) && date_filter[:start_date] && date_filter[:end_date]
       base_scope.date_range(date_filter[:start_date], date_filter[:end_date])
     else
-      base_scope.recent(30)
+      # Return all records (not limited to 30 days) for data integrity
+      base_scope
     end
   end
   
@@ -139,19 +140,39 @@ class Analytic < ApplicationRecord
   end
   
   def self.utm_source_distribution(date_filter = nil)
-    # Only include UTM sources
+    # Only include UTM sources for records with complete UTM parameters (source + medium + campaign)
+    # This ensures consistency across all UTM distributions
     scope = filtered_scope(date_filter)
     
-    # Get UTM source counts only
-    scope.where.not(utm_source: [nil, '']).group(:utm_source).count
+    # Get UTM source counts only for records with complete UTM tracking
+    # Exclude 'direct' and 'other' which are fallback values, not real UTM sources
+    scope.where.not(utm_source: [nil, '', 'direct', 'other'])
+         .where.not(utm_medium: [nil, ''])
+         .where.not(utm_campaign: [nil, ''])
+         .group(:utm_source)
+         .count
   end
   
   def self.utm_medium_distribution(date_filter = nil)
-    filtered_scope(date_filter).where.not(utm_medium: [nil, '']).group(:utm_medium).count
+    # Only include mediums for records with complete UTM parameters (source + medium + campaign)
+    # This ensures consistency with utm_source_distribution and utm_campaign_distribution
+    scope = filtered_scope(date_filter)
+    scope.where.not(utm_medium: [nil, ''])
+         .where.not(utm_source: [nil, '', 'direct', 'other'])
+         .where.not(utm_campaign: [nil, ''])
+         .group(:utm_medium)
+         .count
   end
   
   def self.utm_campaign_distribution(date_filter = nil)
-    filtered_scope(date_filter).where.not(utm_campaign: [nil, '']).group(:utm_campaign).count
+    # Only include campaigns for records that have complete UTM parameters (valid source + medium)
+    # This ensures consistency with utm_source_distribution and utm_medium_distribution
+    scope = filtered_scope(date_filter)
+    scope.where.not(utm_campaign: [nil, ''])
+         .where.not(utm_source: [nil, '', 'direct', 'other'])
+         .where.not(utm_medium: [nil, ''])
+         .group(:utm_campaign)
+         .count
   end
   
   def self.utm_content_distribution(date_filter = nil)

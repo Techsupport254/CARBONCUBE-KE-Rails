@@ -5,6 +5,24 @@ Rails.application.routes.draw do
   get '/seller-', to: redirect('/become-a-seller', status: 301)
   get '/search', to: redirect('/', status: 301)
   
+  # Redirect /ad/* to /ads/* (fix old ad URLs)
+  get '/ad/:path', to: redirect('/ads/%{path}', status: 301), constraints: { path: /.*/ }
+  
+  # Redirect /seller/tiers/ (with trailing slash) to /tiers
+  get '/seller/tiers/', to: redirect('/tiers', status: 301)
+  
+  # Redirect /seller-help to /vendor-help
+  get '/seller-help', to: redirect('/vendor-help', status: 301)
+  
+  # Redirect /privacy-policy to /privacy
+  get '/privacy-policy', to: redirect('/privacy', status: 301)
+  
+  # Redirect /about to /about-us
+  get '/about', to: redirect('/about-us', status: 301)
+  
+  # Redirect /sitemap to /sitemap.xml
+  get '/sitemap', to: redirect('/sitemap.xml', status: 301)
+  
   # Health check endpoints
   get '/health', to: 'health#show'
   get '/health/database', to: 'health#database'
