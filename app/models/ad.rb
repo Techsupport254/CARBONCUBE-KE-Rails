@@ -9,6 +9,7 @@ class Ad < ApplicationRecord
   scope :active, -> { where(deleted: false) }
   scope :deleted, -> { where(deleted: true) }
   scope :with_valid_images, -> { where.not(media: [nil, [], ""]) }
+  scope :from_active_sellers, -> { joins(:seller).where(sellers: { blocked: false, deleted: false, flagged: false }) }
 
   belongs_to :seller
   belongs_to :category

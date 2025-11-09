@@ -7,7 +7,7 @@ class Sales::ReviewsController < ApplicationController
     # Filter out reviews from deleted/blocked buyers and blocked/deleted sellers
     @reviews = Review.joins(:buyer, ad: :seller)
                      .where(buyers: { deleted: false })
-                     .where(sellers: { deleted: false, blocked: false })
+                     .where(sellers: { deleted: false, blocked: false, flagged: false })
                      .includes(:buyer, :ad)
                      .order(created_at: :desc)
 

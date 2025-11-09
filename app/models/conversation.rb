@@ -1,4 +1,5 @@
 class Conversation < ApplicationRecord
+  after_create :associate_guest_clicks_with_buyer
   belongs_to :admin, class_name: 'Admin', foreign_key: 'admin_id', optional: true
   belongs_to :buyer, class_name: 'Buyer', foreign_key: 'buyer_id', optional: true
   belongs_to :seller, class_name: 'Seller', foreign_key: 'seller_id', optional: true
@@ -233,6 +234,30 @@ class Conversation < ApplicationRecord
     scope: [:buyer_id, :seller_id, :inquirer_seller_id], 
     message: "conversation already exists for this ad with these participants" 
   }
+
+  # Associate guest click events with buyer when they send a message
+  # This ensures that clicks made before authentication are properly attributed
+  def associate_guest_clicks_with_buyer
+    return unless buyer_id.present? && ad_id.present?
+    
+    # Find guest click events for this ad that happened before the conversation was created
+    # Look for clicks within a reasonable time window (e.g., 24 hours before conversation)
+    time_window = created_at - 24.hours
+    
+    guest_clicks = ClickEvent
+      .where(ad_id: ad_id)
+      .where(buyer_id: nil)
+      .where('created_at >= ? AND created_at <= ?', time_window, created_at)
+      .where.not(id: ClickEvent.where(buyer_id: buyer_id).select(:id)) # Don't update clicks already associated
+    
+    if guest_clicks.any?
+      updated_count = guest_clicks.update_all(buyer_id: buyer_id)
+      Rails.logger.info "Associated #{updated_count} guest click events with buyer #{buyer_id} for ad #{ad_id}" if defined?(Rails.logger)
+    end
+  rescue => e
+    # Don't fail conversation creation if this fails
+    Rails.logger.error "Failed to associate guest clicks: #{e.message}" if defined?(Rails.logger)
+  end
 
   private
 

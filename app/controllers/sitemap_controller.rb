@@ -4,7 +4,7 @@ class SitemapController < ApplicationController
   def index
     @ads = Ad.active.with_valid_images
              .joins(:seller)
-             .where(sellers: { blocked: false, deleted: false })
+             .where(sellers: { blocked: false, deleted: false, flagged: false })
              .where(flagged: false)
              .includes(:category, :subcategory, seller: { seller_tier: :tier })
              .limit(1000) # Limit for performance
@@ -26,7 +26,7 @@ class SitemapController < ApplicationController
     # Get all active ads without pagination limits for sitemap generation
     @ads = Ad.active.with_valid_images
              .joins(:seller)
-             .where(sellers: { blocked: false, deleted: false })
+             .where(sellers: { blocked: false, deleted: false, flagged: false })
              .where(flagged: false)
              .includes(:category, :subcategory, seller: { seller_tier: :tier })
              .order(Arel.sql('RANDOM()'))
@@ -71,7 +71,7 @@ class SitemapController < ApplicationController
       active_non_deleted_non_flagged_ads: Ad.active
                                            .where(deleted: false, flagged: false)
                                            .joins(:seller)
-                                           .where(sellers: { blocked: false, deleted: false })
+                                           .where(sellers: { blocked: false, deleted: false, flagged: false })
                                            .count,
       total_sellers: Seller.count,
       active_sellers: Seller.where(blocked: false, deleted: false).count,

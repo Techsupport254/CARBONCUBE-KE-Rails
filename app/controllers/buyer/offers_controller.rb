@@ -7,6 +7,8 @@ class Buyer::OffersController < ApplicationController
   def index
     @offers = Offer.where(status: ['active', 'scheduled'])
                    .where('end_time > ?', Time.current)
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .by_priority
                    .includes(:seller, :offer_ads, ads: [:category, :subcategory, :reviews, seller: :seller_tier])
     
@@ -66,6 +68,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/active
   def active_offers
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .homepage_visible
                    .featured
                    .by_priority
@@ -77,6 +81,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/featured
   def featured_offers
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .featured
                    .by_priority
                    .limit(10)
@@ -87,6 +93,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/upcoming
   def upcoming_offers
     @offers = Offer.upcoming
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .homepage_visible
                    .by_priority
                    .limit(5)
@@ -104,6 +112,8 @@ class Buyer::OffersController < ApplicationController
     end
     
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: offer_type)
                    .homepage_visible
                    .by_priority
@@ -122,6 +132,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/black-friday
   def black_friday
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: 'black_friday')
                    .by_priority
     
@@ -131,6 +143,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/cyber-monday
   def cyber_monday
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: 'cyber_monday')
                    .by_priority
     
@@ -140,6 +154,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/flash-sales
   def flash_sales
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: 'flash_sale')
                    .includes(:seller, :offer_ads, ads: [:category, :subcategory, :reviews, seller: :seller_tier])
                    .by_priority
@@ -150,6 +166,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/clearance
   def clearance
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: 'clearance')
                    .by_priority
     
@@ -159,6 +177,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/seasonal
   def seasonal
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: 'seasonal')
                    .by_priority
     
@@ -168,6 +188,8 @@ class Buyer::OffersController < ApplicationController
   # GET /buyer/offers/holiday
   def holiday
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(offer_type: 'holiday')
                    .by_priority
     
@@ -207,6 +229,8 @@ class Buyer::OffersController < ApplicationController
     return render json: { offers: [] } if query.blank?
     
     @offers = Offer.active_now
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(
                      'name ILIKE ? OR description ILIKE ? OR badge_text ILIKE ?', 
                      "%#{query}%", 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_04_133248) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_09_200308) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -601,6 +601,42 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_04_133248) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "quarterly_targets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "metric_type", null: false
+    t.integer "year", null: false
+    t.integer "quarter", null: false
+    t.integer "target_value", null: false
+    t.string "status", default: "pending", null: false
+    t.uuid "created_by_id", null: false
+    t.uuid "approved_by_id"
+    t.datetime "approved_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approved_by_id"], name: "index_quarterly_targets_on_approved_by_id"
+    t.index ["created_by_id"], name: "index_quarterly_targets_on_created_by_id"
+    t.index ["metric_type", "year", "quarter"], name: "index_quarterly_targets_on_metric_year_quarter", unique: true
+    t.index ["status"], name: "index_quarterly_targets_on_status"
+    t.index ["year", "quarter"], name: "index_quarterly_targets_on_year_and_quarter"
+  end
+
+  create_table "review_requests", force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.text "reason"
+    t.string "status", default: "pending"
+    t.datetime "requested_at"
+    t.datetime "reviewed_at"
+    t.string "reviewed_by_type"
+    t.uuid "reviewed_by_id"
+    t.text "review_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["requested_at"], name: "index_review_requests_on_requested_at"
+    t.index ["reviewed_by_type", "reviewed_by_id"], name: "index_review_requests_on_reviewed_by"
+    t.index ["seller_id"], name: "index_review_requests_on_seller_id"
+    t.index ["status"], name: "index_review_requests_on_status"
+  end
+
   create_table "reviews", force: :cascade do |t|
     t.bigint "ad_id", null: false
     t.integer "rating", limit: 2, null: false
@@ -727,6 +763,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_04_133248) do
     t.string "oauth_token"
     t.string "oauth_refresh_token"
     t.string "oauth_expires_at"
+    t.boolean "flagged", default: false, null: false
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -843,6 +880,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_04_133248) do
   add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"
+  add_foreign_key "review_requests", "sellers"
   add_foreign_key "reviews", "ads"
   add_foreign_key "reviews", "buyers", on_delete: :cascade
   add_foreign_key "reviews", "buyers", on_delete: :cascade

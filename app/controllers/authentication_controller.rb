@@ -69,6 +69,16 @@ class AuthenticationController < ApplicationController
       if @user.respond_to?(:update_last_active!)
         @user.update_last_active!
       end
+      
+      # Associate guest clicks with user (buyer or seller) if device_hash is provided
+      if (@user.is_a?(Buyer) || @user.is_a?(Seller)) && params[:device_hash].present?
+        begin
+          GuestClickAssociationService.associate_clicks_with_user(@user, params[:device_hash])
+        rescue => e
+          Rails.logger.error "Failed to associate guest clicks on login: #{e.message}" if defined?(Rails.logger)
+          # Don't fail login if association fails
+        end
+      end
 
       # Create token with appropriate ID field and remember_me flag
       token_payload = if role == 'Seller'
@@ -322,8 +332,9 @@ class AuthenticationController < ApplicationController
       Rails.logger.info "🔧 GoogleOauthService.new(#{auth_code ? auth_code[0..10] + '...' : 'nil'}, #{redirect_uri}, #{user_ip}, #{role}, #{location_data.inspect})"
       
       # Add timeout to prevent hanging requests
+      device_hash = params[:device_hash] # Capture device hash for guest click association
       result = Timeout::timeout(30) do
-        oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip, role, location_data, is_registration)
+        oauth_service = GoogleOauthService.new(auth_code, redirect_uri, user_ip, role, location_data, is_registration, device_hash)
         Rails.logger.info "✅ GoogleOauthService created successfully with is_registration=#{is_registration}"
         
         Rails.logger.info "🔄 Calling authenticate method..."
@@ -694,9 +705,10 @@ class AuthenticationController < ApplicationController
       redirect_uri = ENV['GOOGLE_REDIRECT_URI'] || "#{request.base_url}/auth/google_oauth2/popup_callback"
       user_ip = request.remote_ip
       role = state || 'Buyer' # Get role from state parameter, default to buyer
+      device_hash = params[:device_hash] # Capture device hash for guest click association
       Rails.logger.info "🌐 User IP: #{user_ip}"
       Rails.logger.info "👤 Role from state: #{role}"
-      oauth_service = GoogleOauthService.new(code, redirect_uri, user_ip, role)
+      oauth_service = GoogleOauthService.new(code, redirect_uri, user_ip, role, nil, false, device_hash)
       result = oauth_service.authenticate
       
       if result[:success]
@@ -977,8 +989,22 @@ class AuthenticationController < ApplicationController
                  Buyer.new(user_attributes)
                end
         
+        # Capture device hash if provided for guest click association
+        if params[:device_hash].present? && (user.is_a?(Buyer) || user.is_a?(Seller))
+          user.device_hash_for_association = params[:device_hash]
+        end
+        
         if user.save
           puts "✅ User created successfully: #{user.email}"
+          
+          # Associate guest clicks after save (in case device_hash wasn't set before)
+          if (user.is_a?(Buyer) || user.is_a?(Seller)) && params[:device_hash].present?
+            begin
+              GuestClickAssociationService.associate_clicks_with_user(user, params[:device_hash])
+            rescue => e
+              Rails.logger.error "Failed to associate guest clicks after OAuth registration: #{e.message}" if defined?(Rails.logger)
+            end
+          end
           
           # Handle seller-specific setup
           if user_type == 'seller'

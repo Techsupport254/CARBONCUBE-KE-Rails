@@ -26,9 +26,19 @@ class Seller::AnalyticsController < ApplicationController
         response_data.merge!(calculate_basic_tier_data)
       when 3 # Standard tier
         response_data.merge!(calculate_standard_tier_data)
-        response_data.merge!(click_events_stats: top_click_event_stats)
+        # Use unified service for click events stats
+        click_events_service = ClickEventsAnalyticsService.new(filters: { seller_id: current_seller.id })
+        response_data.merge!(click_events_stats: click_events_service.demographics_stats)
       when 4 # Premium tier
         response_data.merge!(calculate_premium_tier_data)
+        # Use unified service for click events stats
+        click_events_service = ClickEventsAnalyticsService.new(filters: { seller_id: current_seller.id })
+        response_data.merge!(
+          click_events_stats: click_events_service.demographics_stats,
+          basic_click_event_stats: {
+            click_event_trends: click_events_service.click_event_trends
+          }
+        )
       else
         render json: { error: 'Invalid tier' }, status: 400
         return
@@ -117,21 +127,16 @@ class Seller::AnalyticsController < ApplicationController
 
 #================================================= COMBINE ALL TOP CLICK EVENT STATS =================================================#
   def top_click_event_stats
-    stats = {
-      top_age_group_clicks: top_clicks_by_age,
-      top_income_range_clicks: top_clicks_by_income,
-      top_education_level_clicks: top_clicks_by_education,
-      top_employment_status_clicks: top_clicks_by_employment,
-      top_sector_clicks: top_clicks_by_sector
-    }
-
-    # Rails.logger.info "Final Click Events Stats: #{stats}"
-    stats
+    # Use unified service for click events demographics
+    click_events_service = ClickEventsAnalyticsService.new(filters: { seller_id: current_seller.id })
+    click_events_service.demographics_stats
   end
 
   def basic_click_event_stats
+    # Use unified service for click events trends
+    click_events_service = ClickEventsAnalyticsService.new(filters: { seller_id: current_seller.id })
     {
-      click_event_trends: click_event_trends
+      click_event_trends: click_events_service.click_event_trends
     }
   end
 

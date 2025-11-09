@@ -117,5 +117,8 @@ class ProfilePictureCacheService
 
   def ensure_cache_directory_exists
     FileUtils.mkdir_p(@cache_dir) unless Dir.exist?(@cache_dir)
+    
+    # Ensure the directory has proper permissions
+    FileUtils.chmod(0755, @cache_dir) if Dir.exist?(@cache_dir)
   end
 end

@@ -7,7 +7,7 @@ class Sales::WishListsController < ApplicationController
     # Filter out wishlists from deleted/blocked buyers and blocked/deleted sellers
     @wishlists = WishList.joins(:buyer, ad: :seller)
                          .where(buyers: { deleted: false })
-                         .where(sellers: { deleted: false, blocked: false })
+                         .where(sellers: { deleted: false, blocked: false, flagged: false })
                          .includes(:buyer, :ad)
                          .order(created_at: :desc)
 

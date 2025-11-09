@@ -7,7 +7,7 @@ class AdsController < ApplicationController
     # Fetch ads from all active sellers (not just premium) with valid images
     # No caching to ensure true randomization on each request
     @ads = Ad.active.with_valid_images.joins(:seller)
-             .where(sellers: { blocked: false, deleted: false })
+             .where(sellers: { blocked: false, deleted: false, flagged: false })
              .where(flagged: false)
              .includes(
                :category,
@@ -23,7 +23,7 @@ class AdsController < ApplicationController
   # GET /ads/:id
   def show
     @ad = Ad.active.joins(:seller)
-            .where(sellers: { blocked: false, deleted: false })
+            .where(sellers: { blocked: false, deleted: false, flagged: false })
             .where(flagged: false)
             .includes(
               :category,

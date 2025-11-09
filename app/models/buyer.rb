@@ -1,8 +1,12 @@
 # app/models/buyer.rb
 class Buyer < ApplicationRecord
+  after_create :associate_guest_clicks
   before_create :generate_uuid
   before_validation :normalize_email
   before_validation :generate_username_from_fullname
+  
+  # Store device hash temporarily for association (set via attr_accessor)
+  attr_accessor :device_hash_for_association
 
   has_secure_password validations: false
 
@@ -116,6 +120,17 @@ class Buyer < ApplicationRecord
     total_completion = (completed_fields.to_f / all_fields.length * 100).round
 
     total_completion
+  end
+
+  # Associate guest click events with this buyer based on device hash
+  def associate_guest_clicks
+    return if new_record? # Only run after save
+    
+    # Use device_hash_for_association if provided, otherwise let service find it
+    GuestClickAssociationService.associate_clicks_with_user(self, device_hash_for_association)
+  rescue => e
+    # Don't fail buyer creation if association fails
+    Rails.logger.error "Failed to associate guest clicks during buyer creation: #{e.message}" if defined?(Rails.logger)
   end
 
   private

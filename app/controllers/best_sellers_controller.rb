@@ -70,7 +70,7 @@ class BestSellersController < ApplicationController
                  .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
                  .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
                  .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
-                 .where(sellers: { blocked: false, deleted: false })
+                 .where(sellers: { blocked: false, deleted: false, flagged: false })
                  .where(flagged: false)
                  .select("
                    ads.id,

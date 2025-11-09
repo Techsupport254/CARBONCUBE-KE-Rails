@@ -1,10 +1,10 @@
 class Admin::SellersController < ApplicationController
   before_action :authenticate_admin
-  before_action :set_seller, only: [:block, :unblock, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
+  before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
 
   def index
-    # Base query
-    sellers_query = Seller.all
+    # Base query - show all sellers including deleted, flagged, and blocked
+    sellers_query = Seller.unscoped
     
     # Enhanced search functionality
     if params[:query].present?
@@ -25,10 +25,19 @@ class Admin::SellersController < ApplicationController
     if params[:status].present?
       case params[:status]
       when 'active'
-        sellers_query = sellers_query.where(blocked: false)
+        sellers_query = sellers_query.where(blocked: false, deleted: false, flagged: false)
       when 'blocked'
         sellers_query = sellers_query.where(blocked: true)
+      when 'deleted'
+        sellers_query = sellers_query.where(deleted: true)
+      when 'flagged'
+        sellers_query = sellers_query.where(flagged: true)
+      when 'all'
+        # Show all - no filter (already using unscoped)
       end
+    else
+      # Default: show all sellers when no filter is selected
+      # (already using unscoped, so this is fine)
     end
     
     # Sorting - default to last_active_at desc to show most recently active users first
@@ -62,7 +71,7 @@ class Admin::SellersController < ApplicationController
     
     # Prepare sellers data with last_active_at
     @sellers_data = @sellers.map do |seller|
-      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :created_at, :updated_at, :last_active_at, :profile_picture])
+      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture])
     end
     
     # Calculate pagination metadata
@@ -179,6 +188,116 @@ class Admin::SellersController < ApplicationController
     else
       render json: { error: 'Seller not found' }, status: :not_found
     end
+  end
+
+  def flag
+    if @seller
+      if @seller.update(flagged: true)
+        render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :flagged]), status: :ok
+      else
+        render json: @seller.errors, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Seller not found' }, status: :not_found
+    end
+  end
+
+  def unflag
+    if @seller
+      if @seller.update(flagged: false)
+        render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :flagged]), status: :ok
+      else
+        render json: @seller.errors, status: :unprocessable_entity
+      end
+    else
+      render json: { error: 'Seller not found' }, status: :not_found
+    end
+  end
+
+  def bulk_actions
+    action = params[:action_type]
+    seller_ids = params[:seller_ids] || []
+    
+    if seller_ids.empty?
+      render json: { error: 'No sellers selected' }, status: :bad_request
+      return
+    end
+
+    # Ensure seller_ids is an array and filter out any nil/empty values
+    seller_ids = Array(seller_ids).compact.reject(&:blank?)
+    
+    if seller_ids.empty?
+      render json: { error: 'No valid seller IDs provided' }, status: :bad_request
+      return
+    end
+
+    # Normalize seller_ids to strings for UUID comparison
+    seller_ids_normalized = seller_ids.map(&:to_s).reject(&:blank?)
+    
+    # Find all sellers - use unscoped to include deleted/blocked sellers
+    sellers = Seller.unscoped.where(id: seller_ids_normalized)
+    found_ids = sellers.pluck(:id).map(&:to_s)
+    missing_ids = seller_ids_normalized - found_ids
+    
+    updated_count = 0
+    errors = []
+
+    # Log for debugging
+    Rails.logger.info "Bulk action '#{action}' - Requested IDs: #{seller_ids_normalized.inspect}"
+    Rails.logger.info "Bulk action '#{action}' - Found #{sellers.count} sellers"
+    Rails.logger.info "Bulk action '#{action}' - Found IDs: #{found_ids.inspect}"
+    Rails.logger.info "Bulk action '#{action}' - Missing IDs: #{missing_ids.inspect}" if missing_ids.any?
+
+    if sellers.empty?
+      errors << "No sellers found with the provided IDs"
+      render json: {
+        message: "Bulk action '#{action}' failed",
+        updated_count: 0,
+        total_selected: seller_ids_normalized.count,
+        found_count: 0,
+        missing_count: missing_ids.count,
+        errors: errors
+      }, status: :not_found
+      return
+    end
+
+    # Use update_all for better performance and reliability
+    begin
+      case action
+      when 'flag'
+        updated_count = sellers.update_all(flagged: true, updated_at: Time.current)
+        Rails.logger.info "Flagged #{updated_count} sellers"
+      when 'unflag'
+        updated_count = sellers.update_all(flagged: false, updated_at: Time.current)
+        Rails.logger.info "Unflagged #{updated_count} sellers"
+      when 'block'
+        updated_count = sellers.update_all(blocked: true, updated_at: Time.current)
+        Rails.logger.info "Blocked #{updated_count} sellers"
+      when 'unblock'
+        updated_count = sellers.update_all(blocked: false, updated_at: Time.current)
+        Rails.logger.info "Unblocked #{updated_count} sellers"
+      else
+        errors << "Unknown action: #{action}"
+      end
+    rescue => e
+      errors << "Failed to perform bulk action: #{e.message}"
+      Rails.logger.error "Bulk action error: #{e.class.name} - #{e.message}"
+      Rails.logger.error e.backtrace.first(10).join("\n")
+    end
+
+    # Add errors for missing sellers
+    if missing_ids.any?
+      errors << "Sellers not found: #{missing_ids.join(', ')}"
+    end
+
+    render json: {
+      message: "Bulk action '#{action}' completed",
+      updated_count: updated_count,
+      total_selected: seller_ids_normalized.count,
+      found_count: sellers.count,
+      missing_count: missing_ids.count,
+      errors: errors
+    }
   end
 
   def analytics

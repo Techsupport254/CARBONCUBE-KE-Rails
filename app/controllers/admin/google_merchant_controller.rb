@@ -7,7 +7,7 @@ class Admin::GoogleMerchantController < ApplicationController
     # Get premium ads only (tier_id = 4)
     premium_ads = Ad.active
                     .joins(seller: { seller_tier: :tier })
-                    .where(sellers: { blocked: false, deleted: false })
+                    .where(sellers: { blocked: false, deleted: false, flagged: false })
                     .where(flagged: false)
                     .where.not(media: [nil, [], ""])
                     .where(tiers: { id: 4 })
@@ -26,7 +26,7 @@ class Admin::GoogleMerchantController < ApplicationController
       # Get premium ads only (tier_id = 4)
       premium_ads = Ad.active
                       .joins(seller: { seller_tier: :tier })
-                      .where(sellers: { blocked: false, deleted: false })
+                      .where(sellers: { blocked: false, deleted: false, flagged: false })
                       .where(flagged: false)
                       .where.not(media: [nil, [], ""])
                       .where(tiers: { id: 4 })
@@ -260,7 +260,7 @@ class Admin::GoogleMerchantController < ApplicationController
     # Count total premium ads
     total_premium_ads = Ad.active
                           .joins(seller: { seller_tier: :tier })
-                          .where(sellers: { blocked: false, deleted: false })
+                          .where(sellers: { blocked: false, deleted: false, flagged: false })
                           .where(flagged: false)
                           .where.not(media: [nil, [], ""])
                           .where(tiers: { id: 4 })
