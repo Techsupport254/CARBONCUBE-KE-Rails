@@ -6,7 +6,7 @@ class GoogleOauthService
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
   GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
   
-  def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil, is_registration = false)
+  def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil, is_registration = false, device_hash = nil)
     Rails.logger.info "🔧 GoogleOauthService#initialize called with:"
     Rails.logger.info "  - auth_code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
     Rails.logger.info "  - redirect_uri: #{redirect_uri}"
@@ -14,6 +14,7 @@ class GoogleOauthService
     Rails.logger.info "  - role: #{role.inspect} (#{role.class})"
     Rails.logger.info "  - location_data: #{location_data.inspect}"
     Rails.logger.info "  - is_registration: #{is_registration.inspect}"
+    Rails.logger.info "  - device_hash: #{device_hash ? device_hash[0..10] + '...' : 'nil'}"
     
     @auth_code = auth_code
     @redirect_uri = redirect_uri
@@ -21,6 +22,7 @@ class GoogleOauthService
     @role = role
     @location_data = location_data
     @is_registration = is_registration
+    @device_hash = device_hash
     
     Rails.logger.info "✅ GoogleOauthService initialized with @role = #{@role.inspect}, @is_registration = #{@is_registration.inspect}"
   end
@@ -170,9 +172,9 @@ class GoogleOauthService
         Rails.logger.info "🔍 Registration attempt for role: #{requested_role}"
         
         if user_type == 'buyer'
-          create_buyer_user(user_info, location_info)
+          create_buyer_user(user_info, location_info, @device_hash)
         elsif user_type == 'seller'
-          create_seller_user(user_info, location_info)
+          create_seller_user(user_info, location_info, @device_hash)
         else
           Rails.logger.error "Unknown user type: #{user_type}"
           {
@@ -299,7 +301,7 @@ class GoogleOauthService
   end
 
   # Create new seller user
-  def create_seller_user(user_info, location_info)
+  def create_seller_user(user_info, location_info, device_hash = nil)
     Rails.logger.info "Creating seller with data"
     
     # Check if user already exists as a different role (registration conflict)
@@ -402,6 +404,11 @@ class GoogleOauthService
     # Create the seller
     seller = Seller.new(seller_attributes)
     
+    # Capture device hash if provided for guest click association
+    if device_hash.present?
+      seller.device_hash_for_association = device_hash
+    end
+    
     # Try to save, with retry logic for sequence sync issues
     save_success = false
     retry_count = 0
@@ -453,16 +460,29 @@ class GoogleOauthService
       end
       
       # Cache the profile picture after user creation to avoid rate limiting
-      if seller.profile_picture.present? && seller.profile_picture.include?('googleusercontent.com')
-        Rails.logger.info "🔄 Attempting to cache profile picture for seller #{seller.id}: #{seller.profile_picture}"
+      # Store original URL before caching so we can fallback if caching fails
+      original_google_url = seller.profile_picture if seller.profile_picture.present? && seller.profile_picture.include?('googleusercontent.com')
+      
+      if original_google_url.present?
+        Rails.logger.info "🔄 Attempting to cache profile picture for seller #{seller.id}: #{original_google_url}"
         cache_service = ProfilePictureCacheService.new
-        cached_url = cache_service.cache_google_profile_picture(seller.profile_picture, seller.id)
+        cached_url = cache_service.cache_google_profile_picture(original_google_url, seller.id)
         
         if cached_url.present?
-          seller.update_column(:profile_picture, cached_url)
-          Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
+          # Verify the file actually exists before updating
+          filename = cached_url.gsub('/cached_profile_pictures/', '')
+          file_path = Rails.root.join('public', 'cached_profile_pictures', filename)
+          
+          if File.exist?(file_path)
+            seller.update_column(:profile_picture, cached_url)
+            Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
+          else
+            Rails.logger.warn "⚠️ Cached URL returned but file doesn't exist, keeping original Google URL"
+            # Keep the original Google URL if file doesn't exist
+          end
         else
-          Rails.logger.warn "⚠️ Failed to cache profile picture for seller #{seller.id}"
+          Rails.logger.warn "⚠️ Failed to cache profile picture for seller #{seller.id}, keeping original Google URL"
+          # Keep the original Google URL if caching fails
         end
       else
         Rails.logger.info "ℹ️ No Google profile picture to cache for seller #{seller.id}: #{seller.profile_picture}"
@@ -531,7 +551,7 @@ class GoogleOauthService
   end
 
   # Create new buyer user
-  def create_buyer_user(user_info, location_info)
+  def create_buyer_user(user_info, location_info, device_hash = nil)
     Rails.logger.info "Creating buyer with data"
     
     # Check if user already exists as a different role (registration conflict)
@@ -634,6 +654,11 @@ class GoogleOauthService
     # Create the buyer
     buyer = Buyer.new(buyer_attributes)
     
+    # Capture device hash if provided for guest click association
+    if device_hash.present?
+      buyer.device_hash_for_association = device_hash
+    end
+    
     # Ensure UUID is set before saving (safety check in case callback doesn't fire)
     buyer.id ||= SecureRandom.uuid if buyer.id.blank?
     
@@ -679,16 +704,29 @@ class GoogleOauthService
       Rails.logger.info "Buyer created successfully: #{buyer.email}"
       
       # Cache the profile picture after user creation to avoid rate limiting
-      if buyer.profile_picture.present? && buyer.profile_picture.include?('googleusercontent.com')
-        Rails.logger.info "🔄 Attempting to cache profile picture for buyer #{buyer.id}: #{buyer.profile_picture}"
+      # Store original URL before caching so we can fallback if caching fails
+      original_google_url = buyer.profile_picture if buyer.profile_picture.present? && buyer.profile_picture.include?('googleusercontent.com')
+      
+      if original_google_url.present?
+        Rails.logger.info "🔄 Attempting to cache profile picture for buyer #{buyer.id}: #{original_google_url}"
         cache_service = ProfilePictureCacheService.new
-        cached_url = cache_service.cache_google_profile_picture(buyer.profile_picture, buyer.id)
+        cached_url = cache_service.cache_google_profile_picture(original_google_url, buyer.id)
         
         if cached_url.present?
-          buyer.update_column(:profile_picture, cached_url)
-          Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
+          # Verify the file actually exists before updating
+          filename = cached_url.gsub('/cached_profile_pictures/', '')
+          file_path = Rails.root.join('public', 'cached_profile_pictures', filename)
+          
+          if File.exist?(file_path)
+            buyer.update_column(:profile_picture, cached_url)
+            Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
+          else
+            Rails.logger.warn "⚠️ Cached URL returned but file doesn't exist, keeping original Google URL"
+            # Keep the original Google URL if file doesn't exist
+          end
         else
-          Rails.logger.warn "⚠️ Failed to cache profile picture for buyer #{buyer.id}"
+          Rails.logger.warn "⚠️ Failed to cache profile picture for buyer #{buyer.id}, keeping original Google URL"
+          # Keep the original Google URL if caching fails
         end
       else
         Rails.logger.info "ℹ️ No Google profile picture to cache for buyer #{buyer.id}: #{buyer.profile_picture}"
@@ -1374,8 +1412,17 @@ class GoogleOauthService
       
       Rails.logger.info "Detailed user info obtained: #{detailed_info ? 'Yes' : 'No'}"
       
-      # Merge the information
+      # Merge the information (detailed_info takes precedence)
       comprehensive_info = basic_info.merge(detailed_info || {})
+      
+      # Log phone number extraction for debugging
+      if comprehensive_info['phone_number'].present?
+        Rails.logger.info "📞 Phone number found in comprehensive_info: #{comprehensive_info['phone_number']}"
+      elsif comprehensive_info['phone_numbers'].present?
+        Rails.logger.info "📞 Phone numbers array found: #{comprehensive_info['phone_numbers'].inspect}"
+      else
+        Rails.logger.warn "⚠️ No phone number found in comprehensive_info"
+      end
       
       Rails.logger.info "Successfully obtained comprehensive user info: #{comprehensive_info['email']}"
       Rails.logger.info "Available data: #{comprehensive_info.keys.join(', ')}"
@@ -1515,11 +1562,19 @@ class GoogleOauthService
       }
     end
     
-    # Extract phone numbers
+    # Extract phone numbers - try all available phone numbers
     if people_data['phoneNumbers']&.any?
-      phone_info = people_data['phoneNumbers'].first
-      extracted['phone_number'] = phone_info['value']
-      extracted['phone_type'] = phone_info['type']
+      # Try to find mobile phone first, then any phone
+      mobile_phone = people_data['phoneNumbers'].find { |p| p['type']&.downcase == 'mobile' || p['type']&.downcase == 'cell' }
+      phone_info = mobile_phone || people_data['phoneNumbers'].first
+      
+      if phone_info && phone_info['value'].present?
+        extracted['phone_number'] = phone_info['value']
+        extracted['phone_type'] = phone_info['type']
+        # Also store in phone_numbers array format for compatibility
+        extracted['phone_numbers'] = people_data['phoneNumbers'].map { |p| { 'value' => p['value'], 'type' => p['type'] } }
+        Rails.logger.info "📞 Extracted phone number from People API: #{phone_info['value']} (type: #{phone_info['type']})"
+      end
     end
     
     # Extract addresses (removed from API request to avoid consent screens)
@@ -1904,14 +1959,39 @@ class GoogleOauthService
 
   def extract_phone_number(user_info)
     # Try multiple sources for phone number
-    phone_number = user_info['phone_number'] || 
-                   user_info['phone_numbers']&.first&.dig('value') ||
-                   user_info['phone'] ||
-                   nil
+    # Check in order: direct phone_number, phone_numbers array, phone field
+    phone_number = nil
+    
+    # First, try direct phone_number field (from People API)
+    if user_info['phone_number'].present?
+      phone_number = user_info['phone_number']
+      Rails.logger.info "📞 Found phone_number in user_info: #{phone_number}"
+    # Then try phone_numbers array (from People API or other sources)
+    elsif user_info['phone_numbers'].present?
+      if user_info['phone_numbers'].is_a?(Array)
+        # Find mobile/cell phone first, then any phone
+        mobile_phone = user_info['phone_numbers'].find { |p| 
+          (p.is_a?(Hash) && (p['type']&.downcase == 'mobile' || p['type']&.downcase == 'cell')) ||
+          (p.is_a?(String) && p.match?(/mobile|cell/i))
+        }
+        phone_info = mobile_phone || user_info['phone_numbers'].first
+        
+        if phone_info.is_a?(Hash)
+          phone_number = phone_info['value'] || phone_info[:value]
+        elsif phone_info.is_a?(String)
+          phone_number = phone_info
+        end
+        Rails.logger.info "📞 Found phone_number in phone_numbers array: #{phone_number}"
+      end
+    # Try phone field as fallback
+    elsif user_info['phone'].present?
+      phone_number = user_info['phone']
+      Rails.logger.info "📞 Found phone in user_info: #{phone_number}"
+    end
     
     if phone_number.present?
       # Clean and format the phone number
-      cleaned_phone = phone_number.gsub(/[^\d+]/, '')
+      cleaned_phone = phone_number.to_s.gsub(/[^\d+]/, '')
       
       Rails.logger.info "🔍 Extracted phone number: #{phone_number} -> cleaned: #{cleaned_phone}"
       
@@ -1919,36 +1999,49 @@ class GoogleOauthService
       if cleaned_phone.start_with?('+')
         # International format - convert to 10-digit format for Kenya
         if cleaned_phone.start_with?('+254')
-          # Remove +254 and keep the last 10 digits
+          # Remove +254 and keep the last 9-10 digits
           local_number = cleaned_phone[4..-1]
           if local_number.length == 9 && local_number.start_with?('7')
             formatted_phone = "0#{local_number}"
             Rails.logger.info "✅ Formatted international phone: #{formatted_phone}"
-            formatted_phone
+            return formatted_phone
+          elsif local_number.length == 10 && local_number.start_with?('0')
+            Rails.logger.info "✅ International phone already has leading zero: #{local_number}"
+            return local_number
           else
-            Rails.logger.warn "❌ Invalid Kenya phone number format: #{cleaned_phone}"
-            nil
+            Rails.logger.warn "❌ Invalid Kenya phone number format: #{cleaned_phone} (local: #{local_number})"
+            return nil
           end
         else
           Rails.logger.warn "❌ Non-Kenya international number: #{cleaned_phone}"
-          nil
+          return nil
         end
       elsif cleaned_phone.length == 10 && cleaned_phone.start_with?('0')
-        # Already in correct format
+        # Already in correct format (07XXXXXXXX)
         Rails.logger.info "✅ Phone number already in correct format: #{cleaned_phone}"
-        cleaned_phone
+        return cleaned_phone
       elsif cleaned_phone.length == 9 && cleaned_phone.start_with?('7')
-        # Add leading zero
+        # Add leading zero (7XXXXXXXX -> 07XXXXXXXX)
         formatted_phone = "0#{cleaned_phone}"
         Rails.logger.info "✅ Added leading zero: #{formatted_phone}"
-        formatted_phone
+        return formatted_phone
+      elsif cleaned_phone.length == 12 && cleaned_phone.start_with?('254')
+        # Remove country code (2547XXXXXXXX -> 07XXXXXXXX)
+        local_number = cleaned_phone[3..-1]
+        formatted_phone = "0#{local_number}"
+        Rails.logger.info "✅ Removed country code: #{formatted_phone}"
+        return formatted_phone
       else
-        Rails.logger.warn "❌ Invalid phone number format: #{cleaned_phone}"
-        nil
+        Rails.logger.warn "❌ Invalid phone number format: #{cleaned_phone} (length: #{cleaned_phone.length})"
+        return nil
       end
     else
-      Rails.logger.warn "⚠️ No phone number found in Google user info"
-      nil
+      Rails.logger.warn "⚠️ No phone number found in Google user info. Available keys: #{user_info.keys.join(', ')}"
+      # Log phone_numbers structure if it exists
+      if user_info['phone_numbers'].present?
+        Rails.logger.info "📞 phone_numbers structure: #{user_info['phone_numbers'].inspect}"
+      end
+      return nil
     end
   end
 

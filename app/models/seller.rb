@@ -1,7 +1,11 @@
 # app/models/seller.rb
 class Seller < ApplicationRecord
+  after_create :associate_guest_clicks
   before_create :generate_uuid
   before_validation :normalize_email
+  
+  # Store device hash temporarily for association (set via attr_accessor)
+  attr_accessor :device_hash_for_association
 
   has_secure_password validations: false
   has_and_belongs_to_many :categories
@@ -14,6 +18,7 @@ class Seller < ApplicationRecord
   has_many :password_otps, as: :otpable, dependent: :destroy
   has_many :seller_documents, dependent: :destroy
   has_many :offers, dependent: :destroy
+  has_many :review_requests, dependent: :destroy
   has_one :categories_seller
   has_one :category, through: :categories_seller
   has_one :seller_tier

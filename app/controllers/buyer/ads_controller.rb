@@ -35,7 +35,7 @@ class Buyer::AdsController < ApplicationController
                        .joins(:seller, :category, :subcategory)
                        .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
                        .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
-                       .where(sellers: { blocked: false, deleted: false })
+                       .where(sellers: { blocked: false, deleted: false, flagged: false })
                        .where(flagged: false)
                        .includes(:category, :subcategory, seller: { seller_tier: :tier })
 
@@ -56,13 +56,13 @@ class Buyer::AdsController < ApplicationController
     total_count = if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
       # For balanced ads, we need to count all active ads
       Ad.active.with_valid_images.joins(:seller)
-         .where(sellers: { blocked: false, deleted: false })
+         .where(sellers: { blocked: false, deleted: false, flagged: false })
          .where(flagged: false)
          .count
     else
       # For filtered ads, count with same filters
       ads_query = Ad.active.with_valid_images.joins(:seller)
-                    .where(sellers: { blocked: false, deleted: false })
+                    .where(sellers: { blocked: false, deleted: false, flagged: false })
                     .where(flagged: false)
       
       ads_query = filter_by_category(ads_query) if params[:category_id].present?
@@ -161,7 +161,7 @@ class Buyer::AdsController < ApplicationController
     shops_per_page = 10 if shops_per_page < 1 || shops_per_page > 50
 
     ads = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-            .where(sellers: { blocked: false, deleted: false })
+            .where(sellers: { blocked: false, deleted: false, flagged: false })
             .where(flagged: false)
 
     if query.present?
@@ -569,7 +569,7 @@ class Buyer::AdsController < ApplicationController
     # Apply the same filters as the main ads endpoint
     related_ads = Ad.active.with_valid_images
                     .joins(:seller, seller: { seller_tier: :tier })
-                    .where(sellers: { blocked: false, deleted: false })
+                    .where(sellers: { blocked: false, deleted: false, flagged: false })
                     .where(flagged: false)
                     .where.not(id: ad.id)
                     .where('ads.category_id = ? OR ads.subcategory_id = ?', ad.category_id, ad.subcategory_id)
@@ -630,14 +630,14 @@ class Buyer::AdsController < ApplicationController
     # Get total count for this subcategory
     total_count = Ad.active.with_valid_images
       .joins(:seller)
-      .where(sellers: { blocked: false })
+      .where(sellers: { blocked: false, deleted: false, flagged: false })
       .where(flagged: false)
       .where(subcategory_id: subcategory_id)
       .count
     
     ads = Ad.active.with_valid_images
       .joins(:seller, seller: { seller_tier: :tier })
-      .where(sellers: { blocked: false })
+      .where(sellers: { blocked: false, deleted: false, flagged: false })
       .where(flagged: false)
       .where(subcategory_id: subcategory_id)
       .select('ads.*, CASE tiers.id
@@ -695,7 +695,7 @@ class Buyer::AdsController < ApplicationController
                  .joins(:seller, :category, :subcategory)
                  .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
                  .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
-                 .where(sellers: { blocked: false, deleted: false })
+                 .where(sellers: { blocked: false, deleted: false, flagged: false })
                  .where(flagged: false)
                  .includes(:category, :subcategory, seller: { seller_tier: :tier })
 
@@ -731,7 +731,7 @@ class Buyer::AdsController < ApplicationController
         # Get total count for this subcategory
         total_count = Ad.active.with_valid_images
           .joins(:seller)
-          .where(sellers: { blocked: false, deleted: false })
+          .where(sellers: { blocked: false, deleted: false, flagged: false })
           .where(flagged: false)
           .where(subcategory_id: subcategory.id)
           .count
@@ -740,7 +740,7 @@ class Buyer::AdsController < ApplicationController
         
         subcategory_ads = Ad.active.with_valid_images
            .joins(:seller, seller: { seller_tier: :tier })
-           .where(sellers: { blocked: false, deleted: false })
+           .where(sellers: { blocked: false, deleted: false, flagged: false })
            .where(flagged: false)
            .where(subcategory_id: subcategory.id)
            .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
@@ -757,7 +757,7 @@ class Buyer::AdsController < ApplicationController
           # Get total count for this subcategory
           total_count = Ad.active.with_valid_images
             .joins(:seller)
-            .where(sellers: { blocked: false, deleted: false })
+            .where(sellers: { blocked: false, deleted: false, flagged: false })
             .where(flagged: false)
             .where(subcategory_id: subcategory.id)
             .count
@@ -767,7 +767,7 @@ class Buyer::AdsController < ApplicationController
           # Get ads for this subcategory, ordered by tier priority first, then by creation date
           subcategory_ads = Ad.active.with_valid_images
              .joins(:seller, seller: { seller_tier: :tier })
-             .where(sellers: { blocked: false, deleted: false })
+             .where(sellers: { blocked: false, deleted: false, flagged: false })
              .where(flagged: false)
              .where(subcategory_id: subcategory.id)
              .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
@@ -883,7 +883,7 @@ class Buyer::AdsController < ApplicationController
                    .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
                    .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
                    .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
-                   .where(sellers: { blocked: false, deleted: false })
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(flagged: false)
                    .select("
                      ads.id,

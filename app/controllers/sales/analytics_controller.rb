@@ -44,18 +44,24 @@ class Sales::AnalyticsController < ApplicationController
     # Get click events without time filtering for totals (excluding internal users and deleted buyers)
     # Includes ALL clicks (guest + authenticated) for both "Total Ads Clicks" and "Buyer Engagement"
     # Guest clicks have buyer_id = nil, so they're included in the query
+    # Exclude clicks with deleted ads or clicks without ads to match category analytics
     all_ad_clicks = ClickEvent
       .excluding_internal_users
       .where(event_type: 'Ad-Click')
       .left_joins(:buyer)
+      .joins(:ad) # Use inner join to exclude clicks without ads
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
+      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
     # Get reveal click events without time filtering for totals (excluding internal users and deleted buyers)
     # Includes ALL reveal clicks (guest + authenticated) for both "Total Click Reveals" and "Buyer Engagement"
+    # Exclude clicks with deleted ads or clicks without ads to match category analytics
     all_reveal_clicks = ClickEvent
       .excluding_internal_users
       .where(event_type: 'Reveal-Seller-Details')
       .left_joins(:buyer)
+      .joins(:ad) # Use inner join to exclude clicks without ads
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
+      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
     
     # Convert all timestamps to ISO 8601 format for proper JavaScript Date parsing
     sellers_with_timestamps = all_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -88,205 +94,12 @@ class Sales::AnalyticsController < ApplicationController
     reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     buyer_reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
-    # Get category click events with timestamps (excluding internal users)
-    # We need to apply exclusion conditions directly since merge() conflicts with joins
-    excluded_device_hashes = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
-    excluded_email_domains = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
-    excluded_user_agents = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
-    
-    category_query = Category
-      .joins(ads: :click_events)
-      .joins('LEFT OUTER JOIN buyers ON buyers.id = click_events.buyer_id')
-      .where(ads: { deleted: false })
-    
-    # Apply exclusion conditions if any exist
-    if excluded_device_hashes.any? || excluded_email_domains.any? || excluded_user_agents.any?
-      excluded_device_hashes.each do |hash|
-        category_query = category_query.where(
-          "COALESCE(click_events.metadata->>'device_hash', '') NOT LIKE ? AND COALESCE(click_events.metadata->>'device_hash', '') != ?",
-          "#{hash}%", hash
-        )
-      end
-      
-      excluded_email_domains.each do |email_pattern|
-        email_pattern_lower = email_pattern.downcase
-        category_query = category_query.where(
-          "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') != ?)",
-          email_pattern_lower, email_pattern_lower
-        )
-        if email_pattern.include?('@')
-          domain = email_pattern.split('@').last&.downcase
-          if domain.present?
-            category_query = category_query.where(
-              "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
-              "%@#{domain}", "%@#{domain}"
-            )
-          end
-        else
-          category_query = category_query.where(
-            "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
-            "%@#{email_pattern_lower}", "%@#{email_pattern_lower}"
-          )
-        end
-      end
-      
-      excluded_user_agents.each do |pattern|
-        category_query = category_query.where(
-          "click_events.metadata->>'user_agent' IS NULL OR click_events.metadata->>'user_agent' !~* ?",
-          pattern
-        )
-      end
-    end
-    
-    category_click_events_with_timestamps = category_query
-      .select('categories.name AS category_name, 
-              click_events.event_type,
-              click_events.created_at')
-      .order('categories.name')
-      .to_a  # Execute query and load records into array
-    
-    # Process category data
-    category_data = {}
-    category_click_events_with_timestamps.each do |record|
-      category_name = record.category_name
-      category_data[category_name] ||= { ad_clicks: 0, wish_list_clicks: 0, reveal_clicks: 0, timestamps: [] }
-      
-      case record.event_type
-      when 'Ad-Click'
-        category_data[category_name][:ad_clicks] += 1
-      when 'Add-to-Wish-List'
-        category_data[category_name][:wish_list_clicks] += 1
-      when 'Reveal-Seller-Details'
-        category_data[category_name][:reveal_clicks] += 1
-      end
-      
-      category_data[category_name][:timestamps] << record.created_at&.iso8601
-    end
-    
-    # Convert to array format
-    category_click_events = category_data.map do |category_name, data|
-      {
-        category_name: category_name,
-        ad_clicks: data[:ad_clicks],
-        wish_list_clicks: data[:wish_list_clicks],
-        reveal_clicks: data[:reveal_clicks],
-        timestamps: data[:timestamps]
-      }
-    end
+    # Use unified service for category click events
+    click_events_service = ClickEventsAnalyticsService.new(filters: {})
+    category_click_events = click_events_service.category_click_events
 
-    # Get subcategory click events with timestamps (excluding internal users)
-    subcategory_query = Subcategory
-      .joins(:category)
-      .joins('INNER JOIN ads ON ads.subcategory_id = subcategories.id')
-      .joins('INNER JOIN click_events ON click_events.ad_id = ads.id')
-      .joins('LEFT OUTER JOIN buyers ON buyers.id = click_events.buyer_id')
-      .where('ads.deleted = ?', false)
-    
-    # Apply exclusion conditions if any exist (reuse variables from above)
-    if excluded_device_hashes.any? || excluded_email_domains.any? || excluded_user_agents.any?
-      excluded_device_hashes.each do |hash|
-        subcategory_query = subcategory_query.where(
-          "COALESCE(click_events.metadata->>'device_hash', '') NOT LIKE ? AND COALESCE(click_events.metadata->>'device_hash', '') != ?",
-          "#{hash}%", hash
-        )
-      end
-      
-      excluded_email_domains.each do |email_pattern|
-        email_pattern_lower = email_pattern.downcase
-        subcategory_query = subcategory_query.where(
-          "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') != ?)",
-          email_pattern_lower, email_pattern_lower
-        )
-        if email_pattern.include?('@')
-          domain = email_pattern.split('@').last&.downcase
-          if domain.present?
-            subcategory_query = subcategory_query.where(
-              "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
-              "%@#{domain}", "%@#{domain}"
-            )
-          end
-        else
-          subcategory_query = subcategory_query.where(
-            "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (click_events.metadata->>'user_email' IS NULL OR LOWER(click_events.metadata->>'user_email') NOT LIKE ?)",
-            "%@#{email_pattern_lower}", "%@#{email_pattern_lower}"
-          )
-        end
-      end
-      
-      excluded_user_agents.each do |pattern|
-        subcategory_query = subcategory_query.where(
-          "click_events.metadata->>'user_agent' IS NULL OR click_events.metadata->>'user_agent' !~* ?",
-          pattern
-        )
-      end
-    end
-    
-    subcategory_click_events_with_timestamps = subcategory_query
-      .select('subcategories.id AS subcategory_id,
-              subcategories.name AS subcategory_name,
-              categories.id AS category_id,
-              categories.name AS category_name,
-              click_events.event_type,
-              click_events.created_at')
-      .order('categories.name, subcategories.name')
-      .to_a  # Execute query and load records into array
-    
-    # Process subcategory data grouped by category
-    subcategory_data = {}
-    subcategory_click_events_with_timestamps.each do |record|
-      category_name = record.category_name
-      subcategory_name = record.subcategory_name
-      key = "#{category_name}::#{subcategory_name}"
-      
-      subcategory_data[key] ||= { 
-        category_name: category_name,
-        subcategory_name: subcategory_name,
-        ad_clicks: 0, 
-        wish_list_clicks: 0, 
-        reveal_clicks: 0, 
-        timestamps: [] 
-      }
-      
-      case record.event_type
-      when 'Ad-Click'
-        subcategory_data[key][:ad_clicks] += 1
-      when 'Add-to-Wish-List'
-        subcategory_data[key][:wish_list_clicks] += 1
-      when 'Reveal-Seller-Details'
-        subcategory_data[key][:reveal_clicks] += 1
-      end
-      
-      subcategory_data[key][:timestamps] << record.created_at&.iso8601
-    end
-    
-    # Get ads count for each subcategory
-    subcategory_ads_counts = Subcategory
-      .joins(:category)
-      .joins(:ads)
-      .where(ads: { deleted: false })
-      .group('subcategories.id, subcategories.name, subcategories.category_id, categories.id, categories.name')
-      .select('subcategories.id AS subcategory_id,
-              subcategories.name AS subcategory_name,
-              categories.name AS category_name,
-              COUNT(ads.id) AS ads_count')
-      .each_with_object({}) do |record, hash|
-        key = "#{record.category_name}::#{record.subcategory_name}"
-        hash[key] = record.ads_count.to_i
-      end
-    
-    # Convert to array format with ads_count
-    subcategory_click_events = subcategory_data.values.map do |data|
-      key = "#{data[:category_name]}::#{data[:subcategory_name]}"
-      {
-        category_name: data[:category_name],
-        subcategory_name: data[:subcategory_name],
-        ads_count: subcategory_ads_counts[key] || 0,
-        ad_clicks: data[:ad_clicks],
-        wish_list_clicks: data[:wish_list_clicks],
-        reveal_clicks: data[:reveal_clicks],
-        timestamps: data[:timestamps]
-      }
-    end
+    # Use unified service for subcategory click events
+    subcategory_click_events = click_events_service.subcategory_click_events
 
     # Get source tracking analytics
     source_analytics = get_source_analytics
@@ -296,12 +109,36 @@ class Sales::AnalyticsController < ApplicationController
     
     # Analytics data prepared successfully
     
+    # Get current quarter targets
+    sellers_target = QuarterlyTarget.current_target_for('total_sellers')
+    buyers_target = QuarterlyTarget.current_target_for('total_buyers')
+    
     response_data = {
       # Raw data with timestamps for frontend filtering (ALL data, no time restriction)
       sellers_with_timestamps: sellers_with_timestamps,
       buyers_with_timestamps: buyers_with_timestamps,
       ads_with_timestamps: ads_with_timestamps,
       reviews_with_timestamps: reviews_with_timestamps,
+      
+      # Quarterly targets
+      targets: {
+        total_sellers: sellers_target ? {
+          id: sellers_target.id,
+          target_value: sellers_target.target_value,
+          year: sellers_target.year,
+          quarter: sellers_target.quarter,
+          status: sellers_target.status,
+          notes: sellers_target.notes
+        } : nil,
+        total_buyers: buyers_target ? {
+          id: buyers_target.id,
+          target_value: buyers_target.target_value,
+          year: buyers_target.year,
+          quarter: buyers_target.quarter,
+          status: buyers_target.status,
+          notes: buyers_target.notes
+        } : nil
+      },
       wishlists_with_timestamps: wishlists_with_timestamps,
       paid_seller_tiers_with_timestamps: paid_seller_tiers_with_timestamps,
       unpaid_seller_tiers_with_timestamps: unpaid_seller_tiers_with_timestamps,
@@ -418,8 +255,29 @@ class Sales::AnalyticsController < ApplicationController
       users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?
       
       users_data = users.map do |buyer|
-        clicks_count = buyer.click_events.where(event_type: 'Ad-Click').count
-        reveals_count = buyer.click_events.where(event_type: 'Reveal-Seller-Details').count
+        # Count clicks directly associated with buyer
+        direct_clicks = buyer.click_events.where(event_type: 'Ad-Click').count
+        
+        # Also count guest clicks for ads the buyer has messaged about
+        # This handles cases where buyer clicked as guest before authenticating
+        conversation_ad_ids = Conversation.where(buyer_id: buyer.id).where.not(ad_id: nil).pluck(:ad_id).uniq
+        guest_clicks_for_ads = ClickEvent
+          .where(ad_id: conversation_ad_ids)
+          .where(buyer_id: nil, event_type: 'Ad-Click')
+          .where('created_at <= ?', buyer.created_at + 24.hours) # Within 24 hours of account creation
+          .count
+        
+        clicks_count = direct_clicks + guest_clicks_for_ads
+        
+        # Same for reveals
+        direct_reveals = buyer.click_events.where(event_type: 'Reveal-Seller-Details').count
+        guest_reveals_for_ads = ClickEvent
+          .where(ad_id: conversation_ad_ids)
+          .where(buyer_id: nil, event_type: 'Reveal-Seller-Details')
+          .where('created_at <= ?', buyer.created_at + 24.hours)
+          .count
+        
+        reveals_count = direct_reveals + guest_reveals_for_ads
         wishlist_count = buyer.wish_lists.count
         reviews_count = buyer.reviews.count
         signup_method = buyer.oauth_user? ? 'google_oauth' : 'regular'

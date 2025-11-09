@@ -64,6 +64,13 @@ class Seller::SellersController < ApplicationController
       # Don't mark as verified yet - wait until seller is successfully saved
     end
 
+    @seller = Seller.new(seller_params)
+    
+    # Capture device hash if provided for guest click association
+    if params[:device_hash].present?
+      @seller.device_hash_for_association = params[:device_hash]
+    end
+    
     uploaded_document_url = nil
     uploaded_profile_picture_url = nil
 
@@ -113,6 +120,12 @@ class Seller::SellersController < ApplicationController
     end
 
     @seller = Seller.new(seller_params)
+    
+    # Capture device hash if provided for guest click association (if not already set)
+    if params[:device_hash].present? && @seller.device_hash_for_association.blank?
+      @seller.device_hash_for_association = params[:device_hash]
+    end
+    
     @seller.document_url = uploaded_document_url if uploaded_document_url
     @seller.profile_picture = uploaded_profile_picture_url if uploaded_profile_picture_url
 

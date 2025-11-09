@@ -46,6 +46,11 @@ class Buyer::BuyersController < ApplicationController
       end
 
       @buyer = Buyer.new(buyer_params)
+      
+      # Capture device hash if provided for guest click association
+      if params[:device_hash].present?
+        @buyer.device_hash_for_association = params[:device_hash]
+      end
 
       if @buyer.save
         # Email verification is optional - users can verify their email later if they choose

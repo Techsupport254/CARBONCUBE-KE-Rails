@@ -46,7 +46,7 @@ class OptimizedAdsService
           Category.joins(:ads)
                   .where(ads: { deleted: false, flagged: false })
                   .joins('JOIN sellers ON ads.seller_id = sellers.id')
-                  .where(sellers: { blocked: false, deleted: false })
+                  .where(sellers: { blocked: false, deleted: false, flagged: false })
                   .group('categories.id, categories.name')
                   .select('categories.id, categories.name, COUNT(ads.id) as ads_count')
                   .order('ads_count DESC')
@@ -61,7 +61,7 @@ class OptimizedAdsService
           Subcategory.joins(:ads)
                      .where(ads: { deleted: false, flagged: false })
                      .joins('JOIN sellers ON ads.seller_id = sellers.id')
-                     .where(sellers: { blocked: false, deleted: false })
+                     .where(sellers: { blocked: false, deleted: false, flagged: false })
                      .group('subcategories.id, subcategories.name, subcategories.category_id')
                      .select('subcategories.id, subcategories.name, subcategories.category_id, COUNT(ads.id) as ads_count')
                      .order('ads_count DESC')
@@ -102,7 +102,7 @@ class OptimizedAdsService
                 .joins(:seller, :category, :subcategory)
                 .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
                 .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
-                .where(sellers: { blocked: false, deleted: false })
+                .where(sellers: { blocked: false, deleted: false, flagged: false })
                 .where(flagged: false)
 
       # Apply filters

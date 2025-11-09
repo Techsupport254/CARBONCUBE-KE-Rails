@@ -33,7 +33,9 @@ class GoogleMerchantService
       ads = Ad.active
                .joins(seller: { seller_tier: :tier })
                .includes(:seller)
-             .where(tiers: { id: 4 }) # Premium tier
+               .where(sellers: { blocked: false, deleted: false, flagged: false })
+               .where(flagged: false)
+               .where(tiers: { id: 4 }) # Premium tier
       
       success_count = 0
       failure_count = 0

@@ -11,6 +11,7 @@ class Message < ApplicationRecord
   after_create :broadcast_new_message
   after_create :schedule_delivery_receipt
   after_create :send_message_notification_email
+  after_create :send_message_notification_whatsapp
 
   # Status constants
   STATUS_SENT = 'sent'
@@ -193,14 +194,32 @@ class Message < ApplicationRecord
       # If buyer sent, recipient is seller
       Seller.find_by(id: conversation.seller_id)
     when 'Seller'
-      # If seller sent, recipient is buyer
-      Buyer.find_by(id: conversation.buyer_id)
+      # If seller sent, recipient depends on conversation type
+      if conversation.buyer_id.present?
+        # Regular buyer-seller conversation
+        Buyer.find_by(id: conversation.buyer_id)
+      elsif conversation.inquirer_seller_id.present?
+        # Seller-to-seller conversation
+        # If sender is the ad owner (seller_id), recipient is inquirer
+        # If sender is the inquirer, recipient is ad owner
+        if sender.id == conversation.seller_id
+          Seller.find_by(id: conversation.inquirer_seller_id)
+        elsif sender.id == conversation.inquirer_seller_id
+          Seller.find_by(id: conversation.seller_id)
+        else
+          nil
+        end
+      else
+        nil
+      end
     when 'Admin'
       # If admin sent, recipient depends on conversation
       if conversation.buyer_id
         Buyer.find_by(id: conversation.buyer_id)
       elsif conversation.seller_id
         Seller.find_by(id: conversation.seller_id)
+      elsif conversation.inquirer_seller_id
+        Seller.find_by(id: conversation.inquirer_seller_id)
       end
     else
       nil
@@ -244,6 +263,35 @@ class Message < ApplicationRecord
     rescue => e
       Rails.logger.error "Failed to send email notification for message #{id}: #{e.message}"
       # Don't fail message creation if email sending fails
+    end
+  end
+
+  # Send WhatsApp notification to recipient (sellers only)
+  def send_message_notification_whatsapp
+    recipient = get_recipient
+    return unless recipient
+    
+    # Only send WhatsApp to sellers
+    return unless recipient.is_a?(Seller)
+    
+    # Don't send WhatsApp if recipient is online (they'll see it in real-time)
+    if is_recipient_online?(recipient)
+      Rails.logger.info "Recipient #{recipient.class.name} #{recipient.id} is online, skipping WhatsApp notification"
+      return
+    end
+    
+    # Don't send WhatsApp to the sender
+    if sender == recipient
+      Rails.logger.info "Sender and recipient are the same, skipping WhatsApp notification"
+      return
+    end
+    
+    begin
+      WhatsAppNotificationService.send_message_notification(self, recipient, conversation)
+      Rails.logger.info "WhatsApp notification sent to #{recipient.class.name} #{recipient.id} for message #{id}"
+    rescue => e
+      Rails.logger.error "Failed to send WhatsApp notification for message #{id}: #{e.message}"
+      # Don't fail message creation if WhatsApp sending fails
     end
   end
 

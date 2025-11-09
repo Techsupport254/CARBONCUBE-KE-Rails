@@ -249,6 +249,16 @@ Rails.application.routes.draw do
     namespace :buyer do
       get ':buyer_id/profile', to: 'profiles#show'
     end
+
+    resources :quarterly_targets, only: [:index] do
+      collection do
+        get :pending
+      end
+      member do
+        patch :approve
+        patch :reject
+      end
+    end
     
 
     namespace :rider do
@@ -295,10 +305,15 @@ Rails.application.routes.draw do
       member do
         put 'block'
         put 'unblock'
+        put 'flag'
+        put 'unflag'
         get 'analytics'
         get 'ads'
         get 'reviews'
         post :verify_document
+      end
+      collection do
+        post 'bulk_actions'
       end
     end
 
@@ -326,6 +341,12 @@ Rails.application.routes.draw do
 
     resources :analytics
     resources :reviews
+    resources :review_requests, only: [:index, :show] do
+      member do
+        patch :approve
+        patch :reject
+      end
+    end
     resources :abouts
     resources :faqs
     resources :banners
@@ -424,6 +445,8 @@ Rails.application.routes.draw do
     resource :profile, only: [:show, :update] do
       post 'change-password', to: 'profiles#change_password'
     end
+
+    resources :review_requests, only: [:index, :create]
 
     resources :seller_documents
 
@@ -529,6 +552,11 @@ Rails.application.routes.draw do
 
 #for sales
     namespace :sales do
+      resources :seller_rankings, only: [:index] do
+        collection do
+          get :by_metric
+        end
+      end
       resource :profile, only: [:show, :update] do
         collection do
           post 'change-password'
@@ -546,6 +574,11 @@ Rails.application.routes.draw do
       end
       resources :reviews, only: [:index]
       resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
+      resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
+        collection do
+          get :current
+        end
+      end
       resources :conversations, only: [:index, :show, :create] do
         resources :messages, only: [:index, :create]
         get :unread_count, on: :collection

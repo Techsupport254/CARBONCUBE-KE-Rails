@@ -59,8 +59,11 @@ class OfferSerializer
                 enterprise_name: @offer.seller&.enterprise_name,
                 fullname: @offer.seller&.fullname
               },
-              # Ads with discounts
-              ads: @offer.offer_ads.active.map do |offer_ad|
+              # Ads with discounts - exclude ads from flagged, blocked, or deleted sellers
+              ads: @offer.offer_ads.active
+                .joins(ad: :seller)
+                .where(sellers: { blocked: false, deleted: false, flagged: false })
+                .map do |offer_ad|
                 ad = offer_ad.ad
                 seller = ad.seller
                 seller_tier = seller&.seller_tier

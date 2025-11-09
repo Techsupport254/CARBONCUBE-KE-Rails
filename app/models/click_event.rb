@@ -22,6 +22,21 @@ class ClickEvent < ApplicationRecord
     hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
     hardcoded_excluded_domains = ['example.com']
     
+    # Get sales user emails to exclude (check if they exist first)
+    sales_user_emails = SalesUser.pluck(:email).map(&:downcase)
+    hardcoded_excluded_emails.concat(sales_user_emails) if sales_user_emails.any?
+    
+    # Get Denis and Timothy Juma emails (check if they exist first)
+    # Check both buyers and sellers for these users
+    denis_buyer_emails = Buyer.where("fullname ILIKE ? OR email ILIKE ?", '%denis%', '%denis%').pluck(:email).map(&:downcase).compact
+    denis_seller_emails = Seller.where("fullname ILIKE ? OR email ILIKE ?", '%denis%', '%denis%').pluck(:email).map(&:downcase).compact
+    timothy_juma_buyer_emails = Buyer.where("(fullname ILIKE ? OR fullname ILIKE ?) OR (email ILIKE ? OR email ILIKE ?)", 
+                                           '%timothy%juma%', '%juma%', '%timothy%juma%', '%juma%').pluck(:email).map(&:downcase).compact
+    timothy_juma_seller_emails = Seller.where("(fullname ILIKE ? OR fullname ILIKE ?) OR (email ILIKE ? OR email ILIKE ?)", 
+                                              '%timothy%juma%', '%juma%', '%timothy%juma%', '%juma%').pluck(:email).map(&:downcase).compact
+    additional_excluded_emails = (denis_buyer_emails + denis_seller_emails + timothy_juma_buyer_emails + timothy_juma_seller_emails).uniq
+    hardcoded_excluded_emails.concat(additional_excluded_emails) if additional_excluded_emails.any?
+    
     # Get all active exclusion identifiers from database
     device_hash_exclusions = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
     email_domain_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
@@ -31,8 +46,11 @@ class ClickEvent < ApplicationRecord
     all_email_exclusions = (hardcoded_excluded_emails + email_domain_exclusions).uniq
     all_domain_exclusions = (hardcoded_excluded_domains + email_domain_exclusions.select { |e| !e.include?('@') }).uniq
     
-    # Start with all records and join buyers table (needed for email exclusions)
+    # Start with all records and join buyers table (needed for email exclusions and deleted check)
     query = all.left_joins(:buyer)
+    
+    # Exclude deleted buyers
+    query = query.where("buyers.id IS NULL OR buyers.deleted = ?", false)
     
     # First apply hardcoded email exclusions
     hardcoded_excluded_emails.each do |excluded_email|
