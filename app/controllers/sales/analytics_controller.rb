@@ -41,22 +41,27 @@ class Sales::AnalyticsController < ApplicationController
       .joins(:seller)
       .where(tier_id: 1, sellers: { deleted: false })
     
-    # Get click events without time filtering for totals (excluding internal users and deleted buyers)
+    # Get device_hash from params or headers if available for excluding seller own clicks
+    device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+    
+    # Get click events without time filtering for totals (excluding internal users, deleted buyers, and seller own clicks)
     # Includes ALL clicks (guest + authenticated) for both "Total Ads Clicks" and "Buyer Engagement"
     # Guest clicks have buyer_id = nil, so they're included in the query
     # Exclude clicks with deleted ads or clicks without ads to match category analytics
     all_ad_clicks = ClickEvent
       .excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
       .where(event_type: 'Ad-Click')
       .left_joins(:buyer)
       .joins(:ad) # Use inner join to exclude clicks without ads
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
       .where(ads: { deleted: false }) # Exclude clicks with deleted ads
-    # Get reveal click events without time filtering for totals (excluding internal users and deleted buyers)
+    # Get reveal click events without time filtering for totals (excluding internal users, deleted buyers, and seller own clicks)
     # Includes ALL reveal clicks (guest + authenticated) for both "Total Click Reveals" and "Buyer Engagement"
     # Exclude clicks with deleted ads or clicks without ads to match category analytics
     all_reveal_clicks = ClickEvent
       .excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
       .where(event_type: 'Reveal-Seller-Details')
       .left_joins(:buyer)
       .joins(:ad) # Use inner join to exclude clicks without ads
@@ -95,7 +100,11 @@ class Sales::AnalyticsController < ApplicationController
     buyer_reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
     
     # Use unified service for category click events
-    click_events_service = ClickEventsAnalyticsService.new(filters: {})
+    # device_hash already extracted above
+    click_events_service = ClickEventsAnalyticsService.new(
+      filters: {},
+      device_hash: device_hash
+    )
     category_click_events = click_events_service.category_click_events
 
     # Use unified service for subcategory click events
@@ -105,13 +114,42 @@ class Sales::AnalyticsController < ApplicationController
     source_analytics = get_source_analytics
     
     # Get device analytics
+    # Get device analytics with error handling
+    begin
     device_analytics = get_device_analytics
+    rescue => e
+      Rails.logger.error "Error getting device analytics: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      # Return empty device analytics on error to prevent blocking the entire response
+      device_analytics = {
+        device_types: {},
+        browsers: {},
+        operating_systems: {},
+        screen_resolutions: {},
+        device_types_visitors: {},
+        browsers_visitors: {},
+        operating_systems_visitors: {},
+        device_types_total: {},
+        browsers_total: {},
+        operating_systems_total: {},
+        screen_resolutions_total: {},
+        device_types_time_series: [],
+        browsers_time_series: [],
+        operating_systems_time_series: [],
+        total_devices: 0,
+        total_sessions: 0,
+        total_visitors: 0,
+        total_records: 0
+      }
+    end
     
     # Analytics data prepared successfully
     
     # Get current quarter targets
     sellers_target = QuarterlyTarget.current_target_for('total_sellers')
     buyers_target = QuarterlyTarget.current_target_for('total_buyers')
+    ads_target = QuarterlyTarget.current_target_for('total_ads')
+    reveal_clicks_target = QuarterlyTarget.current_target_for('total_reveal_clicks')
     
     response_data = {
       # Raw data with timestamps for frontend filtering (ALL data, no time restriction)
@@ -137,6 +175,22 @@ class Sales::AnalyticsController < ApplicationController
           quarter: buyers_target.quarter,
           status: buyers_target.status,
           notes: buyers_target.notes
+        } : nil,
+        total_ads: ads_target ? {
+          id: ads_target.id,
+          target_value: ads_target.target_value,
+          year: ads_target.year,
+          quarter: ads_target.quarter,
+          status: ads_target.status,
+          notes: ads_target.notes
+        } : nil,
+        total_reveal_clicks: reveal_clicks_target ? {
+          id: reveal_clicks_target.id,
+          target_value: reveal_clicks_target.target_value,
+          year: reveal_clicks_target.year,
+          quarter: reveal_clicks_target.quarter,
+          status: reveal_clicks_target.status,
+          notes: reveal_clicks_target.notes
         } : nil
       },
       wishlists_with_timestamps: wishlists_with_timestamps,
@@ -190,6 +244,39 @@ class Sales::AnalyticsController < ApplicationController
     }
     
     render json: response_data
+  end
+
+  def devices
+    # Get device analytics only - much faster than full analytics endpoint
+    begin
+      device_analytics = get_device_analytics
+      render json: { device_analytics: device_analytics }
+    rescue => e
+      Rails.logger.error "Error getting device analytics: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { 
+        device_analytics: {
+          device_types: {},
+          browsers: {},
+          operating_systems: {},
+          screen_resolutions: {},
+          device_types_visitors: {},
+          browsers_visitors: {},
+          operating_systems_visitors: {},
+          device_types_total: {},
+          browsers_total: {},
+          operating_systems_total: {},
+          screen_resolutions_total: {},
+          device_types_time_series: [],
+          browsers_time_series: [],
+          operating_systems_time_series: [],
+          total_devices: 0,
+          total_sessions: 0,
+          total_visitors: 0,
+          total_records: 0
+        }
+      }
+    end
   end
 
   def recent_users
@@ -376,8 +463,10 @@ class Sales::AnalyticsController < ApplicationController
     # This ensures consistency: total_visits = sum of all source_distribution values
     total_visits_from_sources = source_distribution.values.sum
     
-    # Calculate "other" sources count (incomplete UTM - records with source='other')
-    other_sources_count = source_distribution['other'] || 0
+    # Note: "other" sources and "incomplete UTM" records have been removed via migration
+    # These categories were misleading and have been cleaned up
+    other_sources_count = 0
+    incomplete_utm_count = 0
     
     {
       total_visits: total_visits_from_sources,
@@ -387,6 +476,7 @@ class Sales::AnalyticsController < ApplicationController
       avg_visits_per_visitor: visitor_metrics[:avg_visits_per_visitor],
       source_distribution: source_distribution,
       other_sources_count: other_sources_count,
+      incomplete_utm_count: incomplete_utm_count,
       unique_visitors_by_source: unique_visitors_by_source,
       visits_by_source: visits_by_source,
       utm_source_distribution: utm_source_distribution,
@@ -404,70 +494,144 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def get_device_analytics
-    # Get device analytics for ALL time (no 30-day restriction), excluding internal users
-    all_analytics = Analytic.excluding_internal_users
+    # Optimized: Parse unique user agents only once, use SQL aggregations where possible
+    # Limit to recent records for performance (last 6 months)
+    six_months_ago = 6.months.ago
+    base_query = ClickEvent.excluding_internal_users
+      .left_joins(:ad)
+      .where("ads.id IS NULL OR ads.deleted = ?", false)
+      .where.not(metadata: nil)
+      .where('click_events.created_at >= ?', six_months_ago)
     
-    # Hash to track unique sessions per device/browser/OS
-    device_type_sessions = Hash.new { |h, k| h[k] = Set.new }
-    browser_sessions = Hash.new { |h, k| h[k] = Set.new }
-    os_sessions = Hash.new { |h, k| h[k] = Set.new }
-    resolution_sessions = Hash.new { |h, k| h[k] = Set.new }
+    # Session identifier (device_hash or buyer_id)
+    session_id_sql = "COALESCE(metadata->>'device_hash', buyer_id::text, 'unknown')"
+    visitor_id_sql = "COALESCE(buyer_id::text, metadata->>'device_hash', 'unknown')"
     
-    # Hash to track unique visitors per device/browser/OS
-    device_type_visitors = Hash.new { |h, k| h[k] = Set.new }
-    browser_visitors = Hash.new { |h, k| h[k] = Set.new }
-    os_visitors = Hash.new { |h, k| h[k] = Set.new }
+    # All records now have user_agent_details stored, so no parsing needed
+    query_with_ua = base_query.where("metadata->>'user_agent' IS NOT NULL OR metadata->'user_agent_details' IS NOT NULL")
     
-    # Total counts (for comparison)
-    device_types_total = {}
-    browsers_total = {}
-    operating_systems_total = {}
-    screen_resolutions_total = {}
+    device_types_sessions = Hash.new { |h, k| h[k] = Set.new }
+    browsers_sessions = Hash.new { |h, k| h[k] = Set.new }
+    operating_systems_sessions = Hash.new { |h, k| h[k] = Set.new }
+    screen_resolutions_sessions = Hash.new { |h, k| h[k] = Set.new }
     
-    all_analytics.each do |analytic|
-      next unless analytic.data && analytic.data['device']
+    device_types_visitors = Hash.new { |h, k| h[k] = Set.new }
+    browsers_visitors = Hash.new { |h, k| h[k] = Set.new }
+    operating_systems_visitors = Hash.new { |h, k| h[k] = Set.new }
+    
+    device_types_total = Hash.new(0)
+    browsers_total = Hash.new(0)
+    operating_systems_total = Hash.new(0)
+    screen_resolutions_total = Hash.new(0)
+    
+    # Time-series data (last 90 days)
+    start_date = 90.days.ago.beginning_of_day
+    device_types_by_date = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = Set.new } }
+    browsers_by_date = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = Set.new } }
+    operating_systems_by_date = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = Set.new } }
+    
+    # Use pluck for faster data access (avoids ActiveRecord object overhead)
+    query_with_ua.pluck(
+      Arel.sql("metadata->>'user_agent'"),
+      :metadata,
+      Arel.sql("#{session_id_sql}"),
+      Arel.sql("#{visitor_id_sql}"),
+      :created_at
+    ).each do |user_agent_string, metadata_hash, session_id, visitor_id, created_at|
+      next if session_id == 'unknown' && visitor_id == 'unknown'
       
-      device_data = analytic.data['device']
-      session_id = analytic.data['session_id']
-      visitor_id = analytic.data['visitor_id']
+      # Fast path: Check if user_agent_details exists first (no parsing needed)
+      user_agent_details = metadata_hash['user_agent_details'] || metadata_hash[:user_agent_details]
       
-      # Normalize device type (old "Mobile" to "Phone")
-      device_type = device_data['device_type'] || 'Unknown'
-      device_type = 'Phone' if device_type == 'Mobile'
+      if user_agent_details && (user_agent_details['browser'] || user_agent_details[:browser])
+        # Use existing parsed data - fastest path (no parsing)
+        browser = user_agent_details['browser'] || user_agent_details[:browser] || 'Unknown'
+        os = user_agent_details['os'] || user_agent_details[:os] || 'Unknown'
+        device_type_raw = user_agent_details['device_type'] || user_agent_details[:device_type]
+        device_type = if device_type_raw
+          normalize_device_type(device_type_raw)
+        elsif user_agent_details['is_mobile'] || user_agent_details[:is_mobile]
+          'Phone'
+        elsif user_agent_details['is_tablet'] || user_agent_details[:is_tablet]
+          'Tablet'
+        elsif user_agent_details['is_desktop'] || user_agent_details[:is_desktop]
+          'Desktop'
+        else
+          'Desktop'
+        end
+      elsif user_agent_string.present?
+        # Fallback: Parse on-the-fly if user_agent_details is missing (shouldn't happen after backfill)
+        parsed_ua = parse_user_agent_for_analytics(user_agent_string, {})
+        browser = parsed_ua[:browser] || 'Unknown'
+        os = parsed_ua[:os] || 'Unknown'
+        device_type = normalize_device_type(parsed_ua[:device_type])
+      else
+        # No user agent data
+        browser = 'Unknown'
+        os = 'Unknown'
+        device_type = 'Desktop'
+      end
       
-      browser = device_data['browser'] || 'Unknown'
-      os = device_data['os'] || 'Unknown'
-      resolution = analytic.data['screen_resolution']
-      
-      # Track unique sessions
-      device_type_sessions[device_type].add(session_id) if session_id.present?
-      browser_sessions[browser].add(session_id) if session_id.present?
-      os_sessions[os].add(session_id) if session_id.present?
-      resolution_sessions[resolution].add(session_id) if resolution.present? && session_id.present?
-      
-      # Track unique visitors
-      device_type_visitors[device_type].add(visitor_id) if visitor_id.present?
-      browser_visitors[browser].add(visitor_id) if visitor_id.present?
-      os_visitors[os].add(visitor_id) if visitor_id.present?
-      
-      # Track total counts
-      device_types_total[device_type] = (device_types_total[device_type] || 0) + 1
-      browsers_total[browser] = (browsers_total[browser] || 0) + 1
-      operating_systems_total[os] = (operating_systems_total[os] || 0) + 1
-      screen_resolutions_total[resolution] = (screen_resolutions_total[resolution] || 0) + 1 if resolution.present?
-    end
+      # Screen resolution from device_fingerprint (optimized hash access)
+      device_fingerprint = metadata_hash['device_fingerprint'] || metadata_hash[:device_fingerprint]
+      if device_fingerprint
+        screen_width = device_fingerprint['screen_width'] || device_fingerprint[:screen_width]
+        screen_height = device_fingerprint['screen_height'] || device_fingerprint[:screen_height]
+        resolution = (screen_width && screen_height) ? "#{screen_width}x#{screen_height}" : nil
+      else
+        resolution = nil
+      end
+        
+        # Track unique sessions (optimized - single conditional check)
+        if session_id.present?
+          device_types_sessions[device_type].add(session_id)
+          browsers_sessions[browser].add(session_id)
+          operating_systems_sessions[os].add(session_id)
+          screen_resolutions_sessions[resolution].add(session_id) if resolution.present?
+        end
+        
+        # Track unique visitors
+        if visitor_id.present?
+          device_types_visitors[device_type].add(visitor_id)
+          browsers_visitors[browser].add(visitor_id)
+          operating_systems_visitors[os].add(visitor_id)
+        end
+        
+        # Track total counts
+        device_types_total[device_type] += 1
+        browsers_total[browser] += 1
+        operating_systems_total[os] += 1
+        screen_resolutions_total[resolution] += 1 if resolution.present?
+        
+        # Time-series data (last 90 days) - only if needed
+        if created_at && created_at >= start_date && session_id.present?
+          date_key = created_at.to_date.iso8601
+          device_types_by_date[date_key][device_type].add(session_id)
+          browsers_by_date[date_key][browser].add(session_id)
+          operating_systems_by_date[date_key][os].add(session_id)
+        end
+      end
     
     # Convert Sets to counts
-    device_types_unique_sessions = device_type_sessions.transform_values(&:size)
-    browsers_unique_sessions = browser_sessions.transform_values(&:size)
-    operating_systems_unique_sessions = os_sessions.transform_values(&:size)
-    screen_resolutions_unique_sessions = resolution_sessions.transform_values(&:size)
+    device_types_unique_sessions = device_types_sessions.transform_values(&:size)
+    browsers_unique_sessions = browsers_sessions.transform_values(&:size)
+    operating_systems_unique_sessions = operating_systems_sessions.transform_values(&:size)
+    screen_resolutions_unique_sessions = screen_resolutions_sessions.transform_values(&:size)
     
-    device_types_unique_visitors = device_type_visitors.transform_values(&:size)
-    browsers_unique_visitors = browser_visitors.transform_values(&:size)
-    operating_systems_unique_visitors = os_visitors.transform_values(&:size)
+    device_types_unique_visitors = device_types_visitors.transform_values(&:size)
+    browsers_unique_visitors = browsers_visitors.transform_values(&:size)
+    operating_systems_unique_visitors = operating_systems_visitors.transform_values(&:size)
     
-    total_sessions_count = all_analytics.where("data->>'session_id' IS NOT NULL").distinct.count("data->>'session_id'")
+    # Count unique sessions
+    total_sessions_count = base_query
+      .where("metadata->>'device_hash' IS NOT NULL OR buyer_id IS NOT NULL")
+      .distinct
+      .count(Arel.sql("#{session_id_sql}"))
+    
+    # Generate time-series arrays
+    device_types_time_series = build_time_series(device_types_by_date, device_types_unique_sessions.keys, start_date)
+    browsers_time_series = build_time_series(browsers_by_date, browsers_unique_sessions.keys, start_date)
+    operating_systems_time_series = build_time_series(operating_systems_by_date, operating_systems_unique_sessions.keys, start_date)
     
     {
       # Unique sessions (primary metric - one per session)
@@ -481,18 +645,149 @@ class Sales::AnalyticsController < ApplicationController
       browsers_visitors: browsers_unique_visitors,
       operating_systems_visitors: operating_systems_unique_visitors,
       
-      # Total counts (for reference - should match unique sessions now with session-based tracking)
+      # Total counts (for reference)
       device_types_total: device_types_total,
       browsers_total: browsers_total,
       operating_systems_total: operating_systems_total,
-      screen_resolutions_total: screen_resolutions_total,
+      screen_resolutions_total: screen_resolutions_total.reject { |k, v| k.nil? },
+      
+      # Time-series data for area charts (last 90 days)
+      device_types_time_series: device_types_time_series,
+      browsers_time_series: browsers_time_series,
+      operating_systems_time_series: operating_systems_time_series,
       
       # Summary stats
       total_devices: total_sessions_count, # Total unique device sessions (for frontend compatibility)
       total_sessions: total_sessions_count,
-      total_visitors: all_analytics.where("data->>'visitor_id' IS NOT NULL").distinct.count("data->>'visitor_id'"),
-      total_records: all_analytics.count
+      total_visitors: base_query.where("buyer_id IS NOT NULL OR metadata->>'device_hash' IS NOT NULL")
+        .distinct
+        .count(Arel.sql("#{visitor_id_sql}")),
+      total_records: base_query.count
     }
+  end
+
+  # Build time-series data from pre-grouped hash
+  def build_time_series(date_hash, unique_categories, start_date)
+    return [] if unique_categories.empty?
+    
+    time_series = []
+    (start_date.to_date..Date.today).each do |date|
+      date_str = date.iso8601
+      data_point = { date: date_str }
+      unique_categories.each do |category|
+        data_point[category] = date_hash[date_str][category]&.size || 0
+      end
+      time_series << data_point
+    end
+    
+    time_series
+  end
+  
+  # Normalize device type to match frontend expectations (optimized)
+  def normalize_device_type(device_type)
+    return 'Desktop' unless device_type
+    
+    case device_type.to_s.downcase
+    when 'mobile' then 'Phone'
+    when 'tablet' then 'Tablet'
+    when 'desktop' then 'Desktop'
+    else device_type.to_s.capitalize
+    end
+  end
+
+  # Parse user agent using user_agent_parser gem (reuses logic from ClickEventsAnalyticsService)
+  def parse_user_agent_for_analytics(user_agent_string, metadata_hash = {})
+    # First check if user_agent_details already exists in metadata
+    user_agent_details = metadata_hash['user_agent_details'] || metadata_hash[:user_agent_details] || {}
+    
+    if user_agent_details.present? && (user_agent_details['browser'] || user_agent_details[:browser])
+      # Use existing parsed data
+      device_type = user_agent_details['device_type'] || user_agent_details[:device_type] ||
+                   (user_agent_details['is_mobile'] || user_agent_details[:is_mobile] ? 'mobile' :
+                    user_agent_details['is_tablet'] || user_agent_details[:is_tablet] ? 'tablet' :
+                    user_agent_details['is_desktop'] || user_agent_details[:is_desktop] ? 'desktop' : 'unknown')
+      
+      return {
+        browser: user_agent_details['browser'] || user_agent_details[:browser] || 'Unknown',
+        os: user_agent_details['os'] || user_agent_details[:os] || 'Unknown',
+        device_type: device_type
+      }
+    end
+    
+    # Parse user_agent string using gem
+    return { browser: 'Unknown', os: 'Unknown', device_type: 'unknown' } unless user_agent_string.present?
+    
+    begin
+      require 'user_agent_parser'
+      parser = UserAgentParser.parse(user_agent_string)
+      
+      browser_name = parser.family || 'Unknown'
+      os_family = parser.os&.family || 'Unknown'
+      
+      # Detect device type
+      user_agent_lower = user_agent_string.downcase
+      device_type = if user_agent_lower.match?(/mobile|android|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop/i)
+        'mobile'
+      elsif user_agent_lower.match?(/tablet|ipad|playbook|silk/i) && !user_agent_lower.match?(/mobile/i)
+        'tablet'
+      else
+        'desktop'
+      end
+      
+      {
+        browser: browser_name,
+        os: os_family,
+        device_type: device_type
+      }
+    rescue LoadError, StandardError => e
+      # Fallback to basic detection if gem fails
+      Rails.logger.warn "User agent parser failed for '#{user_agent_string}': #{e.message}"
+      user_agent_lower = user_agent_string.downcase
+      
+      browser = if user_agent_lower.include?('chrome') && !user_agent_lower.include?('edg')
+        'Chrome'
+      elsif user_agent_lower.include?('edg')
+        'Edge'
+      elsif user_agent_lower.include?('firefox')
+        'Firefox'
+      elsif user_agent_lower.include?('safari') && !user_agent_lower.include?('chrome')
+        'Safari'
+      elsif user_agent_lower.include?('opera') || user_agent_lower.include?('opr')
+        'Opera'
+      elsif user_agent_lower.include?('msie') || user_agent_lower.include?('trident')
+        'Internet Explorer'
+      else
+        'Unknown'
+      end
+      
+      os = if user_agent_lower.include?('windows')
+        'Windows'
+      elsif user_agent_lower.include?('mac os') || user_agent_lower.include?('macintosh')
+        'macOS'
+      elsif user_agent_lower.include?('linux') && !user_agent_lower.include?('android')
+        'Linux'
+      elsif user_agent_lower.include?('android')
+        'Android'
+      elsif user_agent_lower.include?('iphone') || user_agent_lower.include?('ipad') || user_agent_lower.include?('ipod')
+        'iOS'
+      else
+        'Unknown'
+      end
+      
+      device_type = if user_agent_lower.match?(/mobile|android|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop/i)
+        'mobile'
+      elsif user_agent_lower.match?(/tablet|ipad|playbook|silk/i) && !user_agent_lower.match?(/mobile/i)
+        'tablet'
+      else
+        'desktop'
+      end
+      
+      {
+        browser: browser,
+        os: os,
+        device_type: device_type
+      }
+    end
   end
 
   # Helper method to exclude emails by pattern (exact match or domain match)

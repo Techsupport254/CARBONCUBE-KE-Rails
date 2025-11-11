@@ -106,6 +106,148 @@ class ConversationsController < ApplicationController
     render json: { online_status: online_status }, status: :ok
   end
 
+  def ping_client
+    # Only allow admins and sales users to ping sellers
+    unless @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser)
+      render json: { error: 'Only admins and sales users can ping sellers' }, status: :forbidden
+      return
+    end
+
+    # Find conversation manually (not using before_action to avoid Rails 7.1 callback validation issue)
+    conversation = find_admin_conversation
+
+    unless conversation
+      render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
+      return
+    end
+
+    # Only ping sellers, not buyers
+    # Priority: seller > inquirer_seller
+    seller = conversation.seller || conversation.inquirer_seller
+
+    unless seller
+      render json: { 
+        error: 'No seller found in this conversation',
+        error_type: 'no_seller'
+      }, status: :unprocessable_entity
+      return
+    end
+
+    # Count unread messages for the seller (messages not sent by the seller)
+    # Use read_at: nil to match the same logic used in unread_counts endpoint
+    unread_count = conversation.messages
+      .where.not(sender: seller)
+      .where(read_at: nil)
+      .count
+
+    if unread_count == 0
+      render json: { 
+        error: 'No unread messages to notify about',
+        error_type: 'no_unread_messages'
+      }, status: :unprocessable_entity
+      return
+    end
+
+    # Check if seller has a phone number
+    unless seller.phone_number.present?
+      render json: { 
+        error: 'Seller does not have a phone number registered. Please ask the seller to add their phone number to their profile.',
+        error_type: 'no_phone_number'
+      }, status: :unprocessable_entity
+      return
+    end
+
+    # Validate phone number format (basic check)
+    phone_number = seller.phone_number.to_s.gsub(/\D/, '')
+    if phone_number.length < 10
+      render json: { 
+        error: 'Seller phone number format is invalid. Please ask the seller to update their phone number.',
+        error_type: 'invalid_phone_format'
+      }, status: :unprocessable_entity
+      return
+    end
+
+    # Build notification message
+    sender_name = @current_user.is_a?(Admin) ? 'Carbon Cube Support' : 'Carbon Cube Sales Team'
+    
+    # Use environment-aware URL: localhost for development, production URL for production
+    base_url = if Rails.env.development?
+      ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+    else
+      ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
+    end
+    conversation_url = "#{base_url}/messages?conversationId=#{conversation.id}"
+    
+    # Get last message preview
+    last_message = conversation.messages
+      .where.not(sender: seller)
+      .order(created_at: :desc)
+      .first
+    
+    message_preview = last_message&.content&.truncate(100) || "You have #{unread_count} unread message#{unread_count > 1 ? 's' : ''}"
+    
+    # Format with WhatsApp-compatible markdown
+    # WhatsApp supports: *bold*, _italic_, ~strikethrough~, ```monospace```, `inline code`, > block quotes, and lists
+    notification_message = <<~MESSAGE
+      🔔 *You have #{unread_count} unread message#{unread_count > 1 ? 's' : ''} on Carbon Cube Kenya*
+      
+      *#{sender_name}* sent you a message:
+      
+      > #{message_preview}
+      
+      👉 View and reply: #{conversation_url}
+      
+      ────────────────
+      *Carbon Cube Kenya*
+    MESSAGE
+
+    # Send WhatsApp notification
+    result = WhatsAppNotificationService.send_message(seller.phone_number, notification_message)
+
+    if result.is_a?(Hash) && result[:success]
+      render json: { 
+        success: true, 
+        message: 'Seller notified via WhatsApp',
+        unread_count: unread_count
+      }, status: :ok
+    else
+      # Handle different error types
+      error_type = result.is_a?(Hash) ? result[:error_type] : 'unknown'
+      error_message = result.is_a?(Hash) ? result[:error] : 'Failed to send WhatsApp notification'
+      
+      case error_type
+      when 'not_registered'
+        render json: { 
+          error: 'Seller\'s phone number is not registered on WhatsApp',
+          message: 'The phone number exists but is not registered on WhatsApp. Please contact the seller to register their number.',
+          error_type: error_type
+        }, status: :bad_request
+      when 'service_unavailable', 'connection_error', 'timeout'
+        render json: { 
+          error: 'WhatsApp service is currently unavailable',
+          message: 'The WhatsApp notification service is not available right now. Please try again later.',
+          error_type: error_type
+        }, status: :service_unavailable
+      when 'no_phone_number', 'invalid_phone_format'
+        # These should have been caught earlier, but handle just in case
+        render json: { 
+          error: error_message,
+          error_type: error_type
+        }, status: :unprocessable_entity
+      else
+        render json: { 
+          error: 'Failed to send WhatsApp notification',
+          message: error_message,
+          error_type: error_type
+        }, status: :service_unavailable
+      end
+    end
+  rescue => e
+    Rails.logger.error "Error pinging seller: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    render json: { error: 'An error occurred while pinging the seller', details: e.message }, status: :internal_server_error
+  end
+
   private
 
   def fix_conversations_sequence

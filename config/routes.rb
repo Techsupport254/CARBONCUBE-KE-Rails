@@ -88,6 +88,9 @@ Rails.application.routes.draw do
         post :send_test_email
       end
     end
+    member do
+      post :ping_client
+    end
     collection do
       get :unread_count
       get :unread_counts
@@ -565,6 +568,7 @@ Rails.application.routes.draw do
       resources :analytics, only: [:index] do
         collection do
           get :recent_users
+          get :devices
         end
       end
       resources :click_events, only: [] do

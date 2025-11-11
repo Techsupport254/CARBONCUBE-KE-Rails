@@ -15,6 +15,52 @@ class ClickEvent < ApplicationRecord
   # Scope to filter clicks by a specific ad
   scope :for_ad, ->(ad_id) { where(ad_id: ad_id) }
 
+  # Scope to exclude click events where sellers click their own ads
+  # Excludes events where:
+  # - metadata->>'user_role' = 'seller' AND metadata->>'user_id' matches the ad's seller_id
+  #   (handles clicks from logged-in sellers)
+  # - OR device_hash matches (if provided) AND the ad's seller_id matches seller_id (if provided)
+  #   (handles guest clicks from sellers clicking their own ads before login)
+  scope :excluding_seller_own_clicks, ->(device_hash: nil, seller_id: nil) {
+    query = all
+    
+    # Join with ads table to access seller_id
+    # Use left_joins to avoid excluding events without ads
+    query = query.left_joins(:ad)
+    
+    # Build exclusion conditions - we want to exclude if ANY condition is true
+    exclusion_parts = []
+    exclusion_params = []
+    
+    # Condition 1: Logged-in seller clicking own ad
+    # user_role in metadata is 'seller' AND user_id in metadata matches the ad's seller_id
+    exclusion_parts << "(
+      (metadata->>'user_role' = 'seller' OR metadata->>'user_role' = 'Seller')
+      AND metadata->>'user_id' IS NOT NULL
+      AND ads.seller_id IS NOT NULL
+      AND CAST(metadata->>'user_id' AS TEXT) = CAST(ads.seller_id AS TEXT)
+    )"
+    
+    # Condition 2: Guest seller clicking own ad (before login)
+    # device_hash matches AND the ad's seller_id matches seller_id
+    if device_hash.present? && seller_id.present?
+      exclusion_parts << "(
+        metadata->>'device_hash' IS NOT NULL
+        AND metadata->>'device_hash' = ?
+        AND ads.seller_id IS NOT NULL
+        AND CAST(ads.seller_id AS TEXT) = ?
+      )"
+      exclusion_params = [device_hash, seller_id.to_s]
+    end
+    
+    # Exclude events where ANY of the conditions are true
+    if exclusion_parts.any?
+      query = query.where("NOT (#{exclusion_parts.join(' OR ')})", *exclusion_params)
+    end
+    
+    query
+  }
+  
   # Scope to exclude internal users from analytics
   # This matches the logic in InternalUserExclusion.should_exclude?
   scope :excluding_internal_users, -> {

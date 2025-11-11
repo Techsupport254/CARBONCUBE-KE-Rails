@@ -12,17 +12,39 @@ class Sales::ClickEventsController < ApplicationController
         seller_id: params[:seller_id] # Optional: for seller-specific analytics
       }.compact
       
-      service = ClickEventsAnalyticsService.new(filters: filters)
+      # Get device_hash from params or headers if available
+      # This is used to exclude guest clicks from sellers clicking their own ads
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      
+      service = ClickEventsAnalyticsService.new(
+        filters: filters,
+        device_hash: device_hash
+      )
       
       # Get pagination params
       page = params[:page].to_i
       page = 1 if page < 1
       per_page = params[:per_page].to_i
-      per_page = 50 if per_page < 1 || per_page > 100
+      per_page = 50 if per_page < 1 || per_page > 500
       
-      # Get analytics data from service
-      analytics_data = service.analytics
-      recent_events_data = service.recent_click_events(page: page, per_page: per_page)
+      # Check if timestamps are needed (they can be expensive for large datasets)
+      include_timestamps = params[:include_timestamps] != 'false'
+      
+      # Get analytics data from service with optimized options
+      analytics_options = {
+        include_timestamps: include_timestamps,
+        include_breakdowns: true,
+        include_top_ads: true
+      }
+      analytics_data = service.analytics(options: analytics_options)
+      
+      # Get recent events without user agent parsing for better performance
+      # User agent parsing is expensive and can be done client-side if needed
+      recent_events_data = service.recent_click_events(
+        page: page, 
+        per_page: per_page,
+        parse_user_agent: false
+      )
       
       # Format response to match existing frontend expectations
       response_data = {

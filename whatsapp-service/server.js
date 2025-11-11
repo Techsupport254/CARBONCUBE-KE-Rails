@@ -6,59 +6,66 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.WHATSAPP_SERVICE_PORT || 3001;
+// Use port 3002 by default to avoid conflict with Rails (which uses 3001)
+const PORT = process.env.WHATSAPP_SERVICE_PORT || 3002;
 
-// Initialize WhatsApp client
-const client = new Client({
-	authStrategy: new LocalAuth({
-		dataPath: "./.wwebjs_auth",
-	}),
-	puppeteer: {
-		headless: true,
-		args: [
-			"--no-sandbox",
-			"--disable-setuid-sandbox",
-			"--disable-dev-shm-usage",
-			"--disable-accelerated-2d-canvas",
-			"--no-first-run",
-			"--no-zygote",
-			"--single-process",
-			"--disable-gpu",
-		],
-	},
-});
-
+let client = null;
 let isReady = false;
 let qrCode = null;
 
-// QR code generation
-client.on("qr", (qr) => {
-	console.log("QR Code received, scan with your phone:");
-	qrcode.generate(qr, { small: true });
-	qrCode = qr;
-});
+// Function to create and initialize WhatsApp client
+function createClient() {
+	client = new Client({
+		authStrategy: new LocalAuth({
+			dataPath: "./.wwebjs_auth",
+		}),
+		puppeteer: {
+			headless: true,
+			args: [
+				"--no-sandbox",
+				"--disable-setuid-sandbox",
+				"--disable-dev-shm-usage",
+				"--disable-accelerated-2d-canvas",
+				"--no-first-run",
+				"--no-zygote",
+				"--single-process",
+				"--disable-gpu",
+			],
+		},
+	});
 
-// Client ready
-client.on("ready", () => {
-	console.log("WhatsApp client is ready!");
-	isReady = true;
-	qrCode = null;
-});
+	// QR code generation
+	client.on("qr", (qr) => {
+		console.log("QR Code received, scan with your phone:");
+		qrcode.generate(qr, { small: true });
+		qrCode = qr;
+	});
 
-// Authentication failure
-client.on("auth_failure", (msg) => {
-	console.error("Authentication failure:", msg);
-	isReady = false;
-});
+	// Client ready
+	client.on("ready", () => {
+		console.log("WhatsApp client is ready!");
+		isReady = true;
+		qrCode = null;
+	});
 
-// Disconnected
-client.on("disconnected", (reason) => {
-	console.log("Client disconnected:", reason);
-	isReady = false;
-});
+	// Authentication failure
+	client.on("auth_failure", (msg) => {
+		console.error("Authentication failure:", msg);
+		isReady = false;
+	});
 
-// Initialize client
-client.initialize();
+	// Disconnected
+	client.on("disconnected", (reason) => {
+		console.log("Client disconnected:", reason);
+		isReady = false;
+	});
+
+	// Initialize client
+	client.initialize();
+}
+
+// Initialize client on startup
+createClient();
 
 // Helper function to format phone number (Kenyan format: 07XXXXXXXX -> 2547XXXXXXXX)
 function formatPhoneNumber(phoneNumber) {
@@ -99,9 +106,66 @@ app.get("/qr", (req, res) => {
 	}
 });
 
+// Logout and reset session endpoint (to rescan with different WhatsApp account)
+app.post("/logout", async (req, res) => {
+	try {
+		if (client) {
+			if (isReady) {
+				try {
+					await client.logout();
+					console.log("WhatsApp client logged out");
+				} catch (e) {
+					console.log("Logout error (may already be logged out):", e.message);
+				}
+			}
+
+			// Destroy the client to clear the session
+			try {
+				await client.destroy();
+				console.log("WhatsApp client destroyed");
+			} catch (e) {
+				console.log("Destroy error:", e.message);
+			}
+		}
+
+		// Clear the authentication data directory
+		const fs = require("fs");
+		const path = require("path");
+		const authPath = path.join(__dirname, ".wwebjs_auth");
+
+		if (fs.existsSync(authPath)) {
+			fs.rmSync(authPath, { recursive: true, force: true });
+			console.log("Authentication data cleared");
+		}
+
+		// Reset state and recreate the client to generate a new QR code
+		isReady = false;
+		qrCode = null;
+		client = null;
+
+		// Wait a moment before recreating to ensure cleanup is complete
+		setTimeout(() => {
+			createClient();
+		}, 1000);
+
+		res.json({
+			success: true,
+			message:
+				"Logged out successfully. A new QR code will be generated shortly. Please scan it with your phone.",
+			qrEndpoint: `http://localhost:${PORT}/qr`,
+		});
+	} catch (error) {
+		console.error("Error during logout:", error);
+		res.status(500).json({
+			error: "Failed to logout",
+			message: error.message,
+		});
+	}
+});
+
 // Send message endpoint
 app.post("/send", async (req, res) => {
-	if (!isReady) {
+	if (!client || !isReady) {
 		return res.status(503).json({
 			error: "WhatsApp client is not ready",
 			message: "Please scan the QR code first or wait for connection",
@@ -159,6 +223,12 @@ app.listen(PORT, () => {
 // Graceful shutdown
 process.on("SIGINT", async () => {
 	console.log("Shutting down...");
-	await client.destroy();
+	if (client) {
+		try {
+			await client.destroy();
+		} catch (e) {
+			console.log("Error during shutdown:", e.message);
+		}
+	}
 	process.exit(0);
 });

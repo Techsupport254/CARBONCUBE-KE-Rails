@@ -17,6 +17,8 @@ class ClickEventsController < ApplicationController
       end
       if params[:user_agent].present?
         metadata[:user_agent] = params[:user_agent]
+        # Parse and store user_agent_details for faster analytics queries
+        metadata[:user_agent_details] = parse_user_agent(params[:user_agent])
       end
 
       # Extract user information from metadata if available (for non-buyer users or when auth fails)
@@ -122,6 +124,106 @@ class ClickEventsController < ApplicationController
   def click_event_params
     # Only permit the fields that actually exist in the ClickEvent model
     params.permit(:event_type, :ad_id, :device_hash, :user_agent, metadata: {}, click_event: {})
+  end
+
+  # Parse user agent to extract browser, OS, and device information
+  def parse_user_agent(user_agent_string)
+    return {} unless user_agent_string.present?
+    
+    begin
+      require 'user_agent_parser'
+      parser = UserAgentParser.parse(user_agent_string)
+      
+      # Extract browser information
+      browser_name = parser.family
+      browser_version = parser.version&.to_s
+      
+      # Extract OS information
+      os_family = parser.os&.family
+      os_version = parser.os&.version&.to_s
+      
+      # Detect device type
+      user_agent_lower = user_agent_string.downcase
+      device_type = detect_device_type(user_agent_lower)
+      
+      {
+        browser: browser_name || 'Unknown',
+        browser_version: browser_version,
+        os: os_family || 'Unknown',
+        os_version: os_version,
+        device_type: device_type,
+        is_mobile: mobile_device?(user_agent_lower),
+        is_tablet: tablet_device?(user_agent_lower),
+        is_desktop: desktop_device?(user_agent_lower)
+      }
+    rescue LoadError, StandardError => e
+      # Fallback to basic detection if gem is not available or fails
+      Rails.logger.warn "User agent parser failed for '#{user_agent_string}': #{e.message}"
+      user_agent_lower = user_agent_string.downcase
+      
+      {
+        browser: detect_browser_fallback(user_agent_lower),
+        browser_version: nil,
+        os: detect_os_fallback(user_agent_lower),
+        os_version: nil,
+        device_type: detect_device_type(user_agent_lower),
+        is_mobile: mobile_device?(user_agent_lower),
+        is_tablet: tablet_device?(user_agent_lower),
+        is_desktop: desktop_device?(user_agent_lower)
+      }
+    end
+  end
+
+  def detect_device_type(user_agent_lower)
+    return 'mobile' if mobile_device?(user_agent_lower)
+    return 'tablet' if tablet_device?(user_agent_lower)
+    'desktop'
+  end
+
+  def mobile_device?(user_agent_lower)
+    user_agent_lower.match?(/mobile|android|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop/i)
+  end
+
+  def tablet_device?(user_agent_lower)
+    user_agent_lower.match?(/tablet|ipad|playbook|silk/i) && !user_agent_lower.match?(/mobile/i)
+  end
+
+  def desktop_device?(user_agent_lower)
+    !mobile_device?(user_agent_lower) && !tablet_device?(user_agent_lower)
+  end
+
+  def detect_browser_fallback(user_agent_lower)
+    if user_agent_lower.include?('chrome') && !user_agent_lower.include?('edg')
+      'Chrome'
+    elsif user_agent_lower.include?('edg')
+      'Edge'
+    elsif user_agent_lower.include?('firefox')
+      'Firefox'
+    elsif user_agent_lower.include?('safari') && !user_agent_lower.include?('chrome')
+      'Safari'
+    elsif user_agent_lower.include?('opera') || user_agent_lower.include?('opr')
+      'Opera'
+    elsif user_agent_lower.include?('msie') || user_agent_lower.include?('trident')
+      'Internet Explorer'
+    else
+      'Unknown'
+    end
+  end
+
+  def detect_os_fallback(user_agent_lower)
+    if user_agent_lower.include?('windows')
+      'Windows'
+    elsif user_agent_lower.include?('mac os') || user_agent_lower.include?('macintosh')
+      'macOS'
+    elsif user_agent_lower.include?('linux') && !user_agent_lower.include?('android')
+      'Linux'
+    elsif user_agent_lower.include?('android')
+      'Android'
+    elsif user_agent_lower.include?('iphone') || user_agent_lower.include?('ipad') || user_agent_lower.include?('ipod')
+      'iOS'
+    else
+      'Unknown'
+    end
   end
 
   # Check if the current request should be excluded based on internal user criteria

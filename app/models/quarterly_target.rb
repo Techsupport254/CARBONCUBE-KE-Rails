@@ -4,7 +4,7 @@ class QuarterlyTarget < ApplicationRecord
   belongs_to :approved_by, class_name: 'Admin', foreign_key: 'approved_by_id', optional: true
 
   # Validations
-  validates :metric_type, presence: true, inclusion: { in: %w[total_sellers total_buyers] }
+  validates :metric_type, presence: true, inclusion: { in: %w[total_sellers total_buyers total_ads total_reveal_clicks] }
   validates :year, presence: true, numericality: { only_integer: true, greater_than: 2020, less_than: 2100 }
   validates :quarter, presence: true, inclusion: { in: [1, 2, 3, 4] }
   validates :target_value, presence: true, numericality: { only_integer: true, greater_than: 0 }
