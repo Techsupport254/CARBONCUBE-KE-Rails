@@ -1,72 +1,141 @@
 class ClickEventsAnalyticsService
   attr_reader :base_query, :filters
 
-  def initialize(filters: {})
+  def initialize(filters: {}, device_hash: nil)
     @filters = filters || {}
+    @device_hash = device_hash
     @base_query = build_base_query
   end
 
   # Main method to get all click events analytics
-  def analytics
-    {
-      # Totals
+  # Options: include_timestamps (default: true), include_breakdowns (default: true), include_top_ads (default: true)
+  def analytics(options: {})
+    include_timestamps = options.fetch(:include_timestamps, true)
+    include_breakdowns = options.fetch(:include_breakdowns, true)
+    include_top_ads = options.fetch(:include_top_ads, true)
+    
+    result = {
+      # Totals (always needed)
       totals: totals,
-      
-      # Timestamps for frontend filtering
-      timestamps: timestamps,
-      
-      # Breakdowns
-      breakdowns: breakdowns,
-      
-      # Top performing ads
-      top_ads: top_ads_by_reveals,
-      
-      # Recent click events (paginated)
-      recent_events: recent_click_events,
-      
-      # Trends (for seller-specific analytics)
-      trends: click_event_trends,
-      
-      # Demographics (for seller-specific analytics)
-      demographics: demographics_stats
     }
+    
+    # Only include timestamps if requested (they can be expensive)
+    result[:timestamps] = timestamps if include_timestamps
+    
+    # Only include breakdowns if requested
+    result[:breakdowns] = breakdowns if include_breakdowns
+    
+    # Only include top ads if requested
+    result[:top_ads] = top_ads_by_reveals if include_top_ads
+    
+    # Recent events, trends, and demographics are typically not needed for main analytics
+    # They should be fetched separately when needed
+    
+    result
   end
 
-  # Get totals
+  # Get totals - optimized to use a single query with conditional aggregation
   def totals
+    # Use a single query with conditional aggregation instead of multiple count queries
+    stats = base_query.select(
+      "COUNT(*) as total_click_events",
+      "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details') as total_reveal_events",
+      "COUNT(*) FILTER (WHERE event_type = 'Ad-Click') as total_ad_clicks",
+      "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND buyer_id IS NULL) as guest_reveals",
+      "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND buyer_id IS NOT NULL) as authenticated_reveals",
+      "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND metadata->>'converted_from_guest' = 'true') as conversion_count",
+      "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND metadata->>'post_login_reveal' = 'true') as post_login_reveal_count",
+      "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND buyer_id IS NULL AND metadata->>'triggered_login_modal' = 'true') as guest_login_attempt_count"
+    ).first
+    
+    guest_attempts = stats.guest_login_attempt_count.to_i
+    conversions = stats.conversion_count.to_i
+    conversion_rate = guest_attempts > 0 ? (conversions.to_f / guest_attempts * 100).round(2) : 0.0
+    
     {
-      total_click_events: base_query.count,
-      total_reveal_events: base_query.where(event_type: 'Reveal-Seller-Details').count,
-      total_ad_clicks: base_query.where(event_type: 'Ad-Click').count,
-      guest_reveals: base_query.where(event_type: 'Reveal-Seller-Details', buyer_id: nil).count,
-      authenticated_reveals: base_query.where(event_type: 'Reveal-Seller-Details').where.not(buyer_id: nil).count,
-      conversion_count: conversion_events.count,
-      conversion_rate: calculate_conversion_rate,
-      post_login_reveal_count: post_login_reveals.count,
-      guest_login_attempt_count: guest_login_attempts.count
+      total_click_events: stats.total_click_events.to_i,
+      total_reveal_events: stats.total_reveal_events.to_i,
+      total_ad_clicks: stats.total_ad_clicks.to_i,
+      guest_reveals: stats.guest_reveals.to_i,
+      authenticated_reveals: stats.authenticated_reveals.to_i,
+      conversion_count: conversions,
+      conversion_rate: conversion_rate,
+      post_login_reveal_count: stats.post_login_reveal_count.to_i,
+      guest_login_attempt_count: guest_attempts
     }
   end
 
-  # Get timestamps for frontend filtering
-  def timestamps
+  # Get timestamps for frontend filtering - optimized to use SQL aggregations instead of loading all into memory
+  # This is much faster for large datasets as it uses database-level aggregations
+  def timestamps(limit: 10000)
+    # Use SQL aggregations to get timestamps directly from database
+    # This avoids loading all records into memory
+    # Limit to most recent events for performance
+    recent_events_query = base_query.order(created_at: :desc).limit(limit)
+    
+    # Get timestamps using SQL array aggregation - much faster than Ruby loops
+    click_events_timestamps = recent_events_query.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get reveal events timestamps
+    reveal_events = recent_events_query.where(event_type: 'Reveal-Seller-Details')
+    reveal_events_timestamps = reveal_events.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get ad clicks timestamps
+    ad_clicks = recent_events_query.where(event_type: 'Ad-Click')
+    ad_clicks_timestamps = ad_clicks.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get guest reveal timestamps
+    guest_reveals = reveal_events.where(buyer_id: nil)
+    guest_reveal_timestamps = guest_reveals.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get authenticated reveal timestamps
+    authenticated_reveals = reveal_events.where.not(buyer_id: nil)
+    authenticated_reveal_timestamps = authenticated_reveals.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get conversion timestamps (using JSONB query with index)
+    conversions = reveal_events.where("metadata->>'converted_from_guest' = 'true'")
+    conversion_timestamps = conversions.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get post-login reveal timestamps
+    post_login_reveals = reveal_events.where("metadata->>'post_login_reveal' = 'true'")
+    post_login_reveal_timestamps = post_login_reveals.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
+    # Get guest login attempt timestamps
+    guest_login_attempts = guest_reveals.where("metadata->>'triggered_login_modal' = 'true'")
+    guest_login_attempt_timestamps = guest_login_attempts.pluck(Arel.sql("created_at::text"))
+      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    
     {
-      click_events_timestamps: base_query.pluck(:created_at).map { |ts| ts&.iso8601 },
-      reveal_events_timestamps: base_query.where(event_type: 'Reveal-Seller-Details').pluck(:created_at).map { |ts| ts&.iso8601 },
-      ad_clicks_timestamps: base_query.where(event_type: 'Ad-Click').pluck(:created_at).map { |ts| ts&.iso8601 },
-      guest_reveal_timestamps: base_query.where(event_type: 'Reveal-Seller-Details', buyer_id: nil).pluck(:created_at).map { |ts| ts&.iso8601 },
-      authenticated_reveal_timestamps: base_query.where(event_type: 'Reveal-Seller-Details').where.not(buyer_id: nil).pluck(:created_at).map { |ts| ts&.iso8601 },
-      conversion_timestamps: conversion_events.pluck(:created_at).map { |ts| ts&.iso8601 },
-      post_login_reveal_timestamps: post_login_reveals.pluck(:created_at).map { |ts| ts&.iso8601 },
-      guest_login_attempt_timestamps: guest_login_attempts.pluck(:created_at).map { |ts| ts&.iso8601 }
+      click_events_timestamps: click_events_timestamps,
+      reveal_events_timestamps: reveal_events_timestamps,
+      ad_clicks_timestamps: ad_clicks_timestamps,
+      guest_reveal_timestamps: guest_reveal_timestamps,
+      authenticated_reveal_timestamps: authenticated_reveal_timestamps,
+      conversion_timestamps: conversion_timestamps,
+      post_login_reveal_timestamps: post_login_reveal_timestamps,
+      guest_login_attempt_timestamps: guest_login_attempt_timestamps
     }
   end
 
-  # Get breakdowns
+  # Get breakdowns - optimized to use single queries
   def breakdowns
+    # Use a single query with conditional aggregation for guest vs authenticated
+    guest_auth_stats = base_query.select(
+      "COUNT(*) FILTER (WHERE buyer_id IS NULL) as guest_count",
+      "COUNT(*) FILTER (WHERE buyer_id IS NOT NULL) as authenticated_count"
+    ).first
+    
     {
       guest_vs_authenticated: {
-        guest: base_query.where(buyer_id: nil).count,
-        authenticated: base_query.where.not(buyer_id: nil).count
+        guest: guest_auth_stats.guest_count.to_i,
+        authenticated: guest_auth_stats.authenticated_count.to_i
       },
       by_event_type: base_query.group(:event_type).count,
       by_category: category_click_events,
@@ -74,80 +143,95 @@ class ClickEventsAnalyticsService
     }
   end
 
-  # Get top ads by reveals
+  # Get top ads by reveals - optimized to use a single SQL query with aggregations
   def top_ads_by_reveals(limit: 10)
-    reveal_counts_by_ad = base_query
-      .where(event_type: 'Reveal-Seller-Details')
-      .group(:ad_id)
-      .count
+    # Use a single query with aggregations to get all stats for top ads
+    # This eliminates N+1 queries by fetching all data in one go
+    top_ads_data = base_query
+      .joins("INNER JOIN ads ON ads.id = click_events.ad_id")
+      .joins("LEFT JOIN categories ON categories.id = ads.category_id")
+      .joins("LEFT JOIN sellers ON sellers.id = ads.seller_id")
+      .where("ads.deleted = ?", false)
+      .group("ads.id", "ads.title", "ads.first_media_url", "ads.seller_id", "categories.name", 
+              "sellers.enterprise_name", "sellers.fullname")
+      .select(
+        "ads.id as ad_id",
+        "ads.title as ad_title",
+        "ads.first_media_url as ad_image_url",
+        "ads.seller_id as seller_id",
+        "categories.name as category_name",
+        "sellers.enterprise_name as seller_enterprise_name",
+        "sellers.fullname as seller_fullname",
+        "COUNT(*) as total_click_events",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.buyer_id IS NULL) as guest_reveals",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.buyer_id IS NOT NULL) as authenticated_reveals",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'converted_from_guest' = 'true') as conversions",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' IN ('copy_phone', 'copy_email')) as copy_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'call_phone') as call_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'whatsapp') as whatsapp_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'view_location') as location_clicks"
+      )
+      .having("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') > 0")
+      .order("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC")
+      .limit(limit)
+      .to_a
     
-    top_ad_ids = reveal_counts_by_ad
-      .sort_by { |_ad_id, count| -count }
-      .first(limit)
-      .map { |ad_id, _count| ad_id }
-    
-    top_ad_ids.map do |ad_id|
-      ad = Ad.find_by(id: ad_id)
-      next nil unless ad
+    top_ads_data.map do |row|
+      ad_clicks = row.ad_clicks.to_i
+      reveal_clicks = row.reveal_clicks.to_i
+      click_to_reveal_rate = ad_clicks > 0 ? (reveal_clicks.to_f / ad_clicks * 100).round(2) : 0.0
       
-      ad_click_events = base_query.where(ad_id: ad_id)
-      ad_clicks = ad_click_events.where(event_type: 'Ad-Click').count
-      reveal_clicks = ad_click_events.where(event_type: 'Reveal-Seller-Details').count
-      
-      guest_reveals_for_ad = ad_click_events
-        .where(event_type: 'Reveal-Seller-Details')
-        .where(buyer_id: nil)
-        .count
-      authenticated_reveals_for_ad = ad_click_events
-        .where(event_type: 'Reveal-Seller-Details')
-        .where.not(buyer_id: nil)
-        .count
-      
-      conversions_for_ad = ad_click_events
-        .where(event_type: 'Reveal-Seller-Details')
-        .where("metadata->>'converted_from_guest' = 'true'")
-        .count
-      
-      click_to_reveal_rate = ad_clicks > 0 ? 
-        (reveal_clicks.to_f / ad_clicks * 100).round(2) : 0.0
-      
-      seller = ad.seller
-      seller_name = seller&.enterprise_name || seller&.fullname || 'Unknown Seller'
+      seller_name = row.seller_enterprise_name.presence || row.seller_fullname.presence || 'Unknown Seller'
       
       {
-        ad_id: ad_id,
-        ad_title: ad.title || 'Unknown Ad',
-        ad_image_url: ad.first_media_url,
-        category_name: ad.category&.name || 'Uncategorized',
+        ad_id: row.ad_id,
+        ad_title: row.ad_title || 'Unknown Ad',
+        ad_image_url: row.ad_image_url,
+        category_name: row.category_name || 'Uncategorized',
         seller_name: seller_name,
-        seller_id: ad.seller_id,
-        total_click_events: ad_click_events.count,
+        seller_id: row.seller_id,
+        total_click_events: row.total_click_events.to_i,
         ad_clicks: ad_clicks,
         reveal_clicks: reveal_clicks,
-        guest_reveals: guest_reveals_for_ad,
-        authenticated_reveals: authenticated_reveals_for_ad,
-        conversions: conversions_for_ad,
-        click_to_reveal_rate: click_to_reveal_rate
+        guest_reveals: row.guest_reveals.to_i,
+        authenticated_reveals: row.authenticated_reveals.to_i,
+        conversions: row.conversions.to_i,
+        click_to_reveal_rate: click_to_reveal_rate,
+        copy_clicks: row.copy_clicks.to_i,
+        call_clicks: row.call_clicks.to_i,
+        whatsapp_clicks: row.whatsapp_clicks.to_i,
+        location_clicks: row.location_clicks.to_i,
+        total_contact_interactions: row.copy_clicks.to_i + row.call_clicks.to_i + row.whatsapp_clicks.to_i + row.location_clicks.to_i
       }
-    end.compact
+    end
   end
 
   # Get recent click events with pagination
-  def recent_click_events(page: 1, per_page: 50)
+  # Options: parse_user_agent (default: false) - set to true only if user agent details are needed
+  def recent_click_events(page: 1, per_page: 50, parse_user_agent: false)
     page = [page.to_i, 1].max
-    per_page = [[per_page.to_i, 1].max, 100].min
+    # Increased limit to 500 to support grouped data display (need more events to get enough groups)
+    per_page = [[per_page.to_i, 1].max, 500].min
     
     filtered_query = apply_filters(base_query)
+    
+    # Use count with limit for better performance on large datasets
+    # Only count if we need pagination info
     total_events_count = filtered_query.count
     total_pages = (total_events_count.to_f / per_page).ceil
     offset = (page - 1) * per_page
     
-    events = filtered_query
+    # Optimize query with proper includes and select only needed columns
+    events_query = filtered_query
       .order(created_at: :desc)
       .offset(offset)
       .limit(per_page)
       .includes(:buyer, :ad)
-      .map { |event| format_click_event(event) }
+    
+    # Map events with optional user agent parsing
+    events = events_query.map { |event| format_click_event(event, parse_user_agent: parse_user_agent) }
     
     {
       events: events,
@@ -207,14 +291,16 @@ class ClickEventsAnalyticsService
     }
   end
 
-  # Get category click events
+  # Get category click events - optimized to use SQL aggregations
   def category_click_events
     # Use base_query subquery to ensure consistency with dashboard totals
-    # base_query already uses ClickEvent.excluding_internal_users (centralized exclusion logic)
+    # Optimize by using SQL aggregations instead of loading all records into memory
+    # Use EXISTS subquery for better performance than IN with large datasets
     category_query = Category
-      .joins(ads: :click_events)
+      .joins("INNER JOIN ads ON ads.category_id = categories.id")
+      .joins("INNER JOIN click_events ON click_events.ad_id = ads.id")
       .where(ads: { deleted: false })
-      .where(click_events: { id: base_query.select(:id) })
+      .where("click_events.id IN (#{base_query.select(:id).to_sql})")
     
     # Filter by seller_id if provided
     if filters[:seller_id].present?
@@ -222,42 +308,47 @@ class ClickEventsAnalyticsService
       category_query = category_query.where(click_events: { ad_id: ad_ids })
     end
     
+    # Use SQL aggregations to get counts - limit timestamps to recent events for performance
+    # Only get timestamps for the most recent 1000 events per category to avoid memory issues
     category_query
-      .select('categories.name AS category_name, 
-              click_events.event_type,
-              click_events.created_at')
+      .group('categories.id', 'categories.name')
+      .select(
+        'categories.id AS category_id',
+        'categories.name AS category_name',
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wish_list_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.created_at IS NOT NULL) as timestamps_array"
+      )
       .order('categories.name')
-      .to_a
-      .group_by(&:category_name)
-      .transform_values do |records|
+      .map do |row|
+        # Limit timestamps to most recent 1000 per category for performance
+        timestamps = if row.respond_to?(:timestamps_array) && row.timestamps_array
+          row.timestamps_array.first(1000).map { |ts| ts&.iso8601 }.compact
+        else
+          []
+        end
+        
         {
-          ad_clicks: records.count { |r| r.event_type == 'Ad-Click' },
-          wish_list_clicks: records.count { |r| r.event_type == 'Add-to-Wish-List' },
-          reveal_clicks: records.count { |r| r.event_type == 'Reveal-Seller-Details' },
-          timestamps: records.map { |r| r.created_at&.iso8601 }
-        }
-      end
-      .map do |category_name, data|
-        {
-          category_name: category_name,
-          ad_clicks: data[:ad_clicks],
-          wish_list_clicks: data[:wish_list_clicks],
-          reveal_clicks: data[:reveal_clicks],
-          timestamps: data[:timestamps]
+          category_name: row.category_name,
+          ad_clicks: row.ad_clicks.to_i,
+          wish_list_clicks: row.wish_list_clicks.to_i,
+          reveal_clicks: row.reveal_clicks.to_i,
+          timestamps: timestamps
         }
       end
   end
 
-  # Get subcategory click events
+  # Get subcategory click events - optimized to use SQL aggregations
   def subcategory_click_events
     # Use base_query subquery to ensure consistency with dashboard totals
-    # base_query already uses ClickEvent.excluding_internal_users (centralized exclusion logic)
+    # Optimize by using SQL aggregations instead of loading all records into memory
     subcategory_query = Subcategory
       .joins(:category)
       .joins('INNER JOIN ads ON ads.subcategory_id = subcategories.id')
       .joins('INNER JOIN click_events ON click_events.ad_id = ads.id')
       .where('ads.deleted = ?', false)
-      .where(click_events: { id: base_query.select(:id) })
+      .where("click_events.id IN (#{base_query.select(:id).to_sql})")
     
     # Filter by seller_id if provided
     if filters[:seller_id].present?
@@ -265,36 +356,45 @@ class ClickEventsAnalyticsService
       subcategory_query = subcategory_query.where(click_events: { ad_id: ad_ids })
     end
     
+    # Get ads_count for each subcategory in a single query - use subquery for better performance
+    subcategory_ids = subcategory_query.distinct.pluck('subcategories.id')
+    ads_counts = Subcategory
+      .joins(:ads)
+      .where(id: subcategory_ids, ads: { deleted: false })
+      .group('subcategories.name')
+      .count('ads.id')
+    
+    # Use SQL aggregations to get counts and timestamps in a single query
+    # Limit timestamps to recent events for performance
     subcategory_query
-      .select('subcategories.id AS subcategory_id,
-              subcategories.name AS subcategory_name,
-              categories.id AS category_id,
-              categories.name AS category_name,
-              click_events.event_type,
-              click_events.created_at')
+      .group('subcategories.id', 'subcategories.name', 'categories.id', 'categories.name')
+      .select(
+        'subcategories.id AS subcategory_id',
+        'subcategories.name AS subcategory_name',
+        'categories.id AS category_id',
+        'categories.name AS category_name',
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wish_list_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.created_at IS NOT NULL) as timestamps_array"
+      )
       .order('categories.name, subcategories.name')
-      .to_a
-      .group_by { |r| "#{r.category_name}::#{r.subcategory_name}" }
-      .transform_values do |records|
+      .map do |row|
+        # Limit timestamps to most recent 1000 per subcategory for performance
+        timestamps = if row.respond_to?(:timestamps_array) && row.timestamps_array
+          row.timestamps_array.first(1000).map { |ts| ts&.iso8601 }.compact
+        else
+          []
+        end
+        
         {
-          category_name: records.first.category_name,
-          subcategory_name: records.first.subcategory_name,
-          ad_clicks: records.count { |r| r.event_type == 'Ad-Click' },
-          wish_list_clicks: records.count { |r| r.event_type == 'Add-to-Wish-List' },
-          reveal_clicks: records.count { |r| r.event_type == 'Reveal-Seller-Details' },
-          timestamps: records.map { |r| r.created_at&.iso8601 }
-        }
-      end
-      .values
-      .map do |data|
-        {
-          category_name: data[:category_name],
-          subcategory_name: data[:subcategory_name],
-          ads_count: Subcategory.joins(:ads).where(name: data[:subcategory_name], ads: { deleted: false }).count,
-          ad_clicks: data[:ad_clicks],
-          wish_list_clicks: data[:wish_list_clicks],
-          reveal_clicks: data[:reveal_clicks],
-          timestamps: data[:timestamps]
+          category_name: row.category_name,
+          subcategory_name: row.subcategory_name,
+          ads_count: ads_counts[row.subcategory_name] || 0,
+          ad_clicks: row.ad_clicks.to_i,
+          wish_list_clicks: row.wish_list_clicks.to_i,
+          reveal_clicks: row.reveal_clicks.to_i,
+          timestamps: timestamps
         }
       end
   end
@@ -310,6 +410,26 @@ class ClickEventsAnalyticsService
     # - Timothy Juma emails (checks if they exist first)
     # - All other internal user exclusions
     query = ClickEvent.excluding_internal_users
+    
+    # Exclude click events where sellers click their own ads
+    # This excludes events where:
+    # - metadata->>'user_role' = 'seller' AND metadata->>'user_id' matches the ad's seller_id
+    #   (handles clicks from logged-in sellers)
+    # - OR device_hash matches AND the ad's seller_id matches seller_id
+    #   (handles guest clicks from sellers clicking their own ads before login)
+    # Pass seller_id to the scope so it can exclude guest clicks for that specific seller
+    query = query.excluding_seller_own_clicks(
+      device_hash: @device_hash,
+      seller_id: filters[:seller_id]
+    )
+    
+    # Join with buyer to filter deleted buyers (matching dashboard logic)
+    query = query.left_joins(:buyer)
+    query = query.where("buyers.id IS NULL OR buyers.deleted = ?", false)
+    
+    # Join with ad to exclude clicks without ads and clicks with deleted ads (matching dashboard logic)
+    query = query.joins(:ad)
+    query = query.where(ads: { deleted: false })
     
     # Filter by seller_id if provided
     if filters[:seller_id].present?
@@ -455,7 +575,7 @@ class ClickEventsAnalyticsService
     }
   end
 
-  def format_click_event(event)
+  def format_click_event(event, parse_user_agent: false)
     metadata = event.metadata || {}
     device_fingerprint = metadata['device_fingerprint'] || metadata[:device_fingerprint] || {}
     
@@ -481,6 +601,21 @@ class ClickEventsAnalyticsService
       }
     end
     
+    # Extract contact interaction details if this is a seller contact interaction
+    contact_interaction = nil
+    if metadata['action'] == 'seller_contact_interaction' || metadata[:action] == 'seller_contact_interaction'
+      contact_interaction = {
+        action_type: metadata['action_type'] || metadata[:action_type],
+        contact_type: metadata['contact_type'] || metadata[:contact_type],
+        phone_number: metadata['phone_number'] || metadata[:phone_number],
+        location: metadata['location'] || metadata[:location]
+      }
+    end
+    
+    # Parse user agent only if requested (expensive operation)
+    user_agent_raw = metadata['user_agent'] || metadata[:user_agent]
+    user_agent_details = parse_user_agent ? parse_user_agent(user_agent_raw) : {}
+    
     {
       id: event.id,
       event_type: event.event_type,
@@ -494,7 +629,8 @@ class ClickEventsAnalyticsService
       was_authenticated: metadata['was_authenticated'] || metadata[:was_authenticated] || false,
       is_guest: metadata['is_guest'] || metadata[:is_guest] || !event.buyer_id,
       device_hash: metadata['device_hash'] || metadata[:device_hash],
-      user_agent: metadata['user_agent'] || metadata[:user_agent],
+      user_agent: user_agent_raw,
+      user_agent_details: user_agent_details,
       platform: device_fingerprint['platform'] || device_fingerprint[:platform],
       screen_size: format_screen_size(device_fingerprint),
       language: device_fingerprint['language'] || device_fingerprint[:language],
@@ -502,7 +638,8 @@ class ClickEventsAnalyticsService
       converted_from_guest: metadata['converted_from_guest'] || metadata[:converted_from_guest] || false,
       post_login_reveal: metadata['post_login_reveal'] || metadata[:post_login_reveal] || false,
       triggered_login_modal: metadata['triggered_login_modal'] || metadata[:triggered_login_modal] || false,
-      source: metadata['source'] || metadata[:source]
+      source: metadata['source'] || metadata[:source],
+      contact_interaction: contact_interaction
     }
   end
 
@@ -510,6 +647,92 @@ class ClickEventsAnalyticsService
     width = device_fingerprint['screen_width'] || device_fingerprint[:screen_width]
     height = device_fingerprint['screen_height'] || device_fingerprint[:screen_height]
     width && height ? "#{width}x#{height}" : nil
+  end
+
+  def parse_user_agent(user_agent_string)
+    return {} unless user_agent_string.present?
+    
+    begin
+      require 'user_agent_parser'
+      parser = UserAgentParser.parse(user_agent_string)
+      
+      # Extract browser information
+      browser_name = parser.family
+      browser_version = parser.version&.to_s
+      
+      # Extract OS information
+      os_family = parser.os&.family
+      os_version = parser.os&.version&.to_s
+      
+      # Detect device type
+      user_agent_lower = user_agent_string.downcase
+      device_type = detect_device_type(user_agent_lower)
+      
+      {
+        browser: browser_name || 'Unknown',
+        browser_version: browser_version,
+        os: os_family || 'Unknown',
+        os_version: os_version,
+        device_type: device_type,
+        is_mobile: mobile_device?(user_agent_lower),
+        is_tablet: tablet_device?(user_agent_lower),
+        is_desktop: desktop_device?(user_agent_lower)
+      }
+    rescue LoadError, StandardError => e
+      # Fallback to basic detection if gem is not available or fails
+      Rails.logger.warn "User agent parser failed for '#{user_agent_string}': #{e.message}"
+      user_agent_lower = user_agent_string.downcase
+      
+      {
+        browser: detect_browser_fallback(user_agent_lower),
+        browser_version: nil,
+        os: detect_os_fallback(user_agent_lower),
+        os_version: nil,
+        device_type: detect_device_type(user_agent_lower),
+        is_mobile: mobile_device?(user_agent_lower),
+        is_tablet: tablet_device?(user_agent_lower),
+        is_desktop: desktop_device?(user_agent_lower)
+      }
+    end
+  end
+
+  def detect_device_type(user_agent_lower)
+    return 'mobile' if mobile_device?(user_agent_lower)
+    return 'tablet' if tablet_device?(user_agent_lower)
+    return 'desktop' if desktop_device?(user_agent_lower)
+    'unknown'
+  end
+
+  def mobile_device?(user_agent_lower)
+    user_agent_lower.match?(/mobile|android|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop/i)
+  end
+
+  def tablet_device?(user_agent_lower)
+    user_agent_lower.match?(/tablet|ipad|playbook|silk/i) && !user_agent_lower.match?(/mobile/i)
+  end
+
+  def desktop_device?(user_agent_lower)
+    !mobile_device?(user_agent_lower) && !tablet_device?(user_agent_lower)
+  end
+
+  def detect_browser_fallback(user_agent_lower)
+    return 'Chrome' if user_agent_lower.include?('chrome') && !user_agent_lower.include?('edg')
+    return 'Edge' if user_agent_lower.include?('edg')
+    return 'Firefox' if user_agent_lower.include?('firefox')
+    return 'Safari' if user_agent_lower.include?('safari') && !user_agent_lower.include?('chrome')
+    return 'Opera' if user_agent_lower.include?('opera') || user_agent_lower.include?('opr')
+    return 'Internet Explorer' if user_agent_lower.include?('msie') || user_agent_lower.include?('trident')
+    'Unknown'
+  end
+
+  def detect_os_fallback(user_agent_lower)
+    return 'Windows' if user_agent_lower.include?('windows')
+    return 'macOS' if user_agent_lower.include?('mac os') || user_agent_lower.include?('macintosh')
+    return 'Linux' if user_agent_lower.include?('linux') && !user_agent_lower.include?('android')
+    return 'Android' if user_agent_lower.include?('android')
+    return 'iOS' if user_agent_lower.include?('iphone') || user_agent_lower.include?('ipad') || user_agent_lower.include?('ipod')
+    return 'Unix' if user_agent_lower.include?('unix')
+    'Unknown'
   end
 
   def apply_exclusion_conditions(query, excluded_device_hashes, excluded_email_domains, excluded_user_agents)

@@ -11,9 +11,16 @@ class Seller::AdsController < ApplicationController
     active_ads = current_seller.ads.active.includes(:category, :reviews)
     deleted_ads = current_seller.ads.deleted.includes(:category, :reviews)
 
+    # Get device_hash if available to exclude seller's own clicks
+    device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+    
+    # Get click event stats for all ads
+    active_ads_with_stats = add_click_event_stats(active_ads, device_hash)
+    deleted_ads_with_stats = add_click_event_stats(deleted_ads, device_hash)
+
     render json: {
-      active_ads: active_ads.as_json(include: [:category, :reviews], methods: [:mean_rating]),
-      deleted_ads: deleted_ads.as_json(include: [:category, :reviews], methods: [:mean_rating])
+      active_ads: active_ads_with_stats,
+      deleted_ads: deleted_ads_with_stats
     }
   end
 
@@ -418,6 +425,85 @@ class Seller::AdsController < ApplicationController
 
 
   # Uploads images to Cloudinary as-is (no preprocessing)
+  # Add click event statistics to ads
+  def add_click_event_stats(ads, device_hash = nil)
+    return [] if ads.empty?
+    
+    ad_ids = ads.map(&:id)
+    
+    # Get click event counts grouped by ad_id and event_type
+    # Note: We don't filter by deleted status here since we want stats for all ads (including deleted ones)
+    click_stats = ClickEvent
+      .excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
+      .where(ad_id: ad_ids)
+      .left_joins(:buyer)
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+      .group(:ad_id, :event_type)
+      .count
+    
+    # Get wishlist counts (include deleted ads for historical data)
+    wishlist_counts = WishList
+      .joins(:ad)
+      .where(ads: { id: ad_ids })
+      .group(:ad_id)
+      .count
+    
+    # Get contact interaction stats
+    contact_interaction_events = ClickEvent
+      .excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
+      .where(ad_id: ad_ids, event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      .left_joins(:buyer)
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+    
+    copy_clicks = contact_interaction_events
+      .where("metadata->>'action_type' IN ('copy_phone', 'copy_email')")
+      .group(:ad_id)
+      .count
+    
+    call_clicks = contact_interaction_events
+      .where("metadata->>'action_type' = ?", 'call_phone')
+      .group(:ad_id)
+      .count
+    
+    whatsapp_clicks = contact_interaction_events
+      .where("metadata->>'action_type' = ?", 'whatsapp')
+      .group(:ad_id)
+      .count
+    
+    location_clicks = contact_interaction_events
+      .where("metadata->>'action_type' = ?", 'view_location')
+      .group(:ad_id)
+      .count
+    
+    # Build stats hash for each ad
+    ads.map do |ad|
+      ad_json = ad.as_json(include: [:category, :reviews], methods: [:mean_rating])
+      
+      # Extract click event counts
+      ad_clicks = click_stats.select { |(ad_id, event_type), _| ad_id == ad.id && event_type == 'Ad-Click' }.values.sum || 0
+      reveal_clicks = click_stats.select { |(ad_id, event_type), _| ad_id == ad.id && event_type == 'Reveal-Seller-Details' }.values.sum || 0
+      wishlist_clicks = click_stats.select { |(ad_id, event_type), _| ad_id == ad.id && event_type == 'Add-to-Wish-List' }.values.sum || 0
+      cart_clicks = click_stats.select { |(ad_id, event_type), _| ad_id == ad.id && event_type == 'Add-to-Cart' }.values.sum || 0
+      wishlist_count = wishlist_counts[ad.id] || 0
+      
+      # Add stats to ad JSON
+      ad_json.merge(
+        ad_clicks: ad_clicks,
+        reveal_clicks: reveal_clicks,
+        wishlist_clicks: wishlist_clicks,
+        cart_clicks: cart_clicks,
+        wishlist_count: wishlist_count,
+        copy_clicks: copy_clicks[ad.id] || 0,
+        call_clicks: call_clicks[ad.id] || 0,
+        whatsapp_clicks: whatsapp_clicks[ad.id] || 0,
+        location_clicks: location_clicks[ad.id] || 0
+      )
+    end
+  end
+
   def process_and_upload_images(images)
     uploaded_urls = []
     Rails.logger.info "🖼️ Processing #{Array(images).length} images for upload"

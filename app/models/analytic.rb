@@ -135,8 +135,20 @@ class Analytic < ApplicationRecord
     # This is more accurate and simpler than trying to reconstruct from utm_source/referrer
     scope = filtered_scope(date_filter)
     
-    # Group by the source column, defaulting to 'direct' if source is blank
-    scope.group(Arel.sql("COALESCE(NULLIF(source, ''), 'direct')")).count
+    # Handle source distribution correctly:
+    # 1. If source is present and not empty, use it (this is the primary source)
+    # 2. If source is empty but utm_source is present and valid (not 'direct', not 'other'), use utm_source
+    # 3. If source is empty and utm_source is 'direct' or empty/null, this is broken UTM - count as 'other'
+    # 4. Only count as 'direct' if source='direct' (regardless of utm_source, since source takes priority)
+    scope.group(
+      Arel.sql(
+        "CASE 
+          WHEN source IS NOT NULL AND source != '' THEN source
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          ELSE 'other'
+        END"
+      )
+    ).count
   end
   
   def self.utm_source_distribution(date_filter = nil)
@@ -176,11 +188,27 @@ class Analytic < ApplicationRecord
   end
   
   def self.utm_content_distribution(date_filter = nil)
-    filtered_scope(date_filter).where.not(utm_content: [nil, '']).group(:utm_content).count
+    # Only include content for records with complete UTM parameters (source + medium + campaign)
+    # This ensures consistency with other UTM distributions
+    scope = filtered_scope(date_filter)
+    scope.where.not(utm_content: [nil, ''])
+         .where.not(utm_source: [nil, '', 'direct', 'other'])
+         .where.not(utm_medium: [nil, ''])
+         .where.not(utm_campaign: [nil, ''])
+         .group(:utm_content)
+         .count
   end
   
   def self.utm_term_distribution(date_filter = nil)
-    filtered_scope(date_filter).where.not(utm_term: [nil, '']).group(:utm_term).count
+    # Only include terms for records with complete UTM parameters (source + medium + campaign)
+    # This ensures consistency with other UTM distributions
+    scope = filtered_scope(date_filter)
+    scope.where.not(utm_term: [nil, ''])
+         .where.not(utm_source: [nil, '', 'direct', 'other'])
+         .where.not(utm_medium: [nil, ''])
+         .where.not(utm_campaign: [nil, ''])
+         .group(:utm_term)
+         .count
   end
   
   def self.referrer_distribution(date_filter = nil)

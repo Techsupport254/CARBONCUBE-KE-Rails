@@ -34,11 +34,11 @@ class Sales::SellerRankingsController < ApplicationController
   end
 
   # GET /sales/seller_rankings/by_metric
-  # Get rankings by specific metric (ad_clicks, reveal_clicks, wishlists_count, reviews_count, avg_rating)
+  # Get rankings by specific metric (ad_clicks, reveal_clicks, copy_clicks, call_clicks, whatsapp_clicks, location_clicks, total_contact_interactions, wishlists_count, reviews_count, avg_rating)
   def by_metric
     begin
       metric_type = params[:metric_type] || 'composite_score'
-      valid_metrics = %w[ad_clicks reveal_clicks wishlists_count reviews_count avg_rating composite_score]
+      valid_metrics = %w[ad_clicks reveal_clicks copy_clicks call_clicks whatsapp_clicks location_clicks total_contact_interactions wishlists_count reviews_count avg_rating composite_score]
       
       unless valid_metrics.include?(metric_type)
         render json: { error: "Invalid metric_type. Must be one of: #{valid_metrics.join(', ')}" }, status: :bad_request

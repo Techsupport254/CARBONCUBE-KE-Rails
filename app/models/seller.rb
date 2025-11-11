@@ -124,6 +124,17 @@ class Seller < ApplicationRecord
     update_column(:last_active_at, Time.current)
   end
 
+  # Associate guest click events with this seller based on device hash
+  def associate_guest_clicks
+    return if new_record? # Only run after save
+    
+    # Use device_hash_for_association if provided, otherwise let service find it
+    GuestClickAssociationService.associate_clicks_with_user(self, device_hash_for_association)
+  rescue => e
+    # Don't fail seller creation if association fails
+    Rails.logger.error "Failed to associate guest clicks during seller creation: #{e.message}" if defined?(Rails.logger)
+  end
+
   private
 
   def generate_uuid

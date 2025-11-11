@@ -31,14 +31,18 @@ class SourceTrackingService
     # If no UTM source but source is determined from referrer/click ID,
     # set utm_source to match source for data consistency
     # This ensures External Sources matches UTM Source Distribution
-    # EXCEPT for 'other' which shouldn't be in UTM Source Distribution
+    # EXCEPT for 'direct' and 'other' which shouldn't be in UTM Source Distribution
     final_utm_source = utm_params[:utm_source]
     if final_utm_source.blank? && source.present? && source != 'direct' && source != 'other'
       # Only set utm_source if source is a valid UTM source name
-      # Exclude 'other' since it represents unknown referrers, not UTM-tracked traffic
+      # Exclude 'direct' and 'other' since they represent traffic classifications, not UTM-tracked traffic
       # This maintains data integrity while ensuring consistency
       final_utm_source = source
     end
+    
+    # Ensure utm_source is never 'direct' or 'other' (these are invalid UTM values)
+    # If somehow we get these values, set to nil
+    final_utm_source = nil if final_utm_source.present? && (final_utm_source.downcase == 'direct' || final_utm_source.downcase == 'other')
     
     # Parse referrer
     referrer = parse_referrer
@@ -48,6 +52,11 @@ class SourceTrackingService
     
     # Parse location information (if available)
     location_info = parse_location_info
+    
+    # Get the actual page URL from frontend (window.location.href) or fallback to request URL
+    # The frontend sends the actual page URL in the 'url' parameter
+    actual_page_url = @params[:url].presence || @request.url
+    actual_page_path = @params[:path].presence || @request.path
     
     # Create analytics record with better error handling
     begin
@@ -62,8 +71,8 @@ class SourceTrackingService
         user_agent: @user_agent,
         ip_address: @ip_address,
         data: {
-          full_url: @request.url,
-          path: @request.path,
+          full_url: actual_page_url, # Use actual page URL from frontend, not tracking endpoint
+          path: actual_page_path, # Use actual page path from frontend
           method: @request.method,
           timestamp: Time.current,
           device: device_info,
@@ -244,9 +253,21 @@ class SourceTrackingService
     sanitized = value.to_s.split(',').first&.strip
     return nil unless sanitized.present?
     
+    # Reject invalid UTM source values
+    # 'direct' and 'other' are not valid UTM sources - they are source classifications, not UTM parameters
+    normalized = sanitized.downcase
+    return nil if normalized == 'direct' || normalized == 'other'
+    
+    # Reject invalid UTM source values that are actions, not sources
+    # 'copy' is not a traffic source - it's an action (copying a link)
+    return nil if normalized == 'copy'
+    
+    # Reject 'social_media' - this is a medium, not a source
+    # People incorrectly use utm_source=social_media when they should use utm_source=facebook&utm_medium=social
+    return nil if normalized == 'social_media' || normalized == 'social-media'
+    
     # Normalize common source variations for consistency
     # This ensures variations like 'fb', 'face', 'facebbo' become 'facebook' to match source column normalization
-    normalized = sanitized.downcase
     case normalized
     when 'fb', 'face', 'facebbo', 'facebook'
       'facebook'
@@ -274,11 +295,15 @@ class SourceTrackingService
     sanitized = value.to_s.split(',').first&.strip
     return nil unless sanitized.present?
     
-    # Normalize UTM medium values: 'social' and 'paid_social' -> 'paid social'
+    # Normalize UTM medium values
+    # 'social' = unpaid/organic social media (keep as is)
+    # 'paid_social' or 'paid social' = paid social media ads (normalize to 'paid social')
     normalized = sanitized.downcase
     case normalized
-    when 'social', 'paid_social', 'paid social'
+    when 'paid_social', 'paid social'
       'paid social'
+    when 'social'
+      'social' # Keep unpaid/organic social as 'social'
     else
       sanitized
     end

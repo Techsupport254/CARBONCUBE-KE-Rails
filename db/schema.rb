@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_09_200308) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_11_181151) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -217,8 +217,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_09_200308) do
     t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"
+    t.index ["buyer_id", "created_at"], name: "index_click_events_on_buyer_id_created_at"
     t.index ["buyer_id"], name: "index_click_events_on_buyer_id"
+    t.index ["created_at", "event_type"], name: "index_click_events_on_created_at_event_type"
     t.index ["event_type", "created_at"], name: "index_click_events_on_event_type_created_at"
+    t.index ["metadata"], name: "index_click_events_on_metadata", using: :gin
   end
 
   create_table "cms_pages", force: :cascade do |t|
