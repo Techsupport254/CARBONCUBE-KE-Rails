@@ -578,7 +578,38 @@ class ClickEventsAnalyticsService
     
     # Filter by event type
     if filters[:event_type].present?
-      filtered = filtered.where(event_type: filters[:event_type])
+      event_type = filters[:event_type]
+      
+      # Handle special contact interaction event types
+      case event_type
+      when 'Contact'
+        # All contact interactions (any action_type)
+        filtered = filtered.where(event_type: 'Reveal-Seller-Details')
+          .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      when 'Copy'
+        # Copy phone or email actions
+        filtered = filtered.where(event_type: 'Reveal-Seller-Details')
+          .where("metadata->>'action' = ?", 'seller_contact_interaction')
+          .where("metadata->>'action_type' IN ('copy_phone', 'copy_email')")
+      when 'Call'
+        # Call phone action
+        filtered = filtered.where(event_type: 'Reveal-Seller-Details')
+          .where("metadata->>'action' = ?", 'seller_contact_interaction')
+          .where("metadata->>'action_type' = ?", 'call_phone')
+      when 'WhatsApp'
+        # WhatsApp action
+        filtered = filtered.where(event_type: 'Reveal-Seller-Details')
+          .where("metadata->>'action' = ?", 'seller_contact_interaction')
+          .where("metadata->>'action_type' = ?", 'whatsapp')
+      when 'Location'
+        # View location action
+        filtered = filtered.where(event_type: 'Reveal-Seller-Details')
+          .where("metadata->>'action' = ?", 'seller_contact_interaction')
+          .where("metadata->>'action_type' = ?", 'view_location')
+      else
+        # Standard event type filter
+        filtered = filtered.where(event_type: event_type)
+      end
     end
     
     # Filter by user status

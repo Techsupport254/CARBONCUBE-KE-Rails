@@ -48,13 +48,19 @@ class Sales::QuarterlyTargetsController < ApplicationController
       return
     end
 
-    # Only allow updates if status is pending
-    if target.status != 'pending'
-      render json: { error: 'Cannot update target that has been approved or rejected' }, status: :unprocessable_entity
+    # Allow updates for pending and approved targets, but reset status to pending if it was approved
+    if target.status == 'rejected'
+      render json: { error: 'Cannot update target that has been rejected' }, status: :unprocessable_entity
       return
     end
 
-    if target.update(target_params)
+    update_params = target_params
+    # If target was approved and is being edited, reset status to pending
+    if target.status == 'approved'
+      update_params = target_params.merge(status: 'pending', approved_by_id: nil, approved_at: nil)
+    end
+
+    if target.update(update_params)
       render json: { target: format_target(target) }
     else
       render json: { errors: target.errors.full_messages }, status: :unprocessable_entity
@@ -70,9 +76,9 @@ class Sales::QuarterlyTargetsController < ApplicationController
       return
     end
 
-    # Only allow deletion if status is pending
-    if target.status != 'pending'
-      render json: { error: 'Cannot delete target that has been approved or rejected' }, status: :unprocessable_entity
+    # Only allow deletion if status is pending or approved
+    if target.status == 'rejected'
+      render json: { error: 'Cannot delete target that has been rejected' }, status: :unprocessable_entity
       return
     end
 
