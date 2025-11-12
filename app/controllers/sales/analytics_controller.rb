@@ -10,22 +10,41 @@ class Sales::AnalyticsController < ApplicationController
                                                     .by_type('email_domain')
                                                     .pluck(:identifier_value)
     
+    # OPTIMIZATION: Limit timestamp queries to last 2 years for performance
+    # Frontend can request older data if needed via date filters
+    timestamp_limit_date = 2.years.ago
+    
     # Get all data without time filtering for totals
     # Exclude sellers with excluded email domains
     all_sellers = exclude_emails_by_pattern(Seller.where(deleted: false), excluded_email_patterns)
     # Exclude buyers with excluded email domains
     all_buyers = exclude_emails_by_pattern(Buyer.where(deleted: false), excluded_email_patterns)
     
-    # Separate buyers by signup method (Google OAuth vs Regular)
-    # Google OAuth users have a provider value (typically 'google')
+    # OPTIMIZATION: Use single query with conditional aggregation for signup method breakdowns
+    buyers_signup_breakdown = all_buyers
+      .reorder(nil) # Remove any existing ORDER BY clauses
+      .select(
+        "COUNT(*) as total",
+        "COUNT(*) FILTER (WHERE provider IS NOT NULL AND provider != '') as google_oauth",
+        "COUNT(*) FILTER (WHERE provider IS NULL OR provider = '') as regular"
+      )
+      .take
+    
+    sellers_signup_breakdown = all_sellers
+      .reorder(nil) # Remove any existing ORDER BY clauses
+      .select(
+        "COUNT(*) as total",
+        "COUNT(*) FILTER (WHERE provider IS NOT NULL AND provider != '') as google_oauth",
+        "COUNT(*) FILTER (WHERE provider IS NULL OR provider = '') as regular"
+      )
+      .take
+    
+    # Separate buyers by signup method (Google OAuth vs Regular) - only for timestamps
     google_oauth_buyers = all_buyers.where.not(provider: nil).where("provider != ''")
-    # Regular users have no provider (nil or empty string)
     regular_buyers = all_buyers.where("provider IS NULL OR provider = ''")
     
-    # Separate sellers by signup method (Google OAuth vs Regular)
-    # Google OAuth users have a provider value (typically 'google')
+    # Separate sellers by signup method (Google OAuth vs Regular) - only for timestamps
     google_oauth_sellers = all_sellers.where.not(provider: nil).where("provider != ''")
-    # Regular users have no provider (nil or empty string)
     regular_sellers = all_sellers.where("provider IS NULL OR provider = ''")
     
     all_ads = Ad.where(deleted: false)
@@ -68,36 +87,41 @@ class Sales::AnalyticsController < ApplicationController
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
       .where(ads: { deleted: false }) # Exclude clicks with deleted ads
     
-    # Convert all timestamps to ISO 8601 format for proper JavaScript Date parsing
-    sellers_with_timestamps = all_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
-    buyers_with_timestamps = all_buyers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
+    # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
+    sellers_with_timestamps = all_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    buyers_with_timestamps = all_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     
-    # Separate timestamps by signup method for time-series tracking
-    google_oauth_buyers_with_timestamps = google_oauth_buyers.pluck(:created_at).map { |ts| ts&.iso8601 }
-    regular_buyers_with_timestamps = regular_buyers.pluck(:created_at).map { |ts| ts&.iso8601 }
-    google_oauth_sellers_with_timestamps = google_oauth_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
-    regular_sellers_with_timestamps = regular_sellers.pluck(:created_at).map { |ts| ts&.iso8601 }
+    # Separate timestamps by signup method for time-series tracking (limited to recent)
+    google_oauth_buyers_with_timestamps = google_oauth_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    regular_buyers_with_timestamps = regular_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    google_oauth_sellers_with_timestamps = google_oauth_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    regular_sellers_with_timestamps = regular_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     
-    ads_with_timestamps = all_ads.pluck(:created_at).map { |ts| ts&.iso8601 }
-    reviews_with_timestamps = all_reviews.pluck(:created_at).map { |ts| ts&.iso8601 }
-    wishlists_with_timestamps = all_wishlists.pluck(:created_at).map { |ts| ts&.iso8601 }
+    ads_with_timestamps = all_ads.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    wishlists_with_timestamps = all_wishlists.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     
-    # Get seller tiers with timestamps
+    # Get seller tiers with timestamps (limited to recent)
     paid_seller_tiers_with_timestamps = all_paid_seller_tiers
+      .where('sellers.created_at >= ?', timestamp_limit_date)
       .pluck('sellers.created_at')
       .map { |ts| ts&.iso8601 }
     
     unpaid_seller_tiers_with_timestamps = all_unpaid_seller_tiers
+      .where('sellers.created_at >= ?', timestamp_limit_date)
       .pluck('sellers.created_at')
       .map { |ts| ts&.iso8601 }
     
-    # Get click events with timestamps (used for both "Total Ads Clicks" and "Buyer Engagement")
-    ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
-    buyer_ad_clicks_with_timestamps = all_ad_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
+    # OPTIMIZATION: Get click events with timestamps (limited to recent, remove duplicates)
+    ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    # Remove duplicate - buyer_ad_clicks uses same data
+    buyer_ad_clicks_with_timestamps = ad_clicks_with_timestamps
     
-    # Get reveal clicks with timestamps (used for both "Total Click Reveals" and "Buyer Engagement")
-    reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
-    buyer_reveal_clicks_with_timestamps = all_reveal_clicks.pluck(:created_at).map { |ts| ts&.iso8601 }
+    # OPTIMIZATION: Get reveal clicks with timestamps (limited to recent, remove duplicates)
+    reveal_clicks_with_timestamps = all_reveal_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    # Remove duplicate - buyer_reveal_clicks uses same data
+    buyer_reveal_clicks_with_timestamps = reveal_clicks_with_timestamps
     
     # Use unified service for category click events
     # device_hash already extracted above
@@ -110,18 +134,46 @@ class Sales::AnalyticsController < ApplicationController
     # Use unified service for subcategory click events
     subcategory_click_events = click_events_service.subcategory_click_events
 
-    # Get source tracking analytics
-    source_analytics = get_source_analytics
+    # Get source tracking analytics (with error handling)
+    source_analytics = begin
+      get_source_analytics
+    rescue => e
+      Rails.logger.error "Error getting source analytics: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      # Return minimal structure on error to prevent blocking
+      {
+        total_visits: 0,
+        unique_visitors: 0,
+        returning_visitors: 0,
+        new_visitors: 0,
+        avg_visits_per_visitor: 0,
+        source_distribution: {},
+        other_sources_count: 0,
+        incomplete_utm_count: 0,
+        unique_visitors_by_source: {},
+        visits_by_source: {},
+        utm_source_distribution: {},
+        utm_medium_distribution: {},
+        utm_campaign_distribution: {},
+        utm_content_distribution: {},
+        utm_term_distribution: {},
+        referrer_distribution: {},
+        daily_visits: {},
+        visit_timestamps: [],
+        daily_unique_visitors: {},
+        top_sources: [],
+        top_referrers: []
+      }
+    end
     
-    # Get device analytics
-    # Get device analytics with error handling
-    begin
-    device_analytics = get_device_analytics
+    # Get device analytics (with error handling)
+    device_analytics = begin
+      get_device_analytics
     rescue => e
       Rails.logger.error "Error getting device analytics: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       # Return empty device analytics on error to prevent blocking the entire response
-      device_analytics = {
+      {
         device_types: {},
         browsers: {},
         operating_systems: {},
@@ -209,9 +261,10 @@ class Sales::AnalyticsController < ApplicationController
       google_oauth_sellers_with_timestamps: google_oauth_sellers_with_timestamps,
       regular_sellers_with_timestamps: regular_sellers_with_timestamps,
       
-      # Pre-calculated totals for initial display (all time)
-      total_sellers: all_sellers.count,
-      total_buyers: all_buyers.count,
+      # OPTIMIZATION: Pre-calculated totals for initial display (all time)
+      # Use cached counts from signup breakdown queries where possible
+      total_sellers: sellers_signup_breakdown&.total.to_i || all_sellers.count,
+      total_buyers: buyers_signup_breakdown&.total.to_i || all_buyers.count,
       total_ads: all_ads.count,
       total_reviews: all_reviews.count,
       total_ads_wish_listed: all_wishlists.count,
@@ -222,17 +275,17 @@ class Sales::AnalyticsController < ApplicationController
       buyer_reveal_clicks: all_reveal_clicks.count, # Same as total_reveal_clicks - both use the same query
       total_reveal_clicks: all_reveal_clicks.count,
       
-      # Signup method breakdown totals
+      # OPTIMIZATION: Signup method breakdown totals (from single aggregated query)
       signup_method_breakdown: {
         buyers: {
-          google_oauth: google_oauth_buyers.count,
-          regular: regular_buyers.count,
-          total: all_buyers.count
+          google_oauth: buyers_signup_breakdown&.google_oauth.to_i || 0,
+          regular: buyers_signup_breakdown&.regular.to_i || 0,
+          total: buyers_signup_breakdown&.total.to_i || all_buyers.count
         },
         sellers: {
-          google_oauth: google_oauth_sellers.count,
-          regular: regular_sellers.count,
-          total: all_sellers.count
+          google_oauth: sellers_signup_breakdown&.google_oauth.to_i || 0,
+          regular: sellers_signup_breakdown&.regular.to_i || 0,
+          total: sellers_signup_breakdown&.total.to_i || all_sellers.count
         }
       },
       
@@ -443,13 +496,19 @@ class Sales::AnalyticsController < ApplicationController
                              .count
     end
     
-    # Get visit timestamps with date filtering (excluding internal users)
+    # OPTIMIZATION: Get visit timestamps with date filtering (excluding internal users)
+    # Limit to last 2 years if no date filter specified for performance
     if date_filter
       visit_timestamps = Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
                                  .pluck(:created_at)
                                  .map { |ts| ts&.iso8601 }
     else
-      visit_timestamps = Analytic.excluding_internal_users.pluck(:created_at).map { |ts| ts&.iso8601 }
+      # Limit to last 2 years for performance
+      two_years_ago = 2.years.ago
+      visit_timestamps = Analytic.excluding_internal_users
+                                 .where('created_at >= ?', two_years_ago)
+                                 .pluck(:created_at)
+                                 .map { |ts| ts&.iso8601 }
     end
     
     # Get unique visitors trend with date filtering

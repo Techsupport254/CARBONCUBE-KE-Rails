@@ -6,6 +6,17 @@ class Seller::ProfilesController < ApplicationController
 
   # GET /seller/profile
   def show
+    # OPTIMIZATION: Eager load associations to avoid N+1 queries
+    @seller = Seller.includes(
+      :categories,
+      :seller_documents,
+      { seller_tier: :tier },
+      :county,
+      :sub_county,
+      :age_group,
+      :document_type
+    ).find(@seller.id)
+    
     seller_data = SellerSerializer.new(@seller).as_json
     # Check if email is verified
     email_verified = EmailOtp.exists?(email: @seller.email, verified: true)

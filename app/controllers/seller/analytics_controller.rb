@@ -8,14 +8,17 @@ class Seller::AnalyticsController < ApplicationController
 
       Rails.logger.info "Analytics request for seller #{current_seller.id} with tier #{tier_id}"
 
+      # OPTIMIZATION: Calculate all base stats in a single query to reduce database round trips
+      base_stats = calculate_base_stats_optimized
+
       # Base response data - always include these fields for dashboard
       response_data = {
         tier_id: tier_id,
-        total_orders: calculate_total_orders,
-        total_ads: calculate_total_ads,
-        total_reviews: calculate_total_reviews,
-        average_rating: calculate_average_rating,
-        total_ads_wishlisted: calculate_total_ads_wishlisted
+        total_orders: 0, # Orders removed
+        total_ads: base_stats[:total_ads],
+        total_reviews: base_stats[:total_reviews],
+        average_rating: base_stats[:average_rating],
+        total_ads_wishlisted: base_stats[:total_ads_wishlisted]
       }
 
       # Add more data based on the seller's tier
@@ -24,6 +27,36 @@ class Seller::AnalyticsController < ApplicationController
         # Free tier already has base data above
       when 2 # Basic tier
         response_data.merge!(calculate_basic_tier_data)
+        # Use unified service for click events stats
+        # Pass device_hash if available to exclude seller's own clicks from their device
+        device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+        click_events_service = ClickEventsAnalyticsService.new(
+          filters: { seller_id: current_seller.id },
+          device_hash: device_hash
+        )
+        # Get all timestamps for Basic tier (all time, no limits)
+        timestamps = click_events_service.timestamps(limit: nil, date_limit: nil)
+        
+        # Get all add-to-wishlist click event timestamps (all time, no limits)
+        add_to_wishlist_timestamps = click_events_service.base_query
+                                                          .where(event_type: 'Add-to-Wish-List')
+                                                          .order('click_events.created_at DESC')
+                                                          .pluck(Arel.sql("click_events.created_at"))
+                                                          .map { |ts| ts&.iso8601 }
+        
+        Rails.logger.info "Basic tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
+        
+        response_data.merge!(
+          click_events_stats: click_events_service.demographics_stats,
+          basic_click_event_stats: {
+            click_event_trends: click_events_service.click_event_trends(months: nil) # All-time data
+          },
+          # Add timestamps for dynamic filtering (all time)
+          click_events_timestamps: timestamps[:click_events_timestamps],
+          ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
+          reveal_events_timestamps: timestamps[:reveal_events_timestamps],
+          add_to_wishlist_timestamps: add_to_wishlist_timestamps
+        )
       when 3 # Standard tier
         response_data.merge!(calculate_standard_tier_data)
         # Use unified service for click events stats
@@ -33,7 +66,29 @@ class Seller::AnalyticsController < ApplicationController
           filters: { seller_id: current_seller.id },
           device_hash: device_hash
         )
-        response_data.merge!(click_events_stats: click_events_service.demographics_stats)
+        # Get all timestamps for Standard tier (all time, no limits)
+        timestamps = click_events_service.timestamps(limit: nil, date_limit: nil)
+        
+        # Get all add-to-wishlist click event timestamps (all time, no limits)
+        add_to_wishlist_timestamps = click_events_service.base_query
+                                                          .where(event_type: 'Add-to-Wish-List')
+                                                          .order('click_events.created_at DESC')
+                                                          .pluck(Arel.sql("click_events.created_at"))
+                                                          .map { |ts| ts&.iso8601 }
+        
+        Rails.logger.info "Standard tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
+        
+        response_data.merge!(
+          click_events_stats: click_events_service.demographics_stats,
+          basic_click_event_stats: {
+            click_event_trends: click_events_service.click_event_trends(months: nil) # All-time data
+          },
+          # Add timestamps for dynamic filtering (all time)
+          click_events_timestamps: timestamps[:click_events_timestamps],
+          ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
+          reveal_events_timestamps: timestamps[:reveal_events_timestamps],
+          add_to_wishlist_timestamps: add_to_wishlist_timestamps
+        )
       when 4 # Premium tier
         response_data.merge!(calculate_premium_tier_data)
         # Use unified service for click events stats
@@ -43,23 +98,29 @@ class Seller::AnalyticsController < ApplicationController
           filters: { seller_id: current_seller.id },
           device_hash: device_hash
         )
-        # Get timestamps for frontend filtering
-        timestamps = click_events_service.timestamps
-        # Get wishlist timestamps separately
+        # Get all timestamps for Premium tier (all time, no limits)
+        timestamps = click_events_service.timestamps(limit: nil, date_limit: nil)
+        
+        # Get all wishlist timestamps (all time, no limits)
         wishlist_timestamps = WishList.joins(:ad)
-                                      .where(ads: { seller_id: current_seller.id })
+                                      .where(ads: { seller_id: current_seller.id, deleted: false })
+                                      .order('wish_lists.created_at DESC')
                                       .pluck(:created_at)
                                       .map { |ts| ts&.iso8601 }
-        # Get add-to-wishlist click event timestamps
+        
+        # Get all add-to-wishlist click event timestamps (all time, no limits)
         add_to_wishlist_timestamps = click_events_service.base_query
                                                           .where(event_type: 'Add-to-Wish-List')
-                                                          .pluck(:created_at)
+                                                          .order('click_events.created_at DESC')
+                                                          .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
+        
+        Rails.logger.info "Premium tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
         
         response_data.merge!(
           click_events_stats: click_events_service.demographics_stats,
           basic_click_event_stats: {
-            click_event_trends: click_events_service.click_event_trends
+            click_event_trends: click_events_service.click_event_trends(months: nil) # All-time data
           },
           # Add timestamps for dynamic filtering
           click_events_timestamps: timestamps[:click_events_timestamps],
@@ -617,6 +678,47 @@ class Seller::AnalyticsController < ApplicationController
 
 
   #===================================== HELPER METHODS =================================================#
+  # OPTIMIZATION: Calculate all base stats in a single optimized query
+  def calculate_base_stats_optimized
+    seller_id = current_seller.id
+    
+    # Use raw SQL with proper parameterization to avoid ActiveRecord adding ORDER BY
+    sql = <<-SQL
+      SELECT 
+        COUNT(DISTINCT ads.id) as total_ads,
+        COUNT(DISTINCT reviews.id) as total_reviews,
+        COALESCE(AVG(reviews.rating), 0) as average_rating,
+        COUNT(DISTINCT wish_lists.id) as total_ads_wishlisted
+      FROM ads
+      LEFT JOIN reviews ON reviews.ad_id = ads.id
+      LEFT JOIN wish_lists ON wish_lists.ad_id = ads.id
+      WHERE ads.seller_id = ?
+        AND ads.deleted = false
+      GROUP BY ads.seller_id
+      LIMIT 1
+    SQL
+    
+    sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql, seller_id])
+    result = ActiveRecord::Base.connection.select_one(sanitized_sql)
+    
+    if result
+      {
+        total_ads: result['total_ads'].to_i,
+        total_reviews: result['total_reviews'].to_i,
+        average_rating: result['average_rating'].to_f.round(1),
+        total_ads_wishlisted: result['total_ads_wishlisted'].to_i
+      }
+    else
+      # Fallback if no ads exist
+      {
+        total_ads: 0,
+        total_reviews: 0,
+        average_rating: 0.0,
+        total_ads_wishlisted: 0
+      }
+    end
+  end
+
   def calculate_total_orders
     # Since orders are removed, return 0
     0
@@ -628,43 +730,31 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def calculate_total_ads
-    current_seller.ads.count
+    @cached_total_ads ||= current_seller.ads.count
   end
 
+  # OPTIMIZATION: Cache seller_ad_ids to avoid repeated queries
   def seller_ad_ids
-    current_seller.ads.pluck(:id)
+    @cached_seller_ad_ids ||= current_seller.ads.pluck(:id)
   end
 
+  # OPTIMIZATION: Use SQL aggregation instead of Ruby loops
   def calculate_average_rating
-    ads = current_seller.ads.includes(:reviews)
-
-    if ads.empty?
-      return 0.0
-    end
-
-    # Calculate average rating for each ad that has reviews, then average those
-    ad_ratings = ads.map do |ad|
-      if ad.reviews.loaded?
-        ad.reviews.any? ? ad.reviews.sum(&:rating).to_f / ad.reviews.size : nil
-      else
-        ad.reviews.average(:rating).to_f if ad.reviews.exists?
-      end
-    end.compact # Remove nil values (ads with no reviews)
-
-    # Return average of rated ads only, rounded to 1 decimal place
-    if ad_ratings.any?
-      (ad_ratings.sum / ad_ratings.size).round(1)
-    else
-      0.0 # No rated ads yet
-    end
+    result = Review.joins(:ad)
+                  .where(ads: { seller_id: current_seller.id, deleted: false })
+                  .average(:rating)
+    
+    result ? result.to_f.round(1) : 0.0
   end
 
   def calculate_total_reviews
-    current_seller.reviews.count
+    @cached_total_reviews ||= current_seller.reviews.count
   end
 
   def calculate_total_ads_wishlisted
-    WishList.joins(:ad).where(ads: { seller_id: current_seller.id }).count
+    @cached_total_ads_wishlisted ||= WishList.joins(:ad)
+                                             .where(ads: { seller_id: current_seller.id, deleted: false })
+                                             .count
   end
 
   def calculate_sales_performance
@@ -673,11 +763,10 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def fetch_best_selling_ads
-    # Use the new comprehensive scoring algorithm
-    best_sellers_controller = BestSellersController.new
-    best_sellers_controller.params = ActionController::Parameters.new(limit: 3)
+    # OPTIMIZATION: Get seller's ads with comprehensive scoring in a single query
+    ad_ids = seller_ad_ids
+    return [] if ad_ids.empty?
     
-    # Get seller's ads with comprehensive scoring
     seller_ads = current_seller.ads.active
                               .joins(:category, :subcategory)
                               .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
@@ -708,47 +797,15 @@ class Seller::AnalyticsController < ApplicationController
                               ")
                               .group("ads.id, categories.id, subcategories.id, tiers.id")
                               .having("AVG(reviews.rating) > 0 OR SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END) > 0 OR COUNT(DISTINCT wish_lists.id) > 0")
+                              .limit(50) # OPTIMIZATION: Limit to top 50 before scoring to reduce processing
     
-    # Calculate comprehensive scores and sort
-    # Get device_hash if available to exclude seller's own clicks (matching ClickEventsAnalyticsService pattern)
+    # OPTIMIZATION: Pre-load all contact interactions in a single query to avoid N+1
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+    contact_interactions_map = preload_contact_interactions(ad_ids, device_hash)
     
     scored_ads = seller_ads.map do |ad|
       score = calculate_comprehensive_score(ad)
-      
-      # Get contact interaction clicks from Reveal-Seller-Details events
-      # This matches the calculation in ClickEventsAnalyticsService.top_ads_by_reveals
-      # Apply same exclusions as sales analytics for consistency
-      ad_click_events = ClickEvent.excluding_internal_users
-        .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
-        .where(ad_id: ad.id)
-        .left_joins(:buyer)
-        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
-        .joins(:ad)
-        .where(ads: { deleted: false })
-      
-      contact_interaction_events = ad_click_events
-        .where(event_type: 'Reveal-Seller-Details')
-        .where("metadata->>'action' = ?", 'seller_contact_interaction')
-      
-      # Count each type of contact interaction
-      copy_clicks = contact_interaction_events
-        .where("metadata->>'action_type' IN ('copy_phone', 'copy_email')")
-        .count
-      
-      call_clicks = contact_interaction_events
-        .where("metadata->>'action_type' = ?", 'call_phone')
-        .count
-      
-      whatsapp_clicks = contact_interaction_events
-        .where("metadata->>'action_type' = ?", 'whatsapp')
-        .count
-      
-      location_clicks = contact_interaction_events
-        .where("metadata->>'action_type' = ?", 'view_location')
-        .count
-      
-      total_contact_interactions = copy_clicks + call_clicks + whatsapp_clicks + location_clicks
+      total_contact_interactions = contact_interactions_map[ad.id] || 0
       
       {
         ad_id: ad.id,
@@ -773,6 +830,25 @@ class Seller::AnalyticsController < ApplicationController
     
     # Sort by comprehensive score and return top 10
     scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(10)
+  end
+
+  # OPTIMIZATION: Pre-load contact interactions for all ads in a single query
+  def preload_contact_interactions(ad_ids, device_hash)
+    return {} if ad_ids.empty?
+    
+    # Single query to get all contact interactions grouped by ad_id
+    contact_events = ClickEvent.excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
+      .where(ad_id: ad_ids, event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      .left_joins(:buyer)
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+      .joins(:ad)
+      .where(ads: { deleted: false })
+      .group(:ad_id)
+      .count
+    
+    contact_events
   end
 
   # Alias method for top performing ads (same as best selling ads)
