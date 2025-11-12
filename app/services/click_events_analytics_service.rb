@@ -20,13 +20,48 @@ class ClickEventsAnalyticsService
     }
     
     # Only include timestamps if requested (they can be expensive)
-    result[:timestamps] = timestamps if include_timestamps
+    # Wrap in begin/rescue to ensure we always return a value even if there's an error
+    if include_timestamps
+      begin
+        result[:timestamps] = timestamps
+      rescue => e
+        Rails.logger.error "Error fetching timestamps: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        # Return empty timestamps structure to prevent nil errors in controller
+        result[:timestamps] = {
+          click_events_timestamps: [],
+          reveal_events_timestamps: [],
+          ad_clicks_timestamps: [],
+          guest_reveal_timestamps: [],
+          authenticated_reveal_timestamps: [],
+          conversion_timestamps: [],
+          post_login_reveal_timestamps: [],
+          guest_login_attempt_timestamps: []
+        }
+      end
+    end
     
     # Only include breakdowns if requested
-    result[:breakdowns] = breakdowns if include_breakdowns
+    if include_breakdowns
+      begin
+        result[:breakdowns] = breakdowns
+      rescue => e
+        Rails.logger.error "Error fetching breakdowns: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        result[:breakdowns] = default_breakdowns
+      end
+    end
     
     # Only include top ads if requested
-    result[:top_ads] = top_ads_by_reveals if include_top_ads
+    if include_top_ads
+      begin
+        result[:top_ads] = top_ads_by_reveals
+      rescue => e
+        Rails.logger.error "Error fetching top ads: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        result[:top_ads] = []
+      end
+    end
     
     # Recent events, trends, and demographics are typically not needed for main analytics
     # They should be fetched separately when needed
@@ -37,7 +72,8 @@ class ClickEventsAnalyticsService
   # Get totals - optimized to use a single query with conditional aggregation
   def totals
     # Use a single query with conditional aggregation instead of multiple count queries
-    stats = base_query.select(
+    # Use .take instead of .first to avoid ORDER BY clauses that conflict with aggregate functions
+    stats = base_query.reorder(nil).select(
       "COUNT(*) as total_click_events",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details') as total_reveal_events",
       "COUNT(*) FILTER (WHERE event_type = 'Ad-Click') as total_ad_clicks",
@@ -46,7 +82,10 @@ class ClickEventsAnalyticsService
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND metadata->>'converted_from_guest' = 'true') as conversion_count",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND metadata->>'post_login_reveal' = 'true') as post_login_reveal_count",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND buyer_id IS NULL AND metadata->>'triggered_login_modal' = 'true') as guest_login_attempt_count"
-    ).first
+    ).take
+    
+    # Aggregate queries always return at least one row, but handle nil for safety
+    return default_totals if stats.nil?
     
     guest_attempts = stats.guest_login_attempt_count.to_i
     conversions = stats.conversion_count.to_i
@@ -67,50 +106,92 @@ class ClickEventsAnalyticsService
 
   # Get timestamps for frontend filtering - optimized to use SQL aggregations instead of loading all into memory
   # This is much faster for large datasets as it uses database-level aggregations
-  def timestamps(limit: 10000)
-    # Use SQL aggregations to get timestamps directly from database
-    # This avoids loading all records into memory
-    # Limit to most recent events for performance
-    recent_events_query = base_query.order(created_at: :desc).limit(limit)
+  def timestamps(limit: 10000, date_limit: nil)
+    # Build base query with ordering - each event type will use a fresh copy
+    base_ordered_query = base_query.order("click_events.created_at DESC")
     
-    # Get timestamps using SQL array aggregation - much faster than Ruby loops
-    click_events_timestamps = recent_events_query.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    # Apply date limit if provided (for performance optimization)
+    if date_limit.present?
+      base_ordered_query = base_ordered_query.where('click_events.created_at >= ?', date_limit)
+    end
     
-    # Get reveal events timestamps
-    reveal_events = recent_events_query.where(event_type: 'Reveal-Seller-Details')
-    reveal_events_timestamps = reveal_events.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    # Apply limit only if provided (nil means no limit - return all records)
+    if limit.present?
+      base_ordered_query = base_ordered_query.limit(limit)
+    end
     
-    # Get ad clicks timestamps
-    ad_clicks = recent_events_query.where(event_type: 'Ad-Click')
-    ad_clicks_timestamps = ad_clicks.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    # Get timestamps using direct pluck - pluck returns Time objects which we convert to ISO8601
+    # Use qualified column name to avoid ambiguity
+    # Get all click events timestamps
+    click_events_timestamps = base_ordered_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
+    
+    # Get reveal events timestamps - build fresh query from base
+    reveal_events_query = base_query
+      .where(event_type: 'Reveal-Seller-Details')
+      .order("click_events.created_at DESC")
+    reveal_events_query = reveal_events_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    reveal_events_query = reveal_events_query.limit(limit) if limit.present?
+    reveal_events_timestamps = reveal_events_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
+    
+    # Get ad clicks timestamps - build fresh query from base
+    ad_clicks_query = base_query
+      .where(event_type: 'Ad-Click')
+      .order("click_events.created_at DESC")
+    ad_clicks_query = ad_clicks_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    ad_clicks_query = ad_clicks_query.limit(limit) if limit.present?
+    ad_clicks_timestamps = ad_clicks_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
     
     # Get guest reveal timestamps
-    guest_reveals = reveal_events.where(buyer_id: nil)
-    guest_reveal_timestamps = guest_reveals.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    guest_reveals_query = base_query
+      .where(event_type: 'Reveal-Seller-Details', buyer_id: nil)
+      .order("click_events.created_at DESC")
+    guest_reveals_query = guest_reveals_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    guest_reveals_query = guest_reveals_query.limit(limit) if limit.present?
+    guest_reveal_timestamps = guest_reveals_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
     
     # Get authenticated reveal timestamps
-    authenticated_reveals = reveal_events.where.not(buyer_id: nil)
-    authenticated_reveal_timestamps = authenticated_reveals.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    authenticated_reveals_query = base_query
+      .where(event_type: 'Reveal-Seller-Details')
+      .where.not(buyer_id: nil)
+      .order("click_events.created_at DESC")
+    authenticated_reveals_query = authenticated_reveals_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    authenticated_reveals_query = authenticated_reveals_query.limit(limit) if limit.present?
+    authenticated_reveal_timestamps = authenticated_reveals_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
     
     # Get conversion timestamps (using JSONB query with index)
-    conversions = reveal_events.where("metadata->>'converted_from_guest' = 'true'")
-    conversion_timestamps = conversions.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    conversions_query = base_query
+      .where(event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'converted_from_guest' = ?", 'true')
+      .order("click_events.created_at DESC")
+    conversions_query = conversions_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    conversions_query = conversions_query.limit(limit) if limit.present?
+    conversion_timestamps = conversions_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
     
     # Get post-login reveal timestamps
-    post_login_reveals = reveal_events.where("metadata->>'post_login_reveal' = 'true'")
-    post_login_reveal_timestamps = post_login_reveals.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    post_login_reveals_query = base_query
+      .where(event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'post_login_reveal' = ?", 'true')
+      .order("click_events.created_at DESC")
+    post_login_reveals_query = post_login_reveals_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    post_login_reveals_query = post_login_reveals_query.limit(limit) if limit.present?
+    post_login_reveal_timestamps = post_login_reveals_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
     
     # Get guest login attempt timestamps
-    guest_login_attempts = guest_reveals.where("metadata->>'triggered_login_modal' = 'true'")
-    guest_login_attempt_timestamps = guest_login_attempts.pluck(Arel.sql("created_at::text"))
-      .map { |ts| Time.parse(ts).iso8601 rescue nil }.compact
+    guest_login_attempts_query = base_query
+      .where(event_type: 'Reveal-Seller-Details', buyer_id: nil)
+      .where("metadata->>'triggered_login_modal' = ?", 'true')
+      .order("click_events.created_at DESC")
+    guest_login_attempts_query = guest_login_attempts_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    guest_login_attempts_query = guest_login_attempts_query.limit(limit) if limit.present?
+    guest_login_attempt_timestamps = guest_login_attempts_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
     
     {
       click_events_timestamps: click_events_timestamps,
@@ -127,10 +208,14 @@ class ClickEventsAnalyticsService
   # Get breakdowns - optimized to use single queries
   def breakdowns
     # Use a single query with conditional aggregation for guest vs authenticated
-    guest_auth_stats = base_query.select(
+    # Use .take instead of .first to avoid ORDER BY clauses that conflict with aggregate functions
+    guest_auth_stats = base_query.reorder(nil).select(
       "COUNT(*) FILTER (WHERE buyer_id IS NULL) as guest_count",
       "COUNT(*) FILTER (WHERE buyer_id IS NOT NULL) as authenticated_count"
-    ).first
+    ).take
+    
+    # Aggregate queries always return at least one row, but handle nil for safety
+    return default_breakdowns if guest_auth_stats.nil?
     
     {
       guest_vs_authenticated: {
@@ -152,12 +237,12 @@ class ClickEventsAnalyticsService
       .joins("LEFT JOIN categories ON categories.id = ads.category_id")
       .joins("LEFT JOIN sellers ON sellers.id = ads.seller_id")
       .where("ads.deleted = ?", false)
-      .group("ads.id", "ads.title", "ads.first_media_url", "ads.seller_id", "categories.name", 
+      .group("ads.id", "ads.title", "ads.media", "ads.seller_id", "categories.name", 
               "sellers.enterprise_name", "sellers.fullname")
       .select(
         "ads.id as ad_id",
         "ads.title as ad_title",
-        "ads.first_media_url as ad_image_url",
+        "CASE WHEN ads.media IS NOT NULL AND ads.media != '' THEN (ads.media::json->>0) ELSE NULL END as ad_image_url",
         "ads.seller_id as seller_id",
         "categories.name as category_name",
         "sellers.enterprise_name as seller_enterprise_name",
@@ -173,8 +258,8 @@ class ClickEventsAnalyticsService
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'whatsapp') as whatsapp_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'view_location') as location_clicks"
       )
-      .having("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') > 0")
-      .order("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC")
+      .having(Arel.sql("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') > 0"))
+      .order(Arel.sql("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC"))
       .limit(limit)
       .to_a
     
@@ -224,8 +309,9 @@ class ClickEventsAnalyticsService
     offset = (page - 1) * per_page
     
     # Optimize query with proper includes and select only needed columns
+    # Qualify created_at with table name to avoid ambiguity when joining with ads table
     events_query = filtered_query
-      .order(created_at: :desc)
+      .order("click_events.created_at DESC")
       .offset(offset)
       .limit(per_page)
       .includes(:buyer, :ad)
@@ -247,35 +333,82 @@ class ClickEventsAnalyticsService
   end
 
   # Get click event trends (for seller-specific analytics)
+  # months: nil means all-time data, otherwise returns last N months
   def click_event_trends(months: 5)
     return [] unless filters[:seller_id].present?
     
-    end_date = Date.today.end_of_month
-    start_date = (end_date - (months - 1).months).beginning_of_month
-    
     ad_ids = Ad.where(seller_id: filters[:seller_id]).pluck(:id)
-    return empty_trends(months) if ad_ids.empty?
+    return empty_trends(months || 1) if ad_ids.empty?
     
-    click_events = base_query
-      .where(ad_id: ad_ids)
-      .where('click_events.created_at BETWEEN ? AND ?', start_date, end_date)
-      .group(Arel.sql("DATE_TRUNC('month', click_events.created_at)"), :event_type)
-      .count
-    
-    (0..(months - 1)).map do |i|
-      month_date = (end_date - i.months).beginning_of_month
+    # If months is nil, get all-time data
+    if months.nil?
+      # Get the first click event date for this seller to determine the start date
+      first_event = base_query
+        .where(ad_id: ad_ids)
+        .order('click_events.created_at ASC')
+        .limit(1)
+        .pluck('click_events.created_at')
+        .first
       
-      ad_clicks = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Ad-Click' }.values.sum || 0
-      add_to_wish_list = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Add-to-Wish-List' }.values.sum || 0
-      reveal_seller_details = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Reveal-Seller-Details' }.values.sum || 0
+      return [] unless first_event
       
-      {
-        month: month_date.strftime('%B %Y'),
-        ad_clicks: ad_clicks,
-        add_to_wish_list: add_to_wish_list,
-        reveal_seller_details: reveal_seller_details
-      }
-    end.reverse
+      # Calculate all months from first event to now
+      start_date = first_event.to_date.beginning_of_month
+      end_date = Date.today.end_of_month
+      
+      # Get all click events grouped by month (all-time, no date restriction in WHERE clause)
+      click_events = base_query
+        .where(ad_id: ad_ids)
+        .group(Arel.sql("DATE_TRUNC('month', click_events.created_at)"), :event_type)
+        .count
+      
+      # Build a list of all months from start to end
+      months_list = []
+      current_month = start_date
+      while current_month <= end_date
+        months_list << current_month
+        current_month = current_month.next_month.beginning_of_month
+      end
+      
+      # Build monthly data for all months
+      months_list.map do |month_date|
+        ad_clicks = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Ad-Click' }.values.sum || 0
+        add_to_wish_list = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Add-to-Wish-List' }.values.sum || 0
+        reveal_seller_details = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Reveal-Seller-Details' }.values.sum || 0
+        
+        {
+          month: month_date.strftime('%B %Y'),
+          ad_clicks: ad_clicks,
+          add_to_wish_list: add_to_wish_list,
+          reveal_seller_details: reveal_seller_details
+        }
+      end
+    else
+      # Original logic for last N months
+      end_date = Date.today.end_of_month
+      start_date = (end_date - (months - 1).months).beginning_of_month
+      
+      click_events = base_query
+        .where(ad_id: ad_ids)
+        .where('click_events.created_at BETWEEN ? AND ?', start_date, end_date)
+        .group(Arel.sql("DATE_TRUNC('month', click_events.created_at)"), :event_type)
+        .count
+      
+      (0..(months - 1)).map do |i|
+        month_date = (end_date - i.months).beginning_of_month
+        
+        ad_clicks = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Ad-Click' }.values.sum || 0
+        add_to_wish_list = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Add-to-Wish-List' }.values.sum || 0
+        reveal_seller_details = click_events.select { |(date, event), _| date && date.to_date == month_date.to_date && event == 'Reveal-Seller-Details' }.values.sum || 0
+        
+        {
+          month: month_date.strftime('%B %Y'),
+          ad_clicks: ad_clicks,
+          add_to_wish_list: add_to_wish_list,
+          reveal_seller_details: reveal_seller_details
+        }
+      end.reverse
+    end
   end
 
   # Get demographics stats (for seller-specific analytics)
@@ -456,14 +589,15 @@ class ClickEventsAnalyticsService
     end
     
     # Filter by date range
+    # Qualify created_at with table name to avoid ambiguity when joining with ads table
     if filters[:start_date].present?
       start_date = Time.parse(filters[:start_date]) rescue nil
-      filtered = filtered.where('created_at >= ?', start_date) if start_date
+      filtered = filtered.where('click_events.created_at >= ?', start_date) if start_date
     end
     
     if filters[:end_date].present?
       end_date = Time.parse(filters[:end_date]) rescue nil
-      filtered = filtered.where('created_at <= ?', end_date) if end_date
+      filtered = filtered.where('click_events.created_at <= ?', end_date) if end_date
     end
     
     filtered
@@ -788,6 +922,32 @@ class ClickEventsAnalyticsService
         reveal_seller_details: 0
       }
     end.reverse
+  end
+
+  def default_totals
+    {
+      total_click_events: 0,
+      total_reveal_events: 0,
+      total_ad_clicks: 0,
+      guest_reveals: 0,
+      authenticated_reveals: 0,
+      conversion_count: 0,
+      conversion_rate: 0.0,
+      post_login_reveal_count: 0,
+      guest_login_attempt_count: 0
+    }
+  end
+
+  def default_breakdowns
+    {
+      guest_vs_authenticated: {
+        guest: 0,
+        authenticated: 0
+      },
+      by_event_type: {},
+      by_category: [],
+      by_subcategory: []
+    }
   end
 end
 

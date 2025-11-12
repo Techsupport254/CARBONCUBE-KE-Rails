@@ -711,75 +711,25 @@ class Buyer::AdsController < ApplicationController
   end
 
   def get_balanced_ads(per_page)
-    # Get all categories with their subcategories
-    categories = Category.includes(:subcategories).all
+    # SIMPLIFIED: Just return all ads we have, organized by subcategory
+    # Get all subcategory counts in a single query
+    subcategory_counts = Ad.active.with_valid_images
+      .joins(:seller)
+      .where(sellers: { blocked: false, deleted: false, flagged: false })
+      .where(flagged: false)
+      .group('ads.subcategory_id')
+      .count('ads.id')
     
-    # Set fixed number of ads per subcategory (20)
-    ads_per_subcategory = 20
+    # Get all ads (no per-subcategory limits, no complex balancing)
+    all_ads = Ad.active.with_valid_images
+      .joins(:seller, seller: { seller_tier: :tier })
+      .where(sellers: { blocked: false, deleted: false, flagged: false })
+      .where(flagged: false)
+      .includes(:category, :subcategory, seller: { seller_tier: :tier })
+      .order(Arel.sql('(EXTRACT(EPOCH FROM ads.created_at::date)::bigint + ads.id % 7) DESC')) # Pseudo-random for variety
+      .to_a
     
-    # Check if we need to load more for a specific subcategory
-    subcategory_id = params[:subcategory_id]
-    page = params[:page]&.to_i || 1
-    
-    all_ads = []
-    subcategory_counts = {}
-    
-    if subcategory_id.present?
-      # Load more for specific subcategory
-      subcategory = Subcategory.find_by(id: subcategory_id)
-      if subcategory
-        # Get total count for this subcategory
-        total_count = Ad.active.with_valid_images
-          .joins(:seller)
-          .where(sellers: { blocked: false, deleted: false, flagged: false })
-          .where(flagged: false)
-          .where(subcategory_id: subcategory.id)
-          .count
-        
-        subcategory_counts[subcategory.id] = total_count
-        
-        subcategory_ads = Ad.active.with_valid_images
-           .joins(:seller, seller: { seller_tier: :tier })
-           .where(sellers: { blocked: false, deleted: false, flagged: false })
-           .where(flagged: false)
-           .where(subcategory_id: subcategory.id)
-           .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-           .order(Arel.sql('RANDOM()'))  # Pure randomization
-           .limit(ads_per_subcategory)
-           .offset((page - 1) * ads_per_subcategory)
-        
-        all_ads.concat(subcategory_ads)
-      end
-    else
-      # Regular balanced loading for all subcategories
-      categories.each do |category|
-        category.subcategories.each do |subcategory|
-          # Get total count for this subcategory
-          total_count = Ad.active.with_valid_images
-            .joins(:seller)
-            .where(sellers: { blocked: false, deleted: false, flagged: false })
-            .where(flagged: false)
-            .where(subcategory_id: subcategory.id)
-            .count
-          
-          subcategory_counts[subcategory.id] = total_count
-          
-          # Get ads for this subcategory, ordered by tier priority first, then by creation date
-          subcategory_ads = Ad.active.with_valid_images
-             .joins(:seller, seller: { seller_tier: :tier })
-             .where(sellers: { blocked: false, deleted: false, flagged: false })
-             .where(flagged: false)
-             .where(subcategory_id: subcategory.id)
-             .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-             .order(Arel.sql('RANDOM()'))  # Pure randomization
-             .limit(ads_per_subcategory)
-          
-          all_ads.concat(subcategory_ads)
-        end
-      end
-    end
-    
-    # Return both ads and subcategory counts
+    # Return all ads and subcategory counts
     {
       ads: all_ads,
       subcategory_counts: subcategory_counts

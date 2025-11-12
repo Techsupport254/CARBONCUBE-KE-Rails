@@ -59,15 +59,15 @@ class Sales::ClickEventsController < ApplicationController
         post_login_reveal_count: analytics_data[:totals][:post_login_reveal_count],
         guest_login_attempt_count: analytics_data[:totals][:guest_login_attempt_count],
 
-        # Timestamps for frontend filtering
-        click_events_timestamps: analytics_data[:timestamps][:click_events_timestamps],
-        reveal_events_timestamps: analytics_data[:timestamps][:reveal_events_timestamps],
-        ad_clicks_timestamps: analytics_data[:timestamps][:ad_clicks_timestamps],
-        guest_reveal_timestamps: analytics_data[:timestamps][:guest_reveal_timestamps],
-        authenticated_reveal_timestamps: analytics_data[:timestamps][:authenticated_reveal_timestamps],
-        conversion_timestamps: analytics_data[:timestamps][:conversion_timestamps],
-        post_login_reveal_timestamps: analytics_data[:timestamps][:post_login_reveal_timestamps],
-        guest_login_attempt_timestamps: analytics_data[:timestamps][:guest_login_attempt_timestamps],
+        # Timestamps for frontend filtering (safe access in case timestamps failed to load)
+        click_events_timestamps: analytics_data[:timestamps]&.dig(:click_events_timestamps) || [],
+        reveal_events_timestamps: analytics_data[:timestamps]&.dig(:reveal_events_timestamps) || [],
+        ad_clicks_timestamps: analytics_data[:timestamps]&.dig(:ad_clicks_timestamps) || [],
+        guest_reveal_timestamps: analytics_data[:timestamps]&.dig(:guest_reveal_timestamps) || [],
+        authenticated_reveal_timestamps: analytics_data[:timestamps]&.dig(:authenticated_reveal_timestamps) || [],
+        conversion_timestamps: analytics_data[:timestamps]&.dig(:conversion_timestamps) || [],
+        post_login_reveal_timestamps: analytics_data[:timestamps]&.dig(:post_login_reveal_timestamps) || [],
+        guest_login_attempt_timestamps: analytics_data[:timestamps]&.dig(:guest_login_attempt_timestamps) || [],
 
         # Top performing ads
         top_ads_by_reveals: analytics_data[:top_ads],

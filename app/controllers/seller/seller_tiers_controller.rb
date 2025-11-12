@@ -26,8 +26,8 @@ class Seller::SellerTiersController < ApplicationController
   def show
     # Handle both tier ID and seller ID cases
     if params[:seller_id]
-      # Find seller tier by seller_id
-      seller_tier = SellerTier.find_by(seller_id: params[:seller_id])
+      # OPTIMIZATION: Eager load tier to avoid N+1 query
+      seller_tier = SellerTier.includes(:tier).find_by(seller_id: params[:seller_id])
       
       if seller_tier
         # Calculate expiry date if not set
@@ -48,6 +48,8 @@ class Seller::SellerTiersController < ApplicationController
         if seller
           # Create a default free tier for the seller
           seller_tier = SellerTier.create(seller_id: seller.id, tier_id: 1, duration_months: 0)
+          # Reload with tier association
+          seller_tier = SellerTier.includes(:tier).find(seller_tier.id)
           
           # Calculate expiry date if not set
           expiry_date = seller_tier.expires_at || (seller_tier.updated_at + seller_tier.duration_months.months)

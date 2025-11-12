@@ -3,7 +3,17 @@ class Seller::ReviewsController < ApplicationController
   before_action :current_seller
 
   def index
-    @reviews = Review.joins(:ad).where(ads: { seller_id: @current_seller.id }).includes(:buyer).order(updated_at: :desc)
+    # OPTIMIZATION: Add pagination and limit to avoid loading all reviews
+    page = params[:page]&.to_i || 1
+    per_page = params[:per_page]&.to_i || 50
+    per_page = [per_page, 100].min # Cap at 100
+    
+    @reviews = Review.joins(:ad)
+                     .where(ads: { seller_id: @current_seller.id })
+                     .includes(:buyer)
+                     .order(updated_at: :desc)
+                     .offset((page - 1) * per_page)
+                     .limit(per_page)
 
     render json: @reviews.map { |review|
       {
