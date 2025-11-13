@@ -61,32 +61,55 @@ class ClickEvent < ApplicationRecord
     query
   }
   
+  # Cache exclusion lists to avoid repeated queries
+  # Cache expires after 5 minutes to allow for updates
+  def self.cached_exclusion_lists
+    Rails.cache.fetch('click_event_exclusion_lists', expires_in: 5.minutes) do
+      # Hardcoded exclusions (always apply these, don't rely on database)
+      hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
+      hardcoded_excluded_domains = ['example.com']
+      
+      # Get sales user emails to exclude (check if they exist first)
+      sales_user_emails = SalesUser.pluck(:email).map(&:downcase)
+      hardcoded_excluded_emails.concat(sales_user_emails) if sales_user_emails.any?
+      
+      # Get Denis and Timothy Juma emails (check if they exist first)
+      # Check both buyers and sellers for these users
+      denis_buyer_emails = Buyer.where("fullname ILIKE ? OR email ILIKE ?", '%denis%', '%denis%').pluck(:email).map(&:downcase).compact
+      denis_seller_emails = Seller.where("fullname ILIKE ? OR email ILIKE ?", '%denis%', '%denis%').pluck(:email).map(&:downcase).compact
+      timothy_juma_buyer_emails = Buyer.where("(fullname ILIKE ? OR fullname ILIKE ?) OR (email ILIKE ? OR email ILIKE ?)", 
+                                             '%timothy%juma%', '%juma%', '%timothy%juma%', '%juma%').pluck(:email).map(&:downcase).compact
+      timothy_juma_seller_emails = Seller.where("(fullname ILIKE ? OR fullname ILIKE ?) OR (email ILIKE ? OR email ILIKE ?)", 
+                                                '%timothy%juma%', '%juma%', '%timothy%juma%', '%juma%').pluck(:email).map(&:downcase).compact
+      additional_excluded_emails = (denis_buyer_emails + denis_seller_emails + timothy_juma_buyer_emails + timothy_juma_seller_emails).uniq
+      hardcoded_excluded_emails.concat(additional_excluded_emails) if additional_excluded_emails.any?
+      
+      # Get all active exclusion identifiers from database
+      device_hash_exclusions = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
+      email_domain_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
+      user_agent_exclusions = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
+      
+      {
+        hardcoded_excluded_emails: hardcoded_excluded_emails,
+        hardcoded_excluded_domains: hardcoded_excluded_domains,
+        device_hash_exclusions: device_hash_exclusions,
+        email_domain_exclusions: email_domain_exclusions,
+        user_agent_exclusions: user_agent_exclusions
+      }
+    end
+  end
+
   # Scope to exclude internal users from analytics
   # This matches the logic in InternalUserExclusion.should_exclude?
+  # OPTIMIZED: Uses cached exclusion lists to avoid repeated queries
   scope :excluding_internal_users, -> {
-    # Hardcoded exclusions (always apply these, don't rely on database)
-    hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
-    hardcoded_excluded_domains = ['example.com']
-    
-    # Get sales user emails to exclude (check if they exist first)
-    sales_user_emails = SalesUser.pluck(:email).map(&:downcase)
-    hardcoded_excluded_emails.concat(sales_user_emails) if sales_user_emails.any?
-    
-    # Get Denis and Timothy Juma emails (check if they exist first)
-    # Check both buyers and sellers for these users
-    denis_buyer_emails = Buyer.where("fullname ILIKE ? OR email ILIKE ?", '%denis%', '%denis%').pluck(:email).map(&:downcase).compact
-    denis_seller_emails = Seller.where("fullname ILIKE ? OR email ILIKE ?", '%denis%', '%denis%').pluck(:email).map(&:downcase).compact
-    timothy_juma_buyer_emails = Buyer.where("(fullname ILIKE ? OR fullname ILIKE ?) OR (email ILIKE ? OR email ILIKE ?)", 
-                                           '%timothy%juma%', '%juma%', '%timothy%juma%', '%juma%').pluck(:email).map(&:downcase).compact
-    timothy_juma_seller_emails = Seller.where("(fullname ILIKE ? OR fullname ILIKE ?) OR (email ILIKE ? OR email ILIKE ?)", 
-                                              '%timothy%juma%', '%juma%', '%timothy%juma%', '%juma%').pluck(:email).map(&:downcase).compact
-    additional_excluded_emails = (denis_buyer_emails + denis_seller_emails + timothy_juma_buyer_emails + timothy_juma_seller_emails).uniq
-    hardcoded_excluded_emails.concat(additional_excluded_emails) if additional_excluded_emails.any?
-    
-    # Get all active exclusion identifiers from database
-    device_hash_exclusions = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
-    email_domain_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
-    user_agent_exclusions = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
+    # Get cached exclusion lists (avoids repeated queries)
+    exclusion_lists = cached_exclusion_lists
+    hardcoded_excluded_emails = exclusion_lists[:hardcoded_excluded_emails]
+    hardcoded_excluded_domains = exclusion_lists[:hardcoded_excluded_domains]
+    device_hash_exclusions = exclusion_lists[:device_hash_exclusions]
+    email_domain_exclusions = exclusion_lists[:email_domain_exclusions]
+    user_agent_exclusions = exclusion_lists[:user_agent_exclusions]
     
     # Merge hardcoded exclusions with database exclusions
     all_email_exclusions = (hardcoded_excluded_emails + email_domain_exclusions).uniq

@@ -75,6 +75,18 @@ class ClickEventsController < ApplicationController
       # Use save! to raise exception on failure for proper rollback
       click_event.save!
 
+      # Track visitor ad click (silently)
+      if click_event.event_type == 'Ad-Click'
+        visitor_id = metadata[:device_hash] || metadata['device_hash']
+        if visitor_id.present?
+          visitor_tracking_service = VisitorTrackingService.new(request)
+          visitor_tracking_service.record_ad_click(visitor_id, {
+            ad_id: click_event.ad_id,
+            event_type: click_event.event_type
+          })
+        end
+      end
+
       # Log successful save with created record details
       if click_event.event_type == 'Reveal-Seller-Details'
         auth_status = was_authenticated ? 'AUTHENTICATED' : 'GUEST'

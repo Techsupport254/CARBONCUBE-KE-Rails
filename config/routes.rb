@@ -410,6 +410,9 @@ Rails.application.routes.draw do
     post 'signup', to: 'sellers#create'
     delete 'delete_account', to: 'sellers#destroy'
     
+    # Consolidated dashboard endpoint
+    get 'dashboard', to: 'dashboard#index'
+    
     resources :ads do
       member do
         put 'restore'
@@ -569,11 +572,14 @@ Rails.application.routes.draw do
         collection do
           get :recent_users
           get :devices
+          get :sources
+          get :categories
         end
       end
       resources :click_events, only: [] do
         collection do
           get :analytics
+          get :best_ads
         end
       end
       resources :reviews, only: [:index]
@@ -594,4 +600,10 @@ Rails.application.routes.draw do
 
 
   mount ActionCable.server => '/cable'
+
+    post '/visitor/track', to: 'visitor_analytics#track_visitor'
+    get '/visitor/analytics', to: 'visitor_analytics#analytics'
+    get '/visitor/list', to: 'visitor_analytics#visitors_list'
+    get '/visitor/:visitor_id', to: 'visitor_analytics#visitor_details'
+    get '/visitor/:visitor_id/click_events', to: 'visitor_analytics#visitor_click_events'
 end

@@ -106,7 +106,8 @@ class ClickEventsAnalyticsService
 
   # Get timestamps for frontend filtering - optimized to use SQL aggregations instead of loading all into memory
   # This is much faster for large datasets as it uses database-level aggregations
-  def timestamps(limit: 10000, date_limit: nil)
+  # OPTIMIZATION: Limit to last 2 years by default to improve performance
+  def timestamps(limit: 10000, date_limit: 2.years.ago)
     # Build base query with ordering - each event type will use a fresh copy
     base_ordered_query = base_query.order("click_events.created_at DESC")
     
@@ -302,11 +303,23 @@ class ClickEventsAnalyticsService
     
     filtered_query = apply_filters(base_query)
     
-    # Use count with limit for better performance on large datasets
-    # Only count if we need pagination info
-    total_events_count = filtered_query.count
-    total_pages = (total_events_count.to_f / per_page).ceil
+    # OPTIMIZATION: Use fast count estimation for large datasets
+    # For pagination, we only need to know if there are more pages, not exact count
+    # Check if there are more records than we need for current page
     offset = (page - 1) * per_page
+    # Check if there's at least one more record after the current page
+    has_more = filtered_query.offset(offset + per_page).limit(1).exists?
+    
+    # For exact count, only calculate if we're on early pages (where it matters for UI)
+    # For later pages, use estimation based on whether there are more records
+    total_events_count = if page <= 5
+      # Calculate exact count for early pages (needed for accurate pagination UI)
+      filtered_query.count
+    else
+      # For later pages, estimate: current page records + 1 if more exist
+      has_more ? (offset + per_page + 1) : (offset + per_page)
+    end
+    total_pages = (total_events_count.to_f / per_page).ceil
     
     # Optimize query with proper includes and select only needed columns
     # Qualify created_at with table name to avoid ambiguity when joining with ads table
@@ -535,14 +548,25 @@ class ClickEventsAnalyticsService
   private
 
   def build_base_query
+    # OPTIMIZATION: Apply date filter first to reduce dataset size before expensive exclusions
+    # Limit to last 2 years by default for better performance (can be overridden by date filters in apply_filters)
+    # Only apply if no explicit date filters are provided
+    query = if filters[:start_date].present? || filters[:end_date].present?
+      # If date filters are provided, let apply_filters handle them
+      ClickEvent.all
+    else
+      # Otherwise, limit to last 2 years for performance
+      ClickEvent.where('click_events.created_at >= ?', 2.years.ago)
+    end
+    
     # Use ClickEvent.excluding_internal_users which now handles:
-    # - Sales members (checks SalesUser emails)
+    # - Sales members (checks SalesUser emails) - now cached
     # - Deleted users (buyers.deleted = false)
     # - @example.com domain emails
     # - Denis emails (checks if they exist first)
     # - Timothy Juma emails (checks if they exist first)
     # - All other internal user exclusions
-    query = ClickEvent.excluding_internal_users
+    query = query.excluding_internal_users
     
     # Exclude click events where sellers click their own ads
     # This excludes events where:

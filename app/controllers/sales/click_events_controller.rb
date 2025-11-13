@@ -34,7 +34,7 @@ class Sales::ClickEventsController < ApplicationController
       analytics_options = {
         include_timestamps: include_timestamps,
         include_breakdowns: true,
-        include_top_ads: true
+        include_top_ads: false  # Top ads are now in dedicated /best_ads endpoint
       }
       analytics_data = service.analytics(options: analytics_options)
       
@@ -69,9 +69,6 @@ class Sales::ClickEventsController < ApplicationController
         post_login_reveal_timestamps: analytics_data[:timestamps]&.dig(:post_login_reveal_timestamps) || [],
         guest_login_attempt_timestamps: analytics_data[:timestamps]&.dig(:guest_login_attempt_timestamps) || [],
 
-        # Top performing ads
-        top_ads_by_reveals: analytics_data[:top_ads],
-        
         # Recent click events with user details (paginated)
         recent_click_events: recent_events_data[:events],
         recent_click_events_pagination: recent_events_data[:pagination]
@@ -80,6 +77,41 @@ class Sales::ClickEventsController < ApplicationController
       render json: response_data
     rescue => e
       Rails.logger.error "Click events analytics error: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Internal server error', details: e.message }, status: 500
+    end
+  end
+
+  # GET /sales/click_events/best_ads
+  # Get top 100 best performing ads (optimized endpoint)
+  def best_ads
+    begin
+      filters = {
+        start_date: params[:start_date],
+        end_date: params[:end_date]
+      }.compact
+      
+      # Get device_hash from params or headers if available
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      
+      limit = params[:limit].to_i
+      limit = 100 if limit < 1 || limit > 100
+      
+      service = ClickEventsAnalyticsService.new(
+        filters: filters,
+        device_hash: device_hash
+      )
+      
+      # Get top ads only (no other data needed)
+      top_ads = service.top_ads_by_reveals(limit: limit)
+      
+      render json: {
+        ads: top_ads,
+        total: top_ads.count,
+        limit: limit
+      }
+    rescue => e
+      Rails.logger.error "Best ads error: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       render json: { error: 'Internal server error', details: e.message }, status: 500
     end

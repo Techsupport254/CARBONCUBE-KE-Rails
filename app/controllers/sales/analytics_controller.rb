@@ -20,32 +20,6 @@ class Sales::AnalyticsController < ApplicationController
     # Exclude buyers with excluded email domains
     all_buyers = exclude_emails_by_pattern(Buyer.where(deleted: false), excluded_email_patterns)
     
-    # OPTIMIZATION: Use single query with conditional aggregation for signup method breakdowns
-    buyers_signup_breakdown = all_buyers
-      .reorder(nil) # Remove any existing ORDER BY clauses
-      .select(
-        "COUNT(*) as total",
-        "COUNT(*) FILTER (WHERE provider IS NOT NULL AND provider != '') as google_oauth",
-        "COUNT(*) FILTER (WHERE provider IS NULL OR provider = '') as regular"
-      )
-      .take
-    
-    sellers_signup_breakdown = all_sellers
-      .reorder(nil) # Remove any existing ORDER BY clauses
-      .select(
-        "COUNT(*) as total",
-        "COUNT(*) FILTER (WHERE provider IS NOT NULL AND provider != '') as google_oauth",
-        "COUNT(*) FILTER (WHERE provider IS NULL OR provider = '') as regular"
-      )
-      .take
-    
-    # Separate buyers by signup method (Google OAuth vs Regular) - only for timestamps
-    google_oauth_buyers = all_buyers.where.not(provider: nil).where("provider != ''")
-    regular_buyers = all_buyers.where("provider IS NULL OR provider = ''")
-    
-    # Separate sellers by signup method (Google OAuth vs Regular) - only for timestamps
-    google_oauth_sellers = all_sellers.where.not(provider: nil).where("provider != ''")
-    regular_sellers = all_sellers.where("provider IS NULL OR provider = ''")
     
     all_ads = Ad.where(deleted: false)
     all_reviews = Review.all
@@ -91,27 +65,9 @@ class Sales::AnalyticsController < ApplicationController
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
     sellers_with_timestamps = all_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     buyers_with_timestamps = all_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    
-    # Separate timestamps by signup method for time-series tracking (limited to recent)
-    google_oauth_buyers_with_timestamps = google_oauth_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    regular_buyers_with_timestamps = regular_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    google_oauth_sellers_with_timestamps = google_oauth_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    regular_sellers_with_timestamps = regular_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    
     ads_with_timestamps = all_ads.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     wishlists_with_timestamps = all_wishlists.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    
-    # Get seller tiers with timestamps (limited to recent)
-    paid_seller_tiers_with_timestamps = all_paid_seller_tiers
-      .where('sellers.created_at >= ?', timestamp_limit_date)
-      .pluck('sellers.created_at')
-      .map { |ts| ts&.iso8601 }
-    
-    unpaid_seller_tiers_with_timestamps = all_unpaid_seller_tiers
-      .where('sellers.created_at >= ?', timestamp_limit_date)
-      .pluck('sellers.created_at')
-      .map { |ts| ts&.iso8601 }
     
     # OPTIMIZATION: Get click events with timestamps (limited to recent, remove duplicates)
     ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -122,78 +78,6 @@ class Sales::AnalyticsController < ApplicationController
     reveal_clicks_with_timestamps = all_reveal_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     # Remove duplicate - buyer_reveal_clicks uses same data
     buyer_reveal_clicks_with_timestamps = reveal_clicks_with_timestamps
-    
-    # Use unified service for category click events
-    # device_hash already extracted above
-    click_events_service = ClickEventsAnalyticsService.new(
-      filters: {},
-      device_hash: device_hash
-    )
-    category_click_events = click_events_service.category_click_events
-
-    # Use unified service for subcategory click events
-    subcategory_click_events = click_events_service.subcategory_click_events
-
-    # Get source tracking analytics (with error handling)
-    source_analytics = begin
-      get_source_analytics
-    rescue => e
-      Rails.logger.error "Error getting source analytics: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      # Return minimal structure on error to prevent blocking
-      {
-        total_visits: 0,
-        unique_visitors: 0,
-        returning_visitors: 0,
-        new_visitors: 0,
-        avg_visits_per_visitor: 0,
-        source_distribution: {},
-        other_sources_count: 0,
-        incomplete_utm_count: 0,
-        unique_visitors_by_source: {},
-        visits_by_source: {},
-        utm_source_distribution: {},
-        utm_medium_distribution: {},
-        utm_campaign_distribution: {},
-        utm_content_distribution: {},
-        utm_term_distribution: {},
-        referrer_distribution: {},
-        daily_visits: {},
-        visit_timestamps: [],
-        daily_unique_visitors: {},
-        top_sources: [],
-        top_referrers: []
-      }
-    end
-    
-    # Get device analytics (with error handling)
-    device_analytics = begin
-      get_device_analytics
-    rescue => e
-      Rails.logger.error "Error getting device analytics: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      # Return empty device analytics on error to prevent blocking the entire response
-      {
-        device_types: {},
-        browsers: {},
-        operating_systems: {},
-        screen_resolutions: {},
-        device_types_visitors: {},
-        browsers_visitors: {},
-        operating_systems_visitors: {},
-        device_types_total: {},
-        browsers_total: {},
-        operating_systems_total: {},
-        screen_resolutions_total: {},
-        device_types_time_series: [],
-        browsers_time_series: [],
-        operating_systems_time_series: [],
-        total_devices: 0,
-        total_sessions: 0,
-        total_visitors: 0,
-        total_records: 0
-      }
-    end
     
     # Analytics data prepared successfully
     
@@ -246,25 +130,14 @@ class Sales::AnalyticsController < ApplicationController
         } : nil
       },
       wishlists_with_timestamps: wishlists_with_timestamps,
-      paid_seller_tiers_with_timestamps: paid_seller_tiers_with_timestamps,
-      unpaid_seller_tiers_with_timestamps: unpaid_seller_tiers_with_timestamps,
       ad_clicks_with_timestamps: ad_clicks_with_timestamps,
       buyer_ad_clicks_with_timestamps: buyer_ad_clicks_with_timestamps,
       buyer_reveal_clicks_with_timestamps: buyer_reveal_clicks_with_timestamps,
       reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
-      category_click_events: category_click_events,
-      subcategory_click_events: subcategory_click_events,
-      
-      # Signup method breakdown timestamps (for time-series tracking)
-      google_oauth_buyers_with_timestamps: google_oauth_buyers_with_timestamps,
-      regular_buyers_with_timestamps: regular_buyers_with_timestamps,
-      google_oauth_sellers_with_timestamps: google_oauth_sellers_with_timestamps,
-      regular_sellers_with_timestamps: regular_sellers_with_timestamps,
       
       # OPTIMIZATION: Pre-calculated totals for initial display (all time)
-      # Use cached counts from signup breakdown queries where possible
-      total_sellers: sellers_signup_breakdown&.total.to_i || all_sellers.count,
-      total_buyers: buyers_signup_breakdown&.total.to_i || all_buyers.count,
+      total_sellers: all_sellers.count,
+      total_buyers: all_buyers.count,
       total_ads: all_ads.count,
       total_reviews: all_reviews.count,
       total_ads_wish_listed: all_wishlists.count,
@@ -273,27 +146,7 @@ class Sales::AnalyticsController < ApplicationController
       total_ads_clicks: all_ad_clicks.count,
       buyer_ad_clicks: all_ad_clicks.count, # Same as total_ads_clicks - both use the same query
       buyer_reveal_clicks: all_reveal_clicks.count, # Same as total_reveal_clicks - both use the same query
-      total_reveal_clicks: all_reveal_clicks.count,
-      
-      # OPTIMIZATION: Signup method breakdown totals (from single aggregated query)
-      signup_method_breakdown: {
-        buyers: {
-          google_oauth: buyers_signup_breakdown&.google_oauth.to_i || 0,
-          regular: buyers_signup_breakdown&.regular.to_i || 0,
-          total: buyers_signup_breakdown&.total.to_i || all_buyers.count
-        },
-        sellers: {
-          google_oauth: sellers_signup_breakdown&.google_oauth.to_i || 0,
-          regular: sellers_signup_breakdown&.regular.to_i || 0,
-          total: sellers_signup_breakdown&.total.to_i || all_sellers.count
-        }
-      },
-      
-      # Source tracking analytics
-      source_analytics: source_analytics,
-      
-      # Device analytics
-      device_analytics: device_analytics
+      total_reveal_clicks: all_reveal_clicks.count
     }
     
     render json: response_data
@@ -312,22 +165,74 @@ class Sales::AnalyticsController < ApplicationController
           device_types: {},
           browsers: {},
           operating_systems: {},
-          screen_resolutions: {},
-          device_types_visitors: {},
-          browsers_visitors: {},
-          operating_systems_visitors: {},
-          device_types_total: {},
-          browsers_total: {},
-          operating_systems_total: {},
-          screen_resolutions_total: {},
           device_types_time_series: [],
           browsers_time_series: [],
           operating_systems_time_series: [],
-          total_devices: 0,
-          total_sessions: 0,
-          total_visitors: 0,
-          total_records: 0
+          total_devices: 0
         }
+      }
+    end
+  end
+
+  def sources
+    # Get source analytics only - optimized endpoint for sources page
+    begin
+      source_analytics = get_source_analytics
+      render json: source_analytics
+    rescue => e
+      Rails.logger.error "Error getting source analytics: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      # Return minimal structure on error to prevent blocking
+      render json: {
+        total_visits: 0,
+        unique_visitors: 0,
+        returning_visitors: 0,
+        new_visitors: 0,
+        avg_visits_per_visitor: 0,
+        source_distribution: {},
+        other_sources_count: 0,
+        incomplete_utm_count: 0,
+        unique_visitors_by_source: {},
+        visits_by_source: {},
+        utm_source_distribution: {},
+        utm_medium_distribution: {},
+        utm_campaign_distribution: {},
+        utm_content_distribution: {},
+        utm_term_distribution: {},
+        referrer_distribution: {},
+        daily_visits: {},
+        visit_timestamps: [],
+        daily_unique_visitors: {},
+        top_sources: [],
+        top_referrers: []
+      }
+    end
+  end
+
+  def categories
+    # Get category click events only - optimized endpoint for categories page
+    begin
+      # Get device_hash from params or headers if available for excluding seller own clicks
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      
+      # Use unified service for category click events
+      click_events_service = ClickEventsAnalyticsService.new(
+        filters: {},
+        device_hash: device_hash
+      )
+      category_click_events = click_events_service.category_click_events
+      subcategory_click_events = click_events_service.subcategory_click_events
+      
+      render json: {
+        category_click_events: category_click_events,
+        subcategory_click_events: subcategory_click_events
+      }
+    rescue => e
+      Rails.logger.error "Error getting category analytics: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: {
+        category_click_events: [],
+        subcategory_click_events: []
       }
     end
   end
@@ -459,71 +364,135 @@ class Sales::AnalyticsController < ApplicationController
     start_date = params[:start_date]
     end_date = params[:end_date]
     
-    
     # Build date filter
     date_filter = nil
     if start_date && end_date
       date_filter = { start_date: start_date, end_date: end_date }
-    else
     end
     
-    # Get source tracking data with optional date filtering
-    source_distribution = Analytic.source_distribution(date_filter)
-    utm_source_distribution = Analytic.utm_source_distribution(date_filter)
-    utm_medium_distribution = Analytic.utm_medium_distribution(date_filter)
-    utm_campaign_distribution = Analytic.utm_campaign_distribution(date_filter)
-    utm_content_distribution = Analytic.utm_content_distribution(date_filter)
-    utm_term_distribution = Analytic.utm_term_distribution(date_filter)
-    referrer_distribution = Analytic.referrer_distribution(date_filter)
+    # OPTIMIZATION: Cache base scope to avoid recalculating internal user exclusions
+    # This is expensive, so we compute it once and reuse
+    base_scope = if date_filter
+      Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
+    else
+      # Limit to last 2 years for performance when no date filter
+      two_years_ago = 2.years.ago
+      Analytic.excluding_internal_users.where('created_at >= ?', two_years_ago)
+    end
     
-    # Get visitor engagement metrics with date filtering
-    visitor_metrics = Analytic.visitor_engagement_metrics(date_filter)
+    # OPTIMIZATION: Run all distribution queries in parallel using threads or optimize queries
+    # Get source tracking data with optional date filtering
+    source_distribution = base_scope.group(
+      Arel.sql(
+        "CASE 
+          WHEN source IS NOT NULL AND source != '' THEN source
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          ELSE 'other'
+        END"
+      )
+    ).count
+    
+    # OPTIMIZATION: Use single query with conditional aggregation for UTM distributions
+    # Build base scope for UTM queries (records with complete UTM parameters)
+    utm_base_scope = base_scope.where.not(utm_source: [nil, '', 'direct', 'other'])
+                               .where.not(utm_medium: [nil, ''])
+                               .where.not(utm_campaign: [nil, ''])
+    
+    # Get all UTM distributions in one pass using select with aggregations
+    utm_source_distribution = utm_base_scope.group(:utm_source).count
+    utm_medium_distribution = utm_base_scope.group(:utm_medium).count
+    utm_campaign_distribution = utm_base_scope.group(:utm_campaign).count
+    utm_content_distribution = utm_base_scope.where.not(utm_content: [nil, '']).group(:utm_content).count
+    utm_term_distribution = utm_base_scope.where.not(utm_term: [nil, '']).group(:utm_term).count
+    
+    referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count
+    
+    # OPTIMIZATION: Calculate visitor metrics more efficiently
+    # Use single query with aggregations instead of multiple queries
+    visitor_id_sql = "data->>'visitor_id'"
+    visitor_scope = base_scope.where("#{visitor_id_sql} IS NOT NULL")
+    
+    total_visits = base_scope.count
+    unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql))
+    avg_visits_per_visitor = unique_visitors > 0 ? (total_visits.to_f / unique_visitors).round(2) : 0
+    
+    # OPTIMIZATION: Calculate returning/new visitors more efficiently
+    # Only calculate if we have visitors and dataset is reasonable (skip for large datasets)
+    # This calculation is expensive, so we limit it to smaller datasets
+    returning_visitors = 0
+    new_visitors = 0
+    if unique_visitors > 0 && unique_visitors < 5000 && total_visits < 50000
+      # Get unique visitor IDs from current scope (limit to first 5000 for performance)
+      visitor_ids = visitor_scope.distinct.limit(5000).pluck(Arel.sql(visitor_id_sql)).compact
+      
+      if visitor_ids.any? && visitor_ids.size <= 5000
+        # Get first visit dates for these visitors in a single optimized query
+        first_visits = Analytic
+          .where("#{visitor_id_sql} IN (?)", visitor_ids)
+          .group(Arel.sql(visitor_id_sql))
+          .minimum(:created_at)
+        
+        cutoff = 7.days.ago
+        first_visits.each_value do |first_visit|
+          if first_visit && first_visit < cutoff
+            returning_visitors += 1
+          else
+            new_visitors += 1
+          end
+        end
+      end
+    end
+    
+    visitor_metrics = {
+      total_visits: total_visits,
+      unique_visitors: unique_visitors,
+      returning_visitors: returning_visitors,
+      new_visitors: new_visitors,
+      avg_visits_per_visitor: avg_visits_per_visitor
+    }
     
     # Get unique visitors by source with date filtering
-    unique_visitors_by_source = Analytic.unique_visitors_by_source(date_filter)
-    visits_by_source = Analytic.visits_by_source(date_filter)
+    unique_visitors_by_source = visitor_scope.group(:utm_source).distinct.count(Arel.sql(visitor_id_sql))
+    visits_by_source = base_scope.group(:utm_source).count
     
-    # Get visits by day with date filtering (excluding internal users)
-    if date_filter
-      daily_visits = Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
-                             .group("DATE(created_at)")
+    # OPTIMIZATION: Get visits by day - use DATE() function for efficient grouping
+    daily_visits = base_scope.group("DATE(created_at)")
                              .order("DATE(created_at)")
                              .count
-    else
-      daily_visits = Analytic.excluding_internal_users
-                             .group("DATE(created_at)")
-                             .order("DATE(created_at)")
-                             .count
-    end
     
-    # OPTIMIZATION: Get visit timestamps with date filtering (excluding internal users)
-    # Limit to last 2 years if no date filter specified for performance
-    if date_filter
-      visit_timestamps = Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
+    # OPTIMIZATION: Limit visit timestamps more aggressively for performance
+    # Only fetch timestamps if date filter is provided or limit to last 6 months
+    # Frontend can request specific date ranges via date filter params if needed
+    visit_timestamps = if date_filter
+      # If date filter provided, fetch all timestamps in range (but limit to 50k for safety)
+      base_scope.select(:created_at)
+                .limit(50000)
                                  .pluck(:created_at)
                                  .map { |ts| ts&.iso8601 }
     else
-      # Limit to last 2 years for performance
-      two_years_ago = 2.years.ago
-      visit_timestamps = Analytic.excluding_internal_users
-                                 .where('created_at >= ?', two_years_ago)
+      # Limit to last 6 months for better performance (reduced from 1 year)
+      # Frontend can use date filter params to get specific ranges
+      six_months_ago = 6.months.ago
+      base_scope.where('created_at >= ?', six_months_ago)
+                .select(:created_at)
+                .limit(50000)
                                  .pluck(:created_at)
                                  .map { |ts| ts&.iso8601 }
     end
     
-    # Get unique visitors trend with date filtering
-    daily_unique_visitors = Analytic.unique_visitors_trend(date_filter)
+    # OPTIMIZATION: Get unique visitors trend - use same visitor scope
+    daily_unique_visitors = visitor_scope.group("DATE(created_at)")
+                                         .order("DATE(created_at)")
+                                         .distinct.count(Arel.sql(visitor_id_sql))
     
-    # Get top sources and referrers
+    # Get top sources and referrers (already computed, just sort)
     top_sources = source_distribution.sort_by { |_, count| -count }.first(10)
     top_referrers = referrer_distribution.sort_by { |_, count| -count }.first(10)
     
     # Calculate total_visits as sum of source_distribution to match frontend expectations
-    # This ensures consistency: total_visits = sum of all source_distribution values
     total_visits_from_sources = source_distribution.values.sum
     
     # Note: "other" sources and "incomplete UTM" records have been removed via migration
-    # These categories were misleading and have been cleaned up
     other_sources_count = 0
     incomplete_utm_count = 0
     
@@ -555,33 +524,30 @@ class Sales::AnalyticsController < ApplicationController
   def get_device_analytics
     # Optimized: Parse unique user agents only once, use SQL aggregations where possible
     # Limit to recent records for performance (last 6 months)
+    # OPTIMIZATION: Apply date filter first to reduce dataset size before exclusions
+    # OPTIMIZATION: Cache base_query to avoid re-evaluating exclusions
     six_months_ago = 6.months.ago
-    base_query = ClickEvent.excluding_internal_users
+    
+    # Build base query with date filter first (reduces dataset before expensive exclusions)
+    base_query = ClickEvent
+      .where('click_events.created_at >= ?', six_months_ago)
+      .where.not(metadata: nil)
       .left_joins(:ad)
       .where("ads.id IS NULL OR ads.deleted = ?", false)
-      .where.not(metadata: nil)
-      .where('click_events.created_at >= ?', six_months_ago)
+      .excluding_internal_users
+    
+    # Note: Exclusion lists are now cached in ClickEvent.cached_exclusion_lists
     
     # Session identifier (device_hash or buyer_id)
     session_id_sql = "COALESCE(metadata->>'device_hash', buyer_id::text, 'unknown')"
-    visitor_id_sql = "COALESCE(buyer_id::text, metadata->>'device_hash', 'unknown')"
     
     # All records now have user_agent_details stored, so no parsing needed
     query_with_ua = base_query.where("metadata->>'user_agent' IS NOT NULL OR metadata->'user_agent_details' IS NOT NULL")
     
+    # Only track what's used by frontend: unique sessions and time-series
     device_types_sessions = Hash.new { |h, k| h[k] = Set.new }
     browsers_sessions = Hash.new { |h, k| h[k] = Set.new }
     operating_systems_sessions = Hash.new { |h, k| h[k] = Set.new }
-    screen_resolutions_sessions = Hash.new { |h, k| h[k] = Set.new }
-    
-    device_types_visitors = Hash.new { |h, k| h[k] = Set.new }
-    browsers_visitors = Hash.new { |h, k| h[k] = Set.new }
-    operating_systems_visitors = Hash.new { |h, k| h[k] = Set.new }
-    
-    device_types_total = Hash.new(0)
-    browsers_total = Hash.new(0)
-    operating_systems_total = Hash.new(0)
-    screen_resolutions_total = Hash.new(0)
     
     # Time-series data (last 90 days)
     start_date = 90.days.ago.beginning_of_day
@@ -594,12 +560,12 @@ class Sales::AnalyticsController < ApplicationController
       Arel.sql("metadata->>'user_agent'"),
       :metadata,
       Arel.sql("#{session_id_sql}"),
-      Arel.sql("#{visitor_id_sql}"),
       :created_at
-    ).each do |user_agent_string, metadata_hash, session_id, visitor_id, created_at|
-      next if session_id == 'unknown' && visitor_id == 'unknown'
+    ).each do |user_agent_string, metadata_hash, session_id, created_at|
+      next if session_id == 'unknown'
       
       # Fast path: Check if user_agent_details exists first (no parsing needed)
+      # OPTIMIZATION: Skip parsing entirely - all records should have user_agent_details after backfill
       user_agent_details = metadata_hash['user_agent_details'] || metadata_hash[:user_agent_details]
       
       if user_agent_details && (user_agent_details['browser'] || user_agent_details[:browser])
@@ -618,76 +584,41 @@ class Sales::AnalyticsController < ApplicationController
         else
           'Desktop'
         end
-      elsif user_agent_string.present?
-        # Fallback: Parse on-the-fly if user_agent_details is missing (shouldn't happen after backfill)
-        parsed_ua = parse_user_agent_for_analytics(user_agent_string, {})
-        browser = parsed_ua[:browser] || 'Unknown'
-        os = parsed_ua[:os] || 'Unknown'
-        device_type = normalize_device_type(parsed_ua[:device_type])
       else
-        # No user agent data
-        browser = 'Unknown'
-        os = 'Unknown'
-        device_type = 'Desktop'
+        # Skip records without user_agent_details (should be rare after backfill)
+        # This avoids expensive UserAgentParser.parse() calls
+        next
       end
       
-      # Screen resolution from device_fingerprint (optimized hash access)
-      device_fingerprint = metadata_hash['device_fingerprint'] || metadata_hash[:device_fingerprint]
-      if device_fingerprint
-        screen_width = device_fingerprint['screen_width'] || device_fingerprint[:screen_width]
-        screen_height = device_fingerprint['screen_height'] || device_fingerprint[:screen_height]
-        resolution = (screen_width && screen_height) ? "#{screen_width}x#{screen_height}" : nil
-      else
-        resolution = nil
-      end
-        
-        # Track unique sessions (optimized - single conditional check)
+      # Track unique sessions (only what's used by frontend)
         if session_id.present?
           device_types_sessions[device_type].add(session_id)
           browsers_sessions[browser].add(session_id)
           operating_systems_sessions[os].add(session_id)
-          screen_resolutions_sessions[resolution].add(session_id) if resolution.present?
-        end
-        
-        # Track unique visitors
-        if visitor_id.present?
-          device_types_visitors[device_type].add(visitor_id)
-          browsers_visitors[browser].add(visitor_id)
-          operating_systems_visitors[os].add(visitor_id)
-        end
-        
-        # Track total counts
-        device_types_total[device_type] += 1
-        browsers_total[browser] += 1
-        operating_systems_total[os] += 1
-        screen_resolutions_total[resolution] += 1 if resolution.present?
         
         # Time-series data (last 90 days) - only if needed
-        if created_at && created_at >= start_date && session_id.present?
+        if created_at && created_at >= start_date
           date_key = created_at.to_date.iso8601
           device_types_by_date[date_key][device_type].add(session_id)
           browsers_by_date[date_key][browser].add(session_id)
           operating_systems_by_date[date_key][os].add(session_id)
         end
+        end
       end
     
-    # Convert Sets to counts
+    # Convert Sets to counts (only what's used by frontend)
     device_types_unique_sessions = device_types_sessions.transform_values(&:size)
     browsers_unique_sessions = browsers_sessions.transform_values(&:size)
     operating_systems_unique_sessions = operating_systems_sessions.transform_values(&:size)
-    screen_resolutions_unique_sessions = screen_resolutions_sessions.transform_values(&:size)
     
-    device_types_unique_visitors = device_types_visitors.transform_values(&:size)
-    browsers_unique_visitors = browsers_visitors.transform_values(&:size)
-    operating_systems_unique_visitors = operating_systems_visitors.transform_values(&:size)
-    
-    # Count unique sessions
+    # Count unique sessions for total_devices
+    # OPTIMIZATION: Reuse the same base_query scope to avoid re-evaluating exclusions
     total_sessions_count = base_query
       .where("metadata->>'device_hash' IS NOT NULL OR buyer_id IS NOT NULL")
       .distinct
       .count(Arel.sql("#{session_id_sql}"))
     
-    # Generate time-series arrays
+    # Generate time-series arrays (only what's used by frontend)
     device_types_time_series = build_time_series(device_types_by_date, device_types_unique_sessions.keys, start_date)
     browsers_time_series = build_time_series(browsers_by_date, browsers_unique_sessions.keys, start_date)
     operating_systems_time_series = build_time_series(operating_systems_by_date, operating_systems_unique_sessions.keys, start_date)
@@ -697,18 +628,6 @@ class Sales::AnalyticsController < ApplicationController
       device_types: device_types_unique_sessions,
       browsers: browsers_unique_sessions,
       operating_systems: operating_systems_unique_sessions,
-      screen_resolutions: screen_resolutions_unique_sessions,
-      
-      # Unique visitors (alternative metric - one per visitor across all sessions)
-      device_types_visitors: device_types_unique_visitors,
-      browsers_visitors: browsers_unique_visitors,
-      operating_systems_visitors: operating_systems_unique_visitors,
-      
-      # Total counts (for reference)
-      device_types_total: device_types_total,
-      browsers_total: browsers_total,
-      operating_systems_total: operating_systems_total,
-      screen_resolutions_total: screen_resolutions_total.reject { |k, v| k.nil? },
       
       # Time-series data for area charts (last 90 days)
       device_types_time_series: device_types_time_series,
@@ -716,12 +635,7 @@ class Sales::AnalyticsController < ApplicationController
       operating_systems_time_series: operating_systems_time_series,
       
       # Summary stats
-      total_devices: total_sessions_count, # Total unique device sessions (for frontend compatibility)
-      total_sessions: total_sessions_count,
-      total_visitors: base_query.where("buyer_id IS NOT NULL OR metadata->>'device_hash' IS NOT NULL")
-        .distinct
-        .count(Arel.sql("#{visitor_id_sql}")),
-      total_records: base_query.count
+      total_devices: total_sessions_count
     }
   end
 

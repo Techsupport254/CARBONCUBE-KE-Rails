@@ -8,32 +8,23 @@ class Seller::AnalyticsController < ApplicationController
 
       Rails.logger.info "Analytics request for seller #{current_seller.id} with tier #{tier_id}"
 
-      # OPTIMIZATION: Calculate all base stats in a single query to reduce database round trips
-      base_stats = calculate_base_stats_optimized
-
-      # Base response data - always include these fields for dashboard
+      # Base response data - only include tier_id (other fields removed as unused on audience page)
       response_data = {
-        tier_id: tier_id,
-        total_orders: 0, # Orders removed
-        total_ads: base_stats[:total_ads],
-        total_reviews: base_stats[:total_reviews],
-        average_rating: base_stats[:average_rating],
-        total_ads_wishlisted: base_stats[:total_ads_wishlisted]
+        tier_id: tier_id
       }
 
       # Add more data based on the seller's tier
+      # OPTIMIZATION: Only return data actually used on the overview page
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      click_events_service = ClickEventsAnalyticsService.new(
+        filters: { seller_id: current_seller.id },
+        device_hash: device_hash
+      )
+      
       case tier_id
       when 1 # Free tier
         # Free tier already has base data above
       when 2 # Basic tier
-        response_data.merge!(calculate_basic_tier_data)
-        # Use unified service for click events stats
-        # Pass device_hash if available to exclude seller's own clicks from their device
-        device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-        click_events_service = ClickEventsAnalyticsService.new(
-          filters: { seller_id: current_seller.id },
-          device_hash: device_hash
-        )
         # Get all timestamps for Basic tier (all time, no limits)
         timestamps = click_events_service.timestamps(limit: nil, date_limit: nil)
         
@@ -47,25 +38,12 @@ class Seller::AnalyticsController < ApplicationController
         Rails.logger.info "Basic tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
         
         response_data.merge!(
-          click_events_stats: click_events_service.demographics_stats,
-          basic_click_event_stats: {
-            click_event_trends: click_events_service.click_event_trends(months: nil) # All-time data
-          },
           # Add timestamps for dynamic filtering (all time)
-          click_events_timestamps: timestamps[:click_events_timestamps],
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
           add_to_wishlist_timestamps: add_to_wishlist_timestamps
         )
       when 3 # Standard tier
-        response_data.merge!(calculate_standard_tier_data)
-        # Use unified service for click events stats
-        # Pass device_hash if available to exclude seller's own clicks from their device
-        device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-        click_events_service = ClickEventsAnalyticsService.new(
-          filters: { seller_id: current_seller.id },
-          device_hash: device_hash
-        )
         # Get all timestamps for Standard tier (all time, no limits)
         timestamps = click_events_service.timestamps(limit: nil, date_limit: nil)
         
@@ -76,28 +54,30 @@ class Seller::AnalyticsController < ApplicationController
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
         
+        # Get primary category for competitor stats
+        primary_category_id = get_primary_category_id
+        
         Rails.logger.info "Standard tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
         
         response_data.merge!(
-          click_events_stats: click_events_service.demographics_stats,
-          basic_click_event_stats: {
-            click_event_trends: click_events_service.click_event_trends(months: nil) # All-time data
-          },
           # Add timestamps for dynamic filtering (all time)
-          click_events_timestamps: timestamps[:click_events_timestamps],
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
-          add_to_wishlist_timestamps: add_to_wishlist_timestamps
+          add_to_wishlist_timestamps: add_to_wishlist_timestamps,
+          # Add demographics stats for audience page (tier 3+)
+          click_events_stats: top_click_event_stats,
+          wishlist_stats: top_wishlist_stats,
+          competitor_stats: primary_category_id ? calculate_competitor_stats(primary_category_id) : {
+            revenue_share: { seller_revenue: 0, total_category_revenue: 0, revenue_share: 0 },
+            top_competitor_ads: [],
+            competitor_average_price: 0
+          }
         )
       when 4 # Premium tier
-        response_data.merge!(calculate_premium_tier_data)
-        # Use unified service for click events stats
-        # Pass device_hash if available to exclude seller's own clicks from their device
-        device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-        click_events_service = ClickEventsAnalyticsService.new(
-          filters: { seller_id: current_seller.id },
-          device_hash: device_hash
-        )
+        # OPTIMIZATION: Cache common data to avoid repeated queries
+        @cached_seller_ad_ids = seller_ad_ids
+        @cached_device_hash = device_hash
+        
         # Get all timestamps for Premium tier (all time, no limits)
         timestamps = click_events_service.timestamps(limit: nil, date_limit: nil)
         
@@ -115,21 +95,41 @@ class Seller::AnalyticsController < ApplicationController
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
         
+        # Get primary category for competitor stats and competitive intelligence
+        primary_category_id = get_primary_category_id
+        
+        # OPTIMIZATION: Pre-load common data used by multiple methods
+        preload_common_data_for_premium
+        
         Rails.logger.info "Premium tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
         
+        # Calculate all advanced metrics for premium tier (used on advanced analytics page)
         response_data.merge!(
-          click_events_stats: click_events_service.demographics_stats,
-          basic_click_event_stats: {
-            click_event_trends: click_events_service.click_event_trends(months: nil) # All-time data
-          },
-          # Add timestamps for dynamic filtering
-          click_events_timestamps: timestamps[:click_events_timestamps],
+          # Timestamps for audience page (tier 2+)
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
           add_to_wishlist_timestamps: add_to_wishlist_timestamps,
           wishlist_timestamps: wishlist_timestamps,
-          # Add top performing ads
-          top_performing_ads: top_performing_ads
+          # Demographics stats for audience page (tier 3+)
+          click_events_stats: top_click_event_stats,
+          wishlist_stats: top_wishlist_stats,
+          competitor_stats: primary_category_id ? calculate_competitor_stats(primary_category_id) : {
+            revenue_share: { seller_revenue: 0, total_category_revenue: 0, revenue_share: 0 },
+            top_competitor_ads: [],
+            competitor_average_price: 0
+          },
+          # Advanced metrics for /seller/analytics/advanced page
+          conversion_funnel_metrics: calculate_conversion_funnel_metrics(device_hash),
+          product_health_indicators: calculate_product_health_indicators_optimized,
+          engagement_quality_metrics: calculate_engagement_quality_metrics(device_hash),
+          temporal_analytics: calculate_temporal_analytics,
+          category_performance: calculate_category_performance,
+          customer_insights: calculate_customer_insights(device_hash),
+          operational_metrics: calculate_operational_metrics,
+          competitive_intelligence: primary_category_id ? calculate_competitive_intelligence(primary_category_id) : empty_competitive_intelligence,
+          advanced_engagement_metrics: calculate_advanced_engagement_metrics(device_hash),
+          review_reputation_metrics: calculate_review_reputation_metrics,
+          offer_promotion_analytics: calculate_offer_promotion_analytics
         )
       else
         render json: { error: 'Invalid tier' }, status: 400
@@ -172,65 +172,15 @@ class Seller::AnalyticsController < ApplicationController
 
   # Data for Standard tier
   def calculate_standard_tier_data
-    primary_category_id = get_primary_category_id
-    competitor_stats = primary_category_id ? calculate_competitor_stats(primary_category_id) : {
-      revenue_share: {
-        seller_revenue: 0,
-        total_category_revenue: 0,
-        revenue_share: 0
-      },
-      top_competitor_ads: [],
-      competitor_average_price: 0
-    }
-    
     {
-      total_revenue: calculate_total_revenue,
-      total_reviews: calculate_total_reviews,
-      sales_performance: calculate_sales_performance,
-      best_selling_ads: fetch_best_selling_ads,
-      competitor_stats: competitor_stats
+      total_revenue: calculate_total_revenue
     }
   end
 
   # Data for Premium tier
   def calculate_premium_tier_data
-    primary_category_id = get_primary_category_id
-    competitor_stats = primary_category_id ? calculate_competitor_stats(primary_category_id) : {
-      revenue_share: {
-        seller_revenue: 0,
-        total_category_revenue: 0,
-        revenue_share: 0
-      },
-      top_competitor_ads: [],
-      competitor_average_price: 0
-    }
-    
-    device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-    
     {
-      total_revenue: calculate_total_revenue,
-      average_rating: calculate_average_rating,
-      total_reviews: calculate_total_reviews,
-      sales_performance: calculate_sales_performance,
-      best_selling_ads: fetch_best_selling_ads,
-      wishlist_stats: top_wishlist_stats, # Merge wishlist stats into the response
-      click_events_stats: top_click_event_stats,
-      basic_wishlist_stats: basic_wishlist_stats,
-      basic_click_event_stats: basic_click_event_stats,
-      competitor_stats: competitor_stats,
-      # New comprehensive statistics
-      conversion_funnel_metrics: calculate_conversion_funnel_metrics(device_hash),
-      product_health_indicators: calculate_product_health_indicators,
-      engagement_quality_metrics: calculate_engagement_quality_metrics(device_hash),
-      temporal_analytics: calculate_temporal_analytics,
-      category_performance: calculate_category_performance,
-      pricing_intelligence: calculate_pricing_intelligence(primary_category_id),
-      customer_insights: calculate_customer_insights(device_hash),
-      operational_metrics: calculate_operational_metrics,
-      competitive_intelligence: calculate_competitive_intelligence(primary_category_id),
-      advanced_engagement_metrics: calculate_advanced_engagement_metrics(device_hash),
-      review_reputation_metrics: calculate_review_reputation_metrics,
-      offer_promotion_analytics: calculate_offer_promotion_analytics
+      total_revenue: calculate_total_revenue
     }
   end
 
@@ -735,7 +685,33 @@ class Seller::AnalyticsController < ApplicationController
 
   # OPTIMIZATION: Cache seller_ad_ids to avoid repeated queries
   def seller_ad_ids
-    @cached_seller_ad_ids ||= current_seller.ads.pluck(:id)
+    @cached_seller_ad_ids ||= current_seller.ads.active.pluck(:id)
+  end
+  
+  # OPTIMIZATION: Pre-load common data for premium tier calculations
+  def preload_common_data_for_premium
+    return if @cached_seller_ad_ids.empty?
+    
+    # Pre-load click event counts per ad (for product health)
+    @cached_ad_click_counts = ClickEvent.excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: @cached_device_hash, seller_id: current_seller.id)
+      .where(ad_id: @cached_seller_ad_ids, event_type: 'Ad-Click')
+      .group(:ad_id)
+      .count
+    
+    # Pre-load review data per ad (for product health)
+    review_data_array = Review.joins(:ad)
+      .where(ads: { id: @cached_seller_ad_ids, deleted: false })
+      .group('ads.id')
+      .select('ads.id, AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as review_count')
+      .to_a
+    @cached_ad_review_data = review_data_array.index_by(&:id)
+    
+    # Pre-load ads with basic info
+    ads_array = current_seller.ads.active
+      .select(:id, :title, :created_at, :updated_at, :flagged, :description, :price, :media, :brand, :category_id, :subcategory_id)
+      .to_a
+    @cached_ads = ads_array.index_by(&:id)
   end
 
   # OPTIMIZATION: Use SQL aggregation instead of Ruby loops
@@ -1121,6 +1097,126 @@ class Seller::AnalyticsController < ApplicationController
       total_incomplete: incomplete_products.count
     }
   end
+  
+  # OPTIMIZED: Product Health Indicators using pre-loaded data
+  def calculate_product_health_indicators_optimized
+    return empty_product_health if @cached_seller_ad_ids.empty?
+    
+    underperforming = []
+    low_rated = []
+    stale_products = []
+    needs_attention = []
+    incomplete_products = []
+
+    @cached_seller_ad_ids.each do |ad_id|
+      ad = @cached_ads[ad_id]
+      next unless ad
+      
+      # Underperforming (zero or very low clicks) - use cached data
+      clicks = @cached_ad_click_counts[ad_id] || 0
+      if clicks < 5
+        underperforming << {
+          ad_id: ad.id,
+          ad_title: ad.title,
+          clicks: clicks,
+          days_since_creation: (Time.current - ad.created_at).to_i / 1.day
+        }
+      end
+
+      # Low rated - use cached data
+      review_data = @cached_ad_review_data[ad_id]
+      if review_data
+        avg_rating = review_data.avg_rating.to_f
+        if avg_rating > 0 && avg_rating < 3.0
+          low_rated << {
+            ad_id: ad.id,
+            ad_title: ad.title,
+            rating: avg_rating.round(1),
+            review_count: review_data.review_count.to_i
+          }
+        end
+      end
+
+      # Stale (not updated in 90+ days)
+      days_since_update = (Time.current - ad.updated_at).to_i / 1.day
+      if days_since_update >= 90
+        stale_products << {
+          ad_id: ad.id,
+          ad_title: ad.title,
+          days_since_update: days_since_update,
+          last_updated: ad.updated_at.iso8601
+        }
+      end
+
+      # Needs attention (flagged or missing critical info)
+      has_valid_images = ad.media.present? && (JSON.parse(ad.media) rescue []).any?
+      if ad.flagged || !has_valid_images || ad.description.blank? || ad.title.blank?
+        needs_attention << {
+          ad_id: ad.id,
+          ad_title: ad.title,
+          issues: [
+            ('flagged' if ad.flagged),
+            ('missing_images' unless has_valid_images),
+            ('missing_description' if ad.description.blank?),
+            ('missing_title' if ad.title.blank?)
+          ].compact
+        }
+      end
+
+      # Incomplete (missing key fields)
+      completeness_score = calculate_product_completeness_optimized(ad)
+      if completeness_score < 80
+        incomplete_products << {
+          ad_id: ad.id,
+          ad_title: ad.title,
+          completeness_score: completeness_score,
+          missing_fields: get_missing_fields_optimized(ad)
+        }
+      end
+    end
+
+    {
+      underperforming_products: underperforming.first(10),
+      low_rated_products: low_rated.first(10),
+      stale_products: stale_products.first(10),
+      products_needing_attention: needs_attention.first(10),
+      incomplete_products: incomplete_products.first(10),
+      total_underperforming: underperforming.count,
+      total_low_rated: low_rated.count,
+      total_stale: stale_products.count,
+      total_needs_attention: needs_attention.count,
+      total_incomplete: incomplete_products.count
+    }
+  end
+  
+  def calculate_product_completeness_optimized(ad)
+    score = 0
+    total_fields = 7
+
+    score += 10 if ad.title.present? && ad.title.length >= 10
+    score += 10 if ad.description.present? && ad.description.length >= 100
+    score += 10 if ad.price.present? && ad.price > 0
+    has_valid_images = ad.media.present? && (JSON.parse(ad.media) rescue []).any?
+    score += 10 if has_valid_images
+    score += 10 if ad.brand.present?
+    score += 10 if ad.category_id.present?
+    score += 10 if ad.subcategory_id.present?
+
+    (score.to_f / total_fields * 100).round
+  end
+  
+  def get_missing_fields_optimized(ad)
+    missing = []
+    missing << 'title' if ad.title.blank? || ad.title.length < 10
+    missing << 'description' if ad.description.blank? || ad.description.length < 100
+    missing << 'price' if ad.price.blank? || ad.price <= 0
+    has_valid_images = ad.media.present? && (JSON.parse(ad.media) rescue []).any?
+    missing << 'images' unless has_valid_images
+    missing << 'brand' if ad.brand.blank?
+    missing << 'category' if ad.category_id.blank?
+    missing << 'subcategory' if ad.subcategory_id.blank?
+    missing
+  end
 
   def calculate_product_completeness(ad)
     score = 0
@@ -1188,14 +1284,34 @@ class Seller::AnalyticsController < ApplicationController
     email_copies = contact_events.where("metadata->>'action_type' IN ('copy_phone', 'copy_email')").count
     location_views = contact_events.where("metadata->>'action_type' = ?", 'view_location').count
 
-    # Calculate average time to reveal (simplified - using created_at differences)
+    # OPTIMIZATION: Calculate average time to reveal using batch queries instead of per-ad loops
     reveal_times = []
-    ad_ids.each do |ad_id|
-      clicks = click_events.where(ad_id: ad_id, event_type: 'Ad-Click').order(:created_at).limit(100)
-      reveals = click_events.where(ad_id: ad_id, event_type: 'Reveal-Seller-Details').order(:created_at).limit(100)
+    if ad_ids.any?
+      # Get clicks and reveals for all ads in one query (limit to recent for performance)
+      clicks_data = click_events.where(event_type: 'Ad-Click')
+                                .where(ad_id: ad_ids)
+                                .where.not(buyer_id: nil)
+                                .select(:id, :ad_id, :buyer_id, :created_at)
+                                .order(:created_at)
+                                .limit(1000)
+                                .to_a
       
-      clicks.each do |click|
-        matching_reveal = reveals.find { |r| r.buyer_id == click.buyer_id && r.created_at > click.created_at }
+      reveals_data = click_events.where(event_type: 'Reveal-Seller-Details')
+                                 .where(ad_id: ad_ids)
+                                 .where.not(buyer_id: nil)
+                                 .select(:id, :ad_id, :buyer_id, :created_at)
+                                 .order(:created_at)
+                                 .limit(1000)
+                                 .to_a
+      
+      # Group reveals by ad_id and buyer_id for faster lookup
+      reveals_by_ad_buyer = reveals_data.group_by { |r| [r.ad_id, r.buyer_id] }
+      
+      # Calculate time differences
+      clicks_data.each do |click|
+        key = [click.ad_id, click.buyer_id]
+        matching_reveals = reveals_by_ad_buyer[key] || []
+        matching_reveal = matching_reveals.find { |r| r.created_at > click.created_at }
         if matching_reveal
           time_diff = (matching_reveal.created_at - click.created_at).to_i
           reveal_times << time_diff if time_diff > 0 && time_diff < 3600 # Within 1 hour
@@ -1205,13 +1321,19 @@ class Seller::AnalyticsController < ApplicationController
 
     avg_time_to_reveal = reveal_times.any? ? (reveal_times.sum.to_f / reveal_times.size / 60).round(1) : 0 # in minutes
 
-    # Repeat visitor rate
-    unique_buyers = click_events.where.not(buyer_id: nil).distinct.pluck(:buyer_id)
-    repeat_buyers = unique_buyers.count { |buyer_id| click_events.where(buyer_id: buyer_id).count > 1 }
-    repeat_visitor_rate = unique_buyers.any? ? (repeat_buyers.to_f / unique_buyers.size * 100).round(2) : 0
+    # OPTIMIZATION: Repeat visitor rate using SQL aggregation
+    buyer_click_counts = click_events.where.not(buyer_id: nil)
+                                     .where(ad_id: ad_ids)
+                                     .group(:buyer_id)
+                                     .count
+    
+    unique_buyers_count = buyer_click_counts.size
+    repeat_buyers_count = buyer_click_counts.count { |_, count| count > 1 }
+    repeat_visitor_rate = unique_buyers_count > 0 ? (repeat_buyers_count.to_f / unique_buyers_count * 100).round(2) : 0
 
-    # Average interactions per buyer
-    interactions_per_buyer = unique_buyers.any? ? (click_events.where.not(buyer_id: nil).count.to_f / unique_buyers.size).round(2) : 0
+    # OPTIMIZATION: Average interactions per buyer using pre-calculated data
+    total_interactions = click_events.where.not(buyer_id: nil).where(ad_id: ad_ids).count
+    interactions_per_buyer = unique_buyers_count > 0 ? (total_interactions.to_f / unique_buyers_count).round(2) : 0
 
     {
       contact_interaction_breakdown: {
@@ -1223,8 +1345,8 @@ class Seller::AnalyticsController < ApplicationController
       },
       average_time_to_reveal_minutes: avg_time_to_reveal,
       repeat_visitor_rate: repeat_visitor_rate,
-      unique_buyers: unique_buyers.count,
-      repeat_buyers: repeat_buyers,
+      unique_buyers: unique_buyers_count,
+      repeat_buyers: repeat_buyers_count,
       average_interactions_per_buyer: interactions_per_buyer
     }
   end

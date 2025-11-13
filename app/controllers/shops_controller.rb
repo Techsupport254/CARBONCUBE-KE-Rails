@@ -35,47 +35,73 @@ class ShopsController < ApplicationController
       return
     end
     
-    
     # Get shop's active ads with pagination
     page = params[:page]&.to_i || 1
-    per_page = params[:per_page]&.to_i || 20
+    per_page = params[:per_page]&.to_i || 24
     
+    # Optimize: Preload all necessary associations to avoid N+1 queries
+    # Preload shop categories first to avoid N+1 when accessing @shop.categories
+    @shop = Seller.includes(
+      :categories,
+      :county,
+      :sub_county,
+      seller_tier: :tier
+    ).find(@shop.id)
+    
+    # Preload ads with all necessary associations in a single query
     @ads = @shop.ads
                 .active
                 .where(flagged: false)
                 .joins(:category, :subcategory, seller: { seller_tier: :tier })
                 .left_joins(:reviews)
-                .includes(:category, :subcategory, :reviews, offer_ads: :offer, seller: { seller_tier: :tier })
+                .includes(
+                  :category,
+                  :subcategory,
+                  :reviews,
+                  :offer_ads,
+                  seller: { 
+                    seller_tier: :tier,
+                    categories: []  # Preload seller categories for SellerSerializer
+                  },
+                  offer_ads: :offer
+                )
                 .order('tiers.id DESC, RANDOM()')
                 .offset((page - 1) * per_page)
                 .limit(per_page)
+                
+    # Force eager loading to ensure all associations are loaded
+    @ads.load
     
-    # Get total count for pagination
+    # Get total count for pagination (cached if possible)
     @total_count = @shop.ads.active.where(flagged: false).count
     
-    # Calculate review statistics for SEO
-    all_reviews = Review.joins(:ad).where(ads: { seller_id: @shop.id })
-    total_reviews = all_reviews.count
-
+    # Optimize review statistics calculation using SQL aggregation
+    # Get total reviews count
+    total_reviews = Review.joins(:ad)
+                         .where(ads: { seller_id: @shop.id })
+                         .count
+    
     # Calculate average rating correctly: average of each ad's rating, not all individual reviews
+    # Optimized: Use SQL to calculate per-ad ratings, then average those in a single query
     if total_reviews > 0
-      # Get all ads for this seller with their reviews
-      seller_ads = @shop.ads.includes(:reviews)
-
-      # Calculate average rating for each ad that has reviews, then average those
-      ad_ratings = seller_ads.map do |ad|
-        ad_reviews = all_reviews.where(ad_id: ad.id)
-        ad_reviews.any? ? ad_reviews.average(:rating).to_f : nil
-      end.compact # Remove nil values (ads with no reviews)
-
-      # Only include rated ads in the calculation
-      average_rating = ad_ratings.any? ? (ad_ratings.sum / ad_ratings.size).round(1) : 0.0
+      # Get average rating per ad using SQL aggregation, then calculate the average of those
+      # This is more efficient than loading all ads and calculating in Ruby
+      ad_ratings_result = Review.joins(:ad)
+                                .where(ads: { seller_id: @shop.id })
+                                .group('ads.id')
+                                .select('AVG(reviews.rating) as avg_rating')
+                                .pluck('AVG(reviews.rating)')
+                                .compact
+                                .map(&:to_f)
+      
+      # Average of ad ratings (not individual review ratings)
+      average_rating = ad_ratings_result.any? ? (ad_ratings_result.sum / ad_ratings_result.size).round(1) : 0.0
     else
       average_rating = 0.0
     end
     
-    # Get shop categories for SEO
-    shop_categories = @shop.categories.pluck(:name).join(', ')
+    # Optimize: Use preloaded categories (already loaded above)
+    shop_categories = @shop.categories.map(&:name).join(', ')
     
     render json: {
       shop: {
@@ -101,7 +127,7 @@ class ShopsController < ApplicationController
         average_rating: average_rating,
         slug: slug
       },
-      ads: @ads.map { |ad| AdSerializer.new(ad).as_json },
+      ads: @ads.map { |ad| AdSerializer.new(ad, include_reviews: false).as_json },
       pagination: {
         current_page: page,
         per_page: per_page,
