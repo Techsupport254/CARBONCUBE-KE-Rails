@@ -81,17 +81,14 @@ class Buyer::AdsController < ApplicationController
       best_sellers = calculate_best_sellers_fast(20) # Get 20 best sellers
     end
 
-    # Optimize response with pre-calculated data for faster transfer
-    optimized_ads = @ads.map do |ad|
-      # Calculate tier priority from seller tier
-      tier_priority = case ad.seller&.seller_tier&.tier&.id
-                     when 4 then 1
-                     when 3 then 2
-                     when 2 then 3
-                     when 1 then 4
-                     else 5
-                     end
-      
+    # For balanced ads, @ads is already optimized (hash format from get_balanced_ads)
+    # For regular ads, optimize serialization
+    optimized_ads = if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
+      # Already optimized from get_balanced_ads - just use as is
+      @ads
+    else
+      # Regular ads - optimize serialization
+      @ads.map do |ad|
       {
         id: ad.id,
         title: ad.title,
@@ -101,15 +98,13 @@ class Buyer::AdsController < ApplicationController
         subcategory_id: ad.subcategory_id,
         category_id: ad.category_id,
         seller_id: ad.seller_id,
-        tier_priority: tier_priority,
-        # Include tier info for frontend components
         seller_tier: ad.seller&.seller_tier&.tier&.id || 1,
         seller_tier_name: ad.seller&.seller_tier&.tier&.name || "Free",
-        # Include essential seller info
         seller_name: ad.seller&.fullname,
         category_name: ad.category&.name,
         subcategory_name: ad.subcategory&.name
       }
+      end
     end
 
     # Add cache headers for faster transfer
@@ -594,7 +589,7 @@ class Buyer::AdsController < ApplicationController
                               WHEN 1 THEN 4
                               ELSE 5
                             END ASC, RANDOM()'))
-                    .limit(10) # Limit to 10 related ads for performance
+                    .limit(50) # Limit to 50 related ads for performance
 
     Rails.logger.info "Found #{related_ads.count} related ads"
     Rails.logger.info "Related ad IDs: #{related_ads.pluck(:id)}"
@@ -711,27 +706,195 @@ class Buyer::AdsController < ApplicationController
   end
 
   def get_balanced_ads(per_page)
-    # SIMPLIFIED: Just return all ads we have, organized by subcategory
+    # Get 6 ads per subcategory for balanced distribution
     # Get all subcategory counts in a single query
-    subcategory_counts = Ad.active.with_valid_images
+    # Only count ads that actually have valid media URLs (not empty arrays) and are not flagged
+    subcategory_counts = Ad.active
       .joins(:seller)
       .where(sellers: { blocked: false, deleted: false, flagged: false })
-      .where(flagged: false)
+      .where(flagged: false) # Exclude flagged ads
+      .where("ads.media IS NOT NULL AND ads.media != '' AND ads.media::text != '[]' AND (ads.media::jsonb -> 0) IS NOT NULL")
       .group('ads.subcategory_id')
       .count('ads.id')
     
-    # Get all ads (no per-subcategory limits, no complex balancing)
-    all_ads = Ad.active.with_valid_images
-      .joins(:seller, seller: { seller_tier: :tier })
-      .where(sellers: { blocked: false, deleted: false, flagged: false })
-      .where(flagged: false)
-      .includes(:category, :subcategory, seller: { seller_tier: :tier })
-      .order(Arel.sql('(EXTRACT(EPOCH FROM ads.created_at::date)::bigint + ads.id % 7) DESC')) # Pseudo-random for variety
-      .to_a
+    # Get all subcategory IDs that have ads
+    subcategory_ids = subcategory_counts.keys.compact
     
-    # Return all ads and subcategory counts
+    return { ads: [], subcategory_counts: subcategory_counts } if subcategory_ids.empty?
+    
+    # Use a subquery with window function to get top 6 ads per subcategory
+    # Then select only the necessary fields for optimized serialization
+    sql = <<-SQL
+      WITH ranked_ads AS (
+        SELECT 
+          ads.id,
+          ads.title,
+          ads.price,
+          ads.media,
+          ads.created_at,
+          ads.subcategory_id,
+          ads.category_id,
+          ads.seller_id,
+          sellers.fullname as seller_name,
+          categories.name as category_name,
+          subcategories.name as subcategory_name,
+          COALESCE(tiers.id, 1) as seller_tier_id,
+          COALESCE(tiers.name, 'Free') as seller_tier_name,
+          COALESCE(review_stats.reviews_count, 0) as reviews_count,
+          COALESCE(review_stats.average_rating, 0.0) as average_rating,
+          ROW_NUMBER() OVER (
+            PARTITION BY ads.subcategory_id 
+            ORDER BY 
+              CASE COALESCE(tiers.id, 1)
+                WHEN 4 THEN 1
+                WHEN 3 THEN 2
+                WHEN 2 THEN 3
+                WHEN 1 THEN 4
+                ELSE 5
+              END,
+              ads.created_at DESC
+          ) as row_num
+        FROM ads
+        INNER JOIN sellers ON sellers.id = ads.seller_id
+        INNER JOIN categories ON categories.id = ads.category_id
+        INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
+        LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
+        LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+        LEFT JOIN (
+          SELECT 
+            ad_id,
+            COUNT(*) as reviews_count,
+            COALESCE(AVG(rating), 0.0) as average_rating
+          FROM reviews
+          GROUP BY ad_id
+        ) review_stats ON review_stats.ad_id = ads.id
+        WHERE ads.deleted = false
+          AND ads.media IS NOT NULL
+          AND ads.media != ''
+          AND ads.media::text != '[]'
+          AND (ads.media::jsonb -> 0) IS NOT NULL
+          AND sellers.blocked = false
+          AND sellers.deleted = false
+          AND sellers.flagged = false
+          AND ads.flagged = false
+          AND ads.subcategory_id IN (#{subcategory_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')})
+      )
+      SELECT * FROM ranked_ads WHERE row_num <= 6
+      ORDER BY subcategory_id, row_num
+    SQL
+    
+    # Execute query and convert to hash format for optimized serialization
+    results = ActiveRecord::Base.connection.execute(sql)
+    
+    # Get ad IDs for fetching offer info and processing media
+    ad_ids = results.map { |row| row['id'] }
+    
+    # Fetch offer info for all ads in one query
+    offer_info_map = {}
+    if ad_ids.any?
+      active_offers = OfferAd.joins(:offer)
+                             .where(ad_id: ad_ids)
+                             .where(offers: { status: ['active', 'scheduled'] })
+                             .where('offers.end_time >= ?', Time.current)
+                             .includes(:offer)
+                             .group_by(&:ad_id)
+      
+      active_offers.each do |ad_id, offer_ads|
+        # Get the first active offer (ordered by start_time)
+        offer_ad = offer_ads.min_by { |oa| oa.offer.start_time || Time.current }
+        offer = offer_ad.offer
+        
+        offer_info_map[ad_id] = {
+          active: offer.status == 'active',
+          scheduled: offer.status == 'scheduled',
+          offer_id: offer.id,
+          offer_name: offer.name,
+          offer_type: offer.offer_type,
+          discount_type: offer.discount_type,
+          original_price: offer_ad.original_price,
+          discounted_price: offer_ad.discounted_price,
+          discount_percentage: offer_ad.discount_percentage,
+          savings_amount: offer_ad.savings_amount,
+          seller_notes: offer_ad.seller_notes,
+          start_time: offer.start_time&.iso8601,
+          end_time: offer.end_time&.iso8601,
+          time_remaining: offer.time_remaining,
+          badge_color: offer.badge_color,
+          banner_color: offer.banner_color,
+          minimum_order_amount: offer.minimum_order_amount
+        }
+      end
+    end
+    
+    balanced_ads = results.map do |row|
+      ad_id = row['id']
+      media_json = row['media']
+      
+      # Process media to get valid URLs (similar to Ad model's valid_media_urls)
+      # PostgreSQL returns JSONB as a string, so we need to parse it
+      media_urls = []
+      first_media_url = nil
+      
+      if media_json.present?
+        begin
+          # Parse JSON string if it's a string
+          if media_json.is_a?(String)
+            # Handle empty array string
+            if media_json.strip == '[]' || media_json.strip == 'null' || media_json.strip == ''
+              media_array = []
+            else
+              media_array = JSON.parse(media_json)
+            end
+          else
+            media_array = media_json
+          end
+          
+          # Process array of URLs
+          if media_array.is_a?(Array) && media_array.any?
+            # Filter valid URLs (must be strings starting with http)
+            media_urls = media_array.select do |url|
+              url.present? && 
+              url.is_a?(String) && 
+              url.strip.length > 0 &&
+              (url.start_with?('http://') || url.start_with?('https://'))
+            end
+            first_media_url = media_urls.first
+          end
+        rescue JSON::ParserError => e
+          # If media is not valid JSON, try to use it as a single URL
+          if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
+            media_urls = [media_json]
+            first_media_url = media_json
+          end
+        end
+      end
+      
+      {
+        id: ad_id,
+        title: row['title'],
+        price: row['price']&.to_f,
+        media: media_json,
+        media_urls: media_urls,
+        first_media_url: first_media_url,
+        created_at: row['created_at']&.iso8601,
+        subcategory_id: row['subcategory_id'],
+        category_id: row['category_id'],
+        seller_id: row['seller_id'],
+        seller_name: row['seller_name'],
+        category_name: row['category_name'],
+        subcategory_name: row['subcategory_name'],
+        seller_tier: row['seller_tier_id'],
+        seller_tier_name: row['seller_tier_name'],
+        reviews_count: row['reviews_count']&.to_i || 0,
+        average_rating: row['average_rating']&.to_f || 0.0,
+        rating: row['average_rating']&.to_f || 0.0, # Alias for AdCard compatibility
+        mean_rating: row['average_rating']&.to_f || 0.0, # Alias for AdCard compatibility
+        flash_sale_info: offer_info_map[ad_id]
+      }
+    end
+    
     {
-      ads: all_ads,
+      ads: balanced_ads,
       subcategory_counts: subcategory_counts
     }
   end

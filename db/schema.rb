@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_11_181151) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_13_082100) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -828,6 +828,46 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_11_181151) do
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "visitors", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "visitor_id", null: false
+    t.string "device_fingerprint_hash"
+    t.string "first_source"
+    t.string "first_referrer"
+    t.string "first_utm_source"
+    t.string "first_utm_medium"
+    t.string "first_utm_campaign"
+    t.string "first_utm_content"
+    t.string "first_utm_term"
+    t.string "ip_address"
+    t.string "country"
+    t.string "city"
+    t.string "region"
+    t.string "timezone"
+    t.jsonb "device_info", default: {}
+    t.string "user_agent"
+    t.datetime "first_visit_at", null: false
+    t.datetime "last_visit_at", null: false
+    t.integer "visit_count", default: 1, null: false
+    t.boolean "has_clicked_ad", default: false
+    t.datetime "first_ad_click_at"
+    t.datetime "last_ad_click_at"
+    t.integer "ad_click_count", default: 0
+    t.boolean "is_internal_user", default: false
+    t.uuid "registered_user_id"
+    t.string "registered_user_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_fingerprint_hash"], name: "index_visitors_on_device_fingerprint_hash"
+    t.index ["first_source"], name: "index_visitors_on_first_source"
+    t.index ["first_visit_at"], name: "index_visitors_on_first_visit_at"
+    t.index ["has_clicked_ad"], name: "index_visitors_on_has_clicked_ad"
+    t.index ["ip_address"], name: "index_visitors_on_ip_address"
+    t.index ["is_internal_user"], name: "index_visitors_on_is_internal_user"
+    t.index ["last_visit_at"], name: "index_visitors_on_last_visit_at"
+    t.index ["registered_user_id", "registered_user_type"], name: "index_visitors_on_registered_user_id_and_registered_user_type"
+    t.index ["visitor_id"], name: "index_visitors_on_visitor_id", unique: true
   end
 
   create_table "wish_lists", force: :cascade do |t|

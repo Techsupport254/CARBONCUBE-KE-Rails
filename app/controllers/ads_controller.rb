@@ -28,7 +28,10 @@ class AdsController < ApplicationController
             .includes(
               :category,
               :subcategory,
-              seller: { seller_tier: :tier }
+              :reviews,
+              :offer_ads,
+              seller: { seller_tier: :tier },
+              offer_ads: :offer
             )
             .find(params[:id])
 

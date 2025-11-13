@@ -16,7 +16,10 @@ class SourceTrackingController < ApplicationController
     # Track the visit using the service
     tracking_service = SourceTrackingService.new(request)
     analytic = tracking_service.track_visit
-    
+
+    visitor_tracking_service = VisitorTrackingService.new(request)
+    visitor = visitor_tracking_service.track_visitor
+
     if analytic
       render json: { 
         success: true, 
