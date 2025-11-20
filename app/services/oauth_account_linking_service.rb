@@ -38,9 +38,12 @@ class OauthAccountLinkingService
     end
     
     # Create new user based on role
-    new_user = create_new_oauth_user
-    if new_user
-      { success: true, user: new_user, message: 'Account created successfully' }
+    new_user_result = create_new_oauth_user
+    # Check if result is an error hash (from seller creation when phone is missing)
+    if new_user_result.is_a?(Hash) && new_user_result[:success] == false
+      return new_user_result
+    elsif new_user_result
+      { success: true, user: new_user_result, message: 'Account created successfully' }
     else
       { success: false, error: 'Failed to create account', error_type: 'creation_failed' }
     end
