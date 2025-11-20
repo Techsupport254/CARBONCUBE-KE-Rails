@@ -444,7 +444,13 @@ class AuthenticationController < ApplicationController
     
     # Get role from params (default to buyer)
     role = params[:role] || 'buyer'
-    Rails.logger.info "   Role: #{role}"
+    Rails.logger.info "=" * 80
+    Rails.logger.info "🔍 [GoogleOAuth] Initiate - Role Parameter"
+    Rails.logger.info "   params[:role]: #{params[:role].inspect}"
+    Rails.logger.info "   params['role']: #{params['role'].inspect}"
+    Rails.logger.info "   Final role value: #{role.inspect}"
+    Rails.logger.info "   Role class: #{role.class}"
+    Rails.logger.info "=" * 80
     
     # Check if Google OAuth is configured
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
