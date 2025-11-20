@@ -745,7 +745,14 @@ class AuthenticationController < ApplicationController
       end
       
       role = (state_data[:role] || state_data['role'] || 'buyer').to_s
-      Rails.logger.info "✅ OAuth state verified - role: #{role}, timestamp: #{timestamp}"
+      Rails.logger.info "=" * 80
+      Rails.logger.info "✅ OAuth state verified"
+      Rails.logger.info "   Role from state_data[:role]: #{state_data[:role].inspect}"
+      Rails.logger.info "   Role from state_data['role']: #{state_data['role'].inspect}"
+      Rails.logger.info "   Final role value: #{role.inspect}"
+      Rails.logger.info "   Role class: #{role.class}"
+      Rails.logger.info "   Timestamp: #{timestamp}"
+      Rails.logger.info "=" * 80
     rescue ActiveSupport::MessageVerifier::InvalidSignature => e
       Rails.logger.error "OAuth state signature invalid - possible CSRF attack: #{e.message}"
       Rails.logger.error "State param: #{params[:state].inspect}"

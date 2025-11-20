@@ -148,20 +148,28 @@ class OauthAccountLinkingService
   def create_new_oauth_user
     # Normalize role to lowercase for case-insensitive matching
     normalized_role = @role.to_s.downcase.strip
-    Rails.logger.info "🔍 [OauthAccountLinkingService] Creating new user with role: #{normalized_role} (original: #{@role.inspect})"
+    Rails.logger.info "=" * 80
+    Rails.logger.info "🔍 [OauthAccountLinkingService] Creating new user"
+    Rails.logger.info "   Original @role: #{@role.inspect} (#{@role.class})"
+    Rails.logger.info "   Normalized role: #{normalized_role.inspect}"
+    Rails.logger.info "   Will match against: 'seller', 'admin', 'sales_user', 'salesuser'"
+    Rails.logger.info "=" * 80
     
     case normalized_role
     when 'seller'
-      Rails.logger.info "✅ [OauthAccountLinkingService] Creating Seller account"
+      Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'seller' - Creating Seller account"
       create_seller
     when 'admin'
-      Rails.logger.info "✅ [OauthAccountLinkingService] Creating Admin account"
+      Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'admin' - Creating Admin account"
       create_admin
     when 'sales_user', 'salesuser'
-      Rails.logger.info "✅ [OauthAccountLinkingService] Creating SalesUser account"
+      Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'sales_user'/'salesuser' - Creating SalesUser account"
       create_sales_user
     else
-      Rails.logger.warn "⚠️ [OauthAccountLinkingService] Unknown role '#{normalized_role}', defaulting to Buyer"
+      Rails.logger.error "❌ [OauthAccountLinkingService] NO MATCH for role '#{normalized_role}'"
+      Rails.logger.error "   This will default to Buyer - THIS IS THE BUG!"
+      Rails.logger.error "   @role was: #{@role.inspect}"
+      Rails.logger.error "   normalized_role was: #{normalized_role.inspect}"
       create_buyer # Default to buyer
     end
   end
