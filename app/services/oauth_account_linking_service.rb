@@ -2,7 +2,8 @@
 class OauthAccountLinkingService
   def initialize(auth_hash, role = 'Buyer', user_ip = nil)
     @auth_hash = auth_hash
-    @role = role
+    # Normalize role to handle both "Seller" and "seller" formats
+    @role = role.to_s.strip
     @provider = auth_hash[:provider]
     @uid = auth_hash[:uid]
     @email = auth_hash.dig(:info, :email)
@@ -16,6 +17,7 @@ class OauthAccountLinkingService
     Rails.logger.info "   Email: #{@email}"
     Rails.logger.info "   Name: #{@name}"
     Rails.logger.info "   Picture: #{@picture.inspect}"
+    Rails.logger.info "   Role: #{@role.inspect} (#{@role.class})"
     Rails.logger.info "   Auth hash info: #{auth_hash[:info].inspect}"
   end
 
@@ -77,14 +79,22 @@ class OauthAccountLinkingService
   end
 
   def create_new_oauth_user
-    case @role
+    # Normalize role to lowercase for case-insensitive matching
+    normalized_role = @role.to_s.downcase.strip
+    Rails.logger.info "🔍 [OauthAccountLinkingService] Creating new user with role: #{normalized_role} (original: #{@role.inspect})"
+    
+    case normalized_role
     when 'seller'
+      Rails.logger.info "✅ [OauthAccountLinkingService] Creating Seller account"
       create_seller
     when 'admin'
+      Rails.logger.info "✅ [OauthAccountLinkingService] Creating Admin account"
       create_admin
-    when 'sales_user'
+    when 'sales_user', 'salesuser'
+      Rails.logger.info "✅ [OauthAccountLinkingService] Creating SalesUser account"
       create_sales_user
     else
+      Rails.logger.warn "⚠️ [OauthAccountLinkingService] Unknown role '#{normalized_role}', defaulting to Buyer"
       create_buyer # Default to buyer
     end
   end
