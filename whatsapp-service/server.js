@@ -36,27 +36,35 @@ function createClient() {
 
 	// QR code generation
 	client.on("qr", (qr) => {
-		console.log("QR Code received, scan with your phone:");
+		if (process.env.NODE_ENV === "development") {
+			console.log("QR Code received, scan with your phone:");
+		}
 		qrcode.generate(qr, { small: true });
 		qrCode = qr;
 	});
 
 	// Client ready
 	client.on("ready", () => {
-		console.log("WhatsApp client is ready!");
+		if (process.env.NODE_ENV === "development") {
+			console.log("WhatsApp client is ready!");
+		}
 		isReady = true;
 		qrCode = null;
 	});
 
 	// Authentication failure
 	client.on("auth_failure", (msg) => {
-		console.error("Authentication failure:", msg);
+		if (process.env.NODE_ENV === "development") {
+			console.error("Authentication failure:", msg);
+		}
 		isReady = false;
 	});
 
 	// Disconnected
 	client.on("disconnected", (reason) => {
-		console.log("Client disconnected:", reason);
+		if (process.env.NODE_ENV === "development") {
+			console.log("Client disconnected:", reason);
+		}
 		isReady = false;
 	});
 
@@ -113,18 +121,26 @@ app.post("/logout", async (req, res) => {
 			if (isReady) {
 				try {
 					await client.logout();
-					console.log("WhatsApp client logged out");
+					if (process.env.NODE_ENV === "development") {
+						console.log("WhatsApp client logged out");
+					}
 				} catch (e) {
-					console.log("Logout error (may already be logged out):", e.message);
+					if (process.env.NODE_ENV === "development") {
+						console.log("Logout error (may already be logged out):", e.message);
+					}
 				}
 			}
 
 			// Destroy the client to clear the session
 			try {
 				await client.destroy();
-				console.log("WhatsApp client destroyed");
+				if (process.env.NODE_ENV === "development") {
+					console.log("WhatsApp client destroyed");
+				}
 			} catch (e) {
-				console.log("Destroy error:", e.message);
+				if (process.env.NODE_ENV === "development") {
+					console.log("Destroy error:", e.message);
+				}
 			}
 		}
 
@@ -159,6 +175,48 @@ app.post("/logout", async (req, res) => {
 		res.status(500).json({
 			error: "Failed to logout",
 			message: error.message,
+		});
+	}
+});
+
+// Check if phone number is registered on WhatsApp endpoint
+app.post("/check", async (req, res) => {
+	if (!client || !isReady) {
+		return res.status(503).json({
+			error: "WhatsApp client is not ready",
+			message: "Please scan the QR code first or wait for connection",
+			isRegistered: false,
+		});
+	}
+
+	const { phoneNumber } = req.body;
+
+	if (!phoneNumber) {
+		return res.status(400).json({
+			error: "Phone number is required",
+			isRegistered: false,
+		});
+	}
+
+	try {
+		const formattedNumber = formatPhoneNumber(phoneNumber);
+
+		// Check if number is registered on WhatsApp
+		const isRegistered = await client.isRegisteredUser(formattedNumber);
+
+		res.json({
+			success: true,
+			isRegistered: isRegistered,
+			phoneNumber: phoneNumber,
+			formattedNumber: formattedNumber,
+			timestamp: new Date().toISOString(),
+		});
+	} catch (error) {
+		console.error("Error checking WhatsApp number:", error);
+		res.status(500).json({
+			error: "Failed to check phone number",
+			message: error.message,
+			isRegistered: false,
 		});
 	}
 });

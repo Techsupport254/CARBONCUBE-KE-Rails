@@ -2,7 +2,7 @@
 namespace :black_friday do
   desc "Send Black Friday emails to all active sellers"
   task send_to_all: :environment do
-    puts "🚀 Starting Black Friday email campaign for all active sellers..."
+    puts "Starting Black Friday email campaign for all active sellers..."
     
     # Find all active sellers (not deleted, not blocked)
     active_sellers = Seller.where(
@@ -13,13 +13,13 @@ namespace :black_friday do
     total_sellers = active_sellers.count
     
     if total_sellers == 0
-      puts "❌ No active sellers found. Campaign cancelled."
+      puts "No active sellers found. Campaign cancelled."
       exit 0
     end
     
-    puts "📊 Found #{total_sellers} active sellers"
+    puts "Found #{total_sellers} active sellers"
     puts ""
-    puts "📋 Sellers list:"
+    puts "Sellers list:"
     puts "-" * 80
     
     active_sellers.order(:id).each do |seller|
@@ -30,17 +30,17 @@ namespace :black_friday do
     
     puts "-" * 80
     puts ""
-    puts "⚠️  You are about to send Black Friday emails to #{total_sellers} sellers!"
+    puts "WARNING: You are about to send Black Friday emails to #{total_sellers} sellers!"
     print "Continue? (yes/no): "
     confirmation = STDIN.gets.chomp.downcase
     
     unless confirmation == 'y' || confirmation == 'yes'
-      puts "❌ Campaign cancelled by user."
+      puts "Campaign cancelled by user."
       exit 0
     end
     
     puts ""
-    puts "📤 Starting bulk email campaign..."
+    puts "Starting bulk email campaign..."
     puts "   Sidekiq will process jobs in the background"
     puts ""
     
@@ -60,7 +60,7 @@ namespace :black_friday do
           # Show progress every 10 sellers to avoid too much output
           if (sent_count + failed_count) % 10 == 0 || sent_count + failed_count == total_sellers
             progress = ((sent_count + failed_count).to_f / total_sellers * 100).round(1)
-            puts "   📊 Progress: #{sent_count + failed_count}/#{total_sellers} (#{progress}%) - Queued #{sent_count} emails"
+            puts "   Progress: #{sent_count + failed_count}/#{total_sellers} (#{progress}%) - Queued #{sent_count} emails"
           end
           
         rescue => e
@@ -71,7 +71,7 @@ namespace :black_friday do
             error: e.message
           }
           
-          puts "   ❌ Failed to queue: #{seller.email} - #{e.message}"
+          puts "   Failed to queue: #{seller.email} - #{e.message}"
         end
       end
       
@@ -83,7 +83,7 @@ namespace :black_friday do
     
     puts ""
     puts "=" * 80
-    puts "📊 CAMPAIGN SUMMARY"
+    puts "CAMPAIGN SUMMARY"
     puts "=" * 80
     puts "Total sellers: #{total_sellers}"
     puts "Successfully queued: #{sent_count}"
@@ -92,22 +92,22 @@ namespace :black_friday do
     
     if failed_sellers.any?
       puts ""
-      puts "❌ Failed sellers:"
+      puts "Failed sellers:"
       failed_sellers.each do |failed|
         puts "   - ID: #{failed[:id]}, Email: #{failed[:email]}, Error: #{failed[:error]}"
       end
     end
     
     puts ""
-    puts "✅ All emails have been queued to Sidekiq"
-    puts "📧 Sidekiq will process and send emails in the background"
+    puts "All emails have been queued to Sidekiq"
+    puts "Sidekiq will process and send emails in the background"
     puts ""
-    puts "💡 Monitor progress:"
+    puts "Monitor progress:"
     puts "   - Check Sidekiq web UI (if configured)"
     puts "   - View logs: tail -f tmp/sidekiq.log"
     puts "   - Check queue: bundle exec rails runner \"require 'sidekiq/api'; puts Sidekiq::Queue.new('default').size\""
     puts ""
-    puts "🎉 Black Friday email campaign queued successfully!"
+    puts "Black Friday email campaign queued successfully!"
   end
   
   desc "Send Black Friday email to a specific seller (for testing)"
@@ -115,24 +115,24 @@ namespace :black_friday do
     seller_id = args[:seller_id]&.to_i
     
     if seller_id.nil?
-      puts "❌ Please provide a seller ID. Usage: rake black_friday:send_test[seller_id]"
+      puts "Please provide a seller ID. Usage: rake black_friday:send_test[seller_id]"
       exit 1
     end
-    
-    puts "🚀 Starting Black Friday email test for seller #{seller_id}..."
+
+    puts "Starting Black Friday email test for seller #{seller_id}..."
     
     seller = Seller.find_by(id: seller_id)
     
     if seller.nil?
-      puts "❌ Seller with ID #{seller_id} not found!"
+      puts "Seller with ID #{seller_id} not found!"
       exit 1
     end
     
-    puts "📧 Found seller: #{seller.fullname} (#{seller.enterprise_name})"
-    puts "📧 Email: #{seller.email}"
-    puts "📧 Location: #{seller.location}"
+    puts "Found seller: #{seller.fullname} (#{seller.enterprise_name})"
+    puts "Email: #{seller.email}"
+    puts "Location: #{seller.location}"
     puts ""
-    puts "📊 Seller Analytics:"
+    puts "Seller Analytics:"
     puts "   - Total Ads: #{seller.ads.where(deleted: false).count}"
     puts "   - Total Reviews: #{seller.reviews.count}"
     puts "   - Average Rating: #{seller.reviews.average(:rating)&.round(1) || 'N/A'}"
@@ -142,29 +142,29 @@ namespace :black_friday do
     confirmation = STDIN.gets.chomp.downcase
     
     unless confirmation == 'y' || confirmation == 'yes'
-      puts "❌ Test cancelled by user."
+      puts "Test cancelled by user."
       exit 0
     end
     
     puts ""
-    puts "📤 Sending Black Friday email..."
+    puts "Sending Black Friday email..."
     
     begin
       # Send immediately for testing
       SellerCommunicationsMailer.with(seller: seller).black_friday_email.deliver_now
       
-      puts "✅ Black Friday email sent successfully!"
-      puts "📧 Check #{seller.email} for the email"
+      puts "Black Friday email sent successfully!"
+      puts "Check #{seller.email} for the email"
       
     rescue => e
-      puts "❌ Error sending email: #{e.message}"
-      puts "📋 Full error:"
+      puts "Error sending email: #{e.message}"
+      puts "Full error:"
       puts e.backtrace.first(10).join("\n")
       exit 1
     end
-    
+
     puts ""
-    puts "🎉 Test completed successfully!"
+    puts "Test completed successfully!"
   end
   
   desc "Preview Black Friday email template for a specific seller"
@@ -176,23 +176,23 @@ namespace :black_friday do
       exit 1
     end
     
-    puts "👀 Generating Black Friday email preview for seller #{seller_id}..."
+    puts "Generating Black Friday email preview for seller #{seller_id}..."
     
     seller = Seller.find_by(id: seller_id)
     
     if seller.nil?
-      puts "❌ Seller with ID #{seller_id} not found!"
+      puts "Seller with ID #{seller_id} not found!"
       exit 1
     end
     
-    puts "📧 Previewing email for: #{seller.fullname} (#{seller.enterprise_name})"
+    puts "Previewing email for: #{seller.fullname} (#{seller.enterprise_name})"
     
     begin
       # Generate the email content
       mail = SellerCommunicationsMailer.with(seller: seller).black_friday_email
       
       puts ""
-      puts "📋 Email Details:"
+      puts "Email Details:"
       puts "   Subject: #{mail.subject}"
       puts "   To: #{mail.to}"
       puts "   From: #{mail.from}"
@@ -202,23 +202,23 @@ namespace :black_friday do
       File.write(preview_file, mail.body.raw_source)
       
       puts ""
-      puts "✅ Email preview saved to: #{preview_file}"
-      puts "🌐 Open this file in your browser to preview the email"
+      puts "Email preview saved to: #{preview_file}"
+      puts "Open this file in your browser to preview the email"
       
     rescue => e
       puts "❌ Error generating preview: #{e.message}"
-      puts "📋 Full error:"
+      puts "Full error:"
       puts e.backtrace.first(10).join("\n")
       exit 1
     end
-    
+
     puts ""
-    puts "🎉 Preview generated successfully!"
+    puts "Preview generated successfully!"
   end
   
   desc "List all active sellers who would receive Black Friday emails"
   task list_active_sellers: :environment do
-    puts "📋 Active Sellers List (for Black Friday campaign)"
+    puts "Active Sellers List (for Black Friday campaign)"
     puts "=" * 80
     
     # Find all active sellers (not deleted, not blocked)
@@ -230,7 +230,7 @@ namespace :black_friday do
     total_count = active_sellers.count
     
     if total_count == 0
-      puts "❌ No active sellers found."
+      puts "No active sellers found."
       exit 0
     end
     
@@ -248,21 +248,21 @@ namespace :black_friday do
     
     puts "-" * 80
     puts ""
-    puts "✅ Listed #{total_count} active sellers"
+    puts "Listed #{total_count} active sellers"
   end
   
   desc "SAFE TEST: Send Black Friday email ONLY to victorquaint@gmail.com (admin test)"
   task send_victor_test: :environment do
-    puts "🚨 SAFE TEST MODE - ONLY VICTORQUAINT RECIPIENT 🚨"
+    puts "SAFE TEST MODE - ONLY VICTORQUAINT RECIPIENT"
     puts "=" * 80
-    puts "⚠️  This will ONLY send to: victorquaint@gmail.com"
+    puts "WARNING: This will ONLY send to: victorquaint@gmail.com"
     puts ""
     
     # Find victorquaint by email - STRICT email matching
     seller = Seller.find_by(email: 'victorquaint@gmail.com')
     
     if seller.nil?
-      puts "❌ Seller with email 'victorquaint@gmail.com' not found!"
+      puts "Seller with email 'victorquaint@gmail.com' not found!"
       puts ""
       puts "Available sellers (first 10):"
       Seller.where(deleted: [false, nil]).limit(10).each do |s|
@@ -273,32 +273,32 @@ namespace :black_friday do
     
     # Double-check email matches exactly
     unless seller.email.downcase.strip == 'victorquaint@gmail.com'
-      puts "❌ Email mismatch! Found: #{seller.email}, Expected: victorquaint@gmail.com"
+      puts "Email mismatch! Found: #{seller.email}, Expected: victorquaint@gmail.com"
       exit 1
     end
     
-    puts "✅ Found seller: #{seller.fullname} (#{seller.enterprise_name})"
-    puts "📧 Email: #{seller.email}"
-    puts "🆔 ID: #{seller.id}"
+    puts "Found seller: #{seller.fullname} (#{seller.enterprise_name})"
+    puts "Email: #{seller.email}"
+    puts "ID: #{seller.id}"
     puts ""
-    puts "📊 Seller Analytics:"
+    puts "Seller Analytics:"
     puts "   - Total Ads: #{seller.ads.where(deleted: false).count}"
     puts "   - Total Reviews: #{seller.reviews.count}"
     puts "   - Average Rating: #{seller.reviews.average(:rating)&.round(1) || 'N/A'}"
     puts "   - Tier: #{seller.tier&.name || 'Free'}"
     puts ""
-    puts "🚨 WARNING: This will send an email to #{seller.email}"
+    puts "WARNING: This will send an email to #{seller.email}"
     print "Continue? (yes/no): "
     confirmation = STDIN.gets.chomp.downcase
     
     unless confirmation == 'y' || confirmation == 'yes'
-      puts "❌ Test cancelled by user."
+      puts "Test cancelled by user."
       exit 0
     end
     
     puts ""
-    puts "📤 Sending Black Friday email..."
-    puts "📧 Recipient: #{seller.email} (#{seller.fullname})"
+    puts "Sending Black Friday email..."
+    puts "Recipient: #{seller.email} (#{seller.fullname})"
     puts ""
     
     begin
@@ -306,7 +306,7 @@ namespace :black_friday do
       # This will appear as a NEW message (not threaded) due to unique subject and headers
       mail = SellerCommunicationsMailer.with(seller: seller).black_friday_email
       
-      puts "📋 Email Details:"
+      puts "Email Details:"
       puts "   Subject: #{mail.subject}"
       puts "   To: #{mail.to.join(', ')}"
       puts "   From: #{mail.from.join(', ')}"
@@ -315,19 +315,19 @@ namespace :black_friday do
       
       mail.deliver_now
       
-      puts "✅ Black Friday email sent successfully!"
+      puts "Black Friday email sent successfully!"
       puts "📧 Check #{seller.email} for the email (should appear as NEW message)"
       
     rescue => e
-      puts "❌ Error sending email: #{e.message}"
-      puts "📋 Full error:"
+      puts "Error sending email: #{e.message}"
+      puts "Full error:"
       puts e.backtrace.first(10).join("\n")
       exit 1
     end
-    
+
     puts ""
-    puts "🎉 Safe test completed successfully!"
-    puts "✅ Only victorquaint@gmail.com received the email"
+    puts "Safe test completed successfully!"
+    puts "Only victorquaint@gmail.com received the email"
   end
 end
 

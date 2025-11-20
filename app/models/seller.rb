@@ -34,6 +34,10 @@ class Seller < ApplicationRecord
   validates :fullname, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
+  # Secondary phone number is optional
+  validates :secondary_phone_number, length: { is: 10, message: "must be exactly 10 digits" },
+            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
+            allow_blank: true
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
   validates :location, presence: true
@@ -57,6 +61,9 @@ class Seller < ApplicationRecord
   
   # Auto-delete ads when seller is deleted
   before_destroy :mark_ads_as_deleted
+  
+  # Auto-verify documents for 2025 sellers
+  before_save :auto_verify_document_for_2025_sellers
 
   def calculate_mean_rating
     # Use cached reviews if available, otherwise calculate
@@ -176,6 +183,16 @@ class Seller < ApplicationRecord
 
     if username.present? && password.downcase.include?(username.downcase)
       errors.add(:password, "should not contain your username.")
+    end
+  end
+
+  def auto_verify_document_for_2025_sellers
+    # Automatically verify documents for sellers registered in 2025
+    # Check if current year is 2025 (for new records) or if seller was created in 2025 (for updates)
+    seller_year = new_record? ? Time.current.year : (created_at&.year || Time.current.year)
+    if seller_year == 2025 && document_url.present? && !document_verified?
+      self.document_verified = true
+      Rails.logger.info "✅ Auto-verifying legacy document for 2025 seller #{id || 'new'}"
     end
   end
 

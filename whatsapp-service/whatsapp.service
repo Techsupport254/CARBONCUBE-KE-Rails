@@ -1,0 +1,26 @@
+[Unit]
+Description=Carbon WhatsApp Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# Update this path to match your VPS project directory
+WorkingDirectory=/root/CARBON/backend/whatsapp-service
+Environment=NODE_ENV=production
+Environment=WHATSAPP_SERVICE_PORT=3002
+# Update node path if needed: which node
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=whatsapp-service
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

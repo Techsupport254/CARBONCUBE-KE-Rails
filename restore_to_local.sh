@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script to restore production dump to local development database
-# This will OVERWRITE the local database with production data
+# Script to restore local dump to local development database
+# This will OVERWRITE the local database with local dump data
 
 set -e  # Exit on error
 
@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 LOCAL_DB="postgresql://Quaint:3323@localhost:5432/carbon_development"
 
 # Find the most recent dump file
-DUMP_FILE=$(ls -t db/dumps/production_dump_*.custom 2>/dev/null | head -1)
+DUMP_FILE=$(ls -t db/dumps/local_dump_*.custom 2>/dev/null | head -1)
 
 if [ -z "$DUMP_FILE" ]; then
     echo -e "${RED}✗ No dump file found in db/dumps/${NC}"
@@ -23,7 +23,7 @@ if [ -z "$DUMP_FILE" ]; then
 fi
 
 echo -e "${YELLOW}========================================${NC}"
-echo -e "${YELLOW}Restore Production Dump to Local${NC}"
+echo -e "${YELLOW}Restore Local Dump to Local${NC}"
 echo -e "${YELLOW}========================================${NC}"
 echo ""
 echo -e "${GREEN}Local database:${NC} $LOCAL_DB"
@@ -73,8 +73,25 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo -e "${GREEN}✓ Successfully restored production data to local database${NC}"
+echo -e "${GREEN}✓ Successfully restored local dump data to local database${NC}"
 echo ""
+
+echo -e "${YELLOW}Step 3: Running pending migrations...${NC}"
+echo ""
+
+# Run pending migrations
+bundle exec rake db:migrate \
+  2>&1 | sed 's/^/  /'
+
+if [ $? -ne 0 ]; then
+  echo -e "${RED}✗ Failed to run migrations${NC}"
+  exit 1
+fi
+
+echo ""
+echo -e "${GREEN}✓ Migrations completed successfully${NC}"
+echo ""
+
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Restore Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"

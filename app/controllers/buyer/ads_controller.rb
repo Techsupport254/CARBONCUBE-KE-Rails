@@ -131,7 +131,7 @@ class Buyer::AdsController < ApplicationController
       :subcategory,
       :reviews,
       :offer_ads,
-      seller: { seller_tier: :tier }
+      seller: { seller_tier: :tier, seller_documents: :document_type }
     ).find(params[:id])
     render json: @ad, serializer: AdSerializer, include_reviews: true
   end
@@ -553,6 +553,262 @@ class Buyer::AdsController < ApplicationController
   end
 
   
+  # GET /buyer/ads/recommendations
+  # Get personalized recommendations based on user's clicked/revealed ads
+  def recommendations
+    begin
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      
+      # Optionally authenticate buyer if token is present (not required for guests)
+      buyer_id = nil
+      begin
+        buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
+        current_buyer = buyer_auth.result
+        buyer_id = current_buyer&.id if current_buyer&.is_a?(Buyer)
+      rescue => e
+        # Silently fail - guest users are allowed
+        Rails.logger.debug "Buyer authentication failed (guest user): #{e.message}" if Rails.env.development?
+      end
+      
+      limit = params[:limit]&.to_i || 100
+      limit = [limit, 500].min # Cap at 500
+      
+      Rails.logger.info "Recommendations request: device_hash=#{device_hash.present? ? 'present' : 'missing'}, buyer_id=#{buyer_id || 'none'}"
+    
+    # Get clicked/revealed ads for this user (device_hash for guests, buyer_id for authenticated)
+    clicked_ad_ids = []
+    clicked_categories = []
+    clicked_subcategories = []
+    clicked_sellers = []
+    
+    if device_hash.present? || buyer_id.present?
+      # Get click events - prioritize reveal clicks as they show stronger interest
+      click_events_query = ClickEvent
+        .excluding_internal_users
+        .where(event_type: ['Ad-Click', 'Reveal-Seller-Details'])
+      
+      if buyer_id.present?
+        # Authenticated user - use buyer_id
+        click_events_query = click_events_query.where(
+          "metadata->>'user_id' = ? OR metadata->>'device_hash' = ?",
+          buyer_id.to_s,
+          device_hash.to_s
+        )
+      elsif device_hash.present?
+        # Guest user - use device_hash
+        click_events_query = click_events_query.where("metadata->>'device_hash' = ?", device_hash.to_s)
+      end
+      
+      # Get recent click events (last 100 to avoid too much data)
+      click_events = click_events_query
+        .order(created_at: :desc)
+        .limit(100)
+        .includes(:ad)
+        .where.not(ad_id: nil)
+      
+      Rails.logger.info "Found #{click_events.count} click events for user"
+      
+      # Extract ad IDs, categories, subcategories, and sellers from clicked ads
+      click_events.each do |event|
+        next unless event.ad&.active?
+        
+        clicked_ad_ids << event.ad_id
+        clicked_categories << event.ad.category_id if event.ad.category_id
+        clicked_subcategories << event.ad.subcategory_id if event.ad.subcategory_id
+        clicked_sellers << event.ad.seller_id if event.ad.seller_id
+      end
+      
+      # Remove duplicates
+      clicked_categories.uniq!
+      clicked_subcategories.uniq!
+      clicked_sellers.uniq!
+      
+      Rails.logger.info "Extracted: #{clicked_ad_ids.count} ad_ids, #{clicked_subcategories.count} subcategories, #{clicked_categories.count} categories, #{clicked_sellers.count} sellers"
+    end
+    
+    # If user has no click history, fall back to best sellers
+    if clicked_ad_ids.empty? && clicked_subcategories.empty? && clicked_categories.empty? && clicked_sellers.empty?
+      Rails.logger.info "No click history found, falling back to best sellers"
+      best_sellers = calculate_best_sellers_fast(limit)
+      Rails.logger.info "Best sellers returned: #{best_sellers.count} ads"
+      render json: best_sellers
+      return
+    end
+    
+    # Find similar ads based on clicked ads
+    # Priority: 1) Same subcategory (highest), 2) Same category, 3) Same seller
+    recommended_ads_query = Ad.active.with_valid_images
+      .joins(:seller, :category, :subcategory)
+      .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
+      .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
+      .where(sellers: { blocked: false, deleted: false, flagged: false })
+      .where(flagged: false)
+    
+    # Exclude already clicked ads only if we have clicked ads
+    if clicked_ad_ids.any?
+      recommended_ads_query = recommended_ads_query.where.not(id: clicked_ad_ids)
+    end
+    
+    # Build similarity conditions using Arel for proper OR handling
+    if clicked_subcategories.any? || clicked_categories.any? || clicked_sellers.any?
+      # Build OR conditions using Arel
+      or_conditions = []
+      
+      if clicked_subcategories.any?
+        or_conditions << Ad.arel_table[:subcategory_id].in(clicked_subcategories)
+      end
+      
+      if clicked_categories.any?
+        or_conditions << Ad.arel_table[:category_id].in(clicked_categories)
+      end
+      
+      if clicked_sellers.any?
+        or_conditions << Ad.arel_table[:seller_id].in(clicked_sellers)
+      end
+      
+      # Combine with OR - handle single and multiple conditions
+      if or_conditions.length == 1
+        combined_condition = or_conditions.first
+      else
+        combined_condition = or_conditions.reduce { |acc, condition| acc.or(condition) }
+      end
+      
+      recommended_ads_query = recommended_ads_query.where(combined_condition)
+    else
+      # Fallback to best sellers if no similarity found
+      Rails.logger.info "No similarity conditions, falling back to best sellers"
+      best_sellers = calculate_best_sellers_fast(limit)
+      render json: best_sellers
+      return
+    end
+    
+    # Get ads with tier priority
+    recommended_ads = recommended_ads_query
+      .select("ads.*, 
+               CASE tiers.id
+                 WHEN 4 THEN 1
+                 WHEN 3 THEN 2
+                 WHEN 2 THEN 3
+                 WHEN 1 THEN 4
+                 ELSE 5
+               END AS tier_priority")
+      .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+      .order(Arel.sql('tier_priority ASC, ads.created_at DESC'))
+      .limit(limit * 3) # Get more to allow for scoring
+    
+    Rails.logger.info "Query returned #{recommended_ads.count} recommended ads"
+    
+    # If no ads found, fall back to best sellers
+    if recommended_ads.empty?
+      Rails.logger.info "No recommended ads found, falling back to best sellers"
+      best_sellers = calculate_best_sellers_fast(limit)
+      render json: best_sellers
+      return
+    end
+    
+    # Calculate comprehensive scores and add personalization boost
+    scored_ads = recommended_ads.map do |ad|
+      # Calculate similarity score in Ruby (safer than SQL)
+      similarity_score = 0
+      if clicked_subcategories.include?(ad.subcategory_id)
+        similarity_score = 3 # Highest priority: same subcategory
+      elsif clicked_categories.include?(ad.category_id)
+        similarity_score = 2 # Medium priority: same category
+      elsif clicked_sellers.include?(ad.seller_id)
+        similarity_score = 1 # Lower priority: same seller
+      end
+      
+      # Base comprehensive score
+      # Get seller_tier_id from the ad's seller association (loaded via includes)
+      seller_tier_id = ad.seller&.seller_tier&.tier_id || 1
+      tier_bonus = calculate_tier_bonus(seller_tier_id)
+      recency_score = calculate_recency_score(ad.created_at)
+      
+      # Get engagement metrics
+      wishlist_count = WishList.where(ad_id: ad.id).count
+      # Reviews are loaded via includes, so we can access them directly
+      review_count = ad.reviews&.count || 0
+      avg_rating = if ad.reviews&.any?
+        ad.reviews.sum(&:rating).to_f / review_count
+      else
+        0.0
+      end
+      click_count = ClickEvent.where(ad_id: ad.id, event_type: 'Ad-Click').excluding_internal_users.count
+      
+      wishlist_score = calculate_wishlist_score(wishlist_count)
+      rating_score = calculate_rating_score(avg_rating, review_count)
+      click_score = calculate_click_score(click_count)
+      
+      comprehensive_score = (
+        (recency_score * 0.25) +
+        (tier_bonus * 0.15) +
+        (wishlist_score * 0.25) +
+        (rating_score * 0.20) +
+        (click_score * 0.15)
+      )
+      
+      # Personalization boost based on similarity
+      personalized_score = comprehensive_score + (similarity_score * 2.0) # Boost for similarity
+      
+      {
+        id: ad.id,
+        ad_id: ad.id,
+        title: ad.title,
+        price: ad.price.to_f,
+        media: ad.media,
+        media_urls: ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || []),
+        first_media_url: ad.media.is_a?(String) ? (JSON.parse(ad.media || '[]').first || '') : (ad.media&.first || ''),
+        created_at: ad.created_at,
+        seller_id: ad.seller_id,
+        seller_name: ad.seller&.enterprise_name || ad.seller&.username || 'Unknown',
+        category_id: ad.category_id,
+        category_name: ad.category&.name,
+        subcategory_id: ad.subcategory_id,
+        subcategory_name: ad.subcategory&.name,
+        seller_tier: seller_tier_id || 1,
+        seller_tier_name: (ad.seller&.seller_tier&.tier&.name || ad.seller_tier_name || 'Free'),
+        tier_priority: ad.tier_priority || 5,
+        comprehensive_score: comprehensive_score.round(2),
+        personalized_score: personalized_score.round(2),
+        similarity_score: similarity_score,
+        metrics: {
+          avg_rating: avg_rating.round(2),
+          review_count: review_count,
+          total_clicks: click_count,
+          wishlist_count: wishlist_count
+        }
+      }
+    end
+    
+    # Sort by personalized score and return top results
+    sorted_ads = scored_ads.sort_by { |ad| -ad[:personalized_score] }.first(limit)
+    
+    Rails.logger.info "Returning #{sorted_ads.count} sorted recommendations"
+    
+      # Ensure we always return something - fallback to best sellers if empty
+      if sorted_ads.empty?
+        Rails.logger.info "Sorted ads empty, falling back to best sellers"
+        best_sellers = calculate_best_sellers_fast(limit)
+        render json: best_sellers
+      else
+        render json: sorted_ads
+      end
+    rescue => e
+      Rails.logger.error "Error in recommendations: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      # Fallback to best sellers on any error
+      begin
+        fallback_limit = limit || 100
+        best_sellers = calculate_best_sellers_fast(fallback_limit)
+        render json: best_sellers || []
+      rescue => fallback_error
+        Rails.logger.error "Error in fallback best sellers: #{fallback_error.message}"
+        Rails.logger.error fallback_error.backtrace.first(10).join("\n")
+        render json: { error: 'Failed to load recommendations' }, status: :internal_server_error
+      end
+    end
+  end
+
   # GET /buyer/ads/:id/related
   def related
     # Use @ad from before_action instead of finding it again
@@ -1089,6 +1345,7 @@ class Buyer::AdsController < ApplicationController
   end
 
   def calculate_recency_score(created_at)
+    return 0 if created_at.nil?
     days_old = (Time.current - created_at) / 1.day
     case days_old
     when 0..7 then 8

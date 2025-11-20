@@ -72,8 +72,8 @@ class Seller::AdsController < ApplicationController
 
   def create
     begin
-      Rails.logger.info "🚀 Starting ad creation process"
-      Rails.logger.info "📊 Request params: #{params[:ad].inspect}"
+      Rails.logger.info "Starting ad creation process"
+      Rails.logger.info "Request params: #{params[:ad].inspect}"
       
       seller_tier = current_seller.seller_tier
 
@@ -527,12 +527,12 @@ class Seller::AdsController < ApplicationController
           end
           
           # Upload original image directly to Cloudinary without any processing
-          Rails.logger.info "🚀 Uploading to Cloudinary with preset: #{ENV['UPLOAD_PRESET']}"
+          Rails.logger.info "Uploading to Cloudinary with preset: #{ENV['UPLOAD_PRESET']}"
           uploaded_image = Cloudinary::Uploader.upload(
-            image.tempfile.path, 
+            image.tempfile.path,
             upload_preset: ENV['UPLOAD_PRESET']
           )
-          Rails.logger.info "🚀 Uploaded to Cloudinary: #{uploaded_image['secure_url']}"
+          Rails.logger.info "Uploaded to Cloudinary: #{uploaded_image['secure_url']}"
 
           uploaded_urls << uploaded_image["secure_url"]
         rescue => e

@@ -45,6 +45,11 @@ class Buyer < ApplicationRecord
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
             allow_blank: true, unless: :oauth_user?
   
+  # Secondary phone number is optional
+  validates :secondary_phone_number, length: { is: 10, message: "must be exactly 10 digits" },
+            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
+            allow_blank: true
+  
   # For OAuth users, phone number validation is still optional (users can verify later)
   # We don't enforce phone number requirement even for OAuth users
 

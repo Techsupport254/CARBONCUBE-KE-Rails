@@ -77,8 +77,12 @@
 
   <!-- Ads -->
   <% @ads.each do |ad| %>
+  <%
+    # Generate slug from title (same logic as in Ad model)
+    slug = ad.title.blank? ? "product-#{ad.id}" : ad.title.downcase.gsub(/[^a-z0-9\s]/, '').gsub(/\s+/, '-').strip
+  %>
   <url>
-    <loc>https://carboncube-ke.com/ads/<%= ad.id %></loc>
+    <loc>https://carboncube-ke.com/ads/<%= slug %></loc>
     <lastmod><%= ad.updated_at.strftime('%Y-%m-%d') %></lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>

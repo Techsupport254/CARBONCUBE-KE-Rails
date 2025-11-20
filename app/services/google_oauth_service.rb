@@ -29,30 +29,42 @@ class GoogleOauthService
 
   def authenticate
     begin
-      Rails.logger.info "Starting Google OAuth authentication"
-      
+      Rails.logger.info "🚀 [GoogleOauthService] Starting authentication process"
+      Rails.logger.info "   Role: #{@role}"
+      Rails.logger.info "   Registration: #{@is_registration}"
+      Rails.logger.info "   IP: #{@user_ip}"
+      Rails.logger.info "   Location data: #{@location_data ? 'present' : 'none'}"
+
       # Step 1: Exchange authorization code for access token
+      Rails.logger.info "🔑 [GoogleOauthService] Step 1: Exchanging code for access token"
       access_token = exchange_code_for_token
       
       unless access_token
-        Rails.logger.error "Failed to get access token"
+        Rails.logger.error "❌ [GoogleOauthService] Failed to get access token"
+        Rails.logger.error "   This usually means the authorization code is invalid or expired"
         return { success: false, error: 'Failed to get access token' }
       end
-      
-      Rails.logger.info "Access token obtained successfully"
-      
+
+      Rails.logger.info "✅ [GoogleOauthService] Access token obtained successfully"
+
       # Step 2: Get comprehensive user info from Google
+      Rails.logger.info "👤 [GoogleOauthService] Step 2: Getting user info from Google"
       user_info = get_comprehensive_user_info(access_token)
       
       unless user_info
-        Rails.logger.error "Failed to get user info"
+        Rails.logger.error "❌ [GoogleOauthService] Failed to get user info"
+        Rails.logger.error "   This could be due to invalid access token or Google API issues"
         return { success: false, error: 'Failed to get user info' }
       end
-      
-      Rails.logger.info "User info obtained from Google"
+
+      Rails.logger.info "✅ [GoogleOauthService] User info obtained successfully"
+      Rails.logger.info "   Email: #{user_info['email']}"
+      Rails.logger.info "   Name: #{user_info['name'] || 'not provided'}"
+      Rails.logger.info "   Has phone: #{user_info['phone_number'].present?}"
       
       # Step 3: Process location data
-      
+      Rails.logger.info "📍 [GoogleOauthService] Step 3: Processing location data"
+
       # Try to get location from multiple sources
       location_info = {}
       
@@ -88,13 +100,18 @@ class GoogleOauthService
         "User input form (fallback)"
       ]
       
-      # Step 4: Register or Login User
-      
+      # Check for existing user
+      Rails.logger.info "🔍 [GoogleOauthService] Step 4: Checking for existing user"
+      Rails.logger.info "   Looking up user by email: #{user_info['email']}"
+
       # Check if user exists in any model
       existing_user = find_existing_user(user_info['email'])
       
       if existing_user
-        Rails.logger.info "Existing user found: #{existing_user.class.name} - #{existing_user.email}"
+        Rails.logger.info "✅ [GoogleOauthService] Existing #{existing_user.class.name} found: #{existing_user.email}"
+        Rails.logger.info "   User ID: #{existing_user.id}"
+        Rails.logger.info "   Blocked: #{existing_user.respond_to?(:blocked?) ? existing_user.blocked? : 'N/A'}"
+        Rails.logger.info "   Deleted: #{existing_user.respond_to?(:deleted?) ? existing_user.deleted? : 'N/A'}"
         
         # Block login if the user is soft-deleted
         if (existing_user.is_a?(Buyer) || existing_user.is_a?(Seller)) && existing_user.deleted?
@@ -127,7 +144,10 @@ class GoogleOauthService
           requested_role = @role.to_s.downcase.strip
           existing_role = existing_user.is_a?(Seller) ? 'seller' : 'buyer'
           
-          Rails.logger.warn "⚠️ Registration mode: existing #{existing_role} account found (requested: #{requested_role})"
+          Rails.logger.warn "Registration mode: existing #{existing_role} account found (requested: #{requested_role})"
+          # Update existing user with fresh Google data before showing confirmation
+          link_oauth_to_existing_user(existing_user, 'google', user_info['id'], user_info)
+
           # Always generate token but return account_exists flag so frontend can show confirmation first
           # This prevents automatic login during registration, even if roles match
           token = generate_jwt_token(existing_user)
@@ -147,7 +167,10 @@ class GoogleOauthService
         end
         
         # For existing users in login mode, or when role matches during registration, allow login
-        Rails.logger.info "✅ Allowing login for existing user: #{existing_user.email}"
+        Rails.logger.info "Allowing login for existing user: #{existing_user.email}"
+
+        # Update existing user with fresh Google data (profile picture, phone number, etc.)
+        link_oauth_to_existing_user(existing_user, 'google', user_info['id'], user_info)
         
         # Generate JWT token for existing user
         token = generate_jwt_token(existing_user)
@@ -160,11 +183,14 @@ class GoogleOauthService
           location_data: location_info
         }
       else
-        Rails.logger.info "No existing user found - attempting to create new user"
-        
+        Rails.logger.info "🆕 [GoogleOauthService] No existing user found - attempting to create new user"
+        Rails.logger.info "=" * 80
+
         # Try to create a new user - this will return missing fields if any are missing
+        Rails.logger.info "👥 [GoogleOauthService] Step 5: Creating new user"
         user_type = determine_user_type_from_context
-        Rails.logger.info "Creating new #{user_type} user"
+        Rails.logger.info "   Requested role: #{@role}"
+        Rails.logger.info "   Determined user type: #{user_type}"
         
         # Check for role mismatch during registration (user creation)
         # This should only happen when creating new accounts, not during login
@@ -393,12 +419,13 @@ class GoogleOauthService
     if missing_fields.any?
       Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
       
-      # Create a seller object that will fail validation but contains the missing fields info
-      seller = Seller.new(seller_attributes)
-      service_instance = self
-      seller.define_singleton_method(:missing_fields) { missing_fields }
-      seller.define_singleton_method(:user_data_for_modal) { service_instance.format_user_data_for_modal(user_info, location_info) }
-      return seller
+      # Return proper hash format with missing fields info
+      return {
+        success: false,
+        missing_fields: missing_fields,
+        user_data: format_user_data_for_modal(user_info, location_info),
+        error: "Please complete your registration by providing the required information."
+      }
     end
 
     # Create the seller
@@ -507,8 +534,16 @@ class GoogleOauthService
         Rails.logger.info "  #{field}: #{messages.join(', ')}"
       end
       
-      # Return the seller object with missing fields (this will be handled by the controller)
-      seller
+      # Determine missing fields from validation errors
+      missing_fields = determine_missing_fields(seller.errors, user_info)
+      
+      # Return proper hash format with error information
+      {
+        success: false,
+        error: seller.errors.full_messages.join(', '),
+        missing_fields: missing_fields.any? ? missing_fields : nil,
+        user_data: missing_fields.any? ? format_user_data_for_modal(user_info, location_info) : nil
+      }
     end
   end
 
@@ -600,15 +635,10 @@ class GoogleOauthService
     profile_picture = nil
     if user_info['picture'].present?
       profile_picture = fix_google_profile_picture_url(user_info['picture'])
-      Rails.logger.info "📸 Profile picture from 'picture' field: #{profile_picture}"
     elsif user_info['photo_url'].present?
       profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
-      Rails.logger.info "📸 Profile picture from 'photo_url' field: #{profile_picture}"
     elsif user_info['image'].present?
       profile_picture = fix_google_profile_picture_url(user_info['image'])
-      Rails.logger.info "📸 Profile picture from 'image' field: #{profile_picture}"
-    else
-      Rails.logger.warn "⚠️ No profile picture found in Google user info"
     end
 
     # Create buyer attributes
@@ -643,12 +673,13 @@ class GoogleOauthService
     if missing_fields.any?
       Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
       
-      # Create a buyer object that will fail validation but contains the missing fields info
-      buyer = Buyer.new(buyer_attributes)
-      service_instance = self
-      buyer.define_singleton_method(:missing_fields) { missing_fields }
-      buyer.define_singleton_method(:user_data_for_modal) { service_instance.format_user_data_for_modal(user_info, location_info) }
-      return buyer
+      # Return proper hash format with missing fields info
+      return {
+        success: false,
+        missing_fields: missing_fields,
+        user_data: format_user_data_for_modal(user_info, location_info),
+        error: "Please complete your registration by providing the required information."
+      }
     end
 
     # Create the buyer
@@ -751,8 +782,16 @@ class GoogleOauthService
         Rails.logger.info "  #{field}: #{messages.join(', ')}"
       end
       
-      # Return the buyer object with missing fields (this will be handled by the controller)
-      buyer
+      # Determine missing fields from validation errors
+      missing_fields = determine_missing_fields(buyer.errors, user_info)
+      
+      # Return proper hash format with error information
+      {
+        success: false,
+        error: buyer.errors.full_messages.join(', '),
+        missing_fields: missing_fields.any? ? missing_fields : nil,
+        user_data: missing_fields.any? ? format_user_data_for_modal(user_info, location_info) : nil
+      }
     end
   end
 
@@ -1346,16 +1385,26 @@ class GoogleOauthService
   def exchange_code_for_token
     begin
       Rails.logger.info "Exchanging code for token"
-      
-      # For GSI popup authentication, use 'postmessage' as redirect_uri
+
+      # For GSI popup authentication, Google uses 'postmessage' for both authorization and token exchange
+      # When redirect_uri is 'postmessage', we must use 'postmessage' for token exchange as well
+      # This is a special case for Google Sign-In (GSI) popup mode
       redirect_uri = @redirect_uri == 'postmessage' ? 'postmessage' : @redirect_uri
-      
+
       Rails.logger.info "Exchanging code for token with redirect_uri: #{redirect_uri}"
       Rails.logger.info "Using client_id: #{ENV['GOOGLE_OAUTH_CLIENT_ID']}"
-      
+      Rails.logger.info "Original redirect_uri from request: #{@redirect_uri}"
+
       # Validate required environment variables
       unless ENV['GOOGLE_OAUTH_CLIENT_ID'].present? && ENV['GOOGLE_OAUTH_CLIENT_SECRET'].present?
         Rails.logger.error "Missing Google OAuth credentials"
+        return nil
+      end
+
+      # For GSI popup mode, 'postmessage' is valid for token exchange
+      # But it must be configured in Google Cloud Console as an authorized redirect URI
+      if redirect_uri.blank?
+        Rails.logger.error "❌ Invalid redirect URI for token exchange: blank"
         return nil
       end
       
@@ -1375,6 +1424,26 @@ class GoogleOauthService
       
       unless response.success?
         Rails.logger.error "Failed to exchange code for token. Status: #{response.code}, Body: #{response.body}"
+        
+        # Parse error response for better debugging
+        begin
+          error_data = JSON.parse(response.body)
+          if error_data['error'] == 'redirect_uri_mismatch'
+            Rails.logger.error "=" * 80
+            Rails.logger.error "❌ REDIRECT URI MISMATCH ERROR"
+            Rails.logger.error "=" * 80
+            Rails.logger.error "   The redirect_uri '#{redirect_uri}' is not configured in Google Cloud Console"
+            Rails.logger.error "   For GSI popup authentication, you need to:"
+            Rails.logger.error "   1. Go to Google Cloud Console → APIs & Services → Credentials"
+            Rails.logger.error "   2. Edit your OAuth 2.0 Client ID"
+            Rails.logger.error "   3. Add 'postmessage' to 'Authorized redirect URIs'"
+            Rails.logger.error "   4. Save and wait a few minutes for changes to propagate"
+            Rails.logger.error "=" * 80
+          end
+        rescue => e
+          # Ignore JSON parsing errors
+        end
+        
         return nil
       end
       
@@ -1415,14 +1484,9 @@ class GoogleOauthService
       # Merge the information (detailed_info takes precedence)
       comprehensive_info = basic_info.merge(detailed_info || {})
       
-      # Log phone number extraction for debugging
-      if comprehensive_info['phone_number'].present?
-        Rails.logger.info "📞 Phone number found in comprehensive_info: #{comprehensive_info['phone_number']}"
-      elsif comprehensive_info['phone_numbers'].present?
-        Rails.logger.info "📞 Phone numbers array found: #{comprehensive_info['phone_numbers'].inspect}"
-      else
-        Rails.logger.warn "⚠️ No phone number found in comprehensive_info"
-      end
+      # Check for phone number data
+      phone_data_available = comprehensive_info['phone_number'].present? || comprehensive_info['phone_numbers'].present?
+      Rails.logger.info "Phone data available: #{phone_data_available}"
       
       Rails.logger.info "Successfully obtained comprehensive user info: #{comprehensive_info['email']}"
       Rails.logger.info "Available data: #{comprehensive_info.keys.join(', ')}"
@@ -1452,7 +1516,7 @@ class GoogleOauthService
       end
       
       user_info = JSON.parse(response.body)
-      Rails.logger.info "Successfully obtained basic user info: #{user_info['email']}"
+      Rails.logger.info "Basic user info obtained for: #{user_info['email']}"
       user_info
     rescue => e
       Rails.logger.error "Error getting basic user info: #{e.message}"
@@ -1529,9 +1593,6 @@ class GoogleOauthService
       
       # Extract and format the detailed information
       extracted_info = extract_detailed_info(detailed_info)
-      Rails.logger.info "Extracted detailed info keys: #{extracted_info.keys.join(', ')}"
-      Rails.logger.info "Extracted phone: #{extracted_info['phone_number'] || 'Not found'}"
-      Rails.logger.info "Extracted gender: #{extracted_info['gender'] || 'Not found'}"
       # Address extraction disabled - location data comes from IP geolocation or frontend
       extracted_info
     rescue => e
@@ -1676,6 +1737,8 @@ class GoogleOauthService
   end
 
   def link_oauth_to_existing_user(user, provider, uid, user_info)
+    Rails.logger.info "Updating existing user: #{user.email} (#{user.class.name})"
+
     # Only link if not already linked to this provider
     unless user.provider == provider && user.uid == uid
       update_attributes = {
@@ -1685,46 +1748,99 @@ class GoogleOauthService
         oauth_expires_at: Time.current + 1.hour # Google tokens typically last 1 hour
       }
       
-      # Update profile picture if user doesn't have one and Google provides one
-      if user.respond_to?(:profile_picture) && user.profile_picture.blank?
-        # Try multiple sources for profile picture
-        profile_picture = nil
-        if user_info['picture'].present?
-          profile_picture = fix_google_profile_picture_url(user_info['picture'])
-          Rails.logger.info "📸 Profile picture from 'picture' field: #{profile_picture}"
-        elsif user_info['photo_url'].present?
-          profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
-          Rails.logger.info "📸 Profile picture from 'photo_url' field: #{profile_picture}"
-        elsif user_info['image'].present?
-          profile_picture = fix_google_profile_picture_url(user_info['image'])
-          Rails.logger.info "📸 Profile picture from 'image' field: #{profile_picture}"
-        end
-        
-        if profile_picture.present?
-          update_attributes[:profile_picture] = profile_picture
-          Rails.logger.info "Updating profile picture for existing user: #{user.email}"
-          Rails.logger.info "Fixed profile picture URL: #{profile_picture}"
+      # Smart profile picture update logic
+      if user.respond_to?(:profile_picture)
+        current_picture = user.profile_picture
+
+        # Determine if current picture should be updated
+        should_update_picture = false
+        update_reason = ""
+
+        if current_picture.blank?
+          should_update_picture = true
+          update_reason = "no current picture"
+        elsif is_google_or_cloudinary_url?(current_picture)
+          should_update_picture = true
+          update_reason = "current picture is from Google/Cloudinary (safe to update)"
         else
-          Rails.logger.warn "⚠️ No profile picture found in Google user info for existing user: #{user.email}"
+          # Current picture appears to be user-uploaded - be conservative
+          should_update_picture = false
+          update_reason = "current picture appears user-uploaded"
         end
-      elsif user.respond_to?(:profile_picture) && user.profile_picture.present?
-        Rails.logger.info "User already has profile picture, keeping existing: #{user.email}"
+
+        if should_update_picture
+          # Try to get fresh profile picture from Google
+          fresh_picture = nil
+
+          fresh_picture = user_info['picture'] || user_info['photo_url'] || user_info['image']
+          if fresh_picture.present?
+            fresh_picture = fix_google_profile_picture_url(fresh_picture, user.id)
+          end
+
+          if fresh_picture.present? && current_picture != fresh_picture
+            update_attributes[:profile_picture] = fresh_picture
+            Rails.logger.info "Updated profile picture for #{user.email}: #{update_reason}"
+          end
+        end
       end
       
       # Update fullname if user doesn't have one and Google provides one
       if user.respond_to?(:fullname) && user.fullname.blank? && (user_info['display_name'].present? || user_info['name'].present?)
-        update_attributes[:fullname] = user_info['display_name'] || user_info['name']
-        Rails.logger.info "Updating fullname for existing user: #{user.email}"
-      elsif user.respond_to?(:fullname) && user.fullname.present?
-        Rails.logger.info "User already has fullname, keeping existing: #{user.email}"
+        new_fullname = user_info['display_name'] || user_info['name']
+        update_attributes[:fullname] = new_fullname
+        Rails.logger.info "✅ Updating fullname for existing user: #{user.email} -> #{new_fullname}"
       end
-      
-      # Update phone number if user doesn't have one and Google provides one
-      if user.respond_to?(:phone_number) && user.phone_number.blank? && user_info['phone_number'].present?
-        update_attributes[:phone_number] = user_info['phone_number']
-        Rails.logger.info "Updating phone number for existing user: #{user.email}"
-      elsif user.respond_to?(:phone_number) && user.phone_number.present?
-        Rails.logger.info "User already has phone number, keeping existing: #{user.email}"
+
+      # Smart phone number update logic
+      if user.respond_to?(:phone_number)
+        current_phone = user.phone_number
+        extracted_phone = extract_phone_number(user_info)
+
+        if extracted_phone.present?
+          # Clean and validate the phone number
+          cleaned_phone = extracted_phone.gsub(/\D/, '')
+          if cleaned_phone.start_with?('+254')
+            cleaned_phone = cleaned_phone[4..-1]
+            cleaned_phone = "0#{cleaned_phone}" if cleaned_phone.length == 9 && cleaned_phone.start_with?('7')
+          elsif cleaned_phone.length == 9 && cleaned_phone.start_with?('7')
+            cleaned_phone = "0#{cleaned_phone}"
+          end
+
+          # Determine if we should update the phone number
+          should_update_phone = false
+          update_reason = ""
+
+          if current_phone.blank?
+            should_update_phone = true
+            update_reason = "no current phone number"
+          elsif current_phone != cleaned_phone
+            # Phone numbers are different - check if the new one looks more complete/valid
+            current_digits = current_phone.gsub(/\D/, '')
+            new_digits = cleaned_phone.gsub(/\D/, '')
+
+            # Prefer phone numbers with country codes or that look more complete
+            if new_digits.length > current_digits.length ||
+               (new_digits.start_with?('0') && !current_digits.start_with?('0')) ||
+               (new_digits.length == 10 && current_digits.length != 10)
+              should_update_phone = true
+              update_reason = "new phone number appears more complete (#{new_digits.length} vs #{current_digits.length} digits)"
+            else
+              Rails.logger.info "ℹ️ Phone numbers differ but keeping current (similar validity)"
+              should_update_phone = false
+              update_reason = "phone numbers differ but current seems equally valid"
+            end
+          else
+            should_update_phone = false
+            update_reason = "phone numbers are identical"
+          end
+
+          if should_update_phone
+            update_attributes[:phone_number] = cleaned_phone
+            Rails.logger.info "Updated phone number for #{user.email}: #{update_reason}"
+          end
+        else
+          Rails.logger.info "ℹ️ No phone number available from Google for existing user: #{user.email}"
+        end
       end
       
       # Update location if user doesn't have one and Google provides one
@@ -1807,19 +1923,11 @@ class GoogleOauthService
     profile_picture = nil
     if user_info['picture'].present?
       profile_picture = fix_google_profile_picture_url(user_info['picture'])
-      Rails.logger.info "📸 Profile picture from 'picture' field: #{profile_picture}"
     elsif user_info['photo_url'].present?
       profile_picture = fix_google_profile_picture_url(user_info['photo_url'])
-      Rails.logger.info "📸 Profile picture from 'photo_url' field: #{profile_picture}"
     elsif user_info['image'].present?
       profile_picture = fix_google_profile_picture_url(user_info['image'])
-      Rails.logger.info "📸 Profile picture from 'image' field: #{profile_picture}"
-    else
-      Rails.logger.warn "⚠️ No profile picture found in Google user info"
     end
-    
-    Rails.logger.info "Profile picture from Google: #{profile_picture.present? ? 'Available' : 'Not available'}"
-    Rails.logger.info "Fixed profile picture URL: #{profile_picture}" if profile_picture.present?
     Rails.logger.info "Full name from Google: #{fullname || 'MISSING - will be required in frontend'}"
     
     # Extract location information
@@ -1959,13 +2067,11 @@ class GoogleOauthService
 
   def extract_phone_number(user_info)
     # Try multiple sources for phone number
-    # Check in order: direct phone_number, phone_numbers array, phone field
     phone_number = nil
     
     # First, try direct phone_number field (from People API)
     if user_info['phone_number'].present?
       phone_number = user_info['phone_number']
-      Rails.logger.info "📞 Found phone_number in user_info: #{phone_number}"
     # Then try phone_numbers array (from People API or other sources)
     elsif user_info['phone_numbers'].present?
       if user_info['phone_numbers'].is_a?(Array)
@@ -1981,12 +2087,10 @@ class GoogleOauthService
         elsif phone_info.is_a?(String)
           phone_number = phone_info
         end
-        Rails.logger.info "📞 Found phone_number in phone_numbers array: #{phone_number}"
       end
     # Try phone field as fallback
     elsif user_info['phone'].present?
       phone_number = user_info['phone']
-      Rails.logger.info "📞 Found phone in user_info: #{phone_number}"
     end
     
     if phone_number.present?
@@ -2036,11 +2140,7 @@ class GoogleOauthService
         return nil
       end
     else
-      Rails.logger.warn "⚠️ No phone number found in Google user info. Available keys: #{user_info.keys.join(', ')}"
-      # Log phone_numbers structure if it exists
-      if user_info['phone_numbers'].present?
-        Rails.logger.info "📞 phone_numbers structure: #{user_info['phone_numbers'].inspect}"
-      end
+      Rails.logger.warn "No phone number found in Google user info"
       return nil
     end
   end
@@ -2246,6 +2346,36 @@ class GoogleOauthService
     current_year = Time.current.year
     Rails.logger.info "🔍 GoogleOauthService checking 2025 premium status: current_year=#{current_year}, is_2025=#{current_year == 2025}"
     current_year == 2025
+  end
+
+  # Check if URL is from Google or Cloudinary (safe to auto-update)
+  def is_google_or_cloudinary_url?(url)
+    return false if url.blank?
+
+    url = url.downcase
+
+    # Check for Google domains
+    google_domains = [
+      'googleusercontent.com',
+      'google.com',
+      'gstatic.com',
+      'ggpht.com'
+    ]
+
+    # Check for Cloudinary domains
+    cloudinary_domains = [
+      'cloudinary.com',
+      'res.cloudinary.com'
+    ]
+
+    # Check for our cached profile pictures path
+    is_cached_local = url.include?('/cached_profile_pictures/')
+
+    # Check if URL contains Google or Cloudinary domains
+    contains_google = google_domains.any? { |domain| url.include?(domain) }
+    contains_cloudinary = cloudinary_domains.any? { |domain| url.include?(domain) }
+
+    contains_google || contains_cloudinary || is_cached_local
   end
 
   # Get premium tier for 2025 users
