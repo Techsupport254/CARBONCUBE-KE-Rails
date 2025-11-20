@@ -184,19 +184,9 @@ class OauthAccountLinkingService
       enterprise_name: @name || @email.split('@').first
     }
     
-    # Phone number is REQUIRED for sellers
-    # Check if phone number is missing before attempting to create
-    if phone_number.blank?
-      Rails.logger.warn "⚠️ Phone number is REQUIRED for sellers but not provided by OAuth"
-      return {
-        success: false,
-        error: "Phone number is required. Please complete your registration.",
-        missing_fields: ['phone_number'],
-        not_registered: true
-      }
-    end
-    
-    user_attributes[:phone_number] = phone_number
+    # Phone number is optional - only include if provided by Google OAuth
+    # Users can add it later if needed
+    user_attributes[:phone_number] = phone_number if phone_number.present?
     
     Rails.logger.info "🔍 Creating seller with attributes: #{user_attributes.except(:oauth_token, :oauth_refresh_token).inspect}"
     Rails.logger.info "📞 Phone number: #{phone_number}"
