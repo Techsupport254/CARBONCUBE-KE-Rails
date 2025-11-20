@@ -127,8 +127,10 @@ class OauthAccountLinkingService
       sub_county_id: location_data[:sub_county_id]
     }
     
-    # Only add phone number if we have one from OAuth provider
+    # Phone number is optional for buyers, but always include if available
     user_attributes[:phone_number] = phone_number if phone_number.present?
+    
+    Rails.logger.info "📞 Creating buyer - Phone number: #{phone_number || 'Not provided (optional for buyers)'}"
     
     Buyer.create!(user_attributes)
   rescue ActiveRecord::RecordInvalid => e
@@ -179,11 +181,23 @@ class OauthAccountLinkingService
       enterprise_name: @name || @email.split('@').first
     }
     
-    # Only add phone number if we have one from OAuth provider
-    user_attributes[:phone_number] = phone_number if phone_number.present?
+    # Phone number is REQUIRED for sellers
+    # Check if phone number is missing before attempting to create
+    if phone_number.blank?
+      Rails.logger.warn "⚠️ Phone number is REQUIRED for sellers but not provided by OAuth"
+      return {
+        success: false,
+        error: "Phone number is required. Please complete your registration.",
+        missing_fields: ['phone_number'],
+        not_registered: true
+      }
+    end
+    
+    user_attributes[:phone_number] = phone_number
     
     Rails.logger.info "🔍 Creating seller with attributes: #{user_attributes.except(:oauth_token, :oauth_refresh_token).inspect}"
-    
+    Rails.logger.info "📞 Phone number: #{phone_number}"
+
     Seller.create!(user_attributes)
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth seller: #{e.message}"
@@ -255,8 +269,51 @@ class OauthAccountLinkingService
   end
 
   def extract_phone_number
-    # OAuth providers may not provide phone number in basic profile
-    # Return nil to indicate no phone number available
+    # Try to extract phone number from OAuth auth hash
+    phone_number = nil
+    
+    # Try multiple sources for phone number
+    if @auth_hash.dig(:info, :phone_number).present?
+      phone_number = @auth_hash.dig(:info, :phone_number)
+    elsif @auth_hash.dig(:info, :phone).present?
+      phone_number = @auth_hash.dig(:info, :phone)
+    elsif @auth_hash.dig(:extra, :raw_info, :phone_number).present?
+      phone_number = @auth_hash.dig(:extra, :raw_info, :phone_number)
+    elsif @auth_hash.dig(:extra, :raw_info, :phone_numbers)&.is_a?(Array) && @auth_hash.dig(:extra, :raw_info, :phone_numbers).any?
+      # Try to get mobile phone first
+      mobile_phone = @auth_hash.dig(:extra, :raw_info, :phone_numbers).find { |p| 
+        p.is_a?(Hash) && (p['type']&.downcase == 'mobile' || p['type']&.downcase == 'cell')
+      }
+      phone_info = mobile_phone || @auth_hash.dig(:extra, :raw_info, :phone_numbers).first
+      phone_number = phone_info['value'] || phone_info[:value] if phone_info.is_a?(Hash)
+    end
+    
+    if phone_number.present?
+      # Clean and format the phone number
+      cleaned_phone = phone_number.to_s.gsub(/[^\d+]/, '')
+      
+      # Format Kenya phone numbers
+      if cleaned_phone.start_with?('+254')
+        local_number = cleaned_phone[4..-1]
+        if local_number.length == 9 && local_number.start_with?('7')
+          cleaned_phone = "0#{local_number}"
+        elsif local_number.length == 10 && local_number.start_with?('0')
+          cleaned_phone = local_number
+        end
+      elsif cleaned_phone.start_with?('254') && cleaned_phone.length == 12
+        local_number = cleaned_phone[3..-1]
+        cleaned_phone = local_number.start_with?('0') ? local_number : "0#{local_number}"
+      elsif cleaned_phone.length == 9 && cleaned_phone.start_with?('7')
+        cleaned_phone = "0#{cleaned_phone}"
+      elsif cleaned_phone.length == 11 && cleaned_phone.start_with?('0')
+        # Already formatted correctly
+      end
+      
+      Rails.logger.info "📞 Extracted phone number from OAuth: #{phone_number} -> #{cleaned_phone}"
+      return cleaned_phone
+    end
+    
+    Rails.logger.warn "⚠️ No phone number found in OAuth auth hash"
     nil
   end
 
