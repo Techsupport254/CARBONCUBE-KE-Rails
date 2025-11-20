@@ -60,6 +60,29 @@ class OauthAccountLinkingService
     # Check if user exists with this OAuth account
     oauth_user = find_user_by_oauth(@provider, @uid)
     if oauth_user
+      # Check if the OAuth user's role matches the requested role
+      oauth_role = determine_user_role(oauth_user)
+      oauth_role_normalized = oauth_role.to_s.downcase.strip
+      
+      Rails.logger.info "🔍 [OauthAccountLinkingService] OAuth user found: #{oauth_user.class.name}"
+      Rails.logger.info "   OAuth user role: #{oauth_role_normalized}"
+      Rails.logger.info "   Requested role: #{normalized_requested_role}"
+      
+      # If roles don't match, return an error
+      if oauth_role_normalized != normalized_requested_role
+        Rails.logger.error "❌ [OauthAccountLinkingService] Role mismatch for OAuth account!"
+        Rails.logger.error "   User #{@email} already has OAuth account linked as #{oauth_role}"
+        Rails.logger.error "   Cannot use same OAuth account for #{normalized_requested_role.capitalize} registration"
+        
+        return {
+          success: false,
+          error: "This Google account is already linked to a #{oauth_role} account. Please sign in with your existing #{oauth_role} account or use a different Google account.",
+          role_mismatch: true,
+          existing_role: oauth_role,
+          requested_role: normalized_requested_role.capitalize
+        }
+      end
+      
       return { success: true, user: oauth_user, message: 'Welcome back!' }
     end
     
