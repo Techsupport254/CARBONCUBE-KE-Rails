@@ -143,6 +143,9 @@ class OauthAccountLinkingService
         oauth_expires_at: @auth_hash.dig(:credentials, :expires_at)
       )
     end
+    
+    # Auto-verify email for Google OAuth users (email is already verified by Google)
+    mark_email_as_verified(@email)
   end
 
   def create_new_oauth_user
@@ -220,7 +223,12 @@ class OauthAccountLinkingService
     
     Rails.logger.info "📞 Creating buyer - Phone number: #{phone_number || 'Not provided (optional for buyers)'}"
     
-    Buyer.create!(user_attributes)
+    buyer = Buyer.create!(user_attributes)
+    
+    # Auto-verify email for Google OAuth users (email is already verified by Google)
+    mark_email_as_verified(@email)
+    
+    buyer
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth buyer: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
@@ -283,7 +291,12 @@ class OauthAccountLinkingService
     Rails.logger.info "🔍 Creating seller with attributes: #{user_attributes.except(:oauth_token, :oauth_refresh_token).inspect}"
     Rails.logger.info "📞 Phone number: #{phone_number}"
 
-    Seller.create!(user_attributes)
+    seller = Seller.create!(user_attributes)
+    
+    # Auto-verify email for Google OAuth users (email is already verified by Google)
+    mark_email_as_verified(@email)
+    
+    seller
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth seller: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
@@ -293,7 +306,7 @@ class OauthAccountLinkingService
   def create_admin
     random_password = SecureRandom.hex(16)
     
-    Admin.create!(
+    admin = Admin.create!(
       fullname: @name || @email.split('@').first,
       email: @email,
       username: generate_unique_username(@name || @email.split('@').first),
@@ -305,6 +318,11 @@ class OauthAccountLinkingService
       password: random_password, # Random password for OAuth users
       password_confirmation: random_password
     )
+    
+    # Auto-verify email for Google OAuth users (email is already verified by Google)
+    mark_email_as_verified(@email)
+    
+    admin
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth admin: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
@@ -314,7 +332,7 @@ class OauthAccountLinkingService
   def create_sales_user
     random_password = SecureRandom.hex(16)
     
-    SalesUser.create!(
+    sales_user = SalesUser.create!(
       fullname: @name || @email.split('@').first,
       email: @email,
       provider: @provider,
@@ -325,6 +343,11 @@ class OauthAccountLinkingService
       password: random_password, # Random password for OAuth users
       password_confirmation: random_password
     )
+    
+    # Auto-verify email for Google OAuth users (email is already verified by Google)
+    mark_email_as_verified(@email)
+    
+    sales_user
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth sales user: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
@@ -613,6 +636,28 @@ class OauthAccountLinkingService
     end
     
     nil
+  end
+
+  # Mark email as verified for Google OAuth users
+  # Google OAuth emails are already verified by Google, so we can skip OTP verification
+  def mark_email_as_verified(email)
+    return unless email.present?
+    
+    # Remove any existing unverified OTPs for this email
+    EmailOtp.where(email: email, verified: false).delete_all
+    
+    # Create or update EmailOtp record with verified: true
+    email_otp = EmailOtp.find_or_initialize_by(email: email)
+    email_otp.update!(
+      verified: true,
+      otp_code: nil, # No OTP needed for Google OAuth users
+      expires_at: nil # No expiration for verified emails
+    )
+    
+    Rails.logger.info "✅ [OauthAccountLinkingService] Email #{email} marked as verified (Google OAuth)"
+  rescue => e
+    Rails.logger.error "❌ [OauthAccountLinkingService] Failed to mark email as verified: #{e.message}"
+    # Don't fail the entire process if email verification marking fails
   end
 
 end
