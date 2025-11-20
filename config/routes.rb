@@ -53,7 +53,7 @@ Rails.application.routes.draw do
   get '/geocoding/reverse', to: 'geocoding#reverse'
   get '/geocoding/search', to: 'geocoding#search'
   
-  # Profile picture caching endpoints
+  # Profile picture caching endpoints (both root and API scope)
   get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
   
   # Best sellers routes
@@ -506,6 +506,8 @@ Rails.application.routes.draw do
   #==========================================Buyer namespace for buyer-specific functionality=========================================#
   # Support both /buyer and /api/buyer routes for backward compatibility
   scope '/api', defaults: { format: :json } do
+    # Profile picture caching endpoints (accessible via /api/cached_profile_pictures/:filename)
+    get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
     namespace :buyer, path: 'buyer' do
       post 'signup', to: 'buyers#create'
       delete 'delete_account', to: 'buyers#destroy'
