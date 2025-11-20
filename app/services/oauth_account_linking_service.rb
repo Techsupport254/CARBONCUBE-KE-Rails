@@ -296,6 +296,11 @@ class OauthAccountLinkingService
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
+    # Apply 2025 premium logic for all users registering in 2025
+    if should_get_2025_premium?
+      create_2025_premium_tier(seller)
+    end
+    
     seller
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth seller: #{e.message}"
@@ -658,6 +663,58 @@ class OauthAccountLinkingService
   rescue => e
     Rails.logger.error "❌ [OauthAccountLinkingService] Failed to mark email as verified: #{e.message}"
     # Don't fail the entire process if email verification marking fails
+  end
+
+  # Check if user should get premium status for 2025 registrations
+  def should_get_2025_premium?
+    current_year = Time.current.year
+    Rails.logger.info "🔍 [OauthAccountLinkingService] Checking 2025 premium status: current_year=#{current_year}, is_2025=#{current_year == 2025}"
+    current_year == 2025
+  end
+
+  # Get premium tier for 2025 users
+  def get_premium_tier
+    Tier.find_by(name: 'Premium')
+  end
+
+  # Create seller tier for 2025 premium users
+  def create_2025_premium_tier(seller)
+    Rails.logger.info "🔍 [OauthAccountLinkingService] create_2025_premium_tier called for seller: #{seller.email}"
+    
+    unless should_get_2025_premium?
+      Rails.logger.info "❌ [OauthAccountLinkingService] Not 2025, skipping premium tier assignment"
+      return
+    end
+    
+    premium_tier = get_premium_tier
+    unless premium_tier
+      Rails.logger.error "❌ [OauthAccountLinkingService] Premium tier not found in database"
+      return
+    end
+    
+    Rails.logger.info "✅ [OauthAccountLinkingService] Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
+    
+    # Calculate expiry date (end of 2025) - expires at midnight on January 1, 2026
+    expires_at = Time.new(2026, 1, 1, 0, 0, 0)
+    
+    # Calculate remaining months until end of 2025
+    current_date = Time.current
+    end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
+    remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
+    duration_months = (remaining_days / 30.44).ceil # Average days per month
+    
+    # Create seller tier with premium status until end of 2025
+    seller_tier = SellerTier.create!(
+      seller: seller,
+      tier: premium_tier,
+      duration_months: duration_months,
+      expires_at: expires_at
+    )
+    
+    Rails.logger.info "✅ [OauthAccountLinkingService] Premium tier assigned to seller #{seller.email} until end of 2025 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
+  rescue => e
+    Rails.logger.error "❌ [OauthAccountLinkingService] Error creating premium tier: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
   end
 
 end
