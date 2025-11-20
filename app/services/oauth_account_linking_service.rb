@@ -385,50 +385,29 @@ class OauthAccountLinkingService
     # Try to extract phone number from OAuth auth hash
     phone_number = nil
     
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔍 [OauthAccountLinkingService] Extracting phone number from auth_hash"
-    Rails.logger.info "   auth_hash[:info][:phone_number]: #{@auth_hash.dig(:info, :phone_number).inspect}"
-    Rails.logger.info "   auth_hash[:info][:phone]: #{@auth_hash.dig(:info, :phone).inspect}"
-    Rails.logger.info "   auth_hash[:extra][:raw_info][:phone_number]: #{@auth_hash.dig(:extra, :raw_info, :phone_number).inspect}"
-    Rails.logger.info "   auth_hash[:extra][:raw_info][:phone_numbers]: #{@auth_hash.dig(:extra, :raw_info, :phone_numbers).inspect}"
-    Rails.logger.info "   auth_hash[:extra][:raw_info][:phone_numbers] class: #{@auth_hash.dig(:extra, :raw_info, :phone_numbers).class}"
-    Rails.logger.info "=" * 80
-    
     # Try multiple sources for phone number
     if @auth_hash.dig(:info, :phone_number).present?
       phone_number = @auth_hash.dig(:info, :phone_number)
-      Rails.logger.info "✅ Found phone number in auth_hash[:info][:phone_number]: #{phone_number}"
     elsif @auth_hash.dig(:info, :phone).present?
       phone_number = @auth_hash.dig(:info, :phone)
-      Rails.logger.info "✅ Found phone number in auth_hash[:info][:phone]: #{phone_number}"
     elsif @auth_hash.dig(:extra, :raw_info, :phone_number).present?
       phone_number = @auth_hash.dig(:extra, :raw_info, :phone_number)
-      Rails.logger.info "✅ Found phone number in auth_hash[:extra][:raw_info][:phone_number]: #{phone_number}"
     elsif @auth_hash.dig(:extra, :raw_info, :phone_numbers)&.is_a?(Array) && @auth_hash.dig(:extra, :raw_info, :phone_numbers).any?
-      Rails.logger.info "🔍 Checking phone_numbers array: #{@auth_hash.dig(:extra, :raw_info, :phone_numbers).inspect}"
       # Try to get mobile phone first
       mobile_phone = @auth_hash.dig(:extra, :raw_info, :phone_numbers).find { |p| 
         p.is_a?(Hash) && (p['type']&.downcase == 'mobile' || p['type']&.downcase == 'cell' || p[:type]&.downcase == 'mobile' || p[:type]&.downcase == 'cell')
       }
       phone_info = mobile_phone || @auth_hash.dig(:extra, :raw_info, :phone_numbers).first
-      Rails.logger.info "   Selected phone_info: #{phone_info.inspect}"
       if phone_info.is_a?(Hash)
         phone_number = phone_info['value'] || phone_info[:value]
-        Rails.logger.info "✅ Extracted phone number from phone_info hash: #{phone_number}"
       elsif phone_info.is_a?(String)
         phone_number = phone_info
-        Rails.logger.info "✅ Using phone_info as string: #{phone_number}"
       end
     end
     
     if phone_number.present?
       # Clean and format the phone number
-      original_phone = phone_number.to_s
       cleaned_phone = phone_number.to_s.gsub(/[^\d+]/, '')
-      
-      Rails.logger.info "📞 Phone number processing:"
-      Rails.logger.info "   Original: #{original_phone}"
-      Rails.logger.info "   After removing non-digits: #{cleaned_phone}"
       
       # Format Kenya phone numbers
       if cleaned_phone.start_with?('+254')
@@ -447,17 +426,9 @@ class OauthAccountLinkingService
         # Already formatted correctly
       end
       
-      Rails.logger.info "   Final formatted: #{cleaned_phone}"
-      Rails.logger.info "✅ Successfully extracted and formatted phone number: #{original_phone} -> #{cleaned_phone}"
       return cleaned_phone
     end
     
-    Rails.logger.warn "⚠️ [OauthAccountLinkingService] No phone number found in OAuth auth hash"
-    Rails.logger.warn "   Full auth_hash structure:"
-    Rails.logger.warn "   auth_hash keys: #{@auth_hash.keys.inspect}"
-    Rails.logger.warn "   auth_hash[:info] keys: #{@auth_hash[:info]&.keys.inspect}" if @auth_hash[:info]
-    Rails.logger.warn "   auth_hash[:extra] keys: #{@auth_hash[:extra]&.keys.inspect}" if @auth_hash[:extra]
-    Rails.logger.warn "   auth_hash[:extra][:raw_info] keys: #{@auth_hash[:extra][:raw_info]&.keys.inspect}" if @auth_hash.dig(:extra, :raw_info)
     nil
   end
 

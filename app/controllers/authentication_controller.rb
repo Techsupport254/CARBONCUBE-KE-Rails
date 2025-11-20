@@ -827,27 +827,13 @@ class AuthenticationController < ApplicationController
       phone_number = nil
       phone_numbers_array = []
       begin
-        Rails.logger.info "=" * 80
-        Rails.logger.info "🔍 [GoogleOAuth] Attempting to fetch phone numbers from People API"
-        Rails.logger.info "   Access token present: #{access_token.present?}"
-        Rails.logger.info "=" * 80
-        
         people_api_response = HTTParty.get('https://people.googleapis.com/v1/people/me', {
           headers: { 'Authorization' => "Bearer #{access_token}" },
           query: { personFields: 'phoneNumbers' }
         })
         
-        Rails.logger.info "📡 [GoogleOAuth] People API Response:"
-        Rails.logger.info "   Status code: #{people_api_response.code}"
-        Rails.logger.info "   Success: #{people_api_response.success?}"
-        Rails.logger.info "   Response body: #{people_api_response.body.inspect}" if people_api_response.body.present?
-        
         if people_api_response.success?
           people_data = JSON.parse(people_api_response.body)
-          Rails.logger.info "   Parsed people_data keys: #{people_data.keys.inspect}"
-          Rails.logger.info "   phoneNumbers present: #{people_data['phoneNumbers'].present?}"
-          Rails.logger.info "   phoneNumbers: #{people_data['phoneNumbers'].inspect}"
-          
           if people_data['phoneNumbers']&.any?
             # Try to find mobile phone first, then any phone
             mobile_phone = people_data['phoneNumbers'].find { |p| 
@@ -856,27 +842,12 @@ class AuthenticationController < ApplicationController
             phone_info = mobile_phone || people_data['phoneNumbers'].first
             phone_number = phone_info['value'] if phone_info && phone_info['value'].present?
             phone_numbers_array = people_data['phoneNumbers'].map { |p| { 'value' => p['value'], 'type' => p['type'] } }
-            Rails.logger.info "✅ [GoogleOAuth] Phone number fetched from People API: #{phone_number}" if phone_number.present?
-            Rails.logger.info "   Phone numbers array: #{phone_numbers_array.inspect}"
-          else
-            Rails.logger.warn "⚠️ [GoogleOAuth] No phone numbers found in People API response"
           end
-        else
-          Rails.logger.error "❌ [GoogleOAuth] People API request failed"
-          Rails.logger.error "   Status: #{people_api_response.code}"
-          Rails.logger.error "   Body: #{people_api_response.body.inspect}"
         end
       rescue => e
-        Rails.logger.error "❌ [GoogleOAuth] Exception fetching phone numbers from People API: #{e.message}"
-        Rails.logger.error "   Backtrace: #{e.backtrace.first(5).join("\n")}"
+        Rails.logger.warn "⚠️ Failed to fetch phone numbers from People API: #{e.message}"
         # Continue without phone numbers - they're optional
       end
-      
-      Rails.logger.info "=" * 80
-      Rails.logger.info "📞 [GoogleOAuth] Final phone number values:"
-      Rails.logger.info "   phone_number: #{phone_number.inspect}"
-      Rails.logger.info "   phone_numbers_array: #{phone_numbers_array.inspect}"
-      Rails.logger.info "=" * 80
       
       # Build auth hash for OauthAccountLinkingService
       auth_hash = {
