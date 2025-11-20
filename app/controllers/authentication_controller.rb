@@ -495,9 +495,10 @@ class AuthenticationController < ApplicationController
     Rails.logger.info "     Signed State (first 50 chars): #{state[0..50]}..."
     
     # Build Google OAuth authorization URL
-    # Minimal scopes for login - only request what's needed
+    # Request scopes including People API for phone numbers
     # openid email profile provides: name, email, picture, and verified_email
-    scope = 'openid email profile'
+    # https://www.googleapis.com/auth/user.phonenumbers.read provides: phone numbers
+    scope = 'openid email profile https://www.googleapis.com/auth/user.phonenumbers.read'
     
     query_params = {
       'client_id' => client_id,
@@ -809,6 +810,33 @@ class AuthenticationController < ApplicationController
       Rails.logger.info "   ID: #{user_info['id'] || user_info['sub'] || 'N/A'}"
       Rails.logger.info "   Has picture: #{user_info['picture'].present?}"
       
+      # Try to fetch phone numbers from Google People API
+      phone_number = nil
+      phone_numbers_array = []
+      begin
+        people_api_response = HTTParty.get('https://people.googleapis.com/v1/people/me', {
+          headers: { 'Authorization' => "Bearer #{access_token}" },
+          query: { personFields: 'phoneNumbers' }
+        })
+        
+        if people_api_response.success?
+          people_data = JSON.parse(people_api_response.body)
+          if people_data['phoneNumbers']&.any?
+            # Try to find mobile phone first, then any phone
+            mobile_phone = people_data['phoneNumbers'].find { |p| 
+              p['type']&.downcase == 'mobile' || p['type']&.downcase == 'cell'
+            }
+            phone_info = mobile_phone || people_data['phoneNumbers'].first
+            phone_number = phone_info['value'] if phone_info && phone_info['value'].present?
+            phone_numbers_array = people_data['phoneNumbers'].map { |p| { 'value' => p['value'], 'type' => p['type'] } }
+            Rails.logger.info "📞 Phone number fetched from People API: #{phone_number}" if phone_number.present?
+          end
+        end
+      rescue => e
+        Rails.logger.warn "⚠️ Failed to fetch phone numbers from People API: #{e.message}"
+        # Continue without phone numbers - they're optional
+      end
+      
       # Build auth hash for OauthAccountLinkingService
       auth_hash = {
         provider: 'google_oauth2',
@@ -818,7 +846,15 @@ class AuthenticationController < ApplicationController
           name: user_info['name'] || user_info['email'].split('@').first,
           image: user_info['picture'],
           first_name: user_info['given_name'],
-          last_name: user_info['family_name']
+          last_name: user_info['family_name'],
+          phone_number: phone_number,
+          phone: phone_number
+        },
+        extra: {
+          raw_info: {
+            phone_number: phone_number,
+            phone_numbers: phone_numbers_array
+          }
         },
         credentials: {
           token: access_token,
