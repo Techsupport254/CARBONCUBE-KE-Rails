@@ -3,6 +3,8 @@ class SellerDocument < ApplicationRecord
   belongs_to :seller
   belongs_to :document_type
 
+  before_save :auto_verify_for_2025_sellers
+
   validates :document_url, presence: true
   validates :document_expiry_date, presence: true
   validates :seller_id, uniqueness: { scope: :document_type_id }
@@ -17,5 +19,15 @@ class SellerDocument < ApplicationRecord
 
   def expiring_soon?
     document_expiry_date <= 30.days.from_now && document_expiry_date >= Date.current
+  end
+
+  private
+
+  def auto_verify_for_2025_sellers
+    # Automatically verify documents for sellers registered in 2025
+    if seller&.created_at&.year == 2025 && !document_verified?
+      self.document_verified = true
+      Rails.logger.info "✅ Auto-verifying document for 2025 seller #{seller.id} (document_type_id: #{document_type_id})"
+    end
   end
 end

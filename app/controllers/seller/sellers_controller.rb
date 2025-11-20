@@ -166,7 +166,7 @@ class Seller::SellersController < ApplicationController
         remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
         duration_months = (remaining_days / 30.44).ceil # Average days per month
         
-        Rails.logger.info "🎉 2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (#{remaining_days} days, ~#{duration_months} months)"
+        Rails.logger.info "2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (#{remaining_days} days, ~#{duration_months} months)"
         seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 4, duration_months: duration_months, expires_at: expiry_date)
         unless seller_tier.save
           Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
@@ -217,7 +217,7 @@ class Seller::SellersController < ApplicationController
 
   def seller_params
     params.require(:seller).permit(
-      :fullname, :phone_number, :email, :enterprise_name, :location, :password, :password_confirmation,
+      :fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation,
       :username, :age_group_id, :zipcode, :city, :gender, :description, :business_registration_number,
       :document_url, :document_type_id, :document_expiry_date, :document_verified,
       :county_id, :sub_county_id, :profile_picture, category_ids: []

@@ -274,6 +274,12 @@ class Message < ApplicationRecord
     # Only send WhatsApp to sellers
     return unless recipient.is_a?(Seller)
     
+    # Check if WhatsApp notifications are enabled before attempting
+    unless WhatsAppNotificationService.enabled?
+      Rails.logger.debug "WhatsApp notifications are disabled, skipping notification for message #{id}"
+      return
+    end
+    
     # Don't send WhatsApp if recipient is online (they'll see it in real-time)
     if is_recipient_online?(recipient)
       Rails.logger.info "Recipient #{recipient.class.name} #{recipient.id} is online, skipping WhatsApp notification"
@@ -287,10 +293,20 @@ class Message < ApplicationRecord
     end
     
     begin
-      WhatsAppNotificationService.send_message_notification(self, recipient, conversation)
-      Rails.logger.info "WhatsApp notification sent to #{recipient.class.name} #{recipient.id} for message #{id}"
+      result = WhatsAppNotificationService.send_message_notification(self, recipient, conversation)
+      if result
+        Rails.logger.info "WhatsApp notification sent to #{recipient.class.name} #{recipient.id} for message #{id}"
+      else
+        # Service returned false (e.g., service unavailable) - log as debug, not error
+        Rails.logger.debug "WhatsApp notification not sent for message #{id} (service may be unavailable)"
+      end
     rescue => e
-      Rails.logger.error "Failed to send WhatsApp notification for message #{id}: #{e.message}"
+      # Log connection errors gracefully - don't treat as critical failures
+      if e.is_a?(Errno::ECONNREFUSED) || e.is_a?(SocketError) || e.is_a?(Net::ReadTimeout) || e.is_a?(Net::OpenTimeout)
+        Rails.logger.debug "WhatsApp service unavailable for message #{id}: #{e.message}"
+      else
+        Rails.logger.warn "Failed to send WhatsApp notification for message #{id}: #{e.message}"
+      end
       # Don't fail message creation if WhatsApp sending fails
     end
   end

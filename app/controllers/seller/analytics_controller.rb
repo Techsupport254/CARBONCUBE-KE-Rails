@@ -54,8 +54,9 @@ class Seller::AnalyticsController < ApplicationController
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
         
-        # Get primary category for competitor stats
-        primary_category_id = get_primary_category_id
+        # Get category for competitor stats (from params or primary category)
+        competitor_category_id = get_competitor_category_id
+        primary_category_id = competitor_category_id || get_primary_category_id
         
         Rails.logger.info "Standard tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
         
@@ -95,8 +96,9 @@ class Seller::AnalyticsController < ApplicationController
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
         
-        # Get primary category for competitor stats and competitive intelligence
-        primary_category_id = get_primary_category_id
+        # Get category for competitor stats (from params or primary category)
+        competitor_category_id = get_competitor_category_id
+        primary_category_id = competitor_category_id || get_primary_category_id
         
         # OPTIMIZATION: Pre-load common data used by multiple methods
         preload_common_data_for_premium
@@ -577,31 +579,119 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   def fetch_top_competitor_ads(category_id)
-    Seller.joins(ads: :wish_lists)
-          .where(ads: { category_id: category_id })
-          .where.not(id: current_seller.id)
-          .select('ads.id AS ad_id, ads.title AS ad_title, COUNT(wish_lists.id) AS total_wishlists, ads.price AS ad_price, ads.media AS ad_media')
-          .group('ads.id')
-          .order('total_wishlists DESC')
-          .limit(3)
-          .map { |record| 
-            { 
-              ad_id: record.ad_id,
-              ad_title: record.ad_title,
-              total_wishlists: record.total_wishlists,
-              ad_price: record.ad_price,
-              ad_media: JSON.parse(record.ad_media || '[]') # Parse the media as an array
-            } 
-          }
+    return [] unless category_id.present?
+    
+    device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+    start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : nil
+    end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : nil
+    
+    # Get all active competitor ads in this category (excluding current seller)
+    competitor_ads_query = Ad.active
+                       .joins(:seller)
+                       .where(category_id: category_id)
+                       .where.not(seller_id: current_seller.id)
+                       .where(sellers: { deleted: false, blocked: false })
+    
+    # Apply date filtering if provided
+    if start_date && end_date
+      competitor_ads_query = competitor_ads_query.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+    end
+    
+    # OPTIMIZATION: Limit to top 50 by engagement before detailed scoring to reduce processing
+    # Pre-load ads with basic info
+    competitor_ads = competitor_ads_query
+                     .includes(:category)
+                     .select(:id, :title, :price, :media, :category_id, :created_at)
+                     .limit(50)
+                     .to_a
+    
+    return [] if competitor_ads.empty?
+    
+    # Get ad IDs for batch queries
+    ad_ids = competitor_ads.map(&:id)
+    
+    # OPTIMIZATION: Batch load all engagement metrics in single queries
+    # Batch load clicks
+    clicks_query = ClickEvent.excluding_internal_users
+                             .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
+                             .where(ad_id: ad_ids, event_type: 'Ad-Click')
+    clicks_by_ad = clicks_query.group(:ad_id).count
+    
+    # Batch load reveals
+    reveals_query = ClickEvent.excluding_internal_users
+                              .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
+                              .where(ad_id: ad_ids, event_type: 'Reveal-Seller-Details')
+    reveals_by_ad = reveals_query.group(:ad_id).count
+    
+    # Batch load wishlists
+    wishlists_by_ad = WishList.joins(:ad)
+                              .where(ad_id: ad_ids)
+                              .where(ads: { deleted: false })
+                              .group(:ad_id)
+                              .count
+    
+    # Batch load reviews (count and average rating)
+    reviews_data = Review.where(ad_id: ad_ids)
+                         .group(:ad_id)
+                         .select('ad_id, COUNT(*) as review_count, AVG(rating) as avg_rating')
+                         .index_by(&:ad_id)
+    
+    # Build ad scores using pre-loaded data
+    ad_scores = competitor_ads.map do |ad|
+      clicks = clicks_by_ad[ad.id] || 0
+      reveals = reveals_by_ad[ad.id] || 0
+      wishlists = wishlists_by_ad[ad.id] || 0
+      
+      review_data = reviews_data[ad.id]
+      reviews_count = review_data ? review_data.review_count.to_i : 0
+      avg_rating = review_data ? review_data.avg_rating.to_f.round(2) : 0.0
+      
+      # Calculate comprehensive score (weighted)
+      # Wishlists: 3 points, Clicks: 1 point, Reveals: 2 points, Reviews: 1 point per review, Rating: 0.5 per point
+      score = (wishlists * 3) + (clicks * 1) + (reveals * 2) + (reviews_count * 1) + (avg_rating * 0.5)
+      
+      {
+        ad_id: ad.id,
+        ad_title: ad.title,
+        ad_price: ad.price.to_f,
+        ad_media: ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || []),
+        total_wishlists: wishlists,
+        total_clicks: clicks,
+        total_reveals: reveals,
+        total_reviews: reviews_count,
+        avg_rating: avg_rating,
+        engagement_score: score,
+        category_id: ad.category_id,
+        category_name: ad.category&.name
+      }
+    end
+    
+    # Sort by engagement score and return top 10
+    ad_scores.sort_by { |ad| -ad[:engagement_score] }.first(10)
   end  
   
 
   def calculate_competitor_average_price(category_id)
-    Seller.joins(:ads)
-          .where(ads: { category_id: category_id })
-          .where.not(id: current_seller.id)
-          .average('ads.price')
-          .to_f.round(2)
+    return 0.0 unless category_id.present?
+    
+    start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : nil
+    end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : nil
+    
+    # Get all active competitor ads in this category (excluding current seller)
+    competitor_ads = Ad.active
+                       .joins(:seller)
+                       .where(category_id: category_id)
+                       .where.not(seller_id: current_seller.id)
+                       .where(sellers: { deleted: false, blocked: false })
+    
+    # Apply date filtering if provided
+    if start_date && end_date
+      competitor_ads = competitor_ads.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+    end
+    
+    return 0.0 if competitor_ads.empty?
+    
+    competitor_ads.average(:price).to_f.round(2)
   end  
 
   # Get the primary category ID (category with most ads for this seller)
@@ -616,12 +706,64 @@ class Seller::AnalyticsController < ApplicationController
     category_counts.max_by { |_, count| count }&.first
   end
 
+  # Get competitor category ID from params (category_id or category_name)
+  def get_competitor_category_id
+    category_param = params[:competitor_category_id] || params[:competitor_category_name]
+    return nil unless category_param.present?
+
+    # Try to find by ID first
+    if category_param.to_s.match?(/\A\d+\z/)
+      category = Category.find_by(id: category_param.to_i)
+      return category&.id
+    end
+
+    # Try to find by name (case-insensitive, partial match)
+    category = Category.where("LOWER(name) LIKE ?", "%#{category_param.to_s.downcase}%").first
+    category&.id
+  end
+
   # Calculate competitor stats for a given category
+  # Aggregates competitor data from all categories the seller participates in
   def calculate_competitor_stats(category_id)
+    return {
+      revenue_share: { seller_revenue: 0, total_category_revenue: 0, revenue_share: 0 },
+      top_competitor_ads: [],
+      competitor_average_price: 0,
+      total_competitor_ads: 0,
+      categories_analyzed: []
+    } unless category_id.present?
+    
+    # Get all categories the seller has ads in (for context)
+    seller_category_ids = current_seller.ads.active
+                                      .where.not(category_id: nil)
+                                      .distinct
+                                      .pluck(:category_id)
+    
+    # OPTIMIZATION: Batch load all categories in one query
+    categories_by_id = Category.where(id: seller_category_ids).index_by(&:id)
+    
+    # Fetch top competitor ads from the specified category
+    top_ads = fetch_top_competitor_ads(category_id)
+    avg_price = calculate_competitor_average_price(category_id)
+    
+    # Count total competitor ads in this category
+    total_competitor_ads = Ad.active
+                              .joins(:seller)
+                              .where(category_id: category_id)
+                              .where.not(seller_id: current_seller.id)
+                              .where(sellers: { deleted: false, blocked: false })
+                              .count
+    
     {
       revenue_share: calculate_revenue_share(category_id),
-      top_competitor_ads: fetch_top_competitor_ads(category_id),
-      competitor_average_price: calculate_competitor_average_price(category_id)
+      top_competitor_ads: top_ads,
+      competitor_average_price: avg_price,
+      total_competitor_ads: total_competitor_ads,
+      categories_analyzed: seller_category_ids.map { |cat_id| 
+        cat = categories_by_id[cat_id]
+        next nil unless cat
+        { id: cat_id, name: cat.name }
+      }.compact
     }
   end
 
@@ -1731,21 +1873,45 @@ class Seller::AnalyticsController < ApplicationController
     return empty_competitive_intelligence if seller_ads.empty?
 
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+    start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : nil
+    end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : nil
     
     # Market share trends
     seller_clicks = ClickEvent.excluding_internal_users
       .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
       .where(ad_id: seller_ads.pluck(:id), event_type: 'Ad-Click')
-      .count
+    
+    # Apply date filtering if provided
+    if start_date && end_date
+      seller_clicks = seller_clicks.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+    end
+    
+    seller_clicks_count = seller_clicks.count
+
+    category_ads = Ad.active
+                     .joins(:seller)
+                     .where(category_id: primary_category_id)
+                     .where(sellers: { deleted: false, blocked: false })
 
     category_clicks = ClickEvent.excluding_internal_users
-      .where(ad_id: Ad.active.where(category_id: primary_category_id).pluck(:id), event_type: 'Ad-Click')
-      .count
+      .where(ad_id: category_ads.pluck(:id), event_type: 'Ad-Click')
+    
+    # Apply date filtering if provided
+    if start_date && end_date
+      category_clicks = category_clicks.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+    end
+    
+    category_clicks_count = category_clicks.count
 
-    market_share = category_clicks > 0 ? (seller_clicks.to_f / category_clicks * 100).round(2) : 0
+    market_share = category_clicks_count > 0 ? (seller_clicks_count.to_f / category_clicks_count * 100).round(2) : 0
 
     # Competitor price trends (last 3 months)
-    competitor_ads = Ad.active.where(category_id: primary_category_id).where.not(seller_id: current_seller.id)
+    competitor_ads = Ad.active
+                       .joins(:seller)
+                       .where(category_id: primary_category_id)
+                       .where.not(seller_id: current_seller.id)
+                       .where(sellers: { deleted: false, blocked: false })
+    
     price_trends = (0..2).map do |i|
       month_start = (Time.current - i.months).beginning_of_month
       month_end = month_start.end_of_month
@@ -1756,22 +1922,40 @@ class Seller::AnalyticsController < ApplicationController
       }
     end.reverse
 
-    # Competitor engagement rates
-    competitor_engagement = competitor_ads.limit(10).map do |ad|
+    # Competitor engagement rates (top 10 by engagement, then top 5 by CTR)
+    competitor_ads_sample = competitor_ads.limit(20).to_a
+    
+    competitor_engagement = competitor_ads_sample.map do |ad|
       clicks = ClickEvent.excluding_internal_users
+                         .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
         .where(ad_id: ad.id, event_type: 'Ad-Click')
-        .count
+      
+      # Apply date filtering if provided
+      if start_date && end_date
+        clicks = clicks.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+      end
+      
+      clicks_count = clicks.count
+      
       reveals = ClickEvent.excluding_internal_users
+                          .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
         .where(ad_id: ad.id, event_type: 'Reveal-Seller-Details')
-        .count
-      ctr = clicks > 0 ? (reveals.to_f / clicks * 100).round(2) : 0
+      
+      # Apply date filtering if provided
+      if start_date && end_date
+        reveals = reveals.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+      end
+      
+      reveals_count = reveals.count
+      
+      ctr = clicks_count > 0 ? (reveals_count.to_f / clicks_count * 100).round(2) : 0
       
       {
         ad_id: ad.id,
         ad_title: ad.title,
         price: ad.price.to_f,
-        clicks: clicks,
-        reveals: reveals,
+        clicks: clicks_count,
+        reveals: reveals_count,
         ctr: ctr
       }
     end.sort_by { |a| -a[:ctr] }.first(5)
@@ -1779,16 +1963,22 @@ class Seller::AnalyticsController < ApplicationController
     avg_competitor_ctr = competitor_engagement.any? ? (competitor_engagement.sum { |a| a[:ctr] } / competitor_engagement.size).round(2) : 0
 
     # Your CTR for comparison
-    your_reveals = ClickEvent.excluding_internal_users
+    your_reveals_query = ClickEvent.excluding_internal_users
       .excluding_seller_own_clicks(device_hash: device_hash, seller_id: current_seller.id)
       .where(ad_id: seller_ads.pluck(:id), event_type: 'Reveal-Seller-Details')
-      .count
-    your_ctr = seller_clicks > 0 ? (your_reveals.to_f / seller_clicks * 100).round(2) : 0
+    
+    # Apply date filtering if provided
+    if start_date && end_date
+      your_reveals_query = your_reveals_query.where(created_at: start_date.beginning_of_day..end_date.end_of_day)
+    end
+    
+    your_reveals_count = your_reveals_query.count
+    your_ctr = seller_clicks_count > 0 ? (your_reveals_count.to_f / seller_clicks_count * 100).round(2) : 0
 
     {
       market_share_percentage: market_share,
-      your_clicks: seller_clicks,
-      category_total_clicks: category_clicks,
+      your_clicks: seller_clicks_count,
+      category_total_clicks: category_clicks_count,
       competitor_price_trends: price_trends,
       competitor_engagement_rates: competitor_engagement,
       average_competitor_ctr: avg_competitor_ctr,

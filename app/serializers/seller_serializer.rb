@@ -1,5 +1,5 @@
 class SellerSerializer < ActiveModel::Serializer
-  attributes :id, :fullname, :phone_number, :email, :enterprise_name, :location, 
+  attributes :id, :fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, 
              :business_registration_number, :description, :username, :profile_picture, 
              :age_group_id, :zipcode, :city, :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,

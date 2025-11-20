@@ -22,6 +22,20 @@ Rails.application.routes.draw do
   
   # Redirect /sitemap to /sitemap.xml
   get '/sitemap', to: redirect('/sitemap.xml', status: 301)
+
+  # Redirect old location URLs that are no longer valid (sub-counties/cities to counties)
+  get '/location/malindi', to: redirect('/location/kilifi', status: 301) # Malindi sub-county → Kilifi county
+  get '/location/eldoret', to: redirect('/location/uasin-gishu', status: 301) # Eldoret city → Uasin Gishu county
+  get '/location/thika', to: redirect('/location/kiambu', status: 301) # Thika Town → Kiambu county
+  get '/location/kitale', to: redirect('/location/trans-nzoia', status: 301) # Kitale city → Trans-Nzoia county
+
+  # Redirect old category URLs that are no longer valid
+  get '/categories/phones', to: redirect('/categories/computers-phones-and-accessories', status: 301)
+  get '/categories/laptops', to: redirect('/categories/computers-phones-and-accessories', status: 301)
+  get '/categories/computer-parts-accessories/internal-components', to: redirect('/categories/computers-phones-and-accessories', status: 301)
+  get '/categories/computer-parts-accessories/accessories', to: redirect('/categories/computers-phones-and-accessories', status: 301)
+  get '/categories/computer-parts-accessories/others', to: redirect('/categories/computers-phones-and-accessories', status: 301)
+  get '/categories/fuel-filters', to: redirect('/categories/filtration', status: 301)
   
   # Health check endpoints
   get '/health', to: 'health#show'
@@ -34,6 +48,10 @@ Rails.application.routes.draw do
   
   # Proxy endpoints
   get '/proxy-image', to: 'proxy#proxy_image'
+  
+  # Geocoding endpoints
+  get '/geocoding/reverse', to: 'geocoding#reverse'
+  get '/geocoding/search', to: 'geocoding#search'
   
   # Profile picture caching endpoints
   get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
@@ -67,6 +85,10 @@ Rails.application.routes.draw do
   post 'validate_phone', to: 'email#phone_exists'
   post 'validate_email', to: 'email#exists'
   post 'validate_username', to: 'email#username_exists'
+  
+  # WhatsApp check route
+  post 'whatsapp/check', to: 'whatsapp#check_number'
+  get 'whatsapp/check', to: 'whatsapp#check_number'
   
   # Contact form routes
   post 'contact/submit', to: 'contact#submit'
@@ -108,11 +130,16 @@ Rails.application.routes.draw do
   
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
-  post 'auth/complete_oauth_registration', to: 'authentication#complete_oauth_registration'
+  get 'auth/google_oauth2/initiate', to: 'authentication#google_oauth_initiate' # For redirect flow with signed state
+  post 'auth/complete_oauth_registration', to: 'authentication#complete_registration'
   post 'auth/complete_registration', to: 'authentication#complete_registration'
-  get 'auth/google_oauth2/initiate', to: 'manual_oauth#google_oauth2_initiate'
-  get 'auth/google_oauth2/callback', to: 'manual_oauth#google_oauth2_callback'
+  get 'auth/google_oauth2/callback', to: 'authentication#google_oauth_callback'
+  post 'auth/google_oauth2/callback', to: 'authentication#google_oauth_callback' # Handle POST requests (should be GET, but handle gracefully)
   get 'auth/google_oauth2/popup_callback', to: 'authentication#google_oauth_popup_callback'
+  get 'auth/google/retrieve', to: 'authentication#retrieve_oauth_data'
+  # Handle requests to /auth/google/callback (in case redirect URI is misconfigured)
+  get 'auth/google/callback', to: 'authentication#google_oauth_callback'
+  post 'auth/google/callback', to: 'authentication#google_oauth_callback'
   resources :banners, only: [:index]
   resources :categories, only: [:index, :show]
   resources :ads, only: [:index, :show] do
@@ -477,6 +504,89 @@ Rails.application.routes.draw do
 
 
   #==========================================Buyer namespace for buyer-specific functionality=========================================#
+  # Support both /buyer and /api/buyer routes for backward compatibility
+  scope '/api', defaults: { format: :json } do
+    namespace :buyer, path: 'buyer' do
+      post 'signup', to: 'buyers#create'
+      delete 'delete_account', to: 'buyers#destroy'
+
+      resource :profile, only: [:show, :update] do
+        post 'change-password', to: 'profiles#change_password'
+        post 'request-verification', to: 'profiles#request_verification'
+        post 'verify-email', to: 'profiles#verify_email'
+      end
+
+      resources :wish_lists, only: [:index, :create, :destroy] do
+        collection do
+          get :count
+        end
+        member do
+          post 'add_to_cart' # This route adds the ad to the cart
+        end
+      end
+
+      resources :reviews
+      resources :conversations, only: [:index, :show, :create] do
+        # Messages are nested under conversations
+        resources :messages, only: [:index, :create]
+        get :unread_count, on: :collection
+        get :unread_counts, on: :collection
+      end
+      resources :categories do
+        collection do
+          get :analytics
+        end
+      end
+      resources :subcategories
+
+      resources :cart_items, only: [:index, :create, :destroy, :update] do
+        collection do
+          post :checkout
+        end
+      end
+      
+      post 'validate_coupon', to: 'promotions#validate_coupon'
+      
+      # Offers routes
+      resources :offers, only: [:index, :show] do
+        member do
+          post :track_click
+        end
+        collection do
+          get :active_offers
+          get :featured_offers
+          get :upcoming_offers
+          get :by_type
+          get :calendar
+          get :search
+          get :black_friday
+          get :cyber_monday
+          get :flash_sales
+          get :clearance
+          get :seasonal
+          get :holiday
+        end
+      end
+
+      resources :ads, only: [:index, :show] do
+        collection do
+          get 'search'
+          get 'load_more_subcategory'
+          get 'recommendations', to: 'ads#recommendations'
+        end
+        member do
+          post 'add_to_cart'
+          get 'related', to: 'ads#related'
+          get 'seller', to: 'ads#seller'
+        end
+        resources :reviews, only: [:create, :index] # Nested reviews under ads
+      end
+
+      get 'identify', to: 'buyers#identify'
+    end
+  end
+  
+  # Original routes without /api prefix for backward compatibility
   namespace :buyer, defaults:{ format: :json}, path: 'buyer' do
     post 'signup', to: 'buyers#create'
     delete 'delete_account', to: 'buyers#destroy'
@@ -543,6 +653,7 @@ Rails.application.routes.draw do
       collection do
         get 'search'
         get 'load_more_subcategory'
+        get 'recommendations', to: 'ads#recommendations'
       end
       member do
         post 'add_to_cart'

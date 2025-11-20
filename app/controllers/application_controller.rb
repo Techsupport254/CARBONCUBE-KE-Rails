@@ -10,6 +10,9 @@ class ApplicationController < ActionController::Base
   
   # Add query timeout protection for database operations
   around_action :set_query_timeout
+  
+  # Log all requests for debugging
+  before_action :log_all_requests
 
     # Optionally, you can uncomment the following for authentication
   # before_action :authenticate_request # Uncomment if needed for authentication
@@ -26,6 +29,28 @@ class ApplicationController < ActionController::Base
   end
 
   private
+
+  def log_all_requests
+    # Log ALL requests in development for debugging
+    if Rails.env.development?
+      Rails.logger.info "=" * 80
+      Rails.logger.info "[ApplicationController] Request received"
+      Rails.logger.info "   Timestamp: #{Time.current}"
+      Rails.logger.info "   Method: #{request.method}"
+      Rails.logger.info "   Path: #{request.path}"
+      Rails.logger.info "   Full URL: #{request.url}"
+      Rails.logger.info "   Query string: #{request.query_string}"
+      Rails.logger.info "   Remote IP: #{request.remote_ip}"
+      Rails.logger.info "   User-Agent: #{request.user_agent}"
+      Rails.logger.info "   Referer: #{request.referer}"
+      Rails.logger.info "   Content-Type: #{request.content_type}"
+      Rails.logger.info "   Accept: #{request.headers['Accept']}"
+      Rails.logger.info "   Origin: #{request.headers['Origin']}"
+      Rails.logger.info "   Params keys: #{params.keys.inspect}"
+      Rails.logger.info "   Params: #{params.except(:controller, :action).inspect}"
+      Rails.logger.info "=" * 80
+    end
+  end
 
   def set_query_timeout
     # Set a reasonable query timeout for production

@@ -14,9 +14,11 @@ class WhatsAppNotificationService
   end
   
   def self.send_message(phone_number, message)
-    Rails.logger.info "=== WhatsAppNotificationService.send_message START ==="
-    Rails.logger.info "Phone number: #{phone_number.inspect}"
-    Rails.logger.info "Message length: #{message.to_s.length} characters"
+    if Rails.env.development?
+      Rails.logger.info "=== WhatsAppNotificationService.send_message START ==="
+      Rails.logger.info "Phone number: #{phone_number.inspect}"
+      Rails.logger.info "Message length: #{message.to_s.length} characters"
+    end
     
     unless phone_number.present?
       Rails.logger.error "Phone number is missing"
@@ -38,7 +40,9 @@ class WhatsAppNotificationService
     
     # Validate phone number format (should be 10 digits for Kenyan numbers)
     cleaned_number = phone_number.to_s.gsub(/\D/, '')
-    Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
+        if Rails.env.development?
+      Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
+    end
     if cleaned_number.length != 10 && !cleaned_number.start_with?('254')
       Rails.logger.error "Invalid phone number format: #{cleaned_number}"
       return { success: false, error: 'Invalid phone number format. Expected 10 digits (e.g., 0712345678)' }
@@ -51,41 +55,52 @@ class WhatsAppNotificationService
       default_port = ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')
       default_url = "http://localhost:#{default_port}"
       
-      Rails.logger.info "Environment variables:"
-      Rails.logger.info "  WHATSAPP_SERVICE_URL: #{whatsapp_service_url_env.inspect}"
-      Rails.logger.info "  WHATSAPP_SERVICE_PORT: #{whatsapp_service_port_env.inspect}"
-      Rails.logger.info "  Default port: #{default_port}"
-      Rails.logger.info "  Default URL: #{default_url}"
+      if Rails.env.development?
+        Rails.logger.info "Environment variables:"
+        Rails.logger.info "  WHATSAPP_SERVICE_URL: #{whatsapp_service_url_env.inspect}"
+        Rails.logger.info "  WHATSAPP_SERVICE_PORT: #{whatsapp_service_port_env.inspect}"
+        Rails.logger.info "  Default port: #{default_port}"
+        Rails.logger.info "  Default URL: #{default_url}"
+      end
       
       service_url = ENV.fetch('WHATSAPP_SERVICE_URL', default_url)
-      Rails.logger.info "Service URL before chomp: #{service_url.inspect}"
+      if Rails.env.development?
+        Rails.logger.info "Service URL before chomp: #{service_url.inspect}"
+      end
       # Ensure service_url doesn't have a trailing slash
       service_url = service_url.chomp('/')
-      Rails.logger.info "Service URL after chomp: #{service_url.inspect}"
-      
+      if Rails.env.development?
+        Rails.logger.info "Service URL after chomp: #{service_url.inspect}"
+      end
+
       full_url = "#{service_url}/send"
-      Rails.logger.info "Full URL: #{full_url.inspect}"
       
       # Use Net::HTTP directly to avoid any HTTParty base_uri issues
       require 'net/http'
       require 'uri'
       
-      Rails.logger.info "Parsing URI..."
+      if Rails.env.development?
+        Rails.logger.info "Parsing URI..."
+      end
       uri = URI(full_url)
-      Rails.logger.info "Parsed URI details:"
-      Rails.logger.info "  Scheme: #{uri.scheme}"
-      Rails.logger.info "  Host: #{uri.host}"
-      Rails.logger.info "  Port: #{uri.port}"
-      Rails.logger.info "  Path: #{uri.path}"
-      Rails.logger.info "  Full URI: #{uri.to_s}"
-      
-      Rails.logger.info "Creating Net::HTTP instance..."
+      if Rails.env.development?
+        Rails.logger.info "Parsed URI details:"
+        Rails.logger.info "  Scheme: #{uri.scheme}"
+        Rails.logger.info "  Host: #{uri.host}"
+        Rails.logger.info "  Port: #{uri.port}"
+        Rails.logger.info "  Path: #{uri.path}"
+        Rails.logger.info "  Full URI: #{uri.to_s}"
+
+        Rails.logger.info "Creating Net::HTTP instance..."
+      end
       http = Net::HTTP.new(uri.host, uri.port)
       http.open_timeout = 10
       http.read_timeout = 10
-      Rails.logger.info "Net::HTTP instance created with timeout: open=#{http.open_timeout}s, read=#{http.read_timeout}s"
-      
-      Rails.logger.info "Creating POST request..."
+      if Rails.env.development?
+        Rails.logger.info "Net::HTTP instance created with timeout: open=#{http.open_timeout}s, read=#{http.read_timeout}s"
+
+        Rails.logger.info "Creating POST request..."
+      end
       request = Net::HTTP::Post.new(uri.path)
       request['Content-Type'] = 'application/json'
       request_body = {
@@ -93,29 +108,39 @@ class WhatsAppNotificationService
         message: message
       }.to_json
       request.body = request_body
-      Rails.logger.info "Request body: #{request_body.inspect}"
-      Rails.logger.info "Request headers: #{request.to_hash.inspect}"
-      
-      Rails.logger.info "Making HTTP request to #{uri.host}:#{uri.port}#{uri.path}..."
+      if Rails.env.development?
+        Rails.logger.info "Request body: #{request_body.inspect}"
+        Rails.logger.info "Request headers: #{request.to_hash.inspect}"
+
+        Rails.logger.info "Making HTTP request to #{uri.host}:#{uri.port}#{uri.path}..."
+      end
       start_time = Time.now
       http_response = http.request(request)
       elapsed_time = Time.now - start_time
-      Rails.logger.info "HTTP request completed in #{elapsed_time}s"
-      Rails.logger.info "Response code: #{http_response.code}"
-      Rails.logger.info "Response message: #{http_response.message}"
-      Rails.logger.info "Response headers: #{http_response.to_hash.inspect}"
-      Rails.logger.info "Response body length: #{http_response.body.to_s.length} bytes"
-      Rails.logger.info "Response body: #{http_response.body.inspect}"
+      if Rails.env.development?
+        Rails.logger.info "HTTP request completed in #{elapsed_time}s"
+        Rails.logger.info "Response code: #{http_response.code}"
+        Rails.logger.info "Response message: #{http_response.message}"
+        Rails.logger.info "Response headers: #{http_response.to_hash.inspect}"
+        Rails.logger.info "Response body length: #{http_response.body.to_s.length} bytes"
+        Rails.logger.info "Response body: #{http_response.body.inspect}"
+      end
       
       # Convert Net::HTTP response to HTTParty-like response for compatibility
-      Rails.logger.info "Parsing response body..."
+      if Rails.env.development?
+        Rails.logger.info "Parsing response body..."
+      end
       parsed_body = begin
         if http_response.body.present?
           parsed = JSON.parse(http_response.body)
-          Rails.logger.info "Successfully parsed JSON response: #{parsed.inspect}"
+          if Rails.env.development?
+            Rails.logger.info "Successfully parsed JSON response: #{parsed.inspect}"
+          end
           parsed
         else
-          Rails.logger.warn "Response body is empty"
+          if Rails.env.development?
+            Rails.logger.warn "Response body is empty"
+          end
           {}
         end
       rescue JSON::ParserError => e
@@ -185,45 +210,52 @@ class WhatsAppNotificationService
         return result
       end
     rescue Net::ReadTimeout, Net::OpenTimeout => e
-      Rails.logger.error "=== TIMEOUT ERROR ==="
-      Rails.logger.error "Exception class: #{e.class.name}"
-      Rails.logger.error "Exception message: #{e.message}"
-      Rails.logger.error "Service URL: #{full_url rescue 'N/A (full_url not set)'}"
-      Rails.logger.error "Backtrace:"
-      Rails.logger.error e.backtrace.join("\n")
+      # Log timeout errors gracefully - less verbose in production
+      if Rails.env.development?
+        Rails.logger.warn "=== WhatsApp Service Timeout ==="
+        Rails.logger.warn "Service URL: #{full_url rescue 'N/A (full_url not set)'}"
+        Rails.logger.warn "Error: #{e.class.name} - #{e.message}"
+      else
+        # In production, log a simple warning without full backtrace
+        Rails.logger.warn "WhatsApp service timeout: #{e.message}"
+      end
       result = { success: false, error: 'WhatsApp service timeout. The service may be unavailable or not responding. Please check if the WhatsApp service is running.', error_type: 'timeout' }
-      Rails.logger.error "Returning result: #{result.inspect}"
       return result
     rescue Errno::ECONNREFUSED, SocketError => e
-      Rails.logger.error "=== CONNECTION REFUSED ERROR ==="
-      Rails.logger.error "Exception class: #{e.class.name}"
-      Rails.logger.error "Exception message: #{e.message}"
-      Rails.logger.error "Service URL: #{full_url rescue 'N/A (full_url not set)'}"
-      Rails.logger.error "Backtrace:"
-      Rails.logger.error e.backtrace.join("\n")
+      # Log connection errors gracefully - less verbose in production
+      if Rails.env.development?
+        Rails.logger.warn "=== WhatsApp Service Connection Error ==="
+        Rails.logger.warn "Service URL: #{full_url rescue 'N/A (full_url not set)'}"
+        Rails.logger.warn "Error: #{e.class.name} - #{e.message}"
+      else
+        # In production, log a simple warning without full backtrace
+        Rails.logger.warn "WhatsApp service unavailable: #{e.message}"
+      end
       result = { success: false, error: 'WhatsApp service is not running or not accessible. Please check if the service is started on the correct port.', error_type: 'connection_error' }
-      Rails.logger.error "Returning result: #{result.inspect}"
       return result
     rescue => e
-      Rails.logger.error "=== UNEXPECTED ERROR ==="
-      Rails.logger.error "Exception class: #{e.class.name}"
-      Rails.logger.error "Exception message: #{e.message}"
-      Rails.logger.error "Service URL: #{full_url rescue 'N/A (full_url not set)'}"
-      Rails.logger.error "Full backtrace:"
-      Rails.logger.error e.backtrace.join("\n")
+      # Log unexpected errors gracefully - less verbose in production
+      if Rails.env.development?
+        Rails.logger.warn "=== WhatsApp Service Unexpected Error ==="
+        Rails.logger.warn "Exception class: #{e.class.name}"
+        Rails.logger.warn "Exception message: #{e.message}"
+        Rails.logger.warn "Service URL: #{full_url rescue 'N/A (full_url not set)'}"
+        if e.message.include?('No route matches') || e.class.name.include?('RoutingError')
+          Rails.logger.warn "Routing error detected - request may have gone to Rails instead of WhatsApp service"
+          Rails.logger.warn "WHATSAPP_SERVICE_URL: #{ENV['WHATSAPP_SERVICE_URL'].inspect}"
+          Rails.logger.warn "WHATSAPP_SERVICE_PORT: #{ENV['WHATSAPP_SERVICE_PORT'].inspect}"
+        end
+      else
+        # In production, log a simple warning without full backtrace
+        Rails.logger.warn "WhatsApp service error: #{e.class.name} - #{e.message}"
+      end
       
       error_msg = if e.message.include?('No route matches') || e.class.name.include?('RoutingError')
-        Rails.logger.error "*** DETECTED ROUTING ERROR ***"
-        Rails.logger.error "This suggests the request went to Rails instead of WhatsApp service!"
-        Rails.logger.error "WHATSAPP_SERVICE_URL: #{ENV['WHATSAPP_SERVICE_URL'].inspect}"
-        Rails.logger.error "WHATSAPP_SERVICE_PORT: #{ENV['WHATSAPP_SERVICE_PORT'].inspect}"
-        Rails.logger.error "Full URL that was attempted: #{full_url rescue 'N/A'}"
         'WhatsApp service URL is incorrect or pointing to the wrong server. Please check WHATSAPP_SERVICE_URL configuration.'
       else
         "Failed to connect to WhatsApp service: #{e.message}"
       end
       result = { success: false, error: error_msg, error_type: 'connection_error' }
-      Rails.logger.error "Returning result: #{result.inspect}"
       return result
     ensure
       Rails.logger.info "=== WhatsAppNotificationService.send_message END ==="
@@ -303,6 +335,186 @@ class WhatsAppNotificationService
   
   def self.enabled?
     ENV.fetch('WHATSAPP_NOTIFICATIONS_ENABLED', 'false') == 'true'
+  end
+  
+  def self.check_number(phone_number)
+    Rails.logger.info "=== WhatsAppNotificationService.check_number START ==="
+    Rails.logger.info "Phone number: #{phone_number.inspect}"
+    
+    unless phone_number.present?
+      Rails.logger.error "Phone number is missing"
+      return { isRegistered: false, error: 'Phone number is required' }
+    end
+    
+    # Validate phone number format (should be 10 digits for Kenyan numbers)
+    cleaned_number = phone_number.to_s.gsub(/\D/, '')
+        if Rails.env.development?
+      Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
+    end
+    if cleaned_number.length != 10 && !cleaned_number.start_with?('254')
+      Rails.logger.error "Invalid phone number format: #{cleaned_number}"
+      return { isRegistered: false, error: 'Invalid phone number format. Expected 10 digits (e.g., 0712345678)' }
+    end
+    
+    # Format number for international format (254XXXXXXXXX)
+    formatted_number = if cleaned_number.start_with?('254')
+      cleaned_number
+    elsif cleaned_number.start_with?('0')
+      "254#{cleaned_number[1..-1]}"
+    else
+      "254#{cleaned_number}"
+    end
+    
+    # Try local WhatsApp service first (if enabled)
+    if enabled?
+      begin
+        service_url = ENV.fetch('WHATSAPP_SERVICE_URL', "http://localhost:#{ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')}")
+        service_url = service_url.chomp('/')
+        full_url = "#{service_url}/check"
+        
+        Rails.logger.info "Checking WhatsApp number via local service: #{full_url}"
+        
+        response = HTTParty.post(
+          full_url,
+          body: {
+            phoneNumber: cleaned_number
+          }.to_json,
+          headers: {
+            'Content-Type' => 'application/json'
+          },
+          timeout: 5  # Shorter timeout for faster fallback
+        )
+        
+        if response.success?
+          parsed_response = response.parsed_response
+          is_registered = parsed_response['isRegistered'] == true
+          
+          Rails.logger.info "Phone number #{cleaned_number} is #{is_registered ? 'registered' : 'not registered'} on WhatsApp (via local service)"
+          
+          return {
+            isRegistered: is_registered,
+            phoneNumber: cleaned_number,
+            formattedNumber: formatted_number,
+            success: true,
+            method: 'local_service'
+          }
+        end
+      rescue Net::ReadTimeout, Net::OpenTimeout => e
+        Rails.logger.warn "Local WhatsApp service timeout, trying fallback method"
+      rescue => e
+        Rails.logger.warn "Local WhatsApp service error: #{e.message}, trying fallback method"
+      end
+    end
+    
+    # Fallback: Use WhatsApp API endpoint to check if number is registered
+    # This uses WhatsApp's public API endpoint which is more reliable
+    Rails.logger.info "Using WhatsApp API method to check registration"
+    
+    begin
+      require 'net/http'
+      require 'uri'
+      
+      # Use WhatsApp's check number endpoint (if available) or wa.me redirect method
+      # Try the WhatsApp Web API endpoint first
+      api_url = "https://api.whatsapp.com/send/?phone=#{formatted_number}&text=&type=phone_number&app_absent=0"
+      
+      uri = URI(api_url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.open_timeout = 5
+      http.read_timeout = 5
+      
+      request = Net::HTTP::Get.new(uri.path + "?" + uri.query)
+      request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      request['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      request['Accept-Language'] = 'en-US,en;q=0.5'
+      
+      response = http.request(request)
+      
+      Rails.logger.info "WhatsApp API check response code: #{response.code}"
+      
+      # Follow redirects if needed
+      if response.is_a?(Net::HTTPRedirection)
+        location = response['location']
+        Rails.logger.info "Following redirect to: #{location}"
+        
+        redirect_uri = URI(location)
+        redirect_http = Net::HTTP.new(redirect_uri.host, redirect_uri.port)
+        redirect_http.use_ssl = true
+        redirect_http.open_timeout = 5
+        redirect_http.read_timeout = 5
+        
+        redirect_request = Net::HTTP::Get.new(redirect_uri.path + (redirect_uri.query ? "?" + redirect_uri.query : ""))
+        redirect_request['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        
+        response = redirect_http.request(redirect_request)
+      end
+      
+      body = response.body.to_s
+      
+      # Check for error indicators in the page content
+      # WhatsApp shows specific messages when number is not registered
+      error_indicators = [
+        'phone number shared via url is invalid',
+        'not registered',
+        'invalid phone number',
+        'this phone number is not on whatsapp',
+        'phone number is not registered',
+        'number not registered',
+        'invalid number'
+      ]
+      
+      has_error = error_indicators.any? { |indicator| body.downcase.include?(indicator.downcase) }
+      is_registered = !has_error && response.code.to_i < 400
+      
+      # Additional check: If we get a successful redirect to WhatsApp Web, it's likely registered
+      if response.code.to_i == 200 && body.include?('whatsapp') && !has_error
+        is_registered = true
+      end
+      
+      Rails.logger.info "Phone number #{cleaned_number} is #{is_registered ? 'registered' : 'not registered'} on WhatsApp (via API method)"
+      
+      return {
+        isRegistered: is_registered,
+        phoneNumber: cleaned_number,
+        formattedNumber: formatted_number,
+        success: true,
+        method: 'whatsapp_api_check'
+      }
+      
+    rescue Net::ReadTimeout, Net::OpenTimeout => e
+      Rails.logger.warn "Timeout checking WhatsApp API: #{e.message}, falling back to format validation"
+      # Fall back to format validation if timeout
+    rescue => e
+      Rails.logger.warn "Error checking WhatsApp API: #{e.message}, falling back to format validation"
+      Rails.logger.warn e.backtrace.first(3).join("\n")
+      # Fall back to format validation on error
+    end
+    
+    # Final fallback: Simple format validation if wa.me check fails
+    Rails.logger.info "Using format validation fallback"
+    
+    # Basic validation: Kenyan numbers should be 10 digits starting with 0 or 7
+    is_valid_format = cleaned_number.length == 10 && (cleaned_number.start_with?('0') || cleaned_number.start_with?('7'))
+    
+    if is_valid_format
+      # Return optimistic result - show WhatsApp button, let WhatsApp handle validation
+      return {
+        isRegistered: true,  # Optimistic - assume valid
+        phoneNumber: cleaned_number,
+        formattedNumber: formatted_number,
+        success: true,
+        method: 'format_validation_fallback',
+        note: 'Using format validation only. WhatsApp will verify when messaging.'
+      }
+    else
+      return {
+        isRegistered: false,
+        phoneNumber: cleaned_number,
+        error: 'Invalid phone number format',
+        success: false
+      }
+    end
   end
   
   def self.health_check

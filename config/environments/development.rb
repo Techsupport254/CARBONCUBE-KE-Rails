@@ -53,8 +53,20 @@ Rails.application.configure do
   config.force_ssl = false
   
   # Ensure proper logger configuration
-  config.logger = ActiveSupport::Logger.new(STDOUT)
+  # Log to both STDOUT and file for easier monitoring
+  log_file = Rails.root.join('log', 'development.log')
+  log_file_dir = File.dirname(log_file)
+  FileUtils.mkdir_p(log_file_dir) unless File.directory?(log_file_dir)
+  
+  # Create a logger that writes to both STDOUT and file
+  log_device = File.open(log_file, 'a')
+  log_device.sync = true # Flush immediately
+  
+  config.logger = ActiveSupport::Logger.new(log_device)
   config.log_level = :debug
+  
+  # Also log to STDOUT for immediate visibility
+  config.logger.extend(ActiveSupport::Logger.broadcast(ActiveSupport::Logger.new(STDOUT)))
   
   # Fix ActionCable logger issue - ensure logger exists
   config.after_initialize do

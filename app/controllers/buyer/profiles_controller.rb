@@ -187,7 +187,7 @@ class Buyer::ProfilesController < ApplicationController
 
   # Updated buyer_params to permit top-level parameters
   def buyer_params
-    params.permit(:fullname, :username, :phone_number, :email, :location, :zipcode, :gender, :city, 
+    params.permit(:fullname, :username, :phone_number, :secondary_phone_number, :email, :location, :zipcode, :gender, :city, 
                   :county_id, :sub_county_id, :age_group_id, :income_id, :employment_id, 
                   :education_id, :sector_id)
   end

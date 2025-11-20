@@ -11,7 +11,7 @@ class OauthAccountLinkingService
     @user_ip = user_ip
     
     # Debug: Log the profile picture information
-    Rails.logger.info "🔍 OAuth Account Linking Service Debug:"
+    Rails.logger.info "OAuth Account Linking Service Debug:"
     Rails.logger.info "   Provider: #{@provider}"
     Rails.logger.info "   Email: #{@email}"
     Rails.logger.info "   Name: #{@name}"
@@ -93,8 +93,8 @@ class OauthAccountLinkingService
     phone_number = extract_phone_number
     location_data = get_user_location_data
     
-    # Fix Google profile picture URL to make it publicly accessible
-    profile_picture = fix_google_profile_picture_url(@picture) if @picture.present?
+    # Use profile picture from OAuth provider
+    profile_picture = @picture if @picture.present?
     
     user_attributes = {
       fullname: @name || @email.split('@').first,
@@ -105,7 +105,7 @@ class OauthAccountLinkingService
       oauth_token: @auth_hash.dig(:credentials, :token),
       oauth_refresh_token: @auth_hash.dig(:credentials, :refresh_token),
       oauth_expires_at: @auth_hash.dig(:credentials, :expires_at),
-      # Use Google profile data
+      # Use OAuth profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
       profile_picture: profile_picture, # Set fixed profile picture from OAuth
@@ -117,7 +117,7 @@ class OauthAccountLinkingService
       sub_county_id: location_data[:sub_county_id]
     }
     
-    # Only add phone number if we have one from Google
+    # Only add phone number if we have one from OAuth provider
     user_attributes[:phone_number] = phone_number if phone_number.present?
     
     Buyer.create!(user_attributes)
@@ -129,9 +129,23 @@ class OauthAccountLinkingService
 
   def create_seller
     phone_number = extract_phone_number
+    location_data = get_user_location_data
     
-    # Fix Google profile picture URL to make it publicly accessible
-    profile_picture = fix_google_profile_picture_url(@picture) if @picture.present?
+    # Use profile picture from OAuth provider
+    profile_picture = @picture if @picture.present?
+    
+    # Get county/sub-county from location data or use defaults
+    county_id = location_data[:county_id]
+    sub_county_id = location_data[:sub_county_id]
+    
+    # Default to Nairobi if no location found
+    if county_id.blank?
+      nairobi_county = County.find_by(name: 'Nairobi')
+      if nairobi_county
+        county_id = nairobi_county.id
+        sub_county_id = nairobi_county.sub_counties.first&.id
+      end
+    end
     
     user_attributes = {
       fullname: @name || @email.split('@').first,
@@ -142,14 +156,23 @@ class OauthAccountLinkingService
       oauth_token: @auth_hash.dig(:credentials, :token),
       oauth_refresh_token: @auth_hash.dig(:credentials, :refresh_token),
       oauth_expires_at: @auth_hash.dig(:credentials, :expires_at),
-      # Use Google profile data
+      # Use OAuth profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
-      profile_picture: profile_picture # Set fixed profile picture from OAuth
+      profile_picture: profile_picture, # Set fixed profile picture from OAuth
+      # Add location data (required for sellers)
+      location: location_data[:location] || location_data[:city] || 'Nairobi',
+      city: location_data[:city] || 'Nairobi',
+      county_id: county_id,
+      sub_county_id: sub_county_id,
+      # Enterprise name defaults to fullname if not provided
+      enterprise_name: @name || @email.split('@').first
     }
     
-    # Only add phone number if we have one from Google
+    # Only add phone number if we have one from OAuth provider
     user_attributes[:phone_number] = phone_number if phone_number.present?
+    
+    Rails.logger.info "🔍 Creating seller with attributes: #{user_attributes.except(:oauth_token, :oauth_refresh_token).inspect}"
     
     Seller.create!(user_attributes)
   rescue ActiveRecord::RecordInvalid => e
@@ -222,14 +245,13 @@ class OauthAccountLinkingService
   end
 
   def extract_phone_number
-    # Google OAuth doesn't provide user's own phone number in basic profile
-    # The phone number scope is for accessing user's contacts, not their own number
+    # OAuth providers may not provide phone number in basic profile
     # Return nil to indicate no phone number available
     nil
   end
 
   def extract_gender
-    # Get gender from Google profile
+    # Get gender from OAuth profile
     gender = @auth_hash.dig(:info, :gender)
     
     case gender&.downcase
@@ -243,12 +265,12 @@ class OauthAccountLinkingService
   end
 
   def calculate_age_group
-    # Get birthday from Google profile
+    # Get birthday from OAuth profile
     birthday = @auth_hash.dig(:info, :birthday) || @auth_hash.dig(:info, :birth_date)
     
     if birthday.present?
       begin
-        # Parse birthday (Google provides in YYYY-MM-DD format)
+        # Parse birthday (typically in YYYY-MM-DD format)
         birth_date = Date.parse(birthday)
         age = calculate_age(birth_date)
         
@@ -303,124 +325,123 @@ class OauthAccountLinkingService
       
       if response.success?
         ip_data = JSON.parse(response.body)
+        
+        # Log full API response for debugging
+        Rails.logger.info "IP API Response: #{ip_data.inspect}"
+        
         if ip_data['status'] == 'success'
           city = ip_data['city']
-          region = ip_data['regionName']
+          region = ip_data['region'] # Region code (e.g., "01", "02")
+          region_name = ip_data['regionName'] # Full region name
           country = ip_data['country']
+          country_code = ip_data['countryCode']
+          lat = ip_data['lat']
+          lon = ip_data['lon']
           
           location_data[:city] = city
-          location_data[:location] = "#{city}, #{region}, #{country}"
+          location_data[:location] = "#{city}, #{region_name}, #{country}"
           location_data[:zipcode] = ip_data['zip']
           
-          # Map to Kenyan counties and sub-counties
-          county_mapping = map_to_kenyan_county(city, region, country)
+          Rails.logger.info "Parsed location data: city=#{city}, region=#{region}, regionName=#{region_name}, country=#{country}"
+          
+          # Map to Kenyan counties and sub-counties using API data
+          county_mapping = map_to_kenyan_county_from_api(ip_data)
           if county_mapping
             location_data[:county_id] = county_mapping[:county_id]
             location_data[:sub_county_id] = county_mapping[:sub_county_id]
-            Rails.logger.info "🗺️ Mapped to Kenyan location: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
+            Rails.logger.info "Mapped to Kenyan location: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
           end
           
-          Rails.logger.info "🌐 User location detected: #{location_data[:location]}"
+          Rails.logger.info "User location detected: #{location_data[:location]}"
+        else
+          Rails.logger.warn "IP API returned error: #{ip_data['message']}"
         end
       end
     rescue => e
       Rails.logger.warn "Failed to get location from IP: #{e.message}"
+      Rails.logger.warn "Backtrace: #{e.backtrace.first(3).join("\n")}"
     end
     
     location_data
   end
 
-  def map_to_kenyan_county(city, region, country)
-    return nil unless country&.downcase&.include?('kenya')
+  def map_to_kenyan_county_from_api(ip_data)
+    country = ip_data['country']
+    country_code = ip_data['countryCode']
     
-    # Normalize city and region names for matching
-    city_normalized = city&.downcase&.strip
-    region_normalized = region&.downcase&.strip
+    # Only process if country is Kenya
+    return nil unless country&.downcase&.include?('kenya') || country_code&.upcase == 'KE'
     
-    Rails.logger.info "🗺️ Mapping location: City='#{city}', Region='#{region}', Country='#{country}'"
+    city = ip_data['city']
+    region = ip_data['region'] # Region code
+    region_name = ip_data['regionName'] # Full region name
+    district = ip_data['district'] # District (if available)
     
-    # Direct city to county mapping for major Kenyan cities
-    city_county_mapping = {
-      'nairobi' => 'Nairobi',
-      'mombasa' => 'Mombasa',
-      'kisumu' => 'Kisumu',
-      'nakuru' => 'Nakuru',
-      'eldoret' => 'Uasin Gishu',
-      'thika' => 'Kiambu',
-      'malindi' => 'Kilifi',
-      'kitale' => 'Trans Nzoia',
-      'garissa' => 'Garissa',
-      'kakamega' => 'Kakamega',
-      'meru' => 'Meru',
-      'kisii' => 'Kisii',
-      'nyeri' => 'Nyeri',
-      'machakos' => 'Machakos',
-      'kericho' => 'Kericho',
-      'lamu' => 'Lamu',
-      'bomet' => 'Bomet',
-      'vihiga' => 'Vihiga',
-      'baringo' => 'Baringo',
-      'bungoma' => 'Bungoma',
-      'busia' => 'Busia',
-      'embu' => 'Embu',
-      'homa bay' => 'Homa Bay',
-      'isiolo' => 'Isiolo',
-      'kajiado' => 'Kajiado',
-      'kilifi' => 'Kilifi',
-      'kirinyaga' => 'Kirinyaga',
-      'kitui' => 'Kitui',
-      'kwale' => 'Kwale',
-      'laikipia' => 'Laikipia',
-      'lamu' => 'Lamu',
-      'makueni' => 'Makueni',
-      'mandera' => 'Mandera',
-      'marsabit' => 'Marsabit',
-      'murang\'a' => 'Murang\'a',
-      'muranga' => 'Murang\'a',
-      'nyamira' => 'Nyamira',
-      'nyandarua' => 'Nyandarua',
-      'nyeri' => 'Nyeri',
-      'samburu' => 'Samburu',
-      'siaya' => 'Siaya',
-      'taita taveta' => 'Taita Taveta',
-      'tana river' => 'Tana River',
-      'tharaka nithi' => 'Tharaka Nithi',
-      'trans nzoia' => 'Trans Nzoia',
-      'turkana' => 'Turkana',
-      'uasin gishu' => 'Uasin Gishu',
-      'vihiga' => 'Vihiga',
-      'wajir' => 'Wajir',
-      'west pokot' => 'West Pokot'
-    }
+    Rails.logger.info "Mapping from API data: city='#{city}', region='#{region}', regionName='#{region_name}', district='#{district}'"
     
-    # Try to find county by city name
-    county_name = city_county_mapping[city_normalized]
+    # Get all counties from database for matching
+    counties = County.all
     
-    # If not found by city, try by region
-    if county_name.nil?
-      county_name = city_county_mapping[region_normalized]
-    end
-    
-    # If still not found, try partial matching
-    if county_name.nil?
-      city_county_mapping.each do |key, value|
-        if city_normalized&.include?(key) || key.include?(city_normalized)
-          county_name = value
-          break
+    # Try to match by regionName first (most reliable for Kenya)
+    if region_name.present?
+      region_normalized = region_name.downcase.strip
+      
+      # Try exact match first
+      county = counties.find { |c| c.name.downcase == region_normalized }
+      
+      # Try partial match if exact match fails
+      if county.nil?
+        county = counties.find do |c|
+          county_name_normalized = c.name.downcase
+          county_name_normalized.include?(region_normalized) || region_normalized.include?(county_name_normalized)
         end
+      end
+      
+      if county
+        sub_county = county.sub_counties.first
+        Rails.logger.info "Matched by regionName: #{county.name} (ID: #{county.id})"
+        return {
+          county_id: county.id,
+          sub_county_id: sub_county&.id
+        }
       end
     end
     
-    if county_name
-      county = County.find_by(name: county_name)
+    # Try to match by city name
+    if city.present?
+      city_normalized = city.downcase.strip
+      
+      # Get all county names and try to match
+      county = counties.find do |c|
+        county_name_normalized = c.name.downcase
+        # Check if city name matches county name or vice versa
+        city_normalized == county_name_normalized ||
+        city_normalized.include?(county_name_normalized) ||
+        county_name_normalized.include?(city_normalized)
+      end
+      
       if county
-        # For now, use the first sub-county of the county
-        # In a more sophisticated system, you could use additional logic to determine the specific sub-county
         sub_county = county.sub_counties.first
-        
-        Rails.logger.info "🗺️ Found county: #{county.name} (ID: #{county.id})"
-        Rails.logger.info "🗺️ Using sub-county: #{sub_county&.name} (ID: #{sub_county&.id})"
-        
+        Rails.logger.info "Matched by city: #{county.name} (ID: #{county.id})"
+        return {
+          county_id: county.id,
+          sub_county_id: sub_county&.id
+        }
+      end
+    end
+    
+    # Try to match by district if available
+    if district.present?
+      district_normalized = district.downcase.strip
+      
+      county = counties.find do |c|
+        county_name_normalized = c.name.downcase
+        district_normalized.include?(county_name_normalized) || county_name_normalized.include?(district_normalized)
+      end
+      
+      if county
+        sub_county = county.sub_counties.first
+        Rails.logger.info "Matched by district: #{county.name} (ID: #{county.id})"
         return {
           county_id: county.id,
           sub_county_id: sub_county&.id
@@ -429,7 +450,7 @@ class OauthAccountLinkingService
     end
     
     # Default to Nairobi if no mapping found
-    Rails.logger.info "🗺️ No county mapping found, defaulting to Nairobi"
+    Rails.logger.info "No county mapping found from API data, defaulting to Nairobi"
     nairobi_county = County.find_by(name: 'Nairobi')
     if nairobi_county
       nairobi_sub_county = nairobi_county.sub_counties.first
@@ -442,31 +463,4 @@ class OauthAccountLinkingService
     nil
   end
 
-  # Fix Google profile picture URL to make it publicly accessible
-  def fix_google_profile_picture_url(original_url)
-    return nil if original_url.blank?
-    
-    Rails.logger.info "🔧 Original profile picture URL: #{original_url}"
-    
-    # Google profile picture URLs often need modification to be publicly accessible
-    # Remove size restrictions and make the URL publicly accessible
-    fixed_url = original_url.dup
-    
-    # Remove size parameters that might cause access issues
-    fixed_url = fixed_url.gsub(/=s\d+/, '=s0') # Change size to 0 (full size)
-    fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s0') # Remove width/height restrictions
-    fixed_url = fixed_url.gsub(/=c\d+/, '=s0') # Remove crop restrictions
-    
-    # Ensure the URL is publicly accessible
-    if fixed_url.include?('googleusercontent.com')
-      # For Google profile pictures, ensure we have the right format
-      fixed_url = fixed_url.gsub(/=s\d+/, '=s0') if fixed_url.include?('=s')
-    end
-    
-    Rails.logger.info "🔧 Fixed profile picture URL: #{fixed_url}"
-    fixed_url
-  rescue => e
-    Rails.logger.error "❌ Error fixing profile picture URL: #{e.message}"
-    original_url # Return original URL if fixing fails
-  end
 end

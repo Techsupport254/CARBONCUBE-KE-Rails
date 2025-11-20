@@ -327,7 +327,7 @@ class ClickEventsAnalyticsService
       .order("click_events.created_at DESC")
       .offset(offset)
       .limit(per_page)
-      .includes(:buyer, :ad)
+      .includes(:buyer, ad: [:category, :subcategory, :seller])
     
     # Map events with optional user agent parsing
     events = events_query.map { |event| format_click_event(event, parse_user_agent: parse_user_agent) }
@@ -811,6 +811,9 @@ class ClickEventsAnalyticsService
       ad_id: event.ad_id,
       ad_title: event.ad&.title || 'Unknown Ad',
       ad_image_url: event.ad&.first_media_url,
+      ad_category_name: event.ad&.category&.name,
+      ad_subcategory_name: event.ad&.subcategory&.name,
+      seller_enterprise_name: event.ad&.seller&.enterprise_name,
       created_at: event.created_at&.iso8601,
       buyer_id: event.buyer_id,
       buyer_info: buyer_info,

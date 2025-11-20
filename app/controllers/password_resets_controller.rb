@@ -9,32 +9,55 @@ class PasswordResetsController < ApplicationController
     user = find_user_by_email(email)
 
     if user
-      # Check if we've recently sent an OTP for this email with the same request_id
-      # This prevents duplicate emails from being sent in quick succession
-      cache_key = "password_reset_otp:#{email}:#{request_id}"
+      # Rate limiting: Check if we've recently sent an OTP for this email
+      # Use email only (not request_id) to prevent spam regardless of request_id changes
+      email_cache_key = "password_reset_otp:#{email}"
       
       # Use Redis directly for rate limiting (since Redis is already configured)
       begin
-        if RedisConnection.exists?(cache_key)
-          # Already sent for this request_id recently
+        if RedisConnection.exists?(email_cache_key)
+          # Already sent an OTP for this email recently (within rate limit window)
+          Rails.logger.info "Password reset OTP rate limited for #{email} (request_id: #{request_id})"
           render json: { message: 'OTP sent' }, status: :ok
           return
         end
         
         # Generate and send OTP
-        PasswordOtp.generate_and_send_otp(user)
+        Rails.logger.info "Generating and sending password reset OTP for #{email} (request_id: #{request_id})"
+        otp_record = PasswordOtp.generate_and_send_otp(user)
         
-        # Cache this request for 60 seconds to prevent duplicates
-        RedisConnection.setex(cache_key, RATE_LIMIT_WINDOW.to_i, '1')
+        # Cache this email for 60 seconds to prevent duplicates
+        # Only cache if OTP was successfully generated
+        if otp_record
+          RedisConnection.setex(email_cache_key, RATE_LIMIT_WINDOW.to_i, '1')
+          Rails.logger.info "✅ Password reset OTP sent successfully to #{email}"
+        else
+          Rails.logger.error "❌ Failed to generate OTP record for #{email}"
+        end
       rescue => e
-        # If Redis fails, still send OTP but log the error
-        Rails.logger.warn "Could not use Redis for rate limiting: #{e.message}"
-        PasswordOtp.generate_and_send_otp(user)
+        # If Redis fails, still try to send OTP but log the error
+        Rails.logger.error "❌ Redis error during password reset OTP: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        
+        # Only send OTP if we haven't already sent it (check if OTP record exists)
+        recent_otp = user.password_otps.where(otp_purpose: 'password_reset')
+                              .where('otp_sent_at > ?', RATE_LIMIT_WINDOW.ago)
+                              .order(created_at: :desc)
+                              .first
+        
+        unless recent_otp
+          Rails.logger.info "Sending password reset OTP without Redis rate limiting for #{email}"
+          PasswordOtp.generate_and_send_otp(user)
+        else
+          Rails.logger.info "Skipping OTP send - recent OTP exists for #{email}"
+        end
       end
       
       render json: { message: 'OTP sent' }, status: :ok
     else
-      render json: { error: 'Email not found' }, status: :not_found
+      # Don't reveal that email doesn't exist (security best practice)
+      Rails.logger.info "Password reset requested for non-existent email: #{email}"
+      render json: { message: 'OTP sent' }, status: :ok
     end
   end
 

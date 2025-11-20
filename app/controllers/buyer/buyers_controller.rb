@@ -108,7 +108,7 @@ class Buyer::BuyersController < ApplicationController
 
   def buyer_params
     permitted = params.require(:buyer).permit(
-      :fullname, :username, :email, :phone_number, :password, 
+      :fullname, :username, :email, :phone_number, :secondary_phone_number, :password, 
       :password_confirmation, :age_group_id, :zipcode, :city, :gender, 
       :location, :income_id, :sector_id, :education_id, :employment_id,
       :county_id, :sub_county_id

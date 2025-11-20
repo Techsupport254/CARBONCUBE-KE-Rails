@@ -10,27 +10,40 @@ class PasswordOtp < ApplicationRecord
 
     # Use first_or_initialize to either reuse or create new OTP record
     otp_record = PasswordOtp.where(otpable: user, otp_purpose: 'password_reset').first_or_initialize
-    otp_record.update!(otp_digest: otp_digest, otp_sent_at: Time.current)
+    
+    begin
+      otp_record.update!(otp_digest: otp_digest, otp_sent_at: Time.current)
+      Rails.logger.info "✅ OTP record created/updated for #{user.email}"
+    rescue => e
+      Rails.logger.error "❌ Failed to save OTP record: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      raise e # Re-raise to prevent sending email without saved OTP
+    end
 
     # Trigger mailer here, passing raw OTP for email content
     # Use deliver_now in development (no Sidekiq needed), deliver_later in production
-    mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
-    
     begin
+      mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
+      
       if Rails.env.development?
         # Send immediately in development
         mailer.deliver_now
         Rails.logger.info "✅ Password reset OTP email sent immediately to #{user.email}"
-        puts "✅ Password reset OTP email sent immediately to #{user.email}"
+        puts "✅ Password reset OTP email sent immediately to #{user.email} - OTP: #{otp}"
       else
         # Queue via Sidekiq in production
         mailer.deliver_later
         Rails.logger.info "✅ Password reset OTP email queued for #{user.email}"
       end
     rescue => e
-      Rails.logger.error "❌ Failed to send password reset email: #{e.message}"
+      Rails.logger.error "❌ Failed to send password reset email to #{user.email}: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
-      # Don't fail the request if email fails - still return success
+      # Log the OTP for debugging (only in development)
+      if Rails.env.development?
+        Rails.logger.error "DEBUG: OTP that failed to send: #{otp}"
+        puts "DEBUG: OTP that failed to send: #{otp}"
+      end
+      # Don't fail the request if email fails - still return the record so user can retry
     end
 
     otp_record

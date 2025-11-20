@@ -129,7 +129,7 @@ class Buyer::ReviewsController < ApplicationController
           end
           
           # Upload to Cloudinary
-          Rails.logger.info "🚀 Uploading review image to Cloudinary"
+          Rails.logger.info "Uploading review image to Cloudinary"
           uploaded_image = Cloudinary::Uploader.upload(
             image.tempfile.path,
             upload_preset: ENV['UPLOAD_PRESET'],

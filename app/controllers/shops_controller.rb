@@ -45,6 +45,7 @@ class ShopsController < ApplicationController
       :categories,
       :county,
       :sub_county,
+      :seller_documents,
       seller_tier: :tier
     ).find(@shop.id)
     
@@ -118,6 +119,7 @@ class ShopsController < ApplicationController
         # SEO-specific fields
         fullname: @shop.fullname,
         phone_number: @shop.phone_number,
+        secondary_phone_number: @shop.secondary_phone_number,
         city: @shop.city,
         county: @shop.county&.name,
         sub_county: @shop.sub_county&.name,
@@ -125,7 +127,22 @@ class ShopsController < ApplicationController
         categories: shop_categories,
         total_reviews: total_reviews,
         average_rating: average_rating,
-        slug: slug
+        slug: slug,
+        # Verification fields
+        document_verified: @shop.document_verified,
+        seller_documents: @shop.seller_documents.map do |doc|
+          {
+            id: doc.id,
+            document_type_id: doc.document_type_id,
+            document_url: doc.document_url,
+            document_expiry_date: doc.document_expiry_date,
+            document_verified: doc.document_verified,
+            document_type: doc.document_type ? {
+              id: doc.document_type.id,
+              name: doc.document_type.name
+            } : nil
+          }
+        end
       },
       ads: @ads.map { |ad| AdSerializer.new(ad, include_reviews: false).as_json },
       pagination: {
@@ -603,7 +620,7 @@ class ShopsController < ApplicationController
           end
           
           # Upload to Cloudinary
-          Rails.logger.info "🚀 Uploading review image to Cloudinary"
+          Rails.logger.info "Uploading review image to Cloudinary"
           uploaded_image = Cloudinary::Uploader.upload(
             image.tempfile.path,
             upload_preset: ENV['UPLOAD_PRESET'],
