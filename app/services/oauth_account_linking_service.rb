@@ -147,22 +147,25 @@ class OauthAccountLinkingService
 
   def create_new_oauth_user
     # Normalize role to lowercase for case-insensitive matching
-    normalized_role = @role.to_s.downcase.strip
+    # Remove all whitespace and convert to lowercase
+    normalized_role = @role.to_s.strip.downcase.gsub(/\s+/, '')
     Rails.logger.info "=" * 80
     Rails.logger.info "🔍 [OauthAccountLinkingService] Creating new user"
     Rails.logger.info "   Original @role: #{@role.inspect} (#{@role.class})"
-    Rails.logger.info "   Normalized role: #{normalized_role.inspect}"
+    Rails.logger.info "   After strip: #{@role.to_s.strip.inspect}"
+    Rails.logger.info "   After downcase: #{@role.to_s.strip.downcase.inspect}"
+    Rails.logger.info "   Final normalized_role: #{normalized_role.inspect}"
     Rails.logger.info "   Will match against: 'seller', 'admin', 'sales_user', 'salesuser'"
     Rails.logger.info "=" * 80
     
-    case normalized_role
-    when 'seller'
+    # Use explicit string comparison to ensure exact match
+    if normalized_role == 'seller'
       Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'seller' - Creating Seller account"
       create_seller
-    when 'admin'
+    elsif normalized_role == 'admin'
       Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'admin' - Creating Admin account"
       create_admin
-    when 'sales_user', 'salesuser'
+    elsif normalized_role == 'sales_user' || normalized_role == 'salesuser'
       Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'sales_user'/'salesuser' - Creating SalesUser account"
       create_sales_user
     else
@@ -170,6 +173,9 @@ class OauthAccountLinkingService
       Rails.logger.error "   This will default to Buyer - THIS IS THE BUG!"
       Rails.logger.error "   @role was: #{@role.inspect}"
       Rails.logger.error "   normalized_role was: #{normalized_role.inspect}"
+      Rails.logger.error "   normalized_role bytes: #{normalized_role.bytes.inspect}"
+      Rails.logger.error "   'seller' bytes: #{'seller'.bytes.inspect}"
+      Rails.logger.error "   Are they equal? #{normalized_role == 'seller'}"
       create_buyer # Default to buyer
     end
   end
