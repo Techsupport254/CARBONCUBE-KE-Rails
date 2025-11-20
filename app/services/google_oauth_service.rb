@@ -407,8 +407,8 @@ class GoogleOauthService
     missing_fields = []
     
     # Required fields for seller creation (based on Seller model validations)
+    # Note: phone_number is optional - only required if provided by Google OAuth
     missing_fields << 'fullname' if seller_attributes[:fullname].blank?
-    missing_fields << 'phone_number' if seller_attributes[:phone_number].blank?
     missing_fields << 'enterprise_name' if seller_attributes[:enterprise_name].blank?
     missing_fields << 'age_group_id' if seller_attributes[:age_group_id].blank?
     missing_fields << 'county_id' if seller_attributes[:county_id].blank?
