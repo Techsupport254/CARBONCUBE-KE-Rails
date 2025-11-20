@@ -22,11 +22,37 @@ class OauthAccountLinkingService
   end
 
   def call
+    # Normalize role for comparison
+    normalized_requested_role = @role.to_s.downcase.strip
+    
     # First, try to find existing user by email
     existing_user = find_user_by_email(@email)
     
     if existing_user
-      # Link OAuth account to existing user
+      # Check if the existing user's role matches the requested role
+      existing_role = determine_user_role(existing_user)
+      existing_role_normalized = existing_role.to_s.downcase.strip
+      
+      Rails.logger.info "🔍 [OauthAccountLinkingService] Existing user found: #{existing_user.class.name}"
+      Rails.logger.info "   Existing role: #{existing_role_normalized}"
+      Rails.logger.info "   Requested role: #{normalized_requested_role}"
+      
+      # If roles don't match, return an error
+      if existing_role_normalized != normalized_requested_role
+        Rails.logger.error "❌ [OauthAccountLinkingService] Role mismatch!"
+        Rails.logger.error "   User #{@email} already exists as #{existing_role}"
+        Rails.logger.error "   Cannot create #{normalized_requested_role.capitalize} account with same email"
+        
+        return {
+          success: false,
+          error: "This email is already registered as a #{existing_role}. Please sign in with your existing account or use a different email address.",
+          role_mismatch: true,
+          existing_role: existing_role,
+          requested_role: normalized_requested_role.capitalize
+        }
+      end
+      
+      # Roles match, link OAuth account to existing user
       link_oauth_to_existing_user(existing_user)
       return { success: true, user: existing_user, message: 'Account linked successfully' }
     end
@@ -68,6 +94,21 @@ class OauthAccountLinkingService
     SalesUser.find_by(provider: provider, uid: uid)
   end
 
+  def determine_user_role(user)
+    case user.class.name
+    when 'Admin'
+      'Admin'
+    when 'SalesUser'
+      'Sales'
+    when 'Seller'
+      'Seller'
+    when 'Buyer'
+      'Buyer'
+    else
+      'Buyer' # default fallback
+    end
+  end
+
   def link_oauth_to_existing_user(user)
     # Only link if not already linked to this provider
     unless user.provider == @provider && user.uid == @uid
@@ -103,6 +144,13 @@ class OauthAccountLinkingService
   end
 
   def create_buyer
+    # Check if user already exists as a different role (safety check)
+    existing_seller = Seller.find_by(email: @email)
+    if existing_seller
+      Rails.logger.error "❌ [OauthAccountLinkingService] Cannot create buyer - user #{@email} already exists as Seller"
+      raise ActiveRecord::RecordInvalid.new(Seller.new.tap { |s| s.errors.add(:email, "already registered as Seller") })
+    end
+    
     phone_number = extract_phone_number
     location_data = get_user_location_data
     
@@ -143,6 +191,13 @@ class OauthAccountLinkingService
   end
 
   def create_seller
+    # Check if user already exists as a different role (safety check)
+    existing_buyer = Buyer.find_by(email: @email)
+    if existing_buyer
+      Rails.logger.error "❌ [OauthAccountLinkingService] Cannot create seller - user #{@email} already exists as Buyer"
+      raise ActiveRecord::RecordInvalid.new(Buyer.new.tap { |b| b.errors.add(:email, "already registered as Buyer") })
+    end
+    
     phone_number = extract_phone_number
     location_data = get_user_location_data
     
