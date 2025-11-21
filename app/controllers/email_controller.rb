@@ -53,9 +53,9 @@ class EmailController < ApplicationController
       return render json: { exists: false, error: 'Username is required' }, status: :bad_request
     end
     
-    # Validate username format (alphanumeric, underscores only, no spaces, 3-20 chars)
-    unless username.match?(/\A[a-zA-Z0-9_]{3,20}\z/)
-      return render json: { exists: false, error: 'Username must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)' }, status: :bad_request
+    # Validate username format (alphanumeric, underscores, hyphens, no spaces, 3-20 chars)
+    unless username.match?(/\A[a-zA-Z0-9_-]{3,20}\z/)
+      return render json: { exists: false, error: 'Username must be 3-20 characters and contain only letters, numbers, underscores, and hyphens (no spaces)' }, status: :bad_request
     end
     
     # Check if username exists across all user models

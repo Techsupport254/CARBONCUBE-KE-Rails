@@ -3,6 +3,7 @@ class Seller < ApplicationRecord
   after_create :associate_guest_clicks
   before_create :generate_uuid
   before_validation :normalize_email
+  before_validation :normalize_username
   
   # Store device hash temporarily for association (set via attr_accessor)
   attr_accessor :device_hash_for_association
@@ -43,8 +44,8 @@ class Seller < ApplicationRecord
   validates :location, presence: true, unless: :oauth_user?
   validates :business_registration_number, length: { minimum: 1 }, allow_blank: true, uniqueness: true, allow_nil: true
   validates :username, uniqueness: true, allow_blank: true,
-            format: { with: /\A[a-zA-Z0-9_]{3,20}\z/, 
-                      message: "must be 3-20 characters and contain only letters, numbers, and underscores (no spaces or hyphens)" },
+            format: { with: /\A[a-zA-Z0-9_-]{3,20}\z/, 
+                      message: "must be 3-20 characters and contain only letters, numbers, underscores, and hyphens (no spaces)" },
             if: -> { username.present? }
   validates :password, presence: true, length: { minimum: 8 }, if: :password_required?
   validate :password_strength, if: :password_required?
@@ -150,6 +151,34 @@ class Seller < ApplicationRecord
 
   def normalize_email
     self.email = email.to_s.strip.downcase
+  end
+
+  def normalize_username
+    return unless username.present?
+    
+    # Convert spaces to hyphens and remove any other invalid characters
+    # Keep only letters, numbers, underscores, and hyphens
+    normalized = username.to_s.strip
+      .gsub(/\s+/, '-')  # Replace spaces with hyphens
+      .gsub(/[^a-zA-Z0-9_-]/, '')  # Remove any other invalid characters
+      .downcase
+    
+    # Remove consecutive hyphens/underscores
+    normalized = normalized.gsub(/[-_]{2,}/, '-')
+    
+    # Remove leading/trailing hyphens and underscores
+    normalized = normalized.gsub(/^[-_]+|[-_]+$/, '')
+    
+    # Ensure it's between 3-20 characters
+    if normalized.length < 3
+      # If too short, pad with numbers
+      normalized = normalized + (1..(3 - normalized.length)).map { rand(0..9) }.join
+    elsif normalized.length > 20
+      # If too long, truncate
+      normalized = normalized[0..19]
+    end
+    
+    self.username = normalized if normalized.present?
   end
 
   def password_strength
