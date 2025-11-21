@@ -15,10 +15,15 @@ class ProfilePicturesController < ApplicationController
     file_path = Rails.root.join('public', 'cached_profile_pictures', filename)
     
     if File.exist?(file_path)
+      # Set proper headers to prevent CORB (Cross-Origin Read Blocking) issues
+      headers['Content-Type'] = 'image/jpeg'
+      headers['X-Content-Type-Options'] = 'nosniff'
+      headers['Access-Control-Allow-Origin'] = '*' # Allow cross-origin requests
+      headers['Cache-Control'] = 'public, max-age=31536000' # Cache for 1 year
+      
       send_file file_path, 
                 type: 'image/jpeg', 
-                disposition: 'inline',
-                cache_control: 'public, max-age=31536000' # Cache for 1 year
+                disposition: 'inline'
     else
       # Fallback: try to re-cache or find the original Google URL for this user
       # Extract user_id (supports both UUID and numeric IDs)
