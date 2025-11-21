@@ -24,13 +24,13 @@ class Seller < ApplicationRecord
   has_one :seller_tier
   has_one :tier, through: :seller_tier
   
-  belongs_to :county
-  belongs_to :sub_county
+  belongs_to :county, optional: true
+  belongs_to :sub_county, optional: true
   belongs_to :age_group, optional: true
   belongs_to :document_type, optional: true
 
-  validates :county_id, presence: true
-  validates :sub_county_id, presence: true
+  validates :county_id, presence: true, unless: :oauth_user?
+  validates :sub_county_id, presence: true, unless: :oauth_user?
   validates :fullname, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
@@ -40,7 +40,7 @@ class Seller < ApplicationRecord
             allow_blank: true
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
-  validates :location, presence: true
+  validates :location, presence: true, unless: :oauth_user?
   validates :business_registration_number, length: { minimum: 1 }, allow_blank: true, uniqueness: true, allow_nil: true
   validates :username, uniqueness: true, allow_blank: true,
             format: { with: /\A[a-zA-Z0-9_]{3,20}\z/, 
@@ -188,11 +188,12 @@ class Seller < ApplicationRecord
 
   def auto_verify_document_for_2025_sellers
     # Automatically verify documents for sellers registered in 2025
+    # Sales team confirms all 2025 registrations physically, so all should be verified
     # Check if current year is 2025 (for new records) or if seller was created in 2025 (for updates)
     seller_year = new_record? ? Time.current.year : (created_at&.year || Time.current.year)
-    if seller_year == 2025 && document_url.present? && !document_verified?
+    if seller_year == 2025 && !document_verified?
       self.document_verified = true
-      Rails.logger.info "✅ Auto-verifying legacy document for 2025 seller #{id || 'new'}"
+      Rails.logger.info "✅ Auto-verifying document for 2025 seller #{id || 'new'} (sales team confirmed physically)"
     end
   end
 

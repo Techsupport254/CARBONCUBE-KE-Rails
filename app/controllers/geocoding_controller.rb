@@ -6,6 +6,7 @@ class GeocodingController < ApplicationController
   def reverse
     latitude = params[:lat]&.to_f
     longitude = params[:lon]&.to_f
+    zoom = params[:zoom]&.to_i || 18 # Default to zoom 18 for detailed results
     
     unless latitude && longitude
       render json: { error: 'Latitude and longitude are required' }, status: :bad_request
@@ -22,7 +23,8 @@ class GeocodingController < ApplicationController
           format: 'json',
           lat: latitude,
           lon: longitude,
-          addressdetails: 1
+          addressdetails: 1,
+          zoom: zoom
         },
         headers: {
           'User-Agent' => 'CarbonCube-Kenya/1.0 (contact: info@carboncube-ke.com)',

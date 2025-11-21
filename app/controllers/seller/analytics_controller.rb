@@ -6,8 +6,6 @@ class Seller::AnalyticsController < ApplicationController
       # Get seller's tier_id
       tier_id = current_seller.seller_tier&.tier_id || 1
 
-      Rails.logger.info "Analytics request for seller #{current_seller.id} with tier #{tier_id}"
-
       # Base response data - only include tier_id (other fields removed as unused on audience page)
       response_data = {
         tier_id: tier_id
@@ -34,9 +32,7 @@ class Seller::AnalyticsController < ApplicationController
                                                           .order('click_events.created_at DESC')
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
-        
-        Rails.logger.info "Basic tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
-        
+
         response_data.merge!(
           # Add timestamps for dynamic filtering (all time)
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
@@ -57,9 +53,7 @@ class Seller::AnalyticsController < ApplicationController
         # Get category for competitor stats (from params or primary category)
         competitor_category_id = get_competitor_category_id
         primary_category_id = competitor_category_id || get_primary_category_id
-        
-        Rails.logger.info "Standard tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
-        
+
         response_data.merge!(
           # Add timestamps for dynamic filtering (all time)
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
@@ -102,9 +96,7 @@ class Seller::AnalyticsController < ApplicationController
         
         # OPTIMIZATION: Pre-load common data used by multiple methods
         preload_common_data_for_premium
-        
-        Rails.logger.info "Premium tier timestamps - ad_clicks: #{timestamps[:ad_clicks_timestamps]&.length || 0}, reveals: #{timestamps[:reveal_events_timestamps]&.length || 0}, wishlist: #{add_to_wishlist_timestamps&.length || 0}"
-        
+
         # Calculate all advanced metrics for premium tier (used on advanced analytics page)
         response_data.merge!(
           # Timestamps for audience page (tier 2+)

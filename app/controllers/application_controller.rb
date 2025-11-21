@@ -11,8 +11,8 @@ class ApplicationController < ActionController::Base
   # Add query timeout protection for database operations
   around_action :set_query_timeout
   
-  # Log all requests for debugging
-  before_action :log_all_requests
+  # Log all requests for debugging (disabled)
+  # before_action :log_all_requests
 
     # Optionally, you can uncomment the following for authentication
   # before_action :authenticate_request # Uncomment if needed for authentication

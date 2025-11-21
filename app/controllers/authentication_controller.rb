@@ -66,6 +66,10 @@ class AuthenticationController < ApplicationController
         user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
       end
       
+      # Include enterprise_name for sellers
+      if @user.respond_to?(:enterprise_name) && @user.enterprise_name.present?
+        user_response[:enterprise_name] = @user.enterprise_name
+      end
 
       # Update last active timestamp for sellers and buyers
       if @user.respond_to?(:update_last_active!)
@@ -431,53 +435,22 @@ class AuthenticationController < ApplicationController
 
   # GET endpoint for initiating OAuth flow with redirect (generates signed state)
   def google_oauth_initiate
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔄 [GoogleOAuth] Initiate endpoint called (GET)"
-    Rails.logger.info "   Timestamp: #{Time.current}"
-    Rails.logger.info "   Request Method: #{request.method}"
-    Rails.logger.info "   Request Path: #{request.path}"
-    Rails.logger.info "   Full URL: #{request.url}"
-    Rails.logger.info "   Request IP: #{request.remote_ip}"
-    Rails.logger.info "   User-Agent: #{request.user_agent}"
-    Rails.logger.info "   Referer: #{request.referer}"
-    Rails.logger.info "   Params: #{params.except(:controller, :action).inspect}"
-    
     # Get role from params (default to buyer)
     role = params[:role] || 'buyer'
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔍 [GoogleOAuth] Initiate - Role Parameter"
-    Rails.logger.info "   params[:role]: #{params[:role].inspect}"
-    Rails.logger.info "   params['role']: #{params['role'].inspect}"
-    Rails.logger.info "   Final role value: #{role.inspect}"
-    Rails.logger.info "   Role class: #{role.class}"
-    Rails.logger.info "=" * 80
     
     # Check if Google OAuth is configured
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
     client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET']&.strip
     redirect_uri = ENV['GOOGLE_REDIRECT_URI']&.strip
     
-    Rails.logger.info "   Environment Variables:"
-    Rails.logger.info "     GOOGLE_OAUTH_CLIENT_ID: #{client_id ? client_id[0..20] + '...' : 'MISSING'}"
-    Rails.logger.info "     GOOGLE_OAUTH_CLIENT_SECRET: #{client_secret ? '***SET***' : 'MISSING'}"
-    Rails.logger.info "     GOOGLE_REDIRECT_URI: #{redirect_uri || 'MISSING'}"
-    
     unless redirect_uri.present? && client_id.present? && client_secret.present?
-      Rails.logger.error "❌ [GoogleOAuth] Configuration missing!"
-      Rails.logger.error "   Missing client_id: #{!client_id.present?}"
-      Rails.logger.error "   Missing client_secret: #{!client_secret.present?}"
-      Rails.logger.error "   Missing redirect_uri: #{!redirect_uri.present?}"
-      frontend_url = ENV['REACT_APP_FRONTEND_URL'] || 'http://localhost:3000'
+      frontend_url = ENV['FRONTEND_URL'] || ENV['REACT_APP_FRONTEND_URL'] || (Rails.env.development? ? 'http://localhost:3000' : 'https://carboncube-ke.com')
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Google OAuth is not configured')}", allow_other_host: true, status: 302
       return
     end
     
     # Ensure redirect_uri has no trailing slash
-    original_redirect_uri = redirect_uri.dup
     redirect_uri = redirect_uri.chomp('/') if redirect_uri.end_with?('/')
-    if original_redirect_uri != redirect_uri
-      Rails.logger.info "   Redirect URI trimmed trailing slash: #{original_redirect_uri} -> #{redirect_uri}"
-    end
     
     # Generate signed state parameter for CSRF protection
     nonce = SecureRandom.hex(16)
@@ -488,22 +461,11 @@ class AuthenticationController < ApplicationController
       timestamp: timestamp
     }
     
-    Rails.logger.info "   State Generation:"
-    Rails.logger.info "     Nonce: #{nonce}"
-    Rails.logger.info "     Role: #{role}"
-    Rails.logger.info "     Timestamp: #{timestamp}"
-    
     # Sign the state data using Rails message verifier
     verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
     state = verifier.generate(state_data)
     
-    Rails.logger.info "     Signed State Length: #{state.length} characters"
-    Rails.logger.info "     Signed State (first 50 chars): #{state[0..50]}..."
-    
     # Build Google OAuth authorization URL
-    # Request scopes including People API for phone numbers
-    # openid email profile provides: name, email, picture, and verified_email
-    # https://www.googleapis.com/auth/user.phonenumbers.read provides: phone numbers
     scope = 'openid email profile https://www.googleapis.com/auth/user.phonenumbers.read'
     
     query_params = {
@@ -516,15 +478,6 @@ class AuthenticationController < ApplicationController
       'state' => state
     }
     
-    Rails.logger.info "   OAuth Parameters:"
-    Rails.logger.info "     client_id: #{client_id[0..20]}..."
-    Rails.logger.info "     redirect_uri: #{redirect_uri}"
-    Rails.logger.info "     response_type: code"
-    Rails.logger.info "     scope: #{scope}"
-    Rails.logger.info "     access_type: offline"
-    Rails.logger.info "     prompt: select_account"
-    Rails.logger.info "     state: #{state[0..50]}..."
-    
     query_string = URI.encode_www_form(query_params)
     auth_url = URI::HTTPS.build(
       host: 'accounts.google.com',
@@ -532,10 +485,6 @@ class AuthenticationController < ApplicationController
       query: query_string
     ).to_s
     
-    Rails.logger.info "   Generated OAuth URL Length: #{auth_url.length} characters"
-    Rails.logger.info "   OAuth URL (first 100 chars): #{auth_url[0..100]}..."
-    Rails.logger.info "🔗 [GoogleOAuth] Redirecting to Google OAuth (role: #{role})"
-    Rails.logger.info "=" * 80
     redirect_to auth_url, allow_other_host: true
   end
 
@@ -642,41 +591,11 @@ class AuthenticationController < ApplicationController
   end
 
   def google_oauth_callback
-    frontend_url = ENV['REACT_APP_FRONTEND_URL'] || 'http://localhost:3000'
-    
-    # Log request details for debugging
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔄 [GoogleOAuth] Callback received - google_oauth_callback method"
-    Rails.logger.info "   Timestamp: #{Time.current}"
-    Rails.logger.info "   Method: #{request.method}"
-    Rails.logger.info "   Path: #{request.path}"
-    Rails.logger.info "   Full URL: #{request.url}"
-    Rails.logger.info "   Request IP: #{request.remote_ip}"
-    Rails.logger.info "   User-Agent: #{request.user_agent}"
-    Rails.logger.info "   Referer: #{request.referer}"
-    Rails.logger.info "   Params keys: #{params.keys.inspect}"
-    Rails.logger.info "   All params: #{params.except(:controller, :action).inspect}"
-    Rails.logger.info "   Has code: #{params[:code].present?}"
-    Rails.logger.info "   Code length: #{params[:code]&.length || 0}"
-    Rails.logger.info "   Code (first 30 chars): #{params[:code] ? params[:code][0..30] + '...' : 'nil'}"
-    Rails.logger.info "   Has state: #{params[:state].present?}"
-    Rails.logger.info "   State length: #{params[:state]&.length || 0}"
-    Rails.logger.info "   State (first 30 chars): #{params[:state] ? params[:state][0..30] + '...' : 'nil'}"
-    Rails.logger.info "   Has error: #{params[:error].present?}"
-    Rails.logger.info "   Error value: #{params[:error]}" if params[:error].present?
-    Rails.logger.info "   Frontend URL: #{frontend_url}"
-    Rails.logger.info "=" * 80
+    # Prioritize FRONTEND_URL, then REACT_APP_FRONTEND_URL, then default to localhost for development
+    frontend_url = ENV['FRONTEND_URL'] || ENV['REACT_APP_FRONTEND_URL'] || (Rails.env.development? ? 'http://localhost:3000' : 'https://carboncube-ke.com')
     
     # OAuth callbacks from Google are always GET requests with query parameters
-    # POST requests to the callback endpoint are invalid - they should go to /auth/google instead
-    # This is typically from old cached frontend code or React Strict Mode double renders
     if request.method == 'POST'
-      # Log at debug level instead of warn to reduce noise (this is expected in dev)
-      Rails.logger.debug "⚠️ [GoogleOAuth] POST request to callback endpoint (likely from cached code)"
-      Rails.logger.debug "   OAuth callbacks from Google are always GET requests"
-      Rails.logger.debug "   POST requests with authorization codes should go to /auth/google endpoint"
-      
-      # Return a cleaner error message that won't clutter the console
       render json: { 
         error: 'Invalid request method. Use GET /auth/google/retrieve endpoint instead.',
         correct_endpoint: '/auth/google/retrieve'
@@ -687,15 +606,12 @@ class AuthenticationController < ApplicationController
     # Check for errors from Google first
     if params[:error].present?
       error_msg = params[:error] == 'access_denied' ? 'Access denied by user' : params[:error]
-      Rails.logger.error "❌ Google OAuth error: #{error_msg}"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape(error_msg)}", allow_other_host: true, status: 302
       return
     end
     
     # If no code and no error, this might be a direct access or invalid request
     if params[:code].blank?
-      Rails.logger.warn "⚠️ [GoogleOAuth] Callback accessed without authorization code"
-      Rails.logger.warn "   This might be a direct access or invalid OAuth flow"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('No authorization code received')}", allow_other_host: true, status: 302
       return
     end
@@ -704,7 +620,6 @@ class AuthenticationController < ApplicationController
     code = params[:code]
     cache_key = "oauth_code_#{Digest::MD5.hexdigest(code)}"
     if Rails.cache.exist?(cache_key)
-      Rails.logger.warn "⚠️ [GoogleOAuth] Duplicate code detected"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('This authorization code has already been used')}", allow_other_host: true, status: 302
       return
     end
@@ -714,10 +629,6 @@ class AuthenticationController < ApplicationController
     # Verify and decode signed state parameter for CSRF protection (stateless)
     # State is required for GET requests (OAuth redirect flow)
     if params[:state].blank?
-      Rails.logger.error "❌ [GoogleOAuth] OAuth state missing"
-      Rails.logger.error "   This is required for CSRF protection in OAuth redirect flow"
-      Rails.logger.error "   Request method: #{request.method}"
-      Rails.logger.error "   All params: #{params.inspect}"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter - OAuth flow may have been interrupted')}", allow_other_host: true, status: 302
       return
     end
@@ -725,17 +636,13 @@ class AuthenticationController < ApplicationController
     begin
       verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
       state_data = verifier.verify(params[:state])
-
-      Rails.logger.info "🔍 Decoded state data: #{state_data.inspect}"
       
       # Convert to symbol keys if needed (MessageVerifier may return string keys)
-      # MessageVerifier returns a Hash, so we can use it directly
       state_data = state_data.with_indifferent_access if state_data.is_a?(Hash) && !state_data.is_a?(ActiveSupport::HashWithIndifferentAccess)
       
       # Validate state data structure - check both symbol and string keys
       timestamp = state_data[:timestamp] || state_data['timestamp']
       unless state_data.is_a?(Hash) && timestamp.present?
-        Rails.logger.error "OAuth state data invalid - missing timestamp: #{state_data.inspect}"
         redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
         return
       end
@@ -745,29 +652,15 @@ class AuthenticationController < ApplicationController
       current_time = Time.current.to_i
       
       if timestamp <= 0 || (current_time - timestamp) > 300
-        Rails.logger.error "OAuth state expired - timestamp: #{timestamp}, current: #{current_time}, diff: #{current_time - timestamp}"
         redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('State parameter expired')}", allow_other_host: true, status: 302
         return
       end
       
       role = (state_data[:role] || state_data['role'] || 'buyer').to_s
-      Rails.logger.info "=" * 80
-      Rails.logger.info "✅ OAuth state verified"
-      Rails.logger.info "   Role from state_data[:role]: #{state_data[:role].inspect}"
-      Rails.logger.info "   Role from state_data['role']: #{state_data['role'].inspect}"
-      Rails.logger.info "   Final role value: #{role.inspect}"
-      Rails.logger.info "   Role class: #{role.class}"
-      Rails.logger.info "   Timestamp: #{timestamp}"
-      Rails.logger.info "=" * 80
     rescue ActiveSupport::MessageVerifier::InvalidSignature => e
-      Rails.logger.error "OAuth state signature invalid - possible CSRF attack: #{e.message}"
-      Rails.logger.error "State param: #{params[:state].inspect}"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
       return
     rescue => e
-      Rails.logger.error "OAuth state verification failed: #{e.message}"
-      Rails.logger.error "Error class: #{e.class}"
-      Rails.logger.error "Backtrace: #{e.backtrace.first(5).join("\n")}"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
       return
     end
@@ -775,53 +668,30 @@ class AuthenticationController < ApplicationController
     # Exchange authorization code for tokens
     code = params[:code]
     unless code.present?
-      Rails.logger.error "❌ Authorization code missing from Google callback"
-      Rails.logger.error "   All params: #{params.keys.inspect}"
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Authorization code missing')}", allow_other_host: true, status: 302
       return
     end
-    
-    Rails.logger.info "✅ Authorization code received: #{code[0..20]}..."
     
     begin
       # Exchange code for access token
       token_response = exchange_code_for_tokens(code)
 
       unless token_response && token_response['access_token']
-        Rails.logger.error "=" * 80
-        Rails.logger.error "❌ [GoogleOAuth] Failed to exchange code for tokens"
-        Rails.logger.error "   Response: #{token_response.inspect}"
-        Rails.logger.error "=" * 80
         redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Failed to authenticate with Google')}", allow_other_host: true, status: 302
         return
       end
       
-      Rails.logger.info "✅ [GoogleOAuth] Access token received successfully"
-      Rails.logger.info "   Token length: #{token_response['access_token'].length}"
-      Rails.logger.info "   Has refresh token: #{token_response['refresh_token'].present?}"
-      Rails.logger.info "   Expires in: #{token_response['expires_in']} seconds"
       access_token = token_response['access_token']
       refresh_token = token_response['refresh_token']
       expires_at = token_response['expires_in'] ? Time.current + token_response['expires_in'].seconds : nil
       
       # Get user info from Google
-      Rails.logger.info "🔄 [GoogleOAuth] Fetching user info from Google..."
       user_info = get_google_user_info(access_token)
 
       unless user_info && user_info['email']
-        Rails.logger.error "=" * 80
-        Rails.logger.error "❌ [GoogleOAuth] Failed to get user info from Google"
-        Rails.logger.error "   Response: #{user_info.inspect}"
-        Rails.logger.error "=" * 80
         redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Failed to retrieve user information')}", allow_other_host: true, status: 302
         return
       end
-
-      Rails.logger.info "✅ [GoogleOAuth] User info received successfully"
-      Rails.logger.info "   Email: #{user_info['email']}"
-      Rails.logger.info "   Name: #{user_info['name'] || 'N/A'}"
-      Rails.logger.info "   ID: #{user_info['id'] || user_info['sub'] || 'N/A'}"
-      Rails.logger.info "   Has picture: #{user_info['picture'].present?}"
       
       # Try to fetch phone numbers from Google People API
       phone_number = nil
@@ -845,7 +715,6 @@ class AuthenticationController < ApplicationController
           end
         end
       rescue => e
-        Rails.logger.warn "⚠️ Failed to fetch phone numbers from People API: #{e.message}"
         # Continue without phone numbers - they're optional
       end
       
@@ -875,38 +744,18 @@ class AuthenticationController < ApplicationController
         }
       }
       
-      Rails.logger.info "=" * 80
-      Rails.logger.info "🔄 [GoogleOAuth] Creating/linking OAuth account"
-      Rails.logger.info "   Role: #{role.capitalize}"
-      Rails.logger.info "   User IP: #{request.remote_ip}"
-      Rails.logger.info "   Email: #{user_info['email']}"
-      Rails.logger.info "=" * 80
       # Use OauthAccountLinkingService to create or link account
       user_ip = request.remote_ip
       linking_service = OauthAccountLinkingService.new(auth_hash, role.capitalize, user_ip)
       result = linking_service.call
-
-      Rails.logger.info "   [GoogleOAuth] Linking result: success=#{result[:success]}"
-      Rails.logger.info "   [GoogleOAuth] User present: #{result[:user].present?}"
-      Rails.logger.info "   [GoogleOAuth] Error: #{result[:error]}" if result[:error]
       
       unless result[:success] && result[:user]
-        Rails.logger.error "=" * 80
-        Rails.logger.error "❌ [GoogleOAuth] OAuth account linking failed"
-        Rails.logger.error "   Error: #{result[:error]}"
-        Rails.logger.error "   Result: #{result.inspect}"
-        Rails.logger.error "=" * 80
         redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
         return
       end
       
-      Rails.logger.info "✅ [GoogleOAuth] OAuth account linked/created successfully"
       user = result[:user]
       user_role = determine_role(user)
-      Rails.logger.info "   [GoogleOAuth] User ID: #{user.id}"
-      Rails.logger.info "   [GoogleOAuth] Email: #{user.email}"
-      Rails.logger.info "   [GoogleOAuth] Role: #{user_role}"
-      Rails.logger.info "   [GoogleOAuth] User class: #{user.class.name}"
       
       # Block login if the user is soft-deleted
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
@@ -921,9 +770,6 @@ class AuthenticationController < ApplicationController
       end
       
       # Create JWT token
-      Rails.logger.info "🔑 [GoogleOAuth] Creating JWT token"
-      Rails.logger.info "   Email: #{user.email}"
-      Rails.logger.info "   Role: #{user_role}"
       token_payload = if user_role == 'Seller'
         { seller_id: user.id, email: user.email, role: user_role }
       else
@@ -931,8 +777,6 @@ class AuthenticationController < ApplicationController
       end
 
       token = JsonWebToken.encode(token_payload)
-      Rails.logger.info "✅ [GoogleOAuth] JWT token created successfully"
-      Rails.logger.info "   Token length: #{token.length}"
       
       # Build user response
       user_response = {
@@ -961,70 +805,37 @@ class AuthenticationController < ApplicationController
         user.update_last_active!
       end
       
-      # Store token and user data temporarily in cache (expires in 5 minutes)
-      # Use a short random code to retrieve it from the frontend
-      auth_code = SecureRandom.hex(16)
+      # Check for missing fields if this is a seller (for completion modal)
+      missing_fields = []
+      if user.is_a?(Seller)
+        missing_fields = check_seller_missing_fields(user)
+        Rails.logger.info "🔍 Seller missing fields detected: #{missing_fields.join(', ')}" if missing_fields.any?
+      end
+      
+      # Encode token and user data as base64 JSON for URL fragment (no cache needed)
+      # URL fragments (#) are client-side only and not sent to server, making them more secure
       auth_data = {
         token: token,
         user: user_response
       }
       
-      cache_key = "oauth_auth_#{auth_code}"
-      cache_write_result = Rails.cache.write(cache_key, auth_data.to_json, expires_in: 5.minutes)
-      
-      Rails.logger.info "=" * 80
-      Rails.logger.info "🔗 [GoogleOAuth] Storing auth data in cache"
-      Rails.logger.info "   Auth code: #{auth_code}"
-      Rails.logger.info "   Auth code length: #{auth_code.length}"
-      Rails.logger.info "   Cache key: #{cache_key}"
-      Rails.logger.info "   Cache key length: #{cache_key.length}"
-      Rails.logger.info "   Cache write result: #{cache_write_result}"
-      Rails.logger.info "   Cache TTL: 5 minutes"
-      Rails.logger.info "   Auth data keys: #{auth_data.keys.inspect}"
-      Rails.logger.info "   Token present: #{auth_data[:token].present?}"
-      Rails.logger.info "   Token length: #{auth_data[:token]&.length || 0}"
-      Rails.logger.info "   User present: #{auth_data[:user].present?}"
-      Rails.logger.info "   User email: #{auth_data[:user][:email]}"
-      Rails.logger.info "   User role: #{auth_data[:user][:role]}"
-      Rails.logger.info "   User ID: #{auth_data[:user][:id]}"
-      
-      # Verify cache was written by reading it back
-      cache_verification = Rails.cache.read(cache_key)
-      Rails.logger.info "   Cache verification: #{cache_verification ? 'SUCCESS (data found)' : 'FAILED (data not found)'}"
-      if cache_verification
-        Rails.logger.info "   Cache verification data length: #{cache_verification.length}"
+      # Include missing fields if any (frontend will show modal)
+      if missing_fields.any?
+        auth_data[:missing_fields] = missing_fields
       end
       
-      # Redirect to frontend with just the short code
-      # Note: This will cause one page reload (backend -> frontend), but then frontend redirects are disabled
-      # so console logs will be preserved on the frontend callback page
-      redirect_url = "#{frontend_url}/auth/google/callback?code=#{auth_code}"
+      # Base64 encode the JSON data for URL-safe transmission
+      # Base64 is part of Ruby standard library, no require needed
+      encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
       
-      Rails.logger.info "=" * 80
-      Rails.logger.info "🔗 [GoogleOAuth] Redirecting to frontend"
-      Rails.logger.info "   Redirect URL: #{redirect_url}"
-      Rails.logger.info "   Frontend URL: #{frontend_url}"
-      Rails.logger.info "   Auth code in URL: #{auth_code}"
-      Rails.logger.info "   Expected frontend flow:"
-      Rails.logger.info "   1. Frontend receives: /auth/google/callback?code=#{auth_code}"
-      Rails.logger.info "   2. Frontend calls: GET /auth/google/retrieve?code=#{auth_code}"
-      Rails.logger.info "   3. Backend looks up cache key: oauth_auth_#{auth_code}"
-      Rails.logger.info "   4. Backend returns token and user data"
-      Rails.logger.info "=" * 80
+      # Redirect to frontend with token in query parameter (URL encoded)
+      # No cache needed - token is passed directly in redirect
+      redirect_url = "#{frontend_url}/auth/google/callback?token=#{CGI.escape(encoded_data)}"
       
-      # Use head :found for Safari compatibility - sends only HTTP headers, no HTML body
-      # This prevents Safari from downloading the redirect response
-      response.headers['Location'] = redirect_url
-      head :found
+      # Use redirect_to for proper redirect handling
+      redirect_to redirect_url, allow_other_host: true, status: 302
       
     rescue => e
-      Rails.logger.error "=" * 80
-      Rails.logger.error "❌ [GoogleOAuth] Exception in callback"
-      Rails.logger.error "   Error class: #{e.class}"
-      Rails.logger.error "   Error message: #{e.message}"
-      Rails.logger.error "   Backtrace:"
-      Rails.logger.error e.backtrace.first(10).join("\n")
-      Rails.logger.error "=" * 80
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Authentication failed: ' + e.message)}", allow_other_host: true, status: 302
     end
   end
@@ -1346,7 +1157,6 @@ class AuthenticationController < ApplicationController
   def complete_registration
     begin
       Rails.logger.info "📝 Complete registration request received"
-      Rails.logger.info "📝 Params: #{params.inspect}"
       
       # Get the form data from the request
       form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id, :age_group_id, :birthday, :given_name, :family_name, :display_name, :provider, :uid, :user_type, :enterprise_name, :business_registration_number, :document_type_id, :description)
@@ -1630,33 +1440,15 @@ class AuthenticationController < ApplicationController
   end
 
   def exchange_code_for_tokens_with_redirect_uri(code, redirect_uri)
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔄 [TokenExchange] Starting token exchange"
-    Rails.logger.info "   Code length: #{code.length}"
-    Rails.logger.info "   Code (first 30 chars): #{code[0..30]}..."
-    Rails.logger.info "   Redirect URI: #{redirect_uri}"
-    Rails.logger.info "   Client ID present: #{ENV['GOOGLE_OAUTH_CLIENT_ID'].present?}"
-    Rails.logger.info "   Client ID (first 20 chars): #{ENV['GOOGLE_OAUTH_CLIENT_ID']&.[](0..20)}..."
-    Rails.logger.info "   Client Secret present: #{ENV['GOOGLE_OAUTH_CLIENT_SECRET'].present?}"
-    
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
     client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET']&.strip
 
     unless client_id.present? && client_secret.present?
-      Rails.logger.error "❌ [TokenExchange] Missing OAuth credentials"
-      Rails.logger.error "   GOOGLE_OAUTH_CLIENT_ID present: #{client_id.present?}"
-      Rails.logger.error "   GOOGLE_OAUTH_CLIENT_SECRET present: #{client_secret.present?}"
       return nil
     end
 
     # Ensure redirect_uri has no trailing slash (Google is strict about exact match)
-    original_redirect_uri = redirect_uri.dup
     redirect_uri = redirect_uri.chomp('/') if redirect_uri.end_with?('/')
-    if original_redirect_uri != redirect_uri
-      Rails.logger.info "   Redirect URI trimmed trailing slash: #{original_redirect_uri} -> #{redirect_uri}"
-    end
-
-    Rails.logger.info "   Final redirect_uri: #{redirect_uri}"
 
     begin
       request_body = {
@@ -1667,13 +1459,6 @@ class AuthenticationController < ApplicationController
         grant_type: 'authorization_code'
       }
       
-      Rails.logger.info "   Request body (without secrets):"
-      Rails.logger.info "     code: #{code[0..30]}..."
-      Rails.logger.info "     client_id: #{client_id[0..20]}..."
-      Rails.logger.info "     client_secret: [REDACTED]"
-      Rails.logger.info "     redirect_uri: #{redirect_uri}"
-      Rails.logger.info "     grant_type: authorization_code"
-      
       response = HTTParty.post('https://oauth2.googleapis.com/token', {
         body: request_body,
         headers: {
@@ -1682,73 +1467,26 @@ class AuthenticationController < ApplicationController
         timeout: 30
       })
 
-      Rails.logger.info "📡 [TokenExchange] Response received"
-      Rails.logger.info "   Status: #{response.code}"
-      Rails.logger.info "   Success: #{response.success?}"
-      Rails.logger.info "   Response body length: #{response.body.length}"
-      Rails.logger.info "   Response body: #{response.body}"
-
       if response.success?
-        token_data = JSON.parse(response.body)
-        Rails.logger.info "✅ [TokenExchange] Token exchange successful"
-        Rails.logger.info "   Has access_token: #{token_data['access_token'].present?}"
-        Rails.logger.info "   Access token length: #{token_data['access_token']&.length || 0}"
-        Rails.logger.info "   Has refresh_token: #{token_data['refresh_token'].present?}"
-        Rails.logger.info "   Expires in: #{token_data['expires_in']} seconds"
-        Rails.logger.info "   Token type: #{token_data['token_type']}"
-        token_data
+        JSON.parse(response.body)
       else
-        Rails.logger.error "❌ [TokenExchange] Token exchange failed"
-        Rails.logger.error "   Status: #{response.code}"
-        Rails.logger.error "   Body: #{response.body}"
-        
-        # Try to parse error for more details
-        begin
-          error_data = JSON.parse(response.body)
-          Rails.logger.error "   Error: #{error_data['error']}"
-          Rails.logger.error "   Error description: #{error_data['error_description']}"
-          
-          if error_data['error'] == 'invalid_grant'
-            Rails.logger.error "   Possible causes:"
-            Rails.logger.error "   1. Code already used (single-use)"
-            Rails.logger.error "   2. Code expired"
-            Rails.logger.error "   3. Code doesn't match redirect_uri"
-            Rails.logger.error "   4. Malformed code"
-          end
-        rescue => e
-          Rails.logger.error "   Could not parse error response: #{e.message}"
-        end
-        
         nil
       end
     rescue => e
-      Rails.logger.error "❌ [TokenExchange] Exception occurred"
-      Rails.logger.error "   Exception class: #{e.class}"
-      Rails.logger.error "   Exception message: #{e.message}"
-      Rails.logger.error "   Backtrace:"
-      Rails.logger.error e.backtrace.first(10).join("\n")
       nil
-    ensure
-      Rails.logger.info "=" * 80
     end
   end
   
   def get_google_user_info(access_token)
-    Rails.logger.info "🔄 Fetching user info from Google API..."
     response = HTTParty.get('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: {
         'Authorization' => "Bearer #{access_token}"
       }
     })
     
-    Rails.logger.info "📡 User info response - Status: #{response.code}, Success: #{response.success?}"
-    
     if response.success?
-      user_data = JSON.parse(response.body)
-      Rails.logger.info "✅ User info received - Email: #{user_data['email']}, Name: #{user_data['name']}"
-      user_data
+      JSON.parse(response.body)
     else
-      Rails.logger.error "❌ User info fetch failed - Status: #{response.code}, Body: #{response.body}"
       nil
     end
   end
@@ -1944,6 +1682,23 @@ class AuthenticationController < ApplicationController
     end
     
     enterprise_name
+  end
+
+  # Check which required seller fields are missing
+  def check_seller_missing_fields(seller)
+    missing_fields = []
+    
+    # Check each required field based on Seller model validations
+    missing_fields << 'fullname' if seller.fullname.blank? || seller.fullname.strip.empty?
+    missing_fields << 'phone_number' if seller.phone_number.blank? || seller.phone_number.strip.empty?
+    missing_fields << 'enterprise_name' if seller.enterprise_name.blank? || seller.enterprise_name.strip.empty?
+    missing_fields << 'location' if seller.location.blank? || seller.location.strip.empty? || seller.location == 'Location to be updated'
+    missing_fields << 'county_id' if seller.county_id.blank?
+    missing_fields << 'sub_county_id' if seller.sub_county_id.blank?
+    missing_fields << 'description' if seller.description.blank? || seller.description.strip.empty?
+    
+    Rails.logger.info "🔍 Missing fields for seller #{seller.id}: #{missing_fields.join(', ')}"
+    missing_fields
   end
 
 end

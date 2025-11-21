@@ -15,7 +15,6 @@ class Buyer::BuyersController < ApplicationController
 
   # POST /buyers/signup
   def create
-    logger.debug "Buyer Params Received: #{buyer_params.inspect}"
 
     buyer_email = buyer_params[:email].downcase.strip
     otp_code = params[:otp]

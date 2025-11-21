@@ -1,5 +1,43 @@
 require "active_support/core_ext/integer/time"
 
+# Custom logger class for Rails 7.1.5.2 compatibility
+# Logs to both file and STDOUT, but filters out request logs ("Started GET", etc.)
+class DualLogger < ActiveSupport::Logger
+  def initialize(*args)
+    super
+    @stdout_logger = ActiveSupport::Logger.new(STDOUT)
+    @stdout_logger.formatter = formatter
+    @stdout_logger.level = level
+  end
+
+  def add(severity, message = nil, progname = nil, &block)
+    # Get the actual message string
+    msg = message || (block && block.call) || progname
+    
+    # Convert to string for matching
+    msg_str = msg.to_s
+    
+    # Filter out request logs and serializer logs
+    # Filter "Started GET/POST" request logs
+    if msg_str.match?(/^Started (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)/i) || msg_str.match?(/^Processing by/i)
+      super # Log to file only
+      return self
+    end
+    
+    # Filter ActiveModel Serializer rendering logs (comprehensive pattern)
+    if msg_str.match?(/Rendered ActiveModel::Serializer/i) || 
+       msg_str.match?(/ActiveModelSerializers/i) ||
+       msg_str.match?(/ActiveModel::Serializer/i) ||
+       msg_str.match?(/Serializer.*Adapter/i)
+      super # Log to file only
+      return self
+    end
+    
+    super
+    @stdout_logger.add(severity, message, progname, &block)
+  end
+end
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
   # 
@@ -59,18 +97,35 @@ Rails.application.configure do
   FileUtils.mkdir_p(log_file_dir) unless File.directory?(log_file_dir)
   
   # Create a logger that writes to both STDOUT and file
+  # For Rails 7.1.5.2 compatibility, use a custom logger class
   log_device = File.open(log_file, 'a')
   log_device.sync = true # Flush immediately
   
-  config.logger = ActiveSupport::Logger.new(log_device)
+  config.logger = DualLogger.new(log_device)
   config.log_level = :debug
   
-  # Also log to STDOUT for immediate visibility
-  config.logger.extend(ActiveSupport::Logger.broadcast(ActiveSupport::Logger.new(STDOUT)))
-  
-  # Fix ActionCable logger issue - ensure logger exists
+  # Suppress ActionController request/response logging ("Started GET", etc.)
+  # and configure ActionCable logging
   config.after_initialize do
-    ActionCable.server.config.logger = Rails.logger
+    # Suppress ActionController::LogSubscriber which logs "Started GET" messages
+    if defined?(ActionController::LogSubscriber)
+      ActiveSupport::Notifications.unsubscribe ActionController::LogSubscriber
+      ActionController::LogSubscriber.logger = Logger.new(File::NULL)
+    end
+    
+    # Suppress ActiveModel::Serializers logging
+    if defined?(ActiveModel::Serializer)
+      # Try to disable ActiveModel Serializers logging if possible
+      begin
+        ActiveModelSerializers.logger = Logger.new(File::NULL) if defined?(ActiveModelSerializers)
+      rescue => e
+        # Ignore if logger cannot be set
+      end
+    end
+    
+    # Configure ActionCable logging
+    ActionCable.server.config.logger = Logger.new(STDOUT)
+    ActionCable.server.config.logger.level = Logger::WARN
     ActionCable.server.config.log_tags = []
   end
   
@@ -138,6 +193,7 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = false
 
+
   # Assets are not used in API-only mode
 
   # Raises error for missing translations.
@@ -152,13 +208,11 @@ Rails.application.configure do
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
 
-  # Reduce ActiveModel Serializer logging
-  # config.active_model_serializers.logger = Logger.new(nil)
-
-  # Reduce ActionCable logging to minimize noise
+  # Suppress ActiveModel Serializer logging
   config.after_initialize do
-    ActionCable.server.config.logger = Logger.new(STDOUT)
-    ActionCable.server.config.logger.level = Logger::WARN
-    ActionCable.server.config.log_tags = []
+    if defined?(ActiveModelSerializers)
+      ActiveModelSerializers.logger = Logger.new(File::NULL)
+    end
   end
+
 end

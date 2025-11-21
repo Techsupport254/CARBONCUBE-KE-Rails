@@ -233,6 +233,9 @@ Rails.application.routes.draw do
   # This route allows viewing ads for a specific seller
   resources :sellers, only: [] do
     get 'ads', to: 'sellers#ads'
+    collection do
+      patch 'complete_registration', to: 'sellers#complete_registration'
+    end
   end
 
   # Public sellers endpoint for sitemap generation

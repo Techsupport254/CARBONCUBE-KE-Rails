@@ -139,30 +139,40 @@ class GoogleOauthService
           }
         end
         
-        # During registration, always require confirmation before auto-login, regardless of role match
+        # During registration, check if roles match
         if @is_registration
           requested_role = @role.to_s.downcase.strip
           existing_role = existing_user.is_a?(Seller) ? 'seller' : 'buyer'
           
-          Rails.logger.warn "Registration mode: existing #{existing_role} account found (requested: #{requested_role})"
-          # Update existing user with fresh Google data before showing confirmation
-          link_oauth_to_existing_user(existing_user, 'google', user_info['id'], user_info)
-
-          # Always generate token but return account_exists flag so frontend can show confirmation first
-          # This prevents automatic login during registration, even if roles match
-          token = generate_jwt_token(existing_user)
-          user_response = format_user_response(existing_user)
+          Rails.logger.info "Registration mode: existing #{existing_role} account found (requested: #{requested_role})"
           
+          # If roles match, sign them in directly
+          if requested_role == existing_role
+            Rails.logger.info "Roles match - signing in existing #{existing_role} user"
+            # Update existing user with fresh Google data
+            link_oauth_to_existing_user(existing_user, 'google', user_info['id'], user_info)
+            
+            # Generate JWT token for existing user
+            token = generate_jwt_token(existing_user)
+            user_response = format_user_response(existing_user)
+            
+            return { 
+              success: true, 
+              user: user_response, 
+              token: token,
+              existing_user: true,
+              location_data: location_info
+            }
+          end
+          
+          # Roles don't match - return error
+          Rails.logger.warn "Role mismatch: existing #{existing_role} account found (requested: #{requested_role})"
           return {
-            success: true,
-            message: "A #{existing_role} account with this email already exists.",
-            token: token,
-            user: user_response,
-            account_exists: true,
-            existing_account_type: existing_role,
-            email: existing_user.email,
-            existing_user: true,
-            location_data: location_info
+            success: false,
+            error: "This email is already registered as a #{existing_role.capitalize}. Please sign in with your existing account or use a different email address.",
+            role_mismatch: true,
+            existing_role: existing_role.capitalize,
+            requested_role: requested_role.capitalize
           }
         end
         
@@ -188,14 +198,23 @@ class GoogleOauthService
 
         # Try to create a new user - this will return missing fields if any are missing
         Rails.logger.info "👥 [GoogleOauthService] Step 5: Creating new user"
-        user_type = determine_user_type_from_context
-        Rails.logger.info "   Requested role: #{@role}"
-        Rails.logger.info "   Determined user type: #{user_type}"
+        
+        # In login mode, always create a buyer account if user doesn't exist
+        # In registration mode, use the requested role
+        if @is_registration
+          user_type = determine_user_type_from_context
+          Rails.logger.info "   Registration mode - Requested role: #{@role}"
+          Rails.logger.info "   Determined user type: #{user_type}"
+        else
+          # Login mode - always create buyer account for new users
+          user_type = 'buyer'
+          Rails.logger.info "   Login mode - Creating buyer account for new user"
+        end
         
         # Check for role mismatch during registration (user creation)
         # This should only happen when creating new accounts, not during login
         requested_role = @role || 'Buyer'
-        Rails.logger.info "🔍 Registration attempt for role: #{requested_role}"
+        Rails.logger.info "🔍 User creation attempt for role: #{user_type}"
         
         if user_type == 'buyer'
           create_buyer_user(user_info, location_info, @device_hash)
@@ -389,25 +408,31 @@ class GoogleOauthService
       username: username,
       phone_number: phone_number,
       gender: user_info['gender']&.capitalize || 'Other',
-      city: city,
-      location: location,
       profile_picture: profile_picture,
       provider: 'google',
       uid: user_info['id'],
       # Set seller-specific fields - only use actual data
       enterprise_name: enterprise_name,
-      county_id: location_info.dig('ip_location', 'county_id'),
-      sub_county_id: location_info.dig('ip_location', 'sub_county_id'),
       age_group_id: calculate_age_group(user_info)
     }
+    
+    # Only include location fields if we have actual detected values (not defaults)
+    # User will complete missing fields via modal
+    seller_attributes[:city] = city if city.present?
+    seller_attributes[:location] = location if location.present? && location != "Location to be updated"
+    
+    # Only include county/sub_county if actually detected from location
+    detected_county_id = location_info.dig('ip_location', 'county_id')
+    detected_sub_county_id = location_info.dig('ip_location', 'sub_county_id')
+    seller_attributes[:county_id] = detected_county_id if detected_county_id.present?
+    seller_attributes[:sub_county_id] = detected_sub_county_id if detected_sub_county_id.present?
 
     Rails.logger.info "Seller attributes: #{seller_attributes.inspect}"
 
-    # Check for ALL required fields that would prevent user creation
+    # Check for missing fields that need to be collected later
     missing_fields = []
     
-    # Required fields for seller creation (based on Seller model validations)
-    # Note: phone_number is optional - only required if provided by Google OAuth
+    # Track missing fields for the completion modal
     missing_fields << 'fullname' if seller_attributes[:fullname].blank?
     missing_fields << 'enterprise_name' if seller_attributes[:enterprise_name].blank?
     missing_fields << 'age_group_id' if seller_attributes[:age_group_id].blank?
@@ -415,17 +440,24 @@ class GoogleOauthService
     missing_fields << 'sub_county_id' if seller_attributes[:sub_county_id].blank?
     missing_fields << 'location' if seller_attributes[:location].blank?
     
-    # If we have missing required fields, return missing fields info for complete registration
-    if missing_fields.any?
-      Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
-      
-      # Return proper hash format with missing fields info
-      return {
-        success: false,
-        missing_fields: missing_fields,
-        user_data: format_user_data_for_modal(user_info, location_info),
-        error: "Please complete your registration by providing the required information."
-      }
+    # Don't set default values for county, sub_county, or location
+    # User will complete these via the modal
+    # Only keep actual detected values, remove any placeholder/default values
+    if seller_attributes[:location] == "Location to be updated" || seller_attributes[:location].blank?
+      seller_attributes.delete(:location)
+    end
+    
+    # Remove county/sub_county if they're defaults (we'll let user choose)
+    # Only keep if they were actually detected from location data
+    # (The location_info should only have real detected values)
+    
+    if seller_attributes[:age_group_id].blank?
+      # Default to first age group if not calculated (this is less critical)
+      default_age_group = AgeGroup.first
+      if default_age_group
+        seller_attributes[:age_group_id] = default_age_group.id
+        Rails.logger.info "Using default age group: #{default_age_group.id}"
+      end
     end
 
     # Create the seller
@@ -518,13 +550,23 @@ class GoogleOauthService
       # Generate JWT token for new user
       token = generate_jwt_token(seller)
       
-      # Return success response
-      { 
+      # Return success response with missing fields if any
+      # Frontend will show modal to collect missing fields
+      response = { 
         success: true, 
         user: format_user_response(seller), 
         token: token,
         new_user: true
       }
+      
+      # Include missing fields if any were detected (user will complete via modal)
+      if missing_fields.any?
+        response[:missing_fields] = missing_fields
+        response[:user_data] = format_user_data_for_modal(user_info, location_info)
+        Rails.logger.info "Seller created with missing fields - will be collected via modal: #{missing_fields.join(', ')}"
+      end
+      
+      response
     else
       Rails.logger.error "Seller creation failed: #{seller.errors.full_messages.join(', ')}"
       

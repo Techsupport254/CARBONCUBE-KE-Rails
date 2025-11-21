@@ -107,7 +107,6 @@ class Seller::AdsController < ApplicationController
         Rails.logger.info "📸 No images provided for this ad"
       end
 
-      Rails.logger.info "📝 Building ad with params: #{ad_params.inspect}"
       @ad = current_seller.ads.build(ad_params)
       Rails.logger.info "📝 Ad built with media: #{@ad.media.inspect}"
 
