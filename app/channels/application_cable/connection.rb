@@ -7,21 +7,14 @@ module ApplicationCable
     @@connection_lock = Mutex.new
     
     def connect
-      Rails.logger.info "🔌 WebSocket: CONNECT METHOD CALLED"
-      
       # Check for existing connections to prevent spam
       @connection_attempt_time = Time.current
       @connection_id = SecureRandom.uuid
-      
-      # Reduce debug logging to prevent spam
-      Rails.logger.info "WebSocket: Connection attempt #{@connection_id} from #{request.remote_ip rescue 'unknown'}"
       
       begin
         authenticate_user!
         setup_session
         track_connection
-        
-        Rails.logger.info "🔌 WebSocket connection established for user #{current_user&.id || 'anonymous'}"
       rescue StandardError => e
         Rails.logger.error "WebSocket connection setup failed: #{e.message}"
         Rails.logger.error "WebSocket connection setup backtrace: #{e.backtrace.first(5).join("\n")}"
@@ -29,9 +22,7 @@ module ApplicationCable
         # Only try fallback if we don't have a current_user
         unless current_user
           begin
-            Rails.logger.info "WebSocket: Attempting fallback authentication"
             authenticate_user_fallback!
-            Rails.logger.info "🔌 WebSocket connection established via fallback for user #{current_user&.id || 'anonymous'}"
           rescue StandardError => fallback_error
             Rails.logger.error "WebSocket fallback authentication also failed: #{fallback_error.message}"
             Rails.logger.error "WebSocket fallback backtrace: #{fallback_error.backtrace.first(5).join("\n")}"
@@ -55,8 +46,6 @@ module ApplicationCable
             @@active_connections.delete(current_user.id)
           end
         end
-        
-        Rails.logger.info "🔌 WebSocket connection closed for user #{current_user&.id}"
       rescue StandardError => e
         Rails.logger.error "WebSocket disconnection tracking failed: #{e.message}"
         # Don't prevent disconnection even if tracking fails
@@ -69,13 +58,11 @@ module ApplicationCable
       token = extract_token
       
       if token
-        Rails.logger.info "WebSocket: Token found, attempting to decode: #{token[0..20]}..."
         decoded_result = JsonWebToken.decode(token)
         
         if decoded_result[:success]
           self.current_user = find_user_from_token(decoded_result[:payload])
           if current_user
-            Rails.logger.info "WebSocket: User authenticated successfully - #{current_user.class.name} ID: #{current_user.id}"
             self.session_id = decoded_result[:payload]['session_id'] || SecureRandom.uuid
             
             begin
@@ -95,30 +82,22 @@ module ApplicationCable
             Rails.logger.warn "WebSocket token validation failed: #{decoded_result[:error]}"
           end
         end
-      else
-        Rails.logger.info "WebSocket: No token provided"
       end
       
       # If no token or invalid token, allow connection to proceed
       # Authentication will be handled during subscription creation
-      Rails.logger.info "WebSocket: No valid token found, allowing connection to proceed for subscription-based auth"
       # Don't reject the connection - let it proceed and handle auth during subscription
     rescue StandardError => e
       Rails.logger.warn "WebSocket authentication failed: #{e.message}"
       # Don't reject the connection - let it proceed for subscription-based auth
-      Rails.logger.info "WebSocket: Allowing connection to proceed despite authentication failure for subscription-based auth"
     end
     
     def authenticate_user_fallback!
       # Fallback authentication that's more lenient for WebSocket connections
-      Rails.logger.debug "WebSocket: Attempting fallback authentication"
-      
       # Try to extract user info from subscription parameters if available
       if request.params[:user_type] && request.params[:user_id]
         user_type = request.params[:user_type]
         user_id = request.params[:user_id]
-        
-        Rails.logger.debug "WebSocket fallback: Trying to find user #{user_id} of type #{user_type}"
         
         case user_type.downcase
         when 'seller'
@@ -126,34 +105,23 @@ module ApplicationCable
           if seller && !seller.deleted?
             self.current_user = seller
             self.session_id = SecureRandom.uuid
-            Rails.logger.info "WebSocket fallback: Successfully authenticated seller #{seller.id}"
             return
-          else
-            Rails.logger.debug "WebSocket fallback: Seller #{user_id} not found or deleted"
           end
         when 'buyer'
           buyer = Buyer.find_by(id: user_id)
           if buyer && !buyer.deleted?
             self.current_user = buyer
             self.session_id = SecureRandom.uuid
-            Rails.logger.info "WebSocket fallback: Successfully authenticated buyer #{buyer.id}"
             return
-          else
-            Rails.logger.debug "WebSocket fallback: Buyer #{user_id} not found or deleted"
           end
         when 'admin'
           admin = Admin.find_by(id: user_id)
           if admin
             self.current_user = admin
             self.session_id = SecureRandom.uuid
-            Rails.logger.info "WebSocket fallback: Successfully authenticated admin #{admin.id}"
             return
-          else
-            Rails.logger.debug "WebSocket fallback: Admin #{user_id} not found"
           end
         when 'sales'
-          Rails.logger.debug "WebSocket fallback: Attempting to find SalesUser with ID: #{user_id} (type: #{user_id.class.name})"
-          
           # SalesUser uses UUID, so integer IDs won't work
           if user_id.is_a?(Integer)
             Rails.logger.warn "WebSocket fallback: SalesUser ID is an integer (#{user_id}), but SalesUsers use UUIDs. Token may be stale."
@@ -164,31 +132,16 @@ module ApplicationCable
           if sales_user
             self.current_user = sales_user
             self.session_id = SecureRandom.uuid
-            Rails.logger.info "WebSocket fallback: Successfully authenticated sales user #{sales_user.id} (type: #{sales_user.id.class.name}), email: #{sales_user.email}"
             return
-          else
-            Rails.logger.debug "WebSocket fallback: Sales user #{user_id} (type: #{user_id.class.name}) not found (SalesUsers use UUID format)"
           end
-        else
-          Rails.logger.debug "WebSocket fallback: Unknown user type: #{user_type}"
         end
-      else
-        Rails.logger.debug "WebSocket fallback: No user_type or user_id in request params"
       end
-      
-      Rails.logger.info "WebSocket fallback: No valid user found, allowing connection to proceed for subscription-based auth"
       # Don't reject the connection - let it proceed for subscription-based auth
     end
     
     def extract_token
       # Try multiple token sources in order of preference
       token = nil
-      
-      # Reduce debug logging to prevent spam - only log on first connection
-      if @first_connection_attempt
-        Rails.logger.info "WebSocket: Token extraction for #{request.remote_ip rescue 'unknown'}"
-        @first_connection_attempt = false
-      end
       
       # 1. Try Authorization header first (most common for API calls)
       if request.headers['Authorization'].present?
@@ -216,19 +169,10 @@ module ApplicationCable
         token = cookies.signed[:session_token]
       end
       
-      # Only log token info if debug is enabled
-      if Rails.env.development? && token.present?
-        Rails.logger.debug "WebSocket: Found token (#{token[0..10]}...)"
-      end
-      
       token
     end
     
     def find_user_from_token(payload)
-      Rails.logger.info "WebSocket: Finding user from token payload: #{payload.inspect}"
-      Rails.logger.info "WebSocket: Token payload keys: #{payload.keys.inspect}"
-      Rails.logger.info "WebSocket: Token user_id: #{payload['user_id']} (type: #{payload['user_id'].class.name}), role: #{payload['role']}"
-      
       # Handle different token formats based on user type
       # Sellers use seller_id field
       if payload['seller_id']
@@ -241,14 +185,9 @@ module ApplicationCable
           return nil
         end
         
-        Rails.logger.info "WebSocket: Looking for seller with ID: #{seller_id}"
         seller = Seller.find_by(id: seller_id)
         if seller
-          Rails.logger.info "WebSocket: Found seller: #{seller.id}, deleted: #{seller.deleted?}"
           return seller unless seller.deleted?
-          Rails.logger.debug "WebSocket: Seller #{seller_id} is deleted (token may be stale)"
-        else
-          Rails.logger.debug "WebSocket: Seller #{seller_id} not found in database (token may be stale)"
         end
         return nil
       end
@@ -263,67 +202,40 @@ module ApplicationCable
         # Require role for direct lookup - don't search all databases
         unless role.present?
           Rails.logger.warn "WebSocket: Token has user_id but no role field. Cannot perform direct lookup. Token may be malformed."
-          Rails.logger.info "WebSocket: Will proceed with subscription-based auth"
           return nil
         end
-        
-        Rails.logger.info "WebSocket: Looking for user with ID: #{user_id} (type: #{user_id_type}), role: #{role} - using direct role-based lookup"
         
         # Direct lookup based on role - no fallback to search all models
         case role.to_s.downcase
         when 'buyer'
           buyer = Buyer.find_by(id: user_id)
           if buyer
-            Rails.logger.info "WebSocket: Found buyer: #{buyer.id} (type: #{buyer.id.class.name}), deleted: #{buyer.deleted?}"
             return buyer unless buyer.deleted?
-            Rails.logger.debug "WebSocket: Buyer #{user_id} is deleted (token may be stale)"
-          else
-            Rails.logger.debug "WebSocket: Buyer #{user_id} not found in database (token may be stale)"
           end
         when 'admin'
           admin = Admin.find_by(id: user_id)
           if admin
-            Rails.logger.info "WebSocket: Found admin: #{admin.id} (type: #{admin.id.class.name})"
             return admin
-          else
-            Rails.logger.debug "WebSocket: Admin #{user_id} not found in database (token may be stale)"
           end
         when 'sales'
-          # SalesUser uses UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-          Rails.logger.info "WebSocket: Attempting to find SalesUser with ID: #{user_id} (type: #{user_id_type})"
-          
           # SalesUser IDs are UUIDs, so we need to ensure proper format
           # If user_id is an integer, it's likely from a stale token (pre-UUID migration)
           if user_id.is_a?(Integer)
             Rails.logger.warn "WebSocket: SalesUser ID is an integer (#{user_id}), but SalesUsers use UUIDs. Token may be stale from before UUID migration."
-            Rails.logger.info "WebSocket: User should log in again to get a fresh token with correct UUID"
           end
           
           # Try direct lookup (works for both UUID strings and will fail gracefully for integers)
           sales_user = SalesUser.find_by(id: user_id)
           
-          # Log all SalesUsers in database for debugging (only in development)
-          if Rails.env.development? && !sales_user
-            all_sales_users = SalesUser.limit(10).pluck(:id, :email)
-            Rails.logger.info "WebSocket: Sample SalesUser IDs in database: #{all_sales_users.map { |id, email| "#{id} (#{id.class.name}) - #{email}" }.join(', ')}"
-            Rails.logger.info "WebSocket: Token has user_id: #{user_id} (#{user_id_type}), but SalesUsers use UUID format"
-          end
-          
           if sales_user
-            Rails.logger.info "WebSocket: Found sales user: #{sales_user.id} (type: #{sales_user.id.class.name}), email: #{sales_user.email}"
             return sales_user
-          else
-            Rails.logger.warn "WebSocket: Sales user #{user_id} (type: #{user_id_type}) not found in database. This likely means the token is stale (from before UUID migration). User should log in again."
-            Rails.logger.info "WebSocket: Will proceed with subscription-based auth"
           end
         else
           # Unknown role - don't search all models, just log and return nil
           Rails.logger.warn "WebSocket: Unknown role '#{role}' for user_id #{user_id}. Cannot perform lookup. Token may be malformed."
-          Rails.logger.info "WebSocket: Will proceed with subscription-based auth"
         end
       end
       
-      Rails.logger.warn "WebSocket: No user found for payload: #{payload.inspect}"
       nil
     end
     
@@ -335,7 +247,6 @@ module ApplicationCable
         session_data = RedisConnection.get(session_key)
         
         unless session_data
-          Rails.logger.warn "No session data found for user #{current_user.id}, creating new session"
           # Create a new session instead of rejecting
           create_new_session
         end
@@ -409,7 +320,6 @@ module ApplicationCable
         }
         
         WebsocketService.store_connection_data(current_user.id, session_id, connection_data)
-        Rails.logger.info "WebSocket: Session setup completed for user #{current_user.id}"
       rescue => e
         Rails.logger.warn "WebSocket: Session setup failed: #{e.message}"
         # Continue without session storage
@@ -433,7 +343,6 @@ module ApplicationCable
                     end
         
         WebsocketService.track_metric("websocket.connections.user_type.#{user_type}")
-        Rails.logger.info "WebSocket: Connection tracking completed for user #{current_user.id}"
       rescue => e
         Rails.logger.warn "WebSocket: Connection tracking failed: #{e.message}"
         # Continue without tracking

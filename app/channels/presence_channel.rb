@@ -16,8 +16,6 @@ class PresenceChannel < ApplicationCable::Channel
     user_type = get_user_type_from_connection
     user_id = connection.current_user.id
     
-    Rails.logger.info "PresenceChannel subscribed: user_type=#{user_type}, user_id=#{user_id}"
-    
     # Store params for use in other methods
     @user_type = user_type
     @user_id = user_id
@@ -41,8 +39,6 @@ class PresenceChannel < ApplicationCable::Channel
       if connection.current_user
         user_type = @user_type || get_user_type_from_connection
         user_id = @user_id || connection.current_user.id
-        
-        Rails.logger.info "PresenceChannel unsubscribed: user_type=#{user_type}, user_id=#{user_id}"
         
         # Track this user as offline
         track_user_online(false)
@@ -74,8 +70,6 @@ class PresenceChannel < ApplicationCable::Channel
       Rails.logger.warn "PresenceChannel: Subscription not active, ignoring message"
       return
     end
-    
-    Rails.logger.info "PresenceChannel received: #{data['type']} from user #{connection.current_user.id}"
     
     case data['type']
     when 'typing_start'
@@ -112,9 +106,6 @@ class PresenceChannel < ApplicationCable::Channel
   private
 
   def authenticate_user_from_subscription_params
-    Rails.logger.info "PresenceChannel: Attempting to authenticate user from subscription params"
-    Rails.logger.info "PresenceChannel: Subscription params: #{params.inspect}"
-    
     user_type = params[:user_type]
     user_id = params[:user_id]
     
@@ -123,15 +114,12 @@ class PresenceChannel < ApplicationCable::Channel
       return false
     end
     
-    Rails.logger.info "PresenceChannel: Looking for user #{user_id} of type #{user_type}"
-    
     case user_type.downcase
     when 'seller'
       seller = Seller.find_by(id: user_id)
       if seller && !seller.deleted?
         connection.current_user = seller
         connection.session_id = SecureRandom.uuid
-        Rails.logger.info "PresenceChannel: Successfully authenticated seller #{seller.id}"
         return true
       else
         Rails.logger.error "PresenceChannel: Seller #{user_id} not found or deleted"
@@ -141,7 +129,6 @@ class PresenceChannel < ApplicationCable::Channel
       if buyer && !buyer.deleted?
         connection.current_user = buyer
         connection.session_id = SecureRandom.uuid
-        Rails.logger.info "PresenceChannel: Successfully authenticated buyer #{buyer.id}"
         return true
       else
         Rails.logger.error "PresenceChannel: Buyer #{user_id} not found or deleted"
@@ -151,7 +138,6 @@ class PresenceChannel < ApplicationCable::Channel
       if admin
         connection.current_user = admin
         connection.session_id = SecureRandom.uuid
-        Rails.logger.info "PresenceChannel: Successfully authenticated admin #{admin.id}"
         return true
       else
         Rails.logger.error "PresenceChannel: Admin #{user_id} not found"
@@ -161,7 +147,6 @@ class PresenceChannel < ApplicationCable::Channel
       if sales_user
         connection.current_user = sales_user
         connection.session_id = SecureRandom.uuid
-        Rails.logger.info "PresenceChannel: Successfully authenticated sales user #{sales_user.id}"
         return true
       else
         Rails.logger.error "PresenceChannel: Sales user #{user_id} not found"
@@ -208,7 +193,6 @@ class PresenceChannel < ApplicationCable::Channel
     begin
       # Remove any pending typing indicators
       # This could be expanded to clean up other user-specific data
-      Rails.logger.info "PresenceChannel: Cleaned up user data for #{params[:user_type]}_#{params[:user_id]}"
     rescue => e
       Rails.logger.warn "PresenceChannel: Error cleaning up user data: #{e.message}"
     end
@@ -267,7 +251,6 @@ class PresenceChannel < ApplicationCable::Channel
         }
       )
       
-      Rails.logger.debug "Broadcasted online status change: #{user_type}_#{user_id} = #{online}"
     rescue => e
       Rails.logger.warn "Failed to broadcast online status change: #{e.message}"
       # Don't re-raise to prevent connection issues
@@ -313,8 +296,6 @@ class PresenceChannel < ApplicationCable::Channel
     user_type = @user_type || get_user_type_from_connection
     user_id = @user_id || connection.current_user.id
     
-    Rails.logger.info "Processing pending delivery receipts for #{user_type}_#{user_id}"
-    
     begin
       # Find all sent messages where this user is the recipient
       pending_messages = case user_type
@@ -336,10 +317,7 @@ class PresenceChannel < ApplicationCable::Channel
       pending_messages.each do |message|
         message.mark_as_delivered!
         broadcast_delivery_receipt(message)
-        Rails.logger.info "Marked pending message #{message.id} as delivered"
       end
-      
-      Rails.logger.info "Processed #{pending_messages.count} pending delivery receipts"
     rescue => e
       Rails.logger.error "Failed to process pending delivery receipts: #{e.message}"
     end
@@ -360,8 +338,6 @@ class PresenceChannel < ApplicationCable::Channel
         status: 'delivered'
       }
     )
-
-    Rails.logger.info "Broadcasted delivery receipt for message #{message.id} to #{sender_type}_#{sender_id}"
   rescue => e
     Rails.logger.error "Failed to broadcast delivery receipt for message #{message.id}: #{e.message}"
   end
@@ -380,8 +356,6 @@ class PresenceChannel < ApplicationCable::Channel
         message.mark_as_read!
         broadcast_read_receipt(message)
       end
-      
-      Rails.logger.info "PresenceChannel: Marked #{unread_messages.count} messages as read for conversation #{conversation_id}"
     rescue => e
       Rails.logger.warn "PresenceChannel: Error handling conversation viewed for ID #{conversation_id}: #{e.message}"
     end
@@ -402,8 +376,6 @@ class PresenceChannel < ApplicationCable::Channel
       
       # Broadcast read receipt to sender
       broadcast_read_receipt(message)
-      
-      Rails.logger.info "PresenceChannel: Marked message #{message_id} as read"
     rescue => e
       Rails.logger.warn "PresenceChannel: Error handling message read for ID #{message_id}: #{e.message}"
     end
@@ -424,8 +396,6 @@ class PresenceChannel < ApplicationCable::Channel
       
       # Broadcast delivery receipt to sender
       broadcast_delivery_receipt(message)
-      
-      Rails.logger.info "PresenceChannel: Marked message #{message_id} as delivered"
     rescue => e
       Rails.logger.warn "PresenceChannel: Error handling message delivered for ID #{message_id}: #{e.message}"
     end

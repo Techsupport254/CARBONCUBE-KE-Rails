@@ -23,13 +23,10 @@ class SellerAuthorizeApiRequest
     end
     
     payload = decoded_result[:payload]
-    Rails.logger.info "SellerAuthorizeApiRequest: Token payload: #{payload.inspect}"
     
     seller_id = payload[:seller_id]
     seller_email = payload[:email]
     role = payload[:role]
-    
-    Rails.logger.info "SellerAuthorizeApiRequest: Extracted seller_id: #{seller_id}, email: #{seller_email}, role: #{role}"
 
     # Check if the token is actually for a seller
     if role && role.downcase != 'seller'
@@ -39,10 +36,8 @@ class SellerAuthorizeApiRequest
 
     # Try to find seller by ID first
     if seller_id
-      Rails.logger.info "SellerAuthorizeApiRequest: Looking for seller with ID: #{seller_id}"
       seller = Seller.find_by(id: seller_id)
       if seller && !seller.deleted?
-        Rails.logger.info "SellerAuthorizeApiRequest: Found seller: #{seller.id}"
         return seller
       elsif seller&.deleted?
         Rails.logger.error "SellerAuthorizeApiRequest: Seller #{seller_id} is deleted"
@@ -53,10 +48,8 @@ class SellerAuthorizeApiRequest
 
     # Try to find seller by email if ID didn't work
     if seller_email
-      Rails.logger.info "SellerAuthorizeApiRequest: Looking for seller with email: #{seller_email}"
       seller = Seller.find_by(email: seller_email)
       if seller && !seller.deleted?
-        Rails.logger.info "SellerAuthorizeApiRequest: Found seller by email: #{seller.id}"
         return seller
       elsif seller&.deleted?
         Rails.logger.error "SellerAuthorizeApiRequest: Seller with email #{seller_email} is deleted"
@@ -82,7 +75,6 @@ class SellerAuthorizeApiRequest
       token = http_auth_header
       return { success: false, error: 'No token provided' } if token.blank?
       
-      Rails.logger.debug "SellerAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
       JsonWebToken.decode(token)
     rescue ExceptionHandler::MissingToken => e
       # Missing token is normal for public endpoints, only log at debug level

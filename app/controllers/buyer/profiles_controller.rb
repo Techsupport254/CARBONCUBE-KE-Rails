@@ -24,8 +24,6 @@ class Buyer::ProfilesController < ApplicationController
   # PATCH/PUT /buyer/profile
   def update
     begin
-      Rails.logger.info "Received params: #{params.inspect}"
-      
       uploaded_profile_picture_url = nil
       
       # Handle profile picture upload if present
@@ -65,9 +63,7 @@ class Buyer::ProfilesController < ApplicationController
       
       # Additional filtering for empty strings and null values
       update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
-      
-      Rails.logger.info "Update params after filtering: #{update_params.inspect}"
-      
+
       # Add the uploaded URL if available
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       

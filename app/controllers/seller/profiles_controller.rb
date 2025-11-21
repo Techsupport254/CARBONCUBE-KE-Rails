@@ -16,19 +16,18 @@ class Seller::ProfilesController < ApplicationController
       :age_group,
       :document_type
     ).find(@seller.id)
-    
+
     seller_data = SellerSerializer.new(@seller).as_json
     # Check if email is verified
     email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
     seller_data[:email_verified] = email_verified
+
     render json: seller_data
   end
 
   # PATCH/PUT /seller/profile
   def update
     begin
-      Rails.logger.info "Received params: #{params.inspect}"
-      
       uploaded_profile_picture_url = nil
       uploaded_document_url = nil
       
@@ -97,10 +96,7 @@ class Seller::ProfilesController < ApplicationController
       
       # Additional filtering for empty strings and null values
       update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
-      
-      Rails.logger.info "Update params after filtering: #{update_params.inspect}"
-      Rails.logger.info "Seller current values: fullname=#{@seller.fullname}, email=#{@seller.email}, phone_number=#{@seller.phone_number}"
-      
+
       # Add the uploaded URLs if available
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       update_params[:document_url] = uploaded_document_url if uploaded_document_url

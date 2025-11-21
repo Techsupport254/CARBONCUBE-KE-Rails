@@ -91,8 +91,26 @@ fi
 echo ""
 echo -e "${GREEN}✓ Successfully restored production data to local database${NC}"
 echo ""
+
+# Step 3: Run pending migrations
+echo -e "${YELLOW}Step 3: Running pending migrations...${NC}"
+echo ""
+
+# Run pending migrations
+bundle exec rake db:migrate \
+  2>&1 | sed 's/^/  /'
+
+if [ $? -ne 0 ]; then
+  echo -e "${RED}✗ Failed to run migrations${NC}"
+  exit 1
+fi
+
+echo ""
+echo -e "${GREEN}✓ Migrations completed successfully${NC}"
+echo ""
+
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}Restore Complete!${NC}"
+echo -e "${GREEN}Dump, Restore & Migration Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Dump file saved at: $DUMP_FILE.custom"

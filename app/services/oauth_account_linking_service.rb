@@ -10,15 +10,6 @@ class OauthAccountLinkingService
     @name = auth_hash.dig(:info, :name)
     @picture = auth_hash.dig(:info, :image)
     @user_ip = user_ip
-    
-    # Debug: Log the profile picture information
-    Rails.logger.info "OAuth Account Linking Service Debug:"
-    Rails.logger.info "   Provider: #{@provider}"
-    Rails.logger.info "   Email: #{@email}"
-    Rails.logger.info "   Name: #{@name}"
-    Rails.logger.info "   Picture: #{@picture.inspect}"
-    Rails.logger.info "   Role: #{@role.inspect} (#{@role.class})"
-    Rails.logger.info "   Auth hash info: #{auth_hash[:info].inspect}"
   end
 
   def call
@@ -33,16 +24,12 @@ class OauthAccountLinkingService
       existing_role = determine_user_role(existing_user)
       existing_role_normalized = existing_role.to_s.downcase.strip
       
-      Rails.logger.info "🔍 [OauthAccountLinkingService] Existing user found: #{existing_user.class.name}"
-      Rails.logger.info "   Existing role: #{existing_role_normalized}"
-      Rails.logger.info "   Requested role: #{normalized_requested_role}"
+      # For login mode (role="buyer"), sign in existing users regardless of role
+      # For registration mode, check if roles match
+      is_login_mode = normalized_requested_role == 'buyer'
       
-      # If roles don't match, return an error
-      if existing_role_normalized != normalized_requested_role
-        Rails.logger.error "❌ [OauthAccountLinkingService] Role mismatch!"
-        Rails.logger.error "   User #{@email} already exists as #{existing_role}"
-        Rails.logger.error "   Cannot create #{normalized_requested_role.capitalize} account with same email"
-        
+      # If roles don't match and it's not login mode, return an error
+      if existing_role_normalized != normalized_requested_role && !is_login_mode
         return {
           success: false,
           error: "This email is already registered as a #{existing_role}. Please sign in with your existing account or use a different email address.",
@@ -52,7 +39,7 @@ class OauthAccountLinkingService
         }
       end
       
-      # Roles match, link OAuth account to existing user
+      # Sign in existing user (roles match or login mode)
       link_oauth_to_existing_user(existing_user)
       return { success: true, user: existing_user, message: 'Account linked successfully' }
     end
@@ -60,20 +47,14 @@ class OauthAccountLinkingService
     # Check if user exists with this OAuth account
     oauth_user = find_user_by_oauth(@provider, @uid)
     if oauth_user
-      # Check if the OAuth user's role matches the requested role
+      # For login mode (role="buyer"), sign in existing users regardless of role
+      # For registration mode, check if roles match
+      is_login_mode = normalized_requested_role == 'buyer'
       oauth_role = determine_user_role(oauth_user)
       oauth_role_normalized = oauth_role.to_s.downcase.strip
       
-      Rails.logger.info "🔍 [OauthAccountLinkingService] OAuth user found: #{oauth_user.class.name}"
-      Rails.logger.info "   OAuth user role: #{oauth_role_normalized}"
-      Rails.logger.info "   Requested role: #{normalized_requested_role}"
-      
-      # If roles don't match, return an error
-      if oauth_role_normalized != normalized_requested_role
-        Rails.logger.error "❌ [OauthAccountLinkingService] Role mismatch for OAuth account!"
-        Rails.logger.error "   User #{@email} already has OAuth account linked as #{oauth_role}"
-        Rails.logger.error "   Cannot use same OAuth account for #{normalized_requested_role.capitalize} registration"
-        
+      # If roles don't match and it's not login mode, return an error
+      if oauth_role_normalized != normalized_requested_role && !is_login_mode
         return {
           success: false,
           error: "This Google account is already linked to a #{oauth_role} account. Please sign in with your existing #{oauth_role} account or use a different Google account.",
@@ -87,11 +68,20 @@ class OauthAccountLinkingService
     end
     
     # Create new user based on role
-    new_user_result = create_new_oauth_user
-    # Check if result is an error hash (from seller creation when phone is missing)
+    # In login mode (role="buyer"), always create buyer account
+    # In registration mode, use the requested role
+    is_login_mode = normalized_requested_role == 'buyer'
+    if is_login_mode
+      # Login mode - always create buyer account for new users
+      new_user_result = create_buyer
+    else
+      # Registration mode - use requested role
+      new_user_result = create_new_oauth_user
+    end
+    # Check if result is an error hash (from seller/buyer creation when validation fails)
     if new_user_result.is_a?(Hash) && new_user_result[:success] == false
       return new_user_result
-    elsif new_user_result
+    elsif new_user_result && new_user_result.is_a?(ActiveRecord::Base)
       { success: true, user: new_user_result, message: 'Account created successfully' }
     else
       { success: false, error: 'Failed to create account', error_type: 'creation_failed' }
@@ -152,33 +142,15 @@ class OauthAccountLinkingService
     # Normalize role to lowercase for case-insensitive matching
     # Remove all whitespace and convert to lowercase
     normalized_role = @role.to_s.strip.downcase.gsub(/\s+/, '')
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔍 [OauthAccountLinkingService] Creating new user"
-    Rails.logger.info "   Original @role: #{@role.inspect} (#{@role.class})"
-    Rails.logger.info "   After strip: #{@role.to_s.strip.inspect}"
-    Rails.logger.info "   After downcase: #{@role.to_s.strip.downcase.inspect}"
-    Rails.logger.info "   Final normalized_role: #{normalized_role.inspect}"
-    Rails.logger.info "   Will match against: 'seller', 'admin', 'sales_user', 'salesuser'"
-    Rails.logger.info "=" * 80
     
     # Use explicit string comparison to ensure exact match
     if normalized_role == 'seller'
-      Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'seller' - Creating Seller account"
       create_seller
     elsif normalized_role == 'admin'
-      Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'admin' - Creating Admin account"
       create_admin
     elsif normalized_role == 'sales_user' || normalized_role == 'salesuser'
-      Rails.logger.info "✅ [OauthAccountLinkingService] MATCHED 'sales_user'/'salesuser' - Creating SalesUser account"
       create_sales_user
     else
-      Rails.logger.error "❌ [OauthAccountLinkingService] NO MATCH for role '#{normalized_role}'"
-      Rails.logger.error "   This will default to Buyer - THIS IS THE BUG!"
-      Rails.logger.error "   @role was: #{@role.inspect}"
-      Rails.logger.error "   normalized_role was: #{normalized_role.inspect}"
-      Rails.logger.error "   normalized_role bytes: #{normalized_role.bytes.inspect}"
-      Rails.logger.error "   'seller' bytes: #{'seller'.bytes.inspect}"
-      Rails.logger.error "   Are they equal? #{normalized_role == 'seller'}"
       create_buyer # Default to buyer
     end
   end
@@ -232,7 +204,13 @@ class OauthAccountLinkingService
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth buyer: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
-    nil
+    # Return error hash instead of nil so the caller can see the actual error
+    {
+      success: false,
+      error: "Failed to create buyer account: #{e.record.errors.full_messages.join(', ')}",
+      error_type: 'validation_error',
+      validation_errors: e.record.errors.full_messages
+    }
   end
 
   def create_seller
@@ -249,18 +227,15 @@ class OauthAccountLinkingService
     # Use profile picture from OAuth provider
     profile_picture = @picture if @picture.present?
     
-    # Get county/sub-county from location data or use defaults
+    # Get county/sub-county from location data
     county_id = location_data[:county_id]
     sub_county_id = location_data[:sub_county_id]
+    location = location_data[:location] || location_data[:city]
+    city = location_data[:city]
     
-    # Default to Nairobi if no location found
-    if county_id.blank?
-      nairobi_county = County.find_by(name: 'Nairobi')
-      if nairobi_county
-        county_id = nairobi_county.id
-        sub_county_id = nairobi_county.sub_counties.first&.id
-      end
-    end
+    # Don't set default values for county, sub_county, or location
+    # User will complete these via the modal
+    # Only include these fields if they have actual values from location detection
     
     user_attributes = {
       fullname: @name || @email.split('@').first,
@@ -275,14 +250,16 @@ class OauthAccountLinkingService
       age_group_id: calculate_age_group,
       gender: extract_gender,
       profile_picture: profile_picture, # Set fixed profile picture from OAuth
-      # Add location data (required for sellers)
-      location: location_data[:location] || location_data[:city] || 'Nairobi',
-      city: location_data[:city] || 'Nairobi',
-      county_id: county_id,
-      sub_county_id: sub_county_id,
       # Enterprise name defaults to fullname if not provided
       enterprise_name: @name || @email.split('@').first
     }
+    
+    # Only include location data if we have actual values (not defaults)
+    # User will complete missing fields via modal
+    user_attributes[:location] = location if location.present? && location != "Location to be updated"
+    user_attributes[:city] = city if city.present?
+    user_attributes[:county_id] = county_id if county_id.present?
+    user_attributes[:sub_county_id] = sub_county_id if sub_county_id.present?
     
     # Phone number is optional - only include if provided by Google OAuth
     # Users can add it later if needed
@@ -305,7 +282,13 @@ class OauthAccountLinkingService
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth seller: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
-    nil
+    # Return error hash instead of nil so the caller can see the actual error
+    {
+      success: false,
+      error: "Failed to create seller account: #{e.record.errors.full_messages.join(', ')}",
+      error_type: 'validation_error',
+      validation_errors: e.record.errors.full_messages
+    }
   end
 
   def create_admin
@@ -631,16 +614,9 @@ class OauthAccountLinkingService
       end
     end
     
-    # Default to Nairobi if no mapping found
-    Rails.logger.info "No county mapping found from API data, defaulting to Nairobi"
-    nairobi_county = County.find_by(name: 'Nairobi')
-    if nairobi_county
-      nairobi_sub_county = nairobi_county.sub_counties.first
-      return {
-        county_id: nairobi_county.id,
-        sub_county_id: nairobi_sub_county&.id
-      }
-    end
+    # Don't default to Nairobi - return nil if no mapping found
+    # Users must provide location information explicitly
+    Rails.logger.info "No county mapping found from API data - location must be provided by user"
     
     nil
   end
@@ -661,7 +637,6 @@ class OauthAccountLinkingService
       expires_at: nil # No expiration for verified emails
     )
     
-    Rails.logger.info "✅ [OauthAccountLinkingService] Email #{email} marked as verified (Google OAuth)"
   rescue => e
     Rails.logger.error "❌ [OauthAccountLinkingService] Failed to mark email as verified: #{e.message}"
     # Don't fail the entire process if email verification marking fails
@@ -670,7 +645,6 @@ class OauthAccountLinkingService
   # Check if user should get premium status for 2025 registrations
   def should_get_2025_premium?
     current_year = Time.current.year
-    Rails.logger.info "🔍 [OauthAccountLinkingService] Checking 2025 premium status: current_year=#{current_year}, is_2025=#{current_year == 2025}"
     current_year == 2025
   end
 
@@ -681,20 +655,15 @@ class OauthAccountLinkingService
 
   # Create seller tier for 2025 premium users
   def create_2025_premium_tier(seller)
-    Rails.logger.info "🔍 [OauthAccountLinkingService] create_2025_premium_tier called for seller: #{seller.email}"
-    
     unless should_get_2025_premium?
-      Rails.logger.info "❌ [OauthAccountLinkingService] Not 2025, skipping premium tier assignment"
       return
     end
     
     premium_tier = get_premium_tier
     unless premium_tier
-      Rails.logger.error "❌ [OauthAccountLinkingService] Premium tier not found in database"
       return
     end
     
-    Rails.logger.info "✅ [OauthAccountLinkingService] Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
     
     # Calculate expiry date (end of 2025) - expires at midnight on January 1, 2026
     expires_at = Time.new(2026, 1, 1, 0, 0, 0)
@@ -713,10 +682,7 @@ class OauthAccountLinkingService
       expires_at: expires_at
     )
     
-    Rails.logger.info "✅ [OauthAccountLinkingService] Premium tier assigned to seller #{seller.email} until end of 2025 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
   rescue => e
-    Rails.logger.error "❌ [OauthAccountLinkingService] Error creating premium tier: #{e.message}"
-    Rails.logger.error e.backtrace.join("\n")
   end
 
 end

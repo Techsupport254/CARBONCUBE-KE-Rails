@@ -15,7 +15,6 @@ class Admin::BannersController < ApplicationController
   end
 
   def create
-    Rails.logger.info "Received params: #{params.inspect}" # Log params
   
     if params[:banner][:image].present?
       uploaded_urls = process_and_upload_images(params[:banner][:image])

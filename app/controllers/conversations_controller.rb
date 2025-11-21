@@ -29,8 +29,6 @@ class ConversationsController < ApplicationController
   end
 
   def create
-    Rails.logger.info "ConversationsController#create called with params: #{params.inspect}"
-    Rails.logger.info "ConversationsController#create current_user: #{@current_user&.class&.name}, id: #{@current_user&.id}"
     
     unless @current_user
       Rails.logger.error "ConversationsController#create: No current_user set"
@@ -52,8 +50,6 @@ class ConversationsController < ApplicationController
   end
 
   def unread_counts
-    Rails.logger.info "ConversationsController#unread_counts: Current user class: #{@current_user.class.name}, ID: #{@current_user.id}"
-    
     case @current_user.class.name
     when 'Buyer'
       fetch_buyer_unread_counts
@@ -297,7 +293,6 @@ class ConversationsController < ApplicationController
       
       # Extract role
       role = (decoded[:role] || decoded['role'])&.downcase
-      Rails.logger.info "ConversationsController: Authenticating user with role: #{role}"
       
       # Find the user based on role and extract appropriate ID
       @current_user = nil
@@ -307,24 +302,20 @@ class ConversationsController < ApplicationController
       when 'seller'
         user_id = decoded[:seller_id] || decoded['seller_id']
         @current_user = Seller.find_by(id: user_id) if user_id
-        Rails.logger.info "ConversationsController: Found seller #{user_id}" if @current_user
         
       when 'buyer'
         user_id = decoded[:buyer_id] || decoded['buyer_id'] || decoded[:user_id] || decoded['user_id']
         @current_user = Buyer.find_by(id: user_id) if user_id
-        Rails.logger.info "ConversationsController: Found buyer #{user_id}" if @current_user
         
       when 'admin'
         # Admin tokens use user_id, not admin_id (same as buyers)
         user_id = decoded[:user_id] || decoded['user_id'] || decoded[:admin_id] || decoded['admin_id']
         @current_user = Admin.find_by(id: user_id) if user_id
-        Rails.logger.info "ConversationsController: Found admin #{user_id}" if @current_user
         
       when 'sales', 'salesuser'
         # Sales tokens use user_id, not sales_id (same as buyers/admins)
         user_id = decoded[:user_id] || decoded['user_id'] || decoded[:sales_id] || decoded['sales_id']
         @current_user = SalesUser.find_by(id: user_id) if user_id
-        Rails.logger.info "ConversationsController: Found sales user #{user_id}" if @current_user
         
       else
         Rails.logger.warn "ConversationsController: Invalid user role: #{role}"
@@ -402,7 +393,6 @@ class ConversationsController < ApplicationController
   end
 
   def create_buyer_conversation
-    Rails.logger.info "create_buyer_conversation called with params: #{params.inspect}"
     Rails.logger.info "Current user: #{@current_user.class.name}, id: #{@current_user.id}, type: #{@current_user.id.class.name}"
     
     # Determine buyer_id and seller_id based on current user type
@@ -424,7 +414,7 @@ class ConversationsController < ApplicationController
 
     # Ensure seller_id is present
     unless seller_id.present?
-      Rails.logger.error "seller_id is missing - params: #{params.inspect}"
+      Rails.logger.error "seller_id is missing"
       render json: { error: 'seller_id is required' }, status: :unprocessable_entity
       return
     end
@@ -539,7 +529,6 @@ class ConversationsController < ApplicationController
   end
 
   def create_seller_conversation
-    Rails.logger.info "Seller conversation creation - Current user: #{@current_user.id}, Params: #{params.inspect}"
     
     # Prevent sellers from messaging their own ads
     if params[:seller_id].present? && params[:seller_id] == @current_user.id.to_s && params[:buyer_id].blank?
@@ -733,15 +722,11 @@ class ConversationsController < ApplicationController
   end
 
   def fetch_seller_unread_counts
-    Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Current user: #{@current_user.class.name} #{@current_user.id}"
-    
     conversations = Conversation.where(
       "(seller_id = ? OR inquirer_seller_id = ?)", 
       @current_user.id, 
       @current_user.id
     ).active_participants
-    
-    Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Found #{conversations.count} conversations"
     
     unread_counts = conversations.map do |conversation|
       # For seller-to-seller conversations, count messages not sent by current user
@@ -760,8 +745,6 @@ class ConversationsController < ApplicationController
                                   .count
       end
       
-      Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Conversation #{conversation.id} has #{unread_count} unread messages"
-      
       {
         conversation_id: conversation.id,
         unread_count: unread_count
@@ -772,7 +755,6 @@ class ConversationsController < ApplicationController
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
     
     total_unread = unread_counts.sum { |item| item[:unread_count] || 0 }
-    Rails.logger.info "ConversationsController#fetch_seller_unread_counts: Total unread: #{total_unread}, Conversations with unread: #{conversations_with_unread}"
     
     render json: { 
       unread_counts: unread_counts,
@@ -781,23 +763,13 @@ class ConversationsController < ApplicationController
   end
 
   def fetch_admin_unread_counts
-    Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Current user: #{@current_user.class.name} #{@current_user.id}"
-    
     # For Sales users, show all conversations (they can see all conversations like admins)
     # For Admins, show conversations where they are the admin_id
     if @current_user.is_a?(SalesUser)
       conversations = Conversation.active_participants
-      Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Sales user - showing all active conversations: #{conversations.count}"
     else
       conversations = Conversation.where(admin_id: @current_user.id)
                                   .active_participants
-      Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Admin - Found #{conversations.count} conversations with admin_id=#{@current_user.id}"
-      
-      # If no conversations found with admin_id, check if there are any conversations at all for this user
-      if conversations.count == 0
-        all_conversations = Conversation.where(admin_id: @current_user.id)
-        Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Total conversations (including inactive): #{all_conversations.count}"
-      end
     end
     
     unread_counts = conversations.map do |conversation|
@@ -805,8 +777,6 @@ class ConversationsController < ApplicationController
                                 .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
                                 .where(read_at: nil)
                                 .count
-      
-      Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Conversation #{conversation.id} has #{unread_count} unread messages"
       
       {
         conversation_id: conversation.id,
@@ -818,7 +788,6 @@ class ConversationsController < ApplicationController
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
     
     total_unread = unread_counts.sum { |item| item[:unread_count] || 0 }
-    Rails.logger.info "ConversationsController#fetch_admin_unread_counts: Total unread: #{total_unread}, Conversations with unread: #{conversations_with_unread}"
     
     render json: { 
       unread_counts: unread_counts,

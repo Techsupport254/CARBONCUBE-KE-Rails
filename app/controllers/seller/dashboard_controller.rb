@@ -17,7 +17,8 @@ class Seller::DashboardController < ApplicationController
           description: seller.description,
           profile_picture: get_profile_picture(seller),
           flagged: seller.flagged || false,
-          seller_tier_name: get_tier_name(tier_id)
+          seller_tier_name: get_tier_name(tier_id),
+          document_verified: seller.document_verified || false
         },
         
         # Quick stats

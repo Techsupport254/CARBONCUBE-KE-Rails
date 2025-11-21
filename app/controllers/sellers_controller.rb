@@ -1,4 +1,60 @@
 class SellersController < ApplicationController
+  before_action :authenticate_seller_for_completion, only: [:complete_registration]
+
+  def complete_registration
+    begin
+      # Extract nested seller params if present, otherwise use direct params
+      seller_data = params[:seller] || params
+      
+      # Get the current seller from authentication
+      seller = @current_seller
+      
+      unless seller
+        render json: { error: 'Not authorized' }, status: :unauthorized
+        return
+      end
+
+      # Permit the allowed fields
+      update_params = seller_data.permit(
+        :fullname, :name, :phone_number, :phone, :secondary_phone_number, :email, 
+        :enterprise_name, :location, :business_registration_number, 
+        :gender, :city, :zipcode, :username, :description, 
+        :county_id, :sub_county_id, :age_group_id, 
+        :document_type_id, :document_expiry_date
+      ).reject { |k, v| v.blank? }
+
+      # Map frontend field names to backend field names
+      update_params[:fullname] = update_params[:name] if update_params[:name].present?
+      update_params[:phone_number] = update_params[:phone] if update_params[:phone].present?
+      
+      # Remove the frontend field names after mapping
+      update_params.delete(:name)
+      update_params.delete(:phone)
+
+      # Remove any unexpected fields
+      unexpected_fields = ['created_at', 'updated_at', 'id', 'birthdate']
+      unexpected_fields.each { |field| update_params.delete(field) }
+
+      # Additional filtering for empty strings and null values
+      update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
+
+      if seller.update(update_params)
+        seller_data = SellerSerializer.new(seller.reload).as_json
+        # Check if email is verified
+        email_verified = EmailOtp.exists?(email: seller.email, verified: true)
+        seller_data[:email_verified] = email_verified
+        render json: seller_data, status: :ok
+      else
+        Rails.logger.error "Seller completion failed with errors: #{seller.errors.full_messages.join(', ')}"
+        render json: { errors: seller.errors.full_messages }, status: :unprocessable_entity
+      end
+    rescue => e
+      Rails.logger.error "Complete registration error: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: "Failed to complete registration: #{e.message}" }, status: :internal_server_error
+    end
+  end
+
   def index
     # Check if this is for sitemap generation (backward compatibility)
     if params[:format] == 'xml' || params[:sitemap] == 'true'
@@ -77,5 +133,14 @@ class SellersController < ApplicationController
     ) }
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Seller not found' }, status: :not_found
+  end
+
+  private
+
+  def authenticate_seller_for_completion
+    @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
+    unless @current_seller && @current_seller.is_a?(Seller)
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
   end
 end
