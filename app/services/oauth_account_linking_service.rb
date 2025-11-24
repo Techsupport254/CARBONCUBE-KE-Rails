@@ -200,6 +200,14 @@ class OauthAccountLinkingService
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
+    # Send welcome WhatsApp message (non-blocking)
+    begin
+      WhatsAppNotificationService.send_welcome_message(buyer)
+    rescue => e
+      Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
+      # Don't fail registration if WhatsApp message fails
+    end
+    
     buyer
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth buyer: #{e.message}"
@@ -276,6 +284,14 @@ class OauthAccountLinkingService
     # Apply 2025 premium logic for all users registering in 2025
     if should_get_2025_premium?
       create_2025_premium_tier(seller)
+    end
+    
+    # Send welcome WhatsApp message (non-blocking)
+    begin
+      WhatsAppNotificationService.send_welcome_message(seller)
+    rescue => e
+      Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
+      # Don't fail registration if WhatsApp message fails
     end
     
     seller

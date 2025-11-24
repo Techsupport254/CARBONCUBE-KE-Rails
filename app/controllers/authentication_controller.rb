@@ -1401,6 +1401,14 @@ class AuthenticationController < ApplicationController
         # Don't fail the registration if email fails
       end
       
+      # Send welcome WhatsApp message (non-blocking)
+      begin
+        WhatsAppNotificationService.send_welcome_message(user)
+      rescue => e
+        Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
+        # Don't fail registration if WhatsApp message fails
+      end
+      
       # Prepare user response data
       user_response = {
         id: user.id,
