@@ -64,6 +64,14 @@ class Buyer::BuyersController < ApplicationController
           # Don't fail the registration if email fails
         end
         
+        # Send welcome WhatsApp message (non-blocking)
+        begin
+          WhatsAppNotificationService.send_welcome_message(@buyer)
+        rescue => e
+          Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
+          # Don't fail registration if WhatsApp message fails
+        end
+        
         # New buyers get remember_me by default for better user experience
         token = JsonWebToken.encode(user_id: @buyer.id, email: @buyer.email, role: 'Buyer', remember_me: true)
         render json: { token: token, buyer: @buyer }, status: :created
