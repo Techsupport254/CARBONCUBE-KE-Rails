@@ -17,10 +17,15 @@ class EmailOtpsController < ApplicationController
 
     # Send email (you can use ActionMailer or external provider)
     begin
-      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_now
-      Rails.logger.info "OTP email sent successfully to #{email}"
+      mail = OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp
+      Rails.logger.info "Attempting to send OTP email to #{email}..."
+      mail.deliver_now
+      Rails.logger.info "✅ OTP email sent successfully to #{email}"
+      Rails.logger.info "OTP Code: #{otp_code}"
     rescue => e
-      Rails.logger.error "Failed to send OTP email: #{e.message}"
+      Rails.logger.error "❌ Failed to send OTP email to #{email}: #{e.message}"
+      Rails.logger.error "Error class: #{e.class}"
+      Rails.logger.error "Error backtrace: #{e.backtrace.first(5).join('\n')}"
       # Don't fail the request if email fails - still return success
     end
 

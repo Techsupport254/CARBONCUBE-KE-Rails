@@ -23,7 +23,11 @@ class Sales::AnalyticsController < ApplicationController
     
     all_ads = Ad.where(deleted: false)
     all_reviews = Review.all
-    all_wishlists = WishList.all
+    # Filter wishlists to exclude deleted/blocked buyers, blocked/deleted sellers, and deleted ads
+    all_wishlists = WishList.joins(:buyer, ad: :seller)
+                            .where(buyers: { deleted: false })
+                            .where(sellers: { deleted: false, blocked: false, flagged: false })
+                            .where(ads: { deleted: false })
     
     # Get seller tiers without time filtering for totals
     all_paid_seller_tiers = SellerTier
@@ -61,13 +65,25 @@ class Sales::AnalyticsController < ApplicationController
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
       .where(ads: { deleted: false }) # Exclude clicks with deleted ads
     
+    # Get contact interaction events (copy, whatsapp, call, location views after reveal)
+    # These are clicks where users interacted with seller contact info after revealing it
+    all_contact_interactions = ClickEvent
+      .excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
+      .where(event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      .left_joins(:buyer)
+      .joins(:ad) # Use inner join to exclude clicks without ads
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
+      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
+    
     # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
     sellers_with_timestamps = all_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     buyers_with_timestamps = all_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     ads_with_timestamps = all_ads.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    wishlists_with_timestamps = all_wishlists.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck('wish_lists.created_at').map { |ts| ts&.iso8601 }
     
     # OPTIMIZATION: Get click events with timestamps (limited to recent, remove duplicates)
     ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -78,6 +94,9 @@ class Sales::AnalyticsController < ApplicationController
     reveal_clicks_with_timestamps = all_reveal_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     # Remove duplicate - buyer_reveal_clicks uses same data
     buyer_reveal_clicks_with_timestamps = reveal_clicks_with_timestamps
+    
+    # OPTIMIZATION: Get contact interactions with timestamps (limited to recent)
+    contact_interactions_with_timestamps = all_contact_interactions.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     
     # Analytics data prepared successfully
     
@@ -134,6 +153,7 @@ class Sales::AnalyticsController < ApplicationController
       buyer_ad_clicks_with_timestamps: buyer_ad_clicks_with_timestamps,
       buyer_reveal_clicks_with_timestamps: buyer_reveal_clicks_with_timestamps,
       reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
+      contact_interactions_with_timestamps: contact_interactions_with_timestamps,
       
       # OPTIMIZATION: Pre-calculated totals for initial display (all time)
       total_sellers: all_sellers.count,
@@ -146,7 +166,8 @@ class Sales::AnalyticsController < ApplicationController
       total_ads_clicks: all_ad_clicks.count,
       buyer_ad_clicks: all_ad_clicks.count, # Same as total_ads_clicks - both use the same query
       buyer_reveal_clicks: all_reveal_clicks.count, # Same as total_reveal_clicks - both use the same query
-      total_reveal_clicks: all_reveal_clicks.count
+      total_reveal_clicks: all_reveal_clicks.count,
+      total_contact_interactions: all_contact_interactions.count
     }
     
     render json: response_data
@@ -323,7 +344,12 @@ class Sales::AnalyticsController < ApplicationController
           .count
         
         reveals_count = direct_reveals + guest_reveals_for_ads
-        wishlist_count = buyer.wish_lists.count
+        # Count only wishlists for non-deleted ads from active sellers
+        wishlist_count = buyer.wish_lists
+                              .joins(ad: :seller)
+                              .where(sellers: { deleted: false, blocked: false, flagged: false })
+                              .where(ads: { deleted: false })
+                              .count
         reviews_count = buyer.reviews.count
         signup_method = buyer.oauth_user? ? 'google_oauth' : 'regular'
         

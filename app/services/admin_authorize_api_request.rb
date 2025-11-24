@@ -53,15 +53,15 @@ class AdminAuthorizeApiRequest
       token = http_auth_header
       return { success: false, error: 'No token provided' } if token.blank?
       
-      Rails.logger.debug "AdminAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
+      # Rails.logger.debug "AdminAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
       JsonWebToken.decode(token)
     rescue ExceptionHandler::MissingToken => e
       # Missing token is normal for public endpoints, only log at debug level
-      Rails.logger.debug "AdminAuthorizeApiRequest: #{e.message}"
+      # Rails.logger.debug "AdminAuthorizeApiRequest: #{e.message}"
       { success: false, error: 'No token provided', missing_token: true }
     rescue => e
       # Only log as error if token was provided but invalid
-      Rails.logger.error "AdminAuthorizeApiRequest: JWT Decode Error: #{e.message}"
+      # Rails.logger.error "AdminAuthorizeApiRequest: JWT Decode Error: #{e.message}"
       { success: false, error: 'Token validation failed' }
     end
   end

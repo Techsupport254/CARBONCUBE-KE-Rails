@@ -147,16 +147,19 @@ Rails.application.configure do
   config.action_mailer.perform_caching = false
 
   # Configure SMTP for development
+  # Try port 465 with SSL first, fallback to 587 with STARTTLS
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
     address: 'smtp-relay.brevo.com',
-    port: 587,  # Standard SMTP port with STARTTLS
+    port: 465,  # SSL port (alternative to 587 with STARTTLS)
     domain: 'carboncube-ke.com',
     user_name: ENV['BREVO_SMTP_USER'],
     password: ENV['BREVO_SMTP_PASSWORD'],
     authentication: :plain,
-    enable_starttls_auto: true,  # Enable STARTTLS for secure connection
-    openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE  # Skip certificate verification in development
+    ssl: true,  # Use direct SSL connection
+    tls: false,
+    enable_starttls_auto: false,
+    openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE
   }
 
   config.action_mailer.default_options = {
@@ -167,6 +170,7 @@ Rails.application.configure do
   # Enable detailed SMTP logging
   config.action_mailer.logger = Rails.logger
   config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
   
   # Set default URL options for email links
   config.action_mailer.default_url_options = {

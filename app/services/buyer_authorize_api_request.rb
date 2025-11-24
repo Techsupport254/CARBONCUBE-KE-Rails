@@ -78,7 +78,7 @@ class BuyerAuthorizeApiRequest
       token = http_auth_header
       return { success: false, error: 'No token provided' } if token.blank?
       
-      Rails.logger.debug "BuyerAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
+      # Rails.logger.debug "BuyerAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
       JsonWebToken.decode(token)
     rescue ExceptionHandler::MissingToken => e
       # Missing token is normal for public endpoints, only log at debug level
