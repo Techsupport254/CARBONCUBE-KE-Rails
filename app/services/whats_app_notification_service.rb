@@ -13,6 +13,47 @@ class WhatsAppNotificationService
     end
   end
   
+  # Helper method to get the WhatsApp service URL
+  # Priority: 1. WHATSAPP_SERVICE_URL env var (if set) - respects local/production config
+  #           2. VPS IP in production (188.245.245.79:3002) - fallback if env var not set
+  #           3. localhost in development/test (localhost:3002) - fallback if env var not set
+  # 
+  # Note: If domain-based URL fails to resolve, automatically falls back to VPS IP in production
+  def self.get_service_url
+    # If WHATSAPP_SERVICE_URL is explicitly set, use it (respects local config)
+    if ENV['WHATSAPP_SERVICE_URL'].present?
+      url = ENV['WHATSAPP_SERVICE_URL'].chomp('/')
+      
+      # In production, if domain doesn't resolve, fall back to VPS IP
+      if Rails.env.production? && url.include?('carboncube-ke.com') && !url.include?('188.245.245.79')
+        # Try to resolve the domain - if it fails, use VPS IP
+        begin
+          require 'socket'
+          uri = URI(url)
+          # Try to resolve the hostname
+          Socket.getaddrinfo(uri.host, nil, Socket::AF_INET)
+          # If we get here, domain resolves, use it
+          return url
+        rescue SocketError => e
+          # Domain doesn't resolve, use VPS IP fallback
+          Rails.logger.warn "WHATSAPP_SERVICE_URL domain (#{url}) doesn't resolve, falling back to VPS IP"
+          default_port = ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')
+          return "http://188.245.245.79:#{default_port}"
+        end
+      end
+      
+      return url
+    end
+    
+    # Otherwise, use environment-appropriate default
+    default_port = ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')
+    if Rails.env.production?
+      "http://188.245.245.79:#{default_port}"
+    else
+      "http://localhost:#{default_port}"
+    end
+  end
+  
   def self.send_message(phone_number, message)
     if Rails.env.development?
       Rails.logger.info "=== WhatsAppNotificationService.send_message START ==="
@@ -49,28 +90,15 @@ class WhatsAppNotificationService
     end
     
     begin
-      # Construct full URL for better error handling
-      whatsapp_service_url_env = ENV['WHATSAPP_SERVICE_URL']
-      whatsapp_service_port_env = ENV['WHATSAPP_SERVICE_PORT']
-      default_port = ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')
-      default_url = "http://localhost:#{default_port}"
+      # Get service URL using helper method (respects env vars and environment)
+      service_url = get_service_url
       
       if Rails.env.development?
-        Rails.logger.info "Environment variables:"
-        Rails.logger.info "  WHATSAPP_SERVICE_URL: #{whatsapp_service_url_env.inspect}"
-        Rails.logger.info "  WHATSAPP_SERVICE_PORT: #{whatsapp_service_port_env.inspect}"
-        Rails.logger.info "  Default port: #{default_port}"
-        Rails.logger.info "  Default URL: #{default_url}"
-      end
-      
-      service_url = ENV.fetch('WHATSAPP_SERVICE_URL', default_url)
-      if Rails.env.development?
-        Rails.logger.info "Service URL before chomp: #{service_url.inspect}"
-      end
-      # Ensure service_url doesn't have a trailing slash
-      service_url = service_url.chomp('/')
-      if Rails.env.development?
-        Rails.logger.info "Service URL after chomp: #{service_url.inspect}"
+        Rails.logger.info "WhatsApp Service Configuration:"
+        Rails.logger.info "  WHATSAPP_SERVICE_URL: #{ENV['WHATSAPP_SERVICE_URL'].inspect || 'NOT SET (using default)'}"
+        Rails.logger.info "  WHATSAPP_SERVICE_PORT: #{ENV['WHATSAPP_SERVICE_PORT'].inspect || 'NOT SET (using 3002)'}"
+        Rails.logger.info "  Environment: #{Rails.env}"
+        Rails.logger.info "  Service URL: #{service_url}"
       end
 
       full_url = "#{service_url}/send"
@@ -94,8 +122,13 @@ class WhatsAppNotificationService
         Rails.logger.info "Creating Net::HTTP instance..."
       end
       http = Net::HTTP.new(uri.host, uri.port)
-      http.open_timeout = 10
-      http.read_timeout = 10
+      if uri.scheme == 'https'
+        http.use_ssl = true
+        # Disable SSL verification for self-signed certificates (common on VPS)
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      http.open_timeout = 15  # Increased timeout for VPS connection
+      http.read_timeout = 30  # Increased timeout for VPS connection
       if Rails.env.development?
         Rails.logger.info "Net::HTTP instance created with timeout: open=#{http.open_timeout}s, read=#{http.read_timeout}s"
 
@@ -368,8 +401,8 @@ class WhatsAppNotificationService
     # Try local WhatsApp service first (if enabled)
     if enabled?
       begin
-        service_url = ENV.fetch('WHATSAPP_SERVICE_URL', "http://localhost:#{ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')}")
-        service_url = service_url.chomp('/')
+        # Get service URL using helper method (respects env vars and environment)
+        service_url = get_service_url
         full_url = "#{service_url}/check"
         
         Rails.logger.info "Checking WhatsApp number via local service: #{full_url}"
@@ -522,14 +555,19 @@ class WhatsAppNotificationService
       require 'net/http'
       require 'uri'
       
-      service_url = ENV.fetch('WHATSAPP_SERVICE_URL', "http://localhost:#{ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')}")
-      service_url = service_url.chomp('/')
+      # Get service URL using helper method (respects env vars and environment)
+      service_url = get_service_url
       full_url = "#{service_url}/health"
       
       uri = URI(full_url)
       http = Net::HTTP.new(uri.host, uri.port)
-      http.open_timeout = 5
-      http.read_timeout = 5
+      if uri.scheme == 'https'
+        http.use_ssl = true
+        # Disable SSL verification for self-signed certificates (common on VPS)
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      http.open_timeout = 10  # Increased timeout for VPS connection
+      http.read_timeout = 10  # Increased timeout for VPS connection
       
       request = Net::HTTP::Get.new(uri.path)
       response = http.request(request)

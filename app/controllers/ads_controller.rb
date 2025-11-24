@@ -33,11 +33,13 @@ class AdsController < ApplicationController
               seller: { seller_tier: :tier },
               offer_ads: :offer
             )
-            .find(params[:id])
+            .find_by_id_or_slug(params[:id])
+
+    unless @ad
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
 
     render json: @ad, serializer: AdSerializer
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
   end
 end
-

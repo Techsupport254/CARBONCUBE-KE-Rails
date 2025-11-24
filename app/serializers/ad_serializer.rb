@@ -3,6 +3,7 @@ class AdSerializer < ActiveModel::Serializer
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name, 
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
+             :seller_is_verified, :seller_document_verified,
              :flash_sale_info
 
   has_one :seller, serializer: SellerSerializer
@@ -138,9 +139,11 @@ class AdSerializer < ActiveModel::Serializer
     
     # Fallback to database query if associations not loaded or not found
     unless active_offer_ad
-      # Debug: Log all offer_ads for this ad to see what's available
-      all_offer_ads = OfferAd.where(ad_id: object.id).includes(:offer)
-      Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - All OfferAds: #{all_offer_ads.map { |oa| { id: oa.id, offer_id: oa.offer_id, offer_status: oa.offer&.status, start_time: oa.offer&.start_time, end_time: oa.offer&.end_time } }.inspect}"
+      # Debug: Log all offer_ads for this ad to see what's available (only when enabled)
+      if flash_sale_debug_logs_enabled?
+        all_offer_ads = OfferAd.where(ad_id: object.id).includes(:offer)
+        Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - All OfferAds: #{all_offer_ads.map { |oa| { id: oa.id, offer_id: oa.offer_id, offer_status: oa.offer&.status, start_time: oa.offer&.start_time, end_time: oa.offer&.end_time } }.inspect}"
+      end
       
       # Include both active and scheduled offers
       # Active offers: must have started (start_time <= now) and not ended (end_time >= now)
@@ -154,7 +157,9 @@ class AdSerializer < ActiveModel::Serializer
                                .order('offers.start_time ASC')
                                .first
       
-      Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - Found active_offer_ad: #{active_offer_ad ? { id: active_offer_ad.id, offer_id: active_offer_ad.offer_id, discount: active_offer_ad.discount_percentage } : 'nil'}"
+      if flash_sale_debug_logs_enabled?
+        Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - Found active_offer_ad: #{active_offer_ad ? { id: active_offer_ad.id, offer_id: active_offer_ad.offer_id, discount: active_offer_ad.discount_percentage } : 'nil'}"
+      end
     end
     
     return nil unless active_offer_ad
@@ -181,5 +186,19 @@ class AdSerializer < ActiveModel::Serializer
       # Bulk offer specific fields
       minimum_order_amount: offer.minimum_order_amount
     }
+  end
+
+  def seller_document_verified
+    object.seller&.document_verified?
+  end
+
+  def seller_is_verified
+    seller_document_verified
+  end
+
+  private
+
+  def flash_sale_debug_logs_enabled?
+    ENV.fetch('FLASH_SALE_DEBUG_LOGS', 'false') == 'true'
   end
 end

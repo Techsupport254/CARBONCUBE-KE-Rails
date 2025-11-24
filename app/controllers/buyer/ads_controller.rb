@@ -1,6 +1,8 @@
 # app/controllers/buyer/ads_controller.rb
 class Buyer::AdsController < ApplicationController
   before_action :set_ad, only: [:show, :seller, :related]
+  before_action :set_ad_with_relations, only: [:alternatives]
+  before_action :authenticate_buyer_for_alternatives, only: [:alternatives]
 
   # GET /buyer/ads
   def index
@@ -132,8 +134,48 @@ class Buyer::AdsController < ApplicationController
       :reviews,
       :offer_ads,
       seller: { seller_tier: :tier, seller_documents: :document_type }
-    ).find(params[:id])
+    ).find_by_id_or_slug(params[:id])
+
+    unless @ad
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
+
     render json: @ad, serializer: AdSerializer, include_reviews: true
+  end
+  
+  # GET /buyer/ads/:id/alternatives
+  def alternatives
+    ad = @ad_with_relations
+
+    base_scope = Ad.active.with_valid_images
+                    .select('ads.*')
+                    .joins(:seller, :category, :subcategory)
+                    .where(sellers: { blocked: false, deleted: false, flagged: false })
+                    .where(flagged: false, deleted: false)
+                    .where.not(id: ad.id, seller_id: ad.seller_id)
+
+    same_product_scope = base_scope
+                           .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
+                           .where(brand: ad.brand)
+                           .where("LOWER(ads.title) = ?", ad.title.to_s.downcase)
+
+    similar_scope = base_scope
+                       .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
+
+    same_product = same_product_scope.limit(10)
+
+    similar_items = if same_product.size < 5
+      similar_scope.where("ads.title ILIKE ?", "%#{ad.title.to_s.split.first}%")
+                   .limit(10)
+    else
+      []
+    end
+
+    render json: {
+      same_product: serialize_alternatives(same_product),
+      similar_items: serialize_alternatives(similar_items)
+    }
   end
   
 
@@ -846,9 +888,6 @@ class Buyer::AdsController < ApplicationController
                               ELSE 5
                             END ASC, RANDOM()'))
                     .limit(50) # Limit to 50 related ads for performance
-
-    Rails.logger.info "Found #{related_ads.count} related ads"
-    Rails.logger.info "Related ad IDs: #{related_ads.pluck(:id)}"
     
     # Final validation: ensure no related ad has the same ID as the current ad
     filtered_related_ads = related_ads.reject { |related_ad| related_ad.id == ad.id }
@@ -928,6 +967,55 @@ class Buyer::AdsController < ApplicationController
   end
 
   private
+  def set_ad_with_relations
+    @ad_with_relations ||= Ad.includes(:category, :subcategory, :seller).find_by_id_or_slug(params[:id])
+
+    unless @ad_with_relations
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
+  end
+
+  def set_ad
+    @ad = Ad.find_by_id_or_slug(params[:id])
+
+    unless @ad
+      render json: { error: 'Ad not found' }, status: :not_found
+    end
+  end
+
+  def authenticate_buyer_for_alternatives
+    begin
+      @current_user = BuyerAuthorizeApiRequest.new(request.headers).result
+    rescue ExceptionHandler::InvalidToken => e
+      Rails.logger.warn "Buyer::AdsController#alternatives: invalid token - #{e.message}"
+      @current_user = nil
+    rescue => e
+      Rails.logger.error "Buyer::AdsController#alternatives: unexpected auth error - #{e.class.name}: #{e.message}"
+      @current_user = nil
+    end
+
+    unless @current_user.is_a?(Buyer)
+      render json: { error: 'Authentication required to view alternative sellers' }, status: :unauthorized
+    end
+  end
+
+  def serialize_alternatives(scope)
+    scope.map do |alt|
+      {
+        id: alt.id,
+        title: alt.title,
+        price: alt.price&.to_f,
+        first_media_url: alt.first_media_url,
+        category_name: alt.category&.name,
+        subcategory_name: alt.subcategory&.name,
+        seller_id: alt.seller_id,
+        seller_name: alt.seller&.fullname || alt.seller&.enterprise_name,
+        seller_rating: alt.seller&.respond_to?(:calculate_mean_rating) ? alt.seller.calculate_mean_rating : nil,
+        location: alt.seller&.county
+      }
+    end
+  end
 
   # Enhanced randomization method that ensures different results on each request
   def get_randomized_ads(ads_query, limit)
@@ -1155,12 +1243,6 @@ class Buyer::AdsController < ApplicationController
     }
   end
 
-  def set_ad
-    @ad = Ad.find(params[:id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
-  end
-
   def filter_by_category(ads_query)
     ads_query.where(category_id: params[:category_id])
   end
@@ -1266,6 +1348,8 @@ class Buyer::AdsController < ApplicationController
                    .where(flagged: false)
                    .select("
                      ads.id,
+                     ads.category_id,
+                     ads.subcategory_id,
                      ads.title,
                      ads.price,
                      ads.media,

@@ -23,6 +23,9 @@ class Ad < ApplicationRecord
   has_many :offers, through: :offer_ads
   has_many :conversations, dependent: :destroy
 
+  delegate :name, to: :category, prefix: true, allow_nil: true
+  delegate :name, to: :subcategory, prefix: true, allow_nil: true
+
   accepts_nested_attributes_for :category
   accepts_nested_attributes_for :reviews
 
@@ -82,6 +85,45 @@ class Ad < ApplicationRecord
 
   def first_media_url
     media&.first # Safely access the first URL in the media array
+  end
+
+  # Utility: generate a URL-friendly slug from a title
+  def self.slugify(value)
+    return "" if value.blank?
+
+    value.to_s
+         .downcase
+         .strip
+         .gsub(/[^\w\s-]/, "")    # remove special characters except spaces/hyphens
+         .gsub(/\s+/, " ")        # normalize multiple spaces
+         .strip
+         .gsub(/\s+/, "-")        # spaces to hyphen
+         .gsub(/-+/, "-")         # collapse multiple hyphens
+         .gsub(/^-+|-+$/, "")     # trim leading/trailing hyphens
+  end
+
+  # Find an ad by numeric ID or by slugified title
+  def self.find_by_id_or_slug(param)
+    return nil if param.blank?
+
+    # Try direct ID lookup first
+    ad = where(id: param).first
+    return ad if ad
+
+    normalized_slug = slugify(param)
+    return nil if normalized_slug.blank?
+
+    # Also consider a space-separated version for titles stored with spaces
+    spacey = normalized_slug.tr("-", " ")
+
+    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '[^a-z0-9]+', '-', 'g'), '-+', '-', 'g'), '-'))"
+
+    # Match against multiple representations of the title
+    where(
+      "#{sanitized_sql} = :slug OR LOWER(title) = :spacey OR LOWER(REPLACE(title, '-', ' ')) = :spacey",
+      slug: normalized_slug,
+      spacey: spacey
+    ).first
   end
 
   # Analytics methods for seller dashboard

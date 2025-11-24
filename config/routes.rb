@@ -583,6 +583,7 @@ Rails.application.routes.draw do
           post 'add_to_cart'
           get 'related', to: 'ads#related'
           get 'seller', to: 'ads#seller'
+          get 'alternatives', to: 'ads#alternatives'
         end
         resources :reviews, only: [:create, :index] # Nested reviews under ads
       end
@@ -664,6 +665,7 @@ Rails.application.routes.draw do
         post 'add_to_cart'
         get 'related', to: 'ads#related'
         get 'seller', to: 'ads#seller'
+        get 'alternatives', to: 'ads#alternatives'
       end
       resources :reviews, only: [:create, :index] # Nested reviews under ads
     end

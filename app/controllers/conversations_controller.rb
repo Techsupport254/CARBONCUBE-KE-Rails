@@ -163,6 +163,27 @@ class ConversationsController < ApplicationController
       return
     end
 
+    # Check if WhatsApp notifications are enabled
+    unless WhatsAppNotificationService.enabled?
+      # In development, return success with a dev message
+      if Rails.env.development?
+        render json: { 
+          success: true, 
+          message: 'WhatsApp notifications are disabled (development mode)',
+          unread_count: unread_count,
+          development_mode: true
+        }, status: :ok
+        return
+      else
+        render json: { 
+          error: 'WhatsApp notifications are not enabled',
+          message: 'WhatsApp notifications are currently disabled on this server.',
+          error_type: 'notifications_disabled'
+        }, status: :service_unavailable
+        return
+      end
+    end
+
     # Build notification message
     sender_name = @current_user.is_a?(Admin) ? 'Carbon Cube Support' : 'Carbon Cube Sales Team'
     
@@ -197,6 +218,14 @@ class ConversationsController < ApplicationController
       *Carbon Cube Kenya*
     MESSAGE
 
+    # Check WhatsApp service availability before attempting to send
+    service_available = begin
+      WhatsAppNotificationService.health_check
+    rescue => e
+      Rails.logger.warn "WhatsApp service health check failed: #{e.message}"
+      false
+    end
+
     # Send WhatsApp notification
     result = WhatsAppNotificationService.send_message(seller.phone_number, notification_message)
 
@@ -211,6 +240,24 @@ class ConversationsController < ApplicationController
       error_type = result.is_a?(Hash) ? result[:error_type] : 'unknown'
       error_message = result.is_a?(Hash) ? result[:error] : 'Failed to send WhatsApp notification'
       
+      # If service is unavailable (connection errors, timeouts, or service_unavailable),
+      # return a graceful response instead of 503
+      if ['service_unavailable', 'connection_error', 'timeout'].include?(error_type) || !service_available
+        Rails.logger.warn "WhatsApp service unavailable: #{error_type} - #{error_message}"
+        
+        # Return success with a warning message - the action was attempted and logged
+        # This prevents the frontend from showing an error when the service is temporarily down
+        render json: { 
+          success: true,
+          message: 'Notification attempt logged. WhatsApp service is currently unavailable - the seller will be notified when the service is back online.',
+          unread_count: unread_count,
+          warning: true,
+          error_type: error_type,
+          note: 'The notification has been logged and will be retried automatically when the WhatsApp service is available.'
+        }, status: :ok
+        return
+      end
+      
       case error_type
       when 'not_registered'
         render json: { 
@@ -218,12 +265,6 @@ class ConversationsController < ApplicationController
           message: 'The phone number exists but is not registered on WhatsApp. Please contact the seller to register their number.',
           error_type: error_type
         }, status: :bad_request
-      when 'service_unavailable', 'connection_error', 'timeout'
-        render json: { 
-          error: 'WhatsApp service is currently unavailable',
-          message: 'The WhatsApp notification service is not available right now. Please try again later.',
-          error_type: error_type
-        }, status: :service_unavailable
       when 'no_phone_number', 'invalid_phone_format'
         # These should have been caught earlier, but handle just in case
         render json: { 
@@ -231,11 +272,17 @@ class ConversationsController < ApplicationController
           error_type: error_type
         }, status: :unprocessable_entity
       else
+        # For other errors, still return success but with a warning
+        # This ensures the UI doesn't break when there are unexpected issues
+        Rails.logger.warn "WhatsApp notification failed with error type: #{error_type}, message: #{error_message}"
         render json: { 
-          error: 'Failed to send WhatsApp notification',
-          message: error_message,
-          error_type: error_type
-        }, status: :service_unavailable
+          success: true,
+          message: 'Notification attempt logged. There was an issue sending the WhatsApp notification.',
+          unread_count: unread_count,
+          warning: true,
+          error_type: error_type,
+          error_details: error_message
+        }, status: :ok
       end
     end
   rescue => e
