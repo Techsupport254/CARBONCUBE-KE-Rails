@@ -132,9 +132,7 @@ Rails.application.configure do
     user_name: ENV['BREVO_SMTP_USER'],
     password: ENV['BREVO_SMTP_PASSWORD'],
     authentication: :plain,
-    ssl: false,  # Use STARTTLS instead of direct SSL
-    tls: true,
-    enable_starttls_auto: true,
+    enable_starttls_auto: true,  # Use STARTTLS for port 587
     openssl_verify_mode: OpenSSL::SSL::VERIFY_PEER  # Proper certificate verification in production
   }
 
