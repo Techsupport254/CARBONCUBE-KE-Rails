@@ -36,20 +36,26 @@ function createClient() {
 
 	// QR code generation
 	client.on("qr", (qr) => {
-		if (process.env.NODE_ENV === "development") {
-			console.log("QR Code received, scan with your phone:");
-		}
+		console.log("QR Code received, scan with your phone:");
 		qrcode.generate(qr, { small: true });
 		qrCode = qr;
 	});
 
 	// Client ready
 	client.on("ready", () => {
-		if (process.env.NODE_ENV === "development") {
-			console.log("WhatsApp client is ready!");
-		}
+		console.log("WhatsApp client is ready!");
 		isReady = true;
 		qrCode = null;
+	});
+
+	// Loading screen
+	client.on("loading_screen", (percent, message) => {
+		console.log(`Loading: ${percent}% - ${message}`);
+	});
+
+	// Authenticated
+	client.on("authenticated", () => {
+		console.log("WhatsApp client authenticated");
 	});
 
 	// Authentication failure
@@ -230,7 +236,23 @@ app.post("/send", async (req, res) => {
 		});
 	}
 
-	const { phoneNumber, message } = req.body;
+	const { phoneNumber, message, imagePath } = req.body;
+
+	// Debug logging
+	if (process.env.NODE_ENV === "development") {
+		console.log("=== WhatsApp Send Request ===");
+		console.log("Phone number:", phoneNumber);
+		console.log("Message length:", message ? message.length : 0);
+		console.log("Image path:", imagePath || "NOT PROVIDED");
+		if (imagePath) {
+			const fs = require("fs");
+			console.log("Image exists:", fs.existsSync(imagePath));
+			if (fs.existsSync(imagePath)) {
+				const stats = fs.statSync(imagePath);
+				console.log("Image size:", stats.size, "bytes");
+			}
+		}
+	}
 
 	if (!phoneNumber || !message) {
 		return res.status(400).json({
@@ -252,14 +274,63 @@ app.post("/send", async (req, res) => {
 			});
 		}
 
-		// Send message
-		const result = await client.sendMessage(formattedNumber, message);
+		let result;
+
+		// Send message with image if imagePath is provided
+		if (imagePath) {
+			const fs = require("fs");
+			const path = require("path");
+
+			// Check if image file exists
+			if (!fs.existsSync(imagePath)) {
+				if (process.env.NODE_ENV === "development") {
+					console.error("Image file not found:", imagePath);
+				}
+				return res.status(400).json({
+					error: "Image file not found",
+					imagePath: imagePath,
+				});
+			}
+
+			if (process.env.NODE_ENV === "development") {
+				console.log("Sending image with caption...");
+			}
+
+			// Send image with caption
+			const MessageMedia = require("whatsapp-web.js").MessageMedia;
+			const media = MessageMedia.fromFilePath(imagePath);
+
+			// Ensure MIME type is set correctly for PNG images
+			if (!media.mimetype || media.mimetype === "application/octet-stream") {
+				media.mimetype = "image/png";
+			}
+
+			media.caption = message;
+
+			if (process.env.NODE_ENV === "development") {
+				console.log("Media MIME type:", media.mimetype);
+				console.log("Media filename:", media.filename);
+			}
+
+			result = await client.sendMessage(formattedNumber, media);
+
+			if (process.env.NODE_ENV === "development") {
+				console.log("Image message sent successfully");
+			}
+		} else {
+			if (process.env.NODE_ENV === "development") {
+				console.log("Sending text message only (no image)...");
+			}
+			// Send text message only
+			result = await client.sendMessage(formattedNumber, message);
+		}
 
 		res.json({
 			success: true,
 			messageId: result.id._serialized,
 			phoneNumber: phoneNumber,
 			formattedNumber: formattedNumber,
+			hasImage: !!imagePath,
 			timestamp: new Date().toISOString(),
 		});
 	} catch (error) {

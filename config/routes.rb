@@ -120,6 +120,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # Alias for /messages/threads to /conversations (for frontend compatibility)
+  get '/messages/threads', to: 'conversations#index'
+
   #========================================Public namespace for public-specific functionality==========================================#
   
   get "up" => "rails/health#show", as: :rails_health_check

@@ -386,7 +386,8 @@ class WhatsAppNotificationService
     # Send message via WhatsApp (bypass enabled? check for welcome messages)
     # Welcome messages are important onboarding communications and should always be sent
     # We call send_message_without_enabled_check to bypass the enabled? check
-    result = send_message_without_enabled_check(phone_number, welcome_message)
+    # Send text-only message (no image)
+    result = send_message_without_enabled_check(phone_number, welcome_message, nil)
     
     if result.is_a?(Hash) && result[:success]
       Rails.logger.info "✅ Welcome WhatsApp message sent to #{user.class.name} #{user.email} (#{phone_number})"
@@ -404,11 +405,13 @@ class WhatsAppNotificationService
   
   # Send message without checking if WhatsApp notifications are enabled
   # Used for critical messages like welcome messages that should always be sent
-  def self.send_message_without_enabled_check(phone_number, message)
+  # image_path: optional path to image file to attach
+  def self.send_message_without_enabled_check(phone_number, message, image_path = nil)
     if Rails.env.development?
       Rails.logger.info "=== WhatsAppNotificationService.send_message_without_enabled_check START ==="
       Rails.logger.info "Phone number: #{phone_number.inspect}"
       Rails.logger.info "Message length: #{message.to_s.length} characters"
+      Rails.logger.info "Image path: #{image_path.inspect}" if image_path
     end
     
     unless phone_number.present?
@@ -481,8 +484,9 @@ class WhatsAppNotificationService
       request_body = {
         phoneNumber: phone_number,
         message: message
-      }.to_json
-      request.body = request_body
+      }
+      request_body[:imagePath] = image_path if image_path.present? && File.exist?(image_path)
+      request.body = request_body.to_json
       if Rails.env.development?
         Rails.logger.info "Request body: #{request_body.inspect}"
         Rails.logger.info "Request headers: #{request.to_hash.inspect}"
@@ -649,6 +653,8 @@ class WhatsAppNotificationService
     end
     
     # Build message based on user type
+    # Note: URLs are placed on separate lines to ensure WhatsApp detects them as clickable links
+    # WhatsApp requires recipients to save the sender's number or reply for links to be clickable
     if user_type == 'seller'
       <<~MESSAGE
         🎉 *Welcome to Carbon Cube Kenya!*
@@ -658,9 +664,16 @@ class WhatsAppNotificationService
         Thank you for joining Carbon Cube Kenya as a seller! We're excited to have you on board.
         
         *Get started:*
-        • Complete your profile: #{base_url}/seller/profile
-        • List your products: #{base_url}/seller/products/new
-        • View your dashboard: #{base_url}/seller/dashboard
+        • Complete your profile:
+        #{base_url}/seller/profile
+        
+        • List your products:
+        #{base_url}/seller/products/new
+        
+        • View your dashboard:
+        #{base_url}/seller/dashboard
+        
+        💡 *Tip:* Reply to this message to make links clickable!
         
         *Need help?*
         Contact our support team anytime - we're here to help you succeed!
@@ -680,9 +693,16 @@ class WhatsAppNotificationService
         Thank you for joining Carbon Cube Kenya! We're thrilled to have you as part of our community.
         
         *Discover amazing products:*
-        • Browse categories: #{base_url}
-        • Find best deals: #{base_url}/deals
-        • Save favorites: #{base_url}/wishlist
+        • Browse categories:
+        #{base_url}
+        
+        • Find best deals:
+        #{base_url}/deals
+        
+        • Save favorites:
+        #{base_url}/wishlist
+        
+        💡 *Tip:* Reply to this message to make links clickable!
         
         *Need help?*
         Contact our support team anytime - we're here to help!

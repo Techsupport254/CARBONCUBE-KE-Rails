@@ -96,6 +96,16 @@ class Admin::AdsController < ApplicationController
     head :no_content
   end
 
+  # GET /admin/ads/flagged
+  def flagged
+    @ads = Ad.joins(seller: :seller_tier)
+             .joins(:category, :subcategory)
+             .where(sellers: { blocked: false })
+             .where(flagged: true)
+             .select('ads.*, seller_tiers.tier_id AS seller_tier')
+    
+    render json: @ads.as_json(methods: :seller_tier)
+  end
 
 # GET /admin/ads/search
 def search
