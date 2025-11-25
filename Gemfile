@@ -66,6 +66,11 @@ gem 'dry-validation'
 # User agent parser for better browser/OS/device detection
 gem 'user_agent_parser'
 
+# Image processing for generating personalized welcome images
+gem 'mini_magick'
+# QR code generation for welcome images
+gem 'rqrcode'
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri mingw x64_mingw ]

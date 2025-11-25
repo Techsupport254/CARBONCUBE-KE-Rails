@@ -17,7 +17,7 @@ class WelcomeMailer < ApplicationMailer
       subject: "Welcome to Carbon Cube Kenya - Your Account is Ready! 🎉"
     )
   end
-
+  
   private
 
   def get_dashboard_url(user)
