@@ -2,7 +2,7 @@ class ClickEvent < ApplicationRecord
   belongs_to :buyer, optional: true
   belongs_to :ad, optional: true
 
-  EVENT_TYPES = %w[Ad-Click Reveal-Seller-Details Add-to-Cart Add-to-Wish-List].freeze
+  EVENT_TYPES = %w[Ad-Click Reveal-Seller-Details Add-to-Cart Add-to-Wish-List Callback-Request].freeze
 
   validates :event_type, presence: true, inclusion: { in: EVENT_TYPES }
   # validates :metadata, presence: true, if: -> { event_type == 'Reveal-Seller-Details' } # Example: require metadata for certain event types

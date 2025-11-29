@@ -32,6 +32,7 @@ class ClickEventsAnalyticsService
           click_events_timestamps: [],
           reveal_events_timestamps: [],
           ad_clicks_timestamps: [],
+          callback_requests_timestamps: [],
           guest_reveal_timestamps: [],
           authenticated_reveal_timestamps: [],
           conversion_timestamps: [],
@@ -77,6 +78,7 @@ class ClickEventsAnalyticsService
       "COUNT(*) as total_click_events",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details') as total_reveal_events",
       "COUNT(*) FILTER (WHERE event_type = 'Ad-Click') as total_ad_clicks",
+      "COUNT(*) FILTER (WHERE event_type = 'Callback-Request') as total_callback_requests",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND buyer_id IS NULL) as guest_reveals",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND buyer_id IS NOT NULL) as authenticated_reveals",
       "COUNT(*) FILTER (WHERE event_type = 'Reveal-Seller-Details' AND metadata->>'converted_from_guest' = 'true') as conversion_count",
@@ -95,6 +97,7 @@ class ClickEventsAnalyticsService
       total_click_events: stats.total_click_events.to_i,
       total_reveal_events: stats.total_reveal_events.to_i,
       total_ad_clicks: stats.total_ad_clicks.to_i,
+      total_callback_requests: stats.total_callback_requests.to_i,
       guest_reveals: stats.guest_reveals.to_i,
       authenticated_reveals: stats.authenticated_reveals.to_i,
       conversion_count: conversions,
@@ -194,10 +197,20 @@ class ClickEventsAnalyticsService
     guest_login_attempt_timestamps = guest_login_attempts_query.pluck(Arel.sql("click_events.created_at"))
       .map { |ts| ts&.iso8601 }.compact
     
+    # Get callback request timestamps
+    callback_requests_query = base_query
+      .where(event_type: 'Callback-Request')
+      .order("click_events.created_at DESC")
+    callback_requests_query = callback_requests_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+    callback_requests_query = callback_requests_query.limit(limit) if limit.present?
+    callback_requests_timestamps = callback_requests_query.pluck(Arel.sql("click_events.created_at"))
+      .map { |ts| ts&.iso8601 }.compact
+    
     {
       click_events_timestamps: click_events_timestamps,
       reveal_events_timestamps: reveal_events_timestamps,
       ad_clicks_timestamps: ad_clicks_timestamps,
+      callback_requests_timestamps: callback_requests_timestamps,
       guest_reveal_timestamps: guest_reveal_timestamps,
       authenticated_reveal_timestamps: authenticated_reveal_timestamps,
       conversion_timestamps: conversion_timestamps,
@@ -987,6 +1000,7 @@ class ClickEventsAnalyticsService
       total_click_events: 0,
       total_reveal_events: 0,
       total_ad_clicks: 0,
+      total_callback_requests: 0,
       guest_reveals: 0,
       authenticated_reveals: 0,
       conversion_count: 0,

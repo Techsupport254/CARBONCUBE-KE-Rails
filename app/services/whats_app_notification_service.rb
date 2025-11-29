@@ -727,8 +727,9 @@ class WhatsAppNotificationService
   end
   
   def self.check_number(phone_number)
-    Rails.logger.info "=== WhatsAppNotificationService.check_number START ==="
-    Rails.logger.info "Phone number: #{phone_number.inspect}"
+    # Logging disabled to reduce console noise
+    # Rails.logger.info "=== WhatsAppNotificationService.check_number START ==="
+    # Rails.logger.info "Phone number: #{phone_number.inspect}"
     
     unless phone_number.present?
       Rails.logger.error "Phone number is missing"
@@ -737,9 +738,10 @@ class WhatsAppNotificationService
     
     # Validate phone number format (should be 10 digits for Kenyan numbers)
     cleaned_number = phone_number.to_s.gsub(/\D/, '')
-        if Rails.env.development?
-      Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
-    end
+    # Logging disabled to reduce console noise
+    # if Rails.env.development?
+    #   Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
+    # end
     if cleaned_number.length != 10 && !cleaned_number.start_with?('254')
       Rails.logger.error "Invalid phone number format: #{cleaned_number}"
       return { isRegistered: false, error: 'Invalid phone number format. Expected 10 digits (e.g., 0712345678)' }
@@ -761,7 +763,8 @@ class WhatsAppNotificationService
         service_url = get_service_url
         full_url = "#{service_url}/check"
         
-        Rails.logger.info "Checking WhatsApp number via local service: #{full_url}"
+        # Logging disabled to reduce console noise
+        # Rails.logger.info "Checking WhatsApp number via local service: #{full_url}"
         
         response = HTTParty.post(
           full_url,
@@ -778,7 +781,8 @@ class WhatsAppNotificationService
           parsed_response = response.parsed_response
           is_registered = parsed_response['isRegistered'] == true
           
-          Rails.logger.info "Phone number #{cleaned_number} is #{is_registered ? 'registered' : 'not registered'} on WhatsApp (via local service)"
+          # Logging disabled to reduce console noise
+          # Rails.logger.info "Phone number #{cleaned_number} is #{is_registered ? 'registered' : 'not registered'} on WhatsApp (via local service)"
           
           return {
             isRegistered: is_registered,
@@ -797,7 +801,8 @@ class WhatsAppNotificationService
     
     # Fallback: Use WhatsApp API endpoint to check if number is registered
     # This uses WhatsApp's public API endpoint which is more reliable
-    Rails.logger.info "Using WhatsApp API method to check registration"
+    # Logging disabled to reduce console noise
+    # Rails.logger.info "Using WhatsApp API method to check registration"
     
     begin
       require 'net/http'
@@ -810,6 +815,10 @@ class WhatsAppNotificationService
       uri = URI(api_url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
+      # Disable SSL verification for WhatsApp API in development to avoid certificate issues
+      if Rails.env.development?
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
       http.open_timeout = 5
       http.read_timeout = 5
       
@@ -820,7 +829,8 @@ class WhatsAppNotificationService
       
       response = http.request(request)
       
-      Rails.logger.info "WhatsApp API check response code: #{response.code}"
+      # Logging disabled to reduce console noise
+      # Rails.logger.info "WhatsApp API check response code: #{response.code}"
       
       # Follow redirects if needed
       if response.is_a?(Net::HTTPRedirection)
@@ -830,6 +840,10 @@ class WhatsAppNotificationService
         redirect_uri = URI(location)
         redirect_http = Net::HTTP.new(redirect_uri.host, redirect_uri.port)
         redirect_http.use_ssl = true
+        # Disable SSL verification for WhatsApp API in development to avoid certificate issues
+        if Rails.env.development?
+          redirect_http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
         redirect_http.open_timeout = 5
         redirect_http.read_timeout = 5
         
@@ -861,7 +875,8 @@ class WhatsAppNotificationService
         is_registered = true
       end
       
-      Rails.logger.info "Phone number #{cleaned_number} is #{is_registered ? 'registered' : 'not registered'} on WhatsApp (via API method)"
+      # Logging disabled to reduce console noise
+      # Rails.logger.info "Phone number #{cleaned_number} is #{is_registered ? 'registered' : 'not registered'} on WhatsApp (via API method)"
       
       return {
         isRegistered: is_registered,

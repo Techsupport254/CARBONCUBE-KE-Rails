@@ -247,7 +247,8 @@ class ConversationsChannel < ApplicationCable::Channel
   end
   
   def log_channel_activity(action, data = {})
-    Rails.logger.info "ConversationsChannel #{action}: #{data.inspect}"
+    # Logging disabled to reduce console noise
+    # Rails.logger.info "ConversationsChannel #{action}: #{data.inspect}"
   end
   
   def track_message_metric(action)

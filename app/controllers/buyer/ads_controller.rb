@@ -2,7 +2,7 @@
 class Buyer::AdsController < ApplicationController
   before_action :set_ad, only: [:show, :seller, :related]
   before_action :set_ad_with_relations, only: [:alternatives]
-  before_action :authenticate_buyer_for_alternatives, only: [:alternatives]
+  before_action :authenticate_user_for_alternatives, only: [:alternatives]
 
   # GET /buyer/ads
   def index
@@ -151,29 +151,128 @@ class Buyer::AdsController < ApplicationController
     base_scope = Ad.active.with_valid_images
                     .select('ads.*')
                     .joins(:seller, :category, :subcategory)
+                    .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
+                    .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
                     .where(sellers: { blocked: false, deleted: false, flagged: false })
                     .where(flagged: false, deleted: false)
                     .where.not(id: ad.id, seller_id: ad.seller_id)
 
+    # Normalize title for better matching
+    normalized_title = normalize_title(ad.title)
+    normalized_brand = normalize_brand(ad.brand)
+    normalized_manufacturer = normalize_brand(ad.manufacturer) if ad.manufacturer.present?
+
+    # Find same product with improved matching logic
     same_product_scope = base_scope
                            .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
-                           .where(brand: ad.brand)
-                           .where("LOWER(ads.title) = ?", ad.title.to_s.downcase)
 
-    similar_scope = base_scope
-                       .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
+    # Build title matching conditions - use multiple strategies for better matching
+    # Strategy 1: Exact match (case-insensitive, trimmed)
+    # Strategy 2: Match with normalized title (if different from original)
+    
+    title_match_conditions = []
+    title_match_params = []
+    
+    # Exact match
+    title_match_conditions << "LOWER(TRIM(ads.title)) = LOWER(TRIM(?))"
+    title_match_params << ad.title.to_s.strip
+    
+    # If normalized title is different, add it as alternative match
+    if normalized_title != ad.title.to_s.downcase.strip
+      title_match_conditions << "LOWER(TRIM(ads.title)) = ?"
+      title_match_params << normalized_title
+    end
+    
+    # Brand matching - handle nulls and case-insensitive
+    brand_match_conditions = []
+    brand_match_params = []
+    
+    if normalized_brand.present?
+      # Match brand
+      brand_match_conditions << "(LOWER(TRIM(COALESCE(ads.brand, ''))) = ?)"
+      brand_match_params << normalized_brand
+      
+      # Match manufacturer if present
+      if normalized_manufacturer.present?
+        brand_match_conditions << "(LOWER(TRIM(COALESCE(ads.manufacturer, ''))) = ?)"
+        brand_match_params << normalized_manufacturer
+      end
+    end
 
-    same_product = same_product_scope.limit(10)
+    # Apply title matching (OR conditions)
+    if title_match_conditions.any?
+      title_sql = title_match_conditions.join(' OR ')
+      same_product_scope = same_product_scope.where(title_sql, *title_match_params)
+    end
 
-    similar_items = if same_product.size < 5
-      similar_scope.where("ads.title ILIKE ?", "%#{ad.title.to_s.split.first}%")
-                   .limit(10)
-    else
-      []
+    # Apply brand matching (OR conditions) if brand exists
+    if brand_match_conditions.any? && normalized_brand.present?
+      brand_sql = brand_match_conditions.join(' OR ')
+      same_product_scope = same_product_scope.where(brand_sql, *brand_match_params)
+    end
+
+    # Get same products with scoring and ordering
+    same_product = same_product_scope
+                     .select("ads.*, 
+                             CASE tiers.id
+                               WHEN 4 THEN 1
+                               WHEN 3 THEN 2
+                               WHEN 2 THEN 3
+                               WHEN 1 THEN 4
+                               ELSE 5
+                             END AS tier_priority")
+                     .includes(:reviews, offer_ads: :offer, seller: { seller_tier: :tier })
+                     .limit(20) # Get more for scoring
+                     .to_a
+
+    # Score and rank same products
+    scored_same_products = same_product.map do |alt|
+      score = calculate_alternative_score(alt, ad, normalized_title, normalized_brand, true)
+      { ad: alt, score: score }
+    end.sort_by { |item| -item[:score] }.first(10).map { |item| item[:ad] }
+
+    # Find similar items if we have fewer than 5 exact matches
+    similar_items = []
+    if scored_same_products.size < 5
+      similar_scope = base_scope
+                        .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
+                        .where.not(id: scored_same_products.map(&:id))
+
+      # Extract key words from title (remove common words)
+      key_words = extract_key_words(ad.title)
+      
+      if key_words.any?
+        # Build ILIKE conditions for key words
+        word_conditions = key_words.map { |word| "ads.title ILIKE ?" }.join(' OR ')
+        word_params = key_words.map { |word| "%#{word}%" }
+        similar_scope = similar_scope.where(word_conditions, *word_params)
+      end
+
+      # Get similar items with scoring
+      similar_candidates = similar_scope
+                             .select("ads.*, 
+                                     CASE tiers.id
+                                       WHEN 4 THEN 1
+                                       WHEN 3 THEN 2
+                                       WHEN 2 THEN 3
+                                       WHEN 1 THEN 4
+                                       ELSE 5
+                                     END AS tier_priority")
+                             .includes(:reviews, offer_ads: :offer, seller: { seller_tier: :tier })
+                             .limit(20)
+                             .to_a
+
+      # Score and rank similar items
+      scored_similar = similar_candidates.map do |alt|
+        score = calculate_alternative_score(alt, ad, normalized_title, normalized_brand, false)
+        { ad: alt, score: score }
+      end.sort_by { |item| -item[:score] }.first(10).map { |item| item[:ad] }
+
+      similar_items = scored_similar
     end
 
     render json: {
-      same_product: serialize_alternatives(same_product),
+      same_product: serialize_alternatives(scored_same_products),
       similar_items: serialize_alternatives(similar_items)
     }
   end
@@ -856,7 +955,8 @@ class Buyer::AdsController < ApplicationController
     # Use @ad from before_action instead of finding it again
     ad = @ad
 
-    Rails.logger.info "Fetching related ads for ad ID: #{ad.id}, category: #{ad.category_id}, subcategory: #{ad.subcategory_id}"
+    # Logging disabled to reduce console noise
+    # Rails.logger.info "Fetching related ads for ad ID: #{ad.id}, category: #{ad.category_id}, subcategory: #{ad.subcategory_id}"
 
     # Fetch ads that share either the same category or subcategory
     # Apply the same filters as the main ads endpoint
@@ -984,37 +1084,243 @@ class Buyer::AdsController < ApplicationController
     end
   end
 
-  def authenticate_buyer_for_alternatives
+  def authenticate_user_for_alternatives
+    # Try authenticating as different user types (buyer, seller, admin, sales)
+    @current_user = nil
+    
+    # Try buyer authentication first
     begin
-      @current_user = BuyerAuthorizeApiRequest.new(request.headers).result
+      buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
+      @current_user = buyer_auth.result
     rescue ExceptionHandler::InvalidToken => e
-      Rails.logger.warn "Buyer::AdsController#alternatives: invalid token - #{e.message}"
-      @current_user = nil
+      Rails.logger.debug "Buyer::AdsController#alternatives: Buyer authentication failed: #{e.message}"
     rescue => e
-      Rails.logger.error "Buyer::AdsController#alternatives: unexpected auth error - #{e.class.name}: #{e.message}"
-      @current_user = nil
+      Rails.logger.debug "Buyer::AdsController#alternatives: Buyer auth error: #{e.class.name}: #{e.message}"
     end
 
-    unless @current_user.is_a?(Buyer)
+    # Try seller authentication if buyer auth failed
+    if @current_user.nil? || !@current_user.is_a?(Buyer)
+      begin
+        seller_auth = SellerAuthorizeApiRequest.new(request.headers)
+        @current_user = seller_auth.result
+      rescue ExceptionHandler::InvalidToken => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Seller authentication failed: #{e.message}"
+      rescue => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Seller auth error: #{e.class.name}: #{e.message}"
+      end
+    end
+
+    # Try admin authentication if still no user
+    if @current_user.nil?
+      begin
+        admin_auth = AdminAuthorizeApiRequest.new(request.headers)
+        @current_user = admin_auth.result
+      rescue ExceptionHandler::InvalidToken => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Admin authentication failed: #{e.message}"
+      rescue => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Admin auth error: #{e.class.name}: #{e.message}"
+      end
+    end
+
+    # Try sales authentication if still no user
+    if @current_user.nil?
+      begin
+        # SalesAuthorizeApiRequest is in lib, ensure it's loaded
+        require_relative '../../lib/sales_authorize_api_request' unless defined?(SalesAuthorizeApiRequest)
+        sales_auth = SalesAuthorizeApiRequest.new(request.headers)
+        @current_user = sales_auth.result
+      rescue ExceptionHandler::InvalidToken => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Sales authentication failed: #{e.message}"
+      rescue => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Sales auth error: #{e.class.name}: #{e.message}"
+      end
+    end
+
+    # Require any authenticated user (buyer, seller, admin, or sales)
+    unless @current_user.is_a?(Buyer) || @current_user.is_a?(Seller) || @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser)
+      Rails.logger.warn "Buyer::AdsController#alternatives: Authentication failed - no valid user found"
       render json: { error: 'Authentication required to view alternative sellers' }, status: :unauthorized
     end
   end
 
   def serialize_alternatives(scope)
     scope.map do |alt|
+      seller_tier_id = alt.seller&.seller_tier&.tier_id || 1
+      review_count = alt.reviews&.count || 0
+      avg_rating = if alt.reviews&.any?
+        alt.reviews.sum(&:rating).to_f / review_count
+      else
+        0.0
+      end
+
+      # Get original_price from active offer if available
+      original_price = nil
+      if alt.association(:offer_ads).loaded?
+        # Use preloaded associations (more efficient)
+        active_offer_ad = alt.offer_ads.find do |offer_ad|
+          offer = offer_ad.association(:offer).loaded? ? offer_ad.offer : offer_ad.offer
+          offer && 
+          ['active', 'scheduled'].include?(offer.status) &&
+          offer.end_time >= Time.current
+        end
+        original_price = active_offer_ad&.original_price&.to_f
+      else
+        # Fallback to database query
+        active_offer_ad = alt.offer_ads.joins(:offer)
+                                    .where(offers: { status: ['active', 'scheduled'] })
+                                    .where('offers.end_time >= ?', Time.current)
+                                    .order('offers.start_time ASC')
+                                    .first
+        original_price = active_offer_ad&.original_price&.to_f
+      end
+
       {
         id: alt.id,
         title: alt.title,
         price: alt.price&.to_f,
+        original_price: original_price,
         first_media_url: alt.first_media_url,
         category_name: alt.category&.name,
         subcategory_name: alt.subcategory&.name,
         seller_id: alt.seller_id,
         seller_name: alt.seller&.fullname || alt.seller&.enterprise_name,
         seller_rating: alt.seller&.respond_to?(:calculate_mean_rating) ? alt.seller.calculate_mean_rating : nil,
-        location: alt.seller&.county
+        rating: avg_rating.round(2),
+        review_count: review_count,
+        seller_tier: seller_tier_id,
+        seller_tier_name: (alt.seller&.seller_tier&.tier&.name || 'Free'),
+        location: alt.seller&.county,
+        brand: alt.brand,
+        manufacturer: alt.manufacturer
       }
     end
+  end
+
+  # Normalize title for better matching
+  def normalize_title(title)
+    return "" if title.blank?
+    title.to_s
+         .downcase
+         .strip
+         .gsub(/[^\w\s]/, '')  # Remove special characters
+         .gsub(/\s+/, ' ')     # Normalize multiple spaces
+         .strip
+  end
+
+  # Normalize brand for better matching
+  def normalize_brand(brand)
+    return "" if brand.blank?
+    brand.to_s
+         .downcase
+         .strip
+         .gsub(/[^\w\s]/, '')  # Remove special characters
+         .gsub(/\s+/, ' ')     # Normalize multiple spaces
+         .strip
+  end
+
+  # Extract key words from title (removes common stop words)
+  def extract_key_words(title)
+    return [] if title.blank?
+    
+    # Common stop words to ignore
+    stop_words = %w[
+      a an and are as at be by for from has he in is it its of on that the to was will with
+      the a an and or but in on at to for of with by from as is was are were been be have has had
+      do does did will would should could may might must can this that these those
+    ]
+    
+    words = title.to_s
+                  .downcase
+                  .gsub(/[^\w\s]/, ' ')
+                  .split(/\s+/)
+                  .reject(&:blank?)
+                  .reject { |word| word.length < 3 }  # Remove very short words
+                  .reject { |word| stop_words.include?(word) }
+                  .uniq
+    
+    # Return top 3-5 most relevant words (longer words are usually more specific)
+    words.sort_by { |w| -w.length }.first(5)
+  end
+
+  # Calculate relevance score for alternative products
+  def calculate_alternative_score(alt, original_ad, normalized_title, normalized_brand, is_exact_match)
+    score = 0.0
+
+    # Title similarity (40% weight)
+    alt_title_normalized = normalize_title(alt.title)
+    if is_exact_match
+      # Exact matches get full points
+      if alt_title_normalized == normalized_title
+        score += 40.0
+      else
+        # Partial match based on word overlap
+        original_words = normalized_title.split(/\s+/).reject { |w| w.length < 3 }
+        alt_words = alt_title_normalized.split(/\s+/).reject { |w| w.length < 3 }
+        common_words = (original_words & alt_words).size
+        if original_words.any?
+          similarity = (common_words.to_f / original_words.size) * 40.0
+          score += similarity
+        end
+      end
+    else
+      # Similar items - word overlap scoring
+      original_words = normalized_title.split(/\s+/).reject { |w| w.length < 3 }
+      alt_words = alt_title_normalized.split(/\s+/).reject { |w| w.length < 3 }
+      common_words = (original_words & alt_words).size
+      if original_words.any?
+        similarity = (common_words.to_f / original_words.size) * 40.0
+        score += similarity
+      end
+    end
+
+    # Brand/Manufacturer match (20% weight)
+    if normalized_brand.present?
+      alt_brand_normalized = normalize_brand(alt.brand)
+      alt_manufacturer_normalized = normalize_brand(alt.manufacturer) if alt.manufacturer.present?
+      
+      if alt_brand_normalized == normalized_brand || 
+         (alt_manufacturer_normalized.present? && alt_manufacturer_normalized == normalized_brand)
+        score += 20.0
+      elsif alt_brand_normalized.include?(normalized_brand) || normalized_brand.include?(alt_brand_normalized)
+        score += 10.0  # Partial brand match
+      end
+    end
+
+    # Seller tier bonus (15% weight) - higher tier sellers get boost
+    seller_tier_id = alt.seller&.seller_tier&.tier_id || 1
+    tier_bonus = case seller_tier_id
+                 when 4 then 15.0  # Premium
+                 when 3 then 12.0  # Gold
+                 when 2 then 9.0   # Silver
+                 when 1 then 6.0   # Free
+                 else 3.0
+                 end
+    score += tier_bonus
+
+    # Rating and reviews (15% weight)
+    review_count = alt.reviews&.count || 0
+    avg_rating = if alt.reviews&.any?
+      alt.reviews.sum(&:rating).to_f / review_count
+    else
+      0.0
+    end
+    
+    if review_count > 0 && avg_rating > 0
+      rating_score = (avg_rating / 5.0) * 10.0  # Normalize to 0-10
+      review_bonus = [Math.log10(review_count + 1) * 2.0, 5.0].min  # Logarithmic bonus for review count
+      score += rating_score + review_bonus
+    end
+
+    # Price competitiveness (10% weight) - lower price gets slight boost
+    if alt.price.present? && original_ad.price.present?
+      price_diff = ((original_ad.price - alt.price) / original_ad.price) * 100
+      if price_diff > 0  # Alternative is cheaper
+        price_bonus = [price_diff * 0.1, 10.0].min
+        score += price_bonus
+      end
+    end
+
+    score
   end
 
   # Enhanced randomization method that ensures different results on each request
