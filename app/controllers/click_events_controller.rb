@@ -43,7 +43,8 @@ class ClickEventsController < ApplicationController
           Rails.logger.warn "ClickEventsController: Buyer ID #{user_id_from_metadata} from metadata not found or deleted"
         end
       elsif user_id_from_metadata
-        Rails.logger.info "ClickEventsController: User ID #{user_id_from_metadata} (role: #{user_role_from_metadata}) is not a buyer, buyer_id will be nil"
+        # Logging disabled to reduce console noise
+        # Rails.logger.info "ClickEventsController: User ID #{user_id_from_metadata} (role: #{user_role_from_metadata}) is not a buyer, buyer_id will be nil"
       end
       
       # Create click event with processed parameters
@@ -59,18 +60,18 @@ class ClickEventsController < ApplicationController
       is_guest = metadata[:is_guest] || metadata['is_guest'] || !was_authenticated
       triggered_login_modal = metadata[:triggered_login_modal] || metadata['triggered_login_modal'] || false
 
-      # Log what we're about to save
-      Rails.logger.info "ClickEventsController: Creating click event: #{{
-        event_type: click_event.event_type,
-        ad_id: click_event.ad_id,
-        buyer_id: click_event.buyer_id,
-        user_id_from_metadata: user_id_from_metadata,
-        user_role_from_metadata: user_role_from_metadata,
-        was_authenticated: was_authenticated,
-        is_guest: is_guest,
-        triggered_login_modal: triggered_login_modal,
-        is_internal_excluded: is_internal_excluded
-      }.to_json}"
+      # Logging disabled to reduce console noise
+      # Rails.logger.info "ClickEventsController: Creating click event: #{{
+      #   event_type: click_event.event_type,
+      #   ad_id: click_event.ad_id,
+      #   buyer_id: click_event.buyer_id,
+      #   user_id_from_metadata: user_id_from_metadata,
+      #   user_role_from_metadata: user_role_from_metadata,
+      #   was_authenticated: was_authenticated,
+      #   is_guest: is_guest,
+      #   triggered_login_modal: triggered_login_modal,
+      #   is_internal_excluded: is_internal_excluded
+      # }.to_json}"
 
       # Use save! to raise exception on failure for proper rollback
       click_event.save!
@@ -87,13 +88,13 @@ class ClickEventsController < ApplicationController
         end
       end
 
-      # Log successful save with created record details
-      if click_event.event_type == 'Reveal-Seller-Details'
-        auth_status = was_authenticated ? 'AUTHENTICATED' : 'GUEST'
-        Rails.logger.info "ClickEventsController: Reveal-Seller-Details saved: ID=#{click_event.id}, buyer_id=#{click_event.buyer_id}, ad_id=#{click_event.ad_id}, user_status=#{auth_status}, triggered_login=#{triggered_login_modal}"
-      else
-        Rails.logger.info "ClickEventsController: Click event saved successfully: ID=#{click_event.id}, buyer_id=#{click_event.buyer_id}, event_type=#{click_event.event_type}, ad_id=#{click_event.ad_id}"
-      end
+      # Logging disabled to reduce console noise
+      # if click_event.event_type == 'Reveal-Seller-Details'
+      #   auth_status = was_authenticated ? 'AUTHENTICATED' : 'GUEST'
+      #   Rails.logger.info "ClickEventsController: Reveal-Seller-Details saved: ID=#{click_event.id}, buyer_id=#{click_event.buyer_id}, ad_id=#{click_event.ad_id}, user_status=#{auth_status}, triggered_login=#{triggered_login_modal}"
+      # else
+      #   Rails.logger.info "ClickEventsController: Click event saved successfully: ID=#{click_event.id}, buyer_id=#{click_event.buyer_id}, event_type=#{click_event.event_type}, ad_id=#{click_event.ad_id}"
+      # end
 
       message = is_internal_excluded ? 'Click logged successfully (internal user excluded)' : 'Click logged successfully'
       render json: { 

@@ -258,16 +258,16 @@ class OauthAccountLinkingService
       age_group_id: calculate_age_group,
       gender: extract_gender,
       profile_picture: profile_picture, # Set fixed profile picture from OAuth
-      # Enterprise name defaults to fullname if not provided
-      enterprise_name: @name || @email.split('@').first
+      # Don't auto-set enterprise_name - let user set it themselves
+      # enterprise_name: @name || @email.split('@').first
     }
     
-    # Only include location data if we have actual values (not defaults)
+    # Don't auto-set location data - let user set them themselves
     # User will complete missing fields via modal
-    user_attributes[:location] = location if location.present? && location != "Location to be updated"
-    user_attributes[:city] = city if city.present?
-    user_attributes[:county_id] = county_id if county_id.present?
-    user_attributes[:sub_county_id] = sub_county_id if sub_county_id.present?
+    # user_attributes[:location] = location if location.present? && location != "Location to be updated"
+    # user_attributes[:city] = city if city.present?
+    # user_attributes[:county_id] = county_id if county_id.present?
+    # user_attributes[:sub_county_id] = sub_county_id if sub_county_id.present?
     
     # Phone number is optional - only include if provided by Google OAuth
     # Users can add it later if needed

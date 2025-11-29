@@ -697,6 +697,8 @@ Rails.application.routes.draw do
           get :categories
         end
       end
+      # Direct route for ad stats
+      get 'analytics/ads/:id/stats', to: 'analytics#ad_stats'
       resources :click_events, only: [] do
         collection do
           get :analytics

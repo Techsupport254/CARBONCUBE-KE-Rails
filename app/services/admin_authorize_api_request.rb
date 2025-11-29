@@ -29,7 +29,8 @@ class AdminAuthorizeApiRequest
 
     # Check if the token is actually for an admin
     if role && role.downcase != 'admin'
-      Rails.logger.debug "AdminAuthorizeApiRequest: Token is for #{role}, not admin. Email: #{admin_email}"
+      # Logging disabled to reduce console noise
+      # Rails.logger.debug "AdminAuthorizeApiRequest: Token is for #{role}, not admin. Email: #{admin_email}"
       raise ExceptionHandler::InvalidToken, "Token is for #{role}, not admin"
     end
 

@@ -288,8 +288,7 @@ class GoogleOauthService
     # Generate username from name
     username = generate_unique_username(fullname)
     
-    # For seller-specific data
-    enterprise_name = fullname # Use fullname as default enterprise name
+    # For seller-specific data - don't auto-set enterprise_name, let user set it
     business_type = 'Other' # Default business type
     
     {
@@ -305,14 +304,14 @@ class GoogleOauthService
       # Contact info
       phone_number: phone_number,
       
-      # Location data - only use actual detected data, no fallbacks
-      city: city,
-      location: location,
-      county_id: location_info.dig('ip_location', 'county_id'),
-      sub_county_id: location_info.dig('ip_location', 'sub_county_id'),
+      # Location data - don't auto-set, let user set it themselves
+      # city: city,
+      # location: location,
+      # county_id: location_info.dig('ip_location', 'county_id'),
+      # sub_county_id: location_info.dig('ip_location', 'sub_county_id'),
       
-      # Seller-specific data
-      enterprise_name: enterprise_name,
+      # Seller-specific data - don't auto-set enterprise_name, let user set it
+      # enterprise_name: enterprise_name,
       business_type: business_type,
       
       # Additional Google data
@@ -397,9 +396,10 @@ class GoogleOauthService
       profile_picture = fix_google_profile_picture_url(user_info['image'])
     end
 
+    # Don't auto-set enterprise_name - let user set it themselves in the completion modal
     # Generate unique enterprise name
-    base_enterprise_name = user_info['name'] || user_info['display_name'] || 'Business'
-    enterprise_name = generate_unique_enterprise_name(base_enterprise_name)
+    # base_enterprise_name = user_info['name'] || user_info['display_name'] || 'Business'
+    # enterprise_name = generate_unique_enterprise_name(base_enterprise_name)
 
     # Create seller attributes
     seller_attributes = {
@@ -411,21 +411,21 @@ class GoogleOauthService
       profile_picture: profile_picture,
       provider: 'google',
       uid: user_info['id'],
-      # Set seller-specific fields - only use actual data
-      enterprise_name: enterprise_name,
+      # Don't auto-set enterprise_name - let user set it themselves
+      # enterprise_name: enterprise_name,
       age_group_id: calculate_age_group(user_info)
     }
     
-    # Only include location fields if we have actual detected values (not defaults)
+    # Don't auto-set location fields - let user set them themselves
     # User will complete missing fields via modal
-    seller_attributes[:city] = city if city.present?
-    seller_attributes[:location] = location if location.present? && location != "Location to be updated"
+    # seller_attributes[:city] = city if city.present?
+    # seller_attributes[:location] = location if location.present? && location != "Location to be updated"
     
-    # Only include county/sub_county if actually detected from location
-    detected_county_id = location_info.dig('ip_location', 'county_id')
-    detected_sub_county_id = location_info.dig('ip_location', 'sub_county_id')
-    seller_attributes[:county_id] = detected_county_id if detected_county_id.present?
-    seller_attributes[:sub_county_id] = detected_sub_county_id if detected_sub_county_id.present?
+    # Don't auto-set county/sub_county - let user set them themselves
+    # detected_county_id = location_info.dig('ip_location', 'county_id')
+    # detected_sub_county_id = location_info.dig('ip_location', 'sub_county_id')
+    # seller_attributes[:county_id] = detected_county_id if detected_county_id.present?
+    # seller_attributes[:sub_county_id] = detected_sub_county_id if detected_sub_county_id.present?
 
     Rails.logger.info "Seller attributes: #{seller_attributes.inspect}"
 

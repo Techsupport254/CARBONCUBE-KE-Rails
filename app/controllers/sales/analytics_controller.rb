@@ -98,6 +98,19 @@ class Sales::AnalyticsController < ApplicationController
     # OPTIMIZATION: Get contact interactions with timestamps (limited to recent)
     contact_interactions_with_timestamps = all_contact_interactions.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     
+    # Get callback request events (excluding internal users, deleted buyers, and seller own clicks)
+    all_callback_requests = ClickEvent
+      .excluding_internal_users
+      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
+      .where(event_type: 'Callback-Request')
+      .left_joins(:buyer)
+      .joins(:ad) # Use inner join to exclude clicks without ads
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
+      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
+    
+    # OPTIMIZATION: Get callback requests with timestamps (limited to recent)
+    callback_requests_with_timestamps = all_callback_requests.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    
     # Analytics data prepared successfully
     
     # Get current quarter targets
@@ -154,6 +167,7 @@ class Sales::AnalyticsController < ApplicationController
       buyer_reveal_clicks_with_timestamps: buyer_reveal_clicks_with_timestamps,
       reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
       contact_interactions_with_timestamps: contact_interactions_with_timestamps,
+      callback_requests_with_timestamps: callback_requests_with_timestamps,
       
       # OPTIMIZATION: Pre-calculated totals for initial display (all time)
       total_sellers: all_sellers.count,
@@ -167,7 +181,8 @@ class Sales::AnalyticsController < ApplicationController
       buyer_ad_clicks: all_ad_clicks.count, # Same as total_ads_clicks - both use the same query
       buyer_reveal_clicks: all_reveal_clicks.count, # Same as total_reveal_clicks - both use the same query
       total_reveal_clicks: all_reveal_clicks.count,
-      total_contact_interactions: all_contact_interactions.count
+      total_contact_interactions: all_contact_interactions.count,
+      total_callback_requests: all_callback_requests.count
     }
     
     render json: response_data
@@ -374,6 +389,122 @@ class Sales::AnalyticsController < ApplicationController
     end
     
     render json: { users: users_data, type: user_type, count: users_data.count }
+  end
+
+  # GET /sales/analytics/ads/:id/stats
+  # Get statistics for a specific ad
+  def ad_stats
+    ad_id = params[:id]
+    
+    begin
+      ad = Ad.find_by(id: ad_id)
+      unless ad
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
+      
+      # Get device_hash from params or headers if available
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      
+      # Get click event statistics
+      click_stats = ClickEvent
+        .excluding_internal_users
+        .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
+        .where(ad_id: ad_id)
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+        .group(:event_type)
+        .count
+      
+      # Get contact interaction stats
+      contact_interaction_events = ClickEvent
+        .excluding_internal_users
+        .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
+        .where(ad_id: ad_id, event_type: 'Reveal-Seller-Details')
+        .where("metadata->>'action' = ?", 'seller_contact_interaction')
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+      
+      copy_clicks = contact_interaction_events
+        .where("metadata->>'action_type' IN ('copy_phone', 'copy_email')")
+        .count
+      
+      call_clicks = contact_interaction_events
+        .where("metadata->>'action_type' = ?", 'call_phone')
+        .count
+      
+      whatsapp_clicks = contact_interaction_events
+        .where("metadata->>'action_type' = ?", 'whatsapp')
+        .count
+      
+      location_clicks = contact_interaction_events
+        .where("metadata->>'action_type' = ?", 'view_location')
+        .count
+      
+      # Get wishlist count
+      wishlist_count = WishList
+        .joins(:ad)
+        .where(ads: { id: ad_id, deleted: false })
+        .count
+      
+      # Get guest vs authenticated reveals
+      reveal_clicks = ClickEvent
+        .excluding_internal_users
+        .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
+        .where(ad_id: ad_id, event_type: 'Reveal-Seller-Details')
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+      
+      guest_reveals = reveal_clicks.where(buyer_id: nil).count
+      authenticated_reveals = reveal_clicks.where.not(buyer_id: nil).count
+      
+      # Get conversions (guest users who revealed and then signed up)
+      conversions = reveal_clicks
+        .where(buyer_id: nil)
+        .where("metadata->>'converted_from_guest' = ?", 'true')
+        .count
+      
+      # Get callback request stats
+      callback_requests = ClickEvent
+        .excluding_internal_users
+        .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
+        .where(ad_id: ad_id, event_type: 'Callback-Request')
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+      
+      callback_request_count = callback_requests.count
+      
+      # Get callback requests from alternative sellers
+      alternative_callback_requests = callback_requests
+        .where("metadata->>'is_alternative_seller' = ?", 'true')
+        .count
+      
+      stats = {
+        ad_id: ad.id,
+        ad_title: ad.title,
+        ad_clicks: click_stats['Ad-Click'] || 0,
+        reveal_clicks: click_stats['Reveal-Seller-Details'] || 0,
+        guest_reveals: guest_reveals,
+        authenticated_reveals: authenticated_reveals,
+        conversions: conversions,
+        wishlist_count: wishlist_count,
+        callback_requests: callback_request_count,
+        alternative_callback_requests: alternative_callback_requests,
+        contact_interactions: {
+          copy_clicks: copy_clicks,
+          call_clicks: call_clicks,
+          whatsapp_clicks: whatsapp_clicks,
+          location_clicks: location_clicks,
+          total: copy_clicks + call_clicks + whatsapp_clicks + location_clicks
+        }
+      }
+      
+      render json: stats
+    rescue => e
+      Rails.logger.error "Ad stats error: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Internal server error', details: e.message }, status: 500
+    end
   end
 
   private
