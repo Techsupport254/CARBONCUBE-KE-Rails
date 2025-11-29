@@ -258,8 +258,7 @@ class OauthAccountLinkingService
       age_group_id: calculate_age_group,
       gender: extract_gender,
       profile_picture: profile_picture, # Set fixed profile picture from OAuth
-      # Don't auto-set enterprise_name - let user set it themselves
-      # enterprise_name: @name || @email.split('@').first
+      # Don't auto-set enterprise_name - let user set it themselves in the completion modal
     }
     
     # Don't auto-set location data - let user set them themselves
@@ -371,6 +370,7 @@ class OauthAccountLinkingService
     
     username
   end
+
 
   def generate_placeholder_phone
     # Generate a placeholder phone number that won't conflict

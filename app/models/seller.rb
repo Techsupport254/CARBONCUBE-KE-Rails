@@ -40,7 +40,7 @@ class Seller < ApplicationRecord
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
             allow_blank: true
   validates :email, presence: true, uniqueness: { case_sensitive: false }
-  validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }
+  validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }, unless: :oauth_user?
   validates :location, presence: true, unless: :oauth_user?
   validates :business_registration_number, length: { minimum: 1 }, allow_blank: true, uniqueness: true, allow_nil: true
   validates :username, uniqueness: true, allow_blank: true,
