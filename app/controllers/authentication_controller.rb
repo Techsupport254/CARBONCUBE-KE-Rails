@@ -1194,7 +1194,24 @@ class AuthenticationController < ApplicationController
           end
         end
         
+        # Check if business name (enterprise_name) already exists for another seller
+        # Only check for sellers since enterprise_name is seller-specific
+        if user_type == 'seller' && form_data[:enterprise_name].present?
+          # Check case-insensitively (database constraint is on lower(enterprise_name))
+          existing_seller_with_name = Seller.where("LOWER(enterprise_name) = ?", form_data[:enterprise_name].downcase.strip).first
+          if existing_seller_with_name
+            render json: {
+              success: false,
+              error: "Business name '#{form_data[:enterprise_name]}' is already registered to another account. Please use a different business name."
+            }, status: :unprocessable_entity
+            return
+          end
+        end
+        
         # Create new user with the provided data
+        # Track if phone number is being added (for new users, this is always "just added" if present)
+        phone_being_added = form_data[:phone_number].present?
+        
         user_attributes = {}
         
         # Common attributes for both buyer and seller
@@ -1235,6 +1252,10 @@ class AuthenticationController < ApplicationController
         # Create the user as OAuth user (no password required)
         user_attributes[:provider] = form_data[:provider] || 'oauth' # Mark as OAuth user
         user_attributes[:uid] = form_data[:uid] || SecureRandom.hex(16) # Use provided UID or generate one
+        # Set phone_provided_by_oauth: If we're in complete_registration, phone was NOT provided by OAuth
+        # (because if it was, user wouldn't need to complete registration)
+        # So phone_provided_by_oauth should always be false for users created via complete_registration
+        user_attributes[:phone_provided_by_oauth] = false
         
         # Create the appropriate user type
         user = case user_type
@@ -1304,7 +1325,25 @@ class AuthenticationController < ApplicationController
           end
         end
         
+        # Check if business name (enterprise_name) already exists for another seller (excluding current user)
+        # Only check for sellers since enterprise_name is seller-specific
+        if user_type == 'seller' && form_data[:enterprise_name].present?
+          # Check case-insensitively (database constraint is on lower(enterprise_name))
+          existing_seller_with_name = Seller.where("LOWER(enterprise_name) = ?", form_data[:enterprise_name].downcase.strip).where.not(id: user.id).first
+          if existing_seller_with_name
+            render json: {
+              success: false,
+              error: "Business name '#{form_data[:enterprise_name]}' is already registered to another account. Please use a different business name."
+            }, status: :unprocessable_entity
+            return
+          end
+        end
+        
         # Update existing user with the provided data
+        # Track if phone number is being added (didn't exist before)
+        phone_number_before = user.phone_number
+        phone_being_added = form_data[:phone_number].present? && phone_number_before.blank?
+        
         user_attributes = {}
         
         # Common attributes for both buyer and seller
@@ -1401,12 +1440,49 @@ class AuthenticationController < ApplicationController
         # Don't fail the registration if email fails
       end
       
-      # Send welcome WhatsApp message (non-blocking)
-      begin
-        WhatsAppNotificationService.send_welcome_message(user)
-      rescue => e
-        Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-        # Don't fail registration if WhatsApp message fails
+      # Reload user to get the latest phone_number after update
+      user.reload
+      
+      # Send welcome WhatsApp message only in these scenarios:
+      # 1. Google OAuth WITHOUT phone: phone_provided_by_oauth = false, phone was just added
+      # 2. Manual registration WITHOUT phone: phone_provided_by_oauth = false, phone was just added
+      # 
+      # Do NOT send if:
+      # - Google OAuth WITH phone: phone_provided_by_oauth = true (already sent during OAuth)
+      # - Manual registration WITH phone: phone already existed (already sent during registration)
+      # - Phone was not just added in this request
+      
+      should_send_welcome = false
+      
+      if user.phone_number.present? && !user.phone_provided_by_oauth
+        # Check if phone was just added in this request
+        # For new users created in complete_registration, phone is always "just added" if present
+        # For existing users, check if phone_being_added flag is set
+        phone_was_just_added = defined?(phone_being_added) ? phone_being_added : true
+        
+        if phone_was_just_added
+          should_send_welcome = true
+          Rails.logger.info "📱 Will send welcome message - phone was just added, phone_provided_by_oauth: false"
+        else
+          Rails.logger.info "📱 Skipping welcome message - phone already existed before this update"
+        end
+      else
+        if user.phone_provided_by_oauth
+          Rails.logger.info "📱 Skipping welcome message - phone was provided by OAuth (already sent during OAuth)"
+        elsif !user.phone_number.present?
+          Rails.logger.info "📱 Skipping welcome message - no phone number present"
+        end
+      end
+      
+      if should_send_welcome
+        Rails.logger.info "📱 Sending welcome WhatsApp message - phone number: #{user.phone_number}"
+        begin
+          WhatsAppNotificationService.send_welcome_message(user)
+        rescue => e
+          Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
+          Rails.logger.error e.backtrace.first(5).join("\n")
+          # Don't fail registration if WhatsApp message fails
+        end
       end
       
       # Prepare user response data

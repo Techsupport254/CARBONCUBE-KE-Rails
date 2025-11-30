@@ -135,7 +135,8 @@ class EmailController < ApplicationController
     end
     
     # Check if business name exists in sellers (enterprise_name)
-    seller_exists = Seller.exists?(enterprise_name: business_name)
+    # Check case-insensitively since database constraint is on lower(enterprise_name)
+    seller_exists = Seller.where("LOWER(enterprise_name) = ?", business_name.downcase).exists?
     
     render json: { 
       exists: seller_exists,

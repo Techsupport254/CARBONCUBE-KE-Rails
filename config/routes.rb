@@ -600,8 +600,50 @@ Rails.application.routes.draw do
 
       get 'identify', to: 'buyers#identify'
     end
+
+    # Sales namespace under /api
+    namespace :sales do
+      resources :analytics, only: [:index] do
+        collection do
+          get :recent_users
+          get :devices
+          get :sources
+          get :categories
+        end
+      end
+      # Direct route for ad stats
+      get 'analytics/ads/:id/stats', to: 'analytics#ad_stats'
+      resources :seller_rankings, only: [:index] do
+        collection do
+          get :by_metric
+        end
+      end
+      resource :profile, only: [:show, :update] do
+        collection do
+          post 'change-password'
+        end
+      end
+      resources :click_events, only: [] do
+        collection do
+          get :analytics
+          get :best_ads
+        end
+      end
+      resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
+        collection do
+          get :current
+        end
+      end
+      resources :reviews, only: [:index, :show]
+      resources :conversations, only: [:index, :show, :create] do
+        resources :messages, only: [:index, :create]
+        get :unread_count, on: :collection
+        get :unread_counts, on: :collection
+      end
+      resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
+    end
   end
-  
+
   # Original routes without /api prefix for backward compatibility
   namespace :buyer, defaults:{ format: :json}, path: 'buyer' do
     post 'signup', to: 'buyers#create'
@@ -684,19 +726,6 @@ Rails.application.routes.draw do
   end
 
 
-#for sales
-    namespace :sales do
-      resources :seller_rankings, only: [:index] do
-        collection do
-          get :by_metric
-        end
-      end
-      resource :profile, only: [:show, :update] do
-        collection do
-          post 'change-password'
-        end
-      end
-    end
 
     # Marketing namespace for marketing-specific functionality
     namespace :marketing do
@@ -740,8 +769,47 @@ Rails.application.routes.draw do
       end
     end
 
-
-
+    # Sales namespace for backward compatibility (without /api prefix)
+    namespace :sales do
+      resources :analytics, only: [:index] do
+        collection do
+          get :recent_users
+          get :devices
+          get :sources
+          get :categories
+        end
+      end
+      # Direct route for ad stats
+      get 'analytics/ads/:id/stats', to: 'analytics#ad_stats'
+      resources :seller_rankings, only: [:index] do
+        collection do
+          get :by_metric
+        end
+      end
+      resource :profile, only: [:show, :update] do
+        collection do
+          post 'change-password'
+        end
+      end
+      resources :click_events, only: [] do
+        collection do
+          get :analytics
+          get :best_ads
+        end
+      end
+      resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
+        collection do
+          get :current
+        end
+      end
+      resources :reviews, only: [:index, :show]
+      resources :conversations, only: [:index, :show, :create] do
+        resources :messages, only: [:index, :create]
+        get :unread_count, on: :collection
+        get :unread_counts, on: :collection
+      end
+      resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
+    end
 
   mount ActionCable.server => '/cable'
 

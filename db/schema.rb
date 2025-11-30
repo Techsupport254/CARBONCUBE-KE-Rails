@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_11_30_095809) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_30_164148) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -167,6 +167,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_30_095809) do
     t.text "description"
     t.datetime "last_active_at"
     t.string "secondary_phone_number", limit: 10
+    t.boolean "phone_provided_by_oauth", default: false
     t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"
@@ -784,6 +785,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_11_30_095809) do
     t.string "oauth_expires_at"
     t.boolean "flagged", default: false, null: false
     t.string "secondary_phone_number", limit: 10
+    t.boolean "phone_provided_by_oauth", default: false
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
