@@ -129,6 +129,8 @@ class ConversationsChannel < ApplicationCable::Channel
       Admin.find_by(id: user_id)
     when 'sales', 'salesuser'
       SalesUser.find_by(id: user_id)
+    when 'marketing'
+      MarketingUser.find_by(id: user_id)
     else
       nil
     end
@@ -145,8 +147,8 @@ class ConversationsChannel < ApplicationCable::Channel
       conversation.buyer_id == user.id
     when 'seller'
       conversation.seller_id == user.id || conversation.inquirer_seller_id == user.id
-    when 'admin', 'sales'
-      true # Admins and sales users can access all conversations
+    when 'admin', 'sales', 'marketing'
+      true # Admins, sales, and marketing users can access all conversations
     when 'rider'
       false # Only buyers, sellers, and admins have conversation access
     else

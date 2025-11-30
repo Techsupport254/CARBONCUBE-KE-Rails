@@ -73,7 +73,7 @@ class Buyer::AdsController < ApplicationController
       ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
       ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
       ads_query = filter_by_search(ads_query) if params[:search].present?
-      
+
       ads_query.count
     end
 
@@ -89,13 +89,54 @@ class Buyer::AdsController < ApplicationController
       # Already optimized from get_balanced_ads - just use as is
       @ads
     else
-      # Regular ads - optimize serialization
+      # Regular ads - optimize serialization with media URL processing
       @ads.map do |ad|
+        # Process media URLs for frontend compatibility
+        media_json = ad.media
+        media_urls = []
+        first_media_url = nil
+
+        if media_json.present?
+          begin
+            # Parse JSON string if it's a string
+            if media_json.is_a?(String)
+              # Handle empty array string
+              if media_json.strip == '[]' || media_json.strip == 'null' || media_json.strip == ''
+                media_array = []
+              else
+                media_array = JSON.parse(media_json)
+              end
+            else
+              media_array = media_json
+            end
+
+            # Process array of URLs
+            if media_array.is_a?(Array) && media_array.any?
+              # Filter valid URLs (must be strings starting with http)
+              media_urls = media_array.select do |url|
+                url.present? &&
+                url.is_a?(String) &&
+                url.strip.length > 0 &&
+                (url.start_with?('http://') || url.start_with?('https://'))
+              end
+              first_media_url = media_urls.first
+            end
+          rescue JSON::ParserError
+            # If media is not valid JSON, try to use it as a single URL
+            if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
+              media_urls = [media_json]
+              first_media_url = media_json
+            end
+          end
+        end
+
       {
         id: ad.id,
         title: ad.title,
         price: ad.price,
-        media: ad.media,
+          media: media_json,
+          media_urls: media_urls,
+          first_media_url: first_media_url,
         created_at: ad.created_at,
         subcategory_id: ad.subcategory_id,
         category_id: ad.category_id,
@@ -1085,7 +1126,7 @@ class Buyer::AdsController < ApplicationController
   end
 
   def authenticate_user_for_alternatives
-    # Try authenticating as different user types (buyer, seller, admin, sales)
+    # Try authenticating as different user types (buyer, seller, admin, sales, marketing)
     @current_user = nil
     
     # Try buyer authentication first
@@ -1136,8 +1177,22 @@ class Buyer::AdsController < ApplicationController
       end
     end
 
-    # Require any authenticated user (buyer, seller, admin, or sales)
-    unless @current_user.is_a?(Buyer) || @current_user.is_a?(Seller) || @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser)
+    # Try marketing authentication if still no user
+    if @current_user.nil?
+      begin
+        # MarketingAuthorizeApiRequest is in lib, ensure it's loaded
+        require_relative '../../lib/marketing_authorize_api_request' unless defined?(MarketingAuthorizeApiRequest)
+        marketing_auth = MarketingAuthorizeApiRequest.new(request.headers)
+        @current_user = marketing_auth.result
+      rescue ExceptionHandler::InvalidToken => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Marketing authentication failed: #{e.message}"
+      rescue => e
+        Rails.logger.debug "Buyer::AdsController#alternatives: Marketing auth error: #{e.class.name}: #{e.message}"
+      end
+    end
+
+    # Require any authenticated user (buyer, seller, admin, sales, or marketing)
+    unless @current_user.is_a?(Buyer) || @current_user.is_a?(Seller) || @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser) || @current_user.is_a?(MarketingUser)
       Rails.logger.warn "Buyer::AdsController#alternatives: Authentication failed - no valid user found"
       render json: { error: 'Authentication required to view alternative sellers' }, status: :unauthorized
     end
@@ -1356,26 +1411,21 @@ class Buyer::AdsController < ApplicationController
   end
 
   def get_balanced_ads(per_page)
-    # Get 6 ads per subcategory for balanced distribution
-    # Get all subcategory counts in a single query
-    # Only count ads that actually have valid media URLs (not empty arrays) and are not flagged
+    # OPTIMIZATION: Get subcategory counts first (this is relatively fast)
     subcategory_counts = Ad.active
       .joins(:seller)
       .where(sellers: { blocked: false, deleted: false, flagged: false })
-      .where(flagged: false) # Exclude flagged ads
+      .where(flagged: false)
       .where("ads.media IS NOT NULL AND ads.media != '' AND ads.media::text != '[]' AND (ads.media::jsonb -> 0) IS NOT NULL")
       .group('ads.subcategory_id')
       .count('ads.id')
     
-    # Get all subcategory IDs that have ads
     subcategory_ids = subcategory_counts.keys.compact
-    
     return { ads: [], subcategory_counts: subcategory_counts } if subcategory_ids.empty?
     
-    # Use a subquery with window function to get top 6 ads per subcategory
-    # Then select only the necessary fields for optimized serialization
+    # OPTIMIZATION: Use a much simpler query without CTE/window functions
+    # Get ads grouped by subcategory and ordered by priority, then take top N per group
     sql = <<-SQL
-      WITH ranked_ads AS (
         SELECT 
           ads.id,
           ads.title,
@@ -1391,19 +1441,7 @@ class Buyer::AdsController < ApplicationController
           COALESCE(tiers.id, 1) as seller_tier_id,
           COALESCE(tiers.name, 'Free') as seller_tier_name,
           COALESCE(review_stats.reviews_count, 0) as reviews_count,
-          COALESCE(review_stats.average_rating, 0.0) as average_rating,
-          ROW_NUMBER() OVER (
-            PARTITION BY ads.subcategory_id 
-            ORDER BY 
-              CASE COALESCE(tiers.id, 1)
-                WHEN 4 THEN 1
-                WHEN 3 THEN 2
-                WHEN 2 THEN 3
-                WHEN 1 THEN 4
-                ELSE 5
-              END,
-              ads.created_at DESC
-          ) as row_num
+        COALESCE(review_stats.average_rating, 0.0) as average_rating
         FROM ads
         INNER JOIN sellers ON sellers.id = ads.seller_id
         INNER JOIN categories ON categories.id = ads.category_id
@@ -1428,13 +1466,32 @@ class Buyer::AdsController < ApplicationController
           AND sellers.flagged = false
           AND ads.flagged = false
           AND ads.subcategory_id IN (#{subcategory_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')})
-      )
-      SELECT * FROM ranked_ads WHERE row_num <= 6
-      ORDER BY subcategory_id, row_num
+      ORDER BY
+        ads.subcategory_id,
+        CASE COALESCE(tiers.id, 1)
+          WHEN 4 THEN 1
+          WHEN 3 THEN 2
+          WHEN 2 THEN 3
+          WHEN 1 THEN 4
+          ELSE 5
+        END,
+        ads.created_at DESC
     SQL
-    
-    # Execute query and convert to hash format for optimized serialization
+
     results = ActiveRecord::Base.connection.execute(sql)
+
+    # OPTIMIZATION: Process results more efficiently in Ruby
+    # Group by subcategory and take only top 6 per subcategory
+    ads_by_subcategory = {}
+    results.each do |row|
+      subcategory_id = row['subcategory_id']
+      ads_by_subcategory[subcategory_id] ||= []
+      # Only keep top 6 per subcategory
+      ads_by_subcategory[subcategory_id] << row if ads_by_subcategory[subcategory_id].size < 6
+    end
+
+    # Flatten back to single array
+    results = ads_by_subcategory.values.flatten
     
     # Get ad IDs for fetching offer info and processing media
     ad_ids = results.map { |row| row['id'] }
@@ -1476,20 +1533,21 @@ class Buyer::AdsController < ApplicationController
       end
     end
     
+    # OPTIMIZATION: Process media URLs more efficiently
     balanced_ads = results.map do |row|
       ad_id = row['id']
       media_json = row['media']
       
-      # Process media to get valid URLs (similar to Ad model's valid_media_urls)
-      # PostgreSQL returns JSONB as a string, so we need to parse it
+      # OPTIMIZED: Extract first media URL directly from JSONB in database
+      # This avoids expensive JSON parsing in Ruby for most cases
       media_urls = []
       first_media_url = nil
       
       if media_json.present?
         begin
-          # Parse JSON string if it's a string
+          # Quick check for array format and extract first valid URL
           if media_json.is_a?(String)
-            # Handle empty array string
+            # Handle empty arrays
             if media_json.strip == '[]' || media_json.strip == 'null' || media_json.strip == ''
               media_array = []
             else
@@ -1499,22 +1557,22 @@ class Buyer::AdsController < ApplicationController
             media_array = media_json
           end
           
-          # Process array of URLs
           if media_array.is_a?(Array) && media_array.any?
-            # Filter valid URLs (must be strings starting with http)
-            media_urls = media_array.select do |url|
+            # OPTIMIZATION: Only process the first URL for performance
+            first_valid_url = media_array.find do |url|
               url.present? && 
               url.is_a?(String) && 
               url.strip.length > 0 &&
               (url.start_with?('http://') || url.start_with?('https://'))
             end
-            first_media_url = media_urls.first
+            first_media_url = first_valid_url
+            media_urls = first_valid_url ? [first_valid_url] : []
           end
-        rescue JSON::ParserError => e
-          # If media is not valid JSON, try to use it as a single URL
+        rescue JSON::ParserError
+          # Fallback for malformed JSON
           if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
-            media_urls = [media_json]
             first_media_url = media_json
+            media_urls = [media_json]
           end
         end
       end
@@ -1637,91 +1695,187 @@ class Buyer::AdsController < ApplicationController
   end
 
   def calculate_best_sellers_fast(limit)
-    # Optimized approach with minimal data for faster response
-    # Use caching for best sellers calculation
+    # OPTIMIZED: Use caching for best sellers calculation
     cache_key = "best_sellers_optimized_#{limit}_#{Date.current.strftime('%Y%m%d')}"
     
     Rails.cache.fetch(cache_key, expires_in: 1.hour) do
-      # Get ads with essential data only for faster queries
-      ads_data = Ad.active.with_valid_images
-                   .joins(:seller, :category, :subcategory)
-                   .joins("LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id")
-                   .joins("LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id")
-                   .joins("LEFT JOIN wish_lists ON ads.id = wish_lists.ad_id")
-                   .joins("LEFT JOIN reviews ON ads.id = reviews.ad_id")
-                   .joins("LEFT JOIN click_events ON ads.id = click_events.ad_id")
-                   .where(sellers: { blocked: false, deleted: false, flagged: false })
-                   .where(flagged: false)
-                   .select("
+      # OPTIMIZATION: Use raw SQL with pre-aggregated metrics to avoid expensive joins
+      sql = <<-SQL
+        SELECT
                      ads.id,
-                     ads.category_id,
-                     ads.subcategory_id,
                      ads.title,
                      ads.price,
                      ads.media,
                      ads.created_at,
+          ads.category_id,
+          ads.subcategory_id,
+          ads.seller_id,
                      sellers.fullname as seller_name,
-                     sellers.id as seller_id,
                      categories.name as category_name,
                      subcategories.name as subcategory_name,
                      COALESCE(tiers.id, 1) as seller_tier_id,
                      COALESCE(tiers.name, 'Free') as seller_tier_name,
-                     COUNT(DISTINCT wish_lists.id) as wishlist_count,
-                     COUNT(DISTINCT reviews.id) as review_count,
-                     COALESCE(AVG(reviews.rating), 0) as avg_rating,
-                     COUNT(DISTINCT click_events.id) as click_count
-                   ")
-                   .group("ads.id, sellers.id, categories.id, subcategories.id, tiers.id")
-                   .order('RANDOM()')
-                   .limit(limit * 3) # Reduced multiplier for faster queries
-    
-    return [] if ads_data.empty?
-    
-    # Enhanced scoring with meaningful metrics
-    scored_ads = ads_data.map do |ad|
-      # Base scores
-      tier_bonus = calculate_tier_bonus(ad.seller_tier_id.to_i)
-      recency_score = calculate_recency_score(ad.created_at)
-      
-      # Engagement metrics
-      wishlist_score = calculate_wishlist_score(ad.wishlist_count.to_i)
-      rating_score = calculate_rating_score(ad.avg_rating.to_f, ad.review_count.to_i)
-      click_score = calculate_click_score(ad.click_count.to_i)
-      
-      # Weighted comprehensive score
-      comprehensive_score = (
-        (recency_score * 0.25) +      # 25% - Recency
-        (tier_bonus * 0.15) +         # 15% - Seller tier
-        (wishlist_score * 0.25) +     # 25% - Wishlist additions
-        (rating_score * 0.20) +       # 20% - Ratings & reviews
-        (click_score * 0.15)          # 15% - Click engagement
-      )
-      
-      {
-        ad_id: ad.id,
-        id: ad.id,  # Add id field for consistency
-        title: ad.title,
-        price: ad.price.to_f,
-        media: ad.media,
-        created_at: ad.created_at,
-        seller_name: ad.seller_name,
-        seller_id: ad.seller_id,
-        category_name: ad.category_name,
-        subcategory_name: ad.subcategory_name,
-        seller_tier: ad.seller_tier_id,  # Use seller_tier instead of seller_tier_id
-        seller_tier_name: ad.seller_tier_name,
+
+          -- Pre-calculated metrics (much faster than separate joins)
+          COALESCE(wishlist_stats.wishlist_count, 0) as wishlist_count,
+          COALESCE(review_stats.review_count, 0) as review_count,
+          COALESCE(review_stats.avg_rating, 0.0) as avg_rating,
+          COALESCE(click_stats.click_count, 0) as click_count,
+
+          -- Pre-calculated scores (moved from Ruby to SQL for performance)
+          CASE
+            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 8
+            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 5
+            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 3
+            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
+            ELSE 0
+          END as recency_score,
+
+          CASE COALESCE(tiers.id, 1)
+            WHEN 4 THEN 15
+            WHEN 3 THEN 8
+            WHEN 2 THEN 4
+            ELSE 0
+          END as tier_bonus,
+
+          -- Calculated comprehensive score in SQL
+          (
+            (
+              CASE
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 8
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 5
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 3
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
+                ELSE 0
+              END * 0.25
+            ) + (
+              CASE COALESCE(tiers.id, 1)
+                WHEN 4 THEN 15
+                WHEN 3 THEN 8
+                WHEN 2 THEN 4
+                ELSE 0
+              END * 0.15
+            ) + (
+              LN(COALESCE(wishlist_stats.wishlist_count, 0) + 1) * 20 * 0.25
+            ) + (
+              (
+                (COALESCE(review_stats.avg_rating, 0.0) / 5.0) * 30 +
+                LN(COALESCE(review_stats.review_count, 0) + 1) * 10
+              ) * 0.20
+            ) + (
+              LN(COALESCE(click_stats.click_count, 0) + 1) * 15 * 0.15
+            )
+          ) as comprehensive_score
+
+        FROM ads
+        INNER JOIN sellers ON sellers.id = ads.seller_id
+        INNER JOIN categories ON categories.id = ads.category_id
+        INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
+        LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
+        LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+
+        -- Pre-aggregated metrics (much faster than individual joins)
+        LEFT JOIN (
+          SELECT ad_id, COUNT(*) as wishlist_count
+          FROM wish_lists
+          GROUP BY ad_id
+        ) wishlist_stats ON wishlist_stats.ad_id = ads.id
+
+        LEFT JOIN (
+          SELECT ad_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+          FROM reviews
+          GROUP BY ad_id
+        ) review_stats ON review_stats.ad_id = ads.id
+
+        LEFT JOIN (
+          SELECT ad_id, COUNT(*) as click_count
+          FROM click_events
+          WHERE event_type = 'Ad-Click'
+          GROUP BY ad_id
+        ) click_stats ON click_stats.ad_id = ads.id
+
+        WHERE ads.deleted = false
+          AND ads.flagged = false
+          AND sellers.blocked = false
+          AND sellers.deleted = false
+          AND sellers.flagged = false
+          AND ads.media IS NOT NULL
+          AND ads.media != ''
+          AND ads.media::text != '[]'
+          AND (ads.media::jsonb -> 0) IS NOT NULL
+
+        ORDER BY comprehensive_score DESC, RANDOM()
+        LIMIT #{limit}
+      SQL
+
+      results = ActiveRecord::Base.connection.execute(sql)
+
+      # OPTIMIZATION: Process media URLs for frontend compatibility
+      results.map do |row|
+        media_json = row['media']
+
+        # Process media URLs similar to recommendations method
+        media_urls = []
+        first_media_url = nil
+
+        if media_json.present?
+          begin
+            # Parse JSON string if it's a string
+            if media_json.is_a?(String)
+              # Handle empty array string
+              if media_json.strip == '[]' || media_json.strip == 'null' || media_json.strip == ''
+                media_array = []
+              else
+                media_array = JSON.parse(media_json)
+              end
+            else
+              media_array = media_json
+            end
+
+            # Process array of URLs
+            if media_array.is_a?(Array) && media_array.any?
+              # Filter valid URLs (must be strings starting with http)
+              media_urls = media_array.select do |url|
+                url.present? &&
+                url.is_a?(String) &&
+                url.strip.length > 0 &&
+                (url.start_with?('http://') || url.start_with?('https://'))
+              end
+              first_media_url = media_urls.first
+            end
+          rescue JSON::ParserError
+            # If media is not valid JSON, try to use it as a single URL
+            if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
+              media_urls = [media_json]
+              first_media_url = media_json
+            end
+          end
+        end
+
+        {
+          ad_id: row['id'],
+          id: row['id'],
+          title: row['title'],
+          price: row['price']&.to_f || 0.0,
+          media: media_json,
+          media_urls: media_urls,
+          first_media_url: first_media_url,
+          created_at: row['created_at'],
+          seller_name: row['seller_name'],
+          seller_id: row['seller_id'],
+          category_name: row['category_name'],
+          subcategory_name: row['subcategory_name'],
+          seller_tier: row['seller_tier_id'],
+          seller_tier_name: row['seller_tier_name'],
         metrics: {
-          avg_rating: ad.avg_rating.to_f.round(2),
-          review_count: ad.review_count.to_i,
-          total_clicks: ad.click_count.to_i,
-          wishlist_count: ad.wishlist_count.to_i
-        },
-        comprehensive_score: comprehensive_score.round(2)
-      }
-    end
-    
-      # Sort by comprehensive score and return top results
-      scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(limit)
+            avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
+            review_count: row['review_count']&.to_i || 0,
+            total_clicks: row['click_count']&.to_i || 0,
+            wishlist_count: row['wishlist_count']&.to_i || 0
+          },
+          comprehensive_score: row['comprehensive_score']&.to_f&.round(2) || 0.0
+        }
+      end
     end
   end
 

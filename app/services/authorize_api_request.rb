@@ -48,12 +48,15 @@ class AuthorizeApiRequest
       Admin.find_by(id: user_id)
     when 'sales'
       SalesUser.find_by(id: user_id)
+    when 'marketing'
+      MarketingUser.find_by(id: user_id)
     else
       # Fallback: try all models
       Buyer.find_by(id: user_id) ||
       Seller.find_by(id: user_id) ||
       Admin.find_by(id: user_id) ||
-      SalesUser.find_by(id: user_id)
+      SalesUser.find_by(id: user_id) ||
+      MarketingUser.find_by(id: user_id)
     end
   end
 
@@ -67,12 +70,15 @@ class AuthorizeApiRequest
       Admin.find_by(email: user_email)
     when 'sales'
       SalesUser.find_by(email: user_email)
+    when 'marketing'
+      MarketingUser.find_by(email: user_email)
     else
       # Fallback: try all models
       Buyer.find_by(email: user_email) ||
       Seller.find_by(email: user_email) ||
       Admin.find_by(email: user_email) ||
-      SalesUser.find_by(email: user_email)
+      SalesUser.find_by(email: user_email) ||
+      MarketingUser.find_by(email: user_email)
     end
   end
 

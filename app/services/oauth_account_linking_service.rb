@@ -97,14 +97,16 @@ class OauthAccountLinkingService
     Buyer.find_by(email: email) ||
     Seller.find_by(email: email) ||
     Admin.find_by(email: email) ||
-    SalesUser.find_by(email: email)
+    SalesUser.find_by(email: email) ||
+    MarketingUser.find_by(email: email)
   end
 
   def find_user_by_oauth(provider, uid)
     Buyer.find_by(provider: provider, uid: uid) ||
     Seller.find_by(provider: provider, uid: uid) ||
     Admin.find_by(provider: provider, uid: uid) ||
-    SalesUser.find_by(provider: provider, uid: uid)
+    SalesUser.find_by(provider: provider, uid: uid) ||
+    MarketingUser.find_by(provider: provider, uid: uid)
   end
 
   def determine_user_role(user)
@@ -113,6 +115,8 @@ class OauthAccountLinkingService
       'Admin'
     when 'SalesUser'
       'Sales'
+    when 'MarketingUser'
+      'Marketing'
     when 'Seller'
       'Seller'
     when 'Buyer'
@@ -150,6 +154,8 @@ class OauthAccountLinkingService
       create_admin
     elsif normalized_role == 'sales_user' || normalized_role == 'salesuser'
       create_sales_user
+    elsif normalized_role == 'marketing_user' || normalized_role == 'marketinguser' || normalized_role == 'marketing'
+      create_marketing_user
     else
       create_buyer # Default to buyer
     end
@@ -353,6 +359,31 @@ class OauthAccountLinkingService
     sales_user
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth sales user: #{e.message}"
+    Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
+    nil
+  end
+
+  def create_marketing_user
+    random_password = SecureRandom.hex(16)
+    
+    marketing_user = MarketingUser.create!(
+      fullname: @name || @email.split('@').first,
+      email: @email,
+      provider: @provider,
+      uid: @uid,
+      oauth_token: @auth_hash.dig(:credentials, :token),
+      oauth_refresh_token: @auth_hash.dig(:credentials, :refresh_token),
+      oauth_expires_at: @auth_hash.dig(:credentials, :expires_at),
+      password: random_password, # Random password for OAuth users
+      password_confirmation: random_password
+    )
+    
+    # Auto-verify email for Google OAuth users (email is already verified by Google)
+    mark_email_as_verified(@email)
+    
+    marketing_user
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "Failed to create OAuth marketing user: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
     nil
   end

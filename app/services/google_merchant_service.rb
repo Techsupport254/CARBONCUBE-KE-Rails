@@ -302,9 +302,10 @@ class GoogleMerchantService
       errors << "Valid product images are required"
     end
     
-    # Brand validation (optional but recommended)
+    # Brand validation (optional - we'll skip invalid brands rather than send "Unknown")
+    # Only warn if brand is completely missing, not if it's invalid (we'll handle that in normalization)
     if ad.brand.blank?
-      errors << "Brand is recommended for better visibility"
+      # This is just a warning, not an error - we'll skip the brand field if it's invalid
     end
     
     # Category validation
@@ -344,23 +345,34 @@ class GoogleMerchantService
     
     # Build product data for Google Merchant API
   def self.build_product_data(ad)
+    # Get additional images (up to 10 additional images allowed by Google)
+    additional_images = ad.valid_media_urls[1..10] || []
+    
+    product_attrs = {
+      title: ad.title,
+      description: ad.description,
+      link: ad.product_url, # Use proper slug-based URL
+      image_link: ad.first_valid_media_url,
+      availability: normalize_availability(ad.availability_status),
+      price: {
+        value: ad.price.to_f,
+        currency: "KES"
+      },
+      condition: normalize_condition(ad.condition)
+    }
+    
+    # Only include brand if it's valid (not blank, not "Unknown", not "Generic")
+    normalized_brand = normalize_brand(ad.brand, ad.title)
+    product_attrs[:brand] = normalized_brand if normalized_brand.present? && !["Unknown", "Generic"].include?(normalized_brand)
+    
+    # Add additional images if available
+    product_attrs[:additional_image_link] = additional_images if additional_images.any?
+    
     {
       offerId: "carbon_cube_#{ad.id}",
       contentLanguage: "en",
       feedLabel: "carbon_cube_feed",
-        productAttributes: {
-          title: ad.title,
-          description: ad.description,
-        link: "https://carboncube-ke.com/ads/#{ad.id}",
-          imageLink: ad.first_valid_media_url,
-        availability: "in stock",
-          price: {
-          value: ad.price.to_f,
-          currency: "KES"
-        },
-        condition: normalize_condition(ad.condition),
-        brand: normalize_brand(ad.brand, ad.title)
-      }
+      productAttributes: product_attrs
     }
     end
     
@@ -375,11 +387,11 @@ class GoogleMerchantService
          .gsub(/^-|-$/, '')
   end
   
-  # Normalize condition for Google Merchant
+  # Normalize condition for Google Merchant (returns lowercase as required by API)
   def self.normalize_condition(condition)
     return "new" if condition.blank?
     
-    case condition.downcase
+    case condition.to_s.downcase
     when "brand_new", "new", "unused", "x_japan", "x-japan"
       "new"
     when "used", "second_hand", "pre_owned"
@@ -391,21 +403,50 @@ class GoogleMerchantService
     end
   end
   
+  # Normalize availability for Google Merchant API
+  def self.normalize_availability(availability)
+    return "in stock" if availability.blank?
+    
+    case availability.to_s.upcase
+    when "IN_STOCK", "IN STOCK", "INSTOCK"
+      "in stock"
+    when "OUT_OF_STOCK", "OUT OF STOCK", "OUTOFSTOCK"
+      "out of stock"
+    when "PREORDER", "PRE_ORDER"
+      "preorder"
+    when "BACKORDER", "BACK_ORDER"
+      "backorder"
+    else
+      "in stock" # Default to in stock for marketplace
+    end
+  end
+  
   # Normalize brand for Google Merchant
+  # Returns nil if brand cannot be determined (don't send invalid brands)
   def self.normalize_brand(brand, title)
-    return "Unknown" if brand.blank?
+    return nil if brand.blank?
+    
+    # Clean up brand string
+    brand = brand.to_s.strip
+    return nil if brand.blank?
     
     # If brand is the same as title, try to extract brand from title
-    if brand == title
+    if brand.downcase == title.to_s.downcase
       # Try to extract brand from common patterns
-      if title.match?(/^(Samsung|Apple|Nokia|LG|Sony|HP|Dell|Lenovo|Asus|Acer|Toshiba|Canon|Nikon|Sony|Panasonic|Philips|Bosch|Whirlpool|LG|Samsung|Apple|iPhone|iPad|MacBook|Galaxy|Pixel)/i)
-        title.split.first
+      brand_match = title.match(/^(Samsung|Apple|Nokia|LG|Sony|HP|Dell|Lenovo|Asus|Acer|Toshiba|Canon|Nikon|Panasonic|Philips|Bosch|Whirlpool|iPhone|iPad|MacBook|Galaxy|Pixel|Microsoft|Intel|AMD|Nvidia|Corsair|Logitech|Razer|SteelSeries|HyperX|Kingston|Western Digital|Seagate|WD)/i)
+      if brand_match
+        return brand_match[1]
       else
-        "Generic"
+        # Can't determine brand, return nil (don't send invalid brand)
+        return nil
       end
-    else
-      brand
     end
+    
+    # Return cleaned brand if it's not too generic
+    invalid_brands = ["unknown", "generic", "n/a", "na", "none", "other", "various", "mixed"]
+    return nil if invalid_brands.include?(brand.downcase)
+    
+    brand
   end
     
     # Send data to Google Merchant API with upsert logic
@@ -419,21 +460,34 @@ class GoogleMerchantService
         # Set up authentication
         content_service.authorization = get_authorization
         
-      # Create product object
-      product = Google::Apis::ContentV2_1::Product.new(
-          offer_id: product_data[:offerId],
-          content_language: product_data[:contentLanguage],
-          feed_label: product_data[:feedLabel],
+      # Build product attributes hash
+      attrs = product_data[:productAttributes]
+      product_attrs = {
+        offer_id: product_data[:offerId],
+        content_language: product_data[:contentLanguage],
+        feed_label: product_data[:feedLabel],
         channel: "online",
-        title: product_data[:productAttributes][:title],
-        description: product_data[:productAttributes][:description],
-        link: product_data[:productAttributes][:link],
-        image_link: product_data[:productAttributes][:imageLink],
-        availability: product_data[:productAttributes][:availability],
-        price: build_price(product_data[:productAttributes][:price]),
-        condition: product_data[:productAttributes][:condition],
-        brand: product_data[:productAttributes][:brand]
-        )
+        title: attrs[:title],
+        description: attrs[:description],
+        link: attrs[:link],
+        image_link: attrs[:image_link],
+        availability: attrs[:availability],
+        price: build_price(attrs[:price]),
+        condition: attrs[:condition]
+      }
+      
+      # Only include brand if it's present and valid
+      if attrs[:brand].present?
+        product_attrs[:brand] = attrs[:brand]
+      end
+      
+      # Add additional images if available
+      if attrs[:additional_image_link].present?
+        product_attrs[:additional_image_link] = attrs[:additional_image_link]
+      end
+      
+      # Create product object
+      product = Google::Apis::ContentV2_1::Product.new(product_attrs)
         
         # Check if product already exists
         existing_product_id = ad.google_merchant_product_id

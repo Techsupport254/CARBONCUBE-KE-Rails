@@ -245,6 +245,7 @@ Rails.application.routes.draw do
   get 'sellers', to: 'sellers#index'
 
   # Route for shop pages
+  get 'shops/locations', to: 'shops#locations', as: :shop_locations
   get 'shop/:slug', to: 'shops#show', as: :shop
   get 'shop/:slug/reviews', to: 'shops#reviews', as: :shop_reviews
   post 'shop/:slug/reviews', to: 'shops#create_review', as: :create_shop_review
@@ -357,6 +358,12 @@ Rails.application.routes.draw do
       member do
         put 'block'
         put 'unblock'
+      end
+    end
+
+    resources :users, only: [:index, :create, :update, :destroy] do
+      collection do
+        get 'index', action: :index
       end
     end
 
@@ -687,6 +694,20 @@ Rails.application.routes.draw do
       resource :profile, only: [:show, :update] do
         collection do
           post 'change-password'
+        end
+      end
+    end
+
+    # Marketing namespace for marketing-specific functionality
+    namespace :marketing do
+      resources :categories, only: [] do
+        member do
+          put 'image', to: 'categories#update_image'
+        end
+      end
+      resources :subcategories, only: [] do
+        member do
+          put 'image', to: 'subcategories#update_image'
         end
       end
       resources :analytics, only: [:index] do

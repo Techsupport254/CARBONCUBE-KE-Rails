@@ -1564,7 +1564,8 @@ class AuthenticationController < ApplicationController
     Buyer.find_by(email: email) ||
     Seller.find_by(email: email) ||
     Admin.find_by(email: email) ||
-    SalesUser.find_by(email: email)
+    SalesUser.find_by(email: email) ||
+    MarketingUser.find_by(email: email)
   end
 
 
@@ -1639,6 +1640,8 @@ class AuthenticationController < ApplicationController
       Admin.find_by(id: user_id)
     when 'sales'
       SalesUser.find_by(id: user_id)
+    when 'marketing'
+      MarketingUser.find_by(id: user_id)
     else
       nil
     end
@@ -1650,6 +1653,7 @@ class AuthenticationController < ApplicationController
     when Seller then 'Seller'
     when Admin then 'Admin'
     when SalesUser then 'Sales'
+    when MarketingUser then 'Marketing'
     else 'Unknown'
     end
   end
