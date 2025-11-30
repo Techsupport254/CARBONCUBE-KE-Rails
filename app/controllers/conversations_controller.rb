@@ -8,7 +8,7 @@ class ConversationsController < ApplicationController
       fetch_buyer_conversations
     when 'Seller'
       fetch_seller_conversations
-    when 'Admin', 'SalesUser'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       fetch_admin_conversations
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
@@ -21,7 +21,7 @@ class ConversationsController < ApplicationController
       render_buyer_conversation
     when 'Seller'
       render_seller_conversation
-    when 'Admin', 'SalesUser'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       render_admin_conversation
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
@@ -41,7 +41,7 @@ class ConversationsController < ApplicationController
       create_buyer_conversation
     when 'Seller'
       create_seller_conversation
-    when 'Admin', 'SalesUser'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       create_admin_conversation
     else
       Rails.logger.error "ConversationsController#create: Invalid user type: #{@current_user.class.name}"
@@ -55,7 +55,7 @@ class ConversationsController < ApplicationController
       fetch_buyer_unread_counts
     when 'Seller'
       fetch_seller_unread_counts
-    when 'Admin', 'SalesUser'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       fetch_admin_unread_counts
     else
       Rails.logger.error "ConversationsController#unread_counts: Invalid user type: #{@current_user.class.name}"
@@ -69,7 +69,7 @@ class ConversationsController < ApplicationController
       fetch_buyer_unread_count
     when 'Seller'
       fetch_seller_unread_count
-    when 'Admin', 'SalesUser'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       fetch_admin_unread_count
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
@@ -364,6 +364,11 @@ class ConversationsController < ApplicationController
         user_id = decoded[:user_id] || decoded['user_id'] || decoded[:sales_id] || decoded['sales_id']
         @current_user = SalesUser.find_by(id: user_id) if user_id
         
+      when 'marketing'
+        # Marketing tokens use user_id (same as buyers/admins/sales)
+        user_id = decoded[:user_id] || decoded['user_id'] || decoded[:marketing_id] || decoded['marketing_id']
+        @current_user = MarketingUser.find_by(id: user_id) if user_id
+        
       else
         Rails.logger.warn "ConversationsController: Invalid user role: #{role}"
         render json: { error: "Invalid user role: #{role}" }, status: :unauthorized
@@ -393,7 +398,7 @@ class ConversationsController < ApplicationController
                      find_buyer_conversation
                    when 'Seller'
                      find_seller_conversation
-                   when 'Admin', 'SalesUser'
+                   when 'Admin', 'SalesUser', 'MarketingUser'
                      find_admin_conversation
                    end
 

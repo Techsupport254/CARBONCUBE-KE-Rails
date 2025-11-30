@@ -1,10 +1,13 @@
 # app/controllers/buyer/categories_controller.rb
 class Buyer::CategoriesController < ApplicationController
   def index
-    @categories = Rails.cache.fetch('buyer_categories_with_ads_count', expires_in: 24.hours) do
+    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v2', expires_in: 24.hours) do
       # Get categories with subcategories and ads count
       Category.includes(:subcategories, :ads).all.map do |category|
-        category_data = category.as_json(include: :subcategories)
+        category_data = category.as_json(
+          include: :subcategories,
+          only: [:id, :name, :description, :created_at, :updated_at, :image_url]
+        )
         category_data['ads_count'] = category.ads.where(deleted: false).count
         category_data
       end
@@ -14,7 +17,10 @@ class Buyer::CategoriesController < ApplicationController
 
   def show
     @category = Category.find(params[:id])
-    category_data = @category.as_json(include: :subcategories)
+    category_data = @category.as_json(
+      include: :subcategories,
+      only: [:id, :name, :description, :created_at, :updated_at, :image_url]
+    )
     category_data['ads_count'] = @category.ads.where(deleted: false).count
     render json: category_data
   rescue ActiveRecord::RecordNotFound

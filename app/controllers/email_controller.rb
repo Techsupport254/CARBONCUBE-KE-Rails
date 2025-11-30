@@ -20,8 +20,9 @@ class EmailController < ApplicationController
     buyer_exists = Buyer.exists?(email: email)
     admin_exists = Admin.exists?(email: email)
     sales_user_exists = SalesUser.exists?(email: email)
+    marketing_user_exists = MarketingUser.exists?(email: email)
     
-    exists = seller_exists || buyer_exists || admin_exists || sales_user_exists
+    exists = seller_exists || buyer_exists || admin_exists || sales_user_exists || marketing_user_exists
     
     # Determine which type of user has this email
     user_type = if seller_exists
@@ -32,6 +33,8 @@ class EmailController < ApplicationController
                   'admin'
                 elsif sales_user_exists
                   'sales'
+                elsif marketing_user_exists
+                  'marketing'
                 else
                   nil
                 end

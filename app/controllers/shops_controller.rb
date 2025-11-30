@@ -1,4 +1,28 @@
 class ShopsController < ApplicationController
+  def locations
+    # Get unique locations from shops that have active ads
+    # Only include shops with verified sellers and active, non-flagged ads
+    locations = Seller.joins(:ads)
+                     .where(ads: { flagged: false, deleted: false })
+                     .where(deleted: false, blocked: false, flagged: false)
+                     .includes(:county, :sub_county)
+                     .pluck(:city, "counties.name", "sub_counties.name", :county_id)
+                     .uniq
+                     .map do |city, county_name, sub_county_name, county_id|
+                       {
+                         id: county_id,
+                         name: city || county_name || sub_county_name || "Kenya",
+                         county_name: county_name,
+                         sub_county_name: sub_county_name,
+                         full_name: [city, sub_county_name, county_name].compact.uniq.join(", ")
+                       }
+                     end
+                     .uniq { |loc| loc[:name] }
+                     .sort_by { |loc| loc[:name] }
+
+    render json: locations
+  end
+
   def show
     # Find shop by slug (enterprise_name converted to slug)
     slug = params[:slug]

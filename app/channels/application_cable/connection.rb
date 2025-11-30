@@ -230,6 +230,13 @@ module ApplicationCable
           if sales_user
             return sales_user
           end
+        when 'marketing'
+          # MarketingUser IDs are UUIDs
+          marketing_user = MarketingUser.find_by(id: user_id)
+          
+          if marketing_user
+            return marketing_user
+          end
         else
           # Unknown role - don't search all models, just log and return nil
           Rails.logger.warn "WebSocket: Unknown role '#{role}' for user_id #{user_id}. Cannot perform lookup. Token may be malformed."
