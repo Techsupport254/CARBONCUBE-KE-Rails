@@ -72,6 +72,39 @@ function createClient() {
 			console.log("Client disconnected:", reason);
 		}
 		isReady = false;
+		// Attempt to reconnect after a delay
+		setTimeout(() => {
+			console.log("Attempting to reconnect WhatsApp client...");
+			createClient();
+		}, 5000); // Wait 5 seconds before reconnecting
+	});
+
+	// Message event (can help detect session issues)
+	client.on("message", (msg) => {
+		if (process.env.NODE_ENV === "development") {
+			console.log(
+				"Received message:",
+				msg.from,
+				msg.body?.substring(0, 50) + "..."
+			);
+		}
+	});
+
+	// Message create event
+	client.on("message_create", (msg) => {
+		if (process.env.NODE_ENV === "development" && msg.fromMe) {
+			console.log("Sent message:", msg.to, msg.body?.substring(0, 50) + "...");
+		}
+	});
+
+	// Handle session state changes
+	client.on("change_state", (state) => {
+		console.log("Client state changed:", state);
+		if (state !== "CONNECTED") {
+			isReady = false;
+		} else {
+			isReady = true;
+		}
 	});
 
 	// Initialize client
@@ -101,10 +134,32 @@ function formatPhoneNumber(phoneNumber) {
 }
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/health", async (req, res) => {
+	let sessionValid = false;
+	let sessionError = null;
+
+	if (client && isReady) {
+		try {
+			// Try to get client state to validate session is active
+			const state = await client.getState();
+			sessionValid = state === "CONNECTED";
+		} catch (error) {
+			console.error("Health check session validation failed:", error.message);
+			sessionError = error.message;
+			if (
+				error.message.includes("Session closed") ||
+				error.message.includes("Protocol error")
+			) {
+				isReady = false;
+			}
+		}
+	}
+
 	res.json({
-		status: "ok",
+		status: sessionValid ? "ok" : "session_issue",
 		whatsapp_ready: isReady,
+		session_valid: sessionValid,
+		session_error: sessionError,
 		timestamp: new Date().toISOString(),
 	});
 });
@@ -117,6 +172,40 @@ app.get("/qr", (req, res) => {
 		res.json({ message: "WhatsApp is already connected" });
 	} else {
 		res.status(503).json({ error: "QR code not available yet" });
+	}
+});
+
+// Restart client endpoint (for session recovery)
+app.post("/restart", async (req, res) => {
+	try {
+		if (client) {
+			try {
+				await client.destroy();
+				console.log("Client destroyed for restart");
+			} catch (error) {
+				console.log(
+					"Error destroying client (may already be destroyed):",
+					error.message
+				);
+			}
+		}
+
+		isReady = false;
+		qrCode = null;
+
+		console.log("Creating new WhatsApp client...");
+		createClient();
+
+		res.json({
+			message: "WhatsApp client restart initiated",
+			timestamp: new Date().toISOString(),
+		});
+	} catch (error) {
+		console.error("Error restarting client:", error.message);
+		res.status(500).json({
+			error: "Failed to restart WhatsApp client",
+			details: error.message,
+		});
 	}
 });
 
@@ -236,6 +325,18 @@ app.post("/send", async (req, res) => {
 		});
 	}
 
+	// Additional session validation - try to access client info to ensure session is active
+	try {
+		await client.getState();
+	} catch (error) {
+		console.error("Client session validation failed:", error.message);
+		isReady = false;
+		return res.status(503).json({
+			error: "WhatsApp session has expired",
+			message: "Please restart the service and scan QR code again",
+		});
+	}
+
 	const { phoneNumber, message, imagePath } = req.body;
 
 	// Debug logging
@@ -264,8 +365,24 @@ app.post("/send", async (req, res) => {
 	try {
 		const formattedNumber = formatPhoneNumber(phoneNumber);
 
-		// Check if number is registered on WhatsApp
-		const isRegistered = await client.isRegisteredUser(formattedNumber);
+		// Check if number is registered on WhatsApp (with error handling)
+		let isRegistered;
+		try {
+			isRegistered = await client.isRegisteredUser(formattedNumber);
+		} catch (error) {
+			console.error("Error checking user registration:", error.message);
+			if (
+				error.message.includes("Session closed") ||
+				error.message.includes("Protocol error")
+			) {
+				isReady = false;
+				return res.status(503).json({
+					error: "WhatsApp session expired",
+					message: "Please restart the service and scan QR code again",
+				});
+			}
+			throw error;
+		}
 
 		if (!isRegistered) {
 			return res.status(400).json({
@@ -312,7 +429,22 @@ app.post("/send", async (req, res) => {
 				console.log("Media filename:", media.filename);
 			}
 
-			result = await client.sendMessage(formattedNumber, media);
+			try {
+				result = await client.sendMessage(formattedNumber, media);
+			} catch (error) {
+				console.error("Error sending image message:", error.message);
+				if (
+					error.message.includes("Session closed") ||
+					error.message.includes("Protocol error")
+				) {
+					isReady = false;
+					return res.status(503).json({
+						error: "WhatsApp session expired during send",
+						message: "Please restart the service and scan QR code again",
+					});
+				}
+				throw error;
+			}
 
 			if (process.env.NODE_ENV === "development") {
 				console.log("Image message sent successfully");
@@ -321,8 +453,22 @@ app.post("/send", async (req, res) => {
 			if (process.env.NODE_ENV === "development") {
 				console.log("Sending text message only (no image)...");
 			}
-			// Send text message only
-			result = await client.sendMessage(formattedNumber, message);
+			try {
+				result = await client.sendMessage(formattedNumber, message);
+			} catch (error) {
+				console.error("Error sending text message:", error.message);
+				if (
+					error.message.includes("Session closed") ||
+					error.message.includes("Protocol error")
+				) {
+					isReady = false;
+					return res.status(503).json({
+						error: "WhatsApp session expired during send",
+						message: "Please restart the service and scan QR code again",
+					});
+				}
+				throw error;
+			}
 		}
 
 		res.json({

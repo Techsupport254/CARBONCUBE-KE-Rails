@@ -48,6 +48,9 @@ gem 'activestorage-cloudinary-service'
 # Sidekiq for background jobs
 gem 'sidekiq'
 
+# Markdown processing
+gem 'redcarpet'
+
 # Use Active Model has_secure_password
 gem 'bcrypt', '~> 3.1.7'
 

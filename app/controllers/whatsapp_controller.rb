@@ -14,12 +14,12 @@ class WhatsappController < ApplicationController
       }, status: :bad_request
     end
     
-    # Validate phone number format (10 digits for Kenyan numbers)
+    # Validate phone number format (accept various international and local formats)
     cleaned_number = phone_number.gsub(/\D/, '')
-    unless cleaned_number.length == 10 || cleaned_number.start_with?('254')
-      return render json: { 
-        isRegistered: false, 
-        error: 'Invalid phone number format. Expected 10 digits (e.g., 0712345678)' 
+    unless cleaned_number.length >= 7 && cleaned_number.length <= 15
+      return render json: {
+        isRegistered: false,
+        error: 'Invalid phone number format. Please enter a valid phone number.'
       }, status: :bad_request
     end
     

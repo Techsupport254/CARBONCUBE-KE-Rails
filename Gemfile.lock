@@ -376,6 +376,7 @@ GEM
     rake (13.2.1)
     rdoc (6.12.0)
       psych (>= 4.0.0)
+    redcarpet (3.6.1)
     redis (5.4.0)
       redis-client (>= 0.22.0)
     redis-client (0.24.0)
@@ -474,6 +475,7 @@ DEPENDENCIES
   puma (>= 5.0)
   rack-cors
   rails (~> 7.1.0)
+  redcarpet
   redis (~> 5.0)
   rqrcode
   rspec-rails

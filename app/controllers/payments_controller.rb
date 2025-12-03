@@ -29,11 +29,12 @@ class PaymentsController < ApplicationController
         }, status: :unprocessable_entity
       end
 
-      # Validate phone number format
-      unless phone_number.match?(/^(\+254|254|0)[0-9]{9}$/)
-        return render json: { 
-          success: false, 
-          error: "Invalid phone number format" 
+      # Validate phone number format (basic validation)
+      cleaned_phone = phone_number.to_s.gsub(/\D/, '')
+      unless cleaned_phone.length >= 7 && cleaned_phone.length <= 15
+        return render json: {
+          success: false,
+          error: "Invalid phone number format"
         }, status: :unprocessable_entity
       end
 

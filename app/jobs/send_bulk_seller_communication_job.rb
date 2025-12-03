@@ -1,14 +1,14 @@
 class SendBulkSellerCommunicationJob < ApplicationJob
   queue_as :default
 
-  def perform(email_type = 'general_update', auto_confirm = false)
+  def perform(email_type = 'general_update', auto_confirm = false, channels = { email: true, whatsapp: false }, custom_subject = nil, custom_message = nil)
     # Log to both Rails logger and Sidekiq logger for visibility
     log_message = "=== BULK SELLER COMMUNICATION JOB START ==="
     Rails.logger.info log_message
-    
-    log_message = "Job ID: #{job_id} | Email Type: #{email_type}"
+
+    log_message = "Job ID: #{job_id} | Email Type: #{email_type} | Channels: #{channels.inspect}"
     Rails.logger.info log_message
-    
+
     log_message = "Job Queue: #{queue_name} | Priority: #{priority}"
     Rails.logger.info log_message
     
@@ -56,8 +56,8 @@ class SendBulkSellerCommunicationJob < ApplicationJob
           log_message = "Processing seller: #{seller.id} | #{seller.fullname} | #{seller.email}"
           Rails.logger.info log_message
           
-          # Queue individual email job for each seller
-          SendSellerCommunicationJob.perform_later(seller.id, email_type)
+          # Queue individual communication job for each seller
+          SendSellerCommunicationJob.perform_later(seller.id, email_type, channels, custom_subject, custom_message)
           sent_count += 1
           
           log_message = "✅ Queued email for seller #{seller.id} (#{seller.email})"

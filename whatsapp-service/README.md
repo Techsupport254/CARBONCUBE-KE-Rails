@@ -69,9 +69,52 @@ sudo ./deploy-production.sh
 
 This will set up the service with PM2 (or systemd) for automatic startup and restart on failure.
 
+## API Endpoints
+
+- `GET /health` - Check service health and session status
+- `GET /qr` - Get QR code for initial setup
+- `POST /send` - Send WhatsApp message
+- `POST /restart` - Restart WhatsApp client (for session recovery)
+- `POST /logout` - Logout and reset session
+
 ## Troubleshooting
+
+### Session Issues
+
+If you see "Session closed" or "Protocol error" messages:
+
+1. **Check service health:**
+
+   ```bash
+   node test-health.js
+   ```
+
+2. **Restart the client:**
+
+   ```bash
+   curl -X POST http://localhost:3002/restart
+   ```
+
+3. **If restart doesn't work, logout and rescan:**
+   ```bash
+   curl -X POST http://localhost:3002/logout
+   # Then restart the service and scan QR code again
+   ```
+
+### Common Issues
 
 - **Service won't start**: Make sure Node.js is installed (`node --version`)
 - **QR code not showing**: Check the terminal output for errors
+- **"Session closed" error**: Session expired, restart client or rescan QR
+- **"Protocol error"**: Browser session lost, try restart endpoint
 - **Connection lost**: Restart the service and scan QR code again
 - **Production issues**: See [PRODUCTION_SETUP.md](./PRODUCTION_SETUP.md) for detailed troubleshooting
+
+### Automatic Recovery
+
+The service now includes automatic recovery features:
+
+- Auto-reconnection on disconnection (5-second delay)
+- Session validation before sending messages
+- Health checks that detect session issues
+- Proper error handling with user-friendly messages
