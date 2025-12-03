@@ -1,9 +1,9 @@
-class SellerCommunicationsController < ApplicationController
+class Admin::SellerCommunicationsController < ApplicationController
   before_action :authenticate_admin!
 
   def send_general_update
     seller_ids = params[:seller_ids] || []
-    
+
     if seller_ids.empty?
       render json: { error: 'No sellers selected' }, status: :bad_request
       return
@@ -21,7 +21,7 @@ class SellerCommunicationsController < ApplicationController
       end
     end
 
-    render json: { 
+    render json: {
       message: "General update email sent to #{sent_count} seller(s)",
       sent_count: sent_count,
       total_selected: sellers.count
@@ -30,11 +30,11 @@ class SellerCommunicationsController < ApplicationController
 
   def send_to_test_seller
     test_seller = Seller.find_by(id: 114) || Seller.first
-    
+
     if test_seller
       # Use the job for background processing
       SendSellerCommunicationJob.perform_later(test_seller.id, 'general_update')
-      render json: { 
+      render json: {
         message: "Test email job queued for #{test_seller.fullname} (#{test_seller.email})",
         seller: {
           id: test_seller.id,
@@ -67,12 +67,13 @@ class SellerCommunicationsController < ApplicationController
   end
 
   def send_bulk_communication
-    subject = params[:subject]
-    body = params[:body]
-    audience = params[:audience]
-    user_ids = params[:user_ids]
-    user_type = params[:user_type]
-    channels = params[:channels] || { email: true, whatsapp: false }
+    communication_params = permitted_communication_params
+    subject = communication_params[:subject]
+    body = communication_params[:body]
+    audience = communication_params[:audience]
+    user_ids = communication_params[:user_ids]
+    user_type = communication_params[:user_type]
+    channels = communication_params[:channels]
 
     # Validate required parameters
     if subject.blank? || body.blank?
@@ -80,6 +81,13 @@ class SellerCommunicationsController < ApplicationController
       return
     end
 
+    # Validate that channels are provided and not empty
+    if channels.blank?
+      render json: { error: 'Communication channels must be specified' }, status: :bad_request
+      return
+    end
+
+    # Use the exact channels specified by the frontend (email, whatsapp, or both)
     if channels[:email] == false && channels[:whatsapp] == false
       render json: { error: 'At least one communication channel must be selected' }, status: :bad_request
       return
@@ -178,10 +186,21 @@ class SellerCommunicationsController < ApplicationController
     }
   end
 
+  def authenticate_admin!
+    # This method should be implemented to check if the current user is an admin
+    # For now, we'll assume it's handled by application controller or other middleware
+  end
+
   private
 
-  def authenticate_admin!
-    # Add your admin authentication logic here
-    # This should check if the current user is an admin
+  def permitted_communication_params
+    params.permit(
+      :subject,
+      :body,
+      :audience,
+      :user_type,
+      user_ids: [],
+      channels: [:email, :whatsapp]
+    )
   end
 end

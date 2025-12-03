@@ -79,14 +79,15 @@ class WhatsAppNotificationService
       return { success: false, error: 'WhatsApp notifications are not enabled' }
     end
     
-    # Validate phone number format (should be 10 digits for Kenyan numbers)
+    # Validate phone number format (accept various international and local formats)
     cleaned_number = phone_number.to_s.gsub(/\D/, '')
         if Rails.env.development?
       Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
     end
-    if cleaned_number.length != 10 && !cleaned_number.start_with?('254')
+    # Accept numbers with 7-15 digits, or international format starting with 254
+    if cleaned_number.length < 7 || cleaned_number.length > 15
       Rails.logger.error "Invalid phone number format: #{cleaned_number}"
-      return { success: false, error: 'Invalid phone number format. Expected 10 digits (e.g., 0712345678)' }
+      return { success: false, error: 'Invalid phone number format. Please enter a valid phone number.' }
     end
     
     begin
@@ -424,14 +425,15 @@ class WhatsAppNotificationService
       return { success: false, error: 'Message is required' }
     end
     
-    # Validate phone number format (should be 10 digits for Kenyan numbers)
+    # Validate phone number format (accept various international and local formats)
     cleaned_number = phone_number.to_s.gsub(/\D/, '')
     if Rails.env.development?
       Rails.logger.info "Cleaned phone number: #{cleaned_number} (length: #{cleaned_number.length})"
     end
-    if cleaned_number.length != 10 && !cleaned_number.start_with?('254')
+    # Accept numbers with 7-15 digits, or international format starting with 254
+    if cleaned_number.length < 7 || cleaned_number.length > 15
       Rails.logger.error "Invalid phone number format: #{cleaned_number}"
-      return { success: false, error: 'Invalid phone number format. Expected 10 digits (e.g., 0712345678)' }
+      return { success: false, error: 'Invalid phone number format. Please enter a valid phone number.' }
     end
     
     begin

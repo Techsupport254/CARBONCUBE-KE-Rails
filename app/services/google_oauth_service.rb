@@ -2159,42 +2159,10 @@ class GoogleOauthService
       
       Rails.logger.info "🔍 Extracted phone number: #{phone_number} -> cleaned: #{cleaned_phone}"
       
-      # Validate phone number format
-      if cleaned_phone.start_with?('+')
-        # International format - convert to 10-digit format for Kenya
-        if cleaned_phone.start_with?('+254')
-          # Remove +254 and keep the last 9-10 digits
-          local_number = cleaned_phone[4..-1]
-          if local_number.length == 9 && local_number.start_with?('7')
-            formatted_phone = "0#{local_number}"
-            Rails.logger.info "✅ Formatted international phone: #{formatted_phone}"
-            return formatted_phone
-          elsif local_number.length == 10 && local_number.start_with?('0')
-            Rails.logger.info "✅ International phone already has leading zero: #{local_number}"
-            return local_number
-          else
-            Rails.logger.warn "❌ Invalid Kenya phone number format: #{cleaned_phone} (local: #{local_number})"
-            return nil
-          end
-        else
-          Rails.logger.warn "❌ Non-Kenya international number: #{cleaned_phone}"
-          return nil
-        end
-      elsif cleaned_phone.length == 10 && cleaned_phone.start_with?('0')
-        # Already in correct format (07XXXXXXXX)
-        Rails.logger.info "✅ Phone number already in correct format: #{cleaned_phone}"
+      # Validate phone number format (accept various formats)
+      if cleaned_phone.length >= 7 && cleaned_phone.length <= 15
+        Rails.logger.info "✅ Phone number format accepted: #{cleaned_phone}"
         return cleaned_phone
-      elsif cleaned_phone.length == 9 && cleaned_phone.start_with?('7')
-        # Add leading zero (7XXXXXXXX -> 07XXXXXXXX)
-        formatted_phone = "0#{cleaned_phone}"
-        Rails.logger.info "✅ Added leading zero: #{formatted_phone}"
-        return formatted_phone
-      elsif cleaned_phone.length == 12 && cleaned_phone.start_with?('254')
-        # Remove country code (2547XXXXXXXX -> 07XXXXXXXX)
-        local_number = cleaned_phone[3..-1]
-        formatted_phone = "0#{local_number}"
-        Rails.logger.info "✅ Removed country code: #{formatted_phone}"
-        return formatted_phone
       else
         Rails.logger.warn "❌ Invalid phone number format: #{cleaned_phone} (length: #{cleaned_phone.length})"
         return nil

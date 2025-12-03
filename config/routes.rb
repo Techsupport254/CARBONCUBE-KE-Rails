@@ -324,6 +324,7 @@ Rails.application.routes.draw do
         post 'send_general_update'
         post 'send_to_test_seller'
         post 'send_bulk_emails'
+        post 'send_bulk_communication'
       end
     end
     resources :ads do

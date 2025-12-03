@@ -155,8 +155,8 @@ class ConversationsController < ApplicationController
 
     # Validate phone number format (basic check)
     phone_number = seller.phone_number.to_s.gsub(/\D/, '')
-    if phone_number.length < 10
-      render json: { 
+    if phone_number.length < 7
+      render json: {
         error: 'Seller phone number format is invalid. Please ask the seller to update their phone number.',
         error_type: 'invalid_phone_format'
       }, status: :unprocessable_entity

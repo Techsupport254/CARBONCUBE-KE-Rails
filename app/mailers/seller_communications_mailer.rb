@@ -9,9 +9,65 @@ class SellerCommunicationsMailer < ApplicationMailer
     SellerCommunicationMailDeliveryJob
   end
   
+  def custom_communication
+    @user = params[:user] || params[:seller] || @seller
+    @user_type = params[:user_type] || 'seller'
+    @custom_subject = params[:subject]
+    @custom_message = params[:message]
+
+    # Log to both Rails logger and stdout for Sidekiq visibility
+    log_message = "=== CUSTOM #{@user_type.upcase} COMMUNICATION EMAIL START ==="
+    Rails.logger.info log_message
+
+    user_name = if @user_type == 'seller'
+      @user.fullname.presence || @user.enterprise_name.presence || 'Seller'
+    else
+      @user.fullname.presence || @user.username.presence || 'Buyer'
+    end
+
+    log_message = "#{@user_type.capitalize} ID: #{@user.id} | Name: #{user_name} | Email: #{@user.email}"
+    Rails.logger.info log_message
+
+    log_message = "Custom Subject: #{@custom_subject}"
+    Rails.logger.info log_message
+
+    # Generate unique subject with timestamp to prevent threading
+    timestamp = Time.current.strftime('%Y%m%d%H%M')
+    unique_subject = "#{@custom_subject} - #{timestamp}"
+
+    mail(
+      to: @user.email,
+      subject: unique_subject
+    ) do |format|
+      Rails.logger.info "Generating custom email content..."
+      format.html { render 'custom_communication' }
+    end
+
+    # AGGRESSIVE threading prevention
+    mail['In-Reply-To'] = nil
+    mail['References'] = nil
+    mail['Thread-Topic'] = nil
+    mail['Thread-Index'] = nil
+
+    # Force new conversation
+    mail['X-Threading'] = 'false'
+    mail['X-Conversation-ID'] = SecureRandom.uuid
+
+    log_message = "Custom email object created successfully | To: #{mail.to.join(', ')} | From: #{mail.from.join(', ')}"
+    Rails.logger.info log_message
+
+    log_message = "About to deliver custom email to: #{@user.email}"
+    Rails.logger.info log_message
+
+    log_message = "=== CUSTOM #{@user_type.upcase} COMMUNICATION EMAIL END ==="
+    Rails.logger.info log_message
+
+    mail
+  end
+
   def general_update
     @seller = params[:seller] || @seller
-    
+
     # Log to both Rails logger and stdout for Sidekiq visibility
     log_message = "=== SELLER COMMUNICATION EMAIL START ==="
     Rails.logger.info log_message
