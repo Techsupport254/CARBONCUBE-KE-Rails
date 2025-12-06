@@ -33,58 +33,7 @@
           </p>
 
           <div style="font-size: 14px; line-height: 1.7; color: #374151; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
-          <%
-            # Use Redcarpet for proper markdown processing
-            require 'redcarpet'
-
-            # Configure Redcarpet renderer for email compatibility
-            renderer = Redcarpet::Render::HTML.new({
-              filter_html: true,
-              no_images: true,
-              no_styles: false,  # Allow inline styles
-              safe_links_only: true,
-              with_toc_data: false,
-              hard_wrap: true,
-              xhtml: false,
-              link_attributes: { target: '_blank' }
-            })
-
-            # Configure markdown parser with email-safe options
-            markdown = Redcarpet::Markdown.new(renderer, {
-              autolink: true,
-              tables: false,  # Disable tables for email compatibility
-              fenced_code_blocks: false,  # Disable for email compatibility
-              disable_indented_code_blocks: true,
-              strikethrough: true,
-              superscript: false,
-              underline: false,
-              highlight: false,
-              quote: true,  # Enable blockquotes
-              footnotes: false,
-              lax_spacing: true
-            })
-
-            # Convert markdown to HTML
-            html_content = markdown.render(@custom_message.to_s)
-
-            # Apply email-safe inline styles for better rendering
-            formatted_message = html_content
-              .gsub('<p>', '<p style="margin: 12px 0; font-size: 14px; line-height: 1.7; color: #374151; font-family: \'Inter\', sans-serif;">')
-              .gsub('<strong>', '<strong style="font-weight: 600; color: #111827; font-family: \'Inter\', sans-serif;">')
-              .gsub('<em>', '<em style="font-style: italic; color: #374151; font-family: \'Inter\', sans-serif;">')
-              .gsub('<h1>', '<h1 style="font-size: 20px; font-weight: 600; color: #111827; margin: 20px 0 10px 0; font-family: \'Inter\', sans-serif;">')
-              .gsub('<h2>', '<h2 style="font-size: 18px; font-weight: 600; color: #111827; margin: 18px 0 8px 0; font-family: \'Inter\', sans-serif;">')
-              .gsub('<h3>', '<h3 style="font-size: 16px; font-weight: 600; color: #111827; margin: 16px 0 8px 0; font-family: \'Inter\', sans-serif;">')
-              .gsub('<blockquote>', '<blockquote style="border-left: 4px solid #e5e7eb; padding: 8px 0 8px 16px; margin: 12px 0; font-style: italic; color: #6b7280; background: #f9fafb; border-radius: 0 4px 4px 0; font-family: \'Inter\', sans-serif;">')
-              .gsub('<code>', '<code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: \'JetBrains Mono\', \'Fira Code\', \'Courier New\', monospace; font-size: 13px; color: #d73a49; border: 1px solid #e1e4e8;">')
-              .gsub('<ul>', '<ul style="margin: 12px 0; padding-left: 20px;">')
-              .gsub('<ol>', '<ol style="margin: 12px 0; padding-left: 20px;">')
-              .gsub('<li>', '<li style="margin: 6px 0; font-size: 14px; line-height: 1.7; color: #374151; font-family: \'Inter\', sans-serif;">')
-
-            # Clean up any remaining unstyled elements
-            formatted_message = formatted_message.gsub(/<[^>]+><\/[^>]+>/, '') # Remove empty tags
-          %>
-          <%= formatted_message.html_safe %>
+          <%= SellerCommunicationsMailer.process_markdown(@custom_message).html_safe %>
           </div>
         </div>
 

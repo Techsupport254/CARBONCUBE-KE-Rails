@@ -54,7 +54,7 @@ class WhatsAppNotificationService
     end
   end
   
-  def self.send_message(phone_number, message)
+  def self.send_message(phone_number, message, attachments = [])
     if Rails.env.development?
       Rails.logger.info "=== WhatsAppNotificationService.send_message START ==="
       Rails.logger.info "Phone number: #{phone_number.inspect}"
@@ -140,7 +140,33 @@ class WhatsAppNotificationService
       request_body = {
         phoneNumber: phone_number,
         message: message
-      }.to_json
+      }
+
+      # Add document attachments if provided
+      if attachments.present? && attachments.is_a?(Array)
+        document_attachments = []
+        attachments.each do |attachment|
+          next unless attachment.respond_to?(:original_filename) && attachment.respond_to?(:read)
+
+          # Save attachment temporarily to disk for WhatsApp service
+          temp_file = Tempfile.new(['whatsapp_attachment', File.extname(attachment.original_filename)])
+          temp_file.binmode
+          temp_file.write(attachment.read)
+          temp_file.close
+
+          document_attachments << {
+            filename: attachment.original_filename,
+            path: temp_file.path,
+            mime_type: attachment.content_type
+          }
+
+          Rails.logger.info "Document attachment prepared: #{attachment.original_filename} (#{attachment.content_type})"
+        end
+
+        request_body[:documentAttachments] = document_attachments if document_attachments.any?
+      end
+
+      request_body = request_body.to_json
       request.body = request_body
       if Rails.env.development?
         Rails.logger.info "Request body: #{request_body.inspect}"
@@ -407,7 +433,7 @@ class WhatsAppNotificationService
   # Send message without checking if WhatsApp notifications are enabled
   # Used for critical messages like welcome messages that should always be sent
   # image_path: optional path to image file to attach
-  def self.send_message_without_enabled_check(phone_number, message, image_path = nil)
+  def self.send_message_without_enabled_check(phone_number, message, image_path = nil, attachments = [])
     if Rails.env.development?
       Rails.logger.info "=== WhatsAppNotificationService.send_message_without_enabled_check START ==="
       Rails.logger.info "Phone number: #{phone_number.inspect}"
@@ -488,6 +514,30 @@ class WhatsAppNotificationService
         message: message
       }
       request_body[:imagePath] = image_path if image_path.present? && File.exist?(image_path)
+
+      # Add document attachments if provided
+      if attachments.present? && attachments.is_a?(Array)
+        document_attachments = []
+        attachments.each do |attachment|
+          next unless attachment.respond_to?(:original_filename) && attachment.respond_to?(:read)
+
+          # Save attachment temporarily to disk for WhatsApp service
+          temp_file = Tempfile.new(['whatsapp_attachment', File.extname(attachment.original_filename)])
+          temp_file.binmode
+          temp_file.write(attachment.read)
+          temp_file.close
+
+          document_attachments << {
+            filename: attachment.original_filename,
+            path: temp_file.path,
+            mime_type: attachment.content_type
+          }
+
+          Rails.logger.info "Document attachment prepared: #{attachment.original_filename} (#{attachment.content_type})"
+        end
+
+        request_body[:documentAttachments] = document_attachments if document_attachments.any?
+      end
       request.body = request_body.to_json
       if Rails.env.development?
         Rails.logger.info "Request body: #{request_body.inspect}"

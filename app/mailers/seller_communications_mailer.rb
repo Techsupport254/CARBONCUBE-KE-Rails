@@ -1,8 +1,57 @@
 class SellerCommunicationsMailer < ApplicationMailer
   default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
-  
+
   # Skip ApplicationMailer's before_action for black_friday_email to have full control
   skip_before_action :add_deliverability_headers, only: [:black_friday_email]
+
+  # Markdown processor for email templates
+  def self.markdown_processor
+    require 'redcarpet'
+    renderer = Redcarpet::Render::HTML.new({
+      filter_html: true,
+      no_images: true,
+      no_styles: false,
+      safe_links_only: true,
+      with_toc_data: false,
+      hard_wrap: true,
+      xhtml: false,
+      link_attributes: { target: '_blank' }
+    })
+
+    Redcarpet::Markdown.new(renderer, {
+      autolink: true,
+      tables: false,
+      fenced_code_blocks: false,
+      disable_indented_code_blocks: true,
+      strikethrough: true,
+      superscript: false,
+      underline: false,
+      highlight: false,
+      quote: true,
+      footnotes: false,
+      lax_spacing: true
+    })
+  end
+
+  def self.process_markdown(message)
+    markdown = markdown_processor
+    html_content = markdown.render(message.to_s)
+
+    # Apply email-safe inline styles
+    html_content
+      .gsub('<p>', '<p style="margin: 12px 0; font-size: 14px; line-height: 1.7; color: #374151; font-family: \'Inter\', sans-serif;">')
+      .gsub('<strong>', '<strong style="font-weight: 600; color: #111827; font-family: \'Inter\', sans-serif;">')
+      .gsub('<em>', '<em style="font-style: italic; color: #374151; font-family: \'Inter\', sans-serif;">')
+      .gsub('<h1>', '<h1 style="font-size: 20px; font-weight: 600; color: #111827; margin: 20px 0 10px 0; font-family: \'Inter\', sans-serif;">')
+      .gsub('<h2>', '<h2 style="font-size: 18px; font-weight: 600; color: #111827; margin: 18px 0 8px 0; font-family: \'Inter\', sans-serif;">')
+      .gsub('<h3>', '<h3 style="font-size: 16px; font-weight: 600; color: #111827; margin: 16px 0 8px 0; font-family: \'Inter\', sans-serif;">')
+      .gsub('<blockquote>', '<blockquote style="border-left: 4px solid #e5e7eb; padding: 8px 0 8px 16px; margin: 12px 0; font-style: italic; color: #6b7280; background: #f9fafb; border-radius: 0 4px 4px 0; font-family: \'Inter\', sans-serif;">')
+      .gsub('<code>', '<code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: \'JetBrains Mono\', \'Fira Code\', \'Courier New\', monospace; font-size: 13px; color: #d73a49; border: 1px solid #e1e4e8;">')
+      .gsub('<ul>', '<ul style="margin: 12px 0; padding-left: 20px;">')
+      .gsub('<ol>', '<ol style="margin: 12px 0; padding-left: 20px;">')
+      .gsub('<li>', '<li style="margin: 6px 0; font-size: 14px; line-height: 1.7; color: #374151; font-family: \'Inter\', sans-serif;">')
+      .gsub(/<[^>]+><\/[^>]+>/, '') # Remove empty tags
+  end
   
   # Use our custom job for better logging
   def self.delivery_job
@@ -14,6 +63,7 @@ class SellerCommunicationsMailer < ApplicationMailer
     @user_type = params[:user_type] || 'seller'
     @custom_subject = params[:subject]
     @custom_message = params[:message]
+    @attachments = params[:attachments] || []
 
     # Log to both Rails logger and stdout for Sidekiq visibility
     log_message = "=== CUSTOM #{@user_type.upcase} COMMUNICATION EMAIL START ==="
@@ -34,6 +84,26 @@ class SellerCommunicationsMailer < ApplicationMailer
     # Generate unique subject with timestamp to prevent threading
     timestamp = Time.current.strftime('%Y%m%d%H%M')
     unique_subject = "#{@custom_subject} - #{timestamp}"
+
+    # Add attachments if provided
+    if @attachments.present? && @attachments.is_a?(Array)
+      @attachments.each do |attachment|
+        next unless attachment.respond_to?(:original_filename) && attachment.respond_to?(:read)
+
+        # Get file content and metadata
+        file_content = attachment.read
+        filename = attachment.original_filename
+
+        # Add attachment to mail
+        attachments[filename] = {
+          mime_type: attachment.content_type,
+          content: file_content
+        }
+
+        log_message = "Attachment added: #{filename} (#{attachment.content_type}, #{file_content.bytesize} bytes)"
+        Rails.logger.info log_message
+      end
+    end
 
     mail(
       to: @user.email,

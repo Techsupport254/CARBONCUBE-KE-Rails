@@ -72,8 +72,13 @@ class Admin::SellerCommunicationsController < ApplicationController
     body = communication_params[:body]
     audience = communication_params[:audience]
     user_ids = communication_params[:user_ids]
+    # Handle user_ids as comma-separated string from frontend
+    if user_ids.is_a?(String) && user_ids.present?
+      user_ids = user_ids.split(',').map(&:strip).reject(&:blank?)
+    end
     user_type = communication_params[:user_type]
-    channels = communication_params[:channels]
+    channels = communication_params[:channels]&.to_h&.symbolize_keys || {}
+    attachments = communication_params[:attachments] || []
 
     # Validate required parameters
     if subject.blank? || body.blank?
@@ -95,16 +100,16 @@ class Admin::SellerCommunicationsController < ApplicationController
 
     if user_ids.present? && user_ids.is_a?(Array)
       # Send to specific users
-      send_to_specific_users(user_ids, user_type, subject, body, channels)
+      send_to_specific_users(user_ids, user_type, subject, body, channels, attachments)
     else
       # Send to audience (fallback to existing logic)
-      send_to_audience(audience, subject, body, channels)
+      send_to_audience(audience, subject, body, channels, attachments)
     end
   end
 
   private
 
-  def send_to_specific_users(user_ids, user_type, subject, body, channels)
+  def send_to_specific_users(user_ids, user_type, subject, body, channels, attachments = [])
     # Determine model class based on user type
     model_class = case user_type
     when 'buyers'
@@ -134,7 +139,8 @@ class Admin::SellerCommunicationsController < ApplicationController
           channels,
           subject,
           body,
-          user_type.singularize # Convert 'buyers'/'sellers' to 'buyer'/'seller'
+          user_type.singularize, # Convert 'buyers'/'sellers' to 'buyer'/'seller'
+          attachments
         )
         sent_count += 1
       rescue => e
@@ -152,7 +158,7 @@ class Admin::SellerCommunicationsController < ApplicationController
     }
   end
 
-  def send_to_audience(audience, subject, body, channels)
+  def send_to_audience(audience, subject, body, channels, attachments = [])
     # Build seller scope based on audience
     sellers_scope = case audience
     when 'active_sellers'
@@ -173,7 +179,8 @@ class Admin::SellerCommunicationsController < ApplicationController
       true, # auto_confirm
       channels,
       subject,
-      body
+      body,
+      attachments
     )
 
     render json: {
@@ -200,7 +207,8 @@ class Admin::SellerCommunicationsController < ApplicationController
       :audience,
       :user_type,
       user_ids: [],
-      channels: [:email, :whatsapp]
+      channels: [:email, :whatsapp],
+      attachments: []
     )
   end
 end

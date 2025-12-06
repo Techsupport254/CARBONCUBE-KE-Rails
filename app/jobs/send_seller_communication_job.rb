@@ -1,7 +1,7 @@
 class SendSellerCommunicationJob < ApplicationJob
   queue_as :default
 
-  def perform(user_id, email_type = 'general_update', channels = { email: true, whatsapp: false }, custom_subject = nil, custom_message = nil, user_type = 'seller')
+  def perform(user_id, email_type = 'general_update', channels = { email: true, whatsapp: false }, custom_subject = nil, custom_message = nil, user_type = 'seller', attachments = [])
     # BLOCK BLACK FRIDAY EMAILS - Prevent sending to avoid spam
     if email_type == 'black_friday'
       Rails.logger.warn "=== BLACK FRIDAY EMAIL BLOCKED ==="
@@ -63,7 +63,7 @@ class SendSellerCommunicationJob < ApplicationJob
         when 'general_update'
           if custom_subject.present? && custom_message.present?
             # Send custom message using a custom mailer method
-            mail = SellerCommunicationsMailer.with(user: user, user_type: user_type, subject: custom_subject, message: custom_message).custom_communication
+            mail = SellerCommunicationsMailer.with(user: user, user_type: user_type, subject: custom_subject, message: custom_message, attachments: attachments).custom_communication
           else
             mail = SellerCommunicationsMailer.with(seller: user).general_update
           end
@@ -100,7 +100,7 @@ class SendSellerCommunicationJob < ApplicationJob
             message_text = build_communication_message(user, user_type, email_type)
           end
 
-          whatsapp_result = WhatsAppNotificationService.send_message(user.phone_number, message_text)
+          whatsapp_result = WhatsAppNotificationService.send_message(user.phone_number, message_text, @attachments)
 
           if whatsapp_result.is_a?(Hash) && whatsapp_result[:success]
             sent_channels << "whatsapp"
