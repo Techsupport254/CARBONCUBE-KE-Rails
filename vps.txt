@@ -1,0 +1,5 @@
+# Configuration
+VPS_HOST="188.245.245.79"
+VPS_USER="root"
+VPS_PASSWORD="Nx9CC4ENjmmpcnqPeWLV"
+PROJECT_DIR="CARBON"

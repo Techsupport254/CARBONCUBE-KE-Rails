@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>mobile-app-development-milestones</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css" />
+</head>
+<body>
+<h1 id="mobile-app-development-milestones---carbon-cube-kenya">Mobile
+App Development Milestones - Carbon Cube Kenya</h1>
+<p><strong>Platform:</strong> Android &amp; iOS
+<strong>Timeline:</strong> 3 Months <strong>Framework:</strong> React
+Native <strong>Start Date:</strong></p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#month-1-foundation--core-setup">Month 1: Foundation &amp;
+Core Setup</a></li>
+<li><a href="#month-2-core-features-development">Month 2: Core Features
+Development</a></li>
+<li><a href="#month-3-tier-upgrades--launch">Month 3: Tier Upgrades
+&amp; Launch</a></li>
+<li><a href="#key-deliverables-summary">Key Deliverables
+Summary</a></li>
+<li><a href="#technical-stack">Technical Stack</a></li>
+<li><a href="#risk-management">Risk Management</a></li>
+</ol>
+<hr />
+<h2 id="month-1-foundation-core-setup">Month 1: Foundation &amp; Core
+Setup</h2>
+<h3 id="week-1-2-project-initiation-architecture">Week 1-2: Project
+Initiation &amp; Architecture</h3>
+<h4 id="project-setup-environment">Project Setup &amp; Environment</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Initialize React Native project
+(TypeScript template)</label></li>
+<li><label><input type="checkbox" />Configure development
+environment</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Android Studio setup (Android SDK,
+emulators)</label></li>
+<li><label><input type="checkbox" />Xcode setup (iOS Simulator,
+CocoaPods)</label></li>
+<li><label><input type="checkbox" />Node.js and npm/yarn
+configuration</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Set up Git repository and branching
+strategy</label></li>
+<li><label><input type="checkbox" />Configure CI/CD pipeline (GitHub
+Actions / Bitrise)</label></li>
+<li><label><input type="checkbox" />Set up code quality tools (ESLint,
+Prettier, Husky)</label></li>
+</ul>
+<h4 id="project-structure">Project Structure</h4>
+<ul class="task-list">
+<li><p><label><input type="checkbox" />Create folder
+structure</label></p>
+<pre><code>/src
+  /components
+  /screens
+  /navigation
+  /services
+  /hooks
+  /store
+  /utils
+  /types
+  /constants</code></pre></li>
+<li><p><label><input type="checkbox" />Set up absolute imports (path
+aliases)</label></p></li>
+<li><p><label><input type="checkbox" />Configure environment variables
+(.env files)</label></p></li>
+<li><p><label><input type="checkbox" />Set up TypeScript
+configuration</label></p></li>
+</ul>
+<h4 id="core-architecture">Core Architecture</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />API client setup (Axios with
+interceptors)</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Base URL configuration</label></li>
+<li><label><input type="checkbox" />Request/Response
+interceptors</label></li>
+<li><label><input type="checkbox" />Error handling</label></li>
+<li><label><input type="checkbox" />Token refresh logic</label></li>
+</ul></li>
+<li><label><input type="checkbox" />State management setup
+(Zustand)</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Auth store</label></li>
+<li><label><input type="checkbox" />User store</label></li>
+<li><label><input type="checkbox" />App state store</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Navigation setup (React
+Navigation)</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Stack navigator</label></li>
+<li><label><input type="checkbox" />Tab navigator</label></li>
+<li><label><input type="checkbox" />Drawer navigator (if
+needed)</label></li>
+<li><label><input type="checkbox" />Deep linking
+configuration</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Design system foundation</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Color palette</label></li>
+<li><label><input type="checkbox" />Typography system</label></li>
+<li><label><input type="checkbox" />Spacing system</label></li>
+<li><label><input type="checkbox" />Component library setup (React
+Native Paper / NativeBase)</label></li>
+</ul></li>
+</ul>
+<h4 id="deliverables">Deliverables</h4>
+<ul>
+<li>Working React Native project</li>
+<li>Development environment ready</li>
+<li>Basic navigation structure</li>
+<li>API client configured</li>
+<li>State management setup</li>
+</ul>
+<hr />
+<h3 id="week-3-4-authentication-onboarding">Week 3-4: Authentication
+&amp; Onboarding</h3>
+<h4 id="authentication-implementation">Authentication
+Implementation</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Login screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Email/Phone input</label></li>
+<li><label><input type="checkbox" />Password input</label></li>
+<li><label><input type="checkbox" />“Remember me”
+functionality</label></li>
+<li><label><input type="checkbox" />Form validation</label></li>
+<li><label><input type="checkbox" />Error handling</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Registration screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />User type selection
+(Buyer/Seller)</label></li>
+<li><label><input type="checkbox" />Email/Phone
+registration</label></li>
+<li><label><input type="checkbox" />Password strength
+indicator</label></li>
+<li><label><input type="checkbox" />Terms &amp; Conditions
+acceptance</label></li>
+</ul></li>
+<li><label><input type="checkbox" />OAuth integration</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Google Sign-In setup</label></li>
+<li><label><input type="checkbox" />iOS Google Sign-In
+configuration</label></li>
+<li><label><input type="checkbox" />Android Google Sign-In
+configuration</label></li>
+</ul></li>
+<li><label><input type="checkbox" />OTP verification flow</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />OTP input screen</label></li>
+<li><label><input type="checkbox" />Resend OTP
+functionality</label></li>
+<li><label><input type="checkbox" />Auto-verify (if
+possible)</label></li>
+<li><label><input type="checkbox" />Timer countdown</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Password reset flow</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Request OTP screen</label></li>
+<li><label><input type="checkbox" />Verify OTP screen</label></li>
+<li><label><input type="checkbox" />Reset password screen</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Token management</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Secure storage (React Native
+Keychain / SecureStore)</label></li>
+<li><label><input type="checkbox" />Token refresh mechanism</label></li>
+<li><label><input type="checkbox" />Auto-logout on token
+expiry</label></li>
+</ul></li>
+</ul>
+<h4 id="onboarding">Onboarding</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Onboarding screens (3-4
+screens)</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Welcome screen</label></li>
+<li><label><input type="checkbox" />Features overview</label></li>
+<li><label><input type="checkbox" />User type selection</label></li>
+</ul></li>
+<li><label><input type="checkbox" />First-time user
+experience</label></li>
+<li><label><input type="checkbox" />Skip onboarding option</label></li>
+</ul>
+<h4 id="user-profile-setup">User Profile Setup</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Profile creation screen
+(Buyer)</label></li>
+<li><label><input type="checkbox" />Profile creation screen
+(Seller)</label></li>
+<li><label><input type="checkbox" />Profile image upload</label></li>
+<li><label><input type="checkbox" />Basic information form</label></li>
+<li><label><input type="checkbox" />Location selection (Kenyan
+counties)</label></li>
+</ul>
+<h4 id="deep-linking">Deep Linking</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Configure deep links</label></li>
+<li><label><input type="checkbox" />Email verification
+links</label></li>
+<li><label><input type="checkbox" />Password reset links</label></li>
+<li><label><input type="checkbox" />OAuth callback handling</label></li>
+</ul>
+<h4 id="deliverables-1">Deliverables</h4>
+<ul>
+<li>Complete authentication flow</li>
+<li>OAuth integration working</li>
+<li>Onboarding experience</li>
+<li>User profile setup</li>
+<li>Deep linking configured</li>
+</ul>
+<hr />
+<h2 id="month-2-core-features-development">Month 2: Core Features
+Development</h2>
+<h3 id="week-5-6-buyer-core-features">Week 5-6: Buyer Core Features</h3>
+<h4 id="home-screen">Home Screen</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Home screen layout</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Search bar</label></li>
+<li><label><input type="checkbox" />Category grid/slider</label></li>
+<li><label><input type="checkbox" />Featured listings
+carousel</label></li>
+<li><label><input type="checkbox" />Recent listings section</label></li>
+<li><label><input type="checkbox" />Special offers banner</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Pull-to-refresh</label></li>
+<li><label><input type="checkbox" />Infinite scroll for
+listings</label></li>
+</ul>
+<h4 id="listing-browsing">Listing Browsing</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Ad/Listing list view</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Grid view option</label></li>
+<li><label><input type="checkbox" />List view option</label></li>
+<li><label><input type="checkbox" />Image lazy loading</label></li>
+<li><label><input type="checkbox" />Skeleton loaders</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Ad detail page</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Image gallery with zoom</label></li>
+<li><label><input type="checkbox" />Image carousel/swiper</label></li>
+<li><label><input type="checkbox" />Product information</label></li>
+<li><label><input type="checkbox" />Seller information card</label></li>
+<li><label><input type="checkbox" />Contact seller button</label></li>
+<li><label><input type="checkbox" />Share functionality</label></li>
+<li><label><input type="checkbox" />Save to wishlist</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Category browsing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Category list</label></li>
+<li><label><input type="checkbox" />Subcategory navigation</label></li>
+<li><label><input type="checkbox" />Category-based
+filtering</label></li>
+</ul></li>
+</ul>
+<h4 id="search-filters">Search &amp; Filters</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Search functionality</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Search input with
+suggestions</label></li>
+<li><label><input type="checkbox" />Search results screen</label></li>
+<li><label><input type="checkbox" />Recent searches</label></li>
+<li><label><input type="checkbox" />Popular searches</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Advanced filters</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Price range filter</label></li>
+<li><label><input type="checkbox" />Location filter</label></li>
+<li><label><input type="checkbox" />Category filter</label></li>
+<li><label><input type="checkbox" />Sort options (price, date,
+relevance)</label></li>
+<li><label><input type="checkbox" />Apply/Reset filters</label></li>
+</ul></li>
+</ul>
+<h4 id="wishlist">Wishlist</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Wishlist screen</label></li>
+<li><label><input type="checkbox" />Add/Remove from
+wishlist</label></li>
+<li><label><input type="checkbox" />Wishlist count badge</label></li>
+<li><label><input type="checkbox" />Quick actions (contact seller,
+remove)</label></li>
+</ul>
+<h4 id="seller-profileshop">Seller Profile/Shop</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Seller profile page</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Seller information</label></li>
+<li><label><input type="checkbox" />Seller’s listings grid</label></li>
+<li><label><input type="checkbox" />Seller reviews</label></li>
+<li><label><input type="checkbox" />Contact seller button</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Shop page view</label></li>
+</ul>
+<h4 id="image-handling">Image Handling</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Image caching (React Native Fast
+Image)</label></li>
+<li><label><input type="checkbox" />Image optimization</label></li>
+<li><label><input type="checkbox" />Placeholder images</label></li>
+<li><label><input type="checkbox" />Error handling for failed
+images</label></li>
+</ul>
+<h4 id="deliverables-2">Deliverables</h4>
+<ul>
+<li>Complete buyer browsing experience</li>
+<li>Search and filter functionality</li>
+<li>Wishlist feature</li>
+<li>Image optimization</li>
+</ul>
+<hr />
+<h3 id="week-7-8-seller-core-features">Week 7-8: Seller Core
+Features</h3>
+<h4 id="seller-dashboard">Seller Dashboard</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Dashboard screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Statistics cards (views, messages,
+listings)</label></li>
+<li><label><input type="checkbox" />Recent activity</label></li>
+<li><label><input type="checkbox" />Quick actions</label></li>
+<li><label><input type="checkbox" />Current tier display</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Analytics overview</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Views chart</label></li>
+<li><label><input type="checkbox" />Messages chart</label></li>
+<li><label><input type="checkbox" />Listing performance</label></li>
+</ul></li>
+</ul>
+<h4 id="ad-management">Ad Management</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Ad creation screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Multi-step form</label></li>
+<li><label><input type="checkbox" />Title and description</label></li>
+<li><label><input type="checkbox" />Category selection</label></li>
+<li><label><input type="checkbox" />Price input</label></li>
+<li><label><input type="checkbox" />Location selection</label></li>
+<li><label><input type="checkbox" />Multiple image upload</label></li>
+<li><label><input type="checkbox" />Image reordering</label></li>
+<li><label><input type="checkbox" />Preview before publish</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Ad editing screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Edit existing ad</label></li>
+<li><label><input type="checkbox" />Update images</label></li>
+<li><label><input type="checkbox" />Change status
+(active/inactive)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Ad list (My Listings)</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Active listings</label></li>
+<li><label><input type="checkbox" />Inactive listings</label></li>
+<li><label><input type="checkbox" />Draft listings</label></li>
+<li><label><input type="checkbox" />Quick actions (edit, delete,
+activate)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Ad deletion</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Confirmation dialog</label></li>
+<li><label><input type="checkbox" />Soft delete option</label></li>
+</ul></li>
+</ul>
+<h4 id="image-upload">Image Upload</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Image picker integration</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Camera capture</label></li>
+<li><label><input type="checkbox" />Gallery selection</label></li>
+<li><label><input type="checkbox" />Multiple image
+selection</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Image compression</label></li>
+<li><label><input type="checkbox" />Upload progress
+indicator</label></li>
+<li><label><input type="checkbox" />Image preview before
+upload</label></li>
+<li><label><input type="checkbox" />Image deletion</label></li>
+</ul>
+<h4 id="seller-profile-management">Seller Profile Management</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Profile edit screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Business information</label></li>
+<li><label><input type="checkbox" />Contact details</label></li>
+<li><label><input type="checkbox" />Profile picture</label></li>
+<li><label><input type="checkbox" />Business description</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Document upload (if
+needed)</label></li>
+<li><label><input type="checkbox" />Profile verification
+status</label></li>
+</ul>
+<h4 id="tier-management-view-only">Tier Management (View Only)</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Current tier display</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Tier name and benefits</label></li>
+<li><label><input type="checkbox" />Expiration date</label></li>
+<li><label><input type="checkbox" />Usage statistics</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Tier comparison
+(preview)</label></li>
+<li><label><input type="checkbox" />Upgrade prompt (navigate to upgrade
+screen)</label></li>
+</ul>
+<h4 id="review-management">Review Management</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Reviews list</label></li>
+<li><label><input type="checkbox" />Review details</label></li>
+<li><label><input type="checkbox" />Reply to reviews</label></li>
+<li><label><input type="checkbox" />Review statistics</label></li>
+</ul>
+<h4 id="deliverables-3">Deliverables</h4>
+<ul>
+<li>Complete seller dashboard</li>
+<li>Ad CRUD operations</li>
+<li>Image upload system</li>
+<li>Profile management</li>
+</ul>
+<hr />
+<h3 id="week-9-10-messaging-communication">Week 9-10: Messaging &amp;
+Communication</h3>
+<h4 id="real-time-messaging">Real-time Messaging</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />ActionCable integration</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />WebSocket connection
+setup</label></li>
+<li><label><input type="checkbox" />Connection management</label></li>
+<li><label><input type="checkbox" />Reconnection logic</label></li>
+<li><label><input type="checkbox" />Authentication with JWT
+token</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Conversations list</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />List of all
+conversations</label></li>
+<li><label><input type="checkbox" />Unread message
+indicators</label></li>
+<li><label><input type="checkbox" />Last message preview</label></li>
+<li><label><input type="checkbox" />Timestamp display</label></li>
+<li><label><input type="checkbox" />Search conversations</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Chat interface</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Message list</label></li>
+<li><label><input type="checkbox" />Message bubbles
+(sent/received)</label></li>
+<li><label><input type="checkbox" />Timestamp for messages</label></li>
+<li><label><input type="checkbox" />Message status (sent, delivered,
+read)</label></li>
+<li><label><input type="checkbox" />Input field with send
+button</label></li>
+<li><label><input type="checkbox" />Image sharing in
+messages</label></li>
+<li><label><input type="checkbox" />Image preview in chat</label></li>
+<li><label><input type="checkbox" />Typing indicators
+(optional)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Message actions</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Mark as read</label></li>
+<li><label><input type="checkbox" />Delete conversation</label></li>
+<li><label><input type="checkbox" />Block user (if
+applicable)</label></li>
+</ul></li>
+</ul>
+<h4 id="push-notifications">Push Notifications</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Firebase Cloud Messaging
+setup</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Android FCM
+configuration</label></li>
+<li><label><input type="checkbox" />iOS APNs configuration</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Notification handling</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Foreground
+notifications</label></li>
+<li><label><input type="checkbox" />Background
+notifications</label></li>
+<li><label><input type="checkbox" />Notification tap
+actions</label></li>
+<li><label><input type="checkbox" />Notification badges</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Notification preferences</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Enable/disable
+notifications</label></li>
+<li><label><input type="checkbox" />Notification types (messages,
+updates)</label></li>
+</ul></li>
+</ul>
+<h4 id="contact-seller-flow">Contact Seller Flow</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />“Contact Seller” button on ad
+detail</label></li>
+<li><label><input type="checkbox" />Create new conversation</label></li>
+<li><label><input type="checkbox" />Pre-filled message
+(optional)</label></li>
+<li><label><input type="checkbox" />Navigate to chat screen</label></li>
+</ul>
+<h4 id="deliverables-4">Deliverables</h4>
+<ul>
+<li>Real-time messaging working</li>
+<li>Push notifications configured</li>
+<li>Complete chat experience</li>
+</ul>
+<hr />
+<h2 id="month-3-tier-upgrades-launch">Month 3: Tier Upgrades &amp;
+Launch</h2>
+<h3 id="week-11-12-tier-management-payments">Week 11-12: Tier Management
+&amp; Payments</h3>
+<h4 id="tier-management">Tier Management</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Tier listing screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />All available tiers</label></li>
+<li><label><input type="checkbox" />Tier comparison table</label></li>
+<li><label><input type="checkbox" />Benefits per tier</label></li>
+<li><label><input type="checkbox" />Pricing information</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Current tier screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Current tier details</label></li>
+<li><label><input type="checkbox" />Expiration countdown</label></li>
+<li><label><input type="checkbox" />Usage statistics</label></li>
+<li><label><input type="checkbox" />Benefits breakdown</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Tier upgrade flow</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Select tier screen</label></li>
+<li><label><input type="checkbox" />Select pricing plan
+(monthly/yearly)</label></li>
+<li><label><input type="checkbox" />Review and confirm</label></li>
+<li><label><input type="checkbox" />Payment method
+selection</label></li>
+</ul></li>
+</ul>
+<h4 id="m-pesa-payment-integration">M-Pesa Payment Integration</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />M-Pesa SDK integration</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Android M-Pesa SDK</label></li>
+<li><label><input type="checkbox" />iOS M-Pesa SDK (or
+web-based)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />STK Push implementation</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Initiate payment</label></li>
+<li><label><input type="checkbox" />Payment request screen</label></li>
+<li><label><input type="checkbox" />Phone number input</label></li>
+<li><label><input type="checkbox" />Payment confirmation</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Payment status tracking</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Polling for payment
+status</label></li>
+<li><label><input type="checkbox" />Payment success screen</label></li>
+<li><label><input type="checkbox" />Payment failure
+handling</label></li>
+<li><label><input type="checkbox" />Retry payment option</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Manual payment option</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Payment instructions
+screen</label></li>
+<li><label><input type="checkbox" />Paybill number display</label></li>
+<li><label><input type="checkbox" />Account number display</label></li>
+<li><label><input type="checkbox" />Manual verification
+flow</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Payment history</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />List of all payments</label></li>
+<li><label><input type="checkbox" />Payment details</label></li>
+<li><label><input type="checkbox" />Receipt download (if
+available)</label></li>
+</ul></li>
+</ul>
+<h4 id="payment-edge-cases">Payment Edge Cases</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Prevent duplicate
+payments</label></li>
+<li><label><input type="checkbox" />Handle expired payments</label></li>
+<li><label><input type="checkbox" />Payment timeout
+handling</label></li>
+<li><label><input type="checkbox" />Network error handling</label></li>
+<li><label><input type="checkbox" />Payment verification</label></li>
+</ul>
+<h4 id="deliverables-5">Deliverables</h4>
+<ul>
+<li>Complete tier upgrade flow</li>
+<li>M-Pesa payment integration</li>
+<li>Payment status tracking</li>
+<li>Payment history</li>
+</ul>
+<hr />
+<h3 id="week-13-14-reviews-offers-polish">Week 13-14: Reviews, Offers
+&amp; Polish</h3>
+<h4 id="review-system">Review System</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Review listing screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Reviews for a listing</label></li>
+<li><label><input type="checkbox" />Reviews for a seller</label></li>
+<li><label><input type="checkbox" />Rating display</label></li>
+<li><label><input type="checkbox" />Review text</label></li>
+<li><label><input type="checkbox" />Review images (if
+applicable)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Submit review screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Rating selection
+(stars)</label></li>
+<li><label><input type="checkbox" />Review text input</label></li>
+<li><label><input type="checkbox" />Image upload (optional)</label></li>
+<li><label><input type="checkbox" />Submit review</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Seller reply to reviews</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Reply input</label></li>
+<li><label><input type="checkbox" />Submit reply</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Review statistics</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Average rating</label></li>
+<li><label><input type="checkbox" />Rating distribution</label></li>
+</ul></li>
+</ul>
+<h4 id="offers-promotions">Offers &amp; Promotions</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Offers listing screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Active offers</label></li>
+<li><label><input type="checkbox" />Featured offers</label></li>
+<li><label><input type="checkbox" />Flash sales</label></li>
+<li><label><input type="checkbox" />Upcoming offers</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Offer detail screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Offer information</label></li>
+<li><label><input type="checkbox" />Participating listings</label></li>
+<li><label><input type="checkbox" />Countdown timer</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Offer notifications</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />New offer alerts</label></li>
+<li><label><input type="checkbox" />Flash sale alerts</label></li>
+</ul></li>
+</ul>
+<h4 id="profile-settings">Profile &amp; Settings</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Profile screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />User information</label></li>
+<li><label><input type="checkbox" />Profile picture</label></li>
+<li><label><input type="checkbox" />Edit profile button</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Settings screen</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Account settings</label></li>
+<li><label><input type="checkbox" />Notification settings</label></li>
+<li><label><input type="checkbox" />Privacy settings</label></li>
+<li><label><input type="checkbox" />Language settings (if
+applicable)</label></li>
+<li><label><input type="checkbox" />About section</label></li>
+<li><label><input type="checkbox" />Help &amp; Support</label></li>
+<li><label><input type="checkbox" />Terms &amp; Conditions</label></li>
+<li><label><input type="checkbox" />Privacy Policy</label></li>
+<li><label><input type="checkbox" />Logout option</label></li>
+</ul></li>
+</ul>
+<h4 id="additional-features">Additional Features</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />About Us screen</label></li>
+<li><label><input type="checkbox" />FAQ screen</label></li>
+<li><label><input type="checkbox" />Contact Us screen</label></li>
+<li><label><input type="checkbox" />Help center</label></li>
+<li><label><input type="checkbox" />App version display</label></li>
+<li><label><input type="checkbox" />Rate app prompt
+(optional)</label></li>
+</ul>
+<h4 id="uiux-polish">UI/UX Polish</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Loading states</label></li>
+<li><label><input type="checkbox" />Error states</label></li>
+<li><label><input type="checkbox" />Empty states</label></li>
+<li><label><input type="checkbox" />Skeleton loaders</label></li>
+<li><label><input type="checkbox" />Smooth animations</label></li>
+<li><label><input type="checkbox" />Consistent spacing</label></li>
+<li><label><input type="checkbox" />Accessibility
+improvements</label></li>
+</ul>
+<h4 id="deliverables-6">Deliverables</h4>
+<ul>
+<li>Complete review system</li>
+<li>Offers display</li>
+<li>Settings and profile</li>
+<li>Polished UI/UX</li>
+</ul>
+<hr />
+<h3 id="week-15-16-testing-optimization-launch">Week 15-16: Testing,
+Optimization &amp; Launch</h3>
+<h4 id="testing">Testing</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Unit testing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Critical functions</label></li>
+<li><label><input type="checkbox" />Utility functions</label></li>
+<li><label><input type="checkbox" />State management</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Integration testing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />API integration</label></li>
+<li><label><input type="checkbox" />Navigation flows</label></li>
+<li><label><input type="checkbox" />Payment flows</label></li>
+</ul></li>
+<li><label><input type="checkbox" />UI/UX testing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Screen flow testing</label></li>
+<li><label><input type="checkbox" />Device compatibility</label></li>
+<li><label><input type="checkbox" />Screen size testing</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Performance testing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />App startup time</label></li>
+<li><label><input type="checkbox" />Image loading
+performance</label></li>
+<li><label><input type="checkbox" />Memory usage</label></li>
+<li><label><input type="checkbox" />Battery usage</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Security testing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Token storage security</label></li>
+<li><label><input type="checkbox" />API security</label></li>
+<li><label><input type="checkbox" />Data encryption</label></li>
+</ul></li>
+</ul>
+<h4 id="bug-fixes">Bug Fixes</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Critical bugs</label></li>
+<li><label><input type="checkbox" />High priority bugs</label></li>
+<li><label><input type="checkbox" />Medium priority bugs</label></li>
+<li><label><input type="checkbox" />UI/UX improvements</label></li>
+</ul>
+<h4 id="performance-optimization">Performance Optimization</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Image optimization</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Image compression</label></li>
+<li><label><input type="checkbox" />Lazy loading</label></li>
+<li><label><input type="checkbox" />Caching strategy</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Code optimization</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Bundle size
+optimization</label></li>
+<li><label><input type="checkbox" />Remove unused
+dependencies</label></li>
+<li><label><input type="checkbox" />Code splitting</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Network optimization</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Request batching</label></li>
+<li><label><input type="checkbox" />Caching strategies</label></li>
+<li><label><input type="checkbox" />Offline support (basic)</label></li>
+</ul></li>
+</ul>
+<h4 id="app-store-preparation">App Store Preparation</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />App icons</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />iOS app icon (all
+sizes)</label></li>
+<li><label><input type="checkbox" />Android app icon (all
+sizes)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Screenshots</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />iOS screenshots (all device
+sizes)</label></li>
+<li><label><input type="checkbox" />Android screenshots (all device
+sizes)</label></li>
+</ul></li>
+<li><label><input type="checkbox" />App Store listings</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />App name</label></li>
+<li><label><input type="checkbox" />App description</label></li>
+<li><label><input type="checkbox" />Keywords</label></li>
+<li><label><input type="checkbox" />Privacy policy URL</label></li>
+<li><label><input type="checkbox" />Support URL</label></li>
+</ul></li>
+<li><label><input type="checkbox" />App metadata</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Version number</label></li>
+<li><label><input type="checkbox" />Build number</label></li>
+<li><label><input type="checkbox" />Release notes</label></li>
+</ul></li>
+</ul>
+<h4 id="beta-testing">Beta Testing</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Internal testing</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />TestFlight setup (iOS)</label></li>
+<li><label><input type="checkbox" />Internal testing track
+(Android)</label></li>
+<li><label><input type="checkbox" />Test user onboarding</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Beta feedback collection</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Feedback form</label></li>
+<li><label><input type="checkbox" />Bug reporting</label></li>
+<li><label><input type="checkbox" />User surveys</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Beta fixes</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Address critical issues</label></li>
+<li><label><input type="checkbox" />Implement feedback</label></li>
+</ul></li>
+</ul>
+<h4 id="app-store-submission">App Store Submission</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />iOS App Store</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />App Store Connect setup</label></li>
+<li><label><input type="checkbox" />Build upload</label></li>
+<li><label><input type="checkbox" />App review submission</label></li>
+<li><label><input type="checkbox" />Compliance checks</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Google Play Store</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Google Play Console
+setup</label></li>
+<li><label><input type="checkbox" />Build upload</label></li>
+<li><label><input type="checkbox" />App review submission</label></li>
+<li><label><input type="checkbox" />Compliance checks</label></li>
+</ul></li>
+</ul>
+<h4 id="launch-preparation">Launch Preparation</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Production environment
+setup</label></li>
+<li><label><input type="checkbox" />API endpoints
+verification</label></li>
+<li><label><input type="checkbox" />Monitoring setup</label>
+<ul class="task-list">
+<li><label><input type="checkbox" />Crash reporting
+(Sentry)</label></li>
+<li><label><input type="checkbox" />Analytics (Firebase Analytics /
+Mixpanel)</label></li>
+<li><label><input type="checkbox" />Performance monitoring</label></li>
+</ul></li>
+<li><label><input type="checkbox" />Launch checklist</label></li>
+<li><label><input type="checkbox" />Rollback plan</label></li>
+</ul>
+<h4 id="post-launch">Post-Launch</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" />Monitor app performance</label></li>
+<li><label><input type="checkbox" />Monitor crash reports</label></li>
+<li><label><input type="checkbox" />Monitor user feedback</label></li>
+<li><label><input type="checkbox" />Hotfix deployment
+process</label></li>
+<li><label><input type="checkbox" />Support team training</label></li>
+</ul>
+<h4 id="deliverables-7">Deliverables</h4>
+<ul>
+<li>Fully tested app</li>
+<li>Optimized performance</li>
+<li>App store submissions</li>
+<li>Production deployment</li>
+<li>Monitoring in place</li>
+</ul>
+<hr />
+<h2 id="key-deliverables-summary">Key Deliverables Summary</h2>
+<h3 id="month-1">Month 1</h3>
+<ul>
+<li>Working React Native project</li>
+<li>Complete authentication system</li>
+<li>Onboarding experience</li>
+<li>API integration layer</li>
+<li>Design system foundation</li>
+</ul>
+<h3 id="month-2">Month 2</h3>
+<ul>
+<li>Complete buyer browsing experience</li>
+<li>Complete seller management system</li>
+<li>Real-time messaging</li>
+<li>Image upload and management</li>
+</ul>
+<h3 id="month-3">Month 3</h3>
+<ul>
+<li>Tier upgrade payment system</li>
+<li>Review system</li>
+<li>Complete feature set</li>
+<li>Production-ready apps</li>
+<li>App store submissions</li>
+</ul>
+<hr />
+<h2 id="technical-stack">Technical Stack</h2>
+<h3 id="core">Core</h3>
+<ul>
+<li><strong>Framework:</strong> React Native (latest stable)</li>
+<li><strong>Language:</strong> TypeScript</li>
+<li><strong>State Management:</strong> Zustand</li>
+<li><strong>Navigation:</strong> React Navigation v6</li>
+<li><strong>API Client:</strong> Fetch</li>
+<li><strong>Data Fetching:</strong> TanStack Query (React Query)</li>
+</ul>
+<h3 id="real-time">Real-time</h3>
+<ul>
+<li><strong>WebSocket:</strong> <span class="citation"
+data-cites="rails/actioncable">@rails/actioncable</span> or
+react-native-actioncable</li>
+<li><strong>Push Notifications:</strong> React Native Firebase
+(FCM/APNs)</li>
+</ul>
+<h3 id="uiux">UI/UX</h3>
+<ul>
+<li><strong>Component Library:</strong> React Native Paper or
+NativeBase</li>
+<li><strong>Animations:</strong> React Native Reanimated</li>
+<li><strong>Images:</strong> React Native Fast Image</li>
+<li><strong>Icons:</strong> React Native Vector Icons</li>
+</ul>
+<h3 id="payments">Payments</h3>
+<ul>
+<li><strong>M-Pesa:</strong> Custom M-Pesa SDK integration or
+react-native-mpesa</li>
+</ul>
+<h3 id="storage">Storage</h3>
+<ul>
+<li><strong>Secure Storage:</strong> React Native Keychain (iOS) / React
+Native Keychain (Android)</li>
+<li><strong>Async Storage:</strong> <span class="citation"
+data-cites="react-native-async-storage/async-storage">@react-native-async-storage/async-storage</span></li>
+</ul>
+<h3 id="development-tools">Development Tools</h3>
+<ul>
+<li><strong>Linting:</strong> ESLint</li>
+<li><strong>Formatting:</strong> Prettier</li>
+<li><strong>Git Hooks:</strong> Husky</li>
+<li><strong>Testing:</strong> Jest + React Native Testing Library</li>
+</ul>
+<h3 id="monitoring-analytics">Monitoring &amp; Analytics</h3>
+<ul>
+<li><strong>Crash Reporting:</strong> Sentry</li>
+<li><strong>Analytics:</strong> Firebase Analytics or Mixpanel</li>
+<li><strong>Performance:</strong> React Native Performance Monitor</li>
+</ul>
+<hr />
+<h2 id="risk-management">Risk Management</h2>
+<h3 id="high-priority-risks">High Priority Risks</h3>
+<ol type="1">
+<li><p><strong>M-Pesa Integration Complexity</strong></p>
+<ul>
+<li><strong>Risk:</strong> M-Pesa SDK integration may take longer than
+expected</li>
+<li><strong>Mitigation:</strong> Start M-Pesa integration early, have
+fallback manual payment option</li>
+<li><strong>Contingency:</strong> Use web-based M-Pesa integration if
+native SDK fails</li>
+</ul></li>
+<li><p><strong>ActionCable WebSocket Issues</strong></p>
+<ul>
+<li><strong>Risk:</strong> WebSocket connections may be unstable on
+mobile</li>
+<li><strong>Mitigation:</strong> Implement robust reconnection logic,
+fallback to polling</li>
+<li><strong>Contingency:</strong> Use HTTP polling as backup</li>
+</ul></li>
+<li><p><strong>App Store Review Delays</strong></p>
+<ul>
+<li><strong>Risk:</strong> App store review may take 1-2 weeks</li>
+<li><strong>Mitigation:</strong> Submit early, ensure compliance, have
+all documentation ready</li>
+<li><strong>Contingency:</strong> Plan for potential delays in launch
+date</li>
+</ul></li>
+<li><p><strong>Image Upload Performance</strong></p>
+<ul>
+<li><strong>Risk:</strong> Large images may cause performance
+issues</li>
+<li><strong>Mitigation:</strong> Implement image compression, optimize
+upload process</li>
+<li><strong>Contingency:</strong> Reduce max image size or number of
+images</li>
+</ul></li>
+<li><p><strong>Timeline Pressure</strong></p>
+<ul>
+<li><strong>Risk:</strong> 3 months is tight for full feature set</li>
+<li><strong>Mitigation:</strong> Prioritize core features, defer
+nice-to-haves</li>
+<li><strong>Contingency:</strong> Consider phased launch (MVP first,
+then enhancements)</li>
+</ul></li>
+</ol>
+<h3 id="medium-priority-risks">Medium Priority Risks</h3>
+<ol type="1">
+<li><p><strong>Device Compatibility Issues</strong></p>
+<ul>
+<li><strong>Risk:</strong> App may not work on all devices</li>
+<li><strong>Mitigation:</strong> Test on multiple devices early, set
+minimum OS versions</li>
+</ul></li>
+<li><p><strong>API Performance</strong></p>
+<ul>
+<li><strong>Risk:</strong> Backend API may not handle mobile load
+well</li>
+<li><strong>Mitigation:</strong> Implement caching, optimize API calls,
+coordinate with backend team</li>
+</ul></li>
+<li><p><strong>Third-party Dependencies</strong></p>
+<ul>
+<li><strong>Risk:</strong> Key libraries may have issues or be
+deprecated</li>
+<li><strong>Mitigation:</strong> Use well-maintained libraries, have
+alternatives ready</li>
+</ul></li>
+</ol>
+<hr />
+<h2 id="success-metrics">Success Metrics</h2>
+<h3 id="technical-metrics">Technical Metrics</h3>
+<ul>
+<li>App crash rate &lt; 1%</li>
+<li>App startup time &lt; 3 seconds</li>
+<li>API response time &lt; 2 seconds</li>
+<li>Image load time &lt; 1 second</li>
+</ul>
+<h3 id="user-metrics">User Metrics</h3>
+<ul>
+<li>User registration completion rate &gt; 70%</li>
+<li>Daily active users (target to be set)</li>
+<li>Message response rate (target to be set)</li>
+<li>Tier upgrade conversion rate (target to be set)</li>
+</ul>
+<hr />
+<h2 id="notes">Notes</h2>
+<ul>
+<li>Regular weekly reviews and adjustments may be needed</li>
+<li>Some features may be moved to post-launch based on priorities</li>
+<li>Regular testing on real devices is crucial</li>
+</ul>
+<hr />
+<p><strong>Document Version:</strong> 1.0 <strong>Last Updated:</strong>
+14th November 2025 <strong>Status:</strong> Planning Phase</p>
+</body>
+</html>

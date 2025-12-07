@@ -1,0 +1,179 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend-carbon
+      dockerfile: Dockerfile.secure
+      args:
+        BACKEND_INTERNAL_URL: http://backend:3001
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+        REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL}
+        REACT_APP_CLOUDINARY_CLOUD_NAME: ${REACT_APP_CLOUDINARY_CLOUD_NAME}
+        REACT_APP_CLOUDINARY_UPLOAD_PRESET: ${REACT_APP_CLOUDINARY_UPLOAD_PRESET}
+        REACT_APP_SITE_URL: ${REACT_APP_SITE_URL}
+        REACT_APP_WEBSOCKET_URL: ${REACT_APP_WEBSOCKET_URL}
+        REACT_APP_GOOGLE_CLIENT_ID: ${REACT_APP_GOOGLE_CLIENT_ID}
+        REACT_APP_GOOGLE_REDIRECT_URI: ${REACT_APP_GOOGLE_REDIRECT_URI}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        NEXT_PUBLIC_GOOGLE_REDIRECT_URI: ${NEXT_PUBLIC_GOOGLE_REDIRECT_URI}
+        PUBLIC_URL: ${PUBLIC_URL}
+    container_name: carbon_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_INTERNAL_URL=http://backend:3001
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
+      nproc:
+        soft: 1024
+        hard: 1024
+    cap_drop: [ALL]
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./frontend-carbon/.next/cache:/app/.next/cache
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carbon_backend
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - RAILS_ENV=production
+      - RAILS_SERVE_STATIC_FILES=true
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    volumes:
+      - ./backend/storage:/app/storage
+      - ./backend/public:/app/public
+      - ./backend/tmp:/app/tmp
+      - ./backend/log:/app/log
+      - ./backend/tmp/pids:/app/tmp/pids
+    tmpfs:
+      - /tmp:size=100m
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
+      nproc:
+        soft: 1024
+        hard: 1024
+    cap_drop:
+      - CAP_SETPCAP
+      - CAP_SYS_MODULE
+      - CAP_SYS_RAWIO
+      - CAP_SYS_PACCT
+      - CAP_SYS_ADMIN
+      - CAP_SYS_NICE
+      - CAP_SYS_RESOURCE
+      - CAP_SYS_TIME
+      - CAP_SYS_TTY_CONFIG
+      - CAP_AUDIT_WRITE
+      - CAP_AUDIT_CONTROL
+      - CAP_MAC_OVERRIDE
+      - CAP_MAC_ADMIN
+      - CAP_SYSLOG
+      - CAP_WAKE_ALARM
+      - CAP_BLOCK_SUSPEND
+      - CAP_AUDIT_READ
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: bitnami/redis:latest
+    container_name: carbon_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=SVk+GapHEBaHGkByor7Fh3TiciyfHyPyQSxSPcEctrU=
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "-a",
+          "SVk+GapHEBaHGkByor7Fh3TiciyfHyPyQSxSPcEctrU=",
+          "ping",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
+      nproc:
+        soft: 1024
+        hard: 1024
+    # Security settings for Bitnami Redis
+    cap_drop: [ALL]
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.websocket
+    container_name: carbon_websocket
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - ANYCABLE_REDIS_URL=${REDIS_URL}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
+      nproc:
+        soft: 1024
+        hard: 1024
+    cap_drop: [ALL]
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
