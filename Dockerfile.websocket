@@ -1,28 +1,16 @@
 FROM ruby:3.4.4
 
-# Install dependencies
-RUN apt-get update -qq && apt-get install -y \
-  build-essential \
-  libpq-dev \
-  nodejs \
-  wget
+RUN apt-get update -qq && apt-get install -y build-essential libpq-dev wget && rm -rf /var/lib/apt/lists/*
 
-# Install anycable-go
 RUN wget https://github.com/anycable/anycable-go/releases/download/v1.4.0/anycable-go-linux-amd64 -O /usr/local/bin/anycable-go && \
     chmod +x /usr/local/bin/anycable-go
 
-# Set the working directory
 WORKDIR /app
 
-# Copy Gemfile and install gems
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
-# Copy the entire application
 COPY . .
 
-# Expose the port
 EXPOSE 3001
-
-# Start anycable-go
 CMD ["anycable-go", "--host=0.0.0.0", "--port=3001"]

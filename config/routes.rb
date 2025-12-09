@@ -796,6 +796,7 @@ Rails.application.routes.draw do
         collection do
           get :analytics
           get :best_ads
+          get :shops
         end
       end
       resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
