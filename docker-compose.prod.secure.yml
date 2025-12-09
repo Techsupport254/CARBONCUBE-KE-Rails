@@ -4,7 +4,7 @@ services:
   frontend:
     build:
       context: ./frontend-carbon
-      dockerfile: Dockerfile.secure
+      dockerfile: Dockerfile
       args:
         BACKEND_INTERNAL_URL: http://backend:3001
         NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
@@ -150,7 +150,7 @@ services:
       dockerfile: Dockerfile.websocket
     container_name: carbon_websocket
     ports:
-      - "8080:8080"
+      - "8080:3001"
     env_file:
       - .env
     environment:

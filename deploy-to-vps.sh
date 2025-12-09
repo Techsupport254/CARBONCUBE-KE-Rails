@@ -16,65 +16,45 @@ VPS_USER="root"
 VPS_PASSWORD="Nx9CC4ENjmmpcnqPeWLV"
 PROJECT_DIR="CARBON"
 
+# Parse command line arguments
+COMMIT_MESSAGE=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -m|--message)
+            COMMIT_MESSAGE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: $0 [-m MESSAGE] [-h]"
+            echo "  -m, --message MESSAGE    Commit message for git operations"
+            echo "  -h, --help              Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use -h or --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 run_vps() {
     sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "$1"
 }
 
-echo -e "${BLUE}🚀 Carbon Cube - Git Pull & Rebuild${NC}"
-
-# Pull latest changes on VPS
-echo -e "${YELLOW}📥 Pulling latest changes...${NC}"
-run_vps "cd /root/$PROJECT_DIR && git pull origin main"
-
-# Copy env file
-echo -e "${YELLOW}📋 Updating environment...${NC}"
-scp -o StrictHostKeyChecking=no .env "$VPS_USER@$VPS_HOST:/root/.env"
-
-# Rebuild containers
-echo -e "${YELLOW}🏗️ Rebuilding containers...${NC}"
-run_vps "cd /root/$PROJECT_DIR && \
-    docker-compose -f docker-compose.prod.secure.yml build --no-cache && \
-    docker-compose -f docker-compose.prod.secure.yml up -d"
-
-# Test services
-echo -e "${YELLOW}🩺 Testing services...${NC}"
-sleep 10
-
-test_service() {
-    local name=$1
-    local url=$2
-    if run_vps "curl -s -f $url > /dev/null 2>&1"; then
-        echo -e "${GREEN}✅ $name: OK${NC}"
-    else
-        echo -e "${RED}❌ $name: FAILED${NC}"
-    fi
-}
-
-test_service "Frontend" "http://localhost:3000"
-test_service "Backend" "http://localhost:3001/up"
-test_service "WebSocket" "http://localhost:8080/health"
-
-echo ""
-echo -e "${GREEN}🎉 Deployment Complete!${NC}"
-echo ""
-echo "🌐 Frontend: https://carboncube-ke.com"
-echo "🔗 Backend API: https://carboncube-ke.com/api"
-echo ""
-run_vps "docker ps --format 'table {{.Names}}\t{{.Status}}'"
-
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  Carbon Cube - VPS Deployment${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo ""
-
-# Function to execute command on VPS
-execute_on_vps() {
-    sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "$1"
-}
+# Show usage if no commit message provided and there are git changes to commit
+if [ -z "$COMMIT_MESSAGE" ]; then
+    echo -e "${BLUE}🚀 Carbon Cube - Git Pull & Rebuild${NC}"
+    echo -e "${BLUE}Tip: Use -m \"commit message\" to skip interactive prompts${NC}"
+    echo ""
+else
+    echo -e "${BLUE}🚀 Carbon Cube - Full Deployment (with message: \"$COMMIT_MESSAGE\")${NC}"
+    echo ""
+fi
 
 # Function to check if command exists on VPS
 check_command() {
-    execute_on_vps "command -v $1 > /dev/null 2>&1"
+    run_vps "command -v $1 > /dev/null 2>&1"
 }
 
 echo -e "${YELLOW}Step 1: Pushing code to GitHub...${NC}"
@@ -83,16 +63,20 @@ echo -e "${YELLOW}Step 1: Pushing code to GitHub...${NC}"
 handle_git_repo() {
     local REPO_DIR="$1"
     local REPO_NAME="$2"
-    
-    if [ ! -d "$REPO_DIR" ]; then
-        return 0
+
+    # Handle directory change
+    if [ "$REPO_DIR" != "." ]; then
+        if [ ! -d "$REPO_DIR" ]; then
+            return 0
+        fi
+        cd "$REPO_DIR" || return 0
     fi
-    
-    cd "$REPO_DIR" || return 0
-    
+
     # Check if this is a git repository
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        cd - > /dev/null || true
+        if [ "$REPO_DIR" != "." ]; then
+            cd - > /dev/null || true
+        fi
         return 0
     fi
     
@@ -147,15 +131,23 @@ handle_git_repo() {
         fi
         echo ""
         
-        # Ask for commit message
-        echo -e "${YELLOW}Enter commit message for $REPO_NAME:${NC}"
-        read -r COMMIT_MESSAGE
-        
-        if [ -z "$COMMIT_MESSAGE" ]; then
-            echo -e "${RED}❌ Commit message cannot be empty, skipping $REPO_NAME${NC}"
-            cd - > /dev/null || true
-            set -e
-            return 0
+        # Get commit message
+        if [ -n "$COMMIT_MESSAGE" ]; then
+            # Use provided commit message
+            echo -e "${BLUE}Using commit message: ${COMMIT_MESSAGE}${NC}"
+        else
+            # Ask for commit message
+            echo -e "${YELLOW}Enter commit message for $REPO_NAME:${NC}"
+            read -r COMMIT_MESSAGE
+
+            if [ -z "$COMMIT_MESSAGE" ]; then
+                echo -e "${RED}❌ Commit message cannot be empty, skipping $REPO_NAME${NC}"
+                if [ "$REPO_DIR" != "." ]; then
+                    cd - > /dev/null || true
+                fi
+                set -e
+                return 0
+            fi
         fi
         
         # Stage all changes
@@ -203,9 +195,21 @@ handle_git_repo() {
     fi
     
     set -e  # Re-enable exit on error
-    cd - > /dev/null || true
+    if [ "$REPO_DIR" != "." ]; then
+        cd - > /dev/null || true
+    fi
     echo ""
 }
+
+# Check root repository first
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    handle_git_repo "." "Root Repository (main project)"
+fi
+
+# Check CarbonMobile submodule
+if [ -d "CarbonMobile" ]; then
+    handle_git_repo "CarbonMobile" "Mobile App (CarbonMobile)"
+fi
 
 # Check frontend-carbon directory
 if [ -d "frontend-carbon" ]; then
@@ -220,7 +224,7 @@ fi
 echo ""
 
 echo -e "${YELLOW}Step 2: Connecting to VPS...${NC}"
-if ! execute_on_vps "echo 'Connected'" > /dev/null 2>&1; then
+if ! run_vps "echo 'Connected'" > /dev/null 2>&1; then
     echo -e "${RED}❌ Failed to connect to VPS${NC}"
     echo "   Make sure sshpass is installed: brew install hudochenkov/sshpass/sshpass (macOS)"
     echo "   Or: sudo apt-get install sshpass (Linux)"
@@ -235,21 +239,21 @@ echo ""
 # First, check what exists on VPS
 echo -e "${BLUE}VPS Structure Check:${NC}"
 echo -e "${YELLOW}Checking /root/CARBON/backend...${NC}"
-if execute_on_vps "test -d $PROJECT_PATH/backend" 2>/dev/null; then
+if run_vps "test -d $PROJECT_PATH/backend" 2>/dev/null; then
     # More robust git check - try multiple methods
     IS_GIT_REPO=false
-    if execute_on_vps "cd $PROJECT_PATH/backend && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
+    if run_vps "cd $PROJECT_PATH/backend && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
         IS_GIT_REPO=true
-    elif execute_on_vps "test -d $PROJECT_PATH/backend/.git" 2>/dev/null; then
+    elif run_vps "test -d $PROJECT_PATH/backend/.git" 2>/dev/null; then
         IS_GIT_REPO=true
-    elif execute_on_vps "cd $PROJECT_PATH/backend && git status > /dev/null 2>&1" 2>/dev/null; then
+    elif run_vps "cd $PROJECT_PATH/backend && git status > /dev/null 2>&1" 2>/dev/null; then
         IS_GIT_REPO=true
     fi
     
     if [ "$IS_GIT_REPO" = true ]; then
-        BACKEND_BRANCH=$(execute_on_vps "cd $PROJECT_PATH/backend && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
-        BACKEND_REMOTE=$(execute_on_vps "cd $PROJECT_PATH/backend && git remote get-url origin 2>/dev/null || echo 'no remote'" 2>/dev/null | tr -d '\n\r')
-        BACKEND_COMMIT=$(execute_on_vps "cd $PROJECT_PATH/backend && git rev-parse --short HEAD 2>/dev/null || echo 'no commits'" 2>/dev/null | tr -d '\n\r')
+        BACKEND_BRANCH=$(run_vps "cd $PROJECT_PATH/backend && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
+        BACKEND_REMOTE=$(run_vps "cd $PROJECT_PATH/backend && git remote get-url origin 2>/dev/null || echo 'no remote'" 2>/dev/null | tr -d '\n\r')
+        BACKEND_COMMIT=$(run_vps "cd $PROJECT_PATH/backend && git rev-parse --short HEAD 2>/dev/null || echo 'no commits'" 2>/dev/null | tr -d '\n\r')
         echo -e "${GREEN}  ✅ Backend is a git repository${NC}"
         echo -e "     Branch: ${BLUE}$BACKEND_BRANCH${NC}"
         echo -e "     Remote: ${BLUE}$BACKEND_REMOTE${NC}"
@@ -263,21 +267,21 @@ fi
 
 echo ""
 echo -e "${YELLOW}Checking /root/CARBON/frontend-carbon (frontend repo)...${NC}"
-if execute_on_vps "test -d $PROJECT_PATH/frontend-carbon" 2>/dev/null; then
+if run_vps "test -d $PROJECT_PATH/frontend-carbon" 2>/dev/null; then
     # More robust git check - try multiple methods
     IS_GIT_REPO=false
-    if execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
+    if run_vps "cd $PROJECT_PATH/frontend-carbon && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
         IS_GIT_REPO=true
-    elif execute_on_vps "test -d $PROJECT_PATH/frontend-carbon/.git" 2>/dev/null; then
+    elif run_vps "test -d $PROJECT_PATH/frontend-carbon/.git" 2>/dev/null; then
         IS_GIT_REPO=true
-    elif execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git status > /dev/null 2>&1" 2>/dev/null; then
+    elif run_vps "cd $PROJECT_PATH/frontend-carbon && git status > /dev/null 2>&1" 2>/dev/null; then
         IS_GIT_REPO=true
     fi
 
     if [ "$IS_GIT_REPO" = true ]; then
-        FRONTEND_BRANCH=$(execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
-        FRONTEND_REMOTE=$(execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git remote get-url origin 2>/dev/null || echo 'no remote'" 2>/dev/null | tr -d '\n\r')
-        FRONTEND_COMMIT=$(execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git rev-parse --short HEAD 2>/dev/null || echo 'no commits'" 2>/dev/null | tr -d '\n\r')
+        FRONTEND_BRANCH=$(run_vps "cd $PROJECT_PATH/frontend-carbon && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
+        FRONTEND_REMOTE=$(run_vps "cd $PROJECT_PATH/frontend-carbon && git remote get-url origin 2>/dev/null || echo 'no remote'" 2>/dev/null | tr -d '\n\r')
+        FRONTEND_COMMIT=$(run_vps "cd $PROJECT_PATH/frontend-carbon && git rev-parse --short HEAD 2>/dev/null || echo 'no commits'" 2>/dev/null | tr -d '\n\r')
         echo -e "${GREEN}  ✅ Frontend (frontend-carbon) is a git repository${NC}"
         echo -e "     Branch: ${BLUE}$FRONTEND_BRANCH${NC}"
         echo -e "     Remote: ${BLUE}$FRONTEND_REMOTE${NC}"
@@ -305,20 +309,20 @@ pull_vps_repo() {
     set +e  # Temporarily disable exit on error
 
     # Check if directory exists and is a git repository
-    if ! execute_on_vps "test -d $FULL_PATH" 2>/dev/null; then
+    if ! run_vps "test -d $FULL_PATH" 2>/dev/null; then
         echo -e "${YELLOW}⚠️  Directory $FULL_PATH does not exist on VPS${NC}"
         set -e
         return 0
     fi
 
-    if ! execute_on_vps "cd $FULL_PATH && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
+    if ! run_vps "cd $FULL_PATH && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
         echo -e "${YELLOW}⚠️  Not a git repository on VPS, skipping...${NC}"
         set -e
         return 0
     fi
 
     # Get current branch
-    CURRENT_BRANCH=$(execute_on_vps "cd $FULL_PATH && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
+    CURRENT_BRANCH=$(run_vps "cd $FULL_PATH && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
     if [ -z "$CURRENT_BRANCH" ]; then
         CURRENT_BRANCH="main"
     fi
@@ -326,23 +330,23 @@ pull_vps_repo() {
     echo -e "${YELLOW}   Pulling from branch: $CURRENT_BRANCH${NC}"
 
     # Check if we need to convert HTTPS to SSH URL for authentication
-    REMOTE_URL=$(execute_on_vps "cd $FULL_PATH && git remote get-url origin 2>/dev/null" 2>/dev/null | tr -d '\n\r')
+    REMOTE_URL=$(run_vps "cd $FULL_PATH && git remote get-url origin 2>/dev/null" 2>/dev/null | tr -d '\n\r')
 
     if [[ "$REMOTE_URL" == https://github.com/* ]]; then
         # Convert HTTPS to SSH URL for better authentication
         SSH_URL=$(echo "$REMOTE_URL" | sed 's|https://github.com/|git@github.com:|g')
         echo -e "${YELLOW}   Converting HTTPS to SSH URL for authentication...${NC}"
-        execute_on_vps "cd $FULL_PATH && git remote set-url origin $SSH_URL" 2>&1 || true
+        run_vps "cd $FULL_PATH && git remote set-url origin $SSH_URL" 2>&1 || true
     fi
 
     # Set git to use the deploy SSH key
-    execute_on_vps "cd $FULL_PATH && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git fetch origin $CURRENT_BRANCH" 2>&1
+    run_vps "cd $FULL_PATH && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git fetch origin $CURRENT_BRANCH" 2>&1
     FETCH_STATUS=$?
 
     if [ $FETCH_STATUS -eq 0 ]; then
         # Always reset to match remote repository exactly (discard any local changes)
         echo -e "${YELLOW}   Resetting to match remote repository (discarding any local changes)...${NC}"
-        execute_on_vps "cd $FULL_PATH && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git reset --hard origin/$CURRENT_BRANCH" 2>&1
+        run_vps "cd $FULL_PATH && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git reset --hard origin/$CURRENT_BRANCH" 2>&1
         PULL_STATUS=$?
     else
         PULL_STATUS=1
@@ -358,7 +362,7 @@ pull_vps_repo() {
 
         # Try with the default SSH key
         set +e
-        execute_on_vps "cd $FULL_PATH && git fetch origin $CURRENT_BRANCH && git reset --hard origin/$CURRENT_BRANCH" 2>&1
+        run_vps "cd $FULL_PATH && git fetch origin $CURRENT_BRANCH && git reset --hard origin/$CURRENT_BRANCH" 2>&1
         ALT_STATUS=$?
         set -e
 
@@ -383,30 +387,30 @@ FRONTEND_DIR="$PROJECT_PATH/frontend-carbon"
 REPO_NAME="Frontend (frontend-carbon repo)"
 
 # Check if directory exists
-if ! execute_on_vps "test -d $FRONTEND_DIR" 2>/dev/null; then
+if ! run_vps "test -d $FRONTEND_DIR" 2>/dev/null; then
     echo -e "${YELLOW}   Creating frontend directory...${NC}"
-    execute_on_vps "mkdir -p $FRONTEND_DIR" 2>&1
+    run_vps "mkdir -p $FRONTEND_DIR" 2>&1
 fi
 
 # Check if it's a git repository
-if ! execute_on_vps "cd $FRONTEND_DIR && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
+if ! run_vps "cd $FRONTEND_DIR && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
     echo -e "${YELLOW}   Initializing git repository...${NC}"
-    execute_on_vps "cd $FRONTEND_DIR && git init" 2>&1
+    run_vps "cd $FRONTEND_DIR && git init" 2>&1
 
     # Set the remote URL (assuming it's the same as local frontend-carbon repo)
     if [ -d "frontend-carbon/.git" ]; then
         LOCAL_REMOTE=$(git -C frontend-carbon config --get remote.origin.url 2>/dev/null || echo "")
         if [ -n "$LOCAL_REMOTE" ]; then
             echo -e "${YELLOW}   Setting remote origin...${NC}"
-            execute_on_vps "cd $FRONTEND_DIR && git remote add origin $LOCAL_REMOTE" 2>&1
+            run_vps "cd $FRONTEND_DIR && git remote add origin $LOCAL_REMOTE" 2>&1
         fi
     fi
 fi
 
 # Now pull the repository
-if execute_on_vps "cd $FRONTEND_DIR && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
+if run_vps "cd $FRONTEND_DIR && git rev-parse --git-dir > /dev/null 2>&1" 2>/dev/null; then
     # Get current branch
-    CURRENT_BRANCH=$(execute_on_vps "cd $FRONTEND_DIR && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
+    CURRENT_BRANCH=$(run_vps "cd $FRONTEND_DIR && git branch --show-current 2>/dev/null || echo 'main'" 2>/dev/null | tr -d '\n\r')
     if [ -z "$CURRENT_BRANCH" ]; then
         CURRENT_BRANCH="main"
     fi
@@ -414,23 +418,23 @@ if execute_on_vps "cd $FRONTEND_DIR && git rev-parse --git-dir > /dev/null 2>&1"
     echo -e "${YELLOW}   Pulling from branch: $CURRENT_BRANCH${NC}"
 
     # Convert HTTPS to SSH URL for authentication if needed
-    REMOTE_URL=$(execute_on_vps "cd $FRONTEND_DIR && git remote get-url origin 2>/dev/null" 2>/dev/null | tr -d '\n\r')
+    REMOTE_URL=$(run_vps "cd $FRONTEND_DIR && git remote get-url origin 2>/dev/null" 2>/dev/null | tr -d '\n\r')
 
     if [[ "$REMOTE_URL" == https://github.com/* ]]; then
         # Convert HTTPS to SSH URL for better authentication
         SSH_URL=$(echo "$REMOTE_URL" | sed 's|https://github.com/|git@github.com:|g')
         echo -e "${YELLOW}   Converting HTTPS to SSH URL for authentication...${NC}"
-        execute_on_vps "cd $FRONTEND_DIR && git remote set-url origin $SSH_URL" 2>&1 || true
+        run_vps "cd $FRONTEND_DIR && git remote set-url origin $SSH_URL" 2>&1 || true
     fi
 
     # Set git to use the deploy SSH key
-    execute_on_vps "cd $FRONTEND_DIR && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git fetch origin $CURRENT_BRANCH" 2>&1
+    run_vps "cd $FRONTEND_DIR && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git fetch origin $CURRENT_BRANCH" 2>&1
     FETCH_STATUS=$?
 
     if [ $FETCH_STATUS -eq 0 ]; then
         # Always reset to match remote repository exactly (discard any local changes)
         echo -e "${YELLOW}   Resetting to match remote repository (discarding any local changes)...${NC}"
-        execute_on_vps "cd $FRONTEND_DIR && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git reset --hard origin/$CURRENT_BRANCH" 2>&1
+        run_vps "cd $FRONTEND_DIR && GIT_SSH_COMMAND='ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes' git reset --hard origin/$CURRENT_BRANCH" 2>&1
         PULL_STATUS=$?
     else
         PULL_STATUS=1
@@ -446,7 +450,7 @@ if execute_on_vps "cd $FRONTEND_DIR && git rev-parse --git-dir > /dev/null 2>&1"
 
         # Try with the default SSH key
         set +e
-        execute_on_vps "cd $FRONTEND_DIR && git fetch origin $CURRENT_BRANCH && git reset --hard origin/$CURRENT_BRANCH" 2>&1
+        run_vps "cd $FRONTEND_DIR && git fetch origin $CURRENT_BRANCH && git reset --hard origin/$CURRENT_BRANCH" 2>&1
         ALT_STATUS=$?
         set -e
 
@@ -497,9 +501,9 @@ sync_env_file() {
     echo -e "${YELLOW}   Syncing $ENV_NAME...${NC}"
     
     # Create backup of existing .env on VPS if it exists
-    if execute_on_vps "test -f $VPS_ENV" 2>/dev/null; then
+    if run_vps "test -f $VPS_ENV" 2>/dev/null; then
         BACKUP_PATH="${VPS_ENV}.backup.$(date +%Y%m%d_%H%M%S)"
-        execute_on_vps "cp $VPS_ENV $BACKUP_PATH" 2>/dev/null || true
+        run_vps "cp $VPS_ENV $BACKUP_PATH" 2>/dev/null || true
         echo -e "${BLUE}     Backed up existing file to: $BACKUP_PATH${NC}"
     fi
     
@@ -511,7 +515,7 @@ sync_env_file() {
         echo -e "${GREEN}     ✅ $ENV_NAME synced successfully${NC}"
         # Verify the file was copied correctly by checking its size
         LOCAL_SIZE=$(stat -f%z "$LOCAL_ENV" 2>/dev/null || stat -c%s "$LOCAL_ENV" 2>/dev/null)
-        VPS_SIZE=$(execute_on_vps "stat -f%z $VPS_ENV 2>/dev/null || stat -c%s $VPS_ENV 2>/dev/null" 2>/dev/null | tr -d '\n\r')
+        VPS_SIZE=$(run_vps "stat -f%z $VPS_ENV 2>/dev/null || stat -c%s $VPS_ENV 2>/dev/null" 2>/dev/null | tr -d '\n\r')
         if [ "$LOCAL_SIZE" != "$VPS_SIZE" ]; then
             echo -e "${YELLOW}     ⚠️  File size mismatch (local: ${LOCAL_SIZE}, VPS: ${VPS_SIZE})${NC}"
         fi
@@ -565,9 +569,9 @@ sync_docker_compose() {
     echo -e "${YELLOW}   Syncing $COMPOSE_NAME...${NC}"
 
     # Create backup of existing docker-compose file on VPS if it exists
-    if execute_on_vps "test -f $VPS_COMPOSE" 2>/dev/null; then
+    if run_vps "test -f $VPS_COMPOSE" 2>/dev/null; then
         BACKUP_PATH="${VPS_COMPOSE}.backup.$(date +%Y%m%d_%H%M%S)"
-        execute_on_vps "cp $VPS_COMPOSE $BACKUP_PATH" 2>/dev/null || true
+        run_vps "cp $VPS_COMPOSE $BACKUP_PATH" 2>/dev/null || true
         echo -e "${BLUE}     Backed up existing file to: $BACKUP_PATH${NC}"
     fi
 
@@ -579,7 +583,7 @@ sync_docker_compose() {
         echo -e "${GREEN}     ✅ $COMPOSE_NAME synced successfully${NC}"
         # Verify the file was copied correctly
         LOCAL_SIZE=$(stat -f%z "$LOCAL_COMPOSE" 2>/dev/null || stat -c%s "$LOCAL_COMPOSE" 2>/dev/null)
-        VPS_SIZE=$(execute_on_vps "stat -f%z $VPS_COMPOSE 2>/dev/null || stat -c%s $VPS_COMPOSE 2>/dev/null" 2>/dev/null | tr -d '\n\r')
+        VPS_SIZE=$(run_vps "stat -f%z $VPS_COMPOSE 2>/dev/null || stat -c%s $VPS_COMPOSE 2>/dev/null" 2>/dev/null | tr -d '\n\r')
         if [ "$LOCAL_SIZE" != "$VPS_SIZE" ]; then
             echo -e "${YELLOW}     ⚠️  File size mismatch (local: ${LOCAL_SIZE}, VPS: ${VPS_SIZE})${NC}"
         fi
@@ -601,7 +605,7 @@ echo -e "${YELLOW}Step 7: Zero-Downtime Docker Deployment...${NC}"
 
 # Function to check if docker command exists
 check_docker_command() {
-    execute_on_vps "command -v docker > /dev/null 2>&1"
+    run_vps "command -v docker > /dev/null 2>&1"
 }
 
 # Function to detect which services have changes
@@ -662,9 +666,9 @@ detect_service_changes() {
     fi
     
     # Check VPS for changes (compare VPS commit vs GitHub remote)
-    if check_docker_command && execute_on_vps "test -d $PROJECT_PATH/backend/.git" 2>/dev/null; then
-        VPS_BACKEND_COMMIT=$(execute_on_vps "cd $PROJECT_PATH/backend && git rev-parse HEAD 2>/dev/null" 2>/dev/null | tr -d '\n\r')
-        REMOTE_BACKEND_COMMIT=$(execute_on_vps "cd $PROJECT_PATH/backend && git ls-remote origin $(git branch --show-current 2>/dev/null || echo 'main') 2>/dev/null | cut -f1" 2>/dev/null | tr -d '\n\r')
+    if check_docker_command && run_vps "test -d $PROJECT_PATH/backend/.git" 2>/dev/null; then
+        VPS_BACKEND_COMMIT=$(run_vps "cd $PROJECT_PATH/backend && git rev-parse HEAD 2>/dev/null" 2>/dev/null | tr -d '\n\r')
+        REMOTE_BACKEND_COMMIT=$(run_vps "cd $PROJECT_PATH/backend && git ls-remote origin $(git branch --show-current 2>/dev/null || echo 'main') 2>/dev/null | cut -f1" 2>/dev/null | tr -d '\n\r')
         
         if [ -n "$VPS_BACKEND_COMMIT" ] && [ -n "$REMOTE_BACKEND_COMMIT" ] && [ "$VPS_BACKEND_COMMIT" != "$REMOTE_BACKEND_COMMIT" ]; then
             BACKEND_CHANGED=true
@@ -672,9 +676,9 @@ detect_service_changes() {
         fi
     fi
     
-    if check_docker_command && execute_on_vps "test -d $PROJECT_PATH/frontend-carbon/.git" 2>/dev/null; then
-        VPS_FRONTEND_COMMIT=$(execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git rev-parse HEAD 2>/dev/null" 2>/dev/null | tr -d '\n\r')
-        REMOTE_FRONTEND_COMMIT=$(execute_on_vps "cd $PROJECT_PATH/frontend-carbon && git ls-remote origin $(git branch --show-current 2>/dev/null || echo 'main') 2>/dev/null | cut -f1" 2>/dev/null | tr -d '\n\r')
+    if check_docker_command && run_vps "test -d $PROJECT_PATH/frontend-carbon/.git" 2>/dev/null; then
+        VPS_FRONTEND_COMMIT=$(run_vps "cd $PROJECT_PATH/frontend-carbon && git rev-parse HEAD 2>/dev/null" 2>/dev/null | tr -d '\n\r')
+        REMOTE_FRONTEND_COMMIT=$(run_vps "cd $PROJECT_PATH/frontend-carbon && git ls-remote origin $(git branch --show-current 2>/dev/null || echo 'main') 2>/dev/null | cut -f1" 2>/dev/null | tr -d '\n\r')
         
         if [ -n "$VPS_FRONTEND_COMMIT" ] && [ -n "$REMOTE_FRONTEND_COMMIT" ] && [ "$VPS_FRONTEND_COMMIT" != "$REMOTE_FRONTEND_COMMIT" ]; then
             FRONTEND_CHANGED=true
@@ -707,9 +711,9 @@ detect_service_changes() {
     fi
 }
 
-# Function to get docker compose command for use in execute_on_vps
+# Function to get docker compose command for use in run_vps
 get_docker_compose_cmd() {
-    if execute_on_vps "command -v docker-compose > /dev/null 2>&1" 2>/dev/null; then
+    if run_vps "command -v docker-compose > /dev/null 2>&1" 2>/dev/null; then
         echo "docker-compose"
     else
         echo "docker compose"
@@ -726,7 +730,7 @@ check_container_health() {
     # If identifier looks like a hash (64 chars), try to find container name
     if [ ${#CONTAINER_IDENTIFIER} -gt 20 ]; then
         echo -e "${YELLOW}     Container identifier looks like a hash, finding container name...${NC}"
-        CONTAINER_NAME=$(execute_on_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
+        CONTAINER_NAME=$(run_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
         if [ -z "$CONTAINER_NAME" ]; then
             echo -e "${YELLOW}     Could not find container name, using HTTP endpoint check only${NC}"
             CONTAINER_NAME="backend"
@@ -739,19 +743,19 @@ check_container_health() {
     
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         # Check if container exists and is running
-        CONTAINER_EXISTS=$(execute_on_vps "docker ps --format '{{.Names}}' | grep -E '^${CONTAINER_NAME}|${CONTAINER_NAME}'" 2>/dev/null | head -1 | tr -d '\n\r')
+        CONTAINER_EXISTS=$(run_vps "docker ps --format '{{.Names}}' | grep -E '^${CONTAINER_NAME}|${CONTAINER_NAME}'" 2>/dev/null | head -1 | tr -d '\n\r')
         
         if [ -n "$CONTAINER_EXISTS" ]; then
             if [ -n "$HEALTH_ENDPOINT" ]; then
                 # Check HTTP endpoint
-                HTTP_CODE=$(execute_on_vps "curl -s -o /dev/null -w '%{http_code}' $HEALTH_ENDPOINT 2>/dev/null || echo '000'" 2>/dev/null | tr -d '\n\r')
+                HTTP_CODE=$(run_vps "curl -s -o /dev/null -w '%{http_code}' $HEALTH_ENDPOINT 2>/dev/null || echo '000'" 2>/dev/null | tr -d '\n\r')
                 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
                     echo -e "${GREEN}     ✅ $CONTAINER_NAME is healthy (HTTP $HTTP_CODE)${NC}"
                     return 0
                 fi
             else
                 # Just check if container is running
-                if execute_on_vps "docker ps --format '{{.Names}} {{.Status}}' | grep -E '^${CONTAINER_NAME}|${CONTAINER_NAME}' | grep -q 'Up'" 2>/dev/null; then
+                if run_vps "docker ps --format '{{.Names}} {{.Status}}' | grep -E '^${CONTAINER_NAME}|${CONTAINER_NAME}' | grep -q 'Up'" 2>/dev/null; then
                     echo -e "${GREEN}     ✅ $CONTAINER_NAME is running${NC}"
                     return 0
                 fi
@@ -774,7 +778,7 @@ if check_docker_command; then
     echo -e "${YELLOW}   Checking Docker Compose file...${NC}"
     DOCKER_COMPOSE_FILE="$PROJECT_PATH/docker-compose.prod.secure.yml"
     
-    if execute_on_vps "test -f $DOCKER_COMPOSE_FILE" 2>/dev/null; then
+    if run_vps "test -f $DOCKER_COMPOSE_FILE" 2>/dev/null; then
         # Get docker compose command
         DOCKER_COMPOSE_CMD=$(get_docker_compose_cmd)
         
@@ -785,14 +789,14 @@ if check_docker_command; then
         
         # Step 0: Prune unused Docker resources before building
         echo -e "${YELLOW}   Step 7.0: Pruning unused Docker resources...${NC}"
-        execute_on_vps "docker system prune -f 2>&1" || true
+        run_vps "docker system prune -f 2>&1" || true
         echo -e "${GREEN}   ✅ Docker cleanup completed${NC}"
         
         # Step 1: Build new images based on changes detected
         if [ "$BACKEND_CHANGED" = true ] && [ "$FRONTEND_CHANGED" = true ]; then
             # Both changed - rebuild both with --no-cache
             echo -e "${YELLOW}   Step 7.1: Both backend and frontend have changes - rebuilding both (no cache)...${NC}"
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache backend frontend 2>&1" || {
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache backend frontend 2>&1" || {
                 echo -e "${RED}   ❌ Build failed, aborting deployment${NC}"
                 echo -e "${YELLOW}   Old containers are still running - no downtime occurred${NC}"
                 exit 1
@@ -803,7 +807,7 @@ if check_docker_command; then
         elif [ "$BACKEND_CHANGED" = true ]; then
             # Only backend changed - rebuild backend with --no-cache
             echo -e "${YELLOW}   Step 7.1: Backend has changes - rebuilding backend only (no cache)...${NC}"
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache backend 2>&1" || {
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache backend 2>&1" || {
                 echo -e "${RED}   ❌ Backend build failed, aborting deployment${NC}"
                 echo -e "${YELLOW}   Old containers are still running - no downtime occurred${NC}"
                 exit 1
@@ -814,7 +818,7 @@ if check_docker_command; then
         elif [ "$FRONTEND_CHANGED" = true ]; then
             # Only frontend changed - rebuild frontend with --no-cache
             echo -e "${YELLOW}   Step 7.1: Frontend has changes - rebuilding frontend only (no cache)...${NC}"
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache frontend 2>&1" || {
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache frontend 2>&1" || {
                 echo -e "${RED}   ❌ Frontend build failed, aborting deployment${NC}"
                 echo -e "${YELLOW}   Old containers are still running - no downtime occurred${NC}"
                 exit 1
@@ -826,7 +830,7 @@ if check_docker_command; then
             # No changes detected - but still rebuild to ensure everything is up-to-date
             echo -e "${YELLOW}   Step 7.1: No changes detected, but rebuilding to ensure consistency (no cache)...${NC}"
             echo -e "${BLUE}   Rebuilding backend and frontend with --no-cache...${NC}"
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache backend frontend 2>&1" || {
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml build --no-cache backend frontend 2>&1" || {
                 echo -e "${RED}   ❌ Build failed, aborting deployment${NC}"
                 echo -e "${YELLOW}   Old containers are still running - no downtime occurred${NC}"
                 exit 1
@@ -841,10 +845,10 @@ if check_docker_command; then
         if [ "$REBUILD_BACKEND" = true ]; then
             echo -e "${YELLOW}   Step 7.2: Updating backend container (rolling update)...${NC}"
             # Stop and remove old container first to avoid ContainerConfig errors
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop backend 2>&1" || true
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f backend 2>&1" || true
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop backend 2>&1" || true
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f backend 2>&1" || true
             # Start new container
-            execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d --no-deps backend 2>&1" || {
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d --no-deps backend 2>&1" || {
                 echo -e "${RED}   ❌ Failed to update backend container${NC}"
                 echo -e "${YELLOW}   Old backend container may still be running${NC}"
                 exit 1
@@ -855,22 +859,22 @@ if check_docker_command; then
         sleep 5
             
             # Get backend container name for health check (use container name, not ID)
-            BACKEND_CONTAINER=$(execute_on_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
+            BACKEND_CONTAINER=$(run_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
             if [ -z "$BACKEND_CONTAINER" ]; then
                 # Fallback: try docker-compose ps
-                BACKEND_CONTAINER=$(execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml ps --format '{{.Names}}' backend 2>/dev/null | head -1" 2>/dev/null | tr -d '\n\r')
+                BACKEND_CONTAINER=$(run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml ps --format '{{.Names}}' backend 2>/dev/null | head -1" 2>/dev/null | tr -d '\n\r')
             fi
             
             if [ -n "$BACKEND_CONTAINER" ]; then
                 if ! check_container_health "$BACKEND_CONTAINER" "http://localhost:3001/up"; then
                     echo -e "${RED}   ❌ Backend health check failed after update${NC}"
                     echo -e "${YELLOW}   Attempting to restart backend...${NC}"
-                    execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml restart backend 2>&1" || true
+                    run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml restart backend 2>&1" || true
                     exit 1
                 fi
             else
                 # Fallback: just check HTTP endpoint
-                if ! execute_on_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
+                if ! run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
                     echo -e "${RED}   ❌ Backend health check failed after update${NC}"
                     exit 1
                 fi
@@ -880,19 +884,19 @@ if check_docker_command; then
         
         # Update frontend if it was rebuilt
         if [ "$REBUILD_FRONTEND" = true ]; then
-            if execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml config --services 2>/dev/null | grep -q frontend" 2>/dev/null; then
+            if run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml config --services 2>/dev/null | grep -q frontend" 2>/dev/null; then
                 echo -e "${YELLOW}   Step 7.3: Updating frontend container...${NC}"
                 # Stop and remove old container first to avoid ContainerConfig errors
-                execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop frontend 2>&1" || true
-                execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f frontend 2>&1" || true
+                run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop frontend 2>&1" || true
+                run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f frontend 2>&1" || true
                 # Start new container
-                execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d --no-deps frontend 2>&1" || {
+                run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d --no-deps frontend 2>&1" || {
                     echo -e "${YELLOW}   ⚠️  Frontend update had issues, but continuing...${NC}"
                 }
                 
                 # Quick health check for frontend
                 sleep 3
-                if execute_on_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
+                if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
                     echo -e "${GREEN}   ✅ Frontend updated and responding${NC}"
                 else
                     echo -e "${YELLOW}   ⚠️  Frontend may need a moment to fully start${NC}"
@@ -902,23 +906,17 @@ if check_docker_command; then
         
         # Update other services (redis, websocket) if needed
         echo -e "${YELLOW}   Step 7.4: Ensuring all services are up-to-date...${NC}"
-        execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d 2>&1" || true
-
-        # Step 3: Run migrations on the updated backend
-        echo -e "${YELLOW}   Step 7.5: Running database migrations...${NC}"
-        sleep 3  # Give backend a moment to fully start
-        execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml exec -T backend bundle exec rails db:migrate RAILS_ENV=production 2>/dev/null || true" 2>&1
-        echo -e "${GREEN}   ✅ Database migrations completed${NC}"
+        run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d 2>&1" || true
 
         # Step 4: Final health check
-        echo -e "${YELLOW}   Step 7.6: Performing final health checks...${NC}"
+        echo -e "${YELLOW}   Step 7.5: Performing final health checks...${NC}"
         BACKEND_FINAL_HEALTH=false
         
         # Get backend container name for final health check (use container name, not ID)
-        BACKEND_CONTAINER_FINAL=$(execute_on_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
+        BACKEND_CONTAINER_FINAL=$(run_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
         if [ -z "$BACKEND_CONTAINER_FINAL" ]; then
             # Fallback: try docker-compose ps
-            BACKEND_CONTAINER_FINAL=$(execute_on_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml ps --format '{{.Names}}' backend 2>/dev/null | head -1" 2>/dev/null | tr -d '\n\r')
+            BACKEND_CONTAINER_FINAL=$(run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml ps --format '{{.Names}}' backend 2>/dev/null | head -1" 2>/dev/null | tr -d '\n\r')
         fi
         
         if [ -n "$BACKEND_CONTAINER_FINAL" ]; then
@@ -927,7 +925,7 @@ if check_docker_command; then
             fi
         else
             # Fallback: just check HTTP endpoint
-            if execute_on_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
+            if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
                 BACKEND_FINAL_HEALTH=true
             fi
         fi
@@ -936,8 +934,8 @@ if check_docker_command; then
             echo -e "${GREEN}   ✅ All services are healthy${NC}"
             
             # Clean up old images and unused resources (keep disk space)
-            echo -e "${YELLOW}   Step 7.7: Cleaning up unused Docker resources...${NC}"
-            execute_on_vps "docker system prune -f 2>&1" || true
+            echo -e "${YELLOW}   Step 7.6: Cleaning up unused Docker resources...${NC}"
+            run_vps "docker system prune -f 2>&1" || true
             echo -e "${GREEN}   ✅ Cleanup completed${NC}"
             
             echo -e "${GREEN}✅ Zero-downtime deployment completed successfully${NC}"
@@ -948,38 +946,58 @@ if check_docker_command; then
     else
         echo -e "${YELLOW}⚠️  docker-compose.prod.secure.yml not found, skipping Docker rebuild${NC}"
         echo -e "${YELLOW}   Deploying Backend (Rails) directly...${NC}"
-        execute_on_vps "cd $PROJECT_PATH/backend && \
+        run_vps "cd $PROJECT_PATH/backend && \
             bundle install --without development test && \
-            bundle exec rails db:migrate RAILS_ENV=production && \
             bundle exec rails assets:precompile RAILS_ENV=production || true" 2>&1
         echo -e "${GREEN}✅ Backend dependencies updated${NC}"
     fi
 else
     echo -e "${YELLOW}⚠️  Docker not available, deploying Backend (Rails) directly...${NC}"
-    execute_on_vps "cd $PROJECT_PATH/backend && \
+    run_vps "cd $PROJECT_PATH/backend && \
         bundle install --without development test && \
-        bundle exec rails db:migrate RAILS_ENV=production && \
         bundle exec rails assets:precompile RAILS_ENV=production || true" 2>&1
     echo -e "${GREEN}✅ Backend dependencies updated${NC}"
 fi
 echo ""
 
-echo -e "${YELLOW}Step 8: Deploying WhatsApp Service...${NC}"
-execute_on_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
+echo -e "${YELLOW}Step 8: Running Database Migrations...${NC}"
+
+# Function to run database migrations
+run_database_migrations() {
+    echo -e "${YELLOW}   Running Rails database migrations...${NC}"
+
+    if check_docker_command && run_vps "test -f $PROJECT_PATH/docker-compose.prod.secure.yml" 2>/dev/null; then
+        # Use Docker container for migrations
+        run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml exec -T backend bundle exec rails db:migrate RAILS_ENV=production 2>/dev/null || true" 2>&1
+    else
+        # Run migrations directly on the server
+        run_vps "cd $PROJECT_PATH/backend && bundle exec rails db:migrate RAILS_ENV=production 2>/dev/null || true" 2>&1
+    fi
+
+    echo -e "${GREEN}   ✅ Database migrations completed${NC}"
+}
+
+# Always run database migrations
+run_database_migrations
+
+echo ""
+
+echo -e "${YELLOW}Step 9: Deploying WhatsApp Service...${NC}"
+run_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
     npm install --production && \
     mkdir -p logs"
 
 # Check if PM2 is installed, install if not
 if ! check_command "pm2"; then
     echo -e "${YELLOW}   Installing PM2...${NC}"
-    execute_on_vps "npm install -g pm2"
+    run_vps "npm install -g pm2"
 fi
 
 # Restart WhatsApp service with PM2
 set +e  # Temporarily disable exit on error
-if execute_on_vps "test -f $PROJECT_PATH/backend/whatsapp-service/ecosystem.config.js" 2>/dev/null; then
+if run_vps "test -f $PROJECT_PATH/backend/whatsapp-service/ecosystem.config.js" 2>/dev/null; then
     # Use ecosystem.config.js if it exists
-    execute_on_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
+    run_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
         pm2 stop whatsapp-service 2>/dev/null || true && \
         pm2 delete whatsapp-service 2>/dev/null || true && \
         pm2 start ecosystem.config.js && \
@@ -987,7 +1005,7 @@ if execute_on_vps "test -f $PROJECT_PATH/backend/whatsapp-service/ecosystem.conf
 else
     # Start server.js directly if ecosystem.config.js doesn't exist
     echo -e "${YELLOW}   Starting WhatsApp service with server.js...${NC}"
-    execute_on_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
+    run_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
         pm2 stop whatsapp-service 2>/dev/null || true && \
         pm2 delete whatsapp-service 2>/dev/null || true && \
         pm2 start server.js --name whatsapp-service && \
@@ -996,44 +1014,44 @@ fi
 set -e  # Re-enable exit on error
 
 # Setup PM2 startup if not already configured
-execute_on_vps "pm2 startup systemd -u root --hp /root 2>/dev/null | tail -1 | bash || true" || true
+run_vps "pm2 startup systemd -u root --hp /root 2>/dev/null | tail -1 | bash || true" || true
 
 echo -e "${GREEN}✅ WhatsApp service deployed${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 9: Verifying Docker Services...${NC}"
+echo -e "${YELLOW}Step 10: Verifying Docker Services...${NC}"
 if check_docker_command; then
     echo -e "${YELLOW}   Checking Docker container status...${NC}"
-    execute_on_vps "cd $PROJECT_PATH && docker-compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker ps | grep carbon" 2>&1
+    run_vps "cd $PROJECT_PATH && docker-compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker ps | grep carbon" 2>&1
     echo ""
 else
     echo -e "${YELLOW}   Docker not available, checking Rails service...${NC}"
     # Try different methods to restart Rails
-    if execute_on_vps "systemctl is-active --quiet carbon-backend" 2>/dev/null; then
+    if run_vps "systemctl is-active --quiet carbon-backend" 2>/dev/null; then
         # Using systemd
-        execute_on_vps "systemctl restart carbon-backend"
+        run_vps "systemctl restart carbon-backend"
         echo -e "${GREEN}✅ Rails service restarted (systemd)${NC}"
-    elif execute_on_vps "systemctl is-active --quiet rails" 2>/dev/null; then
-        execute_on_vps "systemctl restart rails"
+    elif run_vps "systemctl is-active --quiet rails" 2>/dev/null; then
+        run_vps "systemctl restart rails"
         echo -e "${GREEN}✅ Rails service restarted (systemd)${NC}"
-    elif execute_on_vps "pm2 list | grep -q rails" 2>/dev/null; then
+    elif run_vps "pm2 list | grep -q rails" 2>/dev/null; then
         # Using PM2
-        execute_on_vps "pm2 restart rails || pm2 restart carbon-backend || pm2 restart all"
+        run_vps "pm2 restart rails || pm2 restart carbon-backend || pm2 restart all"
         echo -e "${GREEN}✅ Rails service restarted (PM2)${NC}"
     else
         # Try to restart using puma
-        execute_on_vps "cd $PROJECT_PATH/backend && pkill -f puma || true"
-        execute_on_vps "cd $PROJECT_PATH/backend && nohup bundle exec rails server -e production -p 3001 > /tmp/rails.log 2>&1 &" || true
+        run_vps "cd $PROJECT_PATH/backend && pkill -f puma || true"
+        run_vps "cd $PROJECT_PATH/backend && nohup bundle exec rails server -e production -p 3001 > /tmp/rails.log 2>&1 &" || true
         echo -e "${YELLOW}⚠️  Rails service restart attempted (manual)${NC}"
         echo -e "${YELLOW}   Check if Rails is running: ps aux | grep puma${NC}"
     fi
 fi
 echo ""
 
-echo -e "${YELLOW}Step 10: Verifying Services...${NC}"
+echo -e "${YELLOW}Step 11: Verifying Services...${NC}"
 
 # Check WhatsApp service
-if execute_on_vps "curl -s http://localhost:3002/health | grep -q 'whatsapp_ready'" 2>/dev/null; then
+if run_vps "curl -s http://localhost:3002/health | grep -q 'whatsapp_ready'" 2>/dev/null; then
     echo -e "${GREEN}✅ WhatsApp service is running${NC}"
 else
     echo -e "${YELLOW}⚠️  WhatsApp service health check failed${NC}"
@@ -1041,15 +1059,15 @@ else
 fi
 
 # Check Rails service (in Docker or standalone)
-if check_docker_command && execute_on_vps "docker ps | grep -q carbon_backend" 2>/dev/null; then
+if check_docker_command && run_vps "docker ps | grep -q carbon_backend" 2>/dev/null; then
     # Check if Rails responds with HTTP 200 (Rails /up endpoint returns HTML with green background)
-    if execute_on_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up | grep -q '200'" 2>/dev/null; then
+    if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up | grep -q '200'" 2>/dev/null; then
         echo -e "${GREEN}✅ Rails service is running (Docker)${NC}"
     else
         echo -e "${YELLOW}⚠️  Rails service health check failed${NC}"
         echo -e "${YELLOW}   Check logs: docker logs carbon_backend_1${NC}"
     fi
-elif execute_on_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up | grep -q '200'" 2>/dev/null; then
+elif run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up | grep -q '200'" 2>/dev/null; then
     echo -e "${GREEN}✅ Rails service is running${NC}"
 else
     echo -e "${YELLOW}⚠️  Rails service health check failed${NC}"
@@ -1057,8 +1075,8 @@ else
 fi
 
 # Check Frontend service (if Docker is used)
-if check_docker_command && execute_on_vps "docker ps | grep -q carbon_frontend" 2>/dev/null; then
-    if execute_on_vps "curl -s http://localhost:3000 > /dev/null" 2>/dev/null; then
+if check_docker_command && run_vps "docker ps | grep -q carbon_frontend" 2>/dev/null; then
+    if run_vps "curl -s http://localhost:3000 > /dev/null" 2>/dev/null; then
         echo -e "${GREEN}✅ Frontend service is running (Docker)${NC}"
     else
         echo -e "${YELLOW}⚠️  Frontend service health check failed${NC}"

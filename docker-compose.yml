@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend-carbon
+      dockerfile: Dockerfile
+    container_name: carbon_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: carbon_backend
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - RAILS_ENV=production
+      - RAILS_SERVE_STATIC_FILES=true
+    depends_on:
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./backend/storage:/app/storage
+      - ./backend/public:/app/public
+
+  redis:
+    image: bitnami/redis:latest
+    container_name: carbon_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=SVk+GapHEBaHGkByor7Fh3TiciyfHyPyQSxSPcEctrU=
+
+  websocket:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.websocket
+    container_name: carbon_websocket
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - ANYCABLE_REDIS_URL=${REDIS_URL}
+    depends_on:
+      - redis
+    restart: unless-stopped
