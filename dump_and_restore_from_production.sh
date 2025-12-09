@@ -12,7 +12,11 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Production database URL (READ-ONLY operations only)
-PRODUCTION_DB="postgresql://postgres.hwpdzlqfdqiyyvlughtt:7N4tf_-2A_iHMrr@aws-1-eu-central-1.pooler.supabase.com:5432/postgres"
+# Load from .env file
+if [ -f ".env" ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+PRODUCTION_DB="$DATABASE_URL"
 
 # Local database URL
 LOCAL_DB="postgresql://Quaint:3323@localhost:5432/carbon_development"

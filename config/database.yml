@@ -31,8 +31,8 @@ production:
   checkout_timeout: 5 # Add checkout timeout
   reaping_frequency: 10 # Add reaping frequency
   idle_timeout: 300 # Add idle timeout
-  sslmode: require
-  ssl: true
+  sslmode: disable
+  ssl: false
   url: <%= ENV['DATABASE_URL'] %>
   variables:
     statement_timeout: 10000 # Reduce to 10000 for faster failure

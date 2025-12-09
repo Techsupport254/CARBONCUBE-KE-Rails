@@ -41,7 +41,15 @@ class ClickEventsAnalyticsService
         }
       end
     end
-    
+
+    # Include contact counts per ad (always include since it's needed for UI)
+    begin
+      result[:contact_counts] = contact_counts_by_ad
+    rescue => e
+      Rails.logger.error "Error fetching contact counts: #{e.message}"
+      result[:contact_counts] = {}
+    end
+
     # Only include breakdowns if requested
     if include_breakdowns
       begin
@@ -826,7 +834,7 @@ class ClickEventsAnalyticsService
       ad_image_url: event.ad&.first_media_url,
       ad_category_name: event.ad&.category&.name,
       ad_subcategory_name: event.ad&.subcategory&.name,
-      seller_enterprise_name: event.ad&.seller&.enterprise_name,
+      seller_enterprise_name: event.ad&.seller&.enterprise_name || event.ad&.seller&.fullname,
       created_at: event.created_at&.iso8601,
       buyer_id: event.buyer_id,
       buyer_info: buyer_info,
@@ -1019,6 +1027,79 @@ class ClickEventsAnalyticsService
       by_event_type: {},
       by_category: [],
       by_subcategory: []
+    }
+  end
+
+  # Get contact counts for all ads
+  def contact_counts_by_ad
+    apply_filters(base_query)
+      .where(event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'action' = 'seller_contact_interaction'")
+      .group(:ad_id)
+      .count
+  end
+
+  # Get click events analytics aggregated by shop/seller
+  def shop_click_analytics(page: 1, per_page: 50)
+    page = [page.to_i, 1].max
+    per_page = [[per_page.to_i, 1].max, 500].min
+
+    offset = (page - 1) * per_page
+
+    # Get seller stats with proper aggregation
+    seller_stats_query = apply_filters(base_query)
+      .joins(ad: :seller)
+      .select(
+        "sellers.id as seller_id",
+        "COALESCE(sellers.enterprise_name, sellers.fullname) as seller_name",
+        "COUNT(*) as total_events",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_events",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction') as contact_events",
+        "COUNT(DISTINCT click_events.ad_id) as ads_count",
+        "MAX(click_events.created_at) as last_activity"
+      )
+      .group("sellers.id", "COALESCE(sellers.enterprise_name, sellers.fullname)")
+      .order("total_events DESC")
+
+    # Get total count for pagination
+    total_shops = seller_stats_query.count.length
+
+    # Apply pagination and map results
+    shops = seller_stats_query.offset(offset).limit(per_page).map do |stat|
+      {
+        seller_id: stat.seller_id,
+        seller_name: stat.seller_name,
+        total_events: stat.total_events.to_i,
+        ad_clicks: stat.ad_clicks.to_i,
+        reveal_events: stat.reveal_events.to_i,
+        contact_events: stat.contact_events.to_i,
+        ads_count: stat.ads_count.to_i,
+        last_activity: stat.last_activity&.iso8601,
+        # Calculate rates
+        reveal_rate: stat.total_events.to_i > 0 ? (stat.reveal_events.to_f / stat.total_events.to_f * 100).round(1) : 0.0,
+        contact_rate: stat.reveal_events.to_i > 0 ? (stat.contact_events.to_f / stat.reveal_events.to_f * 100).round(1) : 0.0
+      }
+    end
+
+    total_pages = (total_shops.to_f / per_page).ceil
+
+    {
+      shops: shops,
+      pagination: {
+        page: page,
+        per_page: per_page,
+        total_count: total_shops,
+        total_pages: total_pages,
+        has_next_page: page < total_pages,
+        has_prev_page: page > 1
+      },
+      summary: {
+        total_shops: total_shops,
+        total_events: shops.sum { |s| s[:total_events] },
+        total_contacts: shops.sum { |s| s[:contact_events] },
+        avg_contact_rate: shops.any? ? (shops.sum { |s| s[:contact_rate] } / shops.length).round(1) : 0.0
+      }
     }
   end
 end

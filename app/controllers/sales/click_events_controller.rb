@@ -73,7 +73,10 @@ class Sales::ClickEventsController < ApplicationController
 
         # Recent click events with user details (paginated)
         recent_click_events: recent_events_data[:events],
-        recent_click_events_pagination: recent_events_data[:pagination]
+        recent_click_events_pagination: recent_events_data[:pagination],
+
+        # Contact counts per ad for badge display
+        contact_counts: analytics_data[:contact_counts] || {}
       }
 
       render json: response_data
@@ -114,6 +117,45 @@ class Sales::ClickEventsController < ApplicationController
       }
     rescue => e
       Rails.logger.error "Best ads error: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Internal server error', details: e.message }, status: 500
+    end
+  end
+
+  # GET /sales/click_events/shops
+  # Get click events analytics aggregated by shop/seller
+  def shops
+    begin
+      filters = {
+        event_type: params[:event_type],
+        user_status: params[:user_status],
+        start_date: params[:start_date],
+        end_date: params[:end_date]
+      }.compact
+
+      # Get device_hash from params or headers if available
+      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+
+      service = ClickEventsAnalyticsService.new(
+        filters: filters,
+        device_hash: device_hash
+      )
+
+      # Get pagination params
+      page = params[:page].to_i
+      page = 1 if page < 1
+      per_page = params[:per_page].to_i
+      per_page = 50 if per_page < 1 || per_page > 500
+
+      # Get shop analytics data
+      shop_analytics = service.shop_click_analytics(
+        page: page,
+        per_page: per_page
+      )
+
+      render json: shop_analytics
+    rescue => e
+      Rails.logger.error "Shop click analytics error: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       render json: { error: 'Internal server error', details: e.message }, status: 500
     end
