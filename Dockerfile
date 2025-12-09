@@ -9,7 +9,8 @@ RUN bundle install
 
 COPY . .
 
-RUN mkdir -p tmp/pids tmp/cache tmp/sockets tmp/log
+RUN mkdir -p tmp/pids tmp/cache tmp/sockets tmp/log && \
+    chmod -R 755 tmp
 
 EXPOSE 3001
 CMD ["rails", "server", "-b", "0.0.0.0", "-p", "3001"]
