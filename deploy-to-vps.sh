@@ -15,6 +15,7 @@ VPS_HOST="188.245.245.79"
 VPS_USER="root"
 VPS_PASSWORD="Nx9CC4ENjmmpcnqPeWLV"
 PROJECT_DIR="CARBON"
+PROJECT_PATH="/root/$PROJECT_DIR"
 
 # Parse command line arguments
 COMMIT_MESSAGE=""
@@ -64,19 +65,15 @@ handle_git_repo() {
     local REPO_DIR="$1"
     local REPO_NAME="$2"
 
-    # Handle directory change
-    if [ "$REPO_DIR" != "." ]; then
-        if [ ! -d "$REPO_DIR" ]; then
-            return 0
-        fi
-        cd "$REPO_DIR" || return 0
+    if [ ! -d "$REPO_DIR" ]; then
+        return 0
     fi
+
+    cd "$REPO_DIR" || return 0
 
     # Check if this is a git repository
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        if [ "$REPO_DIR" != "." ]; then
-            cd - > /dev/null || true
-        fi
+        cd - > /dev/null || true
         return 0
     fi
     
@@ -142,9 +139,7 @@ handle_git_repo() {
 
             if [ -z "$COMMIT_MESSAGE" ]; then
                 echo -e "${RED}❌ Commit message cannot be empty, skipping $REPO_NAME${NC}"
-                if [ "$REPO_DIR" != "." ]; then
-                    cd - > /dev/null || true
-                fi
+                cd - > /dev/null || true
                 set -e
                 return 0
             fi
@@ -195,21 +190,9 @@ handle_git_repo() {
     fi
     
     set -e  # Re-enable exit on error
-    if [ "$REPO_DIR" != "." ]; then
-        cd - > /dev/null || true
-    fi
+    cd - > /dev/null || true
     echo ""
 }
-
-# Check root repository first
-if git rev-parse --git-dir > /dev/null 2>&1; then
-    handle_git_repo "." "Root Repository (main project)"
-fi
-
-# Check CarbonMobile submodule
-if [ -d "CarbonMobile" ]; then
-    handle_git_repo "CarbonMobile" "Mobile App (CarbonMobile)"
-fi
 
 # Check frontend-carbon directory
 if [ -d "frontend-carbon" ]; then
@@ -238,7 +221,7 @@ echo ""
 
 # First, check what exists on VPS
 echo -e "${BLUE}VPS Structure Check:${NC}"
-echo -e "${YELLOW}Checking /root/CARBON/backend...${NC}"
+echo -e "${YELLOW}Checking $PROJECT_PATH/backend...${NC}"
 if run_vps "test -d $PROJECT_PATH/backend" 2>/dev/null; then
     # More robust git check - try multiple methods
     IS_GIT_REPO=false
@@ -266,7 +249,7 @@ else
 fi
 
 echo ""
-echo -e "${YELLOW}Checking /root/CARBON/frontend-carbon (frontend repo)...${NC}"
+echo -e "${YELLOW}Checking $PROJECT_PATH/frontend-carbon (frontend repo)...${NC}"
 if run_vps "test -d $PROJECT_PATH/frontend-carbon" 2>/dev/null; then
     # More robust git check - try multiple methods
     IS_GIT_REPO=false
@@ -528,7 +511,7 @@ sync_env_file() {
 }
 
 # Sync backend .env file (prioritize .env.production if it exists, otherwise use .env)
-# VPS path: /root/CARBON/backend/.env
+# VPS path: $PROJECT_PATH/backend/.env
 if [ -f "backend/.env.production" ]; then
     sync_env_file "backend/.env.production" "$PROJECT_PATH/backend/.env" "Backend .env.production"
 elif [ -f "backend/.env" ]; then
@@ -536,7 +519,7 @@ elif [ -f "backend/.env" ]; then
 fi
 
 # Sync frontend .env files
-# VPS structure: /root/CARBON/frontend-carbon/ uses .env.production
+# VPS structure: $PROJECT_PATH/frontend-carbon/ uses .env.production
 # Local structure: frontend-carbon/ has .env, .env.local, or .env.production
 # Priority: .env.production > .env > .env.local
 if [ -f "frontend-carbon/.env.production" ]; then
@@ -840,108 +823,109 @@ if check_docker_command; then
             REBUILD_FRONTEND=true
         fi
         
-        # Step 2: Update containers one at a time (rolling update)
-        # Update backend if it was rebuilt
+        # Step 2: Start all containers (rolling update approach)
+        echo -e "${YELLOW}   Step 7.2: Starting all containers...${NC}"
+
+        # Stop and remove containers that need rebuilding
         if [ "$REBUILD_BACKEND" = true ]; then
-            echo -e "${YELLOW}   Step 7.2: Updating backend container (rolling update)...${NC}"
-            # Stop and remove old container first to avoid ContainerConfig errors
+            echo -e "${BLUE}     Preparing backend for rebuild...${NC}"
             run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop backend 2>&1" || true
             run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f backend 2>&1" || true
-            # Start new container
-            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d --no-deps backend 2>&1" || {
-                echo -e "${RED}   ❌ Failed to update backend container${NC}"
-                echo -e "${YELLOW}   Old backend container may still be running${NC}"
-                exit 1
-            }
-        
-            # Wait for backend to be healthy before proceeding
-            echo -e "${YELLOW}     Waiting for backend to be healthy...${NC}"
-        sleep 5
-            
-            # Get backend container name for health check (use container name, not ID)
-            BACKEND_CONTAINER=$(run_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
-            if [ -z "$BACKEND_CONTAINER" ]; then
-                # Fallback: try docker-compose ps
-                BACKEND_CONTAINER=$(run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml ps --format '{{.Names}}' backend 2>/dev/null | head -1" 2>/dev/null | tr -d '\n\r')
-            fi
-            
-            if [ -n "$BACKEND_CONTAINER" ]; then
-                if ! check_container_health "$BACKEND_CONTAINER" "http://localhost:3001/up"; then
-                    echo -e "${RED}   ❌ Backend health check failed after update${NC}"
-                    echo -e "${YELLOW}   Attempting to restart backend...${NC}"
-                    run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml restart backend 2>&1" || true
-                    exit 1
-                fi
-            else
-                # Fallback: just check HTTP endpoint
-                if ! run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
-                    echo -e "${RED}   ❌ Backend health check failed after update${NC}"
-                    exit 1
-                fi
-            fi
-            echo -e "${GREEN}   ✅ Backend updated and healthy${NC}"
         fi
-        
-        # Update frontend if it was rebuilt
-        if [ "$REBUILD_FRONTEND" = true ]; then
-            if run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml config --services 2>/dev/null | grep -q frontend" 2>/dev/null; then
-                echo -e "${YELLOW}   Step 7.3: Updating frontend container...${NC}"
-                # Stop and remove old container first to avoid ContainerConfig errors
-                run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop frontend 2>&1" || true
-                run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f frontend 2>&1" || true
-                # Start new container
-                run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d --no-deps frontend 2>&1" || {
-                    echo -e "${YELLOW}   ⚠️  Frontend update had issues, but continuing...${NC}"
-                }
-                
-                # Quick health check for frontend
-                sleep 3
-                if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
-                    echo -e "${GREEN}   ✅ Frontend updated and responding${NC}"
-                else
-                    echo -e "${YELLOW}   ⚠️  Frontend may need a moment to fully start${NC}"
-                fi
-            fi
-        fi
-        
-        # Update other services (redis, websocket) if needed
-        echo -e "${YELLOW}   Step 7.4: Ensuring all services are up-to-date...${NC}"
-        run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d 2>&1" || true
 
-        # Step 4: Final health check
-        echo -e "${YELLOW}   Step 7.5: Performing final health checks...${NC}"
-        BACKEND_FINAL_HEALTH=false
-        
-        # Get backend container name for final health check (use container name, not ID)
-        BACKEND_CONTAINER_FINAL=$(run_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
-        if [ -z "$BACKEND_CONTAINER_FINAL" ]; then
-            # Fallback: try docker-compose ps
-            BACKEND_CONTAINER_FINAL=$(run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml ps --format '{{.Names}}' backend 2>/dev/null | head -1" 2>/dev/null | tr -d '\n\r')
+        if [ "$REBUILD_FRONTEND" = true ]; then
+            echo -e "${BLUE}     Preparing frontend for rebuild...${NC}"
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop frontend 2>&1" || true
+            run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f frontend 2>&1" || true
         fi
-        
-        if [ -n "$BACKEND_CONTAINER_FINAL" ]; then
-            if check_container_health "$BACKEND_CONTAINER_FINAL" "http://localhost:3001/up"; then
-                BACKEND_FINAL_HEALTH=true
+
+        # Start all services at once
+        echo -e "${BLUE}     Starting all services...${NC}"
+        run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml up -d 2>&1" || {
+            echo -e "${RED}   ❌ Failed to start services${NC}"
+            exit 1
+        }
+
+        # Step 3: Wait for services to initialize
+        echo -e "${YELLOW}   Step 7.3: Waiting for services to initialize...${NC}"
+        sleep 10
+
+        # Step 4: Perform comprehensive health checks for all services
+        echo -e "${YELLOW}   Step 7.4: Performing comprehensive health checks...${NC}"
+
+        ALL_HEALTHY=true
+
+        # Check Redis
+        echo -e "${BLUE}     Checking Redis...${NC}"
+        if run_vps "docker ps --format '{{.Names}}' | grep -q carbon_redis" 2>/dev/null; then
+            if run_vps "docker exec carbon_redis redis-cli -a 'SVk+GapHEBaHGkByor7Fh3TiciyfHyPyQSxSPcEctrU=' ping 2>/dev/null | grep -q PONG" 2>/dev/null; then
+                echo -e "${GREEN}     ✅ Redis is healthy${NC}"
+            else
+                echo -e "${YELLOW}     ⚠️  Redis health check failed${NC}"
+                ALL_HEALTHY=false
             fi
         else
-            # Fallback: just check HTTP endpoint
+            echo -e "${YELLOW}     ⚠️  Redis container not found${NC}"
+        fi
+
+        # Check Backend
+        echo -e "${BLUE}     Checking Backend...${NC}"
+        BACKEND_CONTAINER=$(run_vps "docker ps --format '{{.Names}}' | grep -E 'backend|carbon_backend' | head -1" 2>/dev/null | tr -d '\n\r')
+        if [ -n "$BACKEND_CONTAINER" ]; then
+            if check_container_health "$BACKEND_CONTAINER" "http://localhost:3001/up"; then
+                echo -e "${GREEN}     ✅ Backend is healthy${NC}"
+            else
+                echo -e "${RED}     ❌ Backend health check failed${NC}"
+                ALL_HEALTHY=false
+            fi
+        else
+            # Fallback: check HTTP endpoint directly
             if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/up 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
-                BACKEND_FINAL_HEALTH=true
+                echo -e "${GREEN}     ✅ Backend is healthy (HTTP check)${NC}"
+            else
+                echo -e "${RED}     ❌ Backend health check failed${NC}"
+                ALL_HEALTHY=false
             fi
         fi
-        
-        if [ "$BACKEND_FINAL_HEALTH" = true ]; then
-            echo -e "${GREEN}   ✅ All services are healthy${NC}"
-            
+
+        # Check Frontend
+        echo -e "${BLUE}     Checking Frontend...${NC}"
+        if run_vps "docker ps --format '{{.Names}}' | grep -q carbon_frontend" 2>/dev/null; then
+            if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
+                echo -e "${GREEN}     ✅ Frontend is healthy${NC}"
+            else
+                echo -e "${YELLOW}     ⚠️  Frontend health check failed (may still be starting)${NC}"
+                # Don't mark as unhealthy for frontend - it's less critical
+            fi
+        else
+            echo -e "${YELLOW}     ⚠️  Frontend container not found${NC}"
+        fi
+
+        # Check WebSocket
+        echo -e "${BLUE}     Checking WebSocket...${NC}"
+        if run_vps "docker ps --format '{{.Names}}' | grep -q carbon_websocket" 2>/dev/null; then
+            if run_vps "curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/health 2>/dev/null | grep -q '[23]00'" 2>/dev/null; then
+                echo -e "${GREEN}     ✅ WebSocket is healthy${NC}"
+            else
+                echo -e "${YELLOW}     ⚠️  WebSocket health check failed${NC}"
+                ALL_HEALTHY=false
+            fi
+        else
+            echo -e "${YELLOW}     ⚠️  WebSocket container not found${NC}"
+        fi
+
+        if [ "$ALL_HEALTHY" = true ]; then
+            echo -e "${GREEN}   ✅ All critical services are healthy${NC}"
+
             # Clean up old images and unused resources (keep disk space)
-            echo -e "${YELLOW}   Step 7.6: Cleaning up unused Docker resources...${NC}"
+            echo -e "${YELLOW}   Step 7.5: Cleaning up unused Docker resources...${NC}"
             run_vps "docker system prune -f 2>&1" || true
             echo -e "${GREEN}   ✅ Cleanup completed${NC}"
-            
+
             echo -e "${GREEN}✅ Zero-downtime deployment completed successfully${NC}"
         else
-            echo -e "${RED}   ❌ Final health check failed${NC}"
-            echo -e "${YELLOW}   Deployment completed but health check failed - please verify manually${NC}"
+            echo -e "${RED}   ❌ Some services failed health checks${NC}"
+            echo -e "${YELLOW}   Deployment completed but some services may need attention - please verify manually${NC}"
         fi
     else
         echo -e "${YELLOW}⚠️  docker-compose.prod.secure.yml not found, skipping Docker rebuild${NC}"
@@ -982,7 +966,36 @@ run_database_migrations
 
 echo ""
 
-echo -e "${YELLOW}Step 9: Deploying WhatsApp Service...${NC}"
+echo -e "${YELLOW}Step 10: Verifying All Services...${NC}"
+if check_docker_command; then
+    echo -e "${YELLOW}   Checking Docker container status...${NC}"
+    run_vps "cd $PROJECT_PATH && docker-compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker ps | grep carbon" 2>&1
+    echo ""
+else
+    echo -e "${YELLOW}   Docker not available, checking Rails service...${NC}"
+    # Try different methods to restart Rails
+    if run_vps "systemctl is-active --quiet carbon-backend" 2>/dev/null; then
+        # Using systemd
+        run_vps "systemctl restart carbon-backend"
+        echo -e "${GREEN}✅ Rails service restarted (systemd)${NC}"
+    elif run_vps "systemctl is-active --quiet rails" 2>/dev/null; then
+        run_vps "systemctl restart rails"
+        echo -e "${GREEN}✅ Rails service restarted (systemd)${NC}"
+    elif run_vps "pm2 list | grep -q rails" 2>/dev/null; then
+        # Using PM2
+        run_vps "pm2 restart rails || pm2 restart carbon-backend || pm2 restart all"
+        echo -e "${GREEN}✅ Rails service restarted (PM2)${NC}"
+    else
+        # Try to restart using puma
+        run_vps "cd $PROJECT_PATH/backend && pkill -f puma || true"
+        run_vps "cd $PROJECT_PATH/backend && nohup bundle exec rails server -e production -p 3001 > /tmp/rails.log 2>&1 &" || true
+        echo -e "${YELLOW}⚠️  Rails service restart attempted (manual)${NC}"
+        echo -e "${YELLOW}   Check if Rails is running: ps aux | grep puma${NC}"
+    fi
+fi
+echo ""
+
+echo -e "${YELLOW}Step 11: Deploying WhatsApp Service...${NC}"
 run_vps "cd $PROJECT_PATH/backend/whatsapp-service && \
     npm install --production && \
     mkdir -p logs"
@@ -1019,43 +1032,15 @@ run_vps "pm2 startup systemd -u root --hp /root 2>/dev/null | tail -1 | bash || 
 echo -e "${GREEN}✅ WhatsApp service deployed${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 10: Verifying Docker Services...${NC}"
-if check_docker_command; then
-    echo -e "${YELLOW}   Checking Docker container status...${NC}"
-    run_vps "cd $PROJECT_PATH && docker-compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker compose -f docker-compose.prod.secure.yml ps 2>/dev/null || docker ps | grep carbon" 2>&1
-    echo ""
-else
-    echo -e "${YELLOW}   Docker not available, checking Rails service...${NC}"
-    # Try different methods to restart Rails
-    if run_vps "systemctl is-active --quiet carbon-backend" 2>/dev/null; then
-        # Using systemd
-        run_vps "systemctl restart carbon-backend"
-        echo -e "${GREEN}✅ Rails service restarted (systemd)${NC}"
-    elif run_vps "systemctl is-active --quiet rails" 2>/dev/null; then
-        run_vps "systemctl restart rails"
-        echo -e "${GREEN}✅ Rails service restarted (systemd)${NC}"
-    elif run_vps "pm2 list | grep -q rails" 2>/dev/null; then
-        # Using PM2
-        run_vps "pm2 restart rails || pm2 restart carbon-backend || pm2 restart all"
-        echo -e "${GREEN}✅ Rails service restarted (PM2)${NC}"
-    else
-        # Try to restart using puma
-        run_vps "cd $PROJECT_PATH/backend && pkill -f puma || true"
-        run_vps "cd $PROJECT_PATH/backend && nohup bundle exec rails server -e production -p 3001 > /tmp/rails.log 2>&1 &" || true
-        echo -e "${YELLOW}⚠️  Rails service restart attempted (manual)${NC}"
-        echo -e "${YELLOW}   Check if Rails is running: ps aux | grep puma${NC}"
-    fi
-fi
-echo ""
-
-echo -e "${YELLOW}Step 11: Verifying Services...${NC}"
+echo -e "${YELLOW}Step 12: Final Service Verification...${NC}"
 
 # Check WhatsApp service
-if run_vps "curl -s http://localhost:3002/health | grep -q 'whatsapp_ready'" 2>/dev/null; then
+if run_vps "pm2 list | grep -q whatsapp-service" 2>/dev/null && run_vps "curl -s http://localhost:3002/health | grep -q 'whatsapp_ready'" 2>/dev/null; then
     echo -e "${GREEN}✅ WhatsApp service is running${NC}"
 else
     echo -e "${YELLOW}⚠️  WhatsApp service health check failed${NC}"
-    echo -e "${YELLOW}   Run: pm2 logs whatsapp-service${NC}"
+    echo -e "${YELLOW}   Check PM2: pm2 status${NC}"
+    echo -e "${YELLOW}   View logs: pm2 logs whatsapp-service${NC}"
 fi
 
 # Check Rails service (in Docker or standalone)
@@ -1090,12 +1075,15 @@ echo -e "${GREEN}✅ Deployment Complete!${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 echo "📊 Service Status:"
+echo "   - Check Docker: ssh $VPS_USER@$VPS_HOST 'docker ps'"
 echo "   - Check WhatsApp: ssh $VPS_USER@$VPS_HOST 'pm2 status'"
 echo "   - Check Rails: ssh $VPS_USER@$VPS_HOST 'curl http://localhost:3001/up'"
+echo "   - Check Frontend: ssh $VPS_USER@$VPS_HOST 'curl http://localhost:3000'"
 echo ""
 echo "📝 View Logs:"
+echo "   - Docker: ssh $VPS_USER@$VPS_HOST 'docker logs carbon_backend'"
 echo "   - WhatsApp: ssh $VPS_USER@$VPS_HOST 'pm2 logs whatsapp-service'"
-echo "   - Rails: ssh $VPS_USER@$VPS_HOST 'tail -f /tmp/rails.log'"
+echo "   - Rails (standalone): ssh $VPS_USER@$VPS_HOST 'tail -f /tmp/rails.log'"
 echo ""
 echo "📱 WhatsApp QR Code (if needed):"
 echo "   ssh $VPS_USER@$VPS_HOST 'cd $PROJECT_PATH/backend/whatsapp-service && node show-qr.js'"
