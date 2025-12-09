@@ -9,8 +9,14 @@ RUN bundle install
 
 COPY . .
 
+# Create tmp directories and set proper permissions
 RUN mkdir -p tmp/pids tmp/cache tmp/sockets tmp/log && \
-    chmod -R 755 tmp
+    chmod -R 777 tmp && \
+    chown -R 1000:1000 tmp
+
+# Ensure tmp directories exist with proper permissions at runtime
+RUN echo '#!/bin/bash\nmkdir -p tmp/pids tmp/cache tmp/sockets tmp/log\nchmod -R 777 tmp\nexec "$@"' > /usr/local/bin/start.sh && \
+    chmod +x /usr/local/bin/start.sh
 
 EXPOSE 3001
-CMD ["rails", "server", "-b", "0.0.0.0", "-p", "3001"]
+CMD ["/usr/local/bin/start.sh", "rails", "server", "-b", "0.0.0.0", "-p", "3001"]
