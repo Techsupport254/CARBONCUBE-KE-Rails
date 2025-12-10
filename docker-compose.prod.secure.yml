@@ -25,7 +25,17 @@ services:
     environment:
       - BACKEND_INTERNAL_URL=http://backend:3001
       - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+      - NEXT_PUBLIC_WEBSOCKET_URL=${NEXT_PUBLIC_WEBSOCKET_URL}
       - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      - REACT_APP_CLOUDINARY_CLOUD_NAME=${REACT_APP_CLOUDINARY_CLOUD_NAME}
+      - REACT_APP_CLOUDINARY_UPLOAD_PRESET=${REACT_APP_CLOUDINARY_UPLOAD_PRESET}
+      - REACT_APP_SITE_URL=${REACT_APP_SITE_URL}
+      - REACT_APP_WEBSOCKET_URL=${REACT_APP_WEBSOCKET_URL}
+      - REACT_APP_GOOGLE_CLIENT_ID=${REACT_APP_GOOGLE_CLIENT_ID}
+      - REACT_APP_GOOGLE_REDIRECT_URI=${REACT_APP_GOOGLE_REDIRECT_URI}
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+      - NEXT_PUBLIC_GOOGLE_REDIRECT_URI=${NEXT_PUBLIC_GOOGLE_REDIRECT_URI}
+      - PUBLIC_URL=${PUBLIC_URL}
     depends_on:
       - backend
     restart: unless-stopped
@@ -75,11 +85,10 @@ services:
     volumes:
       - ./backend/storage:/app/storage
       - ./backend/public:/app/public
-      - ./backend/tmp:/app/tmp
       - ./backend/log:/app/log
-      - ./backend/tmp/pids:/app/tmp/pids
     tmpfs:
       - /tmp:size=100m
+      - /app/tmp:size=100m
     ulimits:
       nofile:
         soft: 1024
