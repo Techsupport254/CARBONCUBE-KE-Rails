@@ -144,7 +144,11 @@ Rails.application.routes.draw do
   get 'auth/google/callback', to: 'authentication#google_oauth_callback'
   post 'auth/google/callback', to: 'authentication#google_oauth_callback'
   resources :banners, only: [:index]
-  resources :categories, only: [:index, :show]
+  resources :categories, only: [:index, :show] do
+    member do
+      get :locations
+    end
+  end
   resources :ads, only: [:index, :show] do
     get 'reviews', to: 'reviews#index', on: :member
   end
