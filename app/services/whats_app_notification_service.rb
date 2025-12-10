@@ -15,7 +15,7 @@ class WhatsAppNotificationService
   
   # Helper method to get the WhatsApp service URL
   # Priority: 1. WHATSAPP_SERVICE_URL env var (if set) - respects local/production config
-  #           2. VPS IP in production (from VPS_HOST env var or default) - fallback if env var not set
+  #           2. VPS IP in production (188.245.245.79:3002) - fallback if env var not set
   #           3. localhost in development/test (localhost:3002) - fallback if env var not set
   # 
   # Note: If domain-based URL fails to resolve, automatically falls back to VPS IP in production
@@ -25,8 +25,7 @@ class WhatsAppNotificationService
       url = ENV['WHATSAPP_SERVICE_URL'].chomp('/')
       
       # In production, if domain doesn't resolve, fall back to VPS IP
-      vps_host = ENV.fetch('VPS_HOST', '188.245.245.79')
-      if Rails.env.production? && url.include?('carboncube-ke.com') && !url.include?(vps_host)
+      if Rails.env.production? && url.include?('carboncube-ke.com') && !url.include?('188.245.245.79')
         # Try to resolve the domain - if it fails, use VPS IP
         begin
           require 'socket'
@@ -39,7 +38,7 @@ class WhatsAppNotificationService
           # Domain doesn't resolve, use VPS IP fallback
           Rails.logger.warn "WHATSAPP_SERVICE_URL domain (#{url}) doesn't resolve, falling back to VPS IP"
           default_port = ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')
-          return "http://#{vps_host}:#{default_port}"
+          return "http://188.245.245.79:#{default_port}"
         end
       end
       
@@ -49,8 +48,7 @@ class WhatsAppNotificationService
     # Otherwise, use environment-appropriate default
     default_port = ENV.fetch('WHATSAPP_SERVICE_PORT', '3002')
     if Rails.env.production?
-      vps_host = ENV.fetch('VPS_HOST', '188.245.245.79')
-      "http://#{vps_host}:#{default_port}"
+      "http://188.245.245.79:#{default_port}"
     else
       "http://localhost:#{default_port}"
     end
