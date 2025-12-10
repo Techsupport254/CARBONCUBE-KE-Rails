@@ -10,11 +10,14 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Configuration
-VPS_HOST="188.245.245.79"
-VPS_USER="root"
-VPS_PASSWORD="Nx9CC4ENjmmpcnqPeWLV"
-PROJECT_DIR="CARBON"
+# Load configuration from vps.txt
+if [ -f "vps.txt" ]; then
+    source vps.txt
+else
+    echo -e "${RED}❌ vps.txt configuration file not found${NC}"
+    exit 1
+fi
+
 PROJECT_PATH="/root/$PROJECT_DIR"
 
 # Parse command line arguments
@@ -758,6 +761,12 @@ check_container_health() {
 
 # Check if Docker is available
 if check_docker_command; then
+    # Initial cleanup to ensure clean state
+    echo -e "${YELLOW}   Initial Docker cleanup...${NC}"
+    run_vps "docker stop \$(docker ps -aq) 2>/dev/null || true" 2>&1 || true
+    run_vps "docker rm -f \$(docker ps -aq) 2>/dev/null || true" 2>&1 || true
+    run_vps "docker network prune -f 2>&1" || true
+
     echo -e "${YELLOW}   Checking Docker Compose file...${NC}"
     DOCKER_COMPOSE_FILE="$PROJECT_PATH/docker-compose.prod.secure.yml"
     
@@ -770,9 +779,30 @@ if check_docker_command; then
         # Detect which services have changes
         detect_service_changes
         
-        # Step 0: Prune unused Docker resources before building
-        echo -e "${YELLOW}   Step 7.0: Pruning unused Docker resources...${NC}"
+        # Step 0: Comprehensive Docker cleanup before building
+        echo -e "${YELLOW}   Step 7.0: Comprehensive Docker cleanup...${NC}"
+
+        # Stop all running containers
+        echo -e "${BLUE}     Stopping all containers...${NC}"
+        run_vps "docker stop \$(docker ps -aq) 2>/dev/null || true" 2>&1 || true
+
+        # Remove all containers (including stopped ones)
+        echo -e "${BLUE}     Removing all containers...${NC}"
+        run_vps "docker rm -f \$(docker ps -aq) 2>/dev/null || true" 2>&1 || true
+
+        # Remove all networks
+        echo -e "${BLUE}     Removing networks...${NC}"
+        run_vps "docker network prune -f 2>&1" || true
+
+        # Remove dangling images and unused volumes
+        echo -e "${BLUE}     Removing dangling images and volumes...${NC}"
+        run_vps "docker image prune -f 2>&1" || true
+        run_vps "docker volume prune -f 2>&1" || true
+
+        # System-wide cleanup
+        echo -e "${BLUE}     System cleanup...${NC}"
         run_vps "docker system prune -f 2>&1" || true
+
         echo -e "${GREEN}   ✅ Docker cleanup completed${NC}"
         
         # Step 1: Build new images based on changes detected
@@ -838,6 +868,10 @@ if check_docker_command; then
             run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml stop frontend 2>&1" || true
             run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml rm -f frontend 2>&1" || true
         fi
+
+        # Additional aggressive cleanup before starting services
+        echo -e "${BLUE}     Final cleanup before startup...${NC}"
+        run_vps "cd $PROJECT_PATH && $DOCKER_COMPOSE_CMD -f docker-compose.prod.secure.yml down --volumes --remove-orphans 2>&1" || true
 
         # Start all services at once
         echo -e "${BLUE}     Starting all services...${NC}"
