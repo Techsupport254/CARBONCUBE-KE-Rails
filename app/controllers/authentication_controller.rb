@@ -528,7 +528,7 @@ class AuthenticationController < ApplicationController
       Rails.logger.info "✅ [GoogleOAuth] GoogleOauthService initialized successfully"
 
       # Authenticate user
-      Rails.logger.info "🔐 [GoogleOAuth] Calling authenticate method"
+      Rails.logger.info "[GoogleOAuth] Calling authenticate method"
       result = oauth_service.authenticate
       Rails.logger.info "📋 [GoogleOAuth] Authentication completed"
       Rails.logger.info "   Result type: #{result.class}"

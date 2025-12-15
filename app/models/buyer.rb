@@ -40,16 +40,17 @@ class Buyer < ApplicationRecord
   # validates :sub_county, presence: true
   validates :gender, inclusion: { in: %w(Male Female Other) }, allow_blank: true
   # validates :location, presence: true
-  # Phone number is optional for regular signups (users can verify later)
-  # Only validate format and uniqueness if phone number is provided
-  validates :phone_number, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
-            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
-            allow_blank: true, unless: :oauth_user?
+  # Phone number is required for regular signups (like sellers)
+  validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
+            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
   
   # Secondary phone number is optional
   validates :secondary_phone_number, length: { is: 10, message: "must be exactly 10 digits" },
-            format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
+            format: { with: /\A\d{10}\z/, message: "should only contain numbers" },
             allow_blank: true
+
+  # Custom validation to ensure primary and secondary phone numbers are different
+  validate :phone_numbers_must_be_different
   
   # For OAuth users, phone number validation is still optional (users can verify later)
   # We don't enforce phone number requirement even for OAuth users
@@ -218,5 +219,11 @@ class Buyer < ApplicationRecord
   end
 
   # Phone number validation removed - users can verify their accounts later
+
+  def phone_numbers_must_be_different
+    if phone_number.present? && secondary_phone_number.present? && phone_number == secondary_phone_number
+      errors.add(:secondary_phone_number, "cannot be the same as your primary phone number")
+    end
+  end
 
 end

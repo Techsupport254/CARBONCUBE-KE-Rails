@@ -13,7 +13,7 @@ if ARGV[0]
 else
   # Generate a secure random password
   new_password = SecureRandom.alphanumeric(12) + "!@#"
-  puts "🔐 No password provided. Generating a secure random password..."
+  puts "No password provided. Generating a secure random password..."
 end
 
 # Find the admin user
