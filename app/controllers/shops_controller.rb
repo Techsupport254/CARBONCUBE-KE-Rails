@@ -620,7 +620,6 @@ class ShopsController < ApplicationController
   # Upload review images to Cloudinary (same method as Buyer::ReviewsController)
   def process_and_upload_review_images(images)
     uploaded_urls = []
-    Rails.logger.info "🖼️ Processing #{Array(images).length} review images for upload"
 
     begin
       Array(images).each do |image|
@@ -663,7 +662,6 @@ class ShopsController < ApplicationController
       raise e
     end
 
-    Rails.logger.info "✅ Successfully uploaded #{uploaded_urls.length} review images"
     uploaded_urls
   end
 

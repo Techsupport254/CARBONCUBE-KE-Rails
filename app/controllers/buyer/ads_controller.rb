@@ -749,7 +749,6 @@ class Buyer::AdsController < ApplicationController
         buyer_id = current_buyer&.id if current_buyer&.is_a?(Buyer)
       rescue => e
         # Silently fail - guest users are allowed
-        Rails.logger.debug "Buyer authentication failed (guest user): #{e.message}" if Rails.env.development?
       end
       
       limit = params[:limit]&.to_i || 100
@@ -1134,7 +1133,6 @@ class Buyer::AdsController < ApplicationController
       buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
       @current_user = buyer_auth.result
     rescue ExceptionHandler::InvalidToken => e
-      Rails.logger.debug "Buyer::AdsController#alternatives: Buyer authentication failed: #{e.message}"
     rescue => e
       Rails.logger.debug "Buyer::AdsController#alternatives: Buyer auth error: #{e.class.name}: #{e.message}"
     end

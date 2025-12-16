@@ -72,8 +72,6 @@ class Seller::AdsController < ApplicationController
 
   def create
     begin
-      Rails.logger.info "Starting ad creation process"
-      Rails.logger.info "Request params: #{params[:ad].inspect}"
       
       seller_tier = current_seller.seller_tier
 
@@ -83,7 +81,6 @@ class Seller::AdsController < ApplicationController
       end
 
       ad_limit = seller_tier.tier.ads_limit || 0
-      Rails.logger.info "🔍 Current seller tier: #{seller_tier.tier.name} with ad limit: #{ad_limit}"
       current_ads_count = current_seller.ads.count
 
       if current_ads_count >= ad_limit
@@ -93,10 +90,8 @@ class Seller::AdsController < ApplicationController
 
       # Process and upload images if present
       if params[:ad][:media].present?
-        Rails.logger.info "📸 Found #{params[:ad][:media].length} images to process"
         begin
           uploaded_media = process_and_upload_images(params[:ad][:media])
-          Rails.logger.info "📸 Processed images result: #{uploaded_media.length} URLs"
           params[:ad][:media] = uploaded_media
         rescue => e
           Rails.logger.error "❌ Error processing images: #{e.message}"
@@ -104,16 +99,13 @@ class Seller::AdsController < ApplicationController
           return render json: { error: "Failed to process images. Please try again." }, status: :unprocessable_entity
         end
       else
-        Rails.logger.info "📸 No images provided for this ad"
       end
 
       @ad = current_seller.ads.build(ad_params)
-      Rails.logger.info "📝 Ad built with media: #{@ad.media.inspect}"
 
       if @ad.save
         # Update seller's last active timestamp when creating an ad
         current_seller.update_last_active!
-        Rails.logger.info "✅ Ad saved successfully with ID: #{@ad.id}"
         render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :created
       else
         Rails.logger.error "❌ Ad save failed: #{@ad.errors.full_messages.join(', ')}"
@@ -505,13 +497,10 @@ class Seller::AdsController < ApplicationController
 
   def process_and_upload_images(images)
     uploaded_urls = []
-    Rails.logger.info "🖼️ Processing #{Array(images).length} images for upload"
-    Rails.logger.info "🔧 Cloudinary config - Cloud: #{ENV['CLOUDINARY_CLOUD_NAME']}, Preset: #{ENV['UPLOAD_PRESET']}"
 
     begin
       Array(images).each do |image|
         begin
-          Rails.logger.info "📤 Processing image: #{image.original_filename} (#{image.size} bytes)"
           
           # Check if tempfile exists and is readable
           unless image.tempfile && File.exist?(image.tempfile.path)
@@ -526,12 +515,10 @@ class Seller::AdsController < ApplicationController
           end
           
           # Upload original image directly to Cloudinary without any processing
-          Rails.logger.info "Uploading to Cloudinary with preset: #{ENV['UPLOAD_PRESET']}"
           uploaded_image = Cloudinary::Uploader.upload(
             image.tempfile.path,
             upload_preset: ENV['UPLOAD_PRESET']
           )
-          Rails.logger.info "Uploaded to Cloudinary: #{uploaded_image['secure_url']}"
 
           uploaded_urls << uploaded_image["secure_url"]
         rescue => e
@@ -548,7 +535,6 @@ class Seller::AdsController < ApplicationController
       raise e # Re-raise to be caught by the calling method
     end
 
-    Rails.logger.info "✅ Successfully uploaded #{uploaded_urls.length} images"
     uploaded_urls
   end
 

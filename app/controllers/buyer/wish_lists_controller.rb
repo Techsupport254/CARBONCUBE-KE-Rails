@@ -68,7 +68,6 @@ class Buyer::WishListsController < ApplicationController
       buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
       @current_user = buyer_auth.result
     rescue ExceptionHandler::InvalidToken => e
-      Rails.logger.warn "Buyer::WishListsController: Buyer authentication failed: #{e.message}"
       @current_user = nil
     rescue => e
       Rails.logger.error "Buyer::WishListsController: Unexpected error during buyer authentication: #{e.class.name} - #{e.message}"

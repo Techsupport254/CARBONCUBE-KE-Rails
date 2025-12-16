@@ -16,21 +16,14 @@ module ApplicationCable
         setup_session
         track_connection
       rescue StandardError => e
-        Rails.logger.error "WebSocket connection setup failed: #{e.message}"
-        Rails.logger.error "WebSocket connection setup backtrace: #{e.backtrace.first(5).join("\n")}"
-        
         # Only try fallback if we don't have a current_user
         unless current_user
           begin
             authenticate_user_fallback!
           rescue StandardError => fallback_error
-            Rails.logger.error "WebSocket fallback authentication also failed: #{fallback_error.message}"
-            Rails.logger.error "WebSocket fallback backtrace: #{fallback_error.backtrace.first(5).join("\n")}"
             # Allow connection to proceed even if all authentication fails
-            Rails.logger.warn "Allowing WebSocket connection despite authentication failure"
           end
         else
-          Rails.logger.warn "WebSocket: Authentication succeeded but other setup failed, rejecting connection"
           reject_unauthorized_connection
         end
       end
@@ -47,7 +40,6 @@ module ApplicationCable
           end
         end
       rescue StandardError => e
-        Rails.logger.error "WebSocket disconnection tracking failed: #{e.message}"
         # Don't prevent disconnection even if tracking fails
       end
     end
@@ -68,18 +60,15 @@ module ApplicationCable
             begin
               verify_session_validity!
             rescue => e
-              Rails.logger.warn "WebSocket: Session validation failed: #{e.message}"
               # Continue anyway - session validation failure shouldn't block connection
             end
             
             return
           else
-            Rails.logger.warn "WebSocket: User not found from token payload"
           end
         else
           # Only log warnings for non-expired token errors to reduce noise
           unless decoded_result[:expired]
-            Rails.logger.warn "WebSocket token validation failed: #{decoded_result[:error]}"
           end
         end
       end
@@ -88,7 +77,6 @@ module ApplicationCable
       # Authentication will be handled during subscription creation
       # Don't reject the connection - let it proceed and handle auth during subscription
     rescue StandardError => e
-      Rails.logger.warn "WebSocket authentication failed: #{e.message}"
       # Don't reject the connection - let it proceed for subscription-based auth
     end
     
@@ -124,7 +112,6 @@ module ApplicationCable
         when 'sales'
           # SalesUser uses UUID, so integer IDs won't work
           if user_id.is_a?(Integer)
-            Rails.logger.warn "WebSocket fallback: SalesUser ID is an integer (#{user_id}), but SalesUsers use UUIDs. Token may be stale."
           end
           
           sales_user = SalesUser.find_by(id: user_id)
@@ -181,7 +168,6 @@ module ApplicationCable
         
         # Verify the role matches (case-insensitive)
         if role && role.to_s.downcase != 'seller'
-          Rails.logger.error "WebSocket: Token has seller_id but role is #{role}, expected seller"
           return nil
         end
         
@@ -201,7 +187,6 @@ module ApplicationCable
         
         # Require role for direct lookup - don't search all databases
         unless role.present?
-          Rails.logger.warn "WebSocket: Token has user_id but no role field. Cannot perform direct lookup. Token may be malformed."
           return nil
         end
         
@@ -221,7 +206,6 @@ module ApplicationCable
           # SalesUser IDs are UUIDs, so we need to ensure proper format
           # If user_id is an integer, it's likely from a stale token (pre-UUID migration)
           if user_id.is_a?(Integer)
-            Rails.logger.warn "WebSocket: SalesUser ID is an integer (#{user_id}), but SalesUsers use UUIDs. Token may be stale from before UUID migration."
           end
           
           # Try direct lookup (works for both UUID strings and will fail gracefully for integers)
@@ -239,8 +223,7 @@ module ApplicationCable
           end
         else
           # Unknown role - don't search all models, just log and return nil
-          Rails.logger.warn "WebSocket: Unknown role '#{role}' for user_id #{user_id}. Cannot perform lookup. Token may be malformed."
-        end
+          end
       end
       
       nil
@@ -258,7 +241,6 @@ module ApplicationCable
           create_new_session
         end
       rescue => e
-        Rails.logger.warn "Redis connection failed, skipping session validation: #{e.message}"
         # Allow connection to proceed even if Redis is unavailable
       end
     end
@@ -287,7 +269,6 @@ module ApplicationCable
       begin
         RedisConnection.setex(session_key, 7200, session_data.to_json)
       rescue StandardError => e
-        Rails.logger.warn "Failed to create new WebSocket session in Redis: #{e.message}"
         # Continue without session storage
       end
     end
@@ -307,7 +288,6 @@ module ApplicationCable
           # Check if user has too many recent connections (allow up to 3 concurrent connections)
           user_connections = @@active_connections.select { |k, v| k == user_id }
           if user_connections.size >= 3
-            Rails.logger.warn "WebSocket: User #{user_id} has too many active connections (#{user_connections.size}), rejecting duplicate"
             reject_unauthorized_connection
             return
           end
@@ -328,7 +308,6 @@ module ApplicationCable
         
         WebsocketService.store_connection_data(current_user.id, session_id, connection_data)
       rescue => e
-        Rails.logger.warn "WebSocket: Session setup failed: #{e.message}"
         # Continue without session storage
       end
     end
@@ -351,7 +330,6 @@ module ApplicationCable
         
         WebsocketService.track_metric("websocket.connections.user_type.#{user_type}")
       rescue => e
-        Rails.logger.warn "WebSocket: Connection tracking failed: #{e.message}"
         # Continue without tracking
       end
     end
@@ -374,7 +352,6 @@ module ApplicationCable
         RedisConnection.incrby(metric_key, value)
         RedisConnection.expire(metric_key, 86400) # Expire after 24 hours
       rescue StandardError => e
-        Rails.logger.warn "Failed to track metric #{metric_name}: #{e.message}"
       end
     end
   end

@@ -7,7 +7,6 @@ class PresenceChannel < ApplicationCable::Channel
     
     # Ensure we have a valid user connection
     unless connection.current_user
-      Rails.logger.warn "PresenceChannel: No current_user in connection after authentication attempt"
       reject
       return
     end
@@ -52,8 +51,7 @@ class PresenceChannel < ApplicationCable::Channel
         # Clean up any pending operations
         cleanup_user_data
       end
-    rescue => e
-      Rails.logger.warn "PresenceChannel unsubscribed error: #{e.message}"
+    rescue => each  
       # Don't raise the error to prevent subscription cleanup issues
     end
   end
@@ -61,13 +59,11 @@ class PresenceChannel < ApplicationCable::Channel
   def receive(data)
     # Check if connection is still active
     unless connection.current_user
-      Rails.logger.warn "PresenceChannel: No current_user in connection, ignoring message"
       return
     end
     
     # Check if the subscription is still active
     unless subscription_active?
-      Rails.logger.warn "PresenceChannel: Subscription not active, ignoring message"
       return
     end
     
@@ -93,13 +89,9 @@ class PresenceChannel < ApplicationCable::Channel
       transmit({ type: 'heartbeat_response', timestamp: Time.current.iso8601 })
     when 'pong'
       # Client responded to ping, connection is healthy
-      Rails.logger.debug "PresenceChannel: Received pong from user #{connection.current_user.id}"
     else
-      Rails.logger.warn "PresenceChannel: Unknown message type: #{data['type']}"
     end
   rescue => e
-    Rails.logger.warn "PresenceChannel receive error: #{e.message}"
-    Rails.logger.warn "PresenceChannel error backtrace: #{e.backtrace.first(3).join("\n")}"
     # Don't raise the error to prevent subscription cleanup issues
   end
 
@@ -110,7 +102,6 @@ class PresenceChannel < ApplicationCable::Channel
     user_id = params[:user_id]
     
     unless user_type && user_id
-      Rails.logger.error "PresenceChannel: Missing user_type or user_id in subscription params"
       return false
     end
     
@@ -122,7 +113,6 @@ class PresenceChannel < ApplicationCable::Channel
         connection.session_id = SecureRandom.uuid
         return true
       else
-        Rails.logger.error "PresenceChannel: Seller #{user_id} not found or deleted"
       end
     when 'buyer'
       buyer = Buyer.find_by(id: user_id)
@@ -131,7 +121,6 @@ class PresenceChannel < ApplicationCable::Channel
         connection.session_id = SecureRandom.uuid
         return true
       else
-        Rails.logger.error "PresenceChannel: Buyer #{user_id} not found or deleted"
       end
     when 'admin'
       admin = Admin.find_by(id: user_id)
@@ -140,7 +129,6 @@ class PresenceChannel < ApplicationCable::Channel
         connection.session_id = SecureRandom.uuid
         return true
       else
-        Rails.logger.error "PresenceChannel: Admin #{user_id} not found"
       end
     when 'sales'
       sales_user = SalesUser.find_by(id: user_id)
@@ -149,10 +137,8 @@ class PresenceChannel < ApplicationCable::Channel
         connection.session_id = SecureRandom.uuid
         return true
       else
-        Rails.logger.error "PresenceChannel: Sales user #{user_id} not found"
       end
     else
-      Rails.logger.error "PresenceChannel: Unknown user type: #{user_type}"
     end
     
     false
@@ -183,7 +169,6 @@ class PresenceChannel < ApplicationCable::Channel
       connection.transmit({ type: 'ping', timestamp: Time.current.iso8601 })
       true
     rescue => e
-      Rails.logger.debug "PresenceChannel: Subscription not active: #{e.message}"
       false
     end
   end
@@ -194,7 +179,6 @@ class PresenceChannel < ApplicationCable::Channel
       # Remove any pending typing indicators
       # This could be expanded to clean up other user-specific data
     rescue => e
-      Rails.logger.warn "PresenceChannel: Error cleaning up user data: #{e.message}"
     end
   end
 
@@ -218,7 +202,6 @@ class PresenceChannel < ApplicationCable::Channel
       broadcast_online_status_change(online)
       
     rescue => e
-      Rails.logger.warn "Failed to track user online status: #{e.message}"
       # Don't re-raise to prevent connection issues
     end
   end
@@ -230,7 +213,6 @@ class PresenceChannel < ApplicationCable::Channel
       user.update_last_active!
     end
   rescue => e
-    Rails.logger.warn "Failed to update user last_active_at: #{e.message}"
     # Don't re-raise to prevent connection issues
   end
 
@@ -252,7 +234,6 @@ class PresenceChannel < ApplicationCable::Channel
       )
       
     rescue => e
-      Rails.logger.warn "Failed to broadcast online status change: #{e.message}"
       # Don't re-raise to prevent connection issues
     end
   end
@@ -319,7 +300,6 @@ class PresenceChannel < ApplicationCable::Channel
         broadcast_delivery_receipt(message)
       end
     rescue => e
-      Rails.logger.error "Failed to process pending delivery receipts: #{e.message}"
     end
   end
 
@@ -339,7 +319,6 @@ class PresenceChannel < ApplicationCable::Channel
       }
     )
   rescue => e
-    Rails.logger.error "Failed to broadcast delivery receipt for message #{message.id}: #{e.message}"
   end
 
   def handle_conversation_viewed(conversation_id)
@@ -357,7 +336,6 @@ class PresenceChannel < ApplicationCable::Channel
         broadcast_read_receipt(message)
       end
     rescue => e
-      Rails.logger.warn "PresenceChannel: Error handling conversation viewed for ID #{conversation_id}: #{e.message}"
     end
   end
 
@@ -377,7 +355,6 @@ class PresenceChannel < ApplicationCable::Channel
       # Broadcast read receipt to sender
       broadcast_read_receipt(message)
     rescue => e
-      Rails.logger.warn "PresenceChannel: Error handling message read for ID #{message_id}: #{e.message}"
     end
   end
 
@@ -397,7 +374,6 @@ class PresenceChannel < ApplicationCable::Channel
       # Broadcast delivery receipt to sender
       broadcast_delivery_receipt(message)
     rescue => e
-      Rails.logger.warn "PresenceChannel: Error handling message delivered for ID #{message_id}: #{e.message}"
     end
   end
 
@@ -444,17 +420,14 @@ class PresenceChannel < ApplicationCable::Channel
     rescue => e
       # Handle specific broken pipe errors gracefully
       if e.message.include?('Broken pipe') || e.message.include?('Connection reset')
-        Rails.logger.debug "PresenceChannel: Connection lost for #{stream_name}, skipping broadcast"
         return
       end
       
       retries += 1
       if retries <= max_retries
-        Rails.logger.warn "PresenceChannel broadcast failed for #{stream_name}, retrying (#{retries}/#{max_retries}): #{e.message}"
         sleep(0.1 * retries) # Brief backoff
         retry
-      else
-        Rails.logger.warn "PresenceChannel broadcast failed for #{stream_name} after #{max_retries} retries: #{e.message}"
+      else 
         # Don't raise the error to prevent breaking the presence flow
       end
     end

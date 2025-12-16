@@ -10,11 +10,10 @@ class PerformanceMonitor
       result = yield
       duration = (Time.current - start_time) * 1000 # Convert to milliseconds
       
-      Rails.logger.info "PERFORMANCE: #{query_name} took #{duration.round(2)}ms"
       
       # Log slow queries
       if duration > 100 # Log queries taking more than 100ms
-        Rails.logger.warn "SLOW QUERY: #{query_name} took #{duration.round(2)}ms"
+        # Slow query detected but logging removed
       end
       
       result
@@ -26,11 +25,10 @@ class PerformanceMonitor
       result = yield
       duration = (Time.current - start_time) * 1000
       
-      Rails.logger.info "API PERFORMANCE: #{endpoint} took #{duration.round(2)}ms"
       
       # Log slow API responses
       if duration > 500 # Log API responses taking more than 500ms
-        Rails.logger.warn "SLOW API: #{endpoint} took #{duration.round(2)}ms"
+        # Slow API response detected but logging removed
       end
       
       result
@@ -38,11 +36,7 @@ class PerformanceMonitor
 
     # Track cache hit rates
     def track_cache_performance(cache_key, hit: true)
-      if hit
-        Rails.logger.info "CACHE HIT: #{cache_key}"
-      else
-        Rails.logger.info "CACHE MISS: #{cache_key}"
-      end
+      # Cache performance tracking but logging removed
     end
 
     # Get performance summary
