@@ -16,7 +16,6 @@ class ConversationsChannel < ApplicationCable::Channel
         WebsocketService.remove_connection_data(user.id, connection.session_id)
       end
     rescue => e
-      Rails.logger.warn "ConversationsChannel unsubscribed error: #{e.message}"
       # Don't raise the error to prevent subscription cleanup issues
     end
   end
@@ -29,7 +28,6 @@ class ConversationsChannel < ApplicationCable::Channel
     if user && !connection.current_user
       connection.current_user = user
       connection.session_id = SecureRandom.uuid
-      Rails.logger.info "ConversationsChannel: Set current_user from params: #{user.class.name} ID: #{user.id}"
     end
     
     return reject unless user
@@ -44,7 +42,6 @@ class ConversationsChannel < ApplicationCable::Channel
     # Broadcast online status
     broadcast_presence_update('online', user)
   rescue => e
-    Rails.logger.error "ConversationsChannel subscribed error: #{e.message}"
     reject
   end
 
@@ -183,11 +180,9 @@ class ConversationsChannel < ApplicationCable::Channel
     rescue => e
       retries += 1
       if retries <= max_retries
-        Rails.logger.warn "Broadcast failed for #{stream_name}, retrying (#{retries}/#{max_retries}): #{e.message}"
         sleep(0.1 * retries) # Brief backoff
         retry
       else
-        Rails.logger.error "Broadcast failed for #{stream_name} after #{max_retries} retries: #{e.message}"
         # Don't raise the error to prevent breaking the message flow
       end
     end
@@ -250,7 +245,6 @@ class ConversationsChannel < ApplicationCable::Channel
   
   def log_channel_activity(action, data = {})
     # Logging disabled to reduce console noise
-    # Rails.logger.info "ConversationsChannel #{action}: #{data.inspect}"
   end
   
   def track_message_metric(action)
@@ -258,7 +252,6 @@ class ConversationsChannel < ApplicationCable::Channel
     begin
       WebsocketService.track_metric("websocket.conversations.#{action}")
     rescue => e
-      Rails.logger.debug "Failed to track metric: #{e.message}"
     end
   end
   

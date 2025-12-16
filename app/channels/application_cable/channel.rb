@@ -14,7 +14,6 @@ module ApplicationCable
       current_count = RedisConnection.get(rate_limit_key).to_i
       
       if current_count >= RATE_LIMIT_MAX_REQUESTS
-        Rails.logger.warn "Rate limit exceeded for user #{user.id} on #{self.class.name}"
         transmit({ error: "Rate limit exceeded. Please slow down." })
         return true
       end
@@ -28,7 +27,6 @@ module ApplicationCable
       
       false
     rescue StandardError => e
-      Rails.logger.error "Rate limiting error: #{e.message}"
       false # Fail open
     end
     
@@ -45,7 +43,6 @@ module ApplicationCable
       
       result.output
     rescue StandardError => e
-      Rails.logger.error "Data validation error: #{e.message}"
       transmit({ error: "Data validation failed" })
       nil
     end
@@ -59,11 +56,9 @@ module ApplicationCable
       rescue StandardError => e
         retries += 1
         if retries <= max_retries
-          Rails.logger.warn "Broadcast retry #{retries}/#{max_retries} for #{channel_name}: #{e.message}"
           sleep(0.1 * retries) # Exponential backoff
           retry
         else
-          Rails.logger.error "Broadcast failed for #{channel_name} after #{max_retries} retries: #{e.message}"
           raise e
         end
       end
@@ -84,18 +79,10 @@ module ApplicationCable
       RedisConnection.incrby(metric_key, value)
       RedisConnection.expire(metric_key, 86400)
     rescue StandardError => e
-      Rails.logger.debug "Metric tracking failed: #{e.message}"
     end
     
     def log_channel_activity(action, details = {})
-      Rails.logger.info({
-        channel: self.class.name,
-        action: action,
-        user_id: connection.current_user&.id,
-        session_id: connection.session_id,
-        timestamp: Time.current.iso8601,
-        details: details
-      }.to_json)
+      # Logging disabled to reduce console noise
     end
   end
 end
