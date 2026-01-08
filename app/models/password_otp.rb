@@ -20,36 +20,50 @@ class PasswordOtp < ApplicationRecord
       raise e # Re-raise to prevent sending email without saved OTP
     end
 
-    # Send password reset email synchronously using direct SMTP
-    # This bypasses ActionMailer's queuing system for critical functionality
+    # Send password reset email synchronously using ActionMailer template
+    # This renders the email template but delivers via direct SMTP to bypass queuing
     begin
-      require 'net/smtp'
+      # Generate unique subject with timestamp to prevent threading
+      timestamp = Time.current.strftime('%Y%m%d%H%M%S')
+      unique_subject = "Password Reset Request #{timestamp} - Carbon Cube Kenya"
+
+      # Create mailer instance and render the email
+      mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
+
+      # Render the email content using the template
+      html_content = mailer.mail.parts.find { |part| part.content_type.include?('html') }&.body&.raw_source ||
+                     mailer.mail.body.raw_source
+
+      # Create the email with rendered template content
       require 'mail'
-
-      # Create the email content manually
-      subject = "Password Reset Request #{Time.current.strftime('%Y%m%d%H%M%S')} - Carbon Cube Kenya"
-      body = <<-EMAIL
-Dear #{user.fullname},
-
-You requested a password reset for your Carbon Cube Kenya account.
-
-Your OTP (One-Time Password) is: #{otp}
-
-This OTP will expire in 10 minutes. Please use it to reset your password.
-
-If you did not request this password reset, please ignore this email.
-
-Best regards,
-Carbon Cube Kenya Team
-EMAIL
-
-      # Create mail object
       mail = Mail.new do
         from    ENV['BREVO_EMAIL']
         to      user.email
-        subject subject
-        body    body
+        subject unique_subject
+        html_part do
+          content_type 'text/html; charset=UTF-8'
+          body html_content
+        end
       end
+
+      # Set threading prevention headers
+      mail['In-Reply-To'] = nil
+      mail['References'] = nil
+      mail['Thread-Topic'] = nil
+      mail['Thread-Index'] = nil
+      mail['X-Threading'] = 'false'
+      mail['X-Conversation-ID'] = SecureRandom.uuid
+      mail['X-Mailer'] = 'Carbon Cube Kenya Mailer'
+      mail['X-Priority'] = '3'
+      mail['X-MSMail-Priority'] = 'Normal'
+      mail['Importance'] = 'Normal'
+      mail['X-Carbon-Cube-Version'] = '1.0'
+      mail['List-Unsubscribe'] = '<https://carboncube-ke.com/unsubscribe>'
+      mail['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+      mail['Organization'] = 'Carbon Cube Kenya'
+      mail['Precedence'] = 'bulk'
+      mail['X-Auto-Response-Suppress'] = 'All'
+      mail['Return-Path'] = ENV['BREVO_EMAIL']
 
       # Send via SMTP directly
       smtp_settings = {
