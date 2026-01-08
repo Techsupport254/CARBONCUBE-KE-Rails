@@ -20,16 +20,54 @@ class PasswordOtp < ApplicationRecord
       raise e # Re-raise to prevent sending email without saved OTP
     end
 
-    # Trigger mailer here, passing raw OTP for email content
-    # Send immediately for password reset emails (critical functionality)
+    # Send password reset email synchronously using direct SMTP
+    # This bypasses ActionMailer's queuing system for critical functionality
     begin
-      mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
+      require 'net/smtp'
+      require 'mail'
 
-      # Send immediately - password reset is critical and should not be queued
-      # Create the mail object and deliver it synchronously
-      mail = mailer.message
-      mail.delivery_method(ActionMailer::Base.delivery_method, ActionMailer::Base.smtp_settings)
-      mail.deliver_now!
+      # Create the email content manually
+      subject = "Password Reset Request #{Time.current.strftime('%Y%m%d%H%M%S')} - Carbon Cube Kenya"
+      body = <<-EMAIL
+Dear #{user.fullname},
+
+You requested a password reset for your Carbon Cube Kenya account.
+
+Your OTP (One-Time Password) is: #{otp}
+
+This OTP will expire in 10 minutes. Please use it to reset your password.
+
+If you did not request this password reset, please ignore this email.
+
+Best regards,
+Carbon Cube Kenya Team
+EMAIL
+
+      # Create mail object
+      mail = Mail.new do
+        from    ENV['BREVO_EMAIL']
+        to      user.email
+        subject subject
+        body    body
+      end
+
+      # Send via SMTP directly
+      smtp_settings = {
+        address: 'smtp-relay.brevo.com',
+        port: 587,
+        domain: 'carboncube-ke.com',
+        user_name: ENV['BREVO_SMTP_USER'],
+        password: ENV['BREVO_SMTP_PASSWORD'],
+        authentication: :plain,
+        enable_starttls_auto: true
+      }
+
+      Net::SMTP.start(smtp_settings[:address], smtp_settings[:port], smtp_settings[:domain],
+                     smtp_settings[:user_name], smtp_settings[:password], smtp_settings[:authentication]) do |smtp|
+        smtp.enable_starttls if smtp_settings[:enable_starttls_auto]
+        smtp.send_message(mail.to_s, mail.from.first, mail.to)
+      end
+
       Rails.logger.info "✅ Password reset OTP email sent immediately to #{user.email}"
 
       if Rails.env.development?
