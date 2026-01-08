@@ -26,8 +26,10 @@ class PasswordOtp < ApplicationRecord
       mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
 
       # Send immediately - password reset is critical and should not be queued
-      # Force synchronous delivery using deliver!
-      mailer.deliver!
+      # Create the mail object and deliver it synchronously
+      mail = mailer.message
+      mail.delivery_method(ActionMailer::Base.delivery_method, ActionMailer::Base.smtp_settings)
+      mail.deliver_now!
       Rails.logger.info "✅ Password reset OTP email sent immediately to #{user.email}"
 
       if Rails.env.development?
