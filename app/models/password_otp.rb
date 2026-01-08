@@ -21,19 +21,16 @@ class PasswordOtp < ApplicationRecord
     end
 
     # Trigger mailer here, passing raw OTP for email content
-    # Use deliver_now in development (no Sidekiq needed), deliver_later in production
+    # Send immediately for password reset emails (critical functionality)
     begin
       mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
-      
+
+      # Send immediately - password reset is critical and should not be queued
+      mailer.deliver_now
+      Rails.logger.info "✅ Password reset OTP email sent immediately to #{user.email}"
+
       if Rails.env.development?
-        # Send immediately in development
-        mailer.deliver_now
-        Rails.logger.info "✅ Password reset OTP email sent immediately to #{user.email}"
         puts "✅ Password reset OTP email sent immediately to #{user.email} - OTP: #{otp}"
-      else
-        # Queue via Sidekiq in production
-        mailer.deliver_later
-        Rails.logger.info "✅ Password reset OTP email queued for #{user.email}"
       end
     rescue => e
       Rails.logger.error "❌ Failed to send password reset email to #{user.email}: #{e.message}"

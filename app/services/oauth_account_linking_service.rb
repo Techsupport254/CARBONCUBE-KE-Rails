@@ -286,9 +286,21 @@ class OauthAccountLinkingService
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
-    # Apply 2025 premium logic for all users registering in 2025
-    if should_get_2025_premium?
-      create_2025_premium_tier(seller)
+    # Always assign premium tier for 6 months to new sellers
+    expiry_date = 6.months.from_now
+
+    Rails.logger.info "OAuth Seller Registration: Assigning Premium tier to seller #{seller.id}, expires at #{expiry_date} (6 months)"
+    premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
+    if premium_tier
+      seller_tier = SellerTier.create!(
+        seller: seller,
+        tier: premium_tier,
+        duration_months: 6,
+        expires_at: expiry_date
+      )
+      Rails.logger.info "✅ Premium tier assigned to seller via OAuth: #{premium_tier.name}"
+    else
+      Rails.logger.error "❌ Premium tier not found in database for OAuth seller creation"
     end
     
     # Send welcome WhatsApp message (non-blocking)
@@ -689,47 +701,5 @@ class OauthAccountLinkingService
     # Don't fail the entire process if email verification marking fails
   end
 
-  # Check if user should get premium status for 2025 registrations
-  def should_get_2025_premium?
-    current_year = Time.current.year
-    current_year == 2025
-  end
-
-  # Get premium tier for 2025 users
-  def get_premium_tier
-    Tier.find_by(name: 'Premium')
-  end
-
-  # Create seller tier for 2025 premium users
-  def create_2025_premium_tier(seller)
-    unless should_get_2025_premium?
-      return
-    end
-    
-    premium_tier = get_premium_tier
-    unless premium_tier
-      return
-    end
-    
-    
-    # Calculate expiry date (end of 2025) - expires at midnight on January 1, 2026
-    expires_at = Time.new(2026, 1, 1, 0, 0, 0)
-    
-    # Calculate remaining months until end of 2025
-    current_date = Time.current
-    end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
-    remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
-    duration_months = (remaining_days / 30.44).ceil # Average days per month
-    
-    # Create seller tier with premium status until end of 2025
-    seller_tier = SellerTier.create!(
-      seller: seller,
-      tier: premium_tier,
-      duration_months: duration_months,
-      expires_at: expires_at
-    )
-    
-  rescue => e
-  end
 
 end

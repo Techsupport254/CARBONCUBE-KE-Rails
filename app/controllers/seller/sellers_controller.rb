@@ -154,32 +154,14 @@ class Seller::SellersController < ApplicationController
       # Email verification is optional - users can verify their email later if they choose
       # OTP is validated if provided but not automatically marked as verified
 
-      # Step 2: Assign tier (must succeed for transaction to complete)
-      current_year = Date.current.year
-      if current_year == 2025
-        # Set exact expiry date to midnight on January 1, 2026 (00:00 2026-01-01)
-        expiry_date = DateTime.new(2026, 1, 1, 0, 0, 0)
-        
-        # Calculate remaining months until end of 2025
-        current_date = Time.current
-        end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
-        remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
-        duration_months = (remaining_days / 30.44).ceil # Average days per month
-        
-        Rails.logger.info "2025 Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (#{remaining_days} days, ~#{duration_months} months)"
-        seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 4, duration_months: duration_months, expires_at: expiry_date)
-        unless seller_tier.save
-          Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
-          raise ActiveRecord::Rollback
-        end
-      else
-        # Default free tier for other years
-        Rails.logger.info "📝 #{current_year} Registration: Assigning Free tier to seller #{@seller.id}"
-        seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 1, duration_months: 0)
-        unless seller_tier.save
-          Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
-          raise ActiveRecord::Rollback
-        end
+      # Step 2: Assign premium tier for 6 months to all new sellers
+      expiry_date = 6.months.from_now
+
+      Rails.logger.info "New Seller Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (6 months)"
+      seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 4, duration_months: 6, expires_at: expiry_date)
+      unless seller_tier.save
+        Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
+        raise ActiveRecord::Rollback
       end
 
       # If we reach here, all steps succeeded
