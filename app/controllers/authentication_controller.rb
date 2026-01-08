@@ -1284,8 +1284,8 @@ class AuthenticationController < ApplicationController
           # Handle seller-specific setup
           if user_type == 'seller'
             # Check if user should get 2025 premium status
-            if should_get_2025_premium?
-              create_2025_premium_tier(user)
+            if should_get_2026_premium?
+              create_2026_premium_tier(user)
             else
               # Create default seller tier for non-2025 users
               default_tier = Tier.find_by(name: 'Free') || Tier.first
@@ -1377,10 +1377,10 @@ class AuthenticationController < ApplicationController
         if user.update(user_attributes)
           
           # Handle seller-specific setup for 2025 premium
-          if user_type == 'seller' && should_get_2025_premium?
+          if user_type == 'seller' && should_get_2026_premium?
             # Check if seller already has a tier, if not create premium tier
             unless user.seller_tier.present?
-              create_2025_premium_tier(user)
+              create_2026_premium_tier(user)
             end
           end
         else
@@ -1583,10 +1583,10 @@ class AuthenticationController < ApplicationController
   private
 
   # Check if user should get premium status for 2025 registrations
-  def should_get_2025_premium?
+  def should_get_2026_premium?
     current_year = Time.current.year
-    Rails.logger.info "🔍 Checking 2025 premium status: current_year=#{current_year}, is_2025=#{current_year == 2025}"
-    current_year == 2025
+    Rails.logger.info "🔍 Checking 2026 premium status: current_year=#{current_year}, is_2026=#{current_year == 2026}"
+    current_year == 2026
   end
 
   # Get premium tier for 2025 users
@@ -1594,11 +1594,11 @@ class AuthenticationController < ApplicationController
     Tier.find_by(name: 'Premium')
   end
 
-  # Create seller tier for 2025 premium users
-  def create_2025_premium_tier(seller)
-    Rails.logger.info "🔍 create_2025_premium_tier called for seller: #{seller.email}"
+  # Create seller tier for 2026 premium users
+  def create_2026_premium_tier(seller)
+    Rails.logger.info "🔍 create_2026_premium_tier called for seller: #{seller.email}"
     
-    unless should_get_2025_premium?
+    unless should_get_2026_premium?
       Rails.logger.info "❌ Not 2025, skipping premium tier assignment"
       return
     end
@@ -1611,13 +1611,13 @@ class AuthenticationController < ApplicationController
     
     Rails.logger.info "✅ Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
     
-    # Calculate expiry date (end of 2025) - expires at midnight on January 1, 2026
-    expires_at = Time.new(2026, 1, 1, 0, 0, 0)
-    
-    # Calculate remaining months until end of 2025
+    # Calculate expiry date (end of 2026) - expires at midnight on January 1, 2027
+    expires_at = Time.new(2027, 1, 1, 0, 0, 0)
+
+    # Calculate remaining months until end of 2026
     current_date = Time.current
-    end_of_2025 = Time.new(2025, 12, 31, 23, 59, 59)
-    remaining_days = ((end_of_2025 - current_date) / 1.day).ceil
+    end_of_2026 = Time.new(2026, 12, 31, 23, 59, 59)
+    remaining_days = ((end_of_2026 - current_date) / 1.day).ceil
     duration_months = (remaining_days / 30.44).ceil # Average days per month
     
     # Create seller tier with premium status until end of 2025
@@ -1628,7 +1628,7 @@ class AuthenticationController < ApplicationController
       expires_at: expires_at
     )
     
-    Rails.logger.info "✅ Premium tier assigned to seller #{seller.email} until end of 2025 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
+    Rails.logger.info "✅ Premium tier assigned to seller #{seller.email} until end of 2026 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
   rescue => e
     Rails.logger.error "❌ Error creating premium tier: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
