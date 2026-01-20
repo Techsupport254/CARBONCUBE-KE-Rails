@@ -11,3 +11,8 @@ end
 every 30.minutes do
   command "cd /root/CARBON && docker-compose exec -T backend rails runner 'PrecomputeBestSellersJob.perform_now'"
 end
+
+# Sync search analytics from Redis to PostgreSQL daily
+every 1.day, at: '1:00 am' do
+  command "cd /root/CARBON && docker-compose exec -T backend rails runner 'SyncSearchAnalyticsJob.perform_now'"
+end

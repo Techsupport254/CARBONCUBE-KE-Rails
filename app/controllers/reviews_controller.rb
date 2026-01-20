@@ -10,7 +10,9 @@ class ReviewsController < ApplicationController
         buyer: {
           id: review.buyer.id,
           name: review.buyer.fullname
-        }
+        },
+        created_at: review.created_at,
+        updated_at: review.updated_at
       }
     end
 

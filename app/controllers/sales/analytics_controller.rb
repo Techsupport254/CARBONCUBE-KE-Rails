@@ -273,6 +273,69 @@ class Sales::AnalyticsController < ApplicationController
     end
   end
 
+  def searches
+    # Get search analytics from Redis
+    analytics_data = SearchRedisService.analytics
+
+    # Get popular searches for different timeframes
+    popular_searches = {
+      all_time: SearchRedisService.popular_searches(20, :all),
+      daily: SearchRedisService.popular_searches(15, :daily),
+      weekly: SearchRedisService.popular_searches(15, :weekly),
+      monthly: SearchRedisService.popular_searches(15, :monthly)
+    }
+
+    # Get search history with pagination (limited for sales users)
+    page = params[:page].to_i.positive? ? params[:page].to_i : 1
+    per_page = [params[:per_page].to_i, 100].select(&:positive?).min || 50  # Max 100 per page for sales
+
+    # Build filters from params
+    filters = {}
+    filters[:search_term] = params[:search_term] if params[:search_term].present?
+    filters[:buyer_id] = params[:buyer_id] if params[:buyer_id].present?
+    filters[:start_date] = params[:start_date] if params[:start_date].present?
+    filters[:end_date] = params[:end_date] if params[:end_date].present?
+
+    # Get search history from Redis
+    search_history = SearchRedisService.search_history(
+      page: page,
+      per_page: per_page,
+      filters: filters
+    )
+
+    # Format response
+    formatted_searches = search_history[:searches].map do |search|
+      {
+        id: search[:id],
+        search_term: search[:search_term],
+        buyer_id: search[:buyer_id],
+        timestamp: search[:timestamp],
+        created_at: search[:timestamp],
+        device_hash: search[:device_hash],
+        user_agent: search[:user_agent]&.truncate(100),  # Limit user agent length
+        ip_address: search[:ip_address]
+      }
+    end
+
+    render json: {
+      analytics: analytics_data,
+      popular_searches: popular_searches,
+      search_history: {
+        searches: formatted_searches,
+        meta: {
+          current_page: search_history[:current_page],
+          per_page: search_history[:per_page],
+          total_count: search_history[:total_count],
+          total_pages: search_history[:total_pages]
+        }
+      },
+      data_retention: {
+        individual_searches: '30 days',
+        analytics_data: '90 days'
+      }
+    }, status: :ok
+  end
+
   def recent_users
     user_type = params[:type] || 'buyers' # Default to buyers
     limit = params[:limit]&.to_i || 10

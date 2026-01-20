@@ -417,7 +417,11 @@ Rails.application.routes.draw do
         post 'change-password'
       end
     end
-    resources :ad_searches, only: [:index, :show, :destroy]
+    resources :ad_searches, only: [:index, :show, :destroy] do
+      collection do
+        get :analytics
+      end
+    end
     resources :click_events, only: [:index, :show, :destroy]
     resources :tiers, only: [:index, :show, :create, :update, :destroy]
     resources :internal_user_exclusions do
@@ -488,7 +492,11 @@ Rails.application.routes.draw do
       end
     end
     get 'subcategories', to: 'subcategories#index'
-    resources :analytics, only: [:index]
+    resources :analytics, only: [:index] do
+      collection do
+        get :search_insights
+      end
+    end
     resources :reviews, only: [:index, :show] do
       post 'reply', on: :member
     end
@@ -591,6 +599,7 @@ Rails.application.routes.draw do
       resources :ads, only: [:index, :show] do
         collection do
           get 'search'
+          get 'popular-searches', to: 'ads#popular_searches'
           get 'load_more_subcategory'
           get 'recommendations', to: 'ads#recommendations'
         end
@@ -614,6 +623,12 @@ Rails.application.routes.draw do
           get :devices
           get :sources
           get :categories
+          get :searches
+        end
+      end
+      resources :ad_searches, only: [:index] do
+        collection do
+          get :analytics
         end
       end
       # Direct route for ad stats
@@ -715,6 +730,7 @@ Rails.application.routes.draw do
     resources :ads, only: [:index, :show] do
       collection do
         get 'search'
+        get 'popular-searches', to: 'ads#popular_searches'
         get 'load_more_subcategory'
         get 'recommendations', to: 'ads#recommendations'
       end
@@ -782,6 +798,12 @@ Rails.application.routes.draw do
           get :devices
           get :sources
           get :categories
+          get :searches
+        end
+      end
+      resources :ad_searches, only: [:index] do
+        collection do
+          get :analytics
         end
       end
       # Direct route for ad stats

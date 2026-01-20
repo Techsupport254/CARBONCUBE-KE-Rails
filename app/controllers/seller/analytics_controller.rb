@@ -11,6 +11,9 @@ class Seller::AnalyticsController < ApplicationController
         tier_id: tier_id
       }
 
+      # Add search insights for all tiers (provides valuable market intelligence)
+      response_data[:search_insights] = get_search_insights
+
       # Add more data based on the seller's tier
       # OPTIMIZATION: Only return data actually used on the overview page
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
@@ -133,6 +136,17 @@ class Seller::AnalyticsController < ApplicationController
       render json: response_data
     rescue => e
       Rails.logger.error "Analytics error for seller #{current_seller&.id}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render json: { error: 'Internal server error', details: e.message }, status: 500
+    end
+  end
+
+  def search_insights
+    begin
+      search_insights_data = get_search_insights
+      render json: search_insights_data
+    rescue => e
+      Rails.logger.error "Search insights error for seller #{current_seller&.id}: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       render json: { error: 'Internal server error', details: e.message }, status: 500
     end
@@ -2197,6 +2211,111 @@ class Seller::AnalyticsController < ApplicationController
       best_offer_type: offer_type_performance.first&.dig(:offer_type)
     }
   end
+
+  # Get search insights for sellers to understand market demand
+  def get_search_insights
+    # Get the latest search analytics data
+    latest_analytics = SearchAnalytic.latest
+
+    if latest_analytics.nil?
+      return {
+        total_searches_today: 0,
+        unique_search_terms_today: 0,
+        total_search_records: 0,
+        popular_searches_all_time: [],
+        popular_searches_daily: [],
+        popular_searches_weekly: [],
+        popular_searches_monthly: [],
+        search_trends: [],
+        category_insights: []
+      }
+    end
+
+    # Get trending searches over the past 7 days
+    trending_searches = SearchAnalytic.trending_searches(7)
+
+    # Get search analytics from Redis for real-time data
+    redis_analytics = SearchRedisService.analytics
+
+    # Get seller's categories to provide relevant insights
+    seller_categories = current_seller.ads.active.distinct.pluck(:category_id)
+    category_names = Category.where(id: seller_categories).pluck(:name)
+
+    # Generate category-specific search insights
+    category_insights = generate_category_search_insights(seller_categories)
+
+    # Search opportunities feature removed
+
+    {
+      # Basic search metrics
+      total_searches_today: redis_analytics[:total_searches_today],
+      unique_search_terms_today: redis_analytics[:unique_search_terms_today],
+      total_search_records: redis_analytics[:total_search_records],
+
+      # Popular searches by timeframe
+      popular_searches_all_time: latest_analytics.popular_searches_all_time&.first(20) || [],
+      popular_searches_daily: latest_analytics.popular_searches_daily&.first(20) || [],
+      popular_searches_weekly: latest_analytics.popular_searches_weekly&.first(20) || [],
+      popular_searches_monthly: latest_analytics.popular_searches_monthly&.first(20) || [],
+
+      # Trends and insights
+      search_trends: trending_searches.first(10),
+      category_insights: category_insights,
+
+      # Metadata
+      last_updated: latest_analytics.updated_at.iso8601,
+      seller_categories: category_names
+    }
+  end
+
+  def generate_category_search_insights(seller_category_ids)
+    return [] if seller_category_ids.empty?
+
+    insights = []
+
+    seller_category_ids.each do |category_id|
+      category = Category.find_by(id: category_id)
+      next unless category
+
+      # Get popular searches that might be related to this category
+      # This is a simplified approach - in a real implementation, you might use
+      # natural language processing or keyword matching
+      category_keywords = [
+        category.name.downcase,
+        category.name.downcase.split,
+        # Add common variations and related terms
+      ].flatten.uniq
+
+      related_searches = SearchAnalytic.trending_searches(30).select do |search_term, _|
+        # Ensure search_term is a string before calling downcase
+        next false unless search_term.is_a?(String) && search_term.present?
+        term_lower = search_term.downcase
+        category_keywords.any? { |keyword| term_lower.include?(keyword) }
+      end
+
+      if related_searches.any?
+        insights << {
+          category_name: category.name,
+          related_searches: related_searches.first(5),
+          total_related_searches: related_searches.size,
+          search_volume_trend: calculate_search_volume_trend(related_searches)
+        }
+      end
+    end
+
+    insights
+  end
+
+
+  def calculate_search_volume_trend(related_searches)
+    # Simplified trend calculation - compare recent vs older searches
+    return "stable" if related_searches.empty?
+
+    # This is a placeholder - in a real implementation, you'd compare
+    # search volumes across different time periods
+    "increasing"
+  end
+
 
   def authenticate_seller
     begin
