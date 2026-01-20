@@ -343,138 +343,97 @@ class Buyer::AdsController < ApplicationController
 
     if query.present?
       query_words = query.split(/\s+/).reject(&:blank?)
-      
-      # Build relevance-based search conditions
+      normalized_query = query.downcase.strip
+
+      # Build more precise relevance-based search conditions
       # Priority 1: Exact word matches in title (highest relevance)
-      # Priority 2: Exact word matches in description
-      # Priority 3: Partial matches in title
-      # Priority 4: Partial matches in description
-      # Priority 5: Category/subcategory matches
-      # Priority 6: Seller name matches
-      
+      # Priority 2: Brand matches in title
+      # Priority 3: Partial matches in title with word boundaries
+      # Priority 4: Exact matches in description
+      # Priority 5: Category/subcategory matches (only for relevant categories)
+
       title_conditions = []
+      brand_conditions = []
       description_conditions = []
       category_conditions = []
-      seller_conditions = []
-      
+      search_params = []
+
       query_words.each do |word|
-        # Create multiple search patterns for better matching
-        search_patterns = [
-          "% #{word} %",           # Exact word match with spaces
-          "%#{word}%",             # Partial match anywhere
-          "%#{word[0..-2]}%",      # Remove last character (driller -> drille)
-          "%#{word[0..-3]}%",      # Remove last 2 characters (driller -> drill)
-          "%#{word[0..-4]}%",      # Remove last 3 characters (drilling -> drill)
-          "%#{word}s%",            # Add 's' (drill -> drills)
-          "%#{word}er%",           # Add 'er' (drill -> driller)
-          "%#{word}ing%",          # Add 'ing' (drill -> drilling)
-          "%#{word}ed%",           # Add 'ed' (drill -> drilled)
-        ]
-        
-        # Title matches (highest priority)
-        search_patterns.each do |pattern|
-          title_conditions << "ads.title ILIKE ?"
+        normalized_word = word.downcase
+
+        # Title matches - prioritize exact word boundaries and brand matches
+        title_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Exact word match with spaces
+        search_params << "% #{word} %"
+
+        title_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Starts with word
+        search_params << "#{word}%"
+
+        title_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Contains word with word boundaries
+        search_params << "% #{word} %"
+
+        # Brand matches - high priority for product searches
+        brand_conditions << "LOWER(ads.brand) LIKE LOWER(?)" if word.length > 2
+        if word.length > 2
+          search_params << "%#{word}%"
         end
-        
-        # Description matches (second priority)
-        search_patterns.each do |pattern|
-          description_conditions << "ads.description ILIKE ?"
-        end
-        
-        # Category and subcategory matches
-        search_patterns.each do |pattern|
-          category_conditions << "categories.name ILIKE ?"
-          category_conditions << "subcategories.name ILIKE ?"
-        end
-        
-        # Seller name matches
-        search_patterns.each do |pattern|
-          seller_conditions << "sellers.enterprise_name ILIKE ?"
+
+        # Description matches - less strict, only for longer queries
+        if normalized_word.length > 3
+          description_conditions << "LOWER(ads.description) LIKE LOWER(?)"  # Contains word
+          search_params << "% #{word} %"
         end
       end
-      
-      # Build the main search condition with relevance weighting
+
+      # Category/subcategory matches - only for relevant categories
+      # For phone searches, only match electronics/phone categories
+      if normalized_query.include?('phone') || normalized_query.include?('mobile') ||
+         normalized_query.include?('samsung') || normalized_query.include?('iphone') ||
+         normalized_query.include?('huawei') || normalized_query.include?('xiaomi') ||
+         normalized_query.include?('redmi') || normalized_query.include?('oppo') ||
+         normalized_query.include?('vivo') || normalized_query.include?('realme')
+
+        category_conditions << "LOWER(categories.name) LIKE LOWER(?)"
+        search_params << "%electronics%"
+
+        category_conditions << "LOWER(categories.name) LIKE LOWER(?)"
+        search_params << "%phones%"
+
+        category_conditions << "LOWER(categories.name) LIKE LOWER(?)"
+        search_params << "%mobile%"
+
+        category_conditions << "LOWER(subcategories.name) LIKE LOWER(?)"
+        search_params << "%phones%"
+
+        category_conditions << "LOWER(subcategories.name) LIKE LOWER(?)"
+        search_params << "%mobile%"
+
+        category_conditions << "LOWER(subcategories.name) LIKE LOWER(?)"
+        search_params << "%smartphone%"
+      end
+
+      # Build the search query with proper weighting
       search_conditions = []
-      search_params = []
-      
-      # Title matches (highest priority)
+
+      # Title matches (highest priority - 40% of relevance)
       if title_conditions.any?
         search_conditions << "(#{title_conditions.join(' OR ')})"
-        query_words.each do |word|
-          # Add all search patterns for title matching
-          search_params << "% #{word} %"           # Exact match
-          search_params << "%#{word}%"             # Partial match
-          search_params << "%#{word[0..-2]}%"     # Remove last char
-          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
-          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
-          search_params << "%#{word}s%"            # Add 's'
-          search_params << "%#{word}er%"           # Add 'er'
-          search_params << "%#{word}ing%"          # Add 'ing'
-          search_params << "%#{word}ed%"           # Add 'ed'
-        end
       end
-      
-      # Description matches (second priority)
+
+      # Brand matches (high priority for product searches - 30% of relevance)
+      if brand_conditions.any?
+        search_conditions << "(#{brand_conditions.join(' OR ')})"
+      end
+
+      # Description matches (medium priority - 15% of relevance)
       if description_conditions.any?
         search_conditions << "(#{description_conditions.join(' OR ')})"
-        query_words.each do |word|
-          # Add all search patterns for description matching
-          search_params << "% #{word} %"           # Exact match
-          search_params << "%#{word}%"             # Partial match
-          search_params << "%#{word[0..-2]}%"     # Remove last char
-          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
-          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
-          search_params << "%#{word}s%"            # Add 's'
-          search_params << "%#{word}er%"           # Add 'er'
-          search_params << "%#{word}ing%"          # Add 'ing'
-          search_params << "%#{word}ed%"           # Add 'ed'
-        end
       end
-      
-      # Category matches (third priority)
+
+      # Category matches (low priority - 15% of relevance)
       if category_conditions.any?
         search_conditions << "(#{category_conditions.join(' OR ')})"
-        query_words.each do |word|
-          # Add all search patterns for category matching
-          search_params << "% #{word} %"           # Exact match
-          search_params << "%#{word}%"             # Partial match
-          search_params << "%#{word[0..-2]}%"     # Remove last char
-          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
-          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
-          search_params << "%#{word}s%"            # Add 's'
-          search_params << "%#{word}er%"           # Add 'er'
-          search_params << "%#{word}ing%"          # Add 'ing'
-          search_params << "%#{word}ed%"           # Add 'ed'
-          # Add again for subcategory
-          search_params << "% #{word} %"           # Exact match
-          search_params << "%#{word}%"             # Partial match
-          search_params << "%#{word[0..-2]}%"     # Remove last char
-          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
-          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
-          search_params << "%#{word}s%"            # Add 's'
-          search_params << "%#{word}er%"           # Add 'er'
-          search_params << "%#{word}ing%"          # Add 'ing'
-          search_params << "%#{word}ed%"           # Add 'ed'
-        end
       end
-      
-      # Seller matches (lowest priority)
-      if seller_conditions.any?
-        search_conditions << "(#{seller_conditions.join(' OR ')})"
-        query_words.each do |word|
-          # Add all search patterns for seller matching
-          search_params << "% #{word} %"           # Exact match
-          search_params << "%#{word}%"             # Partial match
-          search_params << "%#{word[0..-2]}%"     # Remove last char
-          search_params << "%#{word[0..-3]}%"     # Remove last 2 chars
-          search_params << "%#{word[0..-4]}%"     # Remove last 3 chars
-          search_params << "%#{word}s%"            # Add 's'
-          search_params << "%#{word}er%"           # Add 'er'
-          search_params << "%#{word}ing%"          # Add 'ing'
-          search_params << "%#{word}ed%"           # Add 'ed'
-        end
-      end
-      
+
       # Apply the search conditions
       if search_conditions.any?
         ads = ads.where(search_conditions.join(' OR '), *search_params)
@@ -501,48 +460,136 @@ class Buyer::AdsController < ApplicationController
 
     # Get total count for pagination
     ads_total_count = ads.count
-    
+
+    # For search queries, we'll recalculate the total count after relevance filtering
+    search_relevant_count = ads_total_count
+
     # Build relevance scoring for search results
     if query.present?
-      # Use a simpler approach with better ordering
-      ads = ads
-        .joins(:seller, seller: { seller_tier: :tier })
-        .select('ads.*, 
-                 CASE tiers.id
-                   WHEN 4 THEN 1
-                   WHEN 3 THEN 2
-                   WHEN 2 THEN 3
-                   WHEN 1 THEN 4
-                   ELSE 5
-                 END AS tier_priority')
-        .includes(
-          :category,
-          :subcategory,
-          :reviews,
-          seller: { seller_tier: :tier }
-        )
-        .order(Arel.sql("
-          CASE 
-            WHEN ads.title ILIKE '% #{query} %' THEN 1
-            WHEN ads.title ILIKE '%#{query}%' THEN 2
-            WHEN ads.description ILIKE '% #{query} %' THEN 3
-            WHEN ads.description ILIKE '%#{query}%' THEN 4
-            WHEN categories.name ILIKE '%#{query}%' THEN 5
-            WHEN subcategories.name ILIKE '%#{query}%' THEN 6
-            WHEN sellers.enterprise_name ILIKE '%#{query}%' THEN 7
-            ELSE 8
-          END ASC,
-          CASE tiers.id
-            WHEN 4 THEN 1
-            WHEN 3 THEN 2
-            WHEN 2 THEN 3
-            WHEN 1 THEN 4
-            ELSE 5
-          END ASC,
-          RANDOM()
-        "))
-        .limit(ads_per_page)
-        .offset((ads_page - 1) * ads_per_page)
+      normalized_query = query.downcase.strip
+
+      # Calculate relevance score for each ad
+      ads_with_scores = ads.map do |ad|
+        relevance_score = 0
+
+        ad_title = ad.title&.downcase || ''
+        ad_brand = ad.brand&.downcase || ''
+        ad_description = ad.description&.downcase || ''
+        category_name = ad.category&.name&.downcase || ''
+        subcategory_name = ad.subcategory&.name&.downcase || ''
+
+        # Title matches (highest weight - 40 points max)
+        if ad_title.include?(" #{normalized_query} ")
+          relevance_score += 40  # Exact word match
+        elsif ad_title.include?(normalized_query)
+          relevance_score += 30  # Contains query
+        elsif ad_title.start_with?(normalized_query)
+          relevance_score += 25  # Starts with query
+        end
+
+        # Brand matches (high weight - 30 points max)
+        if ad_brand.include?(normalized_query)
+          relevance_score += 30
+        end
+
+        # Description matches (medium weight - 15 points max)
+        if ad_description.include?(" #{normalized_query} ")
+          relevance_score += 15
+        elsif ad_description.include?(normalized_query) && normalized_query.length > 3
+          relevance_score += 10
+        end
+
+        # Category/Subcategory matches (low weight - 15 points max)
+        if category_name.include?(normalized_query) || subcategory_name.include?(normalized_query)
+          relevance_score += 15
+        end
+
+        # Length penalty - prefer shorter, more relevant titles
+        if ad_title.length > 100
+          relevance_score -= 5
+        end
+
+        # Boost for verified sellers
+        if ad.seller&.document_verified?
+          relevance_score += 2
+        end
+
+        { ad: ad, score: relevance_score }
+      end
+
+      # Separate exact/high-relevance matches from other matches
+      exact_matches = ads_with_scores.select { |item| item[:score] >= 30 } # Exact title or brand matches
+      other_matches = ads_with_scores.select { |item| item[:score] > 5 && item[:score] < 30 }
+
+      # If we have exact matches, find additional related products from same categories/brands
+      if exact_matches.any?
+        # Get categories, subcategories, and brands from exact matches
+        exact_categories = exact_matches.map { |item| item[:ad].category_id }.uniq
+        exact_subcategories = exact_matches.map { |item| item[:ad].subcategory_id }.uniq
+        exact_brands = exact_matches.map { |item| item[:ad].brand&.downcase&.strip }.uniq.compact
+        exact_ad_ids = exact_matches.map { |item| item[:ad].id }
+
+        # Query for additional related products in same categories/subcategories/brands
+        # These won't be in the original ads query since they don't match the search terms
+        related_ads_query = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                               .where(sellers: { blocked: false, deleted: false, flagged: false })
+                               .where(flagged: false)
+                               .where('ads.id NOT IN (?)', exact_ad_ids) # Exclude already found exact matches
+                               .where(
+                                 'ads.category_id IN (?) OR ads.subcategory_id IN (?) OR LOWER(ads.brand) IN (?)',
+                                 exact_categories, exact_subcategories, exact_brands
+                               )
+                               .limit(20) # Limit additional related products
+
+        related_ads = related_ads_query.map do |ad|
+          # Calculate a lower relevance score for related products
+          relevance_score = 5 # Base score for category/brand match
+
+          # Boost for same subcategory
+          if exact_subcategories.include?(ad.subcategory_id)
+            relevance_score += 3
+          end
+
+          # Boost for same brand
+          if exact_brands.include?(ad.brand&.downcase&.strip)
+            relevance_score += 3
+          end
+
+          # Boost for verified sellers
+          if ad.seller&.document_verified?
+            relevance_score += 2
+          end
+
+          { ad: ad, score: relevance_score }
+        end
+
+        # Combine: exact matches first, then other search matches, then related products
+        relevant_ads = exact_matches + other_matches + related_ads
+        relevant_ads = relevant_ads.uniq { |item| item[:ad].id } # Remove duplicates
+      else
+        # No exact matches, use the original logic
+        relevant_ads = ads_with_scores.select { |item| item[:score] > 5 }
+      end
+
+      # Update total count for search results (only relevant results)
+      search_relevant_count = relevant_ads.size
+
+      # Sort by relevance score, then by seller tier
+      sorted_ads = relevant_ads.sort_by do |item|
+        ad = item[:ad]
+        tier_priority = case ad.seller&.seller_tier&.tier_id
+                        when 4 then 1  # Premium
+                        when 3 then 2  # Standard
+                        when 2 then 3  # Basic
+                        when 1 then 4  # Free
+                        else 5         # Unknown
+                        end
+        [-item[:score], tier_priority, rand]  # Higher score first, then better tier, then random
+      end
+
+      # Apply pagination
+      ads = sorted_ads.map { |item| item[:ad] }
+      ads = ads.slice((ads_page - 1) * ads_per_page, ads_per_page) || []
     else
       # For non-search queries, use the original ordering
       ads = ads
@@ -658,7 +705,7 @@ class Buyer::AdsController < ApplicationController
         recency_score = [30 - days_since_created.to_i, 0].max
         
         # Name match bonus (shops with name matching get extra points)
-        name_match_bonus = shop.enterprise_name.downcase.include?(query.downcase) ? 20 : 0
+        name_match_bonus = shop.enterprise_name&.downcase&.include?(query.downcase) ? 20 : 0
         
         # Calculate total score
         total_score = tier_score + product_score + rating_score + recency_score + name_match_bonus
@@ -715,9 +762,9 @@ class Buyer::AdsController < ApplicationController
         ads: {
           current_page: ads_page,
           per_page: ads_per_page,
-          total_count: ads_total_count,
-          total_pages: (ads_total_count.to_f / ads_per_page).ceil,
-          has_next_page: ads_page < (ads_total_count.to_f / ads_per_page).ceil,
+          total_count: query.present? ? search_relevant_count : ads_total_count,
+          total_pages: ((query.present? ? search_relevant_count : ads_total_count).to_f / ads_per_page).ceil,
+          has_next_page: ads_page < ((query.present? ? search_relevant_count : ads_total_count).to_f / ads_per_page).ceil,
           has_prev_page: ads_page > 1
         },
         shops: {
@@ -734,7 +781,89 @@ class Buyer::AdsController < ApplicationController
     render json: response
   end
 
-  
+
+  # GET /buyer/ads/popular-searches?q=query
+  def popular_searches
+    query = params[:q].to_s.strip.downcase
+
+    # Get popular searches from Redis analytics
+    redis_searches = SearchRedisService.popular_searches(50, :weekly)
+
+    # Add high-value product terms that have many results
+    high_value_terms = [
+      { term: 'iphone', product_count_threshold: 40 },
+      { term: 'samsung', product_count_threshold: 20 },
+      { term: 'laptop', product_count_threshold: 10 },
+      { term: 'phone', product_count_threshold: 50 },
+      { term: 'battery', product_count_threshold: 10 },
+      { term: 'filter', product_count_threshold: 10 },
+      { term: 'tyre', product_count_threshold: 10 }
+    ]
+
+    # Check which high-value terms have sufficient products
+    additional_searches = []
+    high_value_terms.each do |term_data|
+      term = term_data[:term]
+      threshold = term_data[:product_count_threshold]
+
+      # Check if this term has enough products
+      product_count = get_product_count_for_term(term)
+      if product_count >= threshold
+        # Use the higher count between Redis count and product count
+        existing_count = redis_searches.find { |redis_term, _| redis_term.downcase == term.downcase }&.last || 0
+        final_count = [existing_count, product_count].max
+        additional_searches << [term, final_count]
+      end
+    end
+
+    # Remove duplicates from Redis searches that are now in additional_searches
+    redis_term_names = additional_searches.map(&:first).map(&:downcase)
+    filtered_redis_searches = redis_searches.reject { |term, _| redis_term_names.include?(term.downcase) }
+
+    # Combine filtered Redis searches with additional high-value searches
+    combined_searches = filtered_redis_searches + additional_searches
+
+    # If a query is provided, filter the searches to only relevant ones
+    if query.present?
+      filtered_searches = combined_searches.select do |term, _|
+        term_lower = term.downcase
+        # Include if term contains query OR query contains term (for related matches)
+        term_lower.include?(query) || query.include?(term_lower)
+      end
+      combined_searches = filtered_searches
+    end
+
+    # Format the response with images, prices, and category info
+    formatted_searches = combined_searches.map do |term, count|
+      image_url = get_search_image(term)
+      price_info = get_search_price_info(term)
+      category_info = get_search_category_info(term)
+
+      result = {
+        term: term,
+        count: count,
+        type: get_search_type(term)
+      }
+
+      # Only include optional fields if they exist
+      result[:image_url] = image_url if image_url.present?
+      result.merge!(price_info) if price_info.present?
+      result.merge!(category_info) if category_info.present?
+
+      result
+    end
+
+    # Sort by count descending and take top results
+    max_results = query.present? ? 5 : 15  # Fewer results when filtering by query
+    formatted_searches = formatted_searches.sort_by { |s| -s[:count] }.first(max_results)
+
+    render json: {
+      popular_searches: formatted_searches,
+      total: formatted_searches.length
+    }
+  end
+
+
   # GET /buyer/ads/recommendations
   # Get personalized recommendations based on user's clicked/revealed ads
   def recommendations
@@ -1920,5 +2049,132 @@ class Buyer::AdsController < ApplicationController
     return 0 if click_count <= 0
     # Logarithmic scaling for clicks
     Math.log10(click_count + 1) * 15
+  end
+
+  private
+
+  def get_search_image(term)
+    term_lower = term.downcase
+
+    # Check for category images first
+    category = Category.find_by('LOWER(name) LIKE ?', "%#{term_lower}%")
+    return category.image_url if category&.image_url.present?
+
+    # Check for subcategory images
+    subcategory = Subcategory.find_by('LOWER(name) LIKE ?', "%#{term_lower}%")
+    return subcategory.image_url if subcategory&.image_url.present?
+
+    # For popular searches and other cases, check for product images
+    product = Ad.active.with_valid_images
+                  .joins(:seller)
+                  .where(sellers: { blocked: false, deleted: false, flagged: false })
+                  .where(flagged: false)
+                  .where('LOWER(title) LIKE ? OR LOWER(brand) LIKE ? OR LOWER(ads.description) LIKE ?',
+                         "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+                  .first
+
+    return product.first_media_url if product&.first_media_url.present?
+
+    # If no image found, return nil (no image)
+    nil
+  end
+
+  def get_search_price_info(term)
+    term_lower = term.downcase
+
+    # Get price range for products matching this term
+    base_query = Ad.active
+                   .joins(:seller)
+                   .where(sellers: { blocked: false, deleted: false, flagged: false })
+                   .where(flagged: false)
+                   .where('LOWER(title) LIKE ? OR LOWER(brand) LIKE ? OR LOWER(ads.description) LIKE ?',
+                          "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+                   .where.not(price: nil)
+                   .where('price > 0')
+
+    # Get regular prices
+    min_price = base_query.minimum(:price)&.to_f
+    max_price = base_query.maximum(:price)&.to_f
+    product_count = base_query.count
+
+    return nil unless min_price && max_price && product_count > 0
+
+    # Check for discounted prices
+    discounted_query = base_query.joins(:offer_ads)
+                                .where(offer_ads: { is_active: true })
+                                .where('offer_ads.discounted_price < ads.price')
+
+    min_discounted = discounted_query.minimum('offer_ads.discounted_price')&.to_f
+    max_discounted = discounted_query.maximum('offer_ads.discounted_price')&.to_f
+    discounted_count = discounted_query.distinct.count('ads.id')
+
+    result = {
+      min_price: min_price,
+      max_price: max_price,
+      product_count: product_count,
+      price_range: min_price == max_price ? "Ksh #{min_price.to_i}" : "Ksh #{min_price.to_i} - #{max_price.to_i}"
+    }
+
+    # Add discount info if available
+    if min_discounted && max_discounted && discounted_count > 0
+      result[:min_discounted_price] = min_discounted
+      result[:max_discounted_price] = max_discounted
+      result[:discounted_count] = discounted_count
+      result[:discounted_price_range] = min_discounted == max_discounted ?
+        "Ksh #{min_discounted.to_i}" : "Ksh #{min_discounted.to_i} - #{max_discounted.to_i}"
+    end
+
+    result
+  end
+
+  def get_search_category_info(term)
+    term_lower = term.downcase
+
+    # Get category and subcategory info for products matching this term
+    category_stats = Ad.active
+                       .joins(:seller, :category, :subcategory)
+                       .where(sellers: { blocked: false, deleted: false, flagged: false })
+                       .where(flagged: false)
+                       .where('LOWER(ads.title) LIKE ? OR LOWER(ads.brand) LIKE ? OR LOWER(ads.description) LIKE ?',
+                              "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+                       .group('categories.name', 'subcategories.name')
+                       .count
+
+    return nil if category_stats.empty?
+
+    # Get the most common category/subcategory combination
+    top_category_combo = category_stats.max_by { |_, count| count }
+    category_name, subcategory_name = top_category_combo[0]
+
+    {
+      category: category_name,
+      subcategory: subcategory_name
+    }
+  end
+
+  def get_product_count_for_term(term)
+    term_lower = term.downcase
+
+    # Count products matching this term (similar to search API but without image requirement)
+    Ad.active
+      .joins(:seller)
+      .where(sellers: { blocked: false, deleted: false, flagged: false })
+      .where(flagged: false)
+      .where('LOWER(ads.title) LIKE ? OR LOWER(ads.brand) LIKE ? OR LOWER(ads.description) LIKE ?',
+             "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+      .count
+  end
+
+  def get_search_type(term)
+    term_lower = term.downcase
+    if term_lower.include?('phone') || term_lower.include?('samsung') || term_lower.include?('iphone') || term_lower.include?('mobile') || term_lower.include?('laptop') || term_lower.include?('computer')
+      'electronics'
+    elsif term_lower.include?('car') || term_lower.include?('vehicle') || term_lower.include?('automotive') || term_lower.include?('battery') || term_lower.include?('filter') || term_lower.include?('oil') || term_lower.include?('tyre') || term_lower.include?('tire')
+      'automotive'
+    elsif term_lower.include?('near me') || term_lower.include?('location')
+      'location'
+    else
+      'general'
+    end
   end
 end

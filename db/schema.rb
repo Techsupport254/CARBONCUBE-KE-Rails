@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_08_072126) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_19_094420) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -714,6 +714,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_08_072126) do
     t.string "oauth_refresh_token"
     t.string "oauth_expires_at"
     t.index ["id"], name: "index_sales_users_on_uuid", unique: true
+  end
+
+  create_table "search_analytics", force: :cascade do |t|
+    t.date "date", null: false
+    t.integer "total_searches_today", default: 0
+    t.integer "unique_search_terms_today", default: 0
+    t.integer "total_search_records", default: 0
+    t.text "popular_searches_all_time"
+    t.text "popular_searches_daily"
+    t.text "popular_searches_weekly"
+    t.text "popular_searches_monthly"
+    t.jsonb "raw_analytics_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["date"], name: "index_search_analytics_on_date", unique: true
   end
 
   create_table "sectors", force: :cascade do |t|
