@@ -11,7 +11,6 @@ class Sales::AnalyticsController < ApplicationController
                                                     .pluck(:identifier_value)
     
     # OPTIMIZATION: Limit timestamp queries to last 2 years for performance
-    # Frontend can request older data if needed via date filters
     timestamp_limit_date = 2.years.ago
     
     # Get all data without time filtering for totals
@@ -85,7 +84,6 @@ class Sales::AnalyticsController < ApplicationController
     reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck('wish_lists.created_at').map { |ts| ts&.iso8601 }
     
-    # OPTIMIZATION: Get click events with timestamps (limited to recent, remove duplicates)
     ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     # Remove duplicate - buyer_ad_clicks uses same data
     buyer_ad_clicks_with_timestamps = ad_clicks_with_timestamps
