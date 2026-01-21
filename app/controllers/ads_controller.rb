@@ -40,6 +40,13 @@ class AdsController < ApplicationController
       return
     end
 
-    render json: @ad, serializer: AdSerializer
+    # Get similar products
+    similar_products_data = SimilarProductsService.find_similar_products(@ad, limit: 15)
+
+    # Render with similar products
+    ad_data = AdSerializer.new(@ad).as_json
+    ad_data[:similar_products] = similar_products_data
+
+    render json: ad_data
   end
 end
