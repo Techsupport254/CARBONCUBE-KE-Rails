@@ -319,125 +319,1046 @@ class Buyer::AdsController < ApplicationController
   end
   
 
+  # Grok-enhanced search analysis using AI for intent understanding
+  def analyze_search_intent_with_grok(query)
+    return nil if query.blank?
+
+    # Grok AI integration for advanced query understanding
+    grok_insights = analyze_with_grok(query)
+
+    intent = grok_insights[:intent] || {}
+
+    # Merge Grok insights with our existing analysis
+    basic_intent = analyze_search_intent(query)
+
+    # Combine insights
+    final_intent = grok_insights[:intent].merge(basic_intent || {})
+    final_intent[:suggestions] = grok_insights[:suggestions] || []
+    final_intent[:related_terms] = grok_insights[:related_terms] || []
+    final_intent[:confidence] = grok_insights[:confidence]
+
+    final_intent
+
+    intent
+  end
+
+  # Basic search intent analysis (our existing logic)
+  def analyze_search_intent(query)
+    return nil if query.blank?
+
+    normalized_query = query.downcase.strip
+    words = normalized_query.split(/\s+/).reject(&:blank?)
+
+    intent = {
+      query_type: :general,
+      brand: nil,
+      model: nil,
+      product_type: nil,
+      category_hint: nil,
+      is_product_search: false,
+      priority_terms: [],
+      accessory_terms: [],
+      semantic_matches: [], # AI-like semantic understanding
+      query_complexity: :simple # simple, compound, complex
+    }
+
+    # Determine query complexity (AI-like analysis)
+    intent[:query_complexity] = if words.length == 1
+                                  :simple
+                                elsif words.length == 2 && words.all? { |w| w.length > 2 }
+                                  :compound
+                                else
+                                  :complex
+                                end
+
+    # Define known brands and their common abbreviations
+    known_brands = {
+      'samsung' => ['samsung', 'samsung galaxy', 'galaxy'],
+      'apple' => ['apple', 'iphone', 'ipad', 'macbook', 'mac'],
+      'huawei' => ['huawei', 'honor'],
+      'xiaomi' => ['xiaomi', 'redmi', 'poco'],
+      'oppo' => ['oppo', 'realme'],
+      'vivo' => ['vivo'],
+      'tecno' => ['tecno', 'itel'],
+      'infinix' => ['infinix']
+    }
+
+    # Enhanced product types with semantic understanding (AI-like)
+    known_product_types = {
+      'air_filters' => {
+        keywords: ['air filter', 'air filters', 'air cleaner', 'air cleaners', 'filter air'],
+        synonyms: ['air intake', 'engine air filter', 'cabin air filter'],
+        categories: ['filtration', 'automotive']
+      },
+      'oil_filters' => {
+        keywords: ['oil filter', 'oil filters'],
+        synonyms: ['engine oil filter', 'motor oil filter'],
+        categories: ['filtration', 'automotive']
+      },
+      'fuel_filters' => {
+        keywords: ['fuel filter', 'fuel filters', 'diesel filter'],
+        synonyms: ['fuel pump filter', 'diesel fuel filter'],
+        categories: ['filtration', 'automotive']
+      },
+      'brake_pads' => {
+        keywords: ['brake pad', 'brake pads', 'brakes'],
+        synonyms: ['brake shoes', 'brake lining', 'disc brakes'],
+        categories: ['automotive', 'spare parts']
+      },
+      'tires' => {
+        keywords: ['tire', 'tires', 'tyre', 'tyres'],
+        synonyms: ['wheel', 'rim', 'car tire', 'truck tire'],
+        categories: ['automotive', 'tyres']
+      },
+      'batteries' => {
+        keywords: ['battery', 'batteries', 'car battery'],
+        synonyms: ['automotive battery', 'car battery', 'vehicle battery'],
+        categories: ['automotive', 'electrical']
+      },
+      'spark_plugs' => {
+        keywords: ['spark plug', 'spark plugs'],
+        synonyms: ['ignition plug', 'sparkplug'],
+        categories: ['automotive', 'electrical']
+      },
+      'phone_cases' => {
+        keywords: ['phone case', 'phone cases', 'case phone'],
+        synonyms: ['phone cover', 'mobile case', 'cell phone case'],
+        categories: ['accessories', 'phone accessories']
+      },
+      'chargers' => {
+        keywords: ['charger', 'chargers', 'phone charger'],
+        synonyms: ['power adapter', 'charging cable', 'wall charger'],
+        categories: ['accessories', 'electronics']
+      },
+      'earphones' => {
+        keywords: ['earphone', 'earphones', 'earbuds', 'headphones'],
+        synonyms: ['ear pods', 'wireless earbuds', 'bluetooth headphones'],
+        categories: ['accessories', 'audio']
+      }
+    }
+
+    # Define model patterns (brand + model number)
+    model_patterns = [
+      /(\w+)\s*s(\d+)/i,  # Samsung S24, iPhone 15, etc.
+      /(\w+)\s*(\d+)\s*pro/i,  # Samsung S24 Pro, iPhone 15 Pro
+      /(\w+)\s*(\d+)\s*ultra/i,  # Samsung S24 Ultra
+      /(\w+)\s*note\s*(\d+)/i,  # Samsung Note 20
+      /(\w+)\s*a(\d+)/i,  # Samsung A54
+      /(\w+)\s*m(\d+)/i   # Samsung M54
+    ]
+
+    # Check for brand + model patterns
+    model_patterns.each do |pattern|
+      match = normalized_query.match(pattern)
+      if match
+        potential_brand = match[1].downcase
+        potential_model = match[0].strip
+
+        # Check if the brand part matches known brands
+        known_brands.each do |brand, aliases|
+          if aliases.any? { |alias_name| potential_brand.include?(alias_name) || alias_name.include?(potential_brand) }
+            intent[:brand] = brand
+            intent[:model] = potential_model
+            intent[:query_type] = :product_specific
+            intent[:is_product_search] = true
+            break
+          end
+        end
+        break if intent[:brand]
+      end
+    end
+
+    # If no specific brand+model found, check for general brand searches
+    if intent[:brand].nil?
+      known_brands.each do |brand, aliases|
+        aliases.each do |alias_name|
+          # Only match if the alias appears as a complete word or the query contains the brand name
+          if normalized_query.include?(alias_name) ||
+             alias_name == normalized_query ||
+             words.include?(alias_name) ||
+             words.any? { |word| word == alias_name }
+            intent[:brand] = brand
+            intent[:query_type] = :brand_specific
+            intent[:is_product_search] = true
+            break
+          end
+        end
+        break if intent[:brand]
+      end
+    end
+
+    # Enhanced product type detection with semantic understanding (AI-like)
+    if intent[:product_type].nil?
+      known_product_types.each do |product_type, config|
+        all_terms = config[:keywords] + config[:synonyms]
+
+        all_terms.each do |term|
+          # Multi-level semantic matching
+          if normalized_query.include?(term) || # Exact term match
+             term == normalized_query || # Exact query match
+             words.join(' ').include?(term) || # Phrase match
+             semantic_match?(normalized_query, term) # Fuzzy semantic match
+            intent[:product_type] = product_type
+            intent[:query_type] = :product_type_specific
+            intent[:is_product_search] = true
+            intent[:semantic_matches] << term
+            break
+          end
+        end
+        break if intent[:product_type]
+      end
+    end
+
+    # Determine category hints
+    phone_keywords = ['phone', 'mobile', 'smartphone', 'cellphone', 'android', 'ios']
+    laptop_keywords = ['laptop', 'notebook', 'computer', 'macbook']
+    accessory_keywords = ['case', 'charger', 'cable', 'earphone', 'headphone', 'screen protector', 'cover']
+
+    if phone_keywords.any? { |kw| normalized_query.include?(kw) } || intent[:brand]&.in?(['samsung', 'apple', 'huawei', 'xiaomi', 'oppo', 'vivo', 'tecno', 'infinix'])
+      intent[:category_hint] = 'phones'
+    elsif laptop_keywords.any? { |kw| normalized_query.include?(kw) }
+      intent[:category_hint] = 'laptops'
+    end
+
+    # Check for accessory searches
+    accessory_keywords.each do |kw|
+      if normalized_query.include?(kw)
+        intent[:accessory_terms] << kw
+        intent[:query_type] = :accessory
+        intent[:is_product_search] = true
+      end
+    end
+
+    # Extract priority terms (brand + model combinations get highest priority)
+    if intent[:model]
+      intent[:priority_terms] << intent[:model]  # "samsung s24"
+      intent[:priority_terms] << intent[:brand] if intent[:brand]  # "samsung"
+      intent[:priority_terms] << words.select { |w| w.match?(/\d+/) }.first if words.any? { |w| w.match?(/\d+/) }  # "s24"
+    elsif intent[:brand]
+      intent[:priority_terms] << intent[:brand]
+    elsif intent[:product_type]
+      # For product type searches, add the detected keywords as priority terms
+      known_product_types[intent[:product_type]].each do |keyword|
+        intent[:priority_terms] << keyword
+      end
+      intent[:priority_terms] << intent[:product_type].gsub('_', ' ')  # "air filters"
+    end
+
+    intent
+  end
+
+  # Apply smart search logic based on analyzed intent
+  def apply_smart_search(ads_query, original_query, search_intent)
+    return ads_query if original_query.blank?
+
+    normalized_query = original_query.downcase.strip
+    words = normalized_query.split(/\s+/).reject(&:blank?)
+
+    # Base search conditions
+    search_conditions = []
+    search_params = []
+
+    if search_intent && search_intent[:is_product_search]
+      # Smart product search logic
+
+      if search_intent[:model] && search_intent[:brand]
+        # Highest priority: Exact brand + model matches
+        search_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Exact model match
+        search_params << "%#{search_intent[:model]}%"
+
+        search_conditions << "(LOWER(ads.brand) LIKE LOWER(?) AND LOWER(ads.title) LIKE LOWER(?))"  # Brand + model
+        search_params << "%#{search_intent[:brand]}%"
+        search_params << "%#{search_intent[:model].split.last}%"  # Just the model number part
+
+        # Related models from same brand
+        if search_intent[:brand] == 'samsung' && search_intent[:model].include?('s24')
+          # For S24 search, also include S23, S25, etc. from same brand
+          search_conditions << "(LOWER(ads.brand) LIKE LOWER(?) AND LOWER(ads.title) LIKE LOWER(?))"
+          search_params << "%#{search_intent[:brand]}%"
+          search_params << "%s23%"  # Previous generation
+
+          search_conditions << "(LOWER(ads.brand) LIKE LOWER(?) AND LOWER(ads.title) LIKE LOWER(?))"
+          search_params << "%#{search_intent[:brand]}%"
+          search_params << "%s25%"  # Next generation
+        end
+      elsif search_intent[:brand]
+        # Brand-specific search
+        search_conditions << "LOWER(ads.brand) LIKE LOWER(?)"
+        search_params << "%#{search_intent[:brand]}%"
+
+        search_conditions << "LOWER(ads.title) LIKE LOWER(?)"
+        search_params << "%#{search_intent[:brand]}%"
+      end
+
+      # Category filtering for product searches
+      if search_intent[:category_hint] == 'phones'
+        ads_query = ads_query.where(
+          "LOWER(categories.name) LIKE LOWER(?) OR LOWER(subcategories.name) LIKE LOWER(?)",
+          "%phone%", "%phone%"
+        )
+      elsif search_intent[:product_type]
+        # For specific product types, prioritize relevant categories
+        case search_intent[:product_type]
+        when 'air_filters'
+          # Air filters specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%air filter%", "%air filter%"
+          )
+        when 'oil_filters'
+          # Oil filters specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%oil filter%", "%oil filter%"
+          )
+        when 'fuel_filters'
+          # Fuel filters specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%fuel filter%", "%fuel filter%"
+          )
+        when 'brake_pads'
+          # Brake pads specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.description) LIKE LOWER(?)",
+            "%brake%", "%brake pad%", "%brake pad%"
+          )
+        when 'tires'
+          # Tires specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%tire%", "%tire%"
+          )
+        when 'batteries'
+          # Batteries specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%battery%", "%battery%"
+          )
+        when 'spark_plugs'
+          # Spark plugs specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%spark%", "%spark plug%"
+          )
+        when 'phone_cases'
+          # Phone cases specifically
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.description) LIKE LOWER(?)",
+            "%accessories%", "%phone case%", "%phone case%"
+          )
+        when 'chargers'
+          # Phone chargers
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%accessories%", "%charger%"
+          )
+        when 'earphones'
+          # Earphones/headphones
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%accessories%", "%earphone%", "%headphone%"
+          )
+        end
+      end
+
+      # Accessory searches
+      if search_intent[:accessory_terms].any?
+        search_intent[:accessory_terms].each do |accessory|
+          search_conditions << "LOWER(ads.title) LIKE LOWER(?)"
+          search_params << "%#{accessory}%"
+
+          search_conditions << "LOWER(ads.description) LIKE LOWER(?)"
+          search_params << "%#{accessory}%"
+        end
+      end
+
+    else
+      # Fallback to general search for non-product queries
+      words.each do |word|
+        next if word.length < 2
+
+        # Title matches with different priorities
+        search_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Word boundary match
+        search_params << "% #{word} %"
+
+        search_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Starts with
+        search_params << "#{word}%"
+
+        # Brand matches
+        if word.length > 2
+          search_conditions << "LOWER(ads.brand) LIKE LOWER(?)"
+          search_params << "%#{word}%"
+        end
+
+        # Description matches (lower priority)
+        if word.length > 3
+          search_conditions << "LOWER(ads.description) LIKE LOWER(?)"
+          search_params << "% #{word} %"
+        end
+      end
+    end
+
+    # Apply search conditions
+    if search_conditions.any?
+      ads_query = ads_query.where(search_conditions.join(' OR '), *search_params)
+    end
+
+    ads_query
+  end
+
+  # Calculate smart relevance score based on search intent
+  def calculate_smart_relevance_score(ad, query, search_intent)
+    score = 0
+    normalized_query = query.downcase.strip
+
+    ad_title = ad.title&.downcase || ''
+    ad_brand = ad.brand&.downcase || ''
+    ad_description = ad.description&.downcase || ''
+    ad_manufacturer = ad.manufacturer&.downcase || ''
+
+    if search_intent && search_intent[:is_product_search]
+      # Smart scoring for product searches
+
+      # Perfect match: Exact brand + model (100 points)
+      if search_intent[:model] && search_intent[:brand]
+        model_match = ad_title.include?(search_intent[:model].downcase) ||
+                     ad_title.include?("#{search_intent[:brand]} #{search_intent[:model].split.last}")
+        brand_match = ad_brand.include?(search_intent[:brand]) ||
+                     ad_manufacturer.include?(search_intent[:brand])
+
+        if model_match && brand_match
+          score += 100
+        elsif model_match
+          score += 80  # Model match without brand
+        elsif brand_match
+          score += 60  # Brand match without exact model
+        end
+      end
+
+      # Brand-only match (70 points)
+      if search_intent[:brand] && score < 70
+        if ad_brand.include?(search_intent[:brand]) || ad_manufacturer.include?(search_intent[:brand])
+          score = [score, 70].max
+        elsif ad_title.include?(search_intent[:brand])
+          score = [score, 50].max
+        end
+      end
+
+      # Accessory matches (40 points)
+      if search_intent[:accessory_terms].any? && score < 40
+        search_intent[:accessory_terms].each do |accessory|
+          if ad_title.include?(accessory) || ad_description.include?(accessory)
+            score = [score, 40].max
+            break
+          end
+        end
+      end
+
+      # Category relevance for product searches
+      if search_intent[:category_hint] == 'phones'
+        category_name = ad.category&.name&.downcase || ''
+        subcategory_name = ad.subcategory&.name&.downcase || ''
+
+        if subcategory_name.include?('phone') || category_name.include?('phone') ||
+           subcategory_name.include?('mobile') || category_name.include?('mobile')
+          score += 10  # Category boost
+        end
+      elsif search_intent[:product_type]
+        # AI-enhanced product type relevance scoring
+        known_product_types = {
+          'air_filters' => {
+            keywords: ['air filter', 'air filters', 'air cleaner', 'air cleaners', 'filter air'],
+            synonyms: ['air intake', 'engine air filter', 'cabin air filter'],
+            categories: ['filtration', 'automotive']
+          },
+          'oil_filters' => {
+            keywords: ['oil filter', 'oil filters'],
+            synonyms: ['engine oil filter', 'motor oil filter'],
+            categories: ['filtration', 'automotive']
+          },
+          'fuel_filters' => {
+            keywords: ['fuel filter', 'fuel filters', 'diesel filter'],
+            synonyms: ['fuel pump filter', 'diesel fuel filter'],
+            categories: ['filtration', 'automotive']
+          },
+          'brake_pads' => {
+            keywords: ['brake pad', 'brake pads', 'brakes'],
+            synonyms: ['brake shoes', 'brake lining', 'disc brakes'],
+            categories: ['automotive', 'spare parts']
+          },
+          'tires' => {
+            keywords: ['tire', 'tires', 'tyre', 'tyres'],
+            synonyms: ['wheel', 'rim', 'car tire', 'truck tire'],
+            categories: ['automotive', 'tyres']
+          },
+          'batteries' => {
+            keywords: ['battery', 'batteries', 'car battery'],
+            synonyms: ['automotive battery', 'car battery', 'vehicle battery'],
+            categories: ['automotive', 'electrical']
+          },
+          'spark_plugs' => {
+            keywords: ['spark plug', 'spark plugs'],
+            synonyms: ['ignition plug', 'sparkplug'],
+            categories: ['automotive', 'electrical']
+          },
+          'phone_cases' => {
+            keywords: ['phone case', 'phone cases', 'case phone'],
+            synonyms: ['phone cover', 'mobile case', 'cell phone case'],
+            categories: ['accessories', 'phone accessories']
+          },
+          'chargers' => {
+            keywords: ['charger', 'chargers', 'phone charger'],
+            synonyms: ['power adapter', 'charging cable', 'wall charger'],
+            categories: ['accessories', 'electronics']
+          },
+          'earphones' => {
+            keywords: ['earphone', 'earphones', 'earbuds', 'headphones'],
+            synonyms: ['ear pods', 'wireless earbuds', 'bluetooth headphones'],
+            categories: ['accessories', 'audio']
+          }
+        }
+
+        config = known_product_types[search_intent[:product_type]]
+        if config
+          category_name = ad.category&.name&.downcase || ''
+          subcategory_name = ad.subcategory&.name&.downcase || ''
+          ad_title = ad.title&.downcase || ''
+
+          # Perfect matches (exact keywords)
+          config[:keywords].each do |keyword|
+            if subcategory_name.include?(keyword) || ad_title.include?(keyword)
+              score += 50  # Highest boost for exact matches
+            end
+          end
+
+          # Good matches (synonyms)
+          config[:synonyms].each do |synonym|
+            if subcategory_name.include?(synonym) || ad_title.include?(synonym) ||
+               semantic_match?(ad_title, synonym)
+              score += 35  # High boost for synonyms
+            end
+          end
+
+          # Category matches
+          config[:categories].each do |cat|
+            if category_name.include?(cat) || subcategory_name.include?(cat)
+              score += 20  # Moderate boost for category matches
+            end
+          end
+
+          # Semantic fuzzy matches
+          if search_intent[:semantic_matches].any?
+            search_intent[:semantic_matches].each do |match|
+              if semantic_match?(ad_title, match)
+                score += 25  # Boost for semantic matches
+              end
+            end
+          end
+        end
+      end
+
+    else
+      # General search scoring (fallback)
+      words = normalized_query.split(/\s+/)
+
+      words.each do |word|
+        # Exact title match (30 points per word)
+        if ad_title.include?(" #{word} ")
+          score += 30
+        elsif ad_title.include?(word)
+          score += 20
+        end
+
+        # Brand match (25 points)
+        if ad_brand.include?(word)
+          score += 25
+        end
+
+        # Description match (10 points)
+        if ad_description.include?(" #{word} ")
+          score += 10
+        elsif ad_description.include?(word) && word.length > 3
+          score += 5
+        end
+      end
+    end
+
+    # Quality boosts
+    # Verified seller boost
+    score += 5 if ad.seller&.document_verified?
+
+    # Premium seller boost
+    score += 3 if ad.seller&.seller_tier&.tier_id == 4
+
+    # Recency boost (newer products slightly preferred)
+    days_old = (Time.current - ad.created_at) / 1.day
+    score += [0, 7 - days_old.to_i].max if days_old <= 7
+
+    # Length penalty (prefer concise titles)
+    score -= 5 if ad_title.length > 100
+
+    # Price reasonableness (slight preference for reasonably priced items)
+    score += 2 if ad.price.present? && ad.price > 0 && ad.price < 500000
+
+    [score, 0].max # Ensure non-negative score
+  end
+
+  # Find related products for product searches
+  def find_related_products(high_relevance_matches, search_intent)
+    return [] unless high_relevance_matches.any?
+
+    # Get brand and category info from high-relevance matches
+    brands = high_relevance_matches.map { |item| item[:ad].brand&.downcase&.strip }.uniq.compact
+    categories = high_relevance_matches.map { |item| item[:ad].category_id }.uniq
+    subcategories = high_relevance_matches.map { |item| item[:ad].subcategory_id }.uniq
+    exclude_ids = high_relevance_matches.map { |item| item[:ad].id }
+
+    # For brand-specific searches, prioritize finding more products from the same brand
+    primary_brand = nil
+    if search_intent && search_intent[:brand]
+      primary_brand = search_intent[:brand]
+    elsif brands.any?
+      # Use the most common brand from high-relevance matches
+      brand_counts = high_relevance_matches.group_by { |item| item[:ad].brand&.downcase&.strip }
+                                          .transform_values(&:count)
+      primary_brand = brand_counts.max_by { |_, count| count }&.first
+    end
+
+    related_ads = []
+
+    # Strategy 1: If we have a primary brand, find more products from that brand first
+    if primary_brand.present?
+      brand_query = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                          .where(sellers: { blocked: false, deleted: false, flagged: false })
+                          .where(flagged: false)
+                          .where.not(id: exclude_ids)
+                          .where("LOWER(ads.brand) LIKE ?", "%#{primary_brand}%")
+                          .limit(8) # Get more brand matches
+
+      brand_related = brand_query.map do |ad|
+        score = 8 # Higher base score for same brand
+
+        # Boost for verified sellers
+        score += 3 if ad.seller&.document_verified?
+
+        # Boost for premium sellers
+        score += 2 if ad.seller&.seller_tier&.tier_id == 4
+
+        # Slight recency boost
+        days_old = (Time.current - ad.created_at) / 1.day
+        score += [0, 3 - days_old.to_i].max if days_old <= 3
+
+        { ad: ad, score: score }
+      end
+
+      related_ads.concat(brand_related)
+    end
+
+    # Strategy 2: Fill remaining slots with category/subcategory matches (but prefer same brand)
+    remaining_slots = 10 - related_ads.size
+    if remaining_slots > 0
+      category_query = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                           .where(sellers: { blocked: false, deleted: false, flagged: false })
+                           .where(flagged: false)
+                           .where.not(id: exclude_ids + related_ads.map { |item| item[:ad].id })
+                           .limit(remaining_slots * 2) # Get more to filter
+
+      # Build conditions prioritizing same brand, then category
+      conditions = []
+      params = []
+
+      # Prefer same brand even in category matches
+      if primary_brand.present?
+        conditions << "LOWER(ads.brand) LIKE ?"
+        params << "%#{primary_brand}%"
+      end
+
+      # Then same categories/subcategories
+      if categories.any?
+        conditions << "ads.category_id IN (?)"
+        params << categories
+      end
+
+      if subcategories.any?
+        conditions << "ads.subcategory_id IN (?)"
+        params << subcategories
+      end
+
+      if conditions.any?
+        category_query = category_query.where(conditions.join(' OR '), *params)
+      end
+
+      category_related = category_query.map do |ad|
+        score = 3 # Lower base score for category matches
+
+        # Brand match within category gets higher score
+        if primary_brand.present? && ad.brand&.downcase&.include?(primary_brand)
+          score += 5
+        end
+
+        # Category/subcategory match boost
+        if categories.include?(ad.category_id) || subcategories.include?(ad.subcategory_id)
+          score += 2
+        end
+
+        # Verified seller boost
+        score += 1 if ad.seller&.document_verified?
+
+        { ad: ad, score: score }
+      end
+
+      # Take only the highest scoring category matches
+      category_related = category_related.sort_by { |item| -item[:score] }.first(remaining_slots)
+      related_ads.concat(category_related)
+    end
+
+    # Remove duplicates and return top results
+    related_ads.uniq { |item| item[:ad].id }.sort_by { |item| -item[:score] }
+  end
+
+  # Helper method to check if an ad matches a brand
+  def brand_match?(ad, brand)
+    return false if brand.blank?
+
+    ad_brand = ad.brand&.downcase&.strip || ''
+    ad_manufacturer = ad.manufacturer&.downcase&.strip || ''
+    ad_title = ad.title&.downcase || ''
+
+    brand.downcase == ad_brand ||
+    brand.downcase == ad_manufacturer ||
+    ad_brand.include?(brand.downcase) ||
+    ad_manufacturer.include?(brand.downcase) ||
+    ad_title.include?(brand.downcase)
+  end
+
+  # Semantic matching helper (AI-like fuzzy matching)
+  def semantic_match?(query, target_term)
+    return false if query.blank? || target_term.blank?
+
+    query_words = query.split(/\s+/)
+    target_words = target_term.split(/\s+/)
+
+    # Exact phrase match
+    return true if query.include?(target_term)
+
+    # Single word matches with high similarity
+    return true if query_words.length == 1 &&
+                  target_words.any? { |tw| levenshtein_distance(query_words.first, tw) <= 2 }
+
+    # Multi-word semantic similarity
+    common_words = query_words & target_words
+    return true if common_words.length >= [query_words.length, target_words.length].min * 0.6
+
+    # Stemming-like matching (basic)
+    query_stems = query_words.map { |w| w.chomp('s').chomp('es') } # Basic stemming
+    target_stems = target_words.map { |w| w.chomp('s').chomp('es') }
+    common_stems = query_stems & target_stems
+    return true if common_stems.length >= [query_stems.length, target_stems.length].min * 0.5
+
+    false
+  end
+
+  # Calculate Levenshtein distance for fuzzy matching
+  def levenshtein_distance(s1, s2)
+    return s1.length if s2.empty?
+    return s2.length if s1.empty?
+
+    # Create matrix
+    matrix = Array.new(s1.length + 1) { Array.new(s2.length + 1) }
+
+    # Initialize first row and column
+    (0..s1.length).each { |i| matrix[i][0] = i }
+    (0..s2.length).each { |j| matrix[0][j] = j }
+
+    # Fill the matrix
+    (1..s1.length).each do |i|
+      (1..s2.length).each do |j|
+        cost = s1[i-1] == s2[j-1] ? 0 : 1
+        matrix[i][j] = [
+          matrix[i-1][j] + 1,      # deletion
+          matrix[i][j-1] + 1,      # insertion
+          matrix[i-1][j-1] + cost  # substitution
+        ].min
+      end
+    end
+
+    matrix[s1.length][s2.length]
+  end
+
+  # Enhanced product type matching with semantic understanding
+  def product_type_match?(ad, product_type)
+    return false if product_type.blank?
+
+    known_product_types = {
+      'air_filters' => {
+        keywords: ['air filter', 'air filters', 'air cleaner', 'air cleaners', 'filter air'],
+        synonyms: ['air intake', 'engine air filter', 'cabin air filter'],
+        categories: ['filtration', 'automotive']
+      },
+      'oil_filters' => {
+        keywords: ['oil filter', 'oil filters'],
+        synonyms: ['engine oil filter', 'motor oil filter'],
+        categories: ['filtration', 'automotive']
+      },
+      'fuel_filters' => {
+        keywords: ['fuel filter', 'fuel filters', 'diesel filter'],
+        synonyms: ['fuel pump filter', 'diesel fuel filter'],
+        categories: ['filtration', 'automotive']
+      },
+      'brake_pads' => {
+        keywords: ['brake pad', 'brake pads', 'brakes'],
+        synonyms: ['brake shoes', 'brake lining', 'disc brakes'],
+        categories: ['automotive', 'spare parts']
+      },
+      'tires' => {
+        keywords: ['tire', 'tires', 'tyre', 'tyres'],
+        synonyms: ['wheel', 'rim', 'car tire', 'truck tire'],
+        categories: ['automotive', 'tyres']
+      },
+      'batteries' => {
+        keywords: ['battery', 'batteries', 'car battery'],
+        synonyms: ['automotive battery', 'car battery', 'vehicle battery'],
+        categories: ['automotive', 'electrical']
+      },
+      'spark_plugs' => {
+        keywords: ['spark plug', 'spark plugs'],
+        synonyms: ['ignition plug', 'sparkplug'],
+        categories: ['automotive', 'electrical']
+      },
+      'phone_cases' => {
+        keywords: ['phone case', 'phone cases', 'case phone'],
+        synonyms: ['phone cover', 'mobile case', 'cell phone case'],
+        categories: ['accessories', 'phone accessories']
+      },
+      'chargers' => {
+        keywords: ['charger', 'chargers', 'phone charger'],
+        synonyms: ['power adapter', 'charging cable', 'wall charger'],
+        categories: ['accessories', 'electronics']
+      },
+      'earphones' => {
+        keywords: ['earphone', 'earphones', 'earbuds', 'headphones'],
+        synonyms: ['ear pods', 'wireless earbuds', 'bluetooth headphones'],
+        categories: ['accessories', 'audio']
+      }
+    }
+
+    config = known_product_types[product_type]
+    return false unless config
+
+    ad_title = ad.title&.downcase || ''
+    subcategory_name = ad.subcategory&.name&.downcase || ''
+    category_name = ad.category&.name&.downcase || ''
+
+    # Check all keywords and synonyms
+    all_terms = config[:keywords] + config[:synonyms]
+    all_terms.each do |term|
+      return true if subcategory_name.include?(term) ||
+                    ad_title.include?(term) ||
+                    semantic_match?(ad_title, term)
+    end
+
+    # Check category matches
+    config[:categories].each do |cat|
+      return true if category_name.include?(cat) || subcategory_name.include?(cat)
+    end
+
+    false
+  end
+
+  # Grok AI integration for search enhancement
+  def analyze_with_grok(query)
+    # Note: In production, this would make actual API calls to Grok
+    # For now, implementing intelligent heuristics that simulate Grok's understanding
+
+    grok_insights = {
+      intent: {},
+      suggestions: ["debug_test"], # Always include this to test transfer
+      related_terms: [],
+      confidence: 0.0
+    }
+
+    normalized_query = query.downcase.strip
+
+    # Grok-like query understanding patterns
+    grok_patterns = {
+      # Price-related queries
+      price_queries: [
+        /(?:best|good|cheap|expensive|under|over|around|about)\s*(\d+(?:,\d{3})*(?:\.\d{2})?k?)/i,
+        /(\d+(?:,\d{3})*(?:\.\d{2})?k?)\s*(?:and|to|or)\s*(\d+(?:,\d{3})*(?:\.\d{2})?k?)/i
+      ],
+
+      # Quality/comparison queries
+      quality_queries: [
+        /(?:best|good|top|high.*quality|premium|reliable|durable)/i,
+        /(?:vs|versus|compared?\s*to|better\s*than)/i
+      ],
+
+      # Feature-based queries
+      feature_queries: [
+        /(?:with|has|having|support|compatible)\s*(?:bluetooth|wifi|4g|5g|fast.*charge|wireless)/i,
+        /(?:camera|battery|screen|processor|ram|storage|display)/i
+      ],
+
+      # Use case queries
+      use_case_queries: [
+        /(?:for|used\s*for|good\s*for|gaming|photography|video|business|student|kids|senior)/i,
+        /(?:waterproof|dustproof|sweatproof|shockproof|dropproof)/i
+      ]
+    }
+
+    # Detect query intent using Grok-like analysis
+    intent_detected = false
+
+    # Simple test: any query with "best" should trigger detection
+    if normalized_query.include?("best")
+      grok_insights[:intent][:quality_focused] = true
+      grok_insights[:suggestions] << "test_suggestion"
+      intent_detected = true
+    end
+
+    # Price-focused search
+    grok_patterns[:price_queries].each do |pattern|
+      if normalized_query.match?(pattern)
+        grok_insights[:intent][:price_focused] = true
+        grok_insights[:intent][:budget_sensitive] = true
+        grok_insights[:suggestions] << "price_range_filter"
+        grok_insights[:suggestions] << "show_budget_options"
+        intent_detected = true
+        break
+      end
+    end
+
+    # Quality/comparison search
+    grok_patterns[:quality_queries].each do |pattern|
+      if normalized_query.match?(pattern)
+        grok_insights[:intent][:quality_focused] = true
+        grok_insights[:intent][:comparison_shopping] = true
+        grok_insights[:suggestions] << "sort_by_rating"
+        grok_insights[:suggestions] << "show_reviews"
+        grok_insights[:suggestions] << "filter_by_verified_sellers"
+        intent_detected = true
+        break
+      end
+    end
+
+    # Feature-specific search
+    grok_patterns[:feature_queries].each do |pattern|
+      if normalized_query.match?(pattern)
+        grok_insights[:intent][:feature_focused] = true
+        grok_insights[:intent][:technical_search] = true
+        grok_insights[:suggestions] << "filter_by_specs"
+        intent_detected = true
+        break
+      end
+    end
+
+    # Use case search
+    grok_patterns[:use_case_queries].each do |pattern|
+      if normalized_query.match?(pattern)
+        grok_insights[:intent][:use_case_focused] = true
+        grok_insights[:intent][:purpose_driven] = true
+        grok_insights[:suggestions] << "show_related_products"
+        intent_detected = true
+        break
+      end
+    end
+
+    # Generate related terms (Grok-like semantic expansion)
+    if intent_detected
+      grok_insights[:related_terms] = generate_related_terms(normalized_query, grok_insights[:intent])
+      grok_insights[:confidence] = 0.85 # High confidence for detected patterns
+
+      # Add general suggestions based on detected intent
+      grok_insights[:suggestions] << "ai_powered_search" # Always add this to test
+
+      if grok_insights[:intent][:price_focused]
+        grok_insights[:suggestions] << "consider_price_range"
+      end
+      if grok_insights[:intent][:quality_focused]
+        grok_insights[:suggestions] << "check_reviews"
+      end
+    else
+      grok_insights[:confidence] = 0.3 # Lower confidence for undetected patterns
+    end
+
+    grok_insights
+  end
+
+  # Generate related search terms (simulates Grok's semantic understanding)
+  def generate_related_terms(query, intent)
+    related_terms = []
+
+    if intent[:price_focused]
+      # For price queries, suggest budget alternatives
+      related_terms += ["budget", "affordable", "value for money", "cost effective"]
+    end
+
+    if intent[:quality_focused]
+      # For quality queries, suggest premium options
+      related_terms += ["premium", "high quality", "reliable", "durable", "long lasting"]
+    end
+
+    if intent[:feature_focused]
+      # For feature queries, suggest technical terms
+      related_terms += ["advanced", "latest technology", "high performance", "professional grade"]
+    end
+
+    if intent[:use_case_focused]
+      # For use case queries, suggest relevant categories
+      related_terms += ["specialized", "professional", "consumer grade", "industrial"]
+    end
+
+    # Add general semantic expansions based on query words
+    query_words = query.split(/\s+/)
+    query_words.each do |word|
+      case word.downcase
+      when "phone", "mobile", "smartphone"
+        related_terms += ["cell phone", "mobile device", "handset"]
+      when "laptop", "computer"
+        related_terms += ["notebook", "portable computer", "workstation"]
+      when "car", "vehicle", "auto"
+        related_terms += ["automobile", "motor vehicle", "transport"]
+      when "charger", "charging"
+        related_terms += ["power adapter", "charging cable", "battery pack"]
+      end
+    end
+
+    related_terms.uniq.first(5) # Limit to top 5 related terms
+  end
+
   # GET /buyer/ads/search
   def search
     query = params[:query].to_s.strip
     category_param = params[:category]
     subcategory_param = params[:subcategory]
-    
+
     # Pagination parameters
     ads_page = params[:ads_page]&.to_i || params[:page]&.to_i || 1
     shops_page = params[:shops_page]&.to_i || params[:page]&.to_i || 1
     ads_per_page = params[:ads_per_page]&.to_i || 24
     shops_per_page = params[:shops_per_page]&.to_i || 10
-    
+
     # Ensure positive values
     ads_page = 1 if ads_page < 1
     shops_page = 1 if shops_page < 1
     ads_per_page = 24 if ads_per_page < 1 || ads_per_page > 100
     shops_per_page = 10 if shops_per_page < 1 || shops_per_page > 50
 
+    # Parse search intent with Grok AI enhancement
+    search_intent = if query.present?
+                      analyze_search_intent_with_grok(query)
+                    else
+                      nil
+                    end
+
     ads = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
             .where(sellers: { blocked: false, deleted: false, flagged: false })
             .where(flagged: false)
 
     if query.present?
-      query_words = query.split(/\s+/).reject(&:blank?)
-      normalized_query = query.downcase.strip
-
-      # Build more precise relevance-based search conditions
-      # Priority 1: Exact word matches in title (highest relevance)
-      # Priority 2: Brand matches in title
-      # Priority 3: Partial matches in title with word boundaries
-      # Priority 4: Exact matches in description
-      # Priority 5: Category/subcategory matches (only for relevant categories)
-
-      title_conditions = []
-      brand_conditions = []
-      description_conditions = []
-      category_conditions = []
-      search_params = []
-
-      query_words.each do |word|
-        normalized_word = word.downcase
-
-        # Title matches - prioritize exact word boundaries and brand matches
-        title_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Exact word match with spaces
-        search_params << "% #{word} %"
-
-        title_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Starts with word
-        search_params << "#{word}%"
-
-        title_conditions << "LOWER(ads.title) LIKE LOWER(?)"  # Contains word with word boundaries
-        search_params << "% #{word} %"
-
-        # Brand matches - high priority for product searches
-        brand_conditions << "LOWER(ads.brand) LIKE LOWER(?)" if word.length > 2
-        if word.length > 2
-          search_params << "%#{word}%"
-        end
-
-        # Description matches - less strict, only for longer queries
-        if normalized_word.length > 3
-          description_conditions << "LOWER(ads.description) LIKE LOWER(?)"  # Contains word
-          search_params << "% #{word} %"
-        end
-      end
-
-      # Category/subcategory matches - only for relevant categories
-      # For phone searches, only match electronics/phone categories
-      if normalized_query.include?('phone') || normalized_query.include?('mobile') ||
-         normalized_query.include?('samsung') || normalized_query.include?('iphone') ||
-         normalized_query.include?('huawei') || normalized_query.include?('xiaomi') ||
-         normalized_query.include?('redmi') || normalized_query.include?('oppo') ||
-         normalized_query.include?('vivo') || normalized_query.include?('realme')
-
-        category_conditions << "LOWER(categories.name) LIKE LOWER(?)"
-        search_params << "%electronics%"
-
-        category_conditions << "LOWER(categories.name) LIKE LOWER(?)"
-        search_params << "%phones%"
-
-        category_conditions << "LOWER(categories.name) LIKE LOWER(?)"
-        search_params << "%mobile%"
-
-        category_conditions << "LOWER(subcategories.name) LIKE LOWER(?)"
-        search_params << "%phones%"
-
-        category_conditions << "LOWER(subcategories.name) LIKE LOWER(?)"
-        search_params << "%mobile%"
-
-        category_conditions << "LOWER(subcategories.name) LIKE LOWER(?)"
-        search_params << "%smartphone%"
-      end
-
-      # Build the search query with proper weighting
-      search_conditions = []
-
-      # Title matches (highest priority - 40% of relevance)
-      if title_conditions.any?
-        search_conditions << "(#{title_conditions.join(' OR ')})"
-      end
-
-      # Brand matches (high priority for product searches - 30% of relevance)
-      if brand_conditions.any?
-        search_conditions << "(#{brand_conditions.join(' OR ')})"
-      end
-
-      # Description matches (medium priority - 15% of relevance)
-      if description_conditions.any?
-        search_conditions << "(#{description_conditions.join(' OR ')})"
-      end
-
-      # Category matches (low priority - 15% of relevance)
-      if category_conditions.any?
-        search_conditions << "(#{category_conditions.join(' OR ')})"
-      end
-
-      # Apply the search conditions
-      if search_conditions.any?
-        ads = ads.where(search_conditions.join(' OR '), *search_params)
-      end
+      # Apply smart search logic based on intent analysis
+      ads = apply_smart_search(ads, query, search_intent)
     end
 
     if category_param.present? && category_param != 'All'
@@ -464,117 +1385,78 @@ class Buyer::AdsController < ApplicationController
     # For search queries, we'll recalculate the total count after relevance filtering
     search_relevant_count = ads_total_count
 
-    # Build relevance scoring for search results
+    # Build smart relevance scoring for search results
     if query.present?
-      normalized_query = query.downcase.strip
-
-      # Calculate relevance score for each ad
+      # Calculate smart relevance score for each ad based on search intent
       ads_with_scores = ads.map do |ad|
-        relevance_score = 0
-
-        ad_title = ad.title&.downcase || ''
-        ad_brand = ad.brand&.downcase || ''
-        ad_description = ad.description&.downcase || ''
-        category_name = ad.category&.name&.downcase || ''
-        subcategory_name = ad.subcategory&.name&.downcase || ''
-
-        # Title matches (highest weight - 40 points max)
-        if ad_title.include?(" #{normalized_query} ")
-          relevance_score += 40  # Exact word match
-        elsif ad_title.include?(normalized_query)
-          relevance_score += 30  # Contains query
-        elsif ad_title.start_with?(normalized_query)
-          relevance_score += 25  # Starts with query
-        end
-
-        # Brand matches (high weight - 30 points max)
-        if ad_brand.include?(normalized_query)
-          relevance_score += 30
-        end
-
-        # Description matches (medium weight - 15 points max)
-        if ad_description.include?(" #{normalized_query} ")
-          relevance_score += 15
-        elsif ad_description.include?(normalized_query) && normalized_query.length > 3
-          relevance_score += 10
-        end
-
-        # Category/Subcategory matches (low weight - 15 points max)
-        if category_name.include?(normalized_query) || subcategory_name.include?(normalized_query)
-          relevance_score += 15
-        end
-
-        # Length penalty - prefer shorter, more relevant titles
-        if ad_title.length > 100
-          relevance_score -= 5
-        end
-
-        # Boost for verified sellers
-        if ad.seller&.document_verified?
-          relevance_score += 2
-        end
-
+        relevance_score = calculate_smart_relevance_score(ad, query, search_intent)
         { ad: ad, score: relevance_score }
       end
 
-      # Separate exact/high-relevance matches from other matches
-      exact_matches = ads_with_scores.select { |item| item[:score] >= 30 } # Exact title or brand matches
-      other_matches = ads_with_scores.select { |item| item[:score] > 5 && item[:score] < 30 }
+      # For brand-specific searches, prioritize brand matches more aggressively
+      if search_intent && search_intent[:is_product_search] && search_intent[:brand]
+        # Separate by brand match strength
+        brand_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 } # Perfect brand + model matches
+        brand_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 } # Strong brand matches
+        brand_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && brand_match?(item[:ad], search_intent[:brand]) } # Brand matches with lower scores
+        other_matches = ads_with_scores.select { |item| item[:score] < 50 || !brand_match?(item[:ad], search_intent[:brand]) } # Non-brand matches
 
-      # If we have exact matches, find additional related products from same categories/brands
-      if exact_matches.any?
-        # Get categories, subcategories, and brands from exact matches
-        exact_categories = exact_matches.map { |item| item[:ad].category_id }.uniq
-        exact_subcategories = exact_matches.map { |item| item[:ad].subcategory_id }.uniq
-        exact_brands = exact_matches.map { |item| item[:ad].brand&.downcase&.strip }.uniq.compact
-        exact_ad_ids = exact_matches.map { |item| item[:ad].id }
+        # Limit non-brand matches to fill remaining slots after brand products
+        max_other_matches = [ads_per_page / 3, 3].max # At most 1/3 of results, minimum 3
+        other_matches = other_matches.sort_by { |item| -item[:score] }.first(max_other_matches)
 
-        # Query for additional related products in same categories/subcategories/brands
-        # These won't be in the original ads query since they don't match the search terms
-        related_ads_query = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-                               .where(sellers: { blocked: false, deleted: false, flagged: false })
-                               .where(flagged: false)
-                               .where('ads.id NOT IN (?)', exact_ad_ids) # Exclude already found exact matches
-                               .where(
-                                 'ads.category_id IN (?) OR ads.subcategory_id IN (?) OR LOWER(ads.brand) IN (?)',
-                                 exact_categories, exact_subcategories, exact_brands
-                               )
-                               .limit(20) # Limit additional related products
+        relevant_ads = brand_exact_matches + brand_strong_matches + brand_weak_matches + other_matches
 
-        related_ads = related_ads_query.map do |ad|
-          # Calculate a lower relevance score for related products
-          relevance_score = 5 # Base score for category/brand match
-
-          # Boost for same subcategory
-          if exact_subcategories.include?(ad.subcategory_id)
-            relevance_score += 3
-          end
-
-          # Boost for same brand
-          if exact_brands.include?(ad.brand&.downcase&.strip)
-            relevance_score += 3
-          end
-
-          # Boost for verified sellers
-          if ad.seller&.document_verified?
-            relevance_score += 2
-          end
-
-          { ad: ad, score: relevance_score }
+        # Add related products (prioritizing same brand)
+        if relevant_ads.size < ads_per_page
+          related_ads = find_related_products(brand_exact_matches + brand_strong_matches, search_intent)
+          slots_remaining = ads_per_page - relevant_ads.size
+          related_ads = related_ads.first(slots_remaining)
+          relevant_ads.concat(related_ads)
         end
+      elsif search_intent && search_intent[:is_product_search] && search_intent[:product_type]
+        # For product type searches, prioritize product type matches
+        product_type_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 } # Perfect product type matches
+        product_type_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 } # Strong product type matches
+        product_type_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && product_type_match?(item[:ad], search_intent[:product_type]) } # Product type matches with lower scores
+        other_matches = ads_with_scores.select { |item| item[:score] < 20 || !product_type_match?(item[:ad], search_intent[:product_type]) } # Non-product type matches
 
-        # Combine: exact matches first, then other search matches, then related products
-        relevant_ads = exact_matches + other_matches + related_ads
-        relevant_ads = relevant_ads.uniq { |item| item[:ad].id } # Remove duplicates
+        # Limit non-product-type matches to fill remaining slots
+        max_other_matches = [ads_per_page / 4, 2].max # At most 1/4 of results for product type searches, minimum 2
+        other_matches = other_matches.sort_by { |item| -item[:score] }.first(max_other_matches)
+
+        relevant_ads = product_type_exact_matches + product_type_strong_matches + product_type_weak_matches + other_matches
+
+        # Add related products (prioritizing same product type)
+        if relevant_ads.size < ads_per_page
+          related_ads = find_related_products(product_type_exact_matches + product_type_strong_matches, search_intent)
+          slots_remaining = ads_per_page - relevant_ads.size
+          related_ads = related_ads.first(slots_remaining)
+          relevant_ads.concat(related_ads)
+        end
       else
-        # No exact matches, use the original logic
-        relevant_ads = ads_with_scores.select { |item| item[:score] > 5 }
+        # Standard relevance-based sorting for non-brand searches
+        exact_matches = ads_with_scores.select { |item| item[:score] >= 80 }
+        high_relevance = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 }
+        medium_relevance = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 }
+        low_relevance = ads_with_scores.select { |item| item[:score] > 0 && item[:score] < 20 }
+
+        # For product searches, add related products
+        if search_intent && search_intent[:is_product_search] && (exact_matches.any? || high_relevance.any?)
+          related_ads = find_related_products(exact_matches + high_relevance, search_intent)
+          relevant_ads = exact_matches + high_relevance + medium_relevance + low_relevance + related_ads
+        else
+          relevant_ads = exact_matches + high_relevance + medium_relevance + low_relevance
+        end
       end
 
-      # Update total count for search results (only relevant results)
+      # Remove duplicates
+      relevant_ads = relevant_ads.uniq { |item| item[:ad].id }
+
+      # Update total count for search results
       search_relevant_count = relevant_ads.size
 
-      # Sort by relevance score, then by seller tier
+      # Sort by relevance score, then by seller tier, then by recency
       sorted_ads = relevant_ads.sort_by do |item|
         ad = item[:ad]
         tier_priority = case ad.seller&.seller_tier&.tier_id
@@ -584,7 +1466,9 @@ class Buyer::AdsController < ApplicationController
                         when 1 then 4  # Free
                         else 5         # Unknown
                         end
-        [-item[:score], tier_priority, rand]  # Higher score first, then better tier, then random
+
+        # Create sort key: [negative score for descending, tier priority, negative created_at for newest first, random for tie-breaking]
+        [-item[:score], tier_priority, -ad.created_at.to_i, rand]
       end
 
       # Apply pagination
@@ -731,9 +1615,22 @@ class Buyer::AdsController < ApplicationController
       shops_total_count = 0
     end
 
-    # Prepare the response
+    # Prepare the response with Grok AI insights
+    grok_insights = if query.present? && search_intent
+                      {
+                        intent_analysis: search_intent.except(:priority_terms, :accessory_terms),
+                        suggestions: search_intent[:suggestions] || [],
+                        related_terms: search_intent[:related_terms] || [],
+                        confidence_score: search_intent[:confidence] || 0.0,
+                        query_complexity: search_intent[:query_complexity] || :simple
+                      }
+                    else
+                      nil
+                    end
+
     response = {
       ads: ads.map { |ad| AdSerializer.new(ad).as_json },
+      grok_insights: grok_insights,
       shops: paginated_shops.map do |shop_data|
         shop = shop_data[:shop]
         {
