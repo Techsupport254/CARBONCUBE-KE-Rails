@@ -8,6 +8,10 @@ class PasswordOtp < ApplicationRecord
     otp = rand(100000..999999).to_s
     otp_digest = BCrypt::Password.create(otp)
 
+    # DEBUG: Log OTP for troubleshooting (remove in production)
+    Rails.logger.info "DEBUG: Generated OTP for #{user.email}: #{otp}"
+    puts "DEBUG: Generated OTP for #{user.email}: #{otp}" if Rails.env.development?
+
     # Use first_or_initialize to either reuse or create new OTP record
     otp_record = PasswordOtp.where(otpable: user, otp_purpose: 'password_reset').first_or_initialize
     
@@ -30,9 +34,12 @@ class PasswordOtp < ApplicationRecord
       # Create mailer instance and render the email
       mailer = PasswordResetMailer.with(user: user, otp: otp, user_type: user.class.name).send_otp_email
 
+      # Get the actual mail message object
+      mail_message = mailer.message
+
       # Render the email content using the template
-      html_content = mailer.mail.parts.find { |part| part.content_type.include?('html') }&.body&.raw_source ||
-                     mailer.mail.body.raw_source
+      html_content = mail_message.parts.find { |part| part.content_type.include?('html') }&.body&.raw_source ||
+                     mail_message.body.raw_source
 
       # Create the email with rendered template content
       require 'mail'
