@@ -26,13 +26,19 @@ class Sales::AdSearchesController < ApplicationController
       .reject { |search| ['admin', 'sales'].include?(search[:role]&.downcase) } # Exclude internal users
       .map do |search|
         # Convert to format expected by frontend
-        search.merge(
-          id: search[:id],
-          search_term: search[:search_term],
-          buyer_id: search[:buyer_id],
-          role: search[:role] || 'guest',
-          created_at: search[:timestamp]
-        )
+        {
+          id: search[:id] || search['id'],
+          search_term: search[:search_term] || search['search_term'],
+          buyer_id: search[:buyer_id] || search['buyer_id'],
+          user_id: search[:user_id] || search['user_id'],
+          seller_id: search[:seller_id] || search['seller_id'],
+          role: search[:role] || search['role'] || 'guest',
+          created_at: (search[:created_at] || search[:timestamp] || search['created_at'] || search['timestamp']).to_s,
+          timestamp: (search[:timestamp] || search['timestamp']).to_s,
+          device_hash: search[:device_hash] || search['device_hash'],
+          user_agent: search[:user_agent] || search['user_agent'],
+          ip_address: search[:ip_address] || search['ip_address']
+        }
       end
 
     # Recalculate pagination metadata after filtering
@@ -91,8 +97,8 @@ class Sales::AdSearchesController < ApplicationController
       device_stats: device_stats,
       user_type_stats: user_type_stats,
       data_retention: {
-        individual_searches: '30 days',
-        analytics_data: '90 days'
+        individual_searches: 'Permanent (no expiration)',
+        analytics_data: 'Permanent (no expiration)'
       }
     }, status: :ok
   end
@@ -105,7 +111,7 @@ class Sales::AdSearchesController < ApplicationController
     total = recent_searches.size
 
     recent_searches.each do |search|
-      user_agent = search['user_agent'] || ''
+      user_agent = search[:user_agent] || search['user_agent'] || ''
       device_type = if user_agent =~ /iPad|Android.*Tablet|Tablet|PlayBook|Silk/i
                       'tablet'
                     elsif user_agent =~ /Android.*Mobile|iPhone|iPod|BlackBerry|Windows Phone|Windows Mobile|Mobile Safari|Mobile/i
@@ -131,8 +137,8 @@ class Sales::AdSearchesController < ApplicationController
 
     # Count by role, excluding internal users
     role_counts = recent_searches
-      .reject { |s| ['admin', 'sales'].include?(s['role']&.downcase) }
-      .group_by { |s| s['role'] || 'guest' }
+      .reject { |s| role = s[:role] || s['role']; ['admin', 'sales'].include?(role&.downcase) }
+      .group_by { |s| s[:role] || s['role'] || 'guest' }
       .transform_values(&:size)
 
     total = role_counts.values.sum

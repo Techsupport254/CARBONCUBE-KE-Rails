@@ -1,37 +1,27 @@
 class SearchRedisService
-  # Service for handling search logging and analytics using Redis
-  # This separates search operations from the main PostgreSQL database
-
-  SEARCH_TTL = 30.days.to_i  # Individual search logs expire after 30 days
-  ANALYTICS_TTL = 90.days.to_i  # Analytics data expires after 90 days
-
   class << self
-    # Log a search query to Redis
     # @param search_term [String] the search term
-    # @param buyer_id [String, nil] buyer UUID if authenticated, nil for guests
+    # @param user_id [String, nil] user UUID if authenticated, nil for guests
     # @param role [String, nil] user role (buyer, seller, admin, sales, guest)
     # @param metadata [Hash] additional metadata (device_hash, user_agent, etc.)
-    def log_search(search_term, buyer_id = nil, role = nil, metadata = {})
+    def log_search(search_term, user_id = nil, role = nil, metadata = {})
       return if search_term.blank?
 
       session_id = metadata[:session_id] || metadata[:device_hash] || 'unknown'
       device_hash = metadata[:device_hash].to_s
 
-      # Check for duplicate logging within the same session (backend protection)
-      if duplicate_search_recently?(search_term, buyer_id, session_id, device_hash)
+      if duplicate_search_recently?(search_term, user_id, session_id, device_hash)
         Rails.logger.info "Duplicate search '#{search_term}' detected for session #{session_id}, skipping"
         return
       end
 
       timestamp = Time.current.to_i
-      search_key = generate_search_key(timestamp, buyer_id)
+      search_key = generate_search_key(timestamp, user_id, role)
 
-      # Store individual search record (expires after 30 days)
       RedisConnection.with do |redis|
-        # Store the search record as a hash
         redis.hmset(search_key,
           'search_term', search_term,
-          'buyer_id', buyer_id.to_s,
+          'user_id', user_id.to_s,
           'role', role.to_s,
           'timestamp', timestamp,
           'device_hash', device_hash,
@@ -41,62 +31,48 @@ class SearchRedisService
           'logged_at', metadata[:logged_at] || Time.current.iso8601
         )
 
-        redis.expire(search_key, SEARCH_TTL)
-
-        # Track recent searches per session to prevent duplicates
         session_key = "searches:session:#{session_id}:recent"
         redis.zadd(session_key, timestamp, search_term)
-        # Keep only last 10 searches per session, expire after 1 hour
-        redis.zremrangebyrank(session_key, 0, -11)
-        redis.expire(session_key, 1.hour.to_i)
 
-        # Add to daily search set for analytics
         daily_key = "searches:daily:#{Date.current.iso8601}"
         redis.sadd(daily_key, search_term)
-        redis.expire(daily_key, ANALYTICS_TTL)
 
-        # Increment search term popularity
         popularity_key = "searches:popular"
         redis.zincrby(popularity_key, 1, search_term)
-        redis.expire(popularity_key, ANALYTICS_TTL)
 
-        # Track buyer search history if authenticated
-        if buyer_id.present?
-          buyer_history_key = "searches:buyer:#{buyer_id}:history"
-          redis.zadd(buyer_history_key, timestamp, search_term)
-          redis.expire(buyer_history_key, ANALYTICS_TTL)
+        if user_id.present? && role.present?
+          case role.to_s.downcase
+          when 'buyer'
+            redis.zadd("searches:buyer:#{user_id}:history", timestamp, search_term)
+          when 'seller'
+            redis.zadd("searches:seller:#{user_id}:history", timestamp, search_term)
+          when 'admin'
+            redis.zadd("searches:admin:#{user_id}:history", timestamp, search_term)
+          when 'sales'
+            redis.zadd("searches:sales:#{user_id}:history", timestamp, search_term)
+          end
         end
 
-        # Track guest searches by device_hash
-        if buyer_id.blank? && device_hash.present?
-          guest_history_key = "searches:guest:#{device_hash}:history"
-          redis.zadd(guest_history_key, timestamp, search_term)
-          redis.expire(guest_history_key, ANALYTICS_TTL)
+        if user_id.blank? && device_hash.present?
+          redis.zadd("searches:guest:#{device_hash}:history", timestamp, search_term)
         end
       end
 
-      Rails.logger.info "Search '#{search_term}' logged successfully for session #{session_id}"
+      Rails.logger.info "Search '#{search_term}' logged successfully for session #{session_id} (role: #{role}, user_id: #{user_id})"
     rescue => e
       Rails.logger.error "Failed to log search to Redis: #{e.message}"
-      # Don't raise error - search logging shouldn't break the search functionality
     end
 
-    # Get popular search terms
     # @param limit [Integer] number of terms to return
     # @param timeframe [Symbol] :all, :daily, :weekly, :monthly
     def popular_searches(limit = 20, timeframe = :all)
       RedisConnection.with do |redis|
         case timeframe
         when :daily
-          # Count actual daily search frequencies by querying individual records
           start_of_day = Date.current.beginning_of_day.to_i
           end_of_day = Date.current.end_of_day.to_i
+          all_keys = redis.keys("searches:search:*")
 
-          # Get all search keys for today
-          pattern = "searches:search:*"
-          all_keys = redis.keys(pattern)
-
-          # Count term frequencies for today's searches
           term_counts = Hash.new(0)
           all_keys.each do |key|
             timestamp = redis.hget(key, 'timestamp').to_i
@@ -106,24 +82,19 @@ class SearchRedisService
             end
           end
 
-          # Return most popular terms for today with their counts
           term_counts.sort_by { |_, count| -count }.first(limit)
         when :weekly
-          # Aggregate last 7 days
           keys = (0..6).map { |i| "searches:daily:#{(Date.current - i.days).iso8601}" }
           aggregate_daily_searches(redis, keys, limit)
         when :monthly
-          # Aggregate last 30 days
           keys = (0..29).map { |i| "searches:daily:#{(Date.current - i.days).iso8601}" }
           aggregate_daily_searches(redis, keys, limit)
         else
-          # All time popular
           redis.zrevrange("searches:popular", 0, limit - 1, with_scores: true)
         end
       end
     end
 
-    # Get search analytics
     def analytics
       RedisConnection.with do |redis|
         {
@@ -135,14 +106,26 @@ class SearchRedisService
       end
     end
 
-    # Get recent searches for a buyer
-    # @param buyer_id [String] buyer UUID
+    # @param user_id [String] user UUID
+    # @param role [String] user role (buyer, seller, admin, sales)
     # @param limit [Integer] number of recent searches to return
-    def recent_searches_for_buyer(buyer_id, limit = 10)
-      return [] if buyer_id.blank?
+    def recent_searches_for_user(user_id, role, limit = 10)
+      return [] if user_id.blank? || role.blank?
 
       RedisConnection.with do |redis|
-        key = "searches:buyer:#{buyer_id}:history"
+        case role.to_s.downcase
+        when 'buyer'
+          key = "searches:buyer:#{user_id}:history"
+        when 'seller'
+          key = "searches:seller:#{user_id}:history"
+        when 'admin'
+          key = "searches:admin:#{user_id}:history"
+        when 'sales'
+          key = "searches:sales:#{user_id}:history"
+        else
+          return []
+        end
+
         redis.zrevrange(key, 0, limit - 1, with_scores: true).map do |term, score|
           {
             search_term: term,
@@ -152,31 +135,57 @@ class SearchRedisService
       end
     end
 
-    # Get search history for admin interface
+    # @param buyer_id [String] buyer UUID
+    # @param limit [Integer] number of recent searches to return
+    def recent_searches_for_buyer(buyer_id, limit = 10)
+      recent_searches_for_user(buyer_id, 'buyer', limit)
+    end
+
+    # @param device_hash [String] device hash identifier
+    # @param limit [Integer] number of recent searches to return
+    def recent_searches_for_guest(device_hash, limit = 10)
+      return [] if device_hash.blank?
+
+      RedisConnection.with do |redis|
+        key = "searches:guest:#{device_hash}:history"
+        redis.zrevrange(key, 0, limit - 1, with_scores: true).map do |term, score|
+          {
+            search_term: term,
+            timestamp: Time.at(score.to_i)
+          }
+        end
+      end
+    end
+
+    # @param user_id [String, nil] user UUID if authenticated, nil for guests
+    # @param role [String, nil] user role (buyer, seller, admin, sales, guest)
+    # @param device_hash [String, nil] device hash for guest users
+    # @param limit [Integer] number of recent searches to return
+    def recent_searches_for_current_user(user_id: nil, role: nil, device_hash: nil, limit: 10)
+      if user_id.present? && role.present? && role != 'guest'
+        return recent_searches_for_user(user_id, role, limit)
+      end
+
+      if device_hash.present?
+        return recent_searches_for_guest(device_hash, limit)
+      end
+
+      []
+    end
+
     # @param page [Integer] page number (1-based)
     # @param per_page [Integer] records per page
-    # @param filters [Hash] optional filters (buyer_id, search_term, date_range)
+    # @param filters [Hash] optional filters (user_id, buyer_id, seller_id, role, search_term, date_range)
     def search_history(page: 1, per_page: 50, filters: {})
       RedisConnection.with do |redis|
-        # Get all search keys
-        pattern = "searches:search:*"
-        all_keys = redis.keys(pattern)
-
-        # Apply filters if provided
+        all_keys = redis.keys("searches:search:*")
         filtered_keys = apply_filters(all_keys, filters, redis)
 
-        # Sort by timestamp (newest first) and paginate
+        sorted_keys = filtered_keys.sort_by { |key| redis.hget(key, 'timestamp').to_i }.reverse
         start_index = (page - 1) * per_page
-        end_index = start_index + per_page - 1
-
-        sorted_keys = filtered_keys.sort_by do |key|
-          redis.hget(key, 'timestamp').to_i
-        end.reverse
-
-        paginated_keys = sorted_keys[start_index..end_index] || []
+        paginated_keys = sorted_keys[start_index, per_page] || []
         total_count = filtered_keys.size
 
-        # Fetch search records
         searches = paginated_keys.map do |key|
           data = redis.hgetall(key)
           next if data.empty?
@@ -184,7 +193,9 @@ class SearchRedisService
           {
             id: key.split(':').last,
             search_term: data['search_term'],
-            buyer_id: data['buyer_id'].present? ? data['buyer_id'] : nil,
+            user_id: data['user_id'].present? ? data['user_id'] : nil,
+            buyer_id: data['user_id'].present? && data['role'] == 'buyer' ? data['user_id'] : nil,
+            seller_id: data['user_id'].present? && data['role'] == 'seller' ? data['user_id'] : nil,
             role: data['role'].present? ? data['role'] : 'guest',
             timestamp: Time.at(data['timestamp'].to_i),
             created_at: Time.at(data['timestamp'].to_i),
@@ -204,36 +215,36 @@ class SearchRedisService
       end
     end
 
-    # Clean up expired data (optional maintenance method)
     def cleanup_expired_data
       RedisConnection.with do |redis|
-        # This is mainly handled by Redis TTL, but we can add custom cleanup if needed
-        Rails.logger.info "Redis search cleanup completed"
+        Rails.logger.info "Redis search cleanup completed (no expiration configured)"
       end
     end
 
     private
 
-    def generate_search_key(timestamp, buyer_id)
-      # Create a unique key for each search
-      "searches:search:#{timestamp}:#{buyer_id || 'guest'}:#{SecureRandom.hex(4)}"
+    def generate_search_key(timestamp, user_id, role = nil)
+      user_identifier = if user_id.present? && role.present?
+        "#{role}:#{user_id}"
+      elsif user_id.present?
+        user_id
+      else
+        'guest'
+      end
+      "searches:search:#{timestamp}:#{user_identifier}:#{SecureRandom.hex(4)}"
     end
 
-    def duplicate_search_recently?(search_term, buyer_id, session_id, device_hash)
+    def duplicate_search_recently?(search_term, user_id, session_id, device_hash)
       return false if session_id == 'unknown'
 
       RedisConnection.with do |redis|
         session_key = "searches:session:#{session_id}:recent"
-
-        # Check if this exact search term was logged in the last 30 seconds for this session
         recent_searches = redis.zrangebyscore(session_key, Time.current.to_i - 30, Time.current.to_i, with_scores: true)
-
-        # Look for exact match (same search term recently)
         recent_searches.any? { |term, timestamp| term == search_term && (Time.current.to_i - timestamp.to_i) < 30 }
       end
     rescue => e
       Rails.logger.warn "Error checking for duplicate search: #{e.message}"
-      false # Don't block logging if Redis check fails
+      false
     end
 
     def aggregate_daily_searches(redis, keys, limit)
@@ -256,17 +267,30 @@ class SearchRedisService
 
         matches = true
 
-        # Filter by buyer_id
-        if filters[:buyer_id].present?
-          matches &= (data['buyer_id'] == filters[:buyer_id])
+        if filters[:user_id].present?
+          matches &= (data['user_id'] == filters[:user_id])
         end
 
-        # Filter by search_term (partial match)
+        if filters[:buyer_id].present?
+          matches &= (data['user_id'] == filters[:buyer_id] && data['role'] == 'buyer')
+        end
+
+        if filters[:seller_id].present?
+          matches &= (data['user_id'] == filters[:seller_id] && data['role'] == 'seller')
+        end
+
+        if filters[:role].present?
+          matches &= (data['role'] == filters[:role].to_s)
+        end
+
+        if filters[:device_hash].present?
+          matches &= (data['device_hash'] == filters[:device_hash].to_s)
+        end
+
         if filters[:search_term].present?
           matches &= data['search_term'].to_s.downcase.include?(filters[:search_term].downcase)
         end
 
-        # Filter by date range
         if filters[:start_date].present? && filters[:end_date].present?
           timestamp = data['timestamp'].to_i
           start_ts = filters[:start_date].to_time.to_i
