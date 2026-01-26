@@ -173,8 +173,8 @@ Rails.application.routes.draw do
   get 'sitemap/stats', to: 'sitemap#stats'
   
 
-  # Routes for logging ad searches
-  resources :ad_searches, only: [:create]
+  # Routes for logging ad searches and retrieving recent searches
+  resources :ad_searches, only: [:create, :index]
 
   # Routes for logging click events
   resources :click_events, only: [:create]
