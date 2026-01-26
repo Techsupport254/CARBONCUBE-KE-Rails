@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_19_094420) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_26_135532) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -82,6 +82,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_19_094420) do
     t.integer "reviews_count", default: 0, null: false
     t.string "google_merchant_product_id"
     t.uuid "seller_id", null: false
+    t.boolean "is_added_by_sales"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"

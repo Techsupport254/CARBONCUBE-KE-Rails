@@ -102,6 +102,7 @@ class Seller::AdsController < ApplicationController
       end
 
       @ad = current_seller.ads.build(ad_params)
+      @ad.is_added_by_sales = false # Set to false when seller creates ad themselves
 
       if @ad.save
         # Update seller's last active timestamp when creating an ad

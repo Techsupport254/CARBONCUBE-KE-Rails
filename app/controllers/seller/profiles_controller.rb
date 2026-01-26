@@ -21,6 +21,10 @@ class Seller::ProfilesController < ApplicationController
     # Check if email is verified
     email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
     seller_data[:email_verified] = email_verified
+    # Check if user has a password set
+    # password_digest will be nil or empty string for OAuth users who haven't set a password
+    # It will be present (a bcrypt hash) for users who have set a password
+    seller_data[:has_password] = @seller.password_digest.present? && !@seller.password_digest.to_s.strip.empty?
 
     render json: seller_data
   end
@@ -106,6 +110,10 @@ class Seller::ProfilesController < ApplicationController
         # Check if email is verified
         email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
         seller_data[:email_verified] = email_verified
+        # Check if user has a password set
+        # password_digest will be nil or empty string for OAuth users who haven't set a password
+        # It will be present (a bcrypt hash) for users who have set a password
+        seller_data[:has_password] = @seller.password_digest.present? && !@seller.password_digest.to_s.strip.empty?
         render json: seller_data
       else
         Rails.logger.error "Seller update failed with errors: #{@seller.errors.full_messages.join(', ')}"
@@ -120,26 +128,41 @@ class Seller::ProfilesController < ApplicationController
 
   # POST /seller/change-password
   def change_password
-    # Check if the current password is correct
-    if current_seller.authenticate(params[:currentPassword])
-      # Check if new password matches confirmation
-      if params[:newPassword] == params[:confirmPassword]
-        # Update the password
-        if current_seller.update(password: params[:newPassword])
-          # Password changed successfully - session should be cleared on frontend
-          # Return response indicating session invalidation
-          render json: { 
-            message: 'Password updated successfully',
-            session_invalidated: true
-          }, status: :ok
-        else
-          render json: { errors: current_seller.errors.full_messages }, status: :unprocessable_entity
-        end
+    # If user has a password, require current password
+    if current_seller.password_digest.present?
+      # Check if currentPassword was provided
+      unless params[:currentPassword].present?
+        render json: { error: 'Current password is required' }, status: :unauthorized
+        return
+      end
+      
+      # Authenticate the current password
+      unless current_seller.authenticate(params[:currentPassword])
+        render json: { error: 'Current password is incorrect' }, status: :unauthorized
+        return
+      end
+    end
+    
+    # Check if new password matches confirmation
+    unless params[:newPassword].present? && params[:confirmPassword].present?
+      render json: { error: 'New password and confirmation are required' }, status: :unprocessable_entity
+      return
+    end
+    
+    if params[:newPassword] == params[:confirmPassword]
+      # Update the password
+      if current_seller.update(password: params[:newPassword])
+        # Password changed successfully - session should be cleared on frontend
+        # Return response indicating session invalidation
+        render json: { 
+          message: 'Password updated successfully',
+          session_invalidated: true
+        }, status: :ok
       else
-        render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
+        render json: { errors: current_seller.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      render json: { error: 'Current password is incorrect' }, status: :unauthorized
+      render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
     end
   end
 

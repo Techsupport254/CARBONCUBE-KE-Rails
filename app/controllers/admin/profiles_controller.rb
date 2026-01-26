@@ -4,13 +4,17 @@ class Admin::ProfilesController < ApplicationController
 
   # GET /admin/profile
   def show
-    render json: @admin
+    admin_data = @admin.as_json
+    admin_data[:has_password] = @admin.password_digest.present?
+    render json: admin_data
   end
 
   # PATCH/PUT /admin/profile
   def update
     if @admin.update(admin_params)
-      render json: @admin
+      admin_data = @admin.as_json
+      admin_data[:has_password] = @admin.password_digest.present?
+      render json: admin_data
     else
       render json: @admin.errors, status: :unprocessable_entity
     end
@@ -18,26 +22,32 @@ class Admin::ProfilesController < ApplicationController
 
   # POST /admin/change-password
   def change_password
-    # Check if the current password is correct
-    if current_admin.authenticate(params[:currentPassword])
-      # Check if new password matches confirmation
-      if params[:newPassword] == params[:confirmPassword]
-        # Update the password
-        if current_admin.update(password: params[:newPassword])
-          # Password changed successfully - session should be cleared on frontend
-          # Return response indicating session invalidation
-          render json: { 
-            message: 'Password updated successfully',
-            session_invalidated: true
-          }, status: :ok
-        else
-          render json: { errors: current_admin.errors.full_messages }, status: :unprocessable_entity
-        end
+    # For Google OAuth users without a password, skip current password check
+    is_google_user_without_password = current_admin.provider == 'google' && current_admin.password_digest.blank?
+    
+    # If user has a password, require current password
+    if current_admin.password_digest.present?
+      unless params[:currentPassword].present? && current_admin.authenticate(params[:currentPassword])
+        render json: { error: 'Current password is incorrect' }, status: :unauthorized
+        return
+      end
+    end
+    
+    # Check if new password matches confirmation
+    if params[:newPassword] == params[:confirmPassword]
+      # Update the password
+      if current_admin.update(password: params[:newPassword])
+        # Password changed successfully - session should be cleared on frontend
+        # Return response indicating session invalidation
+        render json: { 
+          message: 'Password updated successfully',
+          session_invalidated: true
+        }, status: :ok
       else
-        render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
+        render json: { errors: current_admin.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      render json: { error: 'Current password is incorrect' }, status: :unauthorized
+      render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
     end
   end
 

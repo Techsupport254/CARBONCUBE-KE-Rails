@@ -3,7 +3,7 @@ class AdSerializer < ActiveModel::Serializer
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name, 
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
-             :seller_is_verified, :seller_document_verified,
+             :seller_is_verified, :seller_document_verified, :is_added_by_sales,
              :flash_sale_info
 
   has_one :seller, serializer: SellerSerializer
