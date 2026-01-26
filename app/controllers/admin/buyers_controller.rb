@@ -60,7 +60,7 @@ class Admin::BuyersController < ApplicationController
     
     # Prepare buyers data with last_active_at and profile_picture
     @buyers_data = @buyers.map do |buyer|
-      buyer.as_json(only: [:id, :fullname, :username, :phone_number, :email, :location, :blocked, :created_at, :updated_at, :last_active_at, :profile_picture])
+      buyer.as_json(only: [:id, :fullname, :username, :phone_number, :email, :location, :blocked, :created_at, :updated_at, :last_active_at, :profile_picture, :provider])
     end
     
     # Calculate pagination metadata

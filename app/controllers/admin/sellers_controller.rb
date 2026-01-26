@@ -71,7 +71,7 @@ class Admin::SellersController < ApplicationController
     
     # Prepare sellers data with last_active_at
     @sellers_data = @sellers.map do |seller|
-      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture])
+      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider])
     end
     
     # Calculate pagination metadata

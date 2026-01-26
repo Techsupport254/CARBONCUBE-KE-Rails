@@ -15,6 +15,10 @@ class Buyer::ProfilesController < ApplicationController
     # Check if email is verified
     email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
     buyer_data[:email_verified] = email_verified
+    # Check if user has a password set
+    # password_digest will be nil or empty string for OAuth users who haven't set a password
+    # It will be present (a bcrypt hash) for users who have set a password
+    buyer_data[:has_password] = current_buyer.password_digest.present? && !current_buyer.password_digest.to_s.strip.empty?
     # Ensure timestamps are included
     buyer_data[:created_at] = current_buyer.created_at
     buyer_data[:updated_at] = current_buyer.updated_at
@@ -77,6 +81,10 @@ class Buyer::ProfilesController < ApplicationController
         # Check if email is verified
         email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
         buyer_data[:email_verified] = email_verified
+        # Check if user has a password set
+        # password_digest will be nil or empty string for OAuth users who haven't set a password
+        # It will be present (a bcrypt hash) for users who have set a password
+        buyer_data[:has_password] = current_buyer.password_digest.present? && !current_buyer.password_digest.to_s.strip.empty?
         # Ensure timestamps are included
         buyer_data[:created_at] = current_buyer.created_at
         buyer_data[:updated_at] = current_buyer.updated_at
@@ -94,26 +102,41 @@ class Buyer::ProfilesController < ApplicationController
 
   # POST /buyer/change-password
   def change_password
-    # Check if the current password is correct
-    if current_buyer.authenticate(params[:currentPassword])
-      # Check if new password matches confirmation
-      if params[:newPassword] == params[:confirmPassword]
-        # Update the password
-        if current_buyer.update(password: params[:newPassword])
-          # Password changed successfully - session should be cleared on frontend
-          # Return response indicating session invalidation
-          render json: { 
-            message: 'Password updated successfully',
-            session_invalidated: true
-          }, status: :ok
-        else
-          render json: { errors: current_buyer.errors.full_messages }, status: :unprocessable_entity
-        end
+    # If user has a password, require current password
+    if current_buyer.password_digest.present?
+      # Check if currentPassword was provided
+      unless params[:currentPassword].present?
+        render json: { error: 'Current password is required' }, status: :unauthorized
+        return
+      end
+      
+      # Authenticate the current password
+      unless current_buyer.authenticate(params[:currentPassword])
+        render json: { error: 'Current password is incorrect' }, status: :unauthorized
+        return
+      end
+    end
+    
+    # Check if new password matches confirmation
+    unless params[:newPassword].present? && params[:confirmPassword].present?
+      render json: { error: 'New password and confirmation are required' }, status: :unprocessable_entity
+      return
+    end
+    
+    if params[:newPassword] == params[:confirmPassword]
+      # Update the password
+      if current_buyer.update(password: params[:newPassword])
+        # Password changed successfully - session should be cleared on frontend
+        # Return response indicating session invalidation
+        render json: { 
+          message: 'Password updated successfully',
+          session_invalidated: true
+        }, status: :ok
       else
-        render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
+        render json: { errors: current_buyer.errors.full_messages }, status: :unprocessable_entity
       end
     else
-      render json: { error: 'Current password is incorrect' }, status: :unauthorized
+      render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
     end
   end
 

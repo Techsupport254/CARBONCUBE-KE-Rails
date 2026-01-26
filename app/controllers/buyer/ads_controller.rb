@@ -332,14 +332,23 @@ class Buyer::AdsController < ApplicationController
     basic_intent = analyze_search_intent(query)
 
     # Combine insights
-    final_intent = grok_insights[:intent].merge(basic_intent || {})
+    final_intent = (grok_insights[:intent] || {}).merge(basic_intent || {})
     final_intent[:suggestions] = grok_insights[:suggestions] || []
     final_intent[:related_terms] = grok_insights[:related_terms] || []
     final_intent[:confidence] = grok_insights[:confidence]
 
-    final_intent
+    # Hotfix: if the raw query clearly mentions the \"sony\" brand,
+    # force the detected brand to \"sony\" so that full-title queries
+    # like \"Sony PS4 wireless controller\" are not misclassified as
+    # some other brand by the AI layer.
+    normalized_query = query.downcase.strip
+    if normalized_query.include?('sony')
+      final_intent[:brand] = 'sony'
+      final_intent[:is_product_search] = true
+      final_intent[:query_type] ||= :brand_specific
+    end
 
-    intent
+    final_intent
   end
 
   # Basic search intent analysis (our existing logic)
@@ -380,7 +389,8 @@ class Buyer::AdsController < ApplicationController
       'oppo' => ['oppo', 'realme'],
       'vivo' => ['vivo'],
       'tecno' => ['tecno', 'itel'],
-      'infinix' => ['infinix']
+      'infinix' => ['infinix'],
+      'sony' => ['sony', 'playstation', 'ps4', 'ps5']
     }
 
     # Enhanced product types with semantic understanding (AI-like)
@@ -1345,6 +1355,25 @@ class Buyer::AdsController < ApplicationController
     ads_per_page = 24 if ads_per_page < 1 || ads_per_page > 100
     shops_per_page = 10 if shops_per_page < 1 || shops_per_page > 50
 
+    # First, try an exact title match shortcut so that
+    # full-title queries like "Sony PS4 wireless controller"
+    # always hit the obvious product, without being confused
+    # by AI intent analysis.
+    exact_match_scope = Ad.active.with_valid_images
+                          .joins(:seller, :category, :subcategory)
+                          .where(sellers: { blocked: false, deleted: false, flagged: false })
+                          .where(flagged: false)
+
+    exact_title_matches = []
+    if query.present?
+      # Use a forgiving exact-ish match: title contains the full query text,
+      # case-insensitive. This ensures obvious full-title searches like
+      # "Sony PS4 wireless controller" return the right product even if
+      # there are minor spacing/casing differences.
+      exact_title_matches = exact_match_scope
+                              .where("LOWER(ads.title) LIKE LOWER(?)", "%#{query.downcase.strip}%")
+    end
+
     # Parse search intent with Grok AI enhancement
     search_intent = if query.present?
                       analyze_search_intent_with_grok(query)
@@ -1352,14 +1381,55 @@ class Buyer::AdsController < ApplicationController
                       nil
                     end
 
-    ads = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-            .where(sellers: { blocked: false, deleted: false, flagged: false })
-            .where(flagged: false)
+    ads = if exact_title_matches.present?
+            # If we have exact title matches, use them as the primary
+            # result set and skip the more complex AI search logic.
+            exact_title_matches
+          else
+            scoped_ads = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                           .where(sellers: { blocked: false, deleted: false, flagged: false })
+                           .where(flagged: false)
 
-    if query.present?
-      # Apply smart search logic based on intent analysis
-      ads = apply_smart_search(ads, query, search_intent)
-    end
+            if query.present?
+              # Apply smart search logic based on intent analysis
+              scoped_ads = apply_smart_search(scoped_ads, query, search_intent)
+
+              # Fallback: if smart search returns no ads, use a simpler,
+              # more forgiving text search so obvious matches are not lost.
+              if scoped_ads.none?
+                fallback_scope = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                                   .where(sellers: { blocked: false, deleted: false, flagged: false })
+                                   .where(flagged: false)
+
+                words = query.downcase.split(/\s+/).reject(&:blank?)
+                words.each do |word|
+                  next if word.length < 2
+                  fallback_scope = fallback_scope.where(
+                    "ads.title ILIKE :w OR ads.description ILIKE :w",
+                    w: "%#{word}%"
+                  )
+                end
+
+                scoped_ads = fallback_scope if fallback_scope.exists?
+              end
+
+              # Final safety net: if we STILL have no ads but we detected a brand,
+              # rerun the smart search using just the brand term. This ensures that
+              # \"Sony PS4 wireless controller\" will at least behave like a \"sony\"
+              # brand search instead of returning nothing.
+              if scoped_ads.none? && search_intent && search_intent[:brand].present?
+                brand_query = search_intent[:brand].to_s
+
+                brand_scope = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                                 .where(sellers: { blocked: false, deleted: false, flagged: false })
+                                 .where(flagged: false)
+
+                scoped_ads = apply_smart_search(brand_scope, brand_query, search_intent)
+              end
+            end
+
+            scoped_ads
+          end
 
     if category_param.present? && category_param != 'All'
       if category_param.to_s.match?(/\A\d+\z/)
@@ -1395,24 +1465,23 @@ class Buyer::AdsController < ApplicationController
 
       # For brand-specific searches, prioritize brand matches more aggressively
       if search_intent && search_intent[:is_product_search] && search_intent[:brand]
-        # Separate by brand match strength
-        brand_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 } # Perfect brand + model matches
-        brand_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 } # Strong brand matches
+        # Separate by brand match strength - ONLY include items that match the brand
+        brand_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 && brand_match?(item[:ad], search_intent[:brand]) } # Perfect brand + model matches
+        brand_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 && brand_match?(item[:ad], search_intent[:brand]) } # Strong brand matches
         brand_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && brand_match?(item[:ad], search_intent[:brand]) } # Brand matches with lower scores
-        other_matches = ads_with_scores.select { |item| item[:score] < 50 || !brand_match?(item[:ad], search_intent[:brand]) } # Non-brand matches
-
-        # Limit non-brand matches to fill remaining slots after brand products
-        max_other_matches = [ads_per_page / 3, 3].max # At most 1/3 of results, minimum 3
-        other_matches = other_matches.sort_by { |item| -item[:score] }.first(max_other_matches)
-
-        relevant_ads = brand_exact_matches + brand_strong_matches + brand_weak_matches + other_matches
-
-        # Add related products (prioritizing same brand)
+        
+        # For brand searches, ONLY show brand-matched items - no "other_matches" or related products
+        relevant_ads = brand_exact_matches + brand_strong_matches + brand_weak_matches
+        
+        # Only add more brand-matched items if we have slots remaining
         if relevant_ads.size < ads_per_page
-          related_ads = find_related_products(brand_exact_matches + brand_strong_matches, search_intent)
+          # Find additional brand-matched items that weren't in the initial search results
+          additional_brand_ads = find_related_products(brand_exact_matches + brand_strong_matches, search_intent)
+          # Filter to only include items that match the brand
+          additional_brand_ads = additional_brand_ads.select { |item| brand_match?(item[:ad], search_intent[:brand]) }
           slots_remaining = ads_per_page - relevant_ads.size
-          related_ads = related_ads.first(slots_remaining)
-          relevant_ads.concat(related_ads)
+          additional_brand_ads = additional_brand_ads.first(slots_remaining)
+          relevant_ads.concat(additional_brand_ads)
         end
       elsif search_intent && search_intent[:is_product_search] && search_intent[:product_type]
         # For product type searches, prioritize product type matches

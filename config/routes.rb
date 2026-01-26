@@ -643,6 +643,16 @@ Rails.application.routes.draw do
           post 'change-password'
         end
       end
+      resources :ads, only: [:index, :show, :create] do
+        collection do
+          get :flagged
+          get :stats
+        end
+        member do
+          patch :flag
+          patch :restore
+        end
+      end
       resources :click_events, only: [] do
         collection do
           get :analytics
@@ -816,6 +826,16 @@ Rails.application.routes.draw do
       resource :profile, only: [:show, :update] do
         collection do
           post 'change-password'
+        end
+      end
+      resources :ads, only: [:index, :show, :create] do
+        collection do
+          get :flagged
+          get :stats
+        end
+        member do
+          patch :flag
+          patch :restore
         end
       end
       resources :click_events, only: [] do

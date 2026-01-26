@@ -60,10 +60,9 @@ class AuthenticationController < ApplicationController
       end
       
       # Only include profile picture for users that have this field (Buyer, Seller)
-      # Avoid using cached profile pictures - return nil for cached URLs
+      # Return cached profile picture URLs - frontend will convert them to absolute URLs
       if @user.respond_to?(:profile_picture) && @user.profile_picture.present?
-        profile_pic = @user.profile_picture
-        user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
+        user_response[:profile_picture] = @user.profile_picture
       end
       
       # Include enterprise_name for sellers
@@ -293,10 +292,9 @@ class AuthenticationController < ApplicationController
     end
     
     # Only include profile picture for users that have this field (Buyer, Seller)
-    # Avoid using cached profile pictures - return nil for cached URLs
+    # Return cached profile picture URLs - frontend will convert them to absolute URLs
     if user.respond_to?(:profile_picture) && user.profile_picture.present?
-      profile_pic = user.profile_picture
-      user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
+      user_response[:profile_picture] = user.profile_picture
     end
 
     render json: { user: user_response }, status: :ok
@@ -796,8 +794,7 @@ class AuthenticationController < ApplicationController
       end
       
       if user.respond_to?(:profile_picture) && user.profile_picture.present?
-        profile_pic = user.profile_picture
-        user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
+        user_response[:profile_picture] = user.profile_picture
       end
       
       # Update last active timestamp
@@ -1126,8 +1123,7 @@ class AuthenticationController < ApplicationController
       end
       
       if user.respond_to?(:profile_picture) && user.profile_picture.present?
-        profile_pic = user.profile_picture
-        user_response[:profile_picture] = profile_pic unless profile_pic.start_with?('/cached_profile_pictures/')
+        user_response[:profile_picture] = user.profile_picture
       end
       
       # Update last active timestamp

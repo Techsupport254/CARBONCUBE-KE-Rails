@@ -3,25 +3,55 @@ class Admin::AdsController < ApplicationController
   
   # GET /admin/ads
   def index
-    @ads = Ad.joins(seller: :seller_tier) # Join seller_tiers through seller
+    per_page = params[:per_page]&.to_i || 20
+    page = params[:page]&.to_i || 1
+    
+    # Build base query without select for counting
+    base_query = Ad.joins(seller: :seller_tier)
          .joins(:category, :subcategory)
          .where(sellers: { blocked: false })
-         .select('ads.*, seller_tiers.tier_id AS seller_tier')  # Select tier_id from seller_tiers
 
     if params[:category_id].present?
-      @ads = @ads.where(category_id: params[:category_id])
+      base_query = base_query.where(category_id: params[:category_id])
     end
 
     if params[:subcategory_id].present?
-      @ads = @ads.where(subcategory_id: params[:subcategory_id])
+      base_query = base_query.where(subcategory_id: params[:subcategory_id])
     end
 
+    # Search functionality
+    if params[:query].present?
+      search_terms = params[:query].downcase.split(/\s+/)
+      title_description_conditions = search_terms.map do |term|
+        "(LOWER(ads.title) LIKE ? OR LOWER(ads.description) LIKE ?)"
+      end.join(" AND ")
+      
+      base_query = base_query.where(title_description_conditions, *search_terms.flat_map { |term| ["%#{term}%", "%#{term}%"] })
+    end
+
+    # Get total count before applying select and pagination
+    total_count = base_query.count
+    
+    # Apply select, order, and pagination
+    offset = (page - 1) * per_page
+    @ads = base_query
+         .order(created_at: :desc)  # Sort by latest first
+         .select('ads.*, seller_tiers.tier_id AS seller_tier')  # Select tier_id from seller_tiers
+         .limit(per_page)
+         .offset(offset)
+    
     flagged_ads = @ads.select { |ad| ad.flagged }
     non_flagged_ads = @ads.reject { |ad| ad.flagged }
 
     render json: {
       flagged: flagged_ads.as_json(methods: :seller_tier),
-      non_flagged: non_flagged_ads.as_json(methods: :seller_tier)
+      non_flagged: non_flagged_ads.as_json(methods: :seller_tier),
+      pagination: {
+        current_page: page,
+        per_page: per_page,
+        total_count: total_count,
+        total_pages: (total_count.to_f / per_page).ceil
+      }
     }
   end
   
@@ -41,17 +71,18 @@ class Admin::AdsController < ApplicationController
                       end
     render json: @ad.as_json(
       include: {
-        seller: { only: [:fullname] },
+        seller: { only: [:fullname, :email] },
         category: { only: [:name] },
         subcategory: { only: [:name] },
         reviews: {
           include: {
             buyer: { only: [:fullname] }
           },
-          only: [:rating, :review]
+          only: [:rating, :review, :created_at]
         }
       },
-      methods: [:mean_rating]
+      methods: [:mean_rating, :media_urls, :first_media_url],
+      except: [:deleted]
     )
   end
 
@@ -98,13 +129,35 @@ class Admin::AdsController < ApplicationController
 
   # GET /admin/ads/flagged
   def flagged
-    @ads = Ad.joins(seller: :seller_tier)
+    per_page = params[:per_page]&.to_i || 20
+    page = params[:page]&.to_i || 1
+    
+    # Build base query without select for counting
+    base_query = Ad.joins(seller: :seller_tier)
              .joins(:category, :subcategory)
              .where(sellers: { blocked: false })
              .where(flagged: true)
-             .select('ads.*, seller_tiers.tier_id AS seller_tier')
     
-    render json: @ads.as_json(methods: :seller_tier)
+    # Get total count before applying select and pagination
+    total_count = base_query.count
+    
+    # Apply select, order, and pagination
+    offset = (page - 1) * per_page
+    @ads = base_query
+             .order(created_at: :desc)  # Sort by latest first
+             .select('ads.*, seller_tiers.tier_id AS seller_tier')
+             .limit(per_page)
+             .offset(offset)
+    
+    render json: {
+      ads: @ads.as_json(methods: :seller_tier),
+      pagination: {
+        current_page: page,
+        per_page: per_page,
+        total_count: total_count,
+        total_pages: (total_count.to_f / per_page).ceil
+      }
+    }
   end
 
 # GET /admin/ads/search
