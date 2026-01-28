@@ -29,6 +29,16 @@ class Sales::AdsController < ApplicationController
       base_query = base_query.where(title_description_conditions, *search_terms.flat_map { |term| ["%#{term}%", "%#{term}%"] })
     end
 
+    # Filter by who added the ad (sales vs seller) if requested
+    if params[:added_by].present?
+      case params[:added_by]
+      when 'sales'
+        base_query = base_query.where(is_added_by_sales: true)
+      when 'seller'
+        base_query = base_query.where(is_added_by_sales: false)
+      end
+    end
+
     # Get total count before applying select and pagination
     total_count = base_query.count
     
@@ -150,7 +160,38 @@ class Sales::AdsController < ApplicationController
              .joins(:category, :subcategory)
              .where(sellers: { blocked: false })
              .where(flagged: true)
+
+    # Apply same filters as index (category, subcategory, search)
+    if params[:category_id].present?
+      base_query = base_query.where(category_id: params[:category_id])
+    end
+
+    if params[:subcategory_id].present?
+      base_query = base_query.where(subcategory_id: params[:subcategory_id])
+    end
+
+    if params[:query].present?
+      search_terms = params[:query].downcase.split(/\s+/)
+      title_description_conditions = search_terms.map do |term|
+        "(LOWER(ads.title) LIKE ? OR LOWER(ads.description) LIKE ?)"
+      end.join(" AND ")
+
+      base_query = base_query.where(
+        title_description_conditions,
+        *search_terms.flat_map { |term| ["%#{term}%", "%#{term}%"] }
+      )
+    end
     
+    # Filter by who added the ad (sales vs seller) if requested
+    if params[:added_by].present?
+      case params[:added_by]
+      when 'sales'
+        base_query = base_query.where(is_added_by_sales: true)
+      when 'seller'
+        base_query = base_query.where(is_added_by_sales: false)
+      end
+    end
+
     # Get total count before applying select and pagination
     total_count = base_query.count
     

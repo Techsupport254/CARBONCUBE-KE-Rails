@@ -13,7 +13,12 @@ class Buyer::ProfilesController < ApplicationController
       buyer_data[:profile_picture] = nil
     end
     # Check if email is verified
-    email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
+    # Google OAuth users are treated as automatically verified
+    if current_buyer.respond_to?(:provider) && current_buyer.provider.to_s.downcase == 'google'
+      email_verified = true
+    else
+      email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
+    end
     buyer_data[:email_verified] = email_verified
     # Check if user has a password set
     # password_digest will be nil or empty string for OAuth users who haven't set a password
@@ -79,7 +84,12 @@ class Buyer::ProfilesController < ApplicationController
           buyer_data[:profile_picture] = nil
         end
         # Check if email is verified
-        email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
+        # Google OAuth users are treated as automatically verified
+        if current_buyer.respond_to?(:provider) && current_buyer.provider.to_s.downcase == 'google'
+          email_verified = true
+        else
+          email_verified = EmailOtp.exists?(email: current_buyer.email, verified: true)
+        end
         buyer_data[:email_verified] = email_verified
         # Check if user has a password set
         # password_digest will be nil or empty string for OAuth users who haven't set a password
