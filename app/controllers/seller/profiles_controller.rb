@@ -19,7 +19,12 @@ class Seller::ProfilesController < ApplicationController
 
     seller_data = SellerSerializer.new(@seller).as_json
     # Check if email is verified
-    email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+    # Google OAuth users are treated as automatically verified
+    if @seller.respond_to?(:provider) && @seller.provider.to_s.downcase == 'google'
+      email_verified = true
+    else
+      email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+    end
     seller_data[:email_verified] = email_verified
     # Check if user has a password set
     # password_digest will be nil or empty string for OAuth users who haven't set a password
@@ -108,7 +113,12 @@ class Seller::ProfilesController < ApplicationController
       if @seller.update(update_params)
         seller_data = SellerSerializer.new(@seller).as_json
         # Check if email is verified
-        email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+        # Google OAuth users are treated as automatically verified
+        if @seller.respond_to?(:provider) && @seller.provider.to_s.downcase == 'google'
+          email_verified = true
+        else
+          email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+        end
         seller_data[:email_verified] = email_verified
         # Check if user has a password set
         # password_digest will be nil or empty string for OAuth users who haven't set a password
@@ -163,6 +173,70 @@ class Seller::ProfilesController < ApplicationController
       end
     else
       render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
+    end
+  end
+
+  # POST /seller/profile/request-verification
+  def request_verification
+    email = current_seller.email
+    fullname = current_seller.fullname
+
+    # Google OAuth sellers are automatically verified and do not need an OTP
+    if current_seller.respond_to?(:provider) && current_seller.provider.to_s.downcase == 'google'
+      render json: { message: "Email is already verified via Google." }, status: :ok
+      return
+    end
+
+    otp_code = rand.to_s[2..7] # 6-digit code
+    expires_at = 10.minutes.from_now
+
+    # Remove old OTPs for this email
+    EmailOtp.where(email: email).delete_all
+
+    # Create new OTP
+    EmailOtp.create!(
+      email: email,
+      otp_code: otp_code,
+      expires_at: expires_at,
+      verified: false
+    )
+
+    # Send email
+    begin
+      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_now
+      Rails.logger.info "✅ Seller verification OTP email sent successfully to #{email}"
+    rescue => e
+      Rails.logger.error "❌ Failed to send seller verification OTP email: #{e.message}"
+      # Don't fail the request if email fails
+    end
+
+    response = { message: "Verification code sent to your email" }
+    render json: response, status: :ok
+  end
+
+  # POST /seller/profile/verify-email
+  def verify_email
+    email = current_seller.email
+
+    # Google OAuth sellers are automatically verified and do not need an OTP
+    if current_seller.respond_to?(:provider) && current_seller.provider.to_s.downcase == 'google'
+      render json: { verified: true, message: "Email is already verified via Google" }, status: :ok
+      return
+    end
+
+    otp_code = params[:otp_code]
+
+    record = EmailOtp.find_by(email: email, otp_code: otp_code)
+
+    if record.nil?
+      render json: { verified: false, error: "Invalid verification code" }, status: :unprocessable_entity
+    elsif record.verified == true
+      render json: { verified: false, error: "This code has already been used" }, status: :unprocessable_entity
+    elsif record.expires_at.present? && record.expires_at <= Time.now
+      render json: { verified: false, error: "Verification code has expired" }, status: :unprocessable_entity
+    else
+      record.update!(verified: true)
+      render json: { verified: true, message: "Email verified successfully" }, status: :ok
     end
   end
 
