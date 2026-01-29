@@ -180,35 +180,17 @@ class OauthAccountLinkingService
       end
       
       if should_update_picture
-        # Fix and potentially cache the profile picture URL
+        # Normalize profile picture URL (stored in DB, no file cache)
         fresh_picture = fix_profile_picture_url(@picture, user.id)
         
         if fresh_picture.present? && current_picture != fresh_picture
           update_attributes[:profile_picture] = fresh_picture
-          Rails.logger.info "📸 [Login] Updated profile picture for #{user.email}: #{update_reason}"
-        elsif fresh_picture.present?
-          Rails.logger.info "📸 [Login] Profile picture for #{user.email} is already up to date"
-        end
-      else
-        Rails.logger.info "📸 [Login] Skipping profile picture update for #{user.email}: #{update_reason}"
-      end
-    end
-    
-    # Update user if there are any changes
-    if update_attributes.any?
-      user.update!(update_attributes)
-      
-      # Cache the profile picture if it's from Google to avoid rate limiting
-      if user.profile_picture.present? && user.profile_picture.include?('googleusercontent.com')
-        cache_service = ProfilePictureCacheService.new
-        cached_url = cache_service.cache_google_profile_picture(user.profile_picture, user.id)
-        
-        if cached_url.present?
-          user.update_column(:profile_picture, cached_url)
-          Rails.logger.info "✅ Profile picture cached and updated for existing user: #{cached_url}"
         end
       end
     end
+
+    # Update user if there are any changes (profile picture stored in DB as URL, no file cache)
+    user.update!(update_attributes) if update_attributes.any?
     
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
@@ -244,9 +226,9 @@ class OauthAccountLinkingService
     phone_number = extract_phone_number
     location_data = get_user_location_data
     
-    # Use profile picture from OAuth provider (will be cached after user creation)
+    # Use profile picture from OAuth provider (stored in DB as URL, no file cache)
     profile_picture = @picture.present? ? fix_profile_picture_url(@picture) : nil
-    
+
     user_attributes = {
       fullname: @name || @email.split('@').first,
       email: @email,
@@ -259,7 +241,7 @@ class OauthAccountLinkingService
       # Use OAuth profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
-      profile_picture: profile_picture, # Set fixed profile picture from OAuth
+      profile_picture: profile_picture,
       # Add location data
       location: location_data[:location],
       city: location_data[:city],
@@ -274,18 +256,7 @@ class OauthAccountLinkingService
     Rails.logger.info "📞 Creating buyer - Phone number: #{phone_number || 'Not provided (optional for buyers)'}"
     
     buyer = Buyer.create!(user_attributes)
-    
-    # Cache the profile picture if it's from Google to avoid rate limiting
-    if buyer.profile_picture.present? && buyer.profile_picture.include?('googleusercontent.com')
-      cache_service = ProfilePictureCacheService.new
-      cached_url = cache_service.cache_google_profile_picture(buyer.profile_picture, buyer.id)
-      
-      if cached_url.present?
-        buyer.update_column(:profile_picture, cached_url)
-        Rails.logger.info "✅ Profile picture cached for new buyer: #{cached_url}"
-      end
-    end
-    
+
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
@@ -321,9 +292,9 @@ class OauthAccountLinkingService
     phone_number = extract_phone_number
     location_data = get_user_location_data
     
-    # Use profile picture from OAuth provider (will be cached after user creation)
+    # Use profile picture from OAuth provider (stored in DB as URL, no file cache)
     profile_picture = @picture.present? ? fix_profile_picture_url(@picture) : nil
-    
+
     # Get county/sub-county from location data
     county_id = location_data[:county_id]
     sub_county_id = location_data[:sub_county_id]
@@ -346,7 +317,7 @@ class OauthAccountLinkingService
       # Use OAuth profile data
       age_group_id: calculate_age_group,
       gender: extract_gender,
-      profile_picture: profile_picture, # Set fixed profile picture from OAuth
+      profile_picture: profile_picture,
       # Don't auto-set enterprise_name - let user set it themselves in the completion modal
     }
     
@@ -365,18 +336,7 @@ class OauthAccountLinkingService
     Rails.logger.info "📞 Phone number: #{phone_number}"
 
     seller = Seller.create!(user_attributes)
-    
-    # Cache the profile picture if it's from Google to avoid rate limiting
-    if seller.profile_picture.present? && seller.profile_picture.include?('googleusercontent.com')
-      cache_service = ProfilePictureCacheService.new
-      cached_url = cache_service.cache_google_profile_picture(seller.profile_picture, seller.id)
-      
-      if cached_url.present?
-        seller.update_column(:profile_picture, cached_url)
-        Rails.logger.info "✅ Profile picture cached for new seller: #{cached_url}"
-      end
-    end
-    
+
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
@@ -829,39 +789,23 @@ class OauthAccountLinkingService
     contains_google || contains_cloudinary || is_cached_local
   end
 
-  # Fix and potentially cache profile picture URL from OAuth provider
-  def fix_profile_picture_url(original_url, user_id = nil)
+  # Normalize profile picture URL from OAuth provider (store in DB directly, no file cache)
+  def fix_profile_picture_url(original_url, _user_id = nil)
     return nil if original_url.blank?
-    
-    Rails.logger.info "🔧 Processing profile picture URL from #{@provider}: #{original_url}"
-    
-    # If we have a user_id, try to cache the image to avoid rate limiting
-    if user_id.present? && original_url.include?('googleusercontent.com')
-      cache_service = ProfilePictureCacheService.new
-      cached_url = cache_service.get_or_cache_profile_picture(original_url, user_id)
-      
-      if cached_url.present?
-        Rails.logger.info "✅ Using cached profile picture: #{cached_url}"
-        return cached_url
-      end
-    end
-    
-    # Fallback to fixing the original URL if caching fails or not applicable
+
     fixed_url = original_url.dup
-    
+
     # For Google profile pictures, ensure proper size parameters
     if fixed_url.include?('googleusercontent.com')
-      # Remove size parameters that might cause access issues
-      fixed_url = fixed_url.gsub(/=s\d+/, '=s400') # Set to a reasonable size (400px)
-      fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s400') # Remove width/height restrictions
-      fixed_url = fixed_url.gsub(/=c\d+/, '=s400') # Remove crop restrictions
+      fixed_url = fixed_url.gsub(/=s\d+/, '=s400')
+      fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s400')
+      fixed_url = fixed_url.gsub(/=c\d+/, '=s400')
     end
-    
-    Rails.logger.info "🔧 Fixed profile picture URL: #{fixed_url}"
+
     fixed_url
   rescue => e
     Rails.logger.error "❌ Error fixing profile picture URL: #{e.message}"
-    original_url # Return original URL if fixing fails
+    original_url
   end
 
 

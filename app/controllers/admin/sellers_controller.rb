@@ -1,5 +1,6 @@
 class Admin::SellersController < ApplicationController
-  before_action :authenticate_admin
+  before_action :authenticate_admin_or_sales, only: [:index, :show]
+  before_action :authenticate_admin, except: [:index, :show]
   before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
 
   def index
@@ -365,6 +366,18 @@ class Admin::SellersController < ApplicationController
 
   def seller_params
     params.require(:seller).permit(:fullname, :phone_number, :email, :enterprise_name, :location, :password, :business_registration_number, category_ids: [])
+  end
+
+  def authenticate_admin_or_sales
+    begin
+      @current_user = AdminAuthorizeApiRequest.new(request.headers).result
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+      @current_user = SalesAuthorizeApiRequest.new(request.headers).result
+    end
+    unless @current_user && (@current_user.is_a?(Admin) || @current_user.is_a?(SalesUser))
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+      return
+    end
   end
 
   def authenticate_admin

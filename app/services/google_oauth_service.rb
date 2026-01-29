@@ -530,36 +530,8 @@ class GoogleOauthService
       # Ensure seller always has a tier (e.g. if Premium create raised)
       seller.reload
       assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
-      
-      # Cache the profile picture after user creation to avoid rate limiting
-      # Store original URL before caching so we can fallback if caching fails
-      original_google_url = seller.profile_picture if seller.profile_picture.present? && seller.profile_picture.include?('googleusercontent.com')
-      
-      if original_google_url.present?
-        Rails.logger.info "🔄 Attempting to cache profile picture for seller #{seller.id}: #{original_google_url}"
-        cache_service = ProfilePictureCacheService.new
-        cached_url = cache_service.cache_google_profile_picture(original_google_url, seller.id)
-        
-        if cached_url.present?
-          # Verify the file actually exists before updating
-          filename = cached_url.gsub('/cached_profile_pictures/', '')
-          file_path = Rails.root.join('public', 'cached_profile_pictures', filename)
-          
-          if File.exist?(file_path)
-            seller.update_column(:profile_picture, cached_url)
-            Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
-          else
-            Rails.logger.warn "⚠️ Cached URL returned but file doesn't exist, keeping original Google URL"
-            # Keep the original Google URL if file doesn't exist
-          end
-        else
-          Rails.logger.warn "⚠️ Failed to cache profile picture for seller #{seller.id}, keeping original Google URL"
-          # Keep the original Google URL if caching fails
-        end
-      else
-        Rails.logger.info "ℹ️ No Google profile picture to cache for seller #{seller.id}: #{seller.profile_picture}"
-      end
-      
+
+      # Profile picture already stored in DB as URL (no file cache)
       # Generate JWT token for new user
       token = generate_jwt_token(seller)
       
@@ -797,36 +769,8 @@ class GoogleOauthService
     
     if save_success
       Rails.logger.info "Buyer created successfully: #{buyer.email}"
-      
-      # Cache the profile picture after user creation to avoid rate limiting
-      # Store original URL before caching so we can fallback if caching fails
-      original_google_url = buyer.profile_picture if buyer.profile_picture.present? && buyer.profile_picture.include?('googleusercontent.com')
-      
-      if original_google_url.present?
-        Rails.logger.info "🔄 Attempting to cache profile picture for buyer #{buyer.id}: #{original_google_url}"
-        cache_service = ProfilePictureCacheService.new
-        cached_url = cache_service.cache_google_profile_picture(original_google_url, buyer.id)
-        
-        if cached_url.present?
-          # Verify the file actually exists before updating
-          filename = cached_url.gsub('/cached_profile_pictures/', '')
-          file_path = Rails.root.join('public', 'cached_profile_pictures', filename)
-          
-          if File.exist?(file_path)
-            buyer.update_column(:profile_picture, cached_url)
-            Rails.logger.info "✅ Profile picture cached and updated: #{cached_url}"
-          else
-            Rails.logger.warn "⚠️ Cached URL returned but file doesn't exist, keeping original Google URL"
-            # Keep the original Google URL if file doesn't exist
-          end
-        else
-          Rails.logger.warn "⚠️ Failed to cache profile picture for buyer #{buyer.id}, keeping original Google URL"
-          # Keep the original Google URL if caching fails
-        end
-      else
-        Rails.logger.info "ℹ️ No Google profile picture to cache for buyer #{buyer.id}: #{buyer.profile_picture}"
-      end
-      
+
+      # Profile picture already stored in DB as URL (no file cache)
       # Generate JWT token for new user
       token = generate_jwt_token(buyer)
       
@@ -1961,17 +1905,7 @@ class GoogleOauthService
       
       Rails.logger.info "Updating existing user with attributes: #{update_attributes.keys.join(', ')}"
       user.update!(update_attributes)
-      
-      # Cache the profile picture after update to avoid rate limiting
-      if user.profile_picture.present? && user.profile_picture.include?('googleusercontent.com')
-        cache_service = ProfilePictureCacheService.new
-        cached_url = cache_service.cache_google_profile_picture(user.profile_picture, user.id)
-        
-        if cached_url.present?
-          user.update_column(:profile_picture, cached_url)
-          Rails.logger.info "✅ Profile picture cached and updated for existing user: #{cached_url}"
-        end
-      end
+      # Profile picture stored in DB as URL (no file cache)
     end
   end
 
@@ -2343,42 +2277,22 @@ class GoogleOauthService
 
   private
 
-  # Fix Google profile picture URL and cache it to avoid rate limiting
-  def fix_google_profile_picture_url(original_url, user_id = nil)
+  # Normalize Google profile picture URL (store in DB directly, no file cache)
+  def fix_google_profile_picture_url(original_url, _user_id = nil)
     return nil if original_url.blank?
-    
-    Rails.logger.info "🔧 Original profile picture URL: #{original_url}"
-    
-    # If we have a user_id, try to cache the image to avoid rate limiting
-    if user_id.present?
-      cache_service = ProfilePictureCacheService.new
-      cached_url = cache_service.get_or_cache_profile_picture(original_url, user_id)
-      
-      if cached_url.present?
-        Rails.logger.info "✅ Using cached profile picture: #{cached_url}"
-        return cached_url
-      end
-    end
-    
-    # Fallback to fixing the original URL if caching fails
+
     fixed_url = original_url.dup
-    
-    # Remove size parameters that might cause access issues
-    fixed_url = fixed_url.gsub(/=s\d+/, '=s400') # Set to a reasonable size (400px)
-    fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s400') # Remove width/height restrictions
-    fixed_url = fixed_url.gsub(/=c\d+/, '=s400') # Remove crop restrictions
-    
-    # Ensure the URL is publicly accessible
-    if fixed_url.include?('googleusercontent.com')
-      # For Google profile pictures, ensure we have the right format
-      fixed_url = fixed_url.gsub(/=s\d+/, '=s400') if fixed_url.include?('=s')
-    end
-    
-    Rails.logger.info "🔧 Fixed profile picture URL: #{fixed_url}"
+
+    # Normalize size parameters for Google profile pictures
+    fixed_url = fixed_url.gsub(/=s\d+/, '=s400')
+    fixed_url = fixed_url.gsub(/=w\d+-h\d+/, '=s400')
+    fixed_url = fixed_url.gsub(/=c\d+/, '=s400')
+    fixed_url = fixed_url.gsub(/=s\d+/, '=s400') if fixed_url.include?('googleusercontent.com') && fixed_url.include?('=s')
+
     fixed_url
   rescue => e
     Rails.logger.error "❌ Error fixing profile picture URL: #{e.message}"
-    original_url # Return original URL if fixing fails
+    original_url
   end
 
   # All new sellers get premium tier for 6 months
