@@ -121,6 +121,8 @@ class Admin::SellersController < ApplicationController
   def create
     @seller = Seller.new(seller_params)
     if @seller.save
+      # Ensure every seller has a tier (admin-created sellers get Free by default)
+      assign_default_tier_for_seller(@seller) if @seller.seller_tier.blank?
       render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :blocked]), status: :created
     else
       render json: @seller.errors, status: :unprocessable_entity
@@ -349,6 +351,13 @@ class Admin::SellersController < ApplicationController
   end
 
   private
+
+  def assign_default_tier_for_seller(seller)
+    free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
+    return unless free_tier
+    SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
+    Rails.logger.info "✅ Default (Free) tier assigned to admin-created seller #{seller.id}"
+  end
 
   def set_seller
     @seller = Seller.find(params[:id])
