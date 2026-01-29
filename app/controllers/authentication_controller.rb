@@ -60,7 +60,6 @@ class AuthenticationController < ApplicationController
       end
       
       # Only include profile picture for users that have this field (Buyer, Seller)
-      # Return cached profile picture URLs - frontend will convert them to absolute URLs
       if @user.respond_to?(:profile_picture) && @user.profile_picture.present?
         user_response[:profile_picture] = @user.profile_picture
       end
@@ -292,7 +291,6 @@ class AuthenticationController < ApplicationController
     end
     
     # Only include profile picture for users that have this field (Buyer, Seller)
-    # Return cached profile picture URLs - frontend will convert them to absolute URLs
     if user.respond_to?(:profile_picture) && user.profile_picture.present?
       user_response[:profile_picture] = user.profile_picture
     end
@@ -432,24 +430,26 @@ class AuthenticationController < ApplicationController
   end
 
   # GET endpoint for initiating OAuth flow with redirect (generates signed state)
+  # Optional: callback_scheme (e.g. "carbon") for mobile app deep link redirect
   def google_oauth_initiate
     # Get role from params (default to buyer)
     role = params[:role] || 'buyer'
-    
+    callback_scheme = params[:callback_scheme]&.strip.presence
+
     # Check if Google OAuth is configured
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
     client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET']&.strip
     redirect_uri = ENV['GOOGLE_REDIRECT_URI']&.strip
-    
+
     unless redirect_uri.present? && client_id.present? && client_secret.present?
       frontend_url = ENV['FRONTEND_URL'] || ENV['REACT_APP_FRONTEND_URL'] || (Rails.env.development? ? 'http://localhost:3000' : 'https://carboncube-ke.com')
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Google OAuth is not configured')}", allow_other_host: true, status: 302
       return
     end
-    
+
     # Ensure redirect_uri has no trailing slash
     redirect_uri = redirect_uri.chomp('/') if redirect_uri.end_with?('/')
-    
+
     # Generate signed state parameter for CSRF protection
     nonce = SecureRandom.hex(16)
     timestamp = Time.current.to_i
@@ -458,6 +458,7 @@ class AuthenticationController < ApplicationController
       role: role,
       timestamp: timestamp
     }
+    state_data[:callback_scheme] = callback_scheme if callback_scheme.present?
     
     # Sign the state data using Rails message verifier
     verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
@@ -655,6 +656,7 @@ class AuthenticationController < ApplicationController
       end
       
       role = (state_data[:role] || state_data['role'] || 'buyer').to_s
+      callback_scheme = (state_data[:callback_scheme] || state_data['callback_scheme']).to_s.strip.presence
     rescue ActiveSupport::MessageVerifier::InvalidSignature => e
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
       return
@@ -662,11 +664,14 @@ class AuthenticationController < ApplicationController
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
       return
     end
-    
+
+    # Base URL for OAuth redirect (web frontend or app deep link for mobile)
+    oauth_redirect_base = callback_scheme.present? ? "#{callback_scheme}://auth/google/callback" : "#{frontend_url}/auth/google/callback"
+
     # Exchange authorization code for tokens
     code = params[:code]
     unless code.present?
-      redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Authorization code missing')}", allow_other_host: true, status: 302
+      redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Authorization code missing')}", allow_other_host: true, status: 302
       return
     end
     
@@ -675,7 +680,7 @@ class AuthenticationController < ApplicationController
       token_response = exchange_code_for_tokens(code)
 
       unless token_response && token_response['access_token']
-        redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Failed to authenticate with Google')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Failed to authenticate with Google')}", allow_other_host: true, status: 302
         return
       end
       
@@ -687,7 +692,7 @@ class AuthenticationController < ApplicationController
       user_info = get_google_user_info(access_token)
 
       unless user_info && user_info['email']
-        redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Failed to retrieve user information')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Failed to retrieve user information')}", allow_other_host: true, status: 302
         return
       end
       
@@ -748,7 +753,7 @@ class AuthenticationController < ApplicationController
       result = linking_service.call
       
       unless result[:success] && result[:user]
-        redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
         return
       end
       
@@ -757,13 +762,13 @@ class AuthenticationController < ApplicationController
       
       # Block login if the user is soft-deleted
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
-        redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Your account has been deleted. Please contact support.')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Your account has been deleted. Please contact support.')}", allow_other_host: true, status: 302
         return
       end
-      
+
       # Block login if the user is blocked
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.blocked?
-        redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Your account has been blocked. Please contact support.')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Your account has been blocked. Please contact support.')}", allow_other_host: true, status: 302
         return
       end
       
@@ -824,16 +829,12 @@ class AuthenticationController < ApplicationController
       # Base64 encode the JSON data for URL-safe transmission
       # Base64 is part of Ruby standard library, no require needed
       encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
-      
-      # Redirect to frontend with token in query parameter (URL encoded)
-      # No cache needed - token is passed directly in redirect
-      redirect_url = "#{frontend_url}/auth/google/callback?token=#{CGI.escape(encoded_data)}"
-      
-      # Use redirect_to for proper redirect handling
+
+      redirect_url = "#{oauth_redirect_base}?token=#{CGI.escape(encoded_data)}"
       redirect_to redirect_url, allow_other_host: true, status: 302
-      
+
     rescue => e
-      redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Authentication failed: ' + e.message)}", allow_other_host: true, status: 302
+      redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Authentication failed: ' + e.message)}", allow_other_host: true, status: 302
     end
   end
   
@@ -1810,8 +1811,7 @@ class AuthenticationController < ApplicationController
     missing_fields << 'county_id' if seller.county_id.blank?
     missing_fields << 'sub_county_id' if seller.sub_county_id.blank?
     missing_fields << 'description' if seller.description.blank? || seller.description.strip.empty?
-    
-    Rails.logger.info "🔍 Missing fields for seller #{seller.id}: #{missing_fields.join(', ')}"
+
     missing_fields
   end
 
