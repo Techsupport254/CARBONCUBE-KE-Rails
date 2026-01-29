@@ -96,6 +96,13 @@ class OauthAccountLinkingService
 
   private
 
+  def assign_free_tier_for_seller(seller)
+    free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
+    return unless free_tier
+    SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
+    Rails.logger.info "✅ Free tier assigned to seller #{seller.id} (fallback)"
+  end
+
   def find_user_by_email(email)
     Buyer.find_by(email: email) ||
     Seller.find_by(email: email) ||
@@ -387,8 +394,12 @@ class OauthAccountLinkingService
       )
       Rails.logger.info "✅ Premium tier assigned to seller via OAuth: #{premium_tier.name}"
     else
-      Rails.logger.error "❌ Premium tier not found in database for OAuth seller creation"
+      Rails.logger.error "❌ Premium tier not found in database for OAuth seller creation - assigning Free tier"
+      assign_free_tier_for_seller(seller)
     end
+    # Ensure seller always has a tier (e.g. if Premium create raised)
+    seller.reload
+    assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
     
     # Send welcome WhatsApp message (non-blocking)
     begin

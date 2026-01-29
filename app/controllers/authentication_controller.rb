@@ -1279,21 +1279,29 @@ class AuthenticationController < ApplicationController
           
           # Handle seller-specific setup
           if user_type == 'seller'
-            # Check if user should get 2025 premium status
-            if should_get_2026_premium?
-              create_2026_premium_tier(user)
-            else
-              # Create default seller tier for non-2025 users
-              default_tier = Tier.find_by(name: 'Free') || Tier.first
-              if default_tier
+            # OAuth signups (Continue with Google, etc.) always get Premium for 6 months (same as GoogleOauthService and OauthAccountLinkingService)
+            if form_data[:provider].present?
+              expiry_date = 6.months.from_now
+              premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
+              if premium_tier
                 user.seller_tier = SellerTier.create!(
                   seller: user,
-                  tier: default_tier,
-                  duration_months: 0 # Free tier has no expiration
+                  tier: premium_tier,
+                  duration_months: 6,
+                  expires_at: expiry_date
                 )
-                Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+                Rails.logger.info "✅ Premium tier assigned to OAuth seller (complete_registration): #{user.email}, expires #{expiry_date}"
+              else
+                Rails.logger.error "❌ Premium tier not found for OAuth seller"
+                assign_free_tier(user)
               end
+            elsif should_get_2026_premium?
+              create_2026_premium_tier(user)
+            else
+              assign_free_tier(user)
             end
+            # Ensure seller always has a tier (create_2026_premium_tier can return without creating if tier missing/error)
+            assign_free_tier(user) if user.seller_tier.blank?
           end
         else
           render json: {
@@ -1372,10 +1380,21 @@ class AuthenticationController < ApplicationController
         # Update the user
         if user.update(user_attributes)
           
-          # Handle seller-specific setup for 2025 premium
-          if user_type == 'seller' && should_get_2026_premium?
-            # Check if seller already has a tier, if not create premium tier
-            unless user.seller_tier.present?
+          # Handle seller-specific setup: OAuth sellers get Premium if missing tier; else 2026 promo
+          if user_type == 'seller' && user.seller_tier.blank?
+            if form_data[:provider].present?
+              expiry_date = 6.months.from_now
+              premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
+              if premium_tier
+                user.seller_tier = SellerTier.create!(
+                  seller: user,
+                  tier: premium_tier,
+                  duration_months: 6,
+                  expires_at: expiry_date
+                )
+                Rails.logger.info "✅ Premium tier assigned to OAuth seller (existing user, complete_registration): #{user.email}"
+              end
+            elsif should_get_2026_premium?
               create_2026_premium_tier(user)
             end
           end
@@ -1630,6 +1649,17 @@ class AuthenticationController < ApplicationController
     Rails.logger.error e.backtrace.join("\n")
   end
 
+  def assign_free_tier(seller)
+    default_tier = Tier.find_by(name: 'Free') || Tier.first
+    if default_tier
+      seller.seller_tier = SellerTier.create!(
+        seller: seller,
+        tier: default_tier,
+        duration_months: 0 # Free tier has no expiration
+      )
+      Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
+    end
+  end
 
   def find_user_by_email(email)
     # Only search by email

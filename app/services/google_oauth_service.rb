@@ -326,6 +326,13 @@ class GoogleOauthService
 
   private
 
+  def assign_free_tier_for_seller(seller)
+    free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
+    return unless free_tier
+    SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
+    Rails.logger.info "✅ Free tier assigned to seller #{seller.id} (fallback)"
+  end
+
   # Determine user type from OAuth context
   def determine_user_type_from_context
     # Use the role parameter passed during initialization
@@ -517,8 +524,12 @@ class GoogleOauthService
         )
         Rails.logger.info "✅ Premium tier assigned to seller via Google OAuth: #{premium_tier.name}"
       else
-        Rails.logger.error "❌ Premium tier not found in database for Google OAuth seller creation"
+        Rails.logger.error "❌ Premium tier not found in database for Google OAuth seller creation - assigning Free tier"
+        assign_free_tier_for_seller(seller)
       end
+      # Ensure seller always has a tier (e.g. if Premium create raised)
+      seller.reload
+      assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
       
       # Cache the profile picture after user creation to avoid rate limiting
       # Store original URL before caching so we can fallback if caching fails
