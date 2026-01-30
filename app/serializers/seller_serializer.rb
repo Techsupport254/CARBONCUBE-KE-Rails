@@ -13,7 +13,7 @@ class SellerSerializer < ActiveModel::Serializer
   end
 
   def carbon_code
-    return nil unless object.carbon_code_id?
+    return nil unless object.respond_to?(:carbon_code_id) && object.carbon_code_id.present?
     cc = object.carbon_code
     return nil unless cc
     { id: cc.id, code: cc.code, label: cc.label }
