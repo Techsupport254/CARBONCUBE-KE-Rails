@@ -71,7 +71,7 @@ class Admin::SellersController < ApplicationController
     @sellers = sellers_query.limit(per_page).offset(offset)
     
     # Cutoff for onboarding classification (sellers before this had no Carbon code option)
-    carbon_code_cutoff = Time.zone.parse('2026-01-30').beginning_of_day
+    carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
 
     # Prepare sellers data with last_active_at, carbon_code, and onboarding_type
     @sellers_data = @sellers.map do |seller|
