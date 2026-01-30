@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_29_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_30_160002) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -22,6 +22,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_120000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
+  enable_extension "pg_trgm"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "uuid-ossp"
@@ -180,6 +181,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_120000) do
     t.index ["sector_id"], name: "index_buyers_on_sector_id"
     t.index ["sub_county_id"], name: "index_buyers_on_sub_county_id"
     t.index ["username"], name: "index_buyers_on_username"
+  end
+
+  create_table "carbon_codes", force: :cascade do |t|
+    t.string "code", null: false
+    t.string "label"
+    t.datetime "expires_at"
+    t.integer "max_uses"
+    t.integer "times_used", default: 0, null: false
+    t.string "associable_type", null: false
+    t.uuid "associable_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["associable_type", "associable_id"], name: "index_carbon_codes_on_associable_type_and_associable_id"
+    t.index ["code"], name: "index_carbon_codes_on_code", unique: true
   end
 
   create_table "cart_items", force: :cascade do |t|
@@ -802,12 +817,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_120000) do
     t.boolean "flagged", default: false, null: false
     t.string "secondary_phone_number", limit: 10
     t.boolean "phone_provided_by_oauth", default: false
+    t.bigint "carbon_code_id"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
     t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
     t.index ["blocked"], name: "index_sellers_on_blocked"
     t.index ["business_registration_number"], name: "index_sellers_on_business_registration_number", unique: true, where: "((business_registration_number IS NOT NULL) AND ((business_registration_number)::text <> ''::text))"
+    t.index ["carbon_code_id"], name: "index_sellers_on_carbon_code_id"
     t.index ["county_id"], name: "index_sellers_on_county_id"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true
@@ -973,6 +990,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_29_120000) do
   add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "tiers"
   add_foreign_key "sellers", "age_groups"
+  add_foreign_key "sellers", "carbon_codes"
   add_foreign_key "sellers", "counties"
   add_foreign_key "sellers", "document_types"
   add_foreign_key "sellers", "sub_counties"

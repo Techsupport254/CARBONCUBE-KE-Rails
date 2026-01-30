@@ -70,9 +70,20 @@ class Admin::SellersController < ApplicationController
     
     @sellers = sellers_query.limit(per_page).offset(offset)
     
-    # Prepare sellers data with last_active_at
+    # Cutoff for onboarding classification (sellers before this had no Carbon code option)
+    carbon_code_cutoff = Time.zone.parse('2026-01-30').beginning_of_day
+
+    # Prepare sellers data with last_active_at, carbon_code, and onboarding_type
     @sellers_data = @sellers.map do |seller|
-      seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider])
+      row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
+      row['onboarding_type'] = if seller.carbon_code_id.present?
+        'added_by_sales'
+      elsif seller.created_at && seller.created_at >= carbon_code_cutoff
+        'self_onboarded'
+      else
+        'legacy'
+      end
+      row
     end
     
     # Calculate pagination metadata
@@ -103,7 +114,7 @@ class Admin::SellersController < ApplicationController
         :enterprise_name, :location, :blocked, :profile_picture, :zipcode, 
         :city, :gender, :business_registration_number, :document_url,
         :document_verified, :document_expiry_date, :created_at, :updated_at,
-        :last_active_at, :deleted, :provider, :uid, :ads_count
+        :last_active_at, :deleted, :provider, :uid, :ads_count, :carbon_code_id
       ],
       methods: [:category_names],
       include: {
@@ -111,7 +122,8 @@ class Admin::SellersController < ApplicationController
         sub_county: { only: [:id, :name] },
         age_group: { only: [:id, :name] },
         document_type: { only: [:id, :name] },
-        tier: { only: [:id, :name] }
+        tier: { only: [:id, :name] },
+        carbon_code: { only: [:id, :code, :label] }
       }
     )
     analytics_data = fetch_analytics(@seller)

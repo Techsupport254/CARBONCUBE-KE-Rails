@@ -137,9 +137,19 @@ class Seller::SellersController < ApplicationController
       Rails.logger.info "🔧 Auto-generated username: #{unique_username}"
     end
 
-    # Rails.logger.info "📝 Seller Params: #{seller_params.to_h.except(:password, :password_confirmation).inspect}"
-    # Rails.logger.info "📂 Document URL: #{@seller.document_url}"
-    # Rails.logger.info "🖼️ Profile Picture URL: #{@seller.profile_picture}"
+    # Carbon code (optional): validate and assign if provided
+    carbon_code = nil
+    if params[:carbon_code].present?
+      carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", params[:carbon_code].to_s.strip.upcase)
+      if carbon_code.nil?
+        return render json: { errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
+      end
+      unless carbon_code.valid_for_use?
+        msg = carbon_code.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
+        return render json: { errors: { carbon_code: [msg] } }, status: :unprocessable_entity
+      end
+      @seller.carbon_code_id = carbon_code.id
+    end
 
     # Wrap seller creation and tier assignment in a transaction
     # If any step fails, rollback everything to ensure data consistency
@@ -164,11 +174,19 @@ class Seller::SellersController < ApplicationController
         raise ActiveRecord::Rollback
       end
 
+      # Step 3: Increment Carbon code usage if one was used
+      if carbon_code.present?
+        carbon_code.increment!(:times_used)
+      end
+
       # If we reach here, all steps succeeded
       success = true
     end
 
     if success
+      # Mark OTP as verified so profile shows "Verified" when user completed signup with OTP
+      otp_record&.update!(verified: true)
+
       # Send welcome email (outside transaction to avoid blocking)
       begin
         WelcomeMailer.welcome_email(@seller).deliver_now
@@ -180,13 +198,8 @@ class Seller::SellersController < ApplicationController
         # Don't fail the registration if email fails
       end
       
-      # Send welcome WhatsApp message (non-blocking)
-      begin
-        WhatsAppNotificationService.send_welcome_message(@seller)
-      rescue => e
-        Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-        # Don't fail registration if WhatsApp message fails
-      end
+      # Send welcome WhatsApp in background — never block or fail account creation
+      WhatsAppNotificationService.send_welcome_message_async(@seller)
       
       # New sellers get remember_me by default for better user experience
       token = JsonWebToken.encode(seller_id: @seller.id, email: @seller.email, role: 'Seller', remember_me: true)
@@ -194,7 +207,12 @@ class Seller::SellersController < ApplicationController
       render json: { token: token, seller: @seller }, status: :created
     else
       Rails.logger.error "Seller creation transaction failed: #{@seller.errors.full_messages.inspect}"
-      render json: @seller.errors, status: :unprocessable_entity
+      # Return field-keyed errors so frontend can show them under the right inputs
+      field_errors = {}
+      @seller.errors.attribute_names.each do |attr|
+        field_errors[attr] = @seller.errors.full_messages_for(attr)
+      end
+      render json: { errors: field_errors }, status: :unprocessable_entity
     end
   end
 

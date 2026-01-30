@@ -447,6 +447,20 @@ class Buyer::AdsController < ApplicationController
       }
     }
 
+    # Catalog-driven expansion for short queries (e.g. "a54", "s24"): infer brand/category from
+    # actual ad titles and brands in the catalog instead of hardcoded lists. See CatalogSearchExpansionService.
+    if intent[:brand].nil? && CatalogSearchExpansionService.short_product_like?(normalized_query)
+      expansion = CatalogSearchExpansionService.expand(normalized_query)
+      if expansion.present? && expansion[:brand].present?
+        intent[:brand] = expansion[:brand]
+        intent[:model] = expansion[:model]
+        intent[:category_hint] = expansion[:category_hint]
+        intent[:query_type] = :product_specific
+        intent[:is_product_search] = true
+        intent[:priority_terms] = [expansion[:model], expansion[:brand]].compact
+      end
+    end
+
     # Define model patterns (brand + model number)
     model_patterns = [
       /(\w+)\s*s(\d+)/i,  # Samsung S24, iPhone 15, etc.
@@ -457,7 +471,7 @@ class Buyer::AdsController < ApplicationController
       /(\w+)\s*m(\d+)/i   # Samsung M54
     ]
 
-    # Check for brand + model patterns
+    # Check for brand + model patterns (only if not already set by catalog expansion)
     model_patterns.each do |pattern|
       match = normalized_query.match(pattern)
       if match
@@ -1381,6 +1395,15 @@ class Buyer::AdsController < ApplicationController
                       nil
                     end
 
+    # When query is a known phone model (e.g. "a54"), prefer phone category even for exact title matches
+    if exact_title_matches.present? && search_intent && search_intent[:category_hint] == 'phones'
+      phone_filtered = exact_title_matches.where(
+        "LOWER(categories.name) LIKE LOWER(?) OR LOWER(subcategories.name) LIKE LOWER(?)",
+        "%phone%", "%phone%"
+      )
+      exact_title_matches = phone_filtered if phone_filtered.exists?
+    end
+
     ads = if exact_title_matches.present?
             # If we have exact title matches, use them as the primary
             # result set and skip the more complex AI search logic.
@@ -1397,20 +1420,28 @@ class Buyer::AdsController < ApplicationController
               # Fallback: if smart search returns no ads, use a simpler,
               # more forgiving text search so obvious matches are not lost.
               if scoped_ads.none?
-                fallback_scope = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-                                   .where(sellers: { blocked: false, deleted: false, flagged: false })
-                                   .where(flagged: false)
+                fallback_base = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
+                                  .where(sellers: { blocked: false, deleted: false, flagged: false })
+                                  .where(flagged: false)
 
                 words = query.downcase.split(/\s+/).reject(&:blank?)
+                fallback_scope = fallback_base
                 words.each do |word|
                   next if word.length < 2
                   fallback_scope = fallback_scope.where(
-                    "ads.title ILIKE :w OR ads.description ILIKE :w",
+                    "ads.title ILIKE :w OR ads.description ILIKE :w OR ads.brand ILIKE :w",
                     w: "%#{word}%"
                   )
                 end
 
-                scoped_ads = fallback_scope if fallback_scope.exists?
+                if fallback_scope.exists?
+                  scoped_ads = fallback_scope
+                elsif CatalogSearchExpansionService.short_product_like?(query.strip) &&
+                      CatalogSearchExpansionService.expand(query.strip).present?
+                  # Only use PgSearch fuzzy fallback when catalog had at least some matches (avoids "a54" → Air Filter)
+                  pg_ids = fallback_base.merge(Ad.search_by_title_and_description(query)).limit(200).pluck(:id)
+                  scoped_ads = fallback_base.where(id: pg_ids) if pg_ids.any?
+                end
               end
 
               # Final safety net: if we STILL have no ads but we detected a brand,

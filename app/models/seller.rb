@@ -29,6 +29,7 @@ class Seller < ApplicationRecord
   belongs_to :sub_county, optional: true
   belongs_to :age_group, optional: true
   belongs_to :document_type, optional: true
+  belongs_to :carbon_code, optional: true
 
   validates :county_id, presence: true, unless: :oauth_user?
   validates :sub_county_id, presence: true, unless: :oauth_user?
@@ -63,8 +64,8 @@ class Seller < ApplicationRecord
   # Auto-delete ads when seller is deleted
   before_destroy :mark_ads_as_deleted
   
-  # Auto-verify documents for 2025 sellers
-  before_save :auto_verify_document_for_2025_sellers
+  # Auto-verify documents for 2025 and 2026 sellers (same cohort as premium-for-first-half promo)
+  before_save :auto_verify_document_for_2025_and_2026_sellers
 
   def calculate_mean_rating
     # Use cached reviews if available, otherwise calculate
@@ -209,25 +210,15 @@ class Seller < ApplicationRecord
     if password.match?(/(0123456789|abcdefghijklmnopqrstuvwxyz|qwertyuiopasdfghjklzxcvbnm)/i)
       errors.add(:password, "contains sequential characters which are easy to guess.")
     end
-
-    # Check if password contains user's email or username
-    if email.present? && password.downcase.include?(email.split('@').first.downcase)
-      errors.add(:password, "should not contain your email address.")
-    end
-
-    if username.present? && password.downcase.include?(username.downcase)
-      errors.add(:password, "should not contain your username.")
-    end
   end
 
-  def auto_verify_document_for_2025_sellers
-    # Automatically verify documents for sellers registered in 2025
-    # Sales team confirms all 2025 registrations physically, so all should be verified
-    # Check if current year is 2025 (for new records) or if seller was created in 2025 (for updates)
+  def auto_verify_document_for_2025_and_2026_sellers
+    # Automatically verify documents for sellers registered in 2025 or 2026 (same logic as premium promo for first half of 2026)
+    # Sales team confirms these registrations physically, so all should be verified
     seller_year = new_record? ? Time.current.year : (created_at&.year || Time.current.year)
-    if seller_year == 2025 && !document_verified?
+    if [2025, 2026].include?(seller_year) && !document_verified?
       self.document_verified = true
-      Rails.logger.info "✅ Auto-verifying document for 2025 seller #{id || 'new'} (sales team confirmed physically)"
+      Rails.logger.info "✅ Auto-verifying document for #{seller_year} seller #{id || 'new'} (premium promo cohort)"
     end
   end
 

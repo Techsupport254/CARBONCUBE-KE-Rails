@@ -1,6 +1,8 @@
 class SourceTrackingController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:track]
-  
+  # Prevent Rails from wrapping JSON body under :source_tracking so utm_content/utm_term etc. are at params root
+  wrap_parameters false
+
   def track
     # Check if this is an internal user that should be excluded
     if internal_user_excluded?

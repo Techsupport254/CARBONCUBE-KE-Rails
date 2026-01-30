@@ -372,6 +372,8 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :carbon_codes, only: [:index, :show, :create, :update, :destroy]
+
     resources :riders do 
       member do
         put 'block'

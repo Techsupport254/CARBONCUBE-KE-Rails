@@ -29,7 +29,7 @@ class MessageNotificationMailer < ApplicationMailer
   private
 
   def get_conversation_url(recipient)
-    case recipient.class.name
+    base = case recipient.class.name
     when 'Buyer'
       "https://carboncube-ke.com/buyer/conversations/#{@conversation.id}"
     when 'Seller'
@@ -39,6 +39,13 @@ class MessageNotificationMailer < ApplicationMailer
     else
       "https://carboncube-ke.com/conversations/#{@conversation.id}"
     end
+    UtmUrlHelper.append_utm(
+      base,
+      source: 'email',
+      medium: 'notification',
+      campaign: 'message',
+      content: @conversation.id
+    )
   end
 
   def get_recipient_name(recipient)

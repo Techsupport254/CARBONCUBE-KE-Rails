@@ -16,11 +16,11 @@ class SellersController < ApplicationController
 
       # Permit the allowed fields
       update_params = seller_data.permit(
-        :fullname, :name, :phone_number, :phone, :secondary_phone_number, :email, 
-        :enterprise_name, :location, :business_registration_number, 
-        :gender, :city, :zipcode, :username, :description, 
-        :county_id, :sub_county_id, :age_group_id, 
-        :document_type_id, :document_expiry_date
+        :fullname, :name, :phone_number, :phone, :secondary_phone_number, :email,
+        :enterprise_name, :location, :business_registration_number,
+        :gender, :city, :zipcode, :username, :description,
+        :county_id, :sub_county_id, :age_group_id,
+        :document_type_id, :document_expiry_date, :carbon_code
       ).reject { |k, v| v.blank? }
 
       # Map frontend field names to backend field names
@@ -31,6 +31,23 @@ class SellersController < ApplicationController
       update_params.delete(:name)
       update_params.delete(:phone)
 
+      # Resolve carbon_code string to carbon_code_id (for OAuth completion modal)
+      carbon_code_param = update_params.delete(:carbon_code)
+      carbon_code = nil
+      if carbon_code_param.present?
+        carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", carbon_code_param.to_s.strip.upcase)
+        if carbon_code.nil?
+          render json: { errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
+          return
+        end
+        unless carbon_code.valid_for_use?
+          msg = carbon_code.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
+          render json: { errors: { carbon_code: [msg] } }, status: :unprocessable_entity
+          return
+        end
+        update_params[:carbon_code_id] = carbon_code.id
+      end
+
       # Remove any unexpected fields
       unexpected_fields = ['created_at', 'updated_at', 'id', 'birthdate']
       unexpected_fields.each { |field| update_params.delete(field) }
@@ -39,6 +56,8 @@ class SellersController < ApplicationController
       update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
 
       if seller.update(update_params)
+        # Increment carbon code usage when applied via completion modal
+        carbon_code&.increment!(:times_used)
         seller_data = SellerSerializer.new(seller.reload).as_json
         # Check if email is verified
         email_verified = EmailOtp.exists?(email: seller.email, verified: true)
