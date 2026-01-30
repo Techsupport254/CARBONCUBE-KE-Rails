@@ -41,6 +41,20 @@ class Sales::AdSearchesController < ApplicationController
         }
       end
 
+    # Enrich with user profile (avatar, display name) for buyers and sellers
+    user_profiles = enrich_user_profiles(formatted_searches)
+    formatted_searches.each do |search|
+      uid_raw = search[:user_id].presence || search[:buyer_id].presence || search[:seller_id].presence
+      uid = uid_raw.to_s.strip.downcase.presence
+      role = search[:role].to_s.downcase
+      profile = uid ? user_profiles[[uid, role]] : nil
+      search[:user_profile] = if profile
+        { avatar: profile[:avatar], display_name: profile[:display_name] }
+      else
+        { avatar: nil, display_name: nil }
+      end
+    end
+
     # Recalculate pagination metadata after filtering
     filtered_total_count = formatted_searches.size
     filtered_total_pages = (filtered_total_count.to_f / per_page).ceil
@@ -89,6 +103,12 @@ class Sales::AdSearchesController < ApplicationController
     device_stats = calculate_device_stats
     user_type_stats = calculate_user_type_stats
 
+    # Known shop/seller names from DB for NLP intent (e.g. "pantech kenya", "new corner", "top zone")
+    shop_names = Seller.where(deleted: false, blocked: false)
+                       .where.not(enterprise_name: [nil, ''])
+                       .pluck(:enterprise_name)
+                       .uniq
+
     render json: {
       analytics: analytics_data,
       popular_searches: popular_searches,
@@ -96,6 +116,7 @@ class Sales::AdSearchesController < ApplicationController
       db_analytics: db_analytics,
       device_stats: device_stats,
       user_type_stats: user_type_stats,
+      shop_names: shop_names,
       data_retention: {
         individual_searches: 'Permanent (no expiration)',
         analytics_data: 'Permanent (no expiration)'
@@ -152,6 +173,39 @@ class Sales::AdSearchesController < ApplicationController
   end
 
   private
+
+  # Returns a hash (normalized_user_id, role) => { avatar:, display_name: } for buyers and sellers
+  def enrich_user_profiles(searches)
+    # Use user_id or buyer_id/seller_id so we always have the correct UUID for lookup
+    buyer_ids = searches.select { |s| s[:role].to_s.downcase == 'buyer' }.filter_map { |s| (s[:user_id].presence || s[:buyer_id].presence).to_s.strip.presence }.uniq
+    seller_ids = searches.select { |s| s[:role].to_s.downcase == 'seller' }.filter_map { |s| (s[:user_id].presence || s[:seller_id].presence).to_s.strip.presence }.uniq
+
+    # Normalize UUIDs for key lookup (PostgreSQL returns lowercase)
+    normalize = ->(id) { id.to_s.strip.downcase.presence }
+
+    profiles = {}
+    if buyer_ids.any?
+      # Include deleted buyers so we still show name/avatar for historical search records
+      Buyer.where(id: buyer_ids).pluck(:id, :fullname, :profile_picture).each do |id, fullname, profile_picture|
+        key = [normalize.call(id), 'buyer']
+        profiles[key] = {
+          avatar: profile_picture.presence,
+          display_name: fullname.presence
+        }
+      end
+    end
+    if seller_ids.any?
+      # Include deleted sellers so we still show name/avatar for historical search records
+      Seller.where(id: seller_ids).pluck(:id, :fullname, :enterprise_name, :profile_picture).each do |id, fullname, enterprise_name, profile_picture|
+        key = [normalize.call(id), 'seller']
+        profiles[key] = {
+          avatar: profile_picture.presence,
+          display_name: (enterprise_name.presence || fullname.presence)
+        }
+      end
+    end
+    profiles
+  end
 
   def authenticate_sales_user
     @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result

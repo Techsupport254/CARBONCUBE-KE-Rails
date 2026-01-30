@@ -97,9 +97,14 @@ class SearchRedisService
 
     def analytics
       RedisConnection.with do |redis|
+        today_key = "searches:daily:#{Date.current.iso8601}"
+        weekly_keys = (0..6).map { |i| "searches:daily:#{(Date.current - i.days).iso8601}" }
+        total_searches_weekly = weekly_keys.sum { |key| redis.scard(key) }
+
         {
-          total_searches_today: redis.scard("searches:daily:#{Date.current.iso8601}"),
-          unique_search_terms_today: redis.scard("searches:daily:#{Date.current.iso8601}"),
+          total_searches_today: redis.scard(today_key),
+          unique_search_terms_today: redis.scard(today_key),
+          total_searches_weekly: total_searches_weekly,
           popular_searches: redis.zrevrange("searches:popular", 0, 9, with_scores: true),
           total_search_records: redis.keys("searches:search:*").size
         }

@@ -2212,97 +2212,110 @@ class Seller::AnalyticsController < ApplicationController
     }
   end
 
-  # Get search insights for sellers to understand market demand
+  # Get search insights for sellers: real-time full-phrase data from Redis (what people actually search)
   def get_search_insights
-    # Get the latest search analytics data
-    latest_analytics = SearchAnalytic.latest
-
-    if latest_analytics.nil?
-      return {
-        total_searches_today: 0,
-        unique_search_terms_today: 0,
-        total_search_records: 0,
-        popular_searches_all_time: [],
-        popular_searches_daily: [],
-        popular_searches_weekly: [],
-        popular_searches_monthly: [],
-        search_trends: [],
-        category_insights: []
-      }
-    end
-
-    # Get trending searches over the past 7 days
-    trending_searches = SearchAnalytic.trending_searches(7)
-
-    # Get search analytics from Redis for real-time data
     redis_analytics = SearchRedisService.analytics
 
-    # Get seller's categories to provide relevant insights
+    # Popular searches from Redis (full phrases with counts), same source as sales Search Analytics
+    popular_all = SearchRedisService.popular_searches(20, :all)
+    popular_daily = SearchRedisService.popular_searches(20, :daily)
+    popular_weekly = SearchRedisService.popular_searches(20, :weekly)
+    popular_monthly = SearchRedisService.popular_searches(20, :monthly)
+
+    # Normalize to [term, count] (Redis scores may be float)
+    normalize = ->(arr) { arr.map { |term, score| [term.to_s, score.to_i] } }
+
     seller_categories = current_seller.ads.active.distinct.pluck(:category_id)
     category_names = Category.where(id: seller_categories).pluck(:name)
+    category_insights = generate_category_search_insights_from_redis(seller_categories, popular_all, popular_weekly)
 
-    # Generate category-specific search insights
-    category_insights = generate_category_search_insights(seller_categories)
+    # Popular searches filtered to only terms related to seller's categories (same keyword logic as category_insights)
+    popular_all_related = filter_popular_searches_by_seller_categories(seller_categories, popular_all)
+    popular_weekly_related = filter_popular_searches_by_seller_categories(seller_categories, popular_weekly)
+    popular_daily_related = filter_popular_searches_by_seller_categories(seller_categories, popular_daily)
 
-    # Search opportunities feature removed
+    latest_analytics = SearchAnalytic.latest
 
     {
-      # Basic search metrics
       total_searches_today: redis_analytics[:total_searches_today],
       unique_search_terms_today: redis_analytics[:unique_search_terms_today],
       total_search_records: redis_analytics[:total_search_records],
+      total_searches_weekly: redis_analytics[:total_searches_weekly],
 
-      # Popular searches by timeframe
-      popular_searches_all_time: latest_analytics.popular_searches_all_time&.first(20) || [],
-      popular_searches_daily: latest_analytics.popular_searches_daily&.first(20) || [],
-      popular_searches_weekly: latest_analytics.popular_searches_weekly&.first(20) || [],
-      popular_searches_monthly: latest_analytics.popular_searches_monthly&.first(20) || [],
+      popular_searches_all_time: normalize.call(popular_all),
+      popular_searches_daily: normalize.call(popular_daily),
+      popular_searches_weekly: normalize.call(popular_weekly),
+      popular_searches_monthly: normalize.call(popular_monthly),
 
-      # Trends and insights
-      search_trends: trending_searches.first(10),
+      # Seller-scoped: only searches related to seller's product categories
+      popular_searches_all_time_related: normalize.call(popular_all_related),
+      popular_searches_weekly_related: normalize.call(popular_weekly_related),
+      popular_searches_daily_related: normalize.call(popular_daily_related),
+
+      search_trends: normalize.call(popular_weekly.first(10)),
       category_insights: category_insights,
 
-      # Metadata
-      last_updated: latest_analytics.updated_at.iso8601,
+      last_updated: latest_analytics&.updated_at&.iso8601 || Time.current.iso8601,
       seller_categories: category_names
     }
   end
 
-  def generate_category_search_insights(seller_category_ids)
+  # Filter Redis popular searches to only terms matching any of the seller's category keywords.
+  # Returns [term, count] array sorted by count desc, deduped by term (case-insensitive).
+  def filter_popular_searches_by_seller_categories(seller_category_ids, popular_list)
+    return [] if seller_category_ids.blank? || popular_list.blank?
+
+    category_keywords = seller_category_ids.flat_map do |category_id|
+      category = Category.find_by(id: category_id)
+      next [] unless category
+      [category.name.downcase, category.name.downcase.split].flatten.uniq
+    end.uniq
+
+    return [] if category_keywords.empty?
+
+    related = popular_list.select do |term, _|
+      term_str = term.to_s
+      next false if term_str.blank?
+      term_lower = term_str.downcase
+      category_keywords.any? { |kw| term_lower.include?(kw) }
+    end
+
+    by_term = related.group_by { |t, _| t.to_s.downcase }.transform_values { |pairs| pairs.max_by { |_, c| c } }
+    by_term.values.sort_by { |_, c| -c }
+  end
+
+  # Category insights from Redis popular searches (full phrases) filtered by seller's category keywords
+  def generate_category_search_insights_from_redis(seller_category_ids, popular_all, popular_weekly)
     return [] if seller_category_ids.empty?
 
     insights = []
-
     seller_category_ids.each do |category_id|
       category = Category.find_by(id: category_id)
       next unless category
 
-      # Get popular searches that might be related to this category
-      # This is a simplified approach - in a real implementation, you might use
-      # natural language processing or keyword matching
-      category_keywords = [
-        category.name.downcase,
-        category.name.downcase.split,
-        # Add common variations and related terms
-      ].flatten.uniq
+      category_keywords = [category.name.downcase, category.name.downcase.split].flatten.uniq
 
-      related_searches = SearchAnalytic.trending_searches(30).select do |search_term, _|
-        # Ensure search_term is a string before calling downcase
-        next false unless search_term.is_a?(String) && search_term.present?
-        term_lower = search_term.downcase
-        category_keywords.any? { |keyword| term_lower.include?(keyword) }
+      # Filter Redis popular searches (full phrases) that match this category
+      related_searches = (popular_all + popular_weekly).uniq { |t, _| t.to_s.downcase }.select do |term, _|
+        term_str = term.to_s
+        next false if term_str.blank?
+        term_lower = term_str.downcase
+        category_keywords.any? { |kw| term_lower.include?(kw) }
       end
+
+      # Dedupe by term, keep higher count
+      by_term = related_searches.group_by { |t, _| t.to_s.downcase }.transform_values { |pairs| pairs.max_by { |_, c| c } }
+      related_searches = by_term.values.sort_by { |_, c| -c }.first(10)
 
       if related_searches.any?
         insights << {
           category_name: category.name,
-          related_searches: related_searches.first(5),
+          related_searches: related_searches.first(5).map { |t, c| [t.to_s, c.to_i] },
           total_related_searches: related_searches.size,
           search_volume_trend: calculate_search_volume_trend(related_searches)
         }
       end
     end
-
     insights
   end
 
