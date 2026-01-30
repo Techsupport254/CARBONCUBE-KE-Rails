@@ -193,7 +193,14 @@ class ConversationsController < ApplicationController
     else
       ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
     end
-    conversation_url = "#{base_url}/messages?conversationId=#{conversation.id}"
+    raw_conversation_url = "#{base_url}/messages?conversationId=#{conversation.id}"
+    conversation_url = UtmUrlHelper.append_utm(
+      raw_conversation_url,
+      source: 'whatsapp',
+      medium: 'notification',
+      campaign: 'message',
+      content: conversation.id
+    )
     
     # Get last message preview
     last_message = conversation.messages

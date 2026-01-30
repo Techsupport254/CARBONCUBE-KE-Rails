@@ -146,15 +146,6 @@ class PasswordResetsController < ApplicationController
       errors << 'Password contains sequential characters which are easy to guess.'
     end
     
-    # Check if password contains user's email or username
-    if user.email.present? && password.downcase.include?(user.email.split('@').first.downcase)
-      errors << 'Password should not contain your email address.'
-    end
-    
-    if user.respond_to?(:username) && user.username.present? && password.downcase.include?(user.username.downcase)
-      errors << 'Password should not contain your username.'
-    end
-    
     errors
   end
 end

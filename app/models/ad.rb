@@ -3,7 +3,8 @@ class Ad < ApplicationRecord
 
   enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3 }
 
-  pg_search_scope :search_by_title_and_description, against: [:title, :description], using: { tsearch: { prefix: true }, trigram: {}}
+  # tsearch only: trigram (%) requires pg_trgm and can raise "operator does not exist: unknown % text"
+  pg_search_scope :search_by_title_and_description, against: [:title, :description], using: { tsearch: { prefix: true } }
 
 
   scope :active, -> { where(deleted: false) }
@@ -231,6 +232,22 @@ class Ad < ApplicationRecord
   def product_url
     slug = create_slug(title)
     "https://carboncube-ke.com/ads/#{slug}?id=#{id}"
+  end
+
+  # Ad URL with UTM params for links sent to users (WhatsApp, email, etc.).
+  # Use this when the backend generates an ad link; frontend contact flows use their own UTM via shareUtils.
+  # @param source [String] e.g. 'whatsapp', 'email'
+  # @param medium [String] e.g. 'contact', 'notification'
+  # @param campaign [String] e.g. 'ad_inquiry', 'message'
+  def product_url_with_utm(source: 'whatsapp', medium: 'contact', campaign: 'ad_inquiry')
+    UtmUrlHelper.append_utm(
+      product_url,
+      source: source,
+      medium: medium,
+      campaign: campaign,
+      content: id.to_s,
+      term: title
+    )
   end
 
   def google_condition

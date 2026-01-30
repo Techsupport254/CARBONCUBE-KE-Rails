@@ -11,6 +11,7 @@ class Seller::ProfilesController < ApplicationController
       :categories,
       :seller_documents,
       { seller_tier: :tier },
+      :carbon_code,
       :county,
       :sub_county,
       :age_group,
@@ -110,7 +111,34 @@ class Seller::ProfilesController < ApplicationController
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       update_params[:document_url] = uploaded_document_url if uploaded_document_url
       
+      # Track if phone is being added (for welcome WhatsApp when user didn't have phone from OAuth)
+      phone_number_before = @seller.phone_number
+      phone_being_added = update_params[:phone_number].present? && phone_number_before.blank?
+      # When adding phone via profile/completion modal, mark as not from OAuth
+      update_params[:phone_provided_by_oauth] = false if phone_being_added
+
+      # Resolve carbon_code string to carbon_code_id (for OAuth completion modal)
+      carbon_code_param = update_params.delete(:carbon_code)
+      carbon_code = nil
+      if carbon_code_param.present?
+        carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", carbon_code_param.to_s.strip.upcase)
+        if carbon_code.nil?
+          return render json: { errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
+        end
+        unless carbon_code.valid_for_use?
+          msg = carbon_code.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
+          return render json: { errors: { carbon_code: [msg] } }, status: :unprocessable_entity
+        end
+        update_params[:carbon_code_id] = carbon_code.id
+      end
+      
       if @seller.update(update_params)
+        carbon_code&.increment!(:times_used)
+        # Send welcome WhatsApp when phone was just added (e.g. OAuth user completing signup modal)
+        if phone_being_added && @seller.phone_number.present? && !@seller.phone_provided_by_oauth
+          Rails.logger.info "📱 Sending welcome WhatsApp after phone added via profile - seller #{@seller.email}"
+          WhatsAppNotificationService.send_welcome_message_async(@seller)
+        end
         seller_data = SellerSerializer.new(@seller).as_json
         # Check if email is verified
         # Google OAuth users are treated as automatically verified
@@ -247,7 +275,7 @@ class Seller::ProfilesController < ApplicationController
   end
 
   def seller_params
-    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date)
+    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code)
   end
 
   def authenticate_seller

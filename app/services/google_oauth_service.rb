@@ -535,13 +535,8 @@ class GoogleOauthService
       # Generate JWT token for new user
       token = generate_jwt_token(seller)
       
-      # Send welcome WhatsApp message (non-blocking)
-      begin
-        WhatsAppNotificationService.send_welcome_message(seller)
-      rescue => e
-        Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-        # Don't fail registration if WhatsApp message fails
-      end
+      # Send welcome WhatsApp in background — never block or fail account creation
+      WhatsAppNotificationService.send_welcome_message_async(seller)
       
       # Return success response with missing fields if any
       # Frontend will show modal to collect missing fields
@@ -774,13 +769,8 @@ class GoogleOauthService
       # Generate JWT token for new user
       token = generate_jwt_token(buyer)
       
-      # Send welcome WhatsApp message (non-blocking)
-      begin
-        WhatsAppNotificationService.send_welcome_message(buyer)
-      rescue => e
-        Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-        # Don't fail registration if WhatsApp message fails
-      end
+      # Send welcome WhatsApp in background — never block or fail account creation
+      WhatsAppNotificationService.send_welcome_message_async(buyer)
       
       # Return success response
       { 

@@ -85,7 +85,7 @@ function createClient() {
 			console.log(
 				"Received message:",
 				msg.from,
-				msg.body?.substring(0, 50) + "..."
+				msg.body?.substring(0, 50) + "...",
 			);
 		}
 	});
@@ -164,6 +164,28 @@ app.get("/health", async (req, res) => {
 	});
 });
 
+// Status summary (check if already connected)
+app.get("/status", async (req, res) => {
+	let sessionValid = false;
+	if (client && isReady) {
+		try {
+			const state = await client.getState();
+			sessionValid = state === "CONNECTED";
+		} catch (_) {}
+	}
+	const connected = sessionValid;
+	res.json({
+		connected,
+		message: connected
+			? "WhatsApp is already connected — no scan needed."
+			: qrCode
+				? "Scan the QR at /scan or wait for QR in terminal."
+				: "Starting up or QR not ready yet. Try GET /scan in a few seconds.",
+		isReady,
+		hasQr: !!qrCode,
+	});
+});
+
 // Get QR code endpoint (for initial setup)
 app.get("/qr", (req, res) => {
 	if (qrCode) {
@@ -173,6 +195,60 @@ app.get("/qr", (req, res) => {
 	} else {
 		res.status(503).json({ error: "QR code not available yet" });
 	}
+});
+
+// Scan page: HTML that shows a scannable QR (open in browser)
+app.get("/scan", (req, res) => {
+	const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scan WhatsApp QR</title>
+  <style>
+    body { font-family: system-ui; text-align: center; padding: 2rem; }
+    #msg { margin: 1rem 0; color: #666; }
+    #qrcode { margin: 1rem auto; }
+    img { max-width: 300px; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>Link WhatsApp</h1>
+  <p id="msg">Loading…</p>
+  <div id="qrcode"></div>
+  <script>
+    function check() {
+      fetch('/qr')
+        .then(r => r.json())
+        .then(d => {
+          if (d.qr) {
+            document.getElementById('msg').textContent = 'Scan this QR with WhatsApp: Settings → Linked devices → Link a device';
+            var el = document.getElementById('qrcode');
+            el.innerHTML = '';
+            var img = document.createElement('img');
+            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(d.qr);
+            img.alt = 'QR Code';
+            el.appendChild(img);
+          } else if (d.message && d.message.includes('already connected')) {
+            document.getElementById('msg').textContent = 'Already connected. No scan needed.';
+            document.getElementById('qrcode').innerHTML = '';
+          } else {
+            document.getElementById('msg').textContent = 'QR not ready. Retrying in 2s…';
+            document.getElementById('qrcode').innerHTML = '';
+            setTimeout(check, 2000);
+          }
+        })
+        .catch(() => {
+          document.getElementById('msg').textContent = 'Cannot reach service. Retrying in 2s…';
+          setTimeout(check, 2000);
+        });
+    }
+    check();
+  </script>
+</body>
+</html>`;
+	res.setHeader("Content-Type", "text/html");
+	res.send(html);
 });
 
 // Restart client endpoint (for session recovery)
@@ -185,7 +261,7 @@ app.post("/restart", async (req, res) => {
 			} catch (error) {
 				console.log(
 					"Error destroying client (may already be destroyed):",
-					error.message
+					error.message,
 				);
 			}
 		}
@@ -430,7 +506,10 @@ app.post("/send", async (req, res) => {
 			}
 
 			try {
-				result = await client.sendMessage(formattedNumber, media);
+				// sendSeen: false avoids "markedUnread" TypeError when WhatsApp Web UI has changed
+				result = await client.sendMessage(formattedNumber, media, {
+					sendSeen: false,
+				});
 			} catch (error) {
 				console.error("Error sending image message:", error.message);
 				if (
@@ -454,7 +533,10 @@ app.post("/send", async (req, res) => {
 				console.log("Sending text message only (no image)...");
 			}
 			try {
-				result = await client.sendMessage(formattedNumber, message);
+				// sendSeen: false avoids "markedUnread" TypeError when WhatsApp Web UI has changed
+				result = await client.sendMessage(formattedNumber, message, {
+					sendSeen: false,
+				});
 			} catch (error) {
 				console.error("Error sending text message:", error.message);
 				if (

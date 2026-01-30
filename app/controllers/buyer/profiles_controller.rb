@@ -76,7 +76,17 @@ class Buyer::ProfilesController < ApplicationController
       # Add the uploaded URL if available
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       
+      # Track if phone is being added (for welcome WhatsApp when user didn't have phone from OAuth)
+      phone_number_before = current_buyer.phone_number
+      phone_being_added = update_params[:phone_number].present? && phone_number_before.blank?
+      update_params[:phone_provided_by_oauth] = false if phone_being_added
+      
       if current_buyer.update(update_params)
+        # Send welcome WhatsApp when phone was just added (e.g. OAuth user completing signup modal)
+        if phone_being_added && current_buyer.phone_number.present? && !current_buyer.phone_provided_by_oauth
+          Rails.logger.info "📱 Sending welcome WhatsApp after phone added via profile - buyer #{current_buyer.email}"
+          WhatsAppNotificationService.send_welcome_message_async(current_buyer)
+        end
         buyer_data = current_buyer.as_json
         buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage
         # Avoid using cached profile pictures - return nil for cached URLs
@@ -218,7 +228,7 @@ class Buyer::ProfilesController < ApplicationController
   def buyer_params
     params.permit(:fullname, :username, :phone_number, :secondary_phone_number, :email, :location, :zipcode, :gender, :city, 
                   :county_id, :sub_county_id, :age_group_id, :income_id, :employment_id, 
-                  :education_id, :sector_id)
+                  :education_id, :sector_id, :phone_provided_by_oauth)
   end
 
   # DRY Upload Handler

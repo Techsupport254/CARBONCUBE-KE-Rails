@@ -435,6 +435,7 @@ class AuthenticationController < ApplicationController
     # Get role from params (default to buyer)
     role = params[:role] || 'buyer'
     callback_scheme = params[:callback_scheme]&.strip.presence
+    carbon_code = params[:carbon_code]&.to_s&.strip.presence
 
     # Check if Google OAuth is configured
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
@@ -459,6 +460,7 @@ class AuthenticationController < ApplicationController
       timestamp: timestamp
     }
     state_data[:callback_scheme] = callback_scheme if callback_scheme.present?
+    state_data[:carbon_code] = carbon_code if carbon_code.present? && role.to_s.downcase == 'seller'
     
     # Sign the state data using Rails message verifier
     verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
@@ -657,6 +659,7 @@ class AuthenticationController < ApplicationController
       
       role = (state_data[:role] || state_data['role'] || 'buyer').to_s
       callback_scheme = (state_data[:callback_scheme] || state_data['callback_scheme']).to_s.strip.presence
+      carbon_code_from_state = (state_data[:carbon_code] || state_data['carbon_code']).to_s.strip.presence
     rescue ActiveSupport::MessageVerifier::InvalidSignature => e
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
       return
@@ -746,7 +749,8 @@ class AuthenticationController < ApplicationController
           expires_at: expires_at&.to_i
         }
       }
-      
+      auth_hash[:carbon_code] = carbon_code_from_state if carbon_code_from_state.present?
+
       # Use OauthAccountLinkingService to create or link account
       user_ip = request.remote_ip
       linking_service = OauthAccountLinkingService.new(auth_hash, role.capitalize, user_ip)
@@ -1350,6 +1354,8 @@ class AuthenticationController < ApplicationController
         phone_being_added = form_data[:phone_number].present? && phone_number_before.blank?
         
         user_attributes = {}
+        # When adding phone in complete_registration, mark as not from OAuth so welcome WhatsApp is sent
+        user_attributes[:phone_provided_by_oauth] = false if phone_being_added
         
         # Common attributes for both buyer and seller
         user_attributes[:fullname] = form_data[:fullname] if form_data[:fullname].present?
@@ -1492,23 +1498,18 @@ class AuthenticationController < ApplicationController
       
       if should_send_welcome
         Rails.logger.info "📱 Sending welcome WhatsApp message - phone number: #{user.phone_number}"
-        begin
-          WhatsAppNotificationService.send_welcome_message(user)
-        rescue => e
-          Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-          Rails.logger.error e.backtrace.first(5).join("\n")
-          # Don't fail registration if WhatsApp message fails
-        end
+        WhatsAppNotificationService.send_welcome_message_async(user)
       end
       
-      # Prepare user response data
+      # Prepare user response data (include phone_number so frontend updates UI instantly)
       user_response = {
         id: user.id,
         email: user.email,
         fullname: user.fullname,
         username: user.username,
         role: user.user_type,
-        profile_picture: user.profile_picture
+        profile_picture: user.profile_picture,
+        phone_number: user.phone_number
       }
       
       # Add seller-specific fields if applicable

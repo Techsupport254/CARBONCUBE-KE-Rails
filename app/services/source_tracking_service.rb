@@ -1,4 +1,8 @@
 class SourceTrackingService
+  # Rails ParamsWrapper may nest JSON body under controller name (e.g. :source_tracking).
+  # We read from both root and wrapped params so all UTM params are captured.
+  WRAPPER_KEY = :source_tracking
+
   def initialize(request)
     @request = request
     @params = request.params
@@ -7,9 +11,16 @@ class SourceTrackingService
     @ip_address = request.remote_ip
   end
 
+  # Get param from root or from wrapped hash (Rails ParamsWrapper)
+  def param_value(key)
+    val = @params[key].presence
+    val = @params.dig(WRAPPER_KEY, key) if val.blank? && @params[WRAPPER_KEY].present?
+    val
+  end
+
   def track_visit
     # Check for duplicate session tracking - only track once per session
-    session_id = @params[:session_id]
+    session_id = param_value(:session_id)
     if session_id.present?
       # Check if this session_id has already been tracked
       existing_tracking = Analytic.where("data->>'session_id' = ?", session_id)
@@ -25,9 +36,16 @@ class SourceTrackingService
     # Parse source from URL parameters
     source = parse_source_from_params
     
-    # Parse UTM parameters
-    utm_params = parse_utm_params
-    
+    # Get the actual page URL early (needed for UTM fallback from URL)
+    actual_page_url = param_value(:url).presence || @request.url
+    actual_page_path = param_value(:path).presence || @request.path
+
+    # Parse UTM parameters (reads from root and wrapped params)
+    utm_params = parse_utm_params(actual_page_url)
+
+    # Fill in utm_content/utm_term from URL if missing from params (e.g. ParamsWrapper or truncated client URL)
+    utm_params = merge_utm_from_url(utm_params, actual_page_url)
+
     # If no UTM source but source is determined from referrer/click ID,
     # set utm_source to match source for data consistency
     # This ensures External Sources matches UTM Source Distribution
@@ -53,11 +71,6 @@ class SourceTrackingService
     # Parse location information (if available)
     location_info = parse_location_info
     
-    # Get the actual page URL from frontend (window.location.href) or fallback to request URL
-    # The frontend sends the actual page URL in the 'url' parameter
-    actual_page_url = @params[:url].presence || @request.url
-    actual_page_path = @params[:path].presence || @request.path
-    
     # Create analytics record with better error handling
     begin
       analytic = Analytic.create!(
@@ -77,20 +90,20 @@ class SourceTrackingService
           timestamp: Time.current,
           device: device_info,
           location: location_info,
-          screen_resolution: @params[:screen_resolution],
-          language: @params[:language] || @request.headers['Accept-Language'],
-          timezone: @params[:timezone],
-          session_duration: @params[:session_duration],
-          page_load_time: @params[:page_load_time],
-          device_fingerprint: @params[:device_fingerprint],
-          session_id: @params[:session_id],
-          visitor_id: @params[:visitor_id],
-          is_unique_visit: @params[:is_unique_visit] == 'true',
-          visit_count: @params[:visit_count],
+          screen_resolution: param_value(:screen_resolution),
+          language: param_value(:language).presence || @request.headers['Accept-Language'],
+          timezone: param_value(:timezone),
+          session_duration: param_value(:session_duration),
+          page_load_time: param_value(:page_load_time),
+          device_fingerprint: param_value(:device_fingerprint),
+          session_id: param_value(:session_id),
+          visitor_id: param_value(:visitor_id),
+          is_unique_visit: param_value(:is_unique_visit) == 'true',
+          visit_count: param_value(:visit_count),
           # Platform click IDs for SEO and paid ads tracking
-          gclid: @params[:gclid], # Google Click ID
-          fbclid: @params[:fbclid], # Facebook Click ID
-          msclkid: @params[:msclkid] # Microsoft Click ID
+          gclid: param_value(:gclid), # Google Click ID
+          fbclid: param_value(:fbclid), # Facebook Click ID
+          msclkid: param_value(:msclkid) # Microsoft Click ID
         }
       )
       
@@ -114,20 +127,21 @@ class SourceTrackingService
 
   def parse_source_from_params
     # Priority 1: UTM source (highest priority - campaign tracking)
-    if @params[:utm_source].present?
-      source = self.class.sanitize_source(@params[:utm_source])
+    utm_source = param_value(:utm_source)
+    if utm_source.present?
+      source = self.class.sanitize_source(utm_source)
       return source
     end
-    
+
     # Priority 2: Check for platform click IDs (Google, Facebook, etc.)
     # These indicate paid advertising campaigns from specific platforms
-    if @params[:gclid].present?
+    if param_value(:gclid).present?
       return 'google' # Google Ads click
     end
-    if @params[:fbclid].present?
+    if param_value(:fbclid).present?
       return 'facebook' # Facebook click
     end
-    if @params[:msclkid].present?
+    if param_value(:msclkid).present?
       return 'microsoft' # Microsoft Ads click
     end
     
@@ -235,14 +249,33 @@ class SourceTrackingService
     end
   end
 
-  def parse_utm_params
+  def parse_utm_params(_page_url = nil)
     {
-      utm_source: sanitize_utm_param(@params[:utm_source]),
-      utm_medium: sanitize_utm_medium(@params[:utm_medium]),
-      utm_campaign: sanitize_utm_param(@params[:utm_campaign]),
-      utm_content: sanitize_utm_param(@params[:utm_content]),
-      utm_term: sanitize_utm_param(@params[:utm_term])
+      utm_source: sanitize_utm_param(param_value(:utm_source)),
+      utm_medium: sanitize_utm_medium(param_value(:utm_medium)),
+      utm_campaign: sanitize_utm_param(param_value(:utm_campaign)),
+      utm_content: sanitize_utm_param(param_value(:utm_content)),
+      utm_term: sanitize_utm_param(param_value(:utm_term))
     }
+  end
+
+  # When utm_content or utm_term are missing (e.g. ParamsWrapper or truncated URL), parse from page URL
+  def merge_utm_from_url(utm_params, page_url)
+    return utm_params if page_url.blank?
+
+    begin
+      uri = URI.parse(page_url)
+      query = uri.query
+      return utm_params if query.blank?
+
+      parsed = URI.decode_www_form(query).to_h
+      result = utm_params.dup
+      result[:utm_content] = sanitize_utm_param(parsed['utm_content']) if result[:utm_content].blank? && parsed['utm_content'].present?
+      result[:utm_term] = sanitize_utm_param(parsed['utm_term']) if result[:utm_term].blank? && parsed['utm_term'].present?
+      result
+    rescue URI::InvalidURIError, ArgumentError
+      utm_params
+    end
   end
 
   def sanitize_utm_param(value)

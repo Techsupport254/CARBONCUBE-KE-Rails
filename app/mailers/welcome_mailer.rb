@@ -1,12 +1,18 @@
 class WelcomeMailer < ApplicationMailer
   default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
 
-  # Send welcome email to new users
+  # Send welcome email to new users (links include UTM: source=email, medium=welcome, campaign=signup)
   def welcome_email(user)
     @user = user
     @name = user.fullname || user.username || user.email.split('@').first
     @user_type = user.class.name.downcase
-    @login_url = "https://carboncube-ke.com/login"
+    @login_url = UtmUrlHelper.append_utm(
+      "https://carboncube-ke.com/login",
+      source: 'email',
+      medium: 'welcome',
+      campaign: 'signup',
+      content: 'login'
+    )
     @dashboard_url = get_dashboard_url(user)
     @support_email = ENV['BREVO_EMAIL']
     @support_phone = "+254 712 990 524"
@@ -21,7 +27,7 @@ class WelcomeMailer < ApplicationMailer
   private
 
   def get_dashboard_url(user)
-    case user.class.name
+    base = case user.class.name
     when 'Buyer'
       "https://carboncube-ke.com/"
     when 'Seller'
@@ -33,5 +39,12 @@ class WelcomeMailer < ApplicationMailer
     else
       "https://carboncube-ke.com/"
     end
+    UtmUrlHelper.append_utm(
+      base,
+      source: 'email',
+      medium: 'welcome',
+      campaign: 'signup',
+      content: 'dashboard'
+    )
   end
 end

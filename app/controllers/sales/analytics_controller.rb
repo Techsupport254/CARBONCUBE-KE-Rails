@@ -78,7 +78,12 @@ class Sales::AnalyticsController < ApplicationController
     
     # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
+    carbon_code_cutoff = Time.zone.parse('2026-01-30').beginning_of_day
     sellers_with_timestamps = all_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    # Seller breakdown timestamps for date-filtered Total Sellers modal (added by sales / self onboarded / legacy)
+    sellers_added_by_sales_with_timestamps = all_sellers.where.not(carbon_code_id: nil).where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    sellers_self_onboarded_with_timestamps = all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    sellers_legacy_with_timestamps = all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     buyers_with_timestamps = all_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     ads_with_timestamps = all_ads.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -120,6 +125,9 @@ class Sales::AnalyticsController < ApplicationController
     response_data = {
       # Raw data with timestamps for frontend filtering (ALL data, no time restriction)
       sellers_with_timestamps: sellers_with_timestamps,
+      sellers_added_by_sales_with_timestamps: sellers_added_by_sales_with_timestamps,
+      sellers_self_onboarded_with_timestamps: sellers_self_onboarded_with_timestamps,
+      sellers_legacy_with_timestamps: sellers_legacy_with_timestamps,
       buyers_with_timestamps: buyers_with_timestamps,
       ads_with_timestamps: ads_with_timestamps,
       reviews_with_timestamps: reviews_with_timestamps,
@@ -169,6 +177,12 @@ class Sales::AnalyticsController < ApplicationController
       
       # OPTIMIZATION: Pre-calculated totals for initial display (all time)
       total_sellers: all_sellers.count,
+      # Seller onboarding: only classify sellers created after Carbon codes existed; leave legacy data alone
+      # Cutoff: when carbon_code_id was added to sellers (sellers before this had no code option)
+      carbon_code_cutoff_date: '2026-01-30',
+      sellers_added_by_sales: all_sellers.where.not(carbon_code_id: nil).count,
+      sellers_self_onboarded: all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).count,
+      sellers_legacy: all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).count,
       total_buyers: all_buyers.count,
       total_ads: all_ads.count,
       total_reviews: all_reviews.count,

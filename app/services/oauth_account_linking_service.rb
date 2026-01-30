@@ -260,13 +260,8 @@ class OauthAccountLinkingService
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
-    # Send welcome WhatsApp message (non-blocking)
-    begin
-      WhatsAppNotificationService.send_welcome_message(buyer)
-    rescue => e
-      Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-      # Don't fail registration if WhatsApp message fails
-    end
+    # Send welcome WhatsApp in background — never block or fail account creation
+    WhatsAppNotificationService.send_welcome_message_async(buyer)
     
     buyer
   rescue ActiveRecord::RecordInvalid => e
@@ -331,11 +326,29 @@ class OauthAccountLinkingService
     # Phone number is optional - only include if provided by Google OAuth
     # Users can add it later if needed
     user_attributes[:phone_number] = phone_number if phone_number.present?
+
+    # Apply carbon code from OAuth state if provided (seller signup with Google)
+    carbon_code = nil
+    if @auth_hash[:carbon_code].present?
+      carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", @auth_hash[:carbon_code].to_s.strip.upcase)
+      if carbon_code.nil?
+        Rails.logger.warn "OAuth seller signup: carbon code '#{@auth_hash[:carbon_code]}' not found - skipping"
+      elsif !carbon_code.valid_for_use?
+        Rails.logger.warn "OAuth seller signup: carbon code invalid (expired or limit reached) - skipping"
+        carbon_code = nil
+      else
+        user_attributes[:carbon_code_id] = carbon_code.id
+        Rails.logger.info "OAuth seller signup: applying carbon code #{carbon_code.code}"
+      end
+    end
     
     Rails.logger.info "🔍 Creating seller with attributes: #{user_attributes.except(:oauth_token, :oauth_refresh_token).inspect}"
     Rails.logger.info "📞 Phone number: #{phone_number}"
 
     seller = Seller.create!(user_attributes)
+
+    # Increment carbon code usage after successful create
+    carbon_code.increment!(:times_used) if carbon_code.present?
 
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
@@ -361,13 +374,8 @@ class OauthAccountLinkingService
     seller.reload
     assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
     
-    # Send welcome WhatsApp message (non-blocking)
-    begin
-      WhatsAppNotificationService.send_welcome_message(seller)
-    rescue => e
-      Rails.logger.error "Failed to send welcome WhatsApp message: #{e.message}"
-      # Don't fail registration if WhatsApp message fails
-    end
+    # Send welcome WhatsApp in background — never block or fail account creation
+    WhatsAppNotificationService.send_welcome_message_async(seller)
     
     seller
   rescue ActiveRecord::RecordInvalid => e

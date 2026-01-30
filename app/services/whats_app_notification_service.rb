@@ -358,38 +358,39 @@ class WhatsAppNotificationService
     else
       ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
     end
-    
+
     # Use unified /messages route with conversationId query parameter for all user types
-    if conversation&.id
+    raw_url = if conversation&.id
       "#{base_url}/messages?conversationId=#{conversation.id}"
     else
       "#{base_url}/messages"
     end
+
+    # Add UTM so message-notification traffic is attributed (source=whatsapp, content=conversation_id)
+    UtmUrlHelper.append_utm(
+      raw_url,
+      source: 'whatsapp',
+      medium: 'notification',
+      campaign: 'message',
+      content: conversation&.id
+    )
   end
   
   def self.enabled?
     ENV.fetch('WHATSAPP_NOTIFICATIONS_ENABLED', 'false') == 'true'
   end
   
-  # Send welcome message to new users
-  # Note: Welcome messages are sent regardless of WhatsApp notifications enabled setting
-  # since they are important onboarding communications for new users
+  # Send welcome message to new users (fire-and-forget; never raises).
+  # Account creation must always succeed regardless of WhatsApp. If WhatsApp is not
+  # configured or fails, we only log and return false — never affect signup/registration.
   def self.send_welcome_message(user)
     return false unless user.present?
-    
-    # Get phone number
     phone_number = user.phone_number
     return false unless phone_number.present?
-    
-    # Build welcome message based on user type
+
     welcome_message = build_welcome_message(user)
-    
-    # Send message via WhatsApp (bypass enabled? check for welcome messages)
-    # Welcome messages are important onboarding communications and should always be sent
-    # We call send_message_without_enabled_check to bypass the enabled? check
-    # Send text-only message (no image)
     result = send_message_without_enabled_check(phone_number, welcome_message, nil)
-    
+
     if result.is_a?(Hash) && result[:success]
       Rails.logger.info "✅ Welcome WhatsApp message sent to #{user.class.name} #{user.email} (#{phone_number})"
       true
@@ -398,10 +399,20 @@ class WhatsAppNotificationService
       Rails.logger.warn "⚠️ Failed to send welcome WhatsApp message to #{user.class.name} #{user.email}: #{error_msg}"
       false
     end
-  rescue => e
-    Rails.logger.error "❌ Error sending welcome WhatsApp message: #{e.message}"
-    Rails.logger.error e.backtrace.first(5).join("\n")
+  rescue StandardError => e
+    Rails.logger.warn "WhatsApp welcome message skipped (non-fatal): #{e.message}"
     false
+  end
+
+  # Fire-and-forget: send welcome message in a background thread so signup never blocks
+  # or fails due to WhatsApp. Call after account is created and success response is ready.
+  def self.send_welcome_message_async(user)
+    return unless user.present?
+    Thread.new do
+      send_welcome_message(user)
+    rescue StandardError => e
+      Rails.logger.warn "WhatsApp welcome message async error: #{e.message}"
+    end
   end
   
   # Send message without checking if WhatsApp notifications are enabled
@@ -495,60 +506,83 @@ class WhatsAppNotificationService
 
         Rails.logger.info "Making HTTP request to #{uri.host}:#{uri.port}#{uri.path}..."
       end
-      start_time = Time.now
-      http_response = http.request(request)
-      elapsed_time = Time.now - start_time
-      if Rails.env.development?
-        Rails.logger.info "HTTP request completed in #{elapsed_time}s"
-        Rails.logger.info "Response code: #{http_response.code}"
-        Rails.logger.info "Response message: #{http_response.message}"
-        Rails.logger.info "Response headers: #{http_response.to_hash.inspect}"
-        Rails.logger.info "Response body length: #{http_response.body.to_s.length} bytes"
-        Rails.logger.info "Response body: #{http_response.body.inspect}"
-      end
-      
-      # Convert Net::HTTP response to HTTParty-like response for compatibility
-      if Rails.env.development?
-        Rails.logger.info "Parsing response body..."
-      end
-      parsed_body = begin
-        if http_response.body.present?
-          parsed = JSON.parse(http_response.body)
-          if Rails.env.development?
-            Rails.logger.info "Successfully parsed JSON response: #{parsed.inspect}"
+      max_attempts = 3
+      retry_delay_seconds = 5
+      (1..max_attempts).each do |attempt|
+        if attempt > 1 && Rails.env.development?
+          Rails.logger.info "WhatsApp send attempt #{attempt}/#{max_attempts}..."
+        end
+        start_time = Time.now
+        http_response = http.request(request)
+        elapsed_time = Time.now - start_time
+        if Rails.env.development?
+          Rails.logger.info "HTTP request completed in #{elapsed_time}s"
+          Rails.logger.info "Response code: #{http_response.code}"
+          Rails.logger.info "Response message: #{http_response.message}"
+          Rails.logger.info "Response headers: #{http_response.to_hash.inspect}"
+          Rails.logger.info "Response body length: #{http_response.body.to_s.length} bytes"
+          Rails.logger.info "Response body: #{http_response.body.inspect}"
+        end
+
+        # Convert Net::HTTP response to HTTParty-like response for compatibility
+        if Rails.env.development?
+          Rails.logger.info "Parsing response body..."
+        end
+        parsed_body = begin
+          if http_response.body.present?
+            parsed = JSON.parse(http_response.body)
+            if Rails.env.development?
+              Rails.logger.info "Successfully parsed JSON response: #{parsed.inspect}"
+            end
+            parsed
+          else
+            if Rails.env.development?
+              Rails.logger.warn "Response body is empty"
+            end
+            {}
           end
-          parsed
-        else
-          if Rails.env.development?
-            Rails.logger.warn "Response body is empty"
-          end
+        rescue JSON::ParserError => e
+          Rails.logger.error "Failed to parse JSON response: #{e.message}"
+          Rails.logger.error "Response body that failed to parse: #{http_response.body.inspect}"
           {}
         end
-      rescue JSON::ParserError => e
-        Rails.logger.error "Failed to parse JSON response: #{e.message}"
-        Rails.logger.error "Response body that failed to parse: #{http_response.body.inspect}"
-        {}
-      end
-      
-      response = ResponseWrapper.new(
-        http_response.code.to_i,
-        http_response.body,
-        parsed_body
-      )
-      Rails.logger.info "Response wrapper created - code: #{response.code}, success?: #{response.success?}"
-      
-      if response.success?
-        Rails.logger.info "=== WhatsApp message sent successfully ==="
-        Rails.logger.info "Message ID: #{response.parsed_response['messageId']}"
-        result = { success: true, message_id: response.parsed_response['messageId'] }
-        Rails.logger.info "Returning result: #{result.inspect}"
-        return result
-      else
+
+        response = ResponseWrapper.new(
+          http_response.code.to_i,
+          http_response.body,
+          parsed_body
+        )
+        Rails.logger.info "Response wrapper created - code: #{response.code}, success?: #{response.success?}"
+
+        if response.success?
+          Rails.logger.info "=== WhatsApp message sent successfully ==="
+          Rails.logger.info "Message ID: #{response.parsed_response['messageId']}"
+          result = { success: true, message_id: response.parsed_response['messageId'] }
+          Rails.logger.info "Returning result: #{result.inspect}"
+          return result
+        end
+
+        error_body = response.parsed_response rescue response.body
+        error_message = if error_body.is_a?(Hash)
+          error_body['error'] || error_body['message'] || 'Failed to send WhatsApp message'
+        else
+          error_body.to_s.include?('No route matches') ? 'WhatsApp service URL is incorrect or pointing to the wrong server' : 'Failed to send WhatsApp message'
+        end
+        # 503 "client not ready": ready event can fire a few seconds after QR scan. Retry.
+        not_ready = response.code == 503 && (error_message.include?('not ready') || parsed_body['message'].to_s.include?('scan the QR'))
+        if not_ready && attempt < max_attempts
+          Rails.logger.warn "=== WhatsApp message send failed ==="
+          Rails.logger.warn "Response code: #{response.code}"
+          Rails.logger.warn "Error body: #{error_body.inspect}"
+          Rails.logger.warn "WhatsApp client not ready (attempt #{attempt}/#{max_attempts}). Retrying in #{retry_delay_seconds}s..."
+          sleep retry_delay_seconds
+          next
+        end
+
         Rails.logger.warn "=== WhatsApp message send failed ==="
         Rails.logger.warn "Response code: #{response.code}"
-        error_body = response.parsed_response rescue response.body
         Rails.logger.warn "Error body: #{error_body.inspect}"
-        
+
         # Check if we got a 404 - this likely means we're hitting Rails instead of WhatsApp service
         if response.code == 404
           Rails.logger.error "*** 404 ERROR - Likely hitting wrong server ***"
@@ -565,14 +599,9 @@ class WhatsAppNotificationService
           Rails.logger.error "Returning error result: #{result.inspect}"
           return result
         end
-        
-        error_message = if error_body.is_a?(Hash)
-          error_body['error'] || error_body['message'] || 'Failed to send WhatsApp message'
-        else
-          error_body.to_s.include?('No route matches') ? 'WhatsApp service URL is incorrect or pointing to the wrong server' : 'Failed to send WhatsApp message'
-        end
+
         Rails.logger.warn "Extracted error message: #{error_message}"
-        
+
         # Check for specific error types
         if error_message.include?('not registered on WhatsApp')
           Rails.logger.warn "Phone number #{phone_number} is not registered on WhatsApp"
@@ -654,9 +683,15 @@ class WhatsAppNotificationService
       ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
     end
     
-    # Build message based on user type
+    # Build message based on user type; all links include UTM for attribution (source=whatsapp, medium=welcome, campaign=signup)
     # Note: URLs are placed on separate lines to ensure WhatsApp detects them as clickable links
-    # WhatsApp requires recipients to save the sender's number or reply for links to be clickable
+    profile_url = UtmUrlHelper.append_utm("#{base_url}/seller/profile", source: 'whatsapp', medium: 'welcome', campaign: 'signup', content: 'profile')
+    products_url = UtmUrlHelper.append_utm("#{base_url}/seller/products/new", source: 'whatsapp', medium: 'welcome', campaign: 'signup', content: 'list_products')
+    dashboard_url = UtmUrlHelper.append_utm("#{base_url}/seller/dashboard", source: 'whatsapp', medium: 'welcome', campaign: 'signup', content: 'dashboard')
+    home_url = UtmUrlHelper.append_utm(base_url.to_s, source: 'whatsapp', medium: 'welcome', campaign: 'signup', content: 'home')
+    deals_url = UtmUrlHelper.append_utm("#{base_url}/deals", source: 'whatsapp', medium: 'welcome', campaign: 'signup', content: 'deals')
+    wishlist_url = UtmUrlHelper.append_utm("#{base_url}/wishlist", source: 'whatsapp', medium: 'welcome', campaign: 'signup', content: 'wishlist')
+
     if user_type == 'seller'
       <<~MESSAGE
         🎉 *Welcome to Carbon Cube Kenya!*
@@ -667,13 +702,13 @@ class WhatsAppNotificationService
         
         *Get started:*
         • Complete your profile:
-        #{base_url}/seller/profile
+        #{profile_url}
         
         • List your products:
-        #{base_url}/seller/products/new
+        #{products_url}
         
         • View your dashboard:
-        #{base_url}/seller/dashboard
+        #{dashboard_url}
         
         💡 *Tip:* Reply to this message to make links clickable!
         
@@ -696,13 +731,13 @@ class WhatsAppNotificationService
         
         *Discover amazing products:*
         • Browse categories:
-        #{base_url}
+        #{home_url}
         
         • Find best deals:
-        #{base_url}/deals
+        #{deals_url}
         
         • Save favorites:
-        #{base_url}/wishlist
+        #{wishlist_url}
         
         💡 *Tip:* Reply to this message to make links clickable!
         
