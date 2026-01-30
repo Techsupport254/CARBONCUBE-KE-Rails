@@ -46,7 +46,7 @@ class Sales::AdSearchesController < ApplicationController
     formatted_searches.each do |search|
       uid_raw = search[:user_id].presence || search[:buyer_id].presence || search[:seller_id].presence
       uid = uid_raw.to_s.strip.downcase.presence
-      role = search[:role].to_s.downcase
+      role = search[:role].to_s.strip.downcase.presence || 'guest'
       profile = uid ? user_profiles[[uid, role]] : nil
       search[:user_profile] = if profile
         { avatar: profile[:avatar], display_name: profile[:display_name] }
@@ -103,11 +103,20 @@ class Sales::AdSearchesController < ApplicationController
     device_stats = calculate_device_stats
     user_type_stats = calculate_user_type_stats
 
-    # Known shop/seller names from DB for NLP intent (e.g. "pantech kenya", "new corner", "top zone")
+    # Known shop/seller names from DB for NLP intent: enterprise_name, fullname, username.
+    # So queries like "pantech kenya", "top zone", or a person name / handle match as Shop.
     shop_names = Seller.where(deleted: false, blocked: false)
-                       .where.not(enterprise_name: [nil, ''])
-                       .pluck(:enterprise_name)
+                       .pluck(:enterprise_name, :fullname, :username)
+                       .each_with_object([]) do |(ent, full, user), arr|
+                         arr.push(ent.to_s.strip) if ent.to_s.present?
+                         arr.push(full.to_s.strip) if full.to_s.present?
+                         arr.push(user.to_s.strip) if user.to_s.present?
+                       end
                        .uniq
+
+    # Catalog-driven intent: product terms (title/category/subcategory), brand names, manufacturer names.
+    # Used by frontend NLP to show Search intent (Product, Brand, Manufacturer, Shop, etc.) and Top brands / Top products / Top manufacturers.
+    catalog_product_terms, catalog_brand_terms, catalog_manufacturer_terms = build_catalog_intent_terms(popular_searches)
 
     render json: {
       analytics: analytics_data,
@@ -117,6 +126,9 @@ class Sales::AdSearchesController < ApplicationController
       device_stats: device_stats,
       user_type_stats: user_type_stats,
       shop_names: shop_names,
+      catalog_product_terms: catalog_product_terms,
+      catalog_brand_terms: catalog_brand_terms,
+      catalog_manufacturer_terms: catalog_manufacturer_terms,
       data_retention: {
         individual_searches: 'Permanent (no expiration)',
         analytics_data: 'Permanent (no expiration)'
@@ -180,7 +192,7 @@ class Sales::AdSearchesController < ApplicationController
     buyer_ids = searches.select { |s| s[:role].to_s.downcase == 'buyer' }.filter_map { |s| (s[:user_id].presence || s[:buyer_id].presence).to_s.strip.presence }.uniq
     seller_ids = searches.select { |s| s[:role].to_s.downcase == 'seller' }.filter_map { |s| (s[:user_id].presence || s[:seller_id].presence).to_s.strip.presence }.uniq
 
-    # Normalize UUIDs for key lookup (PostgreSQL returns lowercase)
+    # Normalize UUIDs for key lookup (Redis and PostgreSQL may differ in case)
     normalize = ->(id) { id.to_s.strip.downcase.presence }
 
     profiles = {}
@@ -205,6 +217,46 @@ class Sales::AdSearchesController < ApplicationController
       end
     end
     profiles
+  end
+
+  # Model-like tokens (e.g. s24, a54) are product models, not brand/manufacturer names. Exclude so they stay in product intent.
+  MODEL_LIKE_PATTERN = /\A[a-z]+\d+[a-z]*\z|\A\d+[a-z]+\z/i
+
+  # Returns [catalog_product_terms, catalog_brand_terms, catalog_manufacturer_terms] for NLP intent.
+  # Product terms: title/category/subcategory matches only (no brand/manufacturer) so Top products shows product-type terms.
+  # Brand terms: distinct ads.brand → Top brands and Brand intent (model-like terms excluded).
+  # Manufacturer terms: distinct ads.manufacturer → Manufacturer intent (model-like terms excluded).
+  def build_catalog_intent_terms(popular_searches)
+    brand_raw = Ad.active.where(flagged: false).where.not(brand: [nil, '']).distinct.pluck(:brand).map { |b| b.to_s.strip.downcase.presence }.compact
+    manufacturer_raw = Ad.active.where(flagged: false).where.not(manufacturer: [nil, '']).distinct.pluck(:manufacturer).map { |m| m.to_s.strip.downcase.presence }.compact
+    brand_set = Set.new(brand_raw.reject { |b| b.match?(MODEL_LIKE_PATTERN) })
+    manufacturer_set = Set.new(manufacturer_raw.reject { |m| m.match?(MODEL_LIKE_PATTERN) })
+
+    terms = []
+    %i[all_time weekly daily monthly].each do |key|
+      list = popular_searches[key]
+      next unless list.is_a?(Array)
+
+      list.each { |pair| terms << pair[0].to_s.strip.downcase.presence }
+    end
+    terms = terms.compact.uniq
+    max_terms = 200
+    product_terms = Set.new
+
+    # Product terms: search terms that match catalog (title, category, subcategory) but exclude pure brand/manufacturer names
+    terms.first(max_terms).each do |normalized|
+      next unless CatalogSearchExpansionService.short_product_like?(normalized)
+      next if brand_set.include?(normalized) || manufacturer_set.include?(normalized)
+
+      expansion = CatalogSearchExpansionService.expand(normalized)
+      product_terms << normalized if expansion.present?
+    end
+
+    # Category and subcategory names are product-type terms (not brand/manufacturer)
+    Category.pluck(:name).compact.each { |n| product_terms << n.to_s.strip.downcase if n.present? }
+    Subcategory.pluck(:name).compact.each { |n| product_terms << n.to_s.strip.downcase if n.present? }
+
+    [product_terms.to_a, brand_set.to_a, manufacturer_set.to_a]
   end
 
   def authenticate_sales_user
