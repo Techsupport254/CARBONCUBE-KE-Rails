@@ -78,7 +78,7 @@ class Sales::AnalyticsController < ApplicationController
     
     # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
-    carbon_code_cutoff = Time.zone.parse('2026-01-30').beginning_of_day
+    carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
     sellers_with_timestamps = all_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
     # Seller breakdown timestamps for date-filtered Total Sellers modal (added by sales / self onboarded / legacy)
     sellers_added_by_sales_with_timestamps = all_sellers.where.not(carbon_code_id: nil).where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
@@ -179,7 +179,7 @@ class Sales::AnalyticsController < ApplicationController
       total_sellers: all_sellers.count,
       # Seller onboarding: only classify sellers created after Carbon codes existed; leave legacy data alone
       # Cutoff: when carbon_code_id was added to sellers (sellers before this had no code option)
-      carbon_code_cutoff_date: '2026-01-30',
+      carbon_code_cutoff_date: '2026-02-01',
       sellers_added_by_sales: all_sellers.where.not(carbon_code_id: nil).count,
       sellers_self_onboarded: all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).count,
       sellers_legacy: all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).count,
