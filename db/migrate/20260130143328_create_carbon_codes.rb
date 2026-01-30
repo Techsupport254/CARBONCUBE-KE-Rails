@@ -1,5 +1,6 @@
 class CreateCarbonCodes < ActiveRecord::Migration[7.1]
   def change
+    return if table_exists?(:carbon_codes)
     create_table :carbon_codes do |t|
       t.string :code, null: false
       t.string :label
