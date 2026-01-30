@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
 # Catalog-driven search expansion: infers brand, category, and model from actual
-# ad titles and brands in the catalog. No hardcoded synonym lists.
+# ad data (Ad model fields and related Category/Subcategory). No hardcoded synonym lists.
 #
-# Research basis:
-# - Amazon: "Unsupervised synonym extraction for document enhancement in e-commerce search"
-# - Query expansion from catalog: use what appears in product titles/brands to resolve short queries
-# - Click-through and search logs can extend this later (query → clicked ad → category)
+# Uses Ad fields: title, brand, manufacturer; and Category/Subcategory names.
+# Research: Amazon "Unsupervised synonym extraction for document enhancement in e-commerce search"
 #
 class CatalogSearchExpansionService
   CACHE_PREFIX = "catalog_expansion"
@@ -16,7 +14,7 @@ class CatalogSearchExpansionService
   SAMPLE_LIMIT = 300
 
   class << self
-    # @param query [String] short search query (e.g. "a54", "s24")
+    # @param query [String] short search query (e.g. "a54", "s24", "petromax")
     # @return [Hash, nil] { brand:, model:, category_hint:, category_id: } or nil if no catalog signal
     def expand(query)
       return nil if query.blank?
@@ -24,7 +22,7 @@ class CatalogSearchExpansionService
       normalized = query.to_s.strip.downcase
       return nil if normalized.length < MIN_QUERY_LENGTH || normalized.length > MAX_QUERY_LENGTH
 
-      cache_key = "#{CACHE_PREFIX}:v2:#{normalized}"
+      cache_key = "#{CACHE_PREFIX}:v3:#{normalized}"
       Rails.cache.fetch(cache_key, expires_in: CACHE_TTL) do
         infer_from_catalog(normalized)
       end
@@ -49,10 +47,17 @@ class CatalogSearchExpansionService
                      .where(sellers: { blocked: false, deleted: false, flagged: false })
                      .where(ads: { flagged: false })
 
-      # Match query in title or brand (ILIKE for portability; pg_trgm could be used if available)
+      # Match query against Ad fields (title, brand, manufacturer) and Category/Subcategory names
       pattern = "%#{normalized_query}%"
+      sql = <<~SQL.squish
+        LOWER(ads.title) LIKE :pat
+        OR LOWER(COALESCE(ads.brand, '')) LIKE :pat
+        OR LOWER(COALESCE(ads.manufacturer, '')) LIKE :pat
+        OR LOWER(COALESCE(categories.name, '')) LIKE :pat
+        OR LOWER(COALESCE(subcategories.name, '')) LIKE :pat
+      SQL
       matching = base_scope
-                   .where("LOWER(ads.title) LIKE :pat OR LOWER(ads.brand) LIKE :pat", pat: pattern)
+                   .where(sql, pat: pattern)
                    .limit(SAMPLE_LIMIT)
                    .pluck(:category_id, "categories.name", "subcategories.name", :brand)
 
