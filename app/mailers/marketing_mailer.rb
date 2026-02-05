@@ -75,7 +75,7 @@ class MarketingMailer < ApplicationMailer
 
     mail(
       to: seller.email,
-      subject: "Carbon Account Notification",
+      subject: "We’ve got feelings for your shop! ❤️ (Performance Update)",
       from: "Carbon Cube Team <#{ENV['BREVO_EMAIL']}>"
     )
   end
