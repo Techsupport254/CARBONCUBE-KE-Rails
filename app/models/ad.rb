@@ -250,6 +250,26 @@ class Ad < ApplicationRecord
     )
   end
 
+  # Returns the current price, taking into account active discounts/flash sales
+  def effective_price
+    # First check for active offer_ads through the association
+    # This matches the logic in AdSerializer but simplified for model use
+    active_offer = offer_ads.joins(:offer)
+                            .where(offers: { status: 'active' })
+                            .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
+                            .first
+    
+    active_offer&.discounted_price || price
+  end
+
+  # Returns true if the product currently has an active discount
+  def on_sale?
+    offer_ads.joins(:offer)
+             .where(offers: { status: 'active' })
+             .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
+             .exists?
+  end
+
   def google_condition
     case condition
     when 'brand_new' then 'NEW'

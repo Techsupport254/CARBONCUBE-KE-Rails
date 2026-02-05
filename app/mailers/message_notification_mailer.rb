@@ -8,8 +8,11 @@ class MessageNotificationMailer < ApplicationMailer
     @sender = message.sender
     @conversation = message.conversation
     
+    # Detect if this is a callback request to set appropriate UTM campaign
+    campaign = message.content.to_s.start_with?("[Callback Request]") ? "callback_request" : "message"
+    
     # Get conversation URL based on recipient type
-    @conversation_url = get_conversation_url(recipient)
+    @conversation_url = get_conversation_url(recipient, campaign: campaign)
     
     # Personalize greeting based on recipient type
     @recipient_name = get_recipient_name(recipient)
@@ -28,7 +31,7 @@ class MessageNotificationMailer < ApplicationMailer
 
   private
 
-  def get_conversation_url(recipient)
+  def get_conversation_url(recipient, campaign: "message")
     base = case recipient.class.name
     when 'Buyer'
       "https://carboncube-ke.com/buyer/conversations/#{@conversation.id}"
@@ -43,7 +46,7 @@ class MessageNotificationMailer < ApplicationMailer
       base,
       source: 'email',
       medium: 'notification',
-      campaign: 'message',
+      campaign: campaign,
       content: @conversation.id
     )
   end

@@ -33,6 +33,18 @@
           
           <% if @ad.present? %>
             <p style="margin: 10px 0;"><strong>Product:</strong> <span style="color: #fbbf24; font-weight: 600;"><%= @ad.title %></span></p>
+            <p style="margin: 10px 0;"><strong>Price:</strong> 
+              <span style="color: #fbbf24; font-weight: 600;">
+                <% if @ad.on_sale? %>
+                  <span style="text-decoration: line-through; color: #6b7280; font-size: 13px; margin-right: 5px;">
+                    <%= number_to_currency(@ad.price, unit: "KES ", precision: 0) %>
+                  </span>
+                  <%= number_to_currency(@ad.effective_price, unit: "KES ", precision: 0) %>
+                <% else %>
+                  <%= number_to_currency(@ad.price, unit: "KES ", precision: 0) %>
+                <% end %>
+              </span>
+            </p>
           <% end %>
           
           <p style="margin: 10px 0;"><strong>Sent:</strong> <%= @message.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>

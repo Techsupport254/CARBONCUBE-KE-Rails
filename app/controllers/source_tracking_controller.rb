@@ -6,6 +6,7 @@ class SourceTrackingController < ApplicationController
   def track
     # Check if this is an internal user that should be excluded
     if internal_user_excluded?
+      Rails.logger.info "🚫 [SourceTrackingController] Request EXCLUDED from tracking (internal user detected)"
       render json: { 
         success: true, 
         message: 'Visit tracked successfully (internal user excluded)',

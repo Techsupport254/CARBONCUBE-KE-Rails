@@ -308,11 +308,15 @@ class WhatsAppNotificationService
     
     # Build notification message
     sender_name = get_sender_name(message.sender)
-    conversation_url = get_conversation_url(recipient, conversation)
+    # Detect if this is a callback request to set appropriate UTM campaign
+    campaign = message.content.to_s.start_with?("[Callback Request]") ? "callback_request" : "message"
+    
+    # Get conversation URL based on recipient type
+    conversation_url = get_conversation_url(recipient, conversation, campaign: campaign)
     
     notification_message = build_notification_message(
       sender_name: sender_name,
-      message_preview: message.content.truncate(100),
+      message_preview: message.content.to_s.truncate(100),
       conversation_url: conversation_url
     )
     
@@ -351,12 +355,12 @@ class WhatsAppNotificationService
     end
   end
   
-  def self.get_conversation_url(recipient, conversation = nil)
+  def self.get_conversation_url(recipient, conversation = nil, campaign: "message")
     # Use environment-aware URL: localhost for development, production URL for production
     base_url = if Rails.env.development?
-      ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+      ENV.fetch("FRONTEND_URL", "http://localhost:3000")
     else
-      ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
+      ENV.fetch("FRONTEND_URL", "https://carboncube-ke.com")
     end
 
     # Use unified /messages route with conversationId query parameter for all user types
@@ -366,12 +370,12 @@ class WhatsAppNotificationService
       "#{base_url}/messages"
     end
 
-    # Add UTM so message-notification traffic is attributed (source=whatsapp, content=conversation_id)
+    # Add UTM so message-notification traffic is attributed (source=whatsapp, medium=notification, campaign=message/callback_request)
     UtmUrlHelper.append_utm(
       raw_url,
-      source: 'whatsapp',
-      medium: 'notification',
-      campaign: 'message',
+      source: "whatsapp",
+      medium: "notification",
+      campaign: campaign,
       content: conversation&.id
     )
   end

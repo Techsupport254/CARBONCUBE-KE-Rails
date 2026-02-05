@@ -196,7 +196,14 @@
                               <tr>
                                 <td align="center" style="background-color: #000000; padding: 6px 10px; border-radius: 6px;">
                                   <span style="font-size: 11px; font-weight: 700; color: #ffffff;">
-                                    <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                                    <% if product.on_sale? %>
+                                      <span style="text-decoration: line-through; color: rgba(255, 255, 255, 0.6); font-size: 9px; margin-right: 4px;">
+                                        <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                                      </span>
+                                      <%= number_to_currency(product.effective_price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                                    <% else %>
+                                      <%= number_to_currency(product.price, unit: 'KSh ', separator: '.', delimiter: ',') %>
+                                    <% end %>
                                   </span>
                                 </td>
                               </tr>
