@@ -20,7 +20,8 @@ class Sales::AnalyticsController < ApplicationController
     all_buyers = exclude_emails_by_pattern(Buyer.where(deleted: false), excluded_email_patterns)
     
     
-    all_ads = Ad.where(deleted: false)
+    all_ads = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false })
+    all_ads = exclude_emails_by_pattern(all_ads, excluded_email_patterns)
     all_reviews = Review.all
     # Filter wishlists to exclude deleted/blocked buyers, blocked/deleted sellers, and deleted ads
     all_wishlists = WishList.joins(:buyer, ad: :seller)
