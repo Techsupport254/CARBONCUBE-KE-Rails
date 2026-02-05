@@ -534,12 +534,12 @@ Rails.application.routes.draw do
 
 
   #==========================================Buyer namespace for buyer-specific functionality=========================================#
+  # WhatsApp Cloud API webhook (Meta) — verification + events
+  get 'webhooks/whatsapp', to: 'webhooks#whatsapp'
+  post 'webhooks/whatsapp', to: 'webhooks#whatsapp'
+
   # Support both /buyer and /api/buyer routes for backward compatibility
   scope '/api', defaults: { format: :json } do
-    # WhatsApp Cloud API webhook (Meta) — verification + events
-    get 'webhooks/whatsapp', to: 'webhooks#whatsapp'
-    post 'webhooks/whatsapp', to: 'webhooks#whatsapp'
-
     # Profile picture caching endpoints (accessible via /api/cached_profile_pictures/:filename)
     get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
     namespace :buyer, path: 'buyer' do

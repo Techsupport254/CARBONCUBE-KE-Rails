@@ -12,8 +12,8 @@ class Sales::AdSearchesController < ApplicationController
     filters[:search_term] = params[:search_term] if params[:search_term].present?
     filters[:buyer_id] = params[:buyer_id] if params[:buyer_id].present?
     filters[:start_date] = params[:start_date] if params[:start_date].present?
-    filters[:end_date] = params[:end_date] if params[:end_date].present?
-
+    filters[:exclude_roles] = ['admin', 'sales']
+    
     # Get search history from Redis
     result = SearchRedisService.search_history(
       page: page,
@@ -21,10 +21,8 @@ class Sales::AdSearchesController < ApplicationController
       filters: filters
     )
 
-    # Format response for sales users (similar to admin but with some restrictions)
-    formatted_searches = result[:searches]
-      .reject { |search| ['admin', 'sales'].include?(search[:role]&.downcase) } # Exclude internal users
-      .map do |search|
+    # Format response for sales users
+    formatted_searches = result[:searches].map do |search|
         # Convert to format expected by frontend
         {
           id: search[:id] || search['id'],
@@ -55,17 +53,13 @@ class Sales::AdSearchesController < ApplicationController
       end
     end
 
-    # Recalculate pagination metadata after filtering
-    filtered_total_count = formatted_searches.size
-    filtered_total_pages = (filtered_total_count.to_f / per_page).ceil
-
     render json: {
       searches: formatted_searches,
       meta: {
         current_page: result[:current_page],
         per_page: per_page,
-        total_count: filtered_total_count,
-        total_pages: filtered_total_pages
+        total_count: result[:total_count],
+        total_pages: result[:total_pages]
       }
     }, status: :ok
   end

@@ -292,6 +292,11 @@ class SearchRedisService
           matches &= (data['device_hash'] == filters[:device_hash].to_s)
         end
 
+        if filters[:exclude_roles].present?
+          exclude_list = Array(filters[:exclude_roles]).map(&:to_s).map(&:downcase)
+          matches &= !exclude_list.include?(data['role'].to_s.downcase)
+        end
+
         if filters[:search_term].present?
           matches &= data['search_term'].to_s.downcase.include?(filters[:search_term].downcase)
         end

@@ -9,7 +9,8 @@ class Sales::AdsController < ApplicationController
     # Build base query without select for counting
     base_query = Ad.joins(seller: :seller_tier)
          .joins(:category, :subcategory)
-         .where(sellers: { blocked: false })
+         .where(deleted: false) # Exclude soft-deleted ads
+         .where(sellers: { blocked: false, deleted: false }) # Only active sellers
 
     if params[:category_id].present?
       base_query = base_query.where(category_id: params[:category_id])
@@ -116,7 +117,8 @@ class Sales::AdsController < ApplicationController
     # This performs all counts in one database query instead of multiple queries
     base_query = Ad.joins(seller: :seller_tier)
              .joins(:category, :subcategory)
-             .where(sellers: { blocked: false })
+             .where(deleted: false)
+             .where(sellers: { blocked: false, deleted: false })
     
     # Get the date when tracking started (first ad with is_added_by_sales not null)
     first_tracked_ad = Ad.where.not(is_added_by_sales: nil)
@@ -158,7 +160,8 @@ class Sales::AdsController < ApplicationController
     # Build base query without select for counting
     base_query = Ad.joins(seller: :seller_tier)
              .joins(:category, :subcategory)
-             .where(sellers: { blocked: false })
+             .where(deleted: false)
+             .where(sellers: { blocked: false, deleted: false })
              .where(flagged: true)
 
     # Apply same filters as index (category, subcategory, search)

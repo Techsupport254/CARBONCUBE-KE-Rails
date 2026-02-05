@@ -1,0 +1,182 @@
+<mjml>
+  <mj-head>
+    <mj-title>Your Shop Performance Update</mj-title>
+    <mj-font name="Outfit" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" />
+    <mj-all font-family="Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" color="#2D3748" padding="0px" />
+    <mj-attributes>
+      <mj-text line-height="1.4" font-size="13px" />
+      <mj-button background-color="#E53E3E" color="#ffffff" font-size="13px" font-weight="900" text-transform="uppercase" border-radius="50px" inner-padding="10px 20px" />
+      <mj-section background-color="#ffffff" padding="0px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .heart-bg { background-color: #FFF5F5 !important; }
+      .text-upper { text-transform: uppercase; letter-spacing: 0.5px; }
+      .goofy-border { border-radius: 8px; background-color: #FFF5F5; }
+      .love-gradient { background: linear-gradient(135deg, #FFF5F5 0%, #FED7D7 100%); border-radius: 0px; overflow: hidden; } 
+    </mj-style>
+    <mj-style>
+      @media only screen and (max-width: 480px) {
+        .mobile-text-small { font-size: 13px !important; }
+      }
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+      }
+      .pulse-heart { animation: pulse 2s infinite ease-in-out; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#FFF5F5" width="600px">
+    <!-- Header Logo -->
+    <mj-section background-color="transparent" padding-bottom="15px" padding-top="5px">
+      <mj-column>
+        <mj-image src="https://carboncube-ke.com/logo.png" width="35px" alt="Carbon Logo" align="center" href="https://carboncube-ke.com/?utm_source=internal_system&utm_medium=email&utm_campaign=valentines_2026&utm_term=<%= @fullname %>&utm_content=header_logo" />
+      </mj-column>
+    </mj-section>
+    
+    <!-- Profile Card Wrapper (Simplified, no outer padding) -->
+    <mj-section background-color="#FFF5F5" padding="0px">
+      <mj-column width="100%">
+         <mj-image src="https://images.pexels.com/photos/6478815/pexels-photo-6478815.jpeg" border-radius="0px" alt="Valentine's Special" padding="0px" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Profile Info (Centered Vertical Stack) -->
+    <mj-section background-color="#ffffff" padding="15px 15px 5px 15px">
+      <mj-column width="100%">
+        <mj-image src="<%= @profile_picture %>" width="55px" height="55px" border-radius="50px" alt="Avatar" padding="0px 0px 5px 0px" align="center" />
+        
+        <mj-text font-size="16px" font-weight="900" color="#1A202C" align="center" css-class="text-upper" padding="0px">
+          <%= @enterprise_name %>
+        </mj-text>
+        
+        <mj-text font-size="12px" color="#E53E3E" font-weight="700" padding="2px 0px 0px 0px" align="center">
+          <%= @ads_count %> Active Ad(s)
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Content Section -->
+    <mj-wrapper background-color="#ffffff" padding="10px 0px">
+      
+      <mj-section padding="0px">
+        <mj-column>
+          <!-- Dynamic Greeting & All Text Merged for Minimal Padding -->
+          <mj-text align="left" font-size="13px" color="#4A5568" line-height="1.5" padding-top="10px" padding-bottom="0px">
+            <span style="font-size: 18px; font-weight: 900; color: #E53E3E; display: block; text-align: center; margin-bottom: 5px;">
+              <% if @gender == "Male" %>Hey King <%= @fullname %>,<% elsif @gender == "Female" %>Hey Queen <%= @fullname %>,<% else %>Hey Legend <%= @fullname %>,<% end %>
+            </span>
+            
+            <span style="font-size: 14px; font-weight: 600; color: #2D3748; display: block; text-align: center; margin-bottom: 15px;">
+              Your shop <strong><%= @enterprise_name %></strong> is giving us all the fuzzy feelings! ❤️
+            </span>
+
+            <% if @total_clicks > 1 %>
+              We were just looking at the Carbon data and—WOW. Are you wearing a new crown? Because buyers are <strong>obsessed</strong> with your listings! 👑
+              <br/><br/>
+              We counted <strong><%= @total_clicks %> clicks</strong> on your shop lately. That’s <%= @total_clicks %> times someone sat down and said "Yes, <%= @fullname %> is clearly the chosen one."
+            <% elsif @total_clicks == 1 %>
+              We were just looking at the Carbon data and—WOW. Are you wearing a new crown? Because buyers are <strong>obsessed</strong> with your listings! 👑
+              <br/><br/>
+              We counted <strong>1 click</strong> on your shop lately. That’s one person who sat down and said "Yes, <%= @fullname %> is clearly the chosen one."
+            <% else %>
+              We checked the charts and noticed <strong><%= @enterprise_name %></strong> is a hidden gem waiting to be discovered! 💎
+              <br/><br/>
+              Remember us? We’re Carbon! We’re the ones who think <strong><%= @enterprise_name %></strong> is awesome even when the internet is being a bit shy. 🧹
+              <br/><br/>
+              Don't let your <%= @tier_name %> shop go lonely this February!
+            <% end %>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- STAR AD SECTION -->
+      <% if @top_ad %>
+      <mj-section padding="10px 0px">
+        <mj-column width="100%" background-color="#F7FAFC" border-radius="8px">
+          <mj-table padding="10px">
+            <tr>
+              <td width="30%" style="vertical-align: top;">
+                 <img src="<%= @top_ad.first_valid_media_url || 'https://carboncube-ke.com/logo.png' %>" style="width: 100%; border-radius: 6px; aspect-ratio: 1/1; object-fit: cover; display: block;" />
+              </td>
+              <td width="5%"></td>
+              <td width="65%" style="vertical-align: top;">
+                 <p style="margin: 0; font-size: 13px; font-weight: 700; color: #2D3748; line-height: 1.3; text-transform: capitalize;">
+                   <%= truncate(@top_ad.title, length: 45) %>
+                 </p>
+                 <p style="margin: 4px 0 0; font-size: 13px; color: #E53E3E; font-weight: 700;">
+                   <%= number_to_currency(@top_ad.price, unit: "KES ", precision: 0) %>
+                 </p>
+                 <% if @top_ad_clicks > 0 %>
+                 <p style="margin: 4px 0 0; font-size: 11px; color: #718096; font-weight: 600;">
+                   🔥 <%= @top_ad_clicks %> people checked this out!
+                 </p>
+                 <% end %>
+              </td>
+            </tr>
+          </mj-table>
+        </mj-column>
+      </mj-section>
+      <% end %>
+
+      <!-- Segment 2: Encouragement (Merged) -->
+      <mj-section padding="0px">
+        <mj-column>
+          <mj-text align="left" font-size="13px" color="#4A5568" line-height="1.5" padding-top="0px" padding-bottom="0px">
+            <% if @total_clicks > 0 %>
+             <% if @total_clicks <= 10 %>
+               A very polite talking parrot just whispered that <strong><%= @enterprise_name %></strong> is actually the coolest hidden gem on the block. 🦜✨
+               <br/><br/>
+               People are starting to poke around your <%= @ads_count %> listings, and it’s a total vibe!
+             <% else %>
+               Your shop is clearly the chosen one. 🦜✨
+             <% end %>
+            <% end %>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- The "Ghosting" Joke - Dynamic Days (Boxed) -->
+      <mj-section background-color="#FFF5F5" css-class="goofy-border" padding="15px">
+        <mj-column>
+          <mj-text align="center" color="#C05621" font-weight="900" font-size="14px">
+            <% if @days_since_last_ad > 30 %>
+            Honestly... it’s been <strong><%= @days_since_last_ad %> days</strong> since your last upload. Even the internet-pigeons are wondering where you went! 🕊️
+            <% else %>
+            You've been active lately, which makes us skip a beat! Let's keep that fire burning! 🔥❤️
+            <% end %>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- CTA Section -->
+      <mj-section padding="0px">
+        <mj-column>
+          <mj-spacer height="20px" />
+
+          <mj-text align="center" font-weight="900" font-size="18px" color="#1A202C">
+            So, will you be our Valentine?
+          </mj-text>
+
+          <mj-button href="https://carboncube-ke.com/seller/ads/new?utm_source=internal_system&utm_medium=email&utm_campaign=valentines_2026&utm_term=<%= @fullname %>&utm_content=cta_yes_button" padding-top="15px" css-class="shadow" width="100%">
+            YES, I WILL! 💖
+          </mj-button>
+          
+          <mj-text align="center" font-size="12px" padding-top="15px">
+             <a href="https://carboncube-ke.com/seller/valentines?utm_source=internal_system&utm_medium=email&utm_campaign=valentines_2026&utm_term=<%= @fullname %>&utm_content=cta_no_interactive" style="color: #718096; text-decoration: none; font-weight: 600;">No (I'm a mystery / I need a nap) 🛌</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <!-- Footer -->
+    <mj-section background-color="#F7FAFC" padding-top="20px" padding-bottom="20px">
+      <mj-column>
+        <mj-text align="center" font-size="9px" color="#A0AEC0" css-class="text-upper">
+          © 2026 Carbon Cube.<br/>
+          <%= @timestamp %> • <a href="https://carboncube-ke.com/confirm_unsubscribe?email=<%= @seller.email %>" style="color: #A0AEC0; text-decoration: underline;">Manage Email Preferences</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
