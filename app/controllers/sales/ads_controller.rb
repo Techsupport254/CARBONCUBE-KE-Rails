@@ -46,7 +46,7 @@ class Sales::AdsController < ApplicationController
     # Apply select, order, and pagination
     offset = (page - 1) * per_page
     @ads = base_query
-         .order(created_at: :desc)  # Sort by latest first
+         .order('ads.created_at DESC')  # Sort by latest first
          .select('ads.*, seller_tiers.tier_id AS seller_tier')  # Select tier_id from seller_tiers
          .limit(per_page)
          .offset(offset)
@@ -122,8 +122,8 @@ class Sales::AdsController < ApplicationController
     
     # Get the date when tracking started (first ad with is_added_by_sales not null)
     first_tracked_ad = Ad.where.not(is_added_by_sales: nil)
-                         .order(created_at: :asc)
-                         .select(:created_at)
+                         .order('ads.created_at ASC')
+                         .select('ads.created_at')
                          .first
     
     tracking_start_date = first_tracked_ad&.created_at&.to_date || Date.today
@@ -201,7 +201,7 @@ class Sales::AdsController < ApplicationController
     # Apply select, order, and pagination
     offset = (page - 1) * per_page
     @ads = base_query
-             .order(created_at: :desc)  # Sort by latest first
+             .order('ads.created_at DESC')  # Sort by latest first
              .select('ads.*, seller_tiers.tier_id AS seller_tier')
              .limit(per_page)
              .offset(offset)

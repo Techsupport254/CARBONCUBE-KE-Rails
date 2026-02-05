@@ -80,27 +80,27 @@ class Sales::AnalyticsController < ApplicationController
     # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
     carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
-    sellers_with_timestamps = all_sellers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    sellers_with_timestamps = all_sellers.where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
     # Seller breakdown timestamps for date-filtered Total Sellers modal (added by sales / self onboarded / legacy)
-    sellers_added_by_sales_with_timestamps = all_sellers.where.not(carbon_code_id: nil).where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    sellers_self_onboarded_with_timestamps = all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    sellers_legacy_with_timestamps = all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    buyers_with_timestamps = all_buyers.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    ads_with_timestamps = all_ads.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
-    reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    sellers_added_by_sales_with_timestamps = all_sellers.where.not(carbon_code_id: nil).where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
+    sellers_self_onboarded_with_timestamps = all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
+    sellers_legacy_with_timestamps = all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
+    buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck('buyers.created_at').map { |ts| ts&.iso8601 }
+    ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck('ads.created_at').map { |ts| ts&.iso8601 }
+    reviews_with_timestamps = all_reviews.where('reviews.created_at >= ?', timestamp_limit_date).pluck('reviews.created_at').map { |ts| ts&.iso8601 }
     wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck('wish_lists.created_at').map { |ts| ts&.iso8601 }
     
-    ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
     # Remove duplicate - buyer_ad_clicks uses same data
     buyer_ad_clicks_with_timestamps = ad_clicks_with_timestamps
     
     # OPTIMIZATION: Get reveal clicks with timestamps (limited to recent, remove duplicates)
-    reveal_clicks_with_timestamps = all_reveal_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    reveal_clicks_with_timestamps = all_reveal_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
     # Remove duplicate - buyer_reveal_clicks uses same data
     buyer_reveal_clicks_with_timestamps = reveal_clicks_with_timestamps
     
     # OPTIMIZATION: Get contact interactions with timestamps (limited to recent)
-    contact_interactions_with_timestamps = all_contact_interactions.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    contact_interactions_with_timestamps = all_contact_interactions.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
     
     # Get callback request events (excluding internal users, deleted buyers, and seller own clicks)
     all_callback_requests = ClickEvent
@@ -113,7 +113,7 @@ class Sales::AnalyticsController < ApplicationController
       .where(ads: { deleted: false }) # Exclude clicks with deleted ads
     
     # OPTIMIZATION: Get callback requests with timestamps (limited to recent)
-    callback_requests_with_timestamps = all_callback_requests.where('click_events.created_at >= ?', timestamp_limit_date).pluck(:created_at).map { |ts| ts&.iso8601 }
+    callback_requests_with_timestamps = all_callback_requests.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
     
     # Analytics data prepared successfully
     
