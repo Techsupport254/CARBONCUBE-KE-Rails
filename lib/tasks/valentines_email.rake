@@ -348,4 +348,72 @@ namespace :valentines do
     puts "   rails valentines:generate_csv"
     puts "   Then filter by conditions in Excel/Google Sheets"
   end
+
+  desc "Send Valentine's email to a specific seller (test)"
+  task :test_send, [:email] => :environment do |t, args|
+    email = args[:email] || 'victorquaint@gmail.com'
+    seller = Seller.find_by(email: email)
+    
+    unless seller
+      puts "❌ Seller not found: #{email}"
+      exit
+    end
+    
+    puts "🚀 Sending test Valentine's email to #{seller.fullname} (#{seller.email})..."
+    MarketingMailer.valentines_campaign(seller).deliver_now
+    puts "✅ Sent!"
+  end
+
+  desc "Send Valentine's email to ALL active sellers smartly"
+  task send_bulk: :environment do
+    puts "🔍 Fetching active sellers with ads..."
+    
+    # Target: Active sellers (not blocked, not deleted)
+    if ENV['ALL'] == 'true'
+      sellers = Seller.active.order(created_at: :desc)
+    elsif ENV['REMAINING'] == 'true'
+      # Target active sellers with 0 ads (the ones we skipped in the first batch)
+      sellers = Seller.active.where(ads_count: 0).order(created_at: :desc)
+    else
+      # Default to those who actually have ads
+      sellers = Seller.active.where('ads_count > 0').order(created_at: :desc)
+    end
+    total = sellers.count
+    
+    puts "✅ Found #{total} active sellers to receive the email."
+    
+    unless ENV['CONFIRM'] == 'true' || ENV['AUTO_CONFIRM'] == 'true'
+      print "❓ Proceed with sending to #{total} sellers? (y/n): "
+      STDOUT.flush
+      input = STDIN.gets.chomp.downcase
+      
+      unless input == 'y'
+        puts "🛑 Aborted."
+        exit
+      end
+    end
+    
+    puts "🚀 Launching bulk send (1 email every 1.5 seconds)..."
+    
+    success = 0
+    failed = 0
+    
+    sellers.each_with_index do |seller, index|
+      begin
+        MarketingMailer.valentines_campaign(seller).deliver_now
+        success += 1
+        puts "[#{index + 1}/#{total}] ✅ Sent to #{seller.email}"
+      rescue => e
+        failed += 1
+        puts "[#{index + 1}/#{total}] ❌ Failed for #{seller.email}: #{e.message}"
+      end
+      
+      # smart throttling
+      sleep 1.5 if index < total - 1
+    end
+    
+    puts "\n🏁 Bulk send complete!"
+    puts "📊 Summary: #{success} sent, #{failed} failed, #{total} total."
+  end
 end
+
