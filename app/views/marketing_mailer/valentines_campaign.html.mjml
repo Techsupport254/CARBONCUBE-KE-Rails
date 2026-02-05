@@ -104,9 +104,16 @@
                  <p style="margin: 0; font-size: 13px; font-weight: 700; color: #2D3748; line-height: 1.3; text-transform: capitalize;">
                    <%= truncate(@top_ad.title, length: 45) %>
                  </p>
-                 <p style="margin: 4px 0 0; font-size: 13px; color: #E53E3E; font-weight: 700;">
-                   <%= number_to_currency(@top_ad.price, unit: "KES ", precision: 0) %>
-                 </p>
+                  <p style="margin: 4px 0 0; font-size: 13px; color: #E53E3E; font-weight: 700;">
+                    <% if @top_ad.on_sale? %>
+                      <span style="text-decoration: line-through; color: #718096; font-size: 11px; margin-right: 5px;">
+                        <%= number_to_currency(@top_ad.price, unit: "KES ", precision: 0) %>
+                      </span>
+                      <%= number_to_currency(@top_ad.effective_price, unit: "KES ", precision: 0) %>
+                    <% else %>
+                      <%= number_to_currency(@top_ad.price, unit: "KES ", precision: 0) %>
+                    <% end %>
+                  </p>
                  <% if @top_ad_clicks > 0 %>
                  <p style="margin: 4px 0 0; font-size: 11px; color: #718096; font-weight: 600;">
                    🔥 <%= @top_ad_clicks %> people checked this out!

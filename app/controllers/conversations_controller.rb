@@ -194,11 +194,21 @@ class ConversationsController < ApplicationController
       ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
     end
     raw_conversation_url = "#{base_url}/messages?conversationId=#{conversation.id}"
+    # Get last message to check for callback request
+    last_unread_message = conversation.messages
+      .where.not(sender_id: seller.id)
+      .where(read_at: nil)
+      .order(created_at: :desc)
+      .first
+    
+    # Detect campaign
+    campaign = last_unread_message&.content&.to_s&.start_with?("[Callback Request]") ? "callback_request" : "message"
+
     conversation_url = UtmUrlHelper.append_utm(
       raw_conversation_url,
       source: 'whatsapp',
       medium: 'notification',
-      campaign: 'message',
+      campaign: campaign,
       content: conversation.id
     )
     

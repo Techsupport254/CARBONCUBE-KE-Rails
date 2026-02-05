@@ -23,6 +23,17 @@ class ContactMailer < ApplicationMailer
     @email = params[:email]
     @subject = params[:subject]
 
+    # Detect campaign based on subject
+    @campaign = @subject.to_s.downcase.include?("callback") ? "callback_request" : "contact_form"
+
+    # Set URLs with UTMs for the auto-reply email
+    @site_url = UtmUrlHelper.append_utm("https://carboncube-ke.com", 
+      source: "email", medium: "auto_reply", campaign: @campaign, content: "home")
+    @about_url = UtmUrlHelper.append_utm("https://carboncube-ke.com/about-us", 
+      source: "email", medium: "auto_reply", campaign: @campaign, content: "about")
+    @blog_url = UtmUrlHelper.append_utm("https://carboncube-ke.com/blog", 
+      source: "email", medium: "auto_reply", campaign: @campaign, content: "blog")
+
     mail(
       to: @email,
       subject: "Thank you for contacting Carbon Cube Kenya - We'll be in touch soon!"

@@ -19,6 +19,9 @@ class SourceTrackingService
   end
 
   def track_visit
+    Rails.logger.info "🔍 [SourceTrackingService] Starting track_visit"
+    Rails.logger.info "Params: #{@params.except(:controller, :action)}"
+
     # Check for duplicate session tracking - only track once per session
     session_id = param_value(:session_id)
     if session_id.present?
@@ -28,7 +31,7 @@ class SourceTrackingService
                                    .first
       
       if existing_tracking
-        Rails.logger.info "Session #{session_id} already tracked, skipping duplicate"
+        Rails.logger.info "🚫 [SourceTrackingService] Session #{session_id} already tracked in last hour, SKIPPING."
         return existing_tracking
       end
     end
