@@ -42,8 +42,12 @@ class WebhooksController < ApplicationController
     end
 
     payload = JSON.parse(raw_body)
-    # Log for debugging; replace with your business logic (e.g. process messages, status updates).
-    Rails.logger.info "[Webhooks#whatsapp] Received payload: #{payload.to_json.truncate(500)}"
+    
+    # Process the payload via WhatsAppCloudService
+    WhatsAppCloudService.handle_webhook_payload(payload)
+    
+    # Log for debugging
+    Rails.logger.info "[Webhooks#whatsapp] Received and processed payload"
     head :ok
   rescue JSON::ParserError => e
     Rails.logger.warn "[Webhooks#whatsapp] Invalid JSON: #{e.message}"

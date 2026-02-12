@@ -90,6 +90,12 @@ class WhatsAppNotificationService
       return { success: false, error: 'Invalid phone number format. Please enter a valid phone number.' }
     end
     
+    # Prioritize WhatsApp Cloud API if credentials are present
+    if ENV['WHATSAPP_CLOUD_ACCESS_TOKEN'].present? && ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID'].present?
+      Rails.logger.info "[WhatsAppNotificationService] Using WhatsApp Cloud API for message"
+      return WhatsAppCloudService.send_message(phone_number, message)
+    end
+    
     begin
       # Get service URL using helper method (respects env vars and environment)
       service_url = get_service_url
@@ -440,6 +446,12 @@ class WhatsAppNotificationService
       return { success: false, error: 'Message is required' }
     end
     
+    # Prioritize WhatsApp Cloud API if credentials are present
+    if ENV['WHATSAPP_CLOUD_ACCESS_TOKEN'].present? && ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID'].present?
+      Rails.logger.info "[WhatsAppNotificationService] Using WhatsApp Cloud API for message"
+      return WhatsAppCloudService.send_message(phone_number, message)
+    end
+
     # Validate phone number format (accept various international and local formats)
     cleaned_number = phone_number.to_s.gsub(/\D/, '')
     if Rails.env.development?

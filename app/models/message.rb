@@ -11,7 +11,8 @@ class Message < ApplicationRecord
   after_create :broadcast_new_message
   after_create :schedule_delivery_receipt
   after_create :send_message_notification_email
-  after_create :send_message_notification_whatsapp
+  after_create :send_message_notification_whatsapp, unless: -> { conversation.is_whatsapp? }
+  after_create :send_direct_whatsapp_message, if: -> { conversation.is_whatsapp? }
 
   # Status constants
   STATUS_SENT = 'sent'
@@ -308,6 +309,34 @@ class Message < ApplicationRecord
         Rails.logger.warn "Failed to send WhatsApp notification for message #{id}: #{e.message}"
       end
       # Don't fail message creation if WhatsApp sending fails
+    end
+  end
+
+  # Send direct WhatsApp message for WhatsApp-initiated conversations
+  def send_direct_whatsapp_message
+    # Don't send if we already have a whatsapp_message_id (meaning it came from WhatsApp)
+    return if whatsapp_message_id.present?
+    
+    recipient = get_recipient
+    return unless recipient
+    
+    # Get phone number
+    phone_number = recipient.phone_number
+    return unless phone_number.present?
+    
+    # In WhatsApp conversations, the recipient might be a Buyer or Seller
+    # We send the actual message content directly
+    begin
+      result = WhatsAppCloudService.send_message(phone_number, content)
+      if result[:success]
+        update_column(:whatsapp_message_id, result[:message_id])
+        update_column(:status, STATUS_DELIVERED) # Meta confirmed receipt
+        Rails.logger.info "[Message] Direct WhatsApp message sent to #{phone_number}: #{result[:message_id]}"
+      else
+        Rails.logger.error "[Message] Failed to send direct WhatsApp message: #{result[:error]}"
+      end
+    rescue => e
+      Rails.logger.error "[Message] Exception sending direct WhatsApp message: #{e.message}"
     end
   end
 
