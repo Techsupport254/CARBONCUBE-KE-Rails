@@ -1,5 +1,5 @@
 class NotificationsController < ApplicationController
-  before_action :authenticate_request!
+  before_action :authenticate_request
 
   # GET /api/notifications
   def index
