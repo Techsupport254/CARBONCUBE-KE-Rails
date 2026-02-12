@@ -1,4 +1,5 @@
 require 'googleauth'
+require 'stringio'
 
 class PushNotificationService
   include HTTParty
