@@ -76,16 +76,26 @@ class PushNotificationService
   private
 
   def self.get_access_token
-    key_path = Rails.root.join('config', 'firebase-service-account.json')
-    unless File.exist?(key_path)
-      Rails.logger.error "PushNotificationService: firebase-service-account.json not found at #{key_path}"
-      return nil
-    end
+    json_key = ENV['FIREBASE_SERVICE_ACCOUNT_JSON']
+    
+    if json_key.present?
+      authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
+        json_key_io: StringIO.new(json_key),
+        scope: FCM_SCOPE
+      )
+    else
+      key_path = Rails.root.join('config', 'firebase-service-account.json')
+      unless File.exist?(key_path)
+        Rails.logger.error "PushNotificationService: Firebase credentials not found (checked ENV and #{key_path})"
+        return nil
+      end
 
-    authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-      json_key_io: File.open(key_path),
-      scope: FCM_SCOPE
-    )
+      authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
+        json_key_io: File.open(key_path),
+        scope: FCM_SCOPE
+      )
+    end
+    
     authorizer.fetch_access_token!['access_token']
   rescue => e
     Rails.logger.error "PushNotificationService: Token retrieval error: #{e.message}"
@@ -93,10 +103,15 @@ class PushNotificationService
   end
 
   def self.get_project_id
-    key_path = Rails.root.join('config', 'firebase-service-account.json')
-    return nil unless File.exist?(key_path)
+    json_key = ENV['FIREBASE_SERVICE_ACCOUNT_JSON']
     
-    JSON.parse(File.read(key_path))['project_id']
+    if json_key.present?
+      JSON.parse(json_key)['project_id']
+    else
+      key_path = Rails.root.join('config', 'firebase-service-account.json')
+      return nil unless File.exist?(key_path)
+      JSON.parse(File.read(key_path))['project_id']
+    end
   rescue => e
     Rails.logger.error "PushNotificationService: Project ID retrieval error: #{e.message}"
     nil
