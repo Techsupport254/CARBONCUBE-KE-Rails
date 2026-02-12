@@ -538,10 +538,10 @@ Rails.application.routes.draw do
   get 'webhooks/whatsapp', to: 'webhooks#whatsapp'
   post 'webhooks/whatsapp', to: 'webhooks#whatsapp'
 
-  # Support both /buyer and /api/buyer routes for backward compatibility
-  scope '/api', defaults: { format: :json } do
-    resources :device_tokens, only: [:create]
+  # Device tokens for push notifications
+  resources :device_tokens, only: [:create]
   
+  # Notifications
   resources :notifications, only: [:index] do
     member do
       post 'read', to: 'notifications#mark_as_read'
@@ -550,6 +550,9 @@ Rails.application.routes.draw do
       post 'read_all', to: 'notifications#mark_all_as_read'
     end
   end
+
+  # Support both /buyer and /api/buyer routes for backward compatibility
+  scope '/api', defaults: { format: :json } do
     # Profile picture caching endpoints (accessible via /api/cached_profile_pictures/:filename)
     get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
     namespace :buyer, path: 'buyer' do
