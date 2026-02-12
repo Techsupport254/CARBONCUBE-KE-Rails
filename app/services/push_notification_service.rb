@@ -1,70 +1,104 @@
+require 'googleauth'
+
 class PushNotificationService
   include HTTParty
-  base_uri 'https://fcm.googleapis.com/fcm'
+  base_uri 'https://fcm.googleapis.com'
 
-  def self.send_notification(tokens, notification_payload)
-    # tokens: array of strings
+  FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging'.freeze
+
+  def self.send_notification(tokens, notification_payload, notifiable = nil)
+    # tokens: array of strings or a single string
+    tokens = Array(tokens)
+    return false if tokens.empty?
+
+    project_id = get_project_id
+    access_token = get_access_token
     
-    # We try to use the key from environment
-    server_key = ENV['FCM_SERVER_KEY']
-    
-    unless server_key
-      Rails.logger.warn "PushNotificationService: FCM_SERVER_KEY not set. Skipping notification."
+    unless access_token
+      Rails.logger.error "PushNotificationService: Failed to get access token."
       return false
     end
 
     headers = {
       'Content-Type' => 'application/json',
-      'Authorization' => "key=#{server_key}"
+      'Authorization' => "Bearer #{access_token}"
     }
 
-    body = {
-      registration_ids: tokens,
-      notification: {
-        title: notification_payload[:title],
-        body: notification_payload[:body],
-        sound: 'default'
-      },
-      data: notification_payload[:data],
-      priority: 'high'
-    }
-
-    response = post('/send', headers: headers, body: body.to_json)
+    success_count = 0
     
-    if response.success?
-      Rails.logger.info "PushNotificationService: Notification sent successfully. Response: #{response.body}"
+    tokens.each do |token|
+      body = {
+        message: {
+          token: token,
+          notification: {
+            title: notification_payload[:title],
+            body: notification_payload[:body]
+          },
+          data: notification_payload[:data]&.transform_values(&:to_s) || {}
+        }
+      }
+
+      response = post("/v1/projects/#{project_id}/messages:send", headers: headers, body: body.to_json)
       
-      # Persist the notification in the database for history
-      # We need to find the recipient user object from the token to link it
-      # This is inefficient if sending to multiple tokens for different users, 
-      # but typically 'tokens' array here belongs to the SAME user or we loop.
-      # Current structure of calls: 
-      # Message.rb: tokens = DeviceToken.where(user: recipient) -> All tokens belong to ONE recipient.
-      
-      # We can infer the recipient from the first token
-      first_token = tokens.first
-      device_token = DeviceToken.find_by(token: first_token)
-      
-      if device_token&.user
-        Notification.create(
+      if response&.success?
+        success_count += 1
+        Rails.logger.info "PushNotificationService: Notification sent to #{token}. Response: #{response.body}"
+      else
+        Rails.logger.error "PushNotificationService: Failed to send to #{token}. Status: #{response&.code}. Response: #{response&.body}"
+      end
+    end
+
+    # Persist the notification in the database for history (using first token for recipient info)
+    first_token = tokens.first
+    device_token = DeviceToken.find_by(token: first_token)
+    
+    if device_token&.user
+      begin
+        Notification.create!(
           recipient: device_token.user,
+          notifiable: notifiable,
           title: notification_payload[:title],
           body: notification_payload[:body],
           data: notification_payload[:data],
-          # If data has an ID and Type, we could link notifiable, but let's stick to simple data dump for now
-          # OR if the caller passed 'notifiable' in the payload (which they don't currently), we could use it.
-          # For now, data is enough.
-          status: 'sent'
+          status: success_count > 0 ? 'sent' : 'failed'
         )
+      rescue => e
+        Rails.logger.error "PushNotificationService: Failed to create Notification record: #{e.message}"
       end
-
-      true
-    else
-      Rails.logger.error "PushNotificationService: Failed to send notification. Response: #{response.body}"
-      false
     end
+
+    success_count > 0
   rescue => e
     Rails.logger.error "PushNotificationService: Exception #{e.message}"
     false
+  end
+
+  private
+
+  def self.get_access_token
+    key_path = Rails.root.join('config', 'firebase-service-account.json')
+    unless File.exist?(key_path)
+      Rails.logger.error "PushNotificationService: firebase-service-account.json not found at #{key_path}"
+      return nil
+    end
+
+    authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
+      json_key_io: File.open(key_path),
+      scope: FCM_SCOPE
+    )
+    authorizer.fetch_access_token!['access_token']
+  rescue => e
+    Rails.logger.error "PushNotificationService: Token retrieval error: #{e.message}"
+    nil
+  end
+
+  def self.get_project_id
+    key_path = Rails.root.join('config', 'firebase-service-account.json')
+    return nil unless File.exist?(key_path)
+    
+    JSON.parse(File.read(key_path))['project_id']
+  rescue => e
+    Rails.logger.error "PushNotificationService: Project ID retrieval error: #{e.message}"
+    nil
   end
 end

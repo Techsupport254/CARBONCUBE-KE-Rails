@@ -362,7 +362,7 @@ class Message < ApplicationRecord
           }
         }
         
-        PushNotificationService.send_notification(tokens, payload)
+        PushNotificationService.send_notification(tokens, payload, self)
       end
     rescue => e
       Rails.logger.error "Failed to send push notification: #{e.message}"

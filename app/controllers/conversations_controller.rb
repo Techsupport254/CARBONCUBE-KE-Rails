@@ -102,6 +102,49 @@ class ConversationsController < ApplicationController
     render json: { online_status: online_status }, status: :ok
   end
 
+  def mark_read
+    @conversation = case @current_user.class.name
+                   when 'Buyer'
+                     find_buyer_conversation
+                   when 'Seller'
+                     find_seller_conversation
+                   when 'Admin', 'SalesUser', 'MarketingUser'
+                     find_admin_conversation
+                   end
+
+    unless @conversation
+      render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
+      return
+    end
+
+    unread_messages = @conversation.messages.unread.where.not(sender: @current_user)
+    
+    processed_count = 0
+    unread_messages.each do |message|
+      message.mark_as_read!
+      # We could broadcast here, but mark_as_read! might already do it or we can do it manually
+      # messages_controller.rb has broadcast_read_receipt(message)
+      # But since we're in ConversationsController, we'll just mark them.
+      processed_count += 1
+    end
+
+    # Update unread counts once for the conversation
+    if processed_count > 0
+      begin
+        UpdateUnreadCountsJob.perform_now(@conversation.id, unread_messages.last.id)
+      rescue => e
+        Rails.logger.warn "Failed to update unread counts: #{e.message}"
+        UpdateUnreadCountsJob.perform_later(@conversation.id, unread_messages.last.id)
+      end
+    end
+
+    render json: { 
+      success: true, 
+      processed_count: processed_count,
+      message: "Marked #{processed_count} messages as read" 
+    }
+  end
+
   def ping_client
     # Only allow admins and sales users to ping sellers
     unless @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser)
