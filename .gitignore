@@ -48,3 +48,9 @@ credentials.yaml
 
 # Google Merchant credentials
 /config/google-merchant-key.json
+
+# Firebase service account
+/config/firebase-service-account.json
+
+# Database dumps
+/db/dumps/*
