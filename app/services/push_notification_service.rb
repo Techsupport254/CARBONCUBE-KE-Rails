@@ -80,26 +80,32 @@ class PushNotificationService
     json_key = ENV['FIREBASE_SERVICE_ACCOUNT_JSON']
     
     if json_key.present?
-      authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-        json_key_io: StringIO.new(json_key),
-        scope: FCM_SCOPE
-      )
-    else
-      key_path = Rails.root.join('config', 'firebase-service-account.json')
-      unless File.exist?(key_path)
-        Rails.logger.error "PushNotificationService: Firebase credentials not found (checked ENV and #{key_path})"
-        return nil
+      begin
+        authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
+          json_key_io: StringIO.new(json_key),
+          scope: FCM_SCOPE
+        )
+        return authorizer.fetch_access_token!['access_token']
+      rescue => e
+        Rails.logger.error "PushNotificationService: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON from ENV: #{e.message}"
       end
-
-      authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
-        json_key_io: File.open(key_path),
-        scope: FCM_SCOPE
-      )
     end
-    
-    authorizer.fetch_access_token!['access_token']
-  rescue => e
-    Rails.logger.error "PushNotificationService: Token retrieval error: #{e.message}"
+
+    # Fallback to file only if ENV is missing or invalid
+    key_path = Rails.root.join('config', 'firebase-service-account.json')
+    if File.exist?(key_path)
+      begin
+        authorizer = Google::Auth::ServiceAccountCredentials.make_creds(
+          json_key_io: File.open(key_path),
+          scope: FCM_SCOPE
+        )
+        return authorizer.fetch_access_token!['access_token']
+      rescue => e
+        Rails.logger.error "PushNotificationService: Failed to get token from file: #{e.message}"
+      end
+    else
+      Rails.logger.error "PushNotificationService: Firebase credentials not found in ENV or at #{key_path}"
+    end
     nil
   end
 
@@ -107,14 +113,21 @@ class PushNotificationService
     json_key = ENV['FIREBASE_SERVICE_ACCOUNT_JSON']
     
     if json_key.present?
-      JSON.parse(json_key)['project_id']
-    else
-      key_path = Rails.root.join('config', 'firebase-service-account.json')
-      return nil unless File.exist?(key_path)
-      JSON.parse(File.read(key_path))['project_id']
+      begin
+        return JSON.parse(json_key)['project_id']
+      rescue => e
+        Rails.logger.error "PushNotificationService: Failed to parse project_id from ENV: #{e.message}"
+      end
     end
-  rescue => e
-    Rails.logger.error "PushNotificationService: Project ID retrieval error: #{e.message}"
+
+    key_path = Rails.root.join('config', 'firebase-service-account.json')
+    if File.exist?(key_path)
+      begin
+        return JSON.parse(File.read(key_path))['project_id']
+      rescue => e
+        Rails.logger.error "PushNotificationService: Failed to parse project_id from file: #{e.message}"
+      end
+    end
     nil
   end
 end
