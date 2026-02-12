@@ -1,19 +1,17 @@
 class NotificationsController < ApplicationController
   before_action :authenticate_request
 
-  # GET /api/notifications
+  # GET /notifications
   def index
+    per_page = (params[:per_page] || 20).to_i
     notifications = Notification.where(recipient: @current_user)
                                 .order(created_at: :desc)
-                                .page(params[:page])
-                                .per(params[:per_page] || 20)
+                                .limit(per_page)
     
     render json: {
       notifications: notifications,
       meta: {
-        current_page: notifications.current_page,
-        total_pages: notifications.total_pages,
-        total_count: notifications.total_count,
+        total_count: Notification.where(recipient: @current_user).count,
         unread_count: Notification.where(recipient: @current_user, read_at: nil).count
       }
     }
