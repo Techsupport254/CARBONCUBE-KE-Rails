@@ -125,4 +125,42 @@ class PaymentTransaction < ApplicationRecord
   
   # Scope for payments by tier
   scope :for_tier, ->(tier_id) { where(tier_id: tier_id) }
+
+  after_update :send_status_notification, if: :saved_change_to_status?
+
+  private
+
+  def send_status_notification
+    begin
+      return unless ['completed', 'failed'].include?(status)
+
+      tokens = DeviceToken.where(user: seller).pluck(:token)
+      return unless tokens.any?
+
+      if status == 'completed'
+        payload = {
+          title: "Payment Successful!",
+          body: "Your subscription to #{tier.name} is now active.",
+          data: {
+            type: 'payment_success',
+            transaction_id: id,
+            tier_id: tier_id
+          }
+        }
+      elsif status == 'failed'
+        payload = {
+          title: "Payment Failed",
+          body: "Transaction for #{tier.name} could not be completed. #{error_message}",
+          data: {
+            type: 'payment_failed',
+            transaction_id: id
+          }
+        }
+      end
+      
+      PushNotificationService.send_notification(tokens, payload) if payload
+    rescue => e
+      Rails.logger.error "Failed to send payment push notification: #{e.message}"
+    end
+  end
 end

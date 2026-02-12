@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_12_104421) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_12_122543) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -308,6 +308,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_104421) do
     t.index ["device_id"], name: "index_device_fingerprints_on_device_id", unique: true
   end
 
+  create_table "device_tokens", force: :cascade do |t|
+    t.string "user_type", null: false
+    t.bigint "user_id", null: false
+    t.string "token"
+    t.string "platform"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token"], name: "index_device_tokens_on_token"
+    t.index ["user_type", "user_id"], name: "index_device_tokens_on_user"
+  end
+
   create_table "document_types", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -495,7 +506,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_12_104421) do
     t.string "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "recipient_type", null: false
+    t.bigint "recipient_id", null: false
+    t.string "title"
+    t.text "body"
+    t.json "data"
+    t.datetime "read_at"
     t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
+    t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
 
   create_table "offer_ads", force: :cascade do |t|
