@@ -1,6 +1,6 @@
 class ConversationSerializer < ActiveModel::Serializer
   attributes :id, :admin_id, :buyer_id, :seller_id, :ad_id, :created_at, :updated_at, :inquirer_seller_id, :last_message,
-             :admin, :buyer, :seller, :inquirer_seller, :ad
+             :admin, :buyer, :seller, :inquirer_seller, :ad, :is_whatsapp
 
   def admin
     return nil unless object.admin
