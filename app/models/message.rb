@@ -10,6 +10,7 @@ class Message < ApplicationRecord
   after_create :update_sender_last_active
   after_create :broadcast_new_message
   after_create :schedule_delivery_receipt
+  after_create :send_push_notification
   after_create :send_message_notification_email
   after_create :send_message_notification_whatsapp, unless: -> { conversation.is_whatsapp? }
   after_create :send_direct_whatsapp_message, if: -> { conversation.is_whatsapp? }
@@ -337,6 +338,34 @@ class Message < ApplicationRecord
       end
     rescue => e
       Rails.logger.error "[Message] Exception sending direct WhatsApp message: #{e.message}"
+    end
+  end
+
+  def send_push_notification
+    begin
+      recipient = get_recipient
+      return unless recipient
+
+      # Retrieve tokens for the recipient
+      tokens = DeviceToken.where(user: recipient).pluck(:token)
+
+      if tokens.any?
+        sender_name = get_sender_display_name(sender)
+        
+        payload = {
+          title: "New Message from #{sender_name}",
+          body: content.truncate(100),
+          data: {
+            conversation_id: conversation_id,
+            message_id: id,
+            type: 'chat_message'
+          }
+        }
+        
+        PushNotificationService.send_notification(tokens, payload)
+      end
+    rescue => e
+      Rails.logger.error "Failed to send push notification: #{e.message}"
     end
   end
 

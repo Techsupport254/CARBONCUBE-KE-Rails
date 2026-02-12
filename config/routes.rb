@@ -540,6 +540,16 @@ Rails.application.routes.draw do
 
   # Support both /buyer and /api/buyer routes for backward compatibility
   scope '/api', defaults: { format: :json } do
+    resources :device_tokens, only: [:create]
+  
+  resources :notifications, only: [:index] do
+    member do
+      post 'read', to: 'notifications#mark_as_read'
+    end
+    collection do
+      post 'read_all', to: 'notifications#mark_all_as_read'
+    end
+  end
     # Profile picture caching endpoints (accessible via /api/cached_profile_pictures/:filename)
     get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
     namespace :buyer, path: 'buyer' do

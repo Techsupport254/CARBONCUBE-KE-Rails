@@ -13,7 +13,35 @@ class Review < ApplicationRecord
   # Ensure only buyers can create reviews
   validate :buyer_can_review
 
+  after_create :send_push_notification
+
   private
+
+  def send_push_notification
+    begin
+      recipient = ad.seller
+      return unless recipient
+
+      # Retrieve tokens for the recipient
+      tokens = DeviceToken.where(user: recipient).pluck(:token)
+
+      if tokens.any?
+        payload = {
+          title: "New Review on #{ad.title.truncate(30)}",
+          body: "#{rating} stars: #{review.truncate(100)}",
+          data: {
+            type: 'review',
+            review_id: id,
+            ad_id: ad_id
+          }
+        }
+        
+        PushNotificationService.send_notification(tokens, payload)
+      end
+    rescue => e
+      Rails.logger.error "Failed to send review push notification: #{e.message}"
+    end
+  end
 
   def check_seller_rating
     ad.seller.check_and_block
