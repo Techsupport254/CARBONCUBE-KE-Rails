@@ -112,6 +112,7 @@ Rails.application.routes.draw do
     end
     member do
       post :ping_client
+      post :mark_read
     end
     collection do
       get :unread_count
