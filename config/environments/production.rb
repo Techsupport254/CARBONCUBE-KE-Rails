@@ -47,7 +47,7 @@ Rails.application.configure do
   config.action_cable.allowed_request_origins = [
     "https://carboncube-ke.com",
     "https://www.carboncube-ke.com",
-    "https://anko.carboncube-ke.com",
+    "https://carboncube-ke.com/api",
     "http://localhost",
     "https://localhost"
   ]
@@ -102,7 +102,7 @@ Rails.application.configure do
   config.hosts << "carboncube-ke.com"
   config.hosts << "www.carboncube-ke.com"
   config.hosts << "*.carboncube-ke.com"
-  config.hosts << "anko.carboncube-ke.com"
+  config.hosts << "carboncube-ke.com/api"
   config.hosts << "backend"
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
