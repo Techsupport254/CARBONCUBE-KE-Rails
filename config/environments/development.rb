@@ -43,6 +43,7 @@ Rails.application.configure do
   # 
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
+  config.hosts << "api.carboncube-ke.com"
   
   # Set secret key base for development
   config.secret_key_base = 'development_secret_key_change_in_production_123456789012345678901234567890123456789012345678901234567890'
