@@ -33,7 +33,7 @@ gem 'redis', '~> 5.0'
 gem 'connection_pool', '~> 2.4'
 
 # AnyCable for high-performance WebSockets
-gem 'anycable-rails', '~> 1.4'
+# gem 'anycable-rails', '~> 1.4'
 
 # PgSearch for full-text search
 gem 'pg_search'
