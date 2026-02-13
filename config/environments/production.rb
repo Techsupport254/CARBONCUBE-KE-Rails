@@ -41,8 +41,8 @@ Rails.application.configure do
 
   # Mount Action Cable outside main process or domain.
   # Action Cable configuration
-  # Mount Action Cable standard path
-  config.action_cable.mount_path = "/cable"
+  # Mount Action Cable standard path (disabled, handled in routes.rb)
+  config.action_cable.mount_path = nil
   
   config.action_cable.allowed_request_origins = [
     "https://carboncube-ke.com",
