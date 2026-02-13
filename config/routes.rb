@@ -1,7 +1,12 @@
 
 Rails.application.routes.draw do
 
-
+  # Reject requests for static files (these should be served by Next.js frontend)
+  # This prevents Rails from trying to process .js, .css, and other static files
+  # that should be handled by the frontend server
+  constraints(lambda { |req| req.path.match?(/\.(js|css|map|json|woff|woff2|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp|avif)$/) }) do
+    match '*path', to: proc { [404, {'Content-Type' => 'text/plain'}, ['Not Found - Static files should be served by frontend']] }, via: :all
+  end
 
   # Mount Action Cable server
   mount ActionCable.server => '/cable'
