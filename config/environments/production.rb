@@ -42,10 +42,11 @@ Rails.application.configure do
   # Mount Action Cable outside main process or domain.
   # Configure Action Cable to align with Nginx `/cable` proxy and HTTPS
   config.action_cable.mount_path = "/cable"
-  config.action_cable.url = "wss://carboncube-ke.com/cable"
+  config.action_cable.url = "wss://anko.carboncube-ke.com/cable"
   config.action_cable.allowed_request_origins = [
     "https://carboncube-ke.com",
     "https://www.carboncube-ke.com",
+    "https://anko.carboncube-ke.com",
     "http://localhost",
     "https://localhost"
   ]
@@ -100,7 +101,7 @@ Rails.application.configure do
   config.hosts << "carboncube-ke.com"
   config.hosts << "www.carboncube-ke.com"
   config.hosts << "*.carboncube-ke.com"
-  config.hosts << "api.carboncube-ke.com"
+  config.hosts << "anko.carboncube-ke.com"
   config.hosts << "backend"
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
