@@ -41,8 +41,8 @@ Rails.application.configure do
 
   # Mount Action Cable outside main process or domain.
   # Action Cable configuration
-  # Mount path is default (/cable)
-  # Websocket URL is handled by Nginx proxy
+  # Mount path disabled (handled in routes.rb)
+  config.action_cable.mount_path = nil
   config.action_cable.allowed_request_origins = [
     "https://carboncube-ke.com",
     "https://www.carboncube-ke.com",

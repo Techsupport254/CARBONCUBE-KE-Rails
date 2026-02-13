@@ -1,5 +1,6 @@
 
 Rails.application.routes.draw do
+  mount ActionCable.server => '/cable'
 
 
   # SEO Redirects - Handle common URL issues
