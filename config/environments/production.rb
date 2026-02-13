@@ -40,9 +40,9 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Mount Action Cable outside main process or domain.
-  # Configure Action Cable to align with Nginx `/cable` proxy and HTTPS
-  config.action_cable.mount_path = nil
-  config.action_cable.url = "wss://anko.carboncube-ke.com/cable"
+  # Action Cable configuration
+  # Mount path is default (/cable)
+  # Websocket URL is handled by Nginx proxy
   config.action_cable.allowed_request_origins = [
     "https://carboncube-ke.com",
     "https://www.carboncube-ke.com",
