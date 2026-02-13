@@ -100,6 +100,7 @@ Rails.application.configure do
   config.hosts << "carboncube-ke.com"
   config.hosts << "www.carboncube-ke.com"
   config.hosts << "*.carboncube-ke.com"
+  config.hosts << "api.carboncube-ke.com"
   config.hosts << "backend"
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
