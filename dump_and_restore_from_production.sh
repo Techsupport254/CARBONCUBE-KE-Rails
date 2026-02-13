@@ -14,9 +14,14 @@ NC='\033[0m' # No Color
 # Production database URL (READ-ONLY operations only)
 # Load from .env file
 if [ -f ".env" ]; then
-  export $(grep -v '^#' .env | xargs)
+  # Use a safer way to extract DATABASE_URL that handles quotes and doesn't use xargs
+  PRODUCTION_DB=$(grep '^DATABASE_URL=' .env | head -1 | cut -d '=' -f2- | sed -e 's/^"//' -e 's/"$//')
 fi
-PRODUCTION_DB="$DATABASE_URL"
+
+if [ -z "$PRODUCTION_DB" ]; then
+  echo -e "${RED}✗ Error: DATABASE_URL not found in .env file${NC}"
+  exit 1
+fi
 
 # Local database URL
 LOCAL_DB="postgresql://Quaint:3323@localhost:5432/carbon_development"
@@ -27,8 +32,7 @@ mkdir -p "$DUMP_DIR"
 
 # Generate timestamp for dump file
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-DUMP_FILE="$DUMP_DIR/production_dump_${TIMESTAMP}.sql"
-DUMP_FILE_GZ="$DUMP_FILE.gz"
+DUMP_FILE="$DUMP_DIR/production_dump_${TIMESTAMP}.custom"
 
 echo -e "${YELLOW}========================================${NC}"
 echo -e "${YELLOW}Production to Local Database Dump/Restore${NC}"
@@ -42,7 +46,7 @@ echo ""
 
 # Step 1: Create dump from production (READ-ONLY operation)
 echo -e "${YELLOW}Step 1: Creating dump from production database...${NC}"
-echo "Dump file: $DUMP_FILE_GZ"
+echo "Dump file: $DUMP_FILE"
 echo ""
 
 # Use pg_dump with custom format for better compression and flexibility
@@ -56,15 +60,15 @@ pg_dump "$PRODUCTION_DB" \
   --no-privileges \
   --clean \
   --if-exists \
-  --file="$DUMP_FILE.custom" \
+  --file="$DUMP_FILE" \
   2>&1 | sed 's/^/  /'
 
-if [ $? -ne 0 ]; then
-  echo -e "${RED}✗ Failed to create dump from production${NC}"
+if [ $? -ne 0 ] || [ ! -s "$DUMP_FILE" ]; then
+  echo -e "${RED}✗ Failed to create dump from production or dump is empty${NC}"
   exit 1
 fi
 
-echo -e "${GREEN}✓ Dump created successfully: $DUMP_FILE.custom${NC}"
+echo -e "${GREEN}✓ Dump created successfully: $DUMP_FILE ($(du -h "$DUMP_FILE" | cut -f1))${NC}"
 echo ""
 
 # Step 2: Restore to local database
@@ -84,7 +88,7 @@ pg_restore \
   --no-owner \
   --no-privileges \
   --verbose \
-  "$DUMP_FILE.custom" \
+  "$DUMP_FILE" \
   2>&1 | sed 's/^/  /'
 
 if [ $? -ne 0 ]; then
@@ -117,7 +121,7 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Dump, Restore & Migration Complete!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo "Dump file saved at: $DUMP_FILE.custom"
+echo "Dump file saved at: $DUMP_FILE"
 echo "Local database: carbon_development"
 echo ""
 

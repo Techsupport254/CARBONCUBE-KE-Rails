@@ -1,5 +1,10 @@
 class ChangePolymorphicIdsToUuidInNotificationsAndDeviceTokens < ActiveRecord::Migration[7.1]
   def up
+    # Clear tables since we are changing column types and removing the old ID columns.
+    # Existing rows would violate the NOT NULL constraint on the new columns.
+    execute "DELETE FROM device_tokens"
+    execute "DELETE FROM notifications"
+
     # DeviceTokens
     remove_column :device_tokens, :user_id
     add_column :device_tokens, :user_id, :uuid, null: false
