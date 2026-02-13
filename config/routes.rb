@@ -3,6 +3,9 @@ Rails.application.routes.draw do
 
 
 
+  # Mount Action Cable server
+  mount ActionCable.server => '/cable'
+
   # SEO Redirects - Handle common URL issues
   get '/home', to: redirect('/', status: 301)
   get '/seller-', to: redirect('/become-a-seller', status: 301)
