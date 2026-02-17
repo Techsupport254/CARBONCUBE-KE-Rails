@@ -1,7 +1,7 @@
 class Ad < ApplicationRecord
   include PgSearch::Model
 
-  enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3 }
+  enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3, ex_uk: 4 }
 
   # tsearch only: trigram (%) requires pg_trgm and can raise "operator does not exist: unknown % text"
   pg_search_scope :search_by_title_and_description, against: [:title, :description], using: { tsearch: { prefix: true } }
@@ -276,6 +276,7 @@ class Ad < ApplicationRecord
     when 'second_hand' then 'USED'
     when 'refurbished' then 'REFURBISHED'
     when 'x_japan' then 'NEW' # X-Japan treated as new condition for Google Merchant
+    when 'ex_uk' then 'USED' # EX-UK treated as used condition for Google Merchant
     else 'NEW'
     end
   end
