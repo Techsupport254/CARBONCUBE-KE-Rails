@@ -1,0 +1,17 @@
+.git
+.gitignore
+log/*
+tmp/*
+db/dumps/*
+node_modules/*
+whatsapp-service/node_modules/*
+storage/*
+public/assets/*
+public/packs/*
+public/packs-test/*
+.env*
+Dockerfile*
+docker-compose*
+*.dump
+*.sql
+*.custom

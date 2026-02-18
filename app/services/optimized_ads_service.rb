@@ -22,19 +22,18 @@ class OptimizedAdsService
           # Use the optimized query but return ActiveRecord objects
           query = build_optimized_query(filters)
           
-          # Apply pagination and randomization
-          per_page = filters[:per_page] || 24
-          page = filters[:page] || 1
+          # Apply pagination
+          per_page = (filters[:per_page] || 24).to_i
+          page = (filters[:page] || 1).to_i
           
-          # Get the base query and apply randomization
-          randomized_query = query.order(
-            Arel.sql('RANDOM()'),
-            Arel.sql('ads.created_at DESC'),
-            Arel.sql('ads.id')
-          ).limit(per_page).offset((page - 1) * per_page)
-          
-          # Return as ActiveRecord objects with includes for associations
-          randomized_query.includes(:category, :subcategory, seller: { seller_tier: :tier })
+          # Optimization: Load only IDs first if randomization is needed, 
+          # OR use a more efficient way to get random records.
+          # For now, we force the query to execute inside the cache block by calling .to_a
+          query.includes(:category, :subcategory, seller: { seller_tier: :tier })
+               .order(Arel.sql('RANDOM()')) # Keeping random for now but ensuring it's cached
+               .limit(per_page)
+               .offset((page - 1) * per_page)
+               .to_a # CRITICAL: Execute query INSIDE the cache block
         end
       end
     end
