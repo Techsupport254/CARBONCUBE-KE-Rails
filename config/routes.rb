@@ -565,6 +565,29 @@ Rails.application.routes.draw do
 
   # Support both /buyer and /api/buyer routes for backward compatibility
   scope '/api', defaults: { format: :json } do
+    # Unified conversations and messages endpoints
+    resources :conversations, only: [:index, :show, :create] do
+      resources :messages, only: [:index, :create] do
+        member do
+          patch :mark_as_read
+          patch :mark_as_delivered
+          get :status
+        end
+        collection do
+          post :process_pending_deliveries
+        end
+      end
+      member do
+        post :ping_client
+        post :mark_read
+      end
+      collection do
+        get :unread_count
+        get :unread_counts
+        post :online_status
+      end
+    end
+
     # Profile picture caching endpoints (accessible via /api/cached_profile_pictures/:filename)
     get '/cached_profile_pictures/:filename', to: 'profile_pictures#show'
     namespace :buyer, path: 'buyer' do

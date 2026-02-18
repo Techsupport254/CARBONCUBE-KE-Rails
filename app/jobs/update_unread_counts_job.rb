@@ -5,7 +5,7 @@ class UpdateUnreadCountsJob < ApplicationJob
   retry_on StandardError, wait: :exponentially_longer, attempts: 3
   
   def perform(conversation_id, message_id)
-    Rails.logger.info "UpdateUnreadCountsJob: Starting for conversation #{conversation_id}, message #{message_id}"
+    # Rails.logger.info "UpdateUnreadCountsJob: Starting for conversation #{conversation_id}, message #{message_id}"
     
     conversation = Conversation.find_by(id: conversation_id)
     unless conversation
@@ -19,7 +19,7 @@ class UpdateUnreadCountsJob < ApplicationJob
       return
     end
     
-    Rails.logger.info "UpdateUnreadCountsJob: Found conversation #{conversation.id} and message #{message.id}"
+    # Rails.logger.info "UpdateUnreadCountsJob: Found conversation #{conversation.id} and message #{message.id}"
     
     # Update unread counts for all participants
     update_participant_unread_counts(conversation, message)
@@ -27,7 +27,7 @@ class UpdateUnreadCountsJob < ApplicationJob
     # Broadcast unread count updates to all participants
     broadcast_unread_count_updates(conversation)
     
-    Rails.logger.info "UpdateUnreadCountsJob: Completed successfully"
+    # Rails.logger.info "UpdateUnreadCountsJob: Completed successfully"
     
   rescue StandardError => e
     Rails.logger.error "UpdateUnreadCountsJob: Failed to update unread counts: #{e.message}"
@@ -197,7 +197,7 @@ class UpdateUnreadCountsJob < ApplicationJob
   def broadcast_unread_count_to_user(user_type, user_id, unread_count)
     channel_name = "conversations_#{user_type.downcase}_#{user_id}"
     
-    Rails.logger.info "UpdateUnreadCountsJob: Broadcasting to #{channel_name} with count: #{unread_count}"
+    # Rails.logger.info "UpdateUnreadCountsJob: Broadcasting to #{channel_name} with count: #{unread_count}"
     
     # Use ActionCable.server.broadcast to match the Message model
     ActionCable.server.broadcast(channel_name, {
@@ -206,7 +206,7 @@ class UpdateUnreadCountsJob < ApplicationJob
       timestamp: Time.current.iso8601
     })
     
-    Rails.logger.info "UpdateUnreadCountsJob: Successfully broadcasted to #{channel_name}"
+    # Rails.logger.info "UpdateUnreadCountsJob: Successfully broadcasted to #{channel_name}"
   rescue StandardError => e
     Rails.logger.warn "UpdateUnreadCountsJob: Failed to broadcast unread count to #{channel_name}: #{e.message}"
   end
