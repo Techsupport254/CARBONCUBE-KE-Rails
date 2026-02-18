@@ -58,7 +58,7 @@ class SearchRedisService
         end
       end
 
-      Rails.logger.info "Search '#{search_term}' logged successfully for session #{session_id} (role: #{role}, user_id: #{user_id})"
+      # Rails.logger.info "Search '#{search_term}' logged successfully for session #{session_id} (role: #{role}, user_id: #{user_id})"
     rescue => e
       Rails.logger.error "Failed to log search to Redis: #{e.message}"
     end
