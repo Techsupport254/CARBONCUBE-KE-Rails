@@ -2363,12 +2363,15 @@ class Buyer::AdsController < ApplicationController
         subcategory_name: alt.subcategory&.name,
         seller_id: alt.seller_id,
         seller_name: alt.seller&.fullname || alt.seller&.enterprise_name,
+        seller_enterprise_name: alt.seller&.enterprise_name,
+        seller_profile_picture: alt.seller&.profile_picture,
         seller_rating: alt.seller&.respond_to?(:calculate_mean_rating) ? alt.seller.calculate_mean_rating : nil,
         rating: avg_rating.round(2),
         review_count: review_count,
         seller_tier: seller_tier_id,
         seller_tier_name: (alt.seller&.seller_tier&.tier&.name || 'Free'),
         location: alt.seller&.county,
+        seller_location_name: alt.seller&.county&.name,
         brand: alt.brand,
         manufacturer: alt.manufacturer
       }
