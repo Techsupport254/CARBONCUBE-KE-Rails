@@ -11,14 +11,14 @@ class Buyer < ApplicationRecord
 
   has_secure_password validations: false
 
-  has_many :reviews
-  has_many :cart_items
+  has_many :reviews, dependent: :destroy
+  has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
-  has_many :sent_messages, as: :sender, class_name: 'Message'
+  has_many :sent_messages, as: :sender, class_name: 'Message', dependent: :destroy
   has_many :conversations, dependent: :destroy
-  has_many :click_events
-  has_many :ad_searches
+  has_many :click_events, dependent: :destroy
+  has_many :ad_searches, dependent: :destroy
   has_many :password_otps, as: :otpable, dependent: :destroy
 
   belongs_to :sector, optional: true

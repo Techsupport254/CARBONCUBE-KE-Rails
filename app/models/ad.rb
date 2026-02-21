@@ -19,7 +19,7 @@ class Ad < ApplicationRecord
   has_many :reviews, dependent: :destroy
   has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
-  has_many :click_events
+  has_many :click_events, dependent: :destroy
   has_many :offer_ads, dependent: :destroy
   has_many :offers, through: :offer_ads
   has_many :conversations, dependent: :destroy
