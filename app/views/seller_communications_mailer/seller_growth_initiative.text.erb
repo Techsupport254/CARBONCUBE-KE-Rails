@@ -1,0 +1,19 @@
+Hey <%= @gender == "Male" ? "King" : (@gender == "Female" ? "Queen" : "Legend") %> <%= @first_name %>,
+
+Haha, we caught you there! 😉
+
+Actually, this is Victor from Carbon Cube. But here's the thing—you could be getting actual messages from real buyers at <%= @enterprise_name %> if your listings were top of mind.
+
+<% if @ads_count == 0 %>
+We noticed you haven't listed any items at <%= @enterprise_name %> yet. Listing your first few items today will help you get those real buyer messages!
+<% elsif @days_since_last_ad > 30 %>
+it’s been <%= @days_since_last_ad %> days since your last posted at <%= @enterprise_name %>. Even the internet-pigeons are wondering where you went! 🕊️
+<% elsif @days_since_last_ad > 7 %>
+<%= @enterprise_name %> is a buyer favorite, but fresh listings are the secret to keeping those "New Message" notifications actually happening.
+<% else %>
+You're doing great! Keep uploading at <%= @enterprise_name %> to keep those actual buyer messages coming in.
+<% end %>
+
+Upload here: <%= @upload_url %>
+
+Victor from Carbon Cube

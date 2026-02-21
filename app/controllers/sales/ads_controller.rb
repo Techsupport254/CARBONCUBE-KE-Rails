@@ -9,9 +9,26 @@ class Sales::AdsController < ApplicationController
     # Build base query without select for counting
     base_query = Ad.joins(seller: :seller_tier)
          .joins(:category, :subcategory)
-         .where(deleted: false) # Exclude soft-deleted ads
          .where(sellers: { blocked: false, deleted: false }) # Only active sellers
 
+    # Handle status filtering
+    if params[:status].present?
+      case params[:status]
+      when 'active'
+        base_query = base_query.where(flagged: false, deleted: false)
+      when 'flagged'
+        base_query = base_query.where(flagged: true, deleted: false)
+      when 'deleted'
+        base_query = base_query.where(deleted: true)
+      when 'all'
+        # Do nothing, show all including deleted and flagged
+      else
+        base_query = base_query.where(deleted: false)
+      end
+    else
+      # Default: show non-deleted ads
+      base_query = base_query.where(deleted: false)
+    end
     if params[:category_id].present?
       base_query = base_query.where(category_id: params[:category_id])
     end
@@ -30,7 +47,6 @@ class Sales::AdsController < ApplicationController
       base_query = base_query.where(title_description_conditions, *search_terms.flat_map { |term| ["%#{term}%", "%#{term}%"] })
     end
 
-    # Filter by who added the ad (sales vs seller) if requested
     if params[:added_by].present?
       case params[:added_by]
       when 'sales'
@@ -107,8 +123,27 @@ class Sales::AdsController < ApplicationController
   # Update flagged status
   def restore
     @ad = Ad.find(params[:id])
-    @ad.update(flagged: false)  # Set flagged to false
+    @ad.update(flagged: false, deleted: false)
     head :no_content
+  end
+
+  # DELETE /sales/ads/:id - Permanent delete
+  def destroy
+    begin
+      @ad = Ad.find(params[:id])
+      # Standard destroy performs permanent deletion in this app's architecture
+      # unless specific soft-delete logic is added to the model
+      if @ad.destroy
+        render json: { message: "Ad '#{@ad.title}' permanently deleted successfully" }, status: :ok
+      else
+        render json: { error: "Failed to delete ad permanently", details: @ad.errors.full_messages }, status: :unprocessable_entity
+      end
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Ad not found" }, status: :not_found
+    rescue => e
+      Rails.logger.error "❌ Error permanently deleting ad: #{e.message}"
+      render json: { error: "Internal server error during deletion", details: e.message }, status: :internal_server_error
+    end
   end
 
   # GET /sales/ads/stats

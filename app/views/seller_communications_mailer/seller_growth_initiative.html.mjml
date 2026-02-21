@@ -1,0 +1,138 @@
+<mjml>
+  <mj-head>
+    <mj-title>Seller Performance Update</mj-title>
+    <mj-font name="Outfit" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;900&display=swap" />
+    <mj-attributes>
+      <mj-all font-family="Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" color="#2d3748" padding="0px" />
+      <mj-text line-height="1.4" font-size="13px" />
+      <mj-button background-color="#fbbf24" color="#0f172a" font-size="13px" font-weight="900" text-transform="uppercase" border-radius="50px" inner-padding="10px 25px" />
+      <mj-section background-color="#ffffff" padding="0px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .text-upper { text-transform: uppercase; letter-spacing: 0.5px; }
+      .meme-text { font-style: italic; font-weight: 800; color: #4338ca; }
+      .highlight-box { background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+      .connect-section {
+        background: #000000;
+        background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(251,191,36,0.05) 35px, rgba(251,191,36,0.05) 70px) !important;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f8fafc" width="600px">
+    
+    <!-- Header Logo -->
+    <mj-section background-color="transparent" padding-top="15px" padding-bottom="15px">
+      <mj-column>
+        <mj-image src="https://carboncube-ke.com/logo.png" width="30px" alt="Carbon Logo" align="center" />
+      </mj-column>
+    </mj-section>
+    
+    <!-- Profile Card -->
+    <mj-section background-color="#ffffff" padding="20px 0px 5px 0px" border-radius="16px 16px 0 0">
+      <mj-column width="100%">
+        <mj-image src="<%= @profile_picture %>" width="55px" height="55px" border-radius="50px" alt="Avatar" padding-bottom="8px" align="center" border="2px solid #f1f5f9" />
+        
+        <mj-text font-size="18px" font-weight="900" color="#0f172a" align="center" css-class="text-upper" padding="0px">
+          <%= @enterprise_name %>
+        </mj-text>
+        
+        <mj-text font-size="11px" color="#4338ca" font-weight="700" padding="2px 0px 0px 0px" align="center">
+          <%= @ads_count %> listings
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Main Content Wrapper -->
+    <mj-wrapper background-color="#ffffff" padding="5px 0px 30px 0px" border-radius="0 0 16px 16px">
+      
+      <mj-section padding="10px 20px">
+        <mj-column>
+          <mj-text align="left" color="#4a5568" font-size="14px" line-height="1.6">
+            <span style="font-size: 18px; font-weight: 900; color: #000000; display: block; margin-bottom: 8px;">
+              <% if @gender == "Male" %>Hey King <%= @first_name %>,<% elsif @gender == "Female" %>Hey Queen <%= @first_name %>,<% else %>Hey Legend <%= @first_name %>,<% end %>
+            </span>
+
+            <span style="font-size: 14px; font-weight: 700; color: #4338ca; display: block; margin-bottom: 12px;">
+              Haha, we caught you there! 😉
+            </span>
+
+            Actually, this is Victor from Carbon Cube. But here's the thing—you <i>could</i> be getting actual messages from real buyers at <strong><%= @enterprise_name %></strong> if your listings were top of mind.
+            <br/><br/>
+            
+            <% if @ads_count == 0 %>
+              We were just looking at the account for <strong><%= @enterprise_name %></strong> and noticed you haven't listed any items yet.
+              <br/><br/>
+              Listing your first few items today will move your shop into our active search rankings. Let's get <%= @enterprise_name %> some <i>real</i> messages!
+            <% elsif @days_since_last_ad > 30 %>
+             it’s been <strong><%= @days_since_last_ad %> days</strong> since your last posted at <%= @enterprise_name %>. Even the internet-pigeons are wondering where you went! 🕊️
+            <% elsif @days_since_last_ad > 7 %>
+              <%= @enterprise_name %> is clearly a buyer favorite. 👑 But fresh listings are the only way to keep those "New Message" notifications actually happening.
+              <br/><br/>
+              Consistent activity tells our algorithm to keep your shop prioritized.
+            <% else %>
+              You're already in unlimited power mode! 🔥
+              <br/><br/>
+              Your shop <%= @enterprise_name %> is appearing frequently in recent searches. Keep uploading to keep those actual buyer messages rolling in.
+            <% end %>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- PERFORMANCE STAR -->
+      <% if @top_ad %>
+      <mj-section padding="10px 20px">
+        <mj-column width="100%" background-color="#f8fafc" border-radius="8px">
+          <mj-table padding="12px">
+            <tr>
+              <td width="25%" style="vertical-align: top;">
+                 <img src="<%= @top_ad.first_valid_media_url || 'https://carboncube-ke.com/logo.png' %>" style="width: 100%; border-radius: 6px; aspect-ratio: 1/1; object-fit: cover; display: block;" />
+              </td>
+              <td width="5%"></td>
+              <td width="70%" style="vertical-align: top;">
+                 <p style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.2;">
+                   <%= @top_ad.title.truncate(50) %>
+                 </p>
+                 <p style="margin: 4px 0 0; font-size: 12px; color: #4338ca; font-weight: 700;">
+                    <% if @top_ad_clicks > 0 %>
+                      🔥 <%= @top_ad_clicks %> people checked this out recently!
+                    <% else %>
+                      ✨ Optimized and ready for search
+                    <% end %>
+                 </p>
+              </td>
+            </tr>
+          </mj-table>
+        </mj-column>
+      </mj-section>
+      <% end %>
+
+      <!-- CTA Section -->
+      <mj-section padding-top="20px" padding-left="20px" padding-right="20px">
+        <mj-column>
+          <mj-button href="<%= @upload_url %>" width="100%" inner-padding="12px 25px" border-radius="8px">
+            Upload Ads
+          </mj-button>
+          <mj-text align="center" font-size="12px" color="#94a3b8" padding-top="15px">
+             Or reply to this email if you need a hand!
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+    <!-- Footer -->
+    <mj-section padding="30px 20px">
+      <mj-column>
+        <mj-text align="left" color="#4a5568" font-size="14px">
+          <strong>Victor from Carbon Cube</strong>
+        </mj-text>
+        
+        <mj-spacer height="40px" />
+        
+        <mj-text align="center" font-size="10px" color="#94a3b8">
+          © <%= Time.current.year %> Carbon Cube Kenya.<br/>
+          Nairobi, Kenya • <a href="https://carboncube-ke.com/confirm_unsubscribe?email=<%= @seller.email %>" style="color: #94a3b8; text-decoration: underline;">Unsubscribe</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

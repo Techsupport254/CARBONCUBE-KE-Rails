@@ -475,6 +475,7 @@ Rails.application.routes.draw do
     
     # Consolidated dashboard endpoint
     get 'dashboard', to: 'dashboard#index'
+    get 'catalog', to: 'catalogs#show'
     
     resources :ads do
       member do
@@ -699,7 +700,7 @@ Rails.application.routes.draw do
           post 'change-password'
         end
       end
-      resources :ads, only: [:index, :show, :create] do
+      resources :ads, only: [:index, :show, :create, :destroy] do
         collection do
           get :flagged
           get :stats
@@ -721,6 +722,8 @@ Rails.application.routes.draw do
         end
       end
       resources :reviews, only: [:index, :show]
+      resources :sellers, only: [:index, :show, :destroy]
+      resources :buyers, only: [:index, :show, :destroy]
       resources :conversations, only: [:index, :show, :create] do
         resources :messages, only: [:index, :create]
         get :unread_count, on: :collection
@@ -884,7 +887,7 @@ Rails.application.routes.draw do
           post 'change-password'
         end
       end
-      resources :ads, only: [:index, :show, :create] do
+      resources :ads, only: [:index, :show, :create, :destroy] do
         collection do
           get :flagged
           get :stats
@@ -907,6 +910,8 @@ Rails.application.routes.draw do
         end
       end
       resources :reviews, only: [:index, :show]
+      resources :sellers, only: [:index, :show, :destroy]
+      resources :buyers, only: [:index, :show, :destroy]
       resources :conversations, only: [:index, :show, :create] do
         resources :messages, only: [:index, :create]
         get :unread_count, on: :collection

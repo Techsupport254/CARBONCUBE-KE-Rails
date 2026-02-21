@@ -1,13 +1,10 @@
 class SellerCommunicationsMailer < ApplicationMailer
   default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
   
-  # Skip ApplicationMailer's before_action for black_friday_email to have full control
-  skip_before_action :add_deliverability_headers, only: [:black_friday_email]
+  # Skip global headers for full control over Primary inboxing
+  skip_before_action :add_deliverability_headers, only: [:seller_growth_initiative]
   
-  # Use our custom job for better logging
-  def self.delivery_job
-    SellerCommunicationMailDeliveryJob
-  end
+  helper UtmUrlHelper
   
   def custom_communication
     @user = params[:user] || params[:seller] || @seller
@@ -220,5 +217,76 @@ class SellerCommunicationsMailer < ApplicationMailer
     Rails.logger.info log_message
     
     mail_message
+  end
+  def seller_growth_initiative
+    @seller = params[:seller]
+    @fullname = @seller.fullname
+    @enterprise_name = @seller.enterprise_name
+    @gender = @seller.gender # Standard gender check
+    
+    # Personal greeting name (First name)
+    @first_name = @fullname.to_s.split(' ').first.presence || "Legend"
+    
+    # Profile Picture Logic
+    raw_pic = @seller.profile_picture
+    if raw_pic.present? && !raw_pic.to_s.start_with?('/cached_profile_pictures/')
+      @profile_picture = raw_pic
+    else
+      @profile_picture = "https://ui-avatars.com/api/?name=#{URI.encode_www_form_component(@name)}&background=1f2937&color=ffffff&size=128&bold=true&format=png"
+    end
+
+    # Ads Count
+    @ads_count = @seller.ads.where(deleted: false).count
+
+    # Total Clicks
+    @total_clicks = ClickEvent.where(ad_id: @seller.ads.select(:id), event_type: 'Ad-Click').count
+
+    # Identify Top Performing Ad
+    top_ad_data = ClickEvent.where(ad_id: @seller.ads.select(:id), event_type: 'Ad-Click')
+                            .group(:ad_id)
+                            .order('count_all DESC')
+                            .count
+                            .first
+    
+    if top_ad_data
+      @top_ad = Ad.find_by(id: top_ad_data[0])
+      @top_ad_clicks = top_ad_data[1]
+    elsif @seller.ads.exists?
+       @top_ad = @seller.ads.where(deleted: false).order(created_at: :desc).first
+       @top_ad_clicks = 0
+    end
+
+    # Days since last ad
+    last_ad = @seller.ads.where(deleted: false).order(created_at: :desc).first
+    @days_since_last_ad = last_ad ? ((Time.current - last_ad.created_at) / 1.day).to_i : 999
+    
+    # Tier Name
+    @tier_name = @seller.seller_tier&.tier&.name || "Free"
+    
+    # Timestamp for footer
+    @timestamp = Time.current.in_time_zone("Nairobi").strftime("%B %d, %Y")
+
+    # High-engagement subject line
+    subject_text = "You have a new message"
+
+    # Append subtle unique ID
+    subject_text += " [Ref: #{Time.current.to_i.to_s[-4..-1]}]"
+
+    @upload_url = "https://carboncube-ke.com/seller/ads/new"
+
+    # Minimal headers to mimic manual email
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['Precedence'] = nil
+    headers['List-Unsubscribe'] = nil
+    headers['List-Unsubscribe-Post'] = nil
+    headers['Message-ID'] = "<#{Time.current.to_f}-#{@seller.id}@carboncube-ke.com>"
+
+    mail(
+      to: @seller.email,
+      from: "Victor from Carbon Cube <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text
+    )
   end
 end

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= @seller.enterprise_name %> - Product Catalog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #fbbf24; /* Amber 400 */
+            --primary-dark: #d97706; /* Amber 600 */
+            --dark: #111827; /* Gray 900 */
+            --secondary: #6b7280; /* Gray 500 */
+            --accent: #fffbeb; /* Amber 50 */
+            --white: #ffffff;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fafafa;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 30px;
+            position: relative;
+        }
+
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            border-top: 8px solid var(--primary);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .logos-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+
+        .header-logo {
+            height: 60px;
+            max-width: 180px;
+            object-fit: contain;
+        }
+
+        .cc-logo {
+            height: 50px;
+            object-fit: contain;
+        }
+
+        header h1 {
+            color: var(--dark);
+            font-size: 28px;
+            margin: 10px 0 5px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 800;
+        }
+
+        header .subtitle {
+            color: var(--primary-dark);
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        header .meta {
+            font-size: 12px;
+            color: var(--secondary);
+            background: var(--accent);
+            display: inline-block;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+        }
+
+        th {
+            background-color: var(--dark);
+            color: var(--white);
+            text-align: left;
+            padding: 18px 15px;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        th:first-child { border-top-left-radius: 8px; }
+        th:last-child { border-top-right-radius: 8px; }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            font-size: 13px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        tr:hover {
+            background-color: var(--accent);
+        }
+
+        .img-cell {
+            width: 90px;
+        }
+
+        .product-img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .price {
+            font-weight: 800;
+            color: var(--dark);
+            white-space: nowrap;
+            font-size: 15px;
+        }
+
+        .deleted-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 9999px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .desc {
+            max-width: 450px;
+            color: var(--secondary);
+            font-size: 12px;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .view-link {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 12px;
+            padding: 5px 12px;
+            background-color: var(--dark);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .view-link:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .num-cell {
+            width: 40px;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .no-print-actions {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .action-btn.csv {
+            background: #10b981; /* Green 500 */
+        }
+
+        .action-btn.csv:hover {
+            background: #059669; /* Green 600 */
+        }
+
+        @media print {
+            body { 
+                background: white !important; 
+                padding: 0 !important; 
+                margin: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -100;
+                background-image: url('https://carboncube-ke.com/logo.png') !important;
+                background-repeat: repeat-y !important;
+                background-position: center !important;
+                background-size: 600px !important;
+                opacity: 0.04 !important;
+                pointer-events: none;
+                display: block !important;
+            }
+            .container { 
+                box-shadow: none !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                padding: 0 !important; 
+                border-top: none !important;
+                background: white !important;
+            }
+            .no-print-actions { display: none !important; }
+            .view-link { display: none !important; }
+            .desc { display: none !important; }
+            
+            table { 
+                width: 100% !important; 
+                page-break-inside: auto; 
+                border-collapse: collapse !important;
+            }
+            tr { 
+                page-break-inside: avoid !important; 
+                page-break-after: auto !important; 
+            }
+            th { 
+                background-color: #f3f4f6 !important; 
+                color: black !important; 
+                border-bottom: 2px solid #000 !important;
+                position: static !important;
+            }
+            td {
+                border-bottom: 1px solid #eee !important;
+            }
+            .product-img {
+                border: 1px solid #eee !important;
+            }
+            .meta {
+                background: #f9fafb !important;
+                border: 1px solid #eee !important;
+            }
+            @page { 
+                margin: 1.5cm; 
+                size: portrait;
+            }
+        }
+    </style>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Floating Action Buttons -->
+    <div class="no-print-actions">
+        <a href="javascript:window.print()" class="action-btn">
+            <i class="fas fa-file-pdf"></i> Save as PDF
+        </a>
+        <a href="<%= request.original_url %>&format=csv" class="action-btn csv">
+            <i class="fas fa-file-csv"></i> Download CSV
+        </a>
+    </div>
+    <div class="container">
+        <header>
+            <div class="logos-row">
+                <% if @seller.profile_picture.present? %>
+                    <img src="<%= @seller.profile_picture %>" alt="<%= @seller.enterprise_name %> Logo" class="header-logo">
+                <% else %>
+                    <div style="width:60px;"></div>
+                <% end %>
+                <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Logo" class="cc-logo">
+            </div>
+            <h1><%= @seller.enterprise_name.upcase %></h1>
+            <p class="subtitle">Official Product Catalog & Inventory List</p>
+            <p class="meta">Generated on <%= Time.current.strftime('%B %d, %Y') %> | Total Inventory: <%= @products.size %> Items</p>
+        </header>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="num-cell">#</th>
+                    <th class="img-cell">Image</th>
+                    <th>Product Details</th>
+                    <th>Category</th>
+                    <th>Price (KES)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% @products.each_with_index do |p, index| %>
+                <tr>
+                    <td class="num-cell"><%= index + 1 %></td>
+                    <td class="img-cell">
+                        <% if p.media_urls.present? %>
+                            <img src="<%= p.media_urls.first %>" class="product-img" loading="lazy">
+                        <% else %>
+                            <div class="product-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;background:#eee;font-size:10px;">No Image</div>
+                        <% end %>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; font-size: 15px;">
+                            <%= p.title %>
+                            <% if p.deleted %>
+                                <span class="deleted-badge">Deleted</span>
+                            <% end %>
+                        </div>
+                        <div class="desc"><%= p.description %></div>
+                        <% unless p.deleted %>
+                            <a href="https://carboncube-ke.com/ads/<%= Ad.slugify(p.title) %>?id=<%= p.id %>" target="_blank" class="view-link">View Online</a>
+                        <% end %>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600;"><%= p.category_name %></div>
+                        <div style="color: var(--secondary);"><%= p.subcategory_name %></div>
+                    </td>
+                    <td class="price">
+                        <%= number_with_delimiter(p.price) %>
+                    </td>
+                </tr>
+                <% end %>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p>&copy; <%= Time.current.year %> <%= @seller.enterprise_name %>. All rights reserved.</p>
+            <p>Confidential Business Document</p>
+        </div>
+    </div>
+</body>
+</html>
