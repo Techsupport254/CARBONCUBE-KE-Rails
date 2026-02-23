@@ -552,7 +552,11 @@ Rails.application.routes.draw do
   post 'webhooks/whatsapp', to: 'webhooks#whatsapp'
 
   # Device tokens for push notifications
-  resources :device_tokens, only: [:create]
+  resources :device_tokens, only: [:create] do
+    collection do
+      post :ping_push
+    end
+  end
   
   # Notifications
   resources :notifications, only: [:index] do

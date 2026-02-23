@@ -35,7 +35,29 @@ class PushNotificationService
             title: notification_payload[:title],
             body: notification_payload[:body]
           },
-          data: notification_payload[:data]&.transform_values(&:to_s) || {}
+          data: notification_payload[:data]&.transform_values(&:to_s) || {},
+          # Android: must specify channel_id for Android 8+, otherwise notification is silently dropped.
+          # icon must be a drawable resource name in the app (ic_launcher is always available).
+          android: {
+            priority: 'high',
+            notification: {
+              channel_id: 'default',
+              icon:       'ic_launcher',
+              color:      '#FACC15'
+            }
+          },
+          # iOS: ensure alert is shown even in foreground
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                badge: 1
+              }
+            },
+            headers: {
+              'apns-priority' => '10'
+            }
+          }
         }
       }
 
