@@ -1,5 +1,19 @@
-Rails is not currently installed on this system. To get the latest version, simply type:
-
-    $ sudo gem install rails
-
-You can then rerun your "rails" command.
+=> Booting Puma
+=> Rails 7.1.5.2 application starting in development 
+=> Run `bin/rails server --help` for more startup options
+Set [36mDATABASE_URL[0m, [36mRAILS_MASTER_KEY[0m, [36mREDIS_URL[0m, [36mCLOUDINARY_API_KEY[0m, [36mCLOUDINARY_API_SECRET[0m, [36mCLOUDINARY_CLOUD_NAME[0m, [36mUPLOAD_PRESET[0m, [36mMPESA_CONSUMER_KEY[0m, [36mMPESA_CONSUMER_SECRET[0m, [36mMPESA_SHORTCODE[0m, [36mMPESA_ENV[0m, [36mBREVO_EMAIL[0m, [36mBREVO_SMTP_USER[0m, [36mBREVO_SMTP_PASSWORD[0m, [36mREACT_APP_BACKEND_URL[0m, [36mREACT_APP_CLOUDINARY_CLOUD_NAME[0m, [36mREACT_APP_CLOUDINARY_UPLOAD_PRESET[0m, [36mPILOT_PHASE_ENABLED[0m, [36mREACT_APP_PILOT_PHASE_ENABLED[0m, [36mPUBLIC_URL[0m, [36mREACT_APP_SITE_URL[0m, [36mREACT_APP_WEBSOCKET_URL[0m, [36mWEBSOCKET_URL[0m, [36mREACT_APP_GOOGLE_CLIENT_ID[0m, [36mREACT_APP_GOOGLE_REDIRECT_URI[0m, [36mGOOGLE_OAUTH_CLIENT_ID[0m, [36mGOOGLE_OAUTH_CLIENT_SECRET[0m, [36mGOOGLE_REDIRECT_URI[0m, [36mWHATSAPP_SERVICE_URL[0m, [36mWHATSAPP_NOTIFICATIONS_ENABLED[0m, [36mWHATSAPP_SERVICE_PORT[0m, and [36mFRONTEND_URL[0m
+Loaded [33m.env.development[0m
+Set [36mPORT[0m, [36mNEXT_PUBLIC_BACKEND_URL[0m, [36mNEXT_PUBLIC_WEBSOCKET_URL[0m, [36mNEXT_PUBLIC_SITE_URL[0m, [36mNEXT_PUBLIC_GOOGLE_CLIENT_ID[0m, [36mNEXT_PUBLIC_GOOGLE_REDIRECT_URI[0m, [36mREACT_APP_FRONTEND_URL[0m, [36mWHATSAPP_CLOUD_VERIFY_TOKEN[0m, [36mWHATSAPP_CLOUD_PHONE_NUMBER_ID[0m, [36mWHATSAPP_CLOUD_ACCESS_TOKEN[0m, [36mMETA_APP_SECRET[0m, [36mWHATSAPP_CLOUD_WABA_ID[0m, [36mFCM_SERVER_KEY[0m, and [36mFIREBASE_SERVICE_ACCOUNT_JSON[0m
+Loaded [33m.env[0m
+✅ Redis connection pool initialized successfully
+✅ SMTP SSL verification disabled for development
+Puma starting in single mode...
+* Puma version: 6.6.0 ("Return to Forever")
+* Ruby version: ruby 3.4.4 (2025-05-14 revision a38531fd3f) +PRISM [x86_64-darwin24]
+*  Min threads: 5
+*  Max threads: 10
+*  Environment: development
+*          PID: 6116
+* Listening on http://127.0.0.1:3001
+* Listening on http://[::1]:3001
+Use Ctrl-C to stop

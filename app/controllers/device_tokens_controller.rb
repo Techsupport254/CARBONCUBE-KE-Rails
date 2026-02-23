@@ -72,6 +72,7 @@ class DeviceTokensController < ApplicationController
         success: true,
         message: 'Test push notification sent! Check your device notification tray.',
         token_prefix: target_token.first(20) + '...',
+        credential_source: result[:credential_source],
         success_count: result[:success_count],
         failure_count: result[:failure_count]
       }, status: :ok
@@ -86,7 +87,8 @@ class DeviceTokensController < ApplicationController
         token_prefix: target_token.first(20) + '...',
         fcm_status: first_failure[:fcm_status],
         fcm_error_code: first_failure[:error_code],
-        firebase_project_id: result[:project_id]
+        firebase_project_id: result[:project_id],
+        credential_source: result[:credential_source]
       }, status: :unprocessable_entity
     end
   rescue => e
