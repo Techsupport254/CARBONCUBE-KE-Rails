@@ -1917,7 +1917,7 @@ class Buyer::AdsController < ApplicationController
       
       # Extract ad IDs, categories, subcategories, and sellers from clicked ads
       click_events.each do |event|
-        next unless event.ad&.active?
+        next unless event.ad && !event.ad.deleted
         
         clicked_ad_ids << event.ad_id
         clicked_categories << event.ad.category_id if event.ad.category_id
@@ -1990,20 +1990,24 @@ class Buyer::AdsController < ApplicationController
     end
     
     # Get ads with tier priority
+    # NOTE: Cannot use a SELECT alias with includes() — ActiveRecord generates a
+    # separate DISTINCT subquery that doesn't have the alias. Inline the CASE
+    # expression directly in ORDER BY instead.
     recommended_ads = recommended_ads_query
-      .select("ads.*, 
-               CASE tiers.id
+      .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
+      .order(Arel.sql('CASE tiers.id
                  WHEN 4 THEN 1
                  WHEN 3 THEN 2
                  WHEN 2 THEN 3
                  WHEN 1 THEN 4
                  ELSE 5
-               END AS tier_priority")
-      .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-      .order(Arel.sql('tier_priority ASC, ads.created_at DESC'))
+               END ASC, ads.created_at DESC'))
       .limit(limit * 3) # Get more to allow for scoring
     
-    Rails.logger.info "Query returned #{recommended_ads.count} recommended ads"
+    # Use .load.size instead of .count to avoid a separate COUNT query
+    # that also triggers the DISTINCT subquery issue
+    recommended_ads = recommended_ads.load
+    Rails.logger.info "Query returned #{recommended_ads.size} recommended ads"
     
     # If no ads found, fall back to best sellers
     if recommended_ads.empty?
@@ -2074,7 +2078,7 @@ class Buyer::AdsController < ApplicationController
         subcategory_name: ad.subcategory&.name,
         seller_tier: seller_tier_id || 1,
         seller_tier_name: (ad.seller&.seller_tier&.tier&.name || ad.seller_tier_name || 'Free'),
-        tier_priority: ad.tier_priority || 5,
+        tier_priority: (ad.seller&.seller_tier&.tier_id ? (5 - [ad.seller.seller_tier.tier_id, 4].min) : 5),
         comprehensive_score: comprehensive_score.round(2),
         personalized_score: personalized_score.round(2),
         similarity_score: similarity_score,

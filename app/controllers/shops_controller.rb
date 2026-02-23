@@ -90,7 +90,7 @@ class ShopsController < ApplicationController
                   },
                   offer_ads: :offer
                 )
-                .order('tiers.id DESC, RANDOM()')
+                .order('tiers.id DESC, ads.created_at DESC')
                 .offset((page - 1) * per_page)
                 .limit(per_page)
                 
