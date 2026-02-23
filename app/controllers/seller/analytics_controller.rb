@@ -656,11 +656,20 @@ class Seller::AnalyticsController < ApplicationController
       # Wishlists: 3 points, Clicks: 1 point, Reveals: 2 points, Reviews: 1 point per review, Rating: 0.5 per point
       score = (wishlists * 3) + (clicks * 1) + (reveals * 2) + (reviews_count * 1) + (avg_rating * 0.5)
       
+      parsed_media = begin
+        ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || [])
+      rescue
+        []
+      end
+
       {
         ad_id: ad.id,
         ad_title: ad.title,
         ad_price: ad.price.to_f,
-        ad_media: ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || []),
+        ad_media: parsed_media,
+        first_media_url: (ad.respond_to?(:first_media_url) ? ad.first_media_url : nil),
+        image_url: (ad.respond_to?(:first_media_url) ? ad.first_media_url : nil),
+        media_urls: parsed_media,
         total_wishlists: wishlists,
         total_clicks: clicks,
         total_reveals: reveals,
@@ -1217,7 +1226,7 @@ class Seller::AnalyticsController < ApplicationController
             ('missing_description' if ad.description.blank?),
             ('missing_title' if ad.title.blank?)
           ].compact
-        }
+        }.merge(attention_media_payload(ad))
       end
 
       # Incomplete (missing key fields)
@@ -1297,7 +1306,7 @@ class Seller::AnalyticsController < ApplicationController
       end
 
       # Needs attention (flagged or missing critical info)
-      has_valid_images = ad.media.present? && (JSON.parse(ad.media) rescue []).any?
+      has_valid_images = ad.has_valid_images?
       if ad.flagged || !has_valid_images || ad.description.blank? || ad.title.blank?
         needs_attention << {
           ad_id: ad.id,
@@ -1308,7 +1317,7 @@ class Seller::AnalyticsController < ApplicationController
             ('missing_description' if ad.description.blank?),
             ('missing_title' if ad.title.blank?)
           ].compact
-        }
+        }.merge(attention_media_payload(ad))
       end
 
       # Incomplete (missing key fields)
@@ -1344,8 +1353,7 @@ class Seller::AnalyticsController < ApplicationController
     score += 10 if ad.title.present? && ad.title.length >= 10
     score += 10 if ad.description.present? && ad.description.length >= 100
     score += 10 if ad.price.present? && ad.price > 0
-    has_valid_images = ad.media.present? && (JSON.parse(ad.media) rescue []).any?
-    score += 10 if has_valid_images
+    score += 10 if ad.has_valid_images?
     score += 10 if ad.brand.present?
     score += 10 if ad.category_id.present?
     score += 10 if ad.subcategory_id.present?
@@ -1358,12 +1366,29 @@ class Seller::AnalyticsController < ApplicationController
     missing << 'title' if ad.title.blank? || ad.title.length < 10
     missing << 'description' if ad.description.blank? || ad.description.length < 100
     missing << 'price' if ad.price.blank? || ad.price <= 0
-    has_valid_images = ad.media.present? && (JSON.parse(ad.media) rescue []).any?
-    missing << 'images' unless has_valid_images
+    missing << 'images' unless ad.has_valid_images?
     missing << 'brand' if ad.brand.blank?
     missing << 'category' if ad.category_id.blank?
     missing << 'subcategory' if ad.subcategory_id.blank?
     missing
+  end
+
+  def attention_media_payload(ad)
+    media_urls = []
+    begin
+      parsed_media = ad.media.is_a?(String) ? JSON.parse(ad.media) : ad.media
+      media_urls = parsed_media if parsed_media.is_a?(Array)
+    rescue
+      media_urls = []
+    end
+
+    first_media_url = ad.respond_to?(:first_media_url) ? ad.first_media_url : media_urls.first
+
+    {
+      image_url: first_media_url,
+      first_media_url: first_media_url,
+      media_urls: media_urls
+    }
   end
 
   def calculate_product_completeness(ad)
