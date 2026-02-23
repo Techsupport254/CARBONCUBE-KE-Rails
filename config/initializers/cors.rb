@@ -7,13 +7,18 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins '*'  # In production, you might want to restrict this to your frontend domain
+    origins 'https://carboncube-ke.com', 
+            'https://www.carboncube-ke.com',
+            'https://anko.carboncube-ke.com',
+            'https://carboncube-ke.vercel.app',
+            'http://localhost:3000',
+            'http://localhost:3001'
 
     resource '*',
       headers: :any,
       methods: [:get, :post, :put, :patch, :delete, :options, :head],
-      credentials: false,
-      expose: ['X-Request-Id', 'X-Runtime', 'X-Page-Load-Time'],
+      credentials: true,
+      expose: ['Authorization', 'X-Request-Id', 'X-Runtime', 'X-Page-Load-Time'],
       max_age: 86400
   end
 end
