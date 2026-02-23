@@ -24,17 +24,6 @@ module CarbonecomRails
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
     
-    # CORS configuration
-    config.middleware.insert_before 0, Rack::Cors do
-      allow do
-        origins 'https://carboncube-ke.vercel.app', 'http://localhost:3000', '*' # Adjust the origin as needed
-        resource '*',
-          headers: :any,
-          methods: [:get, :post, :put, :patch, :delete, :options, :head],
-          expose: ['Authorization'] # If you need to expose Authorization header
-      end
-    end
-
     config.api_only = true
     
     # Sessions are not needed for API-only apps with JWT authentication

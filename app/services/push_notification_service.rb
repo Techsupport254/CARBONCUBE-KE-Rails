@@ -20,18 +20,13 @@ class PushNotificationService
 
     project_id = get_project_id
     unless project_id.present?
-      bundle = firebase_credentials_bundle
-      Rails.logger.error "PushNotificationService: Missing Firebase project_id. " \
-                         "Source: #{bundle[:source]}, " \
-                         "Credentials Present: #{bundle[:credentials].present?}, " \
-                         "Is Hash: #{bundle[:credentials].is_a?(Hash)}, " \
-                         "Details: #{bundle[:credentials].is_a?(Hash) ? bundle[:credentials].keys.join(',') : 'N/A'}"
+      Rails.logger.error "PushNotificationService: Missing Firebase project_id."
       return {
         success: false,
         error: 'MISSING_PROJECT_ID',
         message: 'Firebase project_id is missing from credentials.',
         failures: [],
-        credential_source: bundle[:source],
+        credential_source: firebase_credentials_source,
         project_id: nil
       }
     end

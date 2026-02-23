@@ -19,10 +19,10 @@ class DualLogger < ActiveSupport::Logger
     
     # Filter out request logs and serializer logs
     # Filter "Started GET/POST" request logs
-    # if msg_str.match?(/^Started (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)/i) || msg_str.match?(/^Processing by/i)
-    #   super # Log to file only
-    #   return self
-    # end
+    if msg_str.match?(/^Started (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)/i) || msg_str.match?(/^Processing by/i)
+      super # Log to file only
+      return self
+    end
     
     # Filter ActiveModel Serializer rendering logs (comprehensive pattern)
     if msg_str.match?(/Rendered ActiveModel::Serializer/i) || 
@@ -46,9 +46,6 @@ Rails.application.configure do
   config.hosts << "anko.carboncube-ke.com"
   config.hosts << ".ngrok-free.app"
   config.hosts << ".ngrok.io"
-  
-  # Allow web console to render when using ngrok
-  config.web_console.permissions = '0.0.0.0/0'
   
   # Set secret key base for development
   config.secret_key_base = 'development_secret_key_change_in_production_123456789012345678901234567890123456789012345678901234567890'

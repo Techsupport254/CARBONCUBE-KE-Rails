@@ -926,6 +926,37 @@ Rails.application.routes.draw do
 
   mount ActionCable.server => '/cable'
 
+    # Fallback preflight handler. This guarantees CORS headers on OPTIONS
+    # requests even when upstream routing/proxy behavior is inconsistent.
+    match '*path', via: :options, to: proc { |env|
+      request = Rack::Request.new(env)
+      origin = request.get_header('HTTP_ORIGIN').to_s
+      allowed_origins = [
+        'https://carboncube-ke.com',
+        'https://www.carboncube-ke.com',
+        'https://anko.carboncube-ke.com',
+        'https://carboncube-ke.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:3001'
+      ]
+
+      allow_origin = allowed_origins.include?(origin) ? origin : allowed_origins.first
+      request_headers = request.get_header('HTTP_ACCESS_CONTROL_REQUEST_HEADERS').presence || 'Authorization, Content-Type'
+
+      [
+        204,
+        {
+          'Access-Control-Allow-Origin' => allow_origin,
+          'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
+          'Access-Control-Allow-Headers' => request_headers,
+          'Access-Control-Allow-Credentials' => 'true',
+          'Access-Control-Max-Age' => '86400',
+          'Vary' => 'Origin'
+        },
+        []
+      ]
+    }
+
     post '/visitor/track', to: 'visitor_analytics#track_visitor'
     get '/visitor/analytics', to: 'visitor_analytics#analytics'
     get '/visitor/list', to: 'visitor_analytics#visitors_list'
