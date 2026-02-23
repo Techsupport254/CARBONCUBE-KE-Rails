@@ -64,19 +64,29 @@ class DeviceTokensController < ApplicationController
       }
     }
 
-    success = PushNotificationService.send_notification([target_token], payload)
+    result = PushNotificationService.send_notification_with_details([target_token], payload)
+    success = result[:success]
 
     if success
       render json: {
         success: true,
         message: 'Test push notification sent! Check your device notification tray.',
-        token_prefix: target_token.first(20) + '...'
+        token_prefix: target_token.first(20) + '...',
+        success_count: result[:success_count],
+        failure_count: result[:failure_count]
       }, status: :ok
     else
+      first_failure = Array(result[:failures]).first || {}
+      detailed_error = first_failure[:message].presence || result[:message].presence ||
+        'FCM returned an error. Check server logs for details.'
+
       render json: {
         success: false,
-        error: 'FCM returned an error. Check server logs for details. Common causes: invalid token, Firebase credentials missing, or the app is re-installed (stale token).',
-        token_prefix: target_token.first(20) + '...'
+        error: detailed_error,
+        token_prefix: target_token.first(20) + '...',
+        fcm_status: first_failure[:fcm_status],
+        fcm_error_code: first_failure[:error_code],
+        firebase_project_id: result[:project_id]
       }, status: :unprocessable_entity
     end
   rescue => e

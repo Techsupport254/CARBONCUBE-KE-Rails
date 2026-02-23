@@ -8,16 +8,36 @@ class PushNotificationService
   FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging'.freeze
 
   def self.send_notification(tokens, notification_payload, notifiable = nil)
+    result = send_notification_with_details(tokens, notification_payload, notifiable)
+    result[:success]
+  end
+
+  def self.send_notification_with_details(tokens, notification_payload, notifiable = nil)
     # tokens: array of strings or a single string
-    tokens = Array(tokens)
-    return false if tokens.empty?
+    tokens = Array(tokens).compact.uniq
+    return { success: false, error: 'NO_TOKENS', message: 'No tokens provided', failures: [] } if tokens.empty?
 
     project_id = get_project_id
+    unless project_id.present?
+      Rails.logger.error "PushNotificationService: Missing Firebase project_id."
+      return {
+        success: false,
+        error: 'MISSING_PROJECT_ID',
+        message: 'Firebase project_id is missing from credentials.',
+        failures: []
+      }
+    end
+
     access_token = get_access_token
     
     unless access_token
       Rails.logger.error "PushNotificationService: Failed to get access token."
-      return false
+      return {
+        success: false,
+        error: 'ACCESS_TOKEN_FAILED',
+        message: 'Failed to obtain Firebase access token.',
+        failures: []
+      }
     end
 
     headers = {
@@ -26,6 +46,7 @@ class PushNotificationService
     }
 
     success_count = 0
+    failures = []
     
     tokens.each do |token|
       body = {
@@ -67,7 +88,25 @@ class PushNotificationService
         success_count += 1
         Rails.logger.info "PushNotificationService: Notification sent to #{token}. Response: #{response.body}"
       else
-        Rails.logger.error "PushNotificationService: Failed to send to #{token}. Status: #{response&.code}. Response: #{response&.body}"
+        parsed_error = parse_fcm_error(response)
+        failures << {
+          token_prefix: mask_token(token),
+          status_code: response&.code,
+          fcm_status: parsed_error[:fcm_status],
+          error_code: parsed_error[:error_code],
+          message: parsed_error[:message]
+        }
+
+        if parsed_error[:error_code] == 'UNREGISTERED'
+          DeviceToken.where(token: token).delete_all
+          Rails.logger.info "PushNotificationService: Removed stale device token #{mask_token(token)}"
+        end
+
+        Rails.logger.error(
+          "PushNotificationService: Failed to send to #{token}. " \
+          "Status: #{response&.code}, FCM status: #{parsed_error[:fcm_status]}, " \
+          "errorCode: #{parsed_error[:error_code]}, message: #{parsed_error[:message]}"
+        )
       end
     end
 
@@ -90,13 +129,45 @@ class PushNotificationService
       end
     end
 
-    success_count > 0
+    {
+      success: success_count > 0,
+      project_id: project_id,
+      success_count: success_count,
+      failure_count: tokens.length - success_count,
+      failures: failures
+    }
   rescue => e
     Rails.logger.error "PushNotificationService: Exception #{e.message}"
-    false
+    { success: false, error: 'EXCEPTION', message: e.message, failures: [] }
   end
 
   private
+
+  def self.parse_fcm_error(response)
+    default_message = response&.body.to_s
+    parsed = {}
+    begin
+      parsed = JSON.parse(default_message)
+    rescue JSON::ParserError
+      parsed = {}
+    end
+
+    error_obj = parsed['error'] || {}
+    details = Array(error_obj['details'])
+    fcm_detail = details.find { |d| d.is_a?(Hash) && d['errorCode'].present? } || {}
+
+    {
+      fcm_status: error_obj['status'],
+      error_code: fcm_detail['errorCode'],
+      message: error_obj['message'] || default_message
+    }
+  end
+
+  def self.mask_token(token)
+    return '' if token.blank?
+    return token if token.length <= 20
+    "#{token[0, 12]}...#{token[-6, 6]}"
+  end
 
   def self.get_access_token
     json_key = ENV['FIREBASE_SERVICE_ACCOUNT_JSON']
