@@ -533,70 +533,69 @@ class ShopsController < ApplicationController
     
     # Strategy 1: Exact match with normalized spaces (handles multi-spaces, newlines, etc.)
     normalized_enterprise_name = enterprise_name_from_slug.downcase.strip.squeeze(' ')
-    shop = Seller.includes(:seller_tier, :tier)
-                 .where(deleted: false)
-                 .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
-                 .first
-    
-    # Strategy 2: Match by normalized name (removes special chars like apostrophes, newlines)
-    # This handles cases like "Rick's" -> "ricks" in the slug
-    # Use a simpler approach: search for shops whose normalized name matches
+    shop = Strategy1.call(slug, normalized_enterprise_name) ||
+           Strategy2.call(slug, normalized_slug_name) ||
+           Strategy3.call(slug, normalized_enterprise_name) ||
+           Strategy4.call(slug, normalized_slug_name) ||
+           Strategy5.call(slug)
+
     unless shop
-      # Try direct SQL match first (most efficient)
-      shop = Seller.includes(:seller_tier, :tier)
-                   .where(deleted: false)
-                   .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) = ?', normalized_slug_name)
-                   .first
-      
-      # Fallback: If SQL doesn't work (e.g., PostgreSQL regex issues), use Ruby normalization
-      # This is less efficient but more reliable for edge cases
-      unless shop
-        # Only search shops that could potentially match (same length or similar)
-        # This limits the search space significantly
-        potential_shops = Seller.includes(:seller_tier, :tier)
-                                .where(deleted: false)
-                                .where("LENGTH(LOWER(enterprise_name)) BETWEEN ? AND ?", 
-                                       normalized_slug_name.length - 2, 
-                                       normalized_slug_name.length + 2)
-        
-        shop = potential_shops.find do |seller|
-          normalized_db_name = normalize_shop_name(seller.enterprise_name || '')
-          normalized_db_name == normalized_slug_name
-        end
-      end
+      Rails.logger.warn "ShopsController#find_shop_by_slug: Shop not found for slug '#{slug}' (normalized: '#{normalized_slug_name}')"
     end
-    
-    # Strategy 3: Partial match with normalized spaces
-    unless shop
-      shop = Seller.includes(:seller_tier, :tier)
-                   .where(deleted: false)
-                   .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
-                   .first
+
+    shop
+  end
+
+  # Define strategies as lambdas or private methods for better organization
+  class Strategy1
+    def self.call(slug, normalized_enterprise_name)
+      Seller.includes(:seller_tier, :tier)
+            .where(deleted: false)
+            .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
+            .first
     end
-    
-    # Strategy 4: Partial match with normalized name (removes special chars)
-    unless shop
-      shop = Seller.includes(:seller_tier, :tier)
-                   .where(deleted: false)
-                   .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_slug_name}%")
-                   .first
+  end
+
+  class Strategy2
+    def self.call(slug, normalized_slug_name)
+      Seller.includes(:seller_tier, :tier)
+            .where(deleted: false)
+            .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) = ?', normalized_slug_name)
+            .first
     end
-    
-    # Strategy 5: Try to find by ID as fallback (for backward compatibility)
-    unless shop
+  end
+
+  class Strategy3
+    def self.call(slug, normalized_enterprise_name)
+      Seller.includes(:seller_tier, :tier)
+            .where(deleted: false)
+            .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
+            .first
+    end
+  end
+
+  class Strategy4
+    def self.call(slug, normalized_slug_name)
+      Seller.includes(:seller_tier, :tier)
+            .where(deleted: false)
+            .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_slug_name}%")
+            .first
+    end
+  end
+
+  class Strategy5
+    def self.call(slug)
       begin
         shop_id = slug.to_i
         if shop_id > 0
-          shop = Seller.includes(:seller_tier, :tier)
-                       .where(deleted: false)
-                       .find(shop_id)
+          Seller.includes(:seller_tier, :tier)
+                .where(deleted: false)
+                .find(shop_id)
         end
       rescue ActiveRecord::RecordNotFound
-        # Ignore and continue to return nil
+        nil
       end
     end
-    
-    shop
   end
   
   # Normalize shop name by removing special characters and normalizing spaces
