@@ -53,6 +53,18 @@ class Sales::AdSearchesController < ApplicationController
       end
     end
 
+    # Exclude specific individual search records (display_name + search_term combos)
+    excluded_records = [
+      ['pantech kenya limited', 'oppo a57'],
+      ['carbon mobile', 'samsung'],
+      ['sales at carbon', 'top zone'],
+    ].freeze
+    formatted_searches.reject! do |search|
+      name = search[:user_profile]&.dig(:display_name).to_s.strip.downcase
+      term = search[:search_term].to_s.strip.downcase
+      excluded_records.include?([name, term])
+    end
+
     render json: {
       searches: formatted_searches,
       meta: {
