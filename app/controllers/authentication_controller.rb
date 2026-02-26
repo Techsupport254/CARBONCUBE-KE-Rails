@@ -10,7 +10,8 @@ class AuthenticationController < ApplicationController
       render json: { errors: ['Email is required'] }, status: :bad_request
       return
     end
-    remember_me = params[:remember_me] == true || params[:remember_me] == 'true'
+    # Always enable remember_me for maximum session duration
+    remember_me = true
     @user = find_user_by_email(email)
 
     if @user&.authenticate(params[:password])
@@ -126,13 +127,14 @@ class AuthenticationController < ApplicationController
     remember_me = payload[:remember_me]
 
     # Check if remember_me was enabled during login
-    unless remember_me
-      render json: { 
-        error: 'Token refresh not allowed - remember me was not enabled',
-        error_type: 'refresh_not_allowed'
-      }, status: :forbidden
-      return
-    end
+    # Sessions are now persistent by default
+    # unless remember_me
+    #   render json: { 
+    #     error: 'Token refresh not allowed - remember me was not enabled',
+    #     error_type: 'refresh_not_allowed'
+    #   }, status: :forbidden
+    #   return
+    # end
 
     # Find the user
     user = find_user_by_id_and_role(user_id, role)
