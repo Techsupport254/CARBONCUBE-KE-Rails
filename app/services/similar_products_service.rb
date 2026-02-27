@@ -5,20 +5,21 @@ class SimilarProductsService
     def find_similar_products(ad, limit: 15)
       # Normalize title and brand for better matching
       normalized_title = normalize_title(ad.title)
+      normalized_title_key = normalize_title_key(ad.title)
       normalized_brand = normalize_brand(ad.brand)
       normalized_manufacturer = normalize_brand(ad.manufacturer) if ad.manufacturer.present?
 
       # Find alternative sellers for the same product (different sellers, same product)
-      alternative_sellers = find_alternative_sellers(ad, normalized_title, normalized_brand, normalized_manufacturer)
+      alternative_sellers = find_alternative_sellers(ad, normalized_title, normalized_title_key, normalized_brand, normalized_manufacturer)
 
       # Find exact same products from other sellers (for comparison)
-      same_products = find_same_products(ad, normalized_title, normalized_brand, normalized_manufacturer, exclude_current_seller: true)
+      same_products = find_same_products(ad, normalized_title, normalized_title_key, normalized_brand, normalized_manufacturer, exclude_current_seller: true)
 
       # Find similar products if we don't have enough exact matches
       similar_products = []
       exclude_ids = (same_products + alternative_sellers).map(&:id)
       if same_products.size + alternative_sellers.size < 8
-        similar_products = find_similar_products_by_keywords(ad, normalized_title, normalized_brand, exclude_ids)
+        similar_products = find_similar_products_by_keywords(ad, normalized_title, normalized_title_key, normalized_brand, exclude_ids)
       end
 
       # Return serialized results
@@ -32,7 +33,7 @@ class SimilarProductsService
 
     private
 
-    def find_alternative_sellers(ad, normalized_title, normalized_brand, normalized_manufacturer)
+    def find_alternative_sellers(ad, normalized_title, normalized_title_key, normalized_brand, normalized_manufacturer)
       # Find products from the SAME seller with similar titles (alternative products from same seller)
       alternative_scope = Ad.active.with_valid_images
                              .select('ads.*')
@@ -53,7 +54,10 @@ class SimilarProductsService
         word_conditions = key_words.map { |word| "ads.title ILIKE ?" }.join(' OR ')
         word_params = key_words.map { |word| "%#{word}%" }
         alternative_scope = alternative_scope.where(word_conditions, *word_params)
-                                             .where.not("LOWER(TRIM(ads.title)) = LOWER(TRIM(?))", ad.title.to_s.strip)
+                                             .where.not(
+                                               "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?",
+                                               normalized_title_key
+                                             )
       end
 
       # Get alternative products with scoring
@@ -95,7 +99,7 @@ class SimilarProductsService
       scope
     end
 
-    def find_same_products(ad, normalized_title, normalized_brand, normalized_manufacturer, exclude_current_seller: false)
+    def find_same_products(ad, normalized_title, normalized_title_key, normalized_brand, normalized_manufacturer, exclude_current_seller: false)
       base_scope = build_base_scope(ad, exclude_current_seller: exclude_current_seller)
       same_product_scope = base_scope
                              .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
@@ -108,10 +112,10 @@ class SimilarProductsService
       title_match_conditions << "LOWER(TRIM(ads.title)) = LOWER(TRIM(?))"
       title_match_params << ad.title.to_s.strip
 
-      # If normalized title is different, add it as alternative match
-      if normalized_title != ad.title.to_s.downcase.strip
-        title_match_conditions << "LOWER(TRIM(ads.title)) = ?"
-        title_match_params << normalized_title
+      # Punctuation-insensitive exact key match (e.g. "Redmi A3x." == "Redmi A3x")
+      if normalized_title_key.present?
+        title_match_conditions << "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?"
+        title_match_params << normalized_title_key
       end
 
       # Brand matching
@@ -165,7 +169,7 @@ class SimilarProductsService
       scored_same_products
     end
 
-    def find_similar_products_by_keywords(ad, normalized_title, normalized_brand, exclude_ids)
+    def find_similar_products_by_keywords(ad, normalized_title, normalized_title_key, normalized_brand, exclude_ids)
       base_scope = build_base_scope(ad, exclude_current_seller: true)
       similar_scope = base_scope
                         .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
@@ -180,6 +184,12 @@ class SimilarProductsService
         word_params = key_words.map { |word| "%#{word}%" }
         similar_scope = similar_scope.where(word_conditions, *word_params)
       end
+
+      # Prevent exact same products (ignoring punctuation) from showing as merely "similar"
+      similar_scope = similar_scope.where.not(
+        "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?",
+        normalized_title_key
+      )
 
       # Get similar items with scoring
       similar_candidates = similar_scope
@@ -210,8 +220,15 @@ class SimilarProductsService
       return '' if title.blank?
       # Remove extra spaces, normalize case, remove special chars but keep numbers/letters
       title.to_s.downcase.strip
-           .gsub(/[^\w\s-]/, '') # Remove special characters except hyphens
+           .gsub(/[^a-z0-9\s]/, '') # Remove punctuation/symbols
            .gsub(/\s+/, ' ') # Normalize multiple spaces
+           .strip
+    end
+
+    def normalize_title_key(title)
+      return '' if title.blank?
+      title.to_s.downcase
+           .gsub(/[^a-z0-9]/, '')
            .strip
     end
 

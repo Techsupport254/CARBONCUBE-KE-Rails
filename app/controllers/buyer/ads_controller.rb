@@ -209,19 +209,21 @@ class Buyer::AdsController < ApplicationController
 
     # Build title matching conditions - use multiple strategies for better matching
     # Strategy 1: Exact match (case-insensitive, trimmed)
-    # Strategy 2: Match with normalized title (if different from original)
+    # Strategy 2: Match with punctuation-insensitive normalized key
     
     title_match_conditions = []
     title_match_params = []
     
+    normalized_title_key = normalize_title_key(ad.title)
+
     # Exact match
     title_match_conditions << "LOWER(TRIM(ads.title)) = LOWER(TRIM(?))"
     title_match_params << ad.title.to_s.strip
-    
-    # If normalized title is different, add it as alternative match
-    if normalized_title != ad.title.to_s.downcase.strip
-      title_match_conditions << "LOWER(TRIM(ads.title)) = ?"
-      title_match_params << normalized_title
+
+    # Punctuation-insensitive exact key match (e.g. "Redmi A3x." == "Redmi A3x")
+    if normalized_title_key.present?
+      title_match_conditions << "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?"
+      title_match_params << normalized_title_key
     end
     
     # Brand matching - handle nulls and case-insensitive
@@ -288,6 +290,12 @@ class Buyer::AdsController < ApplicationController
         word_params = key_words.map { |word| "%#{word}%" }
         similar_scope = similar_scope.where(word_conditions, *word_params)
       end
+
+      # Prevent exact same products (ignoring punctuation) from leaking into similar items
+      similar_scope = similar_scope.where.not(
+        "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?",
+        normalized_title_key
+      )
 
       # Get similar items with scoring
       similar_candidates = similar_scope
@@ -2388,8 +2396,17 @@ class Buyer::AdsController < ApplicationController
     title.to_s
          .downcase
          .strip
-         .gsub(/[^\w\s]/, '')  # Remove special characters
+         .gsub(/[^a-z0-9\s]/, '')  # Remove punctuation/symbols
          .gsub(/\s+/, ' ')     # Normalize multiple spaces
+         .strip
+  end
+
+  # Canonical key for exact product matching (punctuation-insensitive)
+  def normalize_title_key(title)
+    return "" if title.blank?
+    title.to_s
+         .downcase
+         .gsub(/[^a-z0-9]/, '')
          .strip
   end
 
@@ -2399,7 +2416,7 @@ class Buyer::AdsController < ApplicationController
     brand.to_s
          .downcase
          .strip
-         .gsub(/[^\w\s]/, '')  # Remove special characters
+         .gsub(/[^a-z0-9\s]/, '')  # Remove punctuation/symbols
          .gsub(/\s+/, ' ')     # Normalize multiple spaces
          .strip
   end
@@ -2417,7 +2434,7 @@ class Buyer::AdsController < ApplicationController
     
     words = title.to_s
                   .downcase
-                  .gsub(/[^\w\s]/, ' ')
+                  .gsub(/[^a-z0-9\s]/, ' ')
                   .split(/\s+/)
                   .reject(&:blank?)
                   .reject { |word| word.length < 3 }  # Remove very short words

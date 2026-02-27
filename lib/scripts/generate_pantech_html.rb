@@ -255,7 +255,7 @@ end
 def slugify(title)
   return "product" if title.blank?
   title.downcase
-       .gsub(/[^a-z0-9\s]/, '')
+       .gsub(/[^a-z0-9\s.]/, '')
        .gsub(/\s+/, '-')
        .strip
 end
