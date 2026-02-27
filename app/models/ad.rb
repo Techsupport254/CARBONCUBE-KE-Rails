@@ -95,7 +95,7 @@ class Ad < ApplicationRecord
     value.to_s
          .downcase
          .strip
-         .gsub(/[^\w\s-]/, "")    # remove special characters except spaces/hyphens
+         .gsub(/[^\w\s.-]/, "")    # remove special characters except spaces/hyphens/dots
          .gsub(/\s+/, " ")        # normalize multiple spaces
          .strip
          .gsub(/\s+/, "-")        # spaces to hyphen
@@ -117,7 +117,7 @@ class Ad < ApplicationRecord
     # Also consider a space-separated version for titles stored with spaces
     spacey = normalized_slug.tr("-", " ")
 
-    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '[^a-z0-9]+', '-', 'g'), '-+', '-', 'g'), '-'))"
+    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '[^a-z0-9.]+', '-', 'g'), '-+', '-', 'g'), '-'))"
 
     # Match against multiple representations of the title
     where(
@@ -385,7 +385,7 @@ class Ad < ApplicationRecord
     return "product-#{Time.current.to_i}" if title.blank?
     
     title.downcase
-         .gsub(/[^a-z0-9\s]/, '')
+         .gsub(/[^a-z0-9\s.]/, '')
          .gsub(/\s+/, '-')
          .strip
   end
