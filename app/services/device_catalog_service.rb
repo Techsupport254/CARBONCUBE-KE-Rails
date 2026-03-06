@@ -55,13 +55,12 @@ class DeviceCatalogService
 
     # Map subcategory to specific file
     filename = case name
-               when 'tablets' then 'tablets_filtered.json'
-               when 'ipads' then 'ipads_filtered.json'
-               when 'laptops' then 'laptops_filtered.json'
-               when 'tvs', 'televisions', 'tvs & home entertainment' then 'tvs_filtered.json'
-               when 'watches', 'smartwatches' then 'watches_filtered.json'
+               when /tablet|ipad/ then 'tablets_filtered.json'
+               when /laptop|computer/ then 'laptops_filtered.json'
+               when /tv|television|entertainment/ then 'tvs_filtered.json'
+               when /watch/ then 'watches_filtered.json'
                when 'phones' then 'phones_filtered.json'
-               else 'phones_filtered.json' # Default to the filtered phones list instead of raw unstructured data
+               else 'phones_filtered.json'
                end
 
     Rails.root.join('scripts', 'output', filename)
