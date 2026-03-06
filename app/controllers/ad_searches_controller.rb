@@ -1,6 +1,6 @@
 class AdSearchesController < ApplicationController
   before_action :authenticate_user, only: [:create] # Authenticate any user (buyer, seller, admin, sales)
-  before_action :authenticate_user_for_index, only: [:index] # For getting recent searches
+  before_action :authenticate_user_for_index, only: [:index, :analytics] # For getting recent searches/analytics
 
   def create
     # Determine user role for logging
@@ -58,6 +58,36 @@ class AdSearchesController < ApplicationController
   rescue => e
     Rails.logger.error "Failed to fetch recent searches: #{e.message}"
     render json: { searches: [], count: 0, error: 'Failed to fetch recent searches' }, status: :internal_server_error
+  end
+
+  # Backward-compatible analytics endpoint used by mobile/web clients
+  # GET /ad_searches/analytics
+  def analytics
+    all_time = SearchRedisService.popular_searches(20, :all)
+    weekly = SearchRedisService.popular_searches(20, :weekly)
+    daily = SearchRedisService.popular_searches(20, :daily)
+    summary = SearchRedisService.analytics
+
+    render json: {
+      popular_searches: {
+        all_time: all_time,
+        weekly: weekly,
+        daily: daily
+      },
+      # Keep legacy shape expected by older clients
+      popular_searches_all_time: all_time,
+      searches: all_time.map { |term, _count| { search_term: term } },
+      total_searches_today: summary[:total_searches_today],
+      total_searches_weekly: summary[:total_searches_weekly],
+      unique_search_terms_today: summary[:unique_search_terms_today]
+    }, status: :ok
+  rescue => e
+    Rails.logger.error "Failed to fetch search analytics: #{e.message}"
+    render json: {
+      popular_searches: { all_time: [], weekly: [], daily: [] },
+      popular_searches_all_time: [],
+      searches: []
+    }, status: :internal_server_error
   end
 
   private

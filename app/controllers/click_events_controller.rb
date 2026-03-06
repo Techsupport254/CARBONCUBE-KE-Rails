@@ -47,10 +47,13 @@ class ClickEventsController < ApplicationController
         # Rails.logger.info "ClickEventsController: User ID #{user_id_from_metadata} (role: #{user_role_from_metadata}) is not a buyer, buyer_id will be nil"
       end
       
+      # Resolve ad_id safely; invalid/non-existent IDs become nil to avoid FK violations
+      ad_id = normalize_ad_id(click_event_params[:ad_id])
+
       # Create click event with processed parameters
       click_event = ClickEvent.new(
         event_type: click_event_params[:event_type],
-        ad_id: click_event_params[:ad_id],
+        ad_id: ad_id,
         buyer_id: buyer_id,
         metadata: metadata
       )
@@ -118,8 +121,6 @@ class ClickEventsController < ApplicationController
       # Log error for debugging
       Rails.logger.error "Click event creation failed: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
-      # Manually rollback transaction to ensure data consistency
-      ActiveRecord::Base.connection.rollback_db_transaction
       # Render error response
       render json: { errors: ['Failed to log click event'] }, status: :internal_server_error
     end
@@ -137,6 +138,20 @@ class ClickEventsController < ApplicationController
   def click_event_params
     # Only permit the fields that actually exist in the ClickEvent model
     params.permit(:event_type, :ad_id, :device_hash, :user_agent, metadata: {}, click_event: {})
+  end
+
+  def normalize_ad_id(raw_ad_id)
+    return nil if raw_ad_id.blank?
+
+    ad = if raw_ad_id.to_s.match?(/\A\d+\z/)
+      numeric_id = raw_ad_id.to_i
+      return nil if numeric_id <= 0
+      Ad.active.find_by(id: numeric_id)
+    else
+      Ad.active.find_by_id_or_slug(raw_ad_id)
+    end
+
+    ad&.id
   end
 
   # Parse user agent to extract browser, OS, and device information

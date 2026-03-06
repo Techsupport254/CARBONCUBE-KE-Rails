@@ -41,15 +41,15 @@ class Admin::SellersController < ApplicationController
       # (already using unscoped, so this is fine)
     end
     
-    # Sorting - default to last_active_at desc to show most recently active users first
-    sort_by = params[:sort_by] || 'last_active_at'
+    # Sorting - default to created_at desc to show newest sellers first
+    sort_by = params[:sort_by] || 'created_at'
     sort_order = params[:sort_order] || 'desc'
     
     # Validate sort parameters
     allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at]
     allowed_sort_orders = %w[asc desc]
     
-    sort_by = 'id' unless allowed_sort_fields.include?(sort_by)
+    sort_by = 'created_at' unless allowed_sort_fields.include?(sort_by)
     sort_order = 'asc' unless allowed_sort_orders.include?(sort_order)
     
     # Handle sorting - use last_active_at instead of last_activity

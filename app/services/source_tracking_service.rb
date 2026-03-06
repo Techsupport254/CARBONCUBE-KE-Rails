@@ -23,15 +23,19 @@ class SourceTrackingService
     Rails.logger.info "Params: #{@params.except(:controller, :action)}"
 
     # Check for duplicate session tracking - only track once per session
+    # EXCEPT if UTM parameters are present (we want to track every campaign click)
     session_id = param_value(:session_id)
-    if session_id.present?
+    utm_source = param_value(:utm_source)
+    
+    if session_id.present? && utm_source.blank?
+      # Only skip if no UTM parameters are present
       # Check if this session_id has already been tracked
       existing_tracking = Analytic.where("data->>'session_id' = ?", session_id)
                                    .where('created_at >= ?', 1.hour.ago) # Only check recent records
                                    .first
       
       if existing_tracking
-        Rails.logger.info "🚫 [SourceTrackingService] Session #{session_id} already tracked in last hour, SKIPPING."
+        Rails.logger.info "🚫 [SourceTrackingService] Session #{session_id} already tracked in last hour (no UTMs), SKIPPING."
         return existing_tracking
       end
     end

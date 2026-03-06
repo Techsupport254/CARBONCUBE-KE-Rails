@@ -209,45 +209,59 @@ class Seller::DashboardController < ApplicationController
   end
 
   def get_top_performing_ads(seller_id, limit = 10)
-    # Get top performing ads based on comprehensive score
-    # Use the same approach as Seller::AnalyticsController to avoid JOIN issues
+    # Avoid inflated metrics from multi-table joins by aggregating each source separately.
     seller_ads = Ad.where(seller_id: seller_id, deleted: false)
-            .joins("LEFT JOIN reviews ON reviews.ad_id = ads.id")
-            .joins("LEFT JOIN click_events ON click_events.ad_id = ads.id")
-            .joins("LEFT JOIN wish_lists ON wish_lists.ad_id = ads.id")
-            .select("
-              ads.id,
-              ads.title,
-              ads.price,
-              ads.media,
-              ads.created_at,
-              COALESCE(AVG(reviews.rating), 0) as avg_rating,
-              COALESCE(COUNT(DISTINCT reviews.id), 0) as review_count,
-              COALESCE(SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END), 0) as ad_clicks,
-              COALESCE(SUM(CASE WHEN click_events.event_type IN ('Reveal-Seller-Details', 'Reveal-Vendor-Details') THEN 1 ELSE 0 END), 0) as reveal_clicks,
-              COALESCE(SUM(CASE WHEN click_events.event_type = 'Add-to-Wish-List' THEN 1 ELSE 0 END), 0) as wishlist_clicks,
-              COALESCE(COUNT(DISTINCT wish_lists.id), 0) as wishlist_count
-            ")
-            .group("ads.id")
-            .having("AVG(reviews.rating) > 0 OR SUM(CASE WHEN click_events.event_type = 'Ad-Click' THEN 1 ELSE 0 END) > 0 OR COUNT(DISTINCT wish_lists.id) > 0")
-            .limit(50) # Limit before scoring to reduce processing
+                   .select(:id, :title, :price, :media, :created_at)
+                   .limit(100)
 
-    # Get ad IDs for contact interactions query
-    ad_ids = seller_ads.map(&:id)
-    
-    # Pre-load contact interactions
+    ad_ids = seller_ads.pluck(:id)
+    return [] if ad_ids.empty?
+
     device_hash = request.headers['X-Device-Hash']
-    contact_interactions_map = preload_contact_interactions(ad_ids, seller_id, device_hash)
+    click_events_service = ClickEventsAnalyticsService.new(
+      filters: { seller_id: seller_id },
+      device_hash: device_hash
+    )
+    filtered_clicks = click_events_service.base_query.where(ad_id: ad_ids)
 
-    # Calculate comprehensive score for each ad
+    ad_clicks_by_ad = filtered_clicks.where(event_type: 'Ad-Click').group(:ad_id).count
+    reveal_clicks_by_ad = filtered_clicks.where(event_type: 'Reveal-Seller-Details').group(:ad_id).count
+    wishlist_clicks_by_ad = filtered_clicks.where(event_type: 'Add-to-Wish-List').group(:ad_id).count
+
+    contact_interactions_map = filtered_clicks
+      .where(event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      .group(:ad_id)
+      .count
+
+    reviews_by_ad = Review.where(ad_id: ad_ids)
+                          .group(:ad_id)
+                          .pluck(
+                            :ad_id,
+                            Arel.sql('COALESCE(AVG(rating), 0)'),
+                            Arel.sql('COUNT(*)')
+                          )
+                          .each_with_object({}) do |(ad_id, avg_rating, review_count), acc|
+                            acc[ad_id] = {
+                              avg_rating: avg_rating.to_f,
+                              review_count: review_count.to_i
+                            }
+                          end
+
+    wishlist_count_by_ad = WishList.where(ad_id: ad_ids).group(:ad_id).count
+
     scored_ads = seller_ads.map do |ad|
-      # Calculate comprehensive score
-      rating_score = (ad.avg_rating.to_f * 20) # 0-100
-      review_score = [ad.review_count.to_i * 5, 50].min # Max 50 points
-      click_score = [ad.ad_clicks.to_i * 2, 100].min # Max 100 points
-      reveal_score = [ad.reveal_clicks.to_i * 3, 75].min # Max 75 points
-      wishlist_score = [ad.wishlist_count.to_i * 4, 60].min # Max 60 points
-      
+      ad_clicks = ad_clicks_by_ad[ad.id].to_i
+      reveal_clicks = reveal_clicks_by_ad[ad.id].to_i
+      wishlist_clicks = wishlist_clicks_by_ad[ad.id].to_i
+      wishlist_count = wishlist_count_by_ad[ad.id].to_i
+      review_data = reviews_by_ad[ad.id] || { avg_rating: 0.0, review_count: 0 }
+
+      rating_score = (review_data[:avg_rating] * 20) # 0-100
+      review_score = [review_data[:review_count] * 5, 50].min # Max 50 points
+      click_score = [ad_clicks * 2, 100].min # Max 100 points
+      reveal_score = [reveal_clicks * 3, 75].min # Max 75 points
+      wishlist_score = [wishlist_count * 4, 60].min # Max 60 points
       comprehensive_score = rating_score + review_score + click_score + reveal_score + wishlist_score
 
       # Parse media
@@ -268,34 +282,25 @@ class Seller::DashboardController < ApplicationController
         media: media_urls,
         comprehensive_score: comprehensive_score.round(2),
         metrics: {
-          avg_rating: ad.avg_rating.to_f.round(1),
-          review_count: ad.review_count.to_i,
-          ad_clicks: ad.ad_clicks.to_i,
-          reveal_clicks: ad.reveal_clicks.to_i,
-          wishlist_clicks: ad.wishlist_clicks.to_i,
-          wishlist_count: ad.wishlist_count.to_i,
+          avg_rating: review_data[:avg_rating].round(1),
+          review_count: review_data[:review_count],
+          ad_clicks: ad_clicks,
+          reveal_clicks: reveal_clicks,
+          wishlist_clicks: wishlist_clicks,
+          wishlist_count: wishlist_count,
           total_contact_interactions: contact_interactions_map[ad.id] || 0
         }
       }
+    end.select do |ad|
+      metrics = ad[:metrics]
+      metrics[:avg_rating] > 0 ||
+        metrics[:ad_clicks] > 0 ||
+        metrics[:reveal_clicks] > 0 ||
+        metrics[:wishlist_count] > 0
     end
 
     # Sort by comprehensive score and return top N
     scored_ads.sort_by { |ad| -ad[:comprehensive_score] }.first(limit)
-  end
-
-  def preload_contact_interactions(ad_ids, seller_id, device_hash)
-    return {} if ad_ids.empty?
-    
-    # Get contact interactions for all ads in a single query
-    contact_events = ClickEvent
-      .where(ad_id: ad_ids, event_type: 'Reveal-Seller-Details')
-      .where("metadata->>'action' = ?", 'seller_contact_interaction')
-      .joins(:ad)
-      .where(ads: { seller_id: seller_id, deleted: false })
-      .group(:ad_id)
-      .count
-    
-    contact_events
   end
 
   def authenticate_seller
@@ -309,4 +314,3 @@ class Seller::DashboardController < ApplicationController
     @current_seller
   end
 end
-

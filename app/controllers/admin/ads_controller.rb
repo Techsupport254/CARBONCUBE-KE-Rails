@@ -193,6 +193,18 @@ def search
   render json: @ads
 end
 
+  # GET /admin/ads/conditions
+  def conditions
+    options = Ad.conditions.keys.map do |condition|
+      {
+        value: condition,
+        label: condition.to_s.humanize
+      }
+    end
+
+    render json: { conditions: options }
+  end
+
 
 
   private

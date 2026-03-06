@@ -252,6 +252,18 @@ class Sales::AdsController < ApplicationController
     }
   end
 
+  # GET /sales/ads/conditions
+  def conditions
+    options = Ad.conditions.keys.map do |condition|
+      {
+        value: condition,
+        label: condition.to_s.humanize
+      }
+    end
+
+    render json: { conditions: options }
+  end
+
   # POST /sales/ads - Create ad on behalf of a seller
   def create
     begin

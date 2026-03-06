@@ -5,7 +5,7 @@ require 'uri'
 require 'json'
 
 class WhatsAppCloudService
-  GRAPH_URL = 'https://graph.facebook.com/v18.0'
+  GRAPH_URL = 'https://graph.facebook.com/v22.0'
 
   def self.send_message(to, body)
     phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
