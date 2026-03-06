@@ -13496,3 +13496,269 @@
 [13:42:19]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_eluga_a-6574.php...
 [13:42:35]   🛑  HTTP 429 Rate Limit detected at 13:42:35
 [13:42:35]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[13:52:37]   🛑  HTTP 429 Rate Limit detected at 13:52:37
+[13:52:37]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:52:37]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_eluga_a-6574.php...
+[13:52:53]   🛑  HTTP 429 Rate Limit detected at 13:52:53
+[13:52:53]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:52:53]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_eluga_a-6574.php...
+[13:53:10]     ✅ [7985] Panasonic Eluga A (22 specs)
+[13:53:13]     ✅ [7986] Panasonic Eluga U (23 specs)
+[13:53:18]     ✅ [7987] Panasonic P81 (22 specs)
+[13:53:20]     ✅ [7988] Panasonic T31 (22 specs)
+[13:53:22]     ✅ [7989] Panasonic T21 (20 specs)
+[13:53:25]     ✅ [7990] Panasonic P11 (22 specs)
+[13:53:27]     ✅ [7991] Panasonic T11 (22 specs)
+[13:53:29]     ✅ [7992] Panasonic P51 (22 specs)
+[13:53:31]     ✅ [7993] Panasonic P41 (22 specs)
+[13:53:36]     ✅ [7994] Panasonic Eluga Power (23 specs)
+[13:53:39]     ✅ [7995] Panasonic Eluga DL1 (21 specs)
+[13:53:42]     ✅ [7996] Panasonic Toughpad FZ-A1 (20 specs)
+[13:53:44]     ✅ [7997] Panasonic Toughpad JT-B1 (17 specs)
+[13:53:47]     ✅ [7998] Panasonic KX-TU311 (15 specs)
+[13:53:49]     ✅ [7999] Panasonic KX-TU301 (15 specs)
+[13:53:51]     ✅ [8000] Panasonic VS7 (15 specs)
+[13:53:53]     ✅ [8001] Panasonic VS6 (16 specs)
+[13:53:55]     ✅ [8002] Panasonic VS3 (15 specs)
+[13:53:57]     ✅ [8003] Panasonic VS2 (16 specs)
+[13:53:59]     ✅ [8004] Panasonic MX7 (14 specs)
+[13:54:01]   🛑  CAPTCHA/Block detected at 13:54:01
+[13:54:01]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:54:01]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_mx6-1061.php...
+[13:54:18]   🛑  CAPTCHA/Block detected at 13:54:18
+[13:54:18]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:54:18]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_mx6-1061.php...
+[13:54:35]   🛑  CAPTCHA/Block detected at 13:54:35
+[13:54:35]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:54:35]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_mx6-1061.php...
+[13:54:52]     ✅ [8005] Panasonic MX6 (16 specs)
+[13:54:54]     ✅ [8006] Panasonic SA7 (15 specs)
+[13:54:57]     ✅ [8007] Panasonic SA6 (16 specs)
+[13:54:59]     ✅ [8008] Panasonic SC3 (15 specs)
+[13:55:01]     ✅ [8009] Panasonic A210 (14 specs)
+[13:55:03]     ✅ [8010] Panasonic X800 (16 specs)
+[13:55:05]     ✅ [8011] Panasonic Z800 (15 specs)
+[13:55:07]     ✅ [8012] Panasonic X700 (16 specs)
+[13:55:09]     ✅ [8013] Panasonic X500 (15 specs)
+[13:55:11]     ✅ [8014] Panasonic X400 (15 specs)
+[13:55:13]     ✅ [8015] Panasonic X300 (16 specs)
+[13:55:16]     ✅ [8016] Panasonic X200 (15 specs)
+[13:55:18]     ✅ [8017] Panasonic X100 (15 specs)
+[13:55:20]     ✅ [8018] Panasonic A500 (14 specs)
+[13:55:22]     ✅ [8019] Panasonic A200 (14 specs)
+[13:55:24]     ✅ [8020] Panasonic A100 Series (14 specs)
+[13:55:26]     ✅ [8021] Panasonic P341i (15 specs)
+[13:55:29]     ✅ [8022] Panasonic X68/X77 (15 specs)
+[13:55:31]     ✅ [8023] Panasonic X11 (15 specs)
+[13:55:33]     ✅ [8024] Panasonic G70 (14 specs)
+[13:55:35]     ✅ [8025] Panasonic G51 (14 specs)
+[13:55:37]     ✅ [8026] Panasonic X88 (15 specs)
+[13:55:39]     ✅ [8027] Panasonic X66 (15 specs)
+[13:55:42]     ✅ [8028] Panasonic X70 (14 specs)
+[13:55:44]     ✅ [8029] Panasonic G60 (14 specs)
+[13:55:46]   🛑  CAPTCHA/Block detected at 13:55:46
+[13:55:46]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:55:46]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_g50-410.php...
+[13:56:02]   🛑  HTTP 429 Rate Limit detected at 13:56:02
+[13:56:02]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:56:02]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_g50-410.php...
+[13:56:22]     ✅ [8030] Panasonic G50 (14 specs)
+[13:56:24]     ✅ [8031] Panasonic GD55 (14 specs)
+[13:56:27]     ✅ [8032] Panasonic GD87 (14 specs)
+[13:56:29]     ✅ [8033] Panasonic GD67 (13 specs)
+[13:56:31]     ✅ [8034] Panasonic GD95 (14 specs)
+[13:56:33]   🛑  CAPTCHA/Block detected at 13:56:33
+[13:56:33]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:56:33]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd75-269.php...
+[13:56:49]   🛑  HTTP 429 Rate Limit detected at 13:56:49
+[13:56:49]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:56:49]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd75-269.php...
+[13:57:06]   🛑  HTTP 429 Rate Limit detected at 13:57:06
+[13:57:06]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:57:06]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd75-269.php...
+[13:57:23]   🛑  HTTP 429 Rate Limit detected at 13:57:23
+[13:57:23]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[14:07:24]   🛑  HTTP 429 Rate Limit detected at 14:07:24
+[14:07:24]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:07:24]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd75-269.php...
+[14:07:41]   🛑  HTTP 429 Rate Limit detected at 14:07:41
+[14:07:41]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:07:41]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd75-269.php...
+[14:07:58]   🛑  HTTP 429 Rate Limit detected at 14:07:58
+[14:07:58]   ❌ Giving up on https://www.gsmarena.com/panasonic_gd75-269.php after multiple rotations and long cooling.
+[14:07:58]     ⚠️  [114/121] Skip (fetch failed): panasonic_gd75-269.php
+[14:08:00]   🛑  HTTP 429 Rate Limit detected at 14:08:00
+[14:08:00]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:08:00]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd35-268.php...
+[14:08:17]   🛑  CAPTCHA/Block detected at 14:08:17
+[14:08:17]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:08:17]   💤  Waiting 15s to retry https://www.gsmarena.com/panasonic_gd35-268.php...
+[14:08:34]     ✅ [8035] Panasonic GD35 (13 specs)
+[14:08:37]     ✅ [8036] Panasonic GD93 (13 specs)
+[14:08:39]     ✅ [8037] Panasonic GD92 (14 specs)
+[14:08:42]     ✅ [8038] Panasonic GD90 (14 specs)
+[14:08:44]     ✅ [8039] Panasonic GD70 (14 specs)
+[14:08:46]     ✅ [8040] Panasonic GD30 (13 specs)
+[14:08:49]     ✅ [8041] Panasonic G600 (13 specs)
+[14:08:49]   ⚠️  Panasonic has 2 pending or failed models. Leaving as pending.
+[14:08:49] 
+[34/46] ━━━ BLU ━━━ https://www.gsmarena.com/blu-phones-67.php
+[14:08:50]   📄 Page 1 — https://www.gsmarena.com/blu-phones-67.php
+[14:08:52]   → 50 devices
+[14:08:54]   📄 Page 2 — https://www.gsmarena.com/blu-phones-f-67-0-p2.php
+[14:08:56]   → 46 devices
+[14:08:58]   📄 Page 3 — https://www.gsmarena.com/blu-phones-f-67-0-p3.php
+[14:08:59]   → 49 devices
+[14:09:02]   📄 Page 4 — https://www.gsmarena.com/blu-phones-f-67-0-p4.php
+[14:09:04]   → 49 devices
+[14:09:06]   📄 Page 5 — https://www.gsmarena.com/blu-phones-f-67-0-p5.php
+[14:09:08]   → 48 devices
+[14:09:09]   📄 Page 6 — https://www.gsmarena.com/blu-phones-f-67-0-p6.php
+[14:09:10]   → 50 devices
+[14:09:12]   📄 Page 7 — https://www.gsmarena.com/blu-phones-f-67-0-p7.php
+[14:09:14]   → 50 devices
+[14:09:15]   📄 Page 8 — https://www.gsmarena.com/blu-phones-f-67-0-p8.php
+[14:09:17]   → 19 devices
+[14:09:18]   📄 Page 9 — https://www.gsmarena.com/blu-phones-f-67-0-p9.php
+[14:09:20]   → 0 devices
+[14:09:20]   📱 361 total devices across 8 page(s)
+[14:09:20]   📱 361 total devices found for BLU
+[14:09:20]   ⏭  0 already done — 361 to scrape
+[14:09:22]     ✅ [8042] BLU Bold N3 (22 specs)
+[14:09:24]     ✅ [8043] BLU G93 (22 specs)
+[14:09:27]     ✅ [8044] BLU G73 (21 specs)
+[14:09:29]     ✅ [8045] BLU G63 (21 specs)
+[14:09:34]     ✅ [8046] BLU G53 (21 specs)
+[14:09:36]     ✅ [8047] BLU G33 (20 specs)
+[14:09:38]     ✅ [8048] BLU F92e (22 specs)
+[14:09:42]     ✅ [8049] BLU G72 Max (22 specs)
+[14:09:44]     ✅ [8050] BLU G52L (20 specs)
+[14:09:46]     ✅ [8051] BLU Studio X5 Max (20 specs)
+[14:09:49]     ✅ [8052] BLU Studio X5 (20 specs)
+[14:09:52]     ✅ [8053] BLU G40 (20 specs)
+[14:09:55]     ✅ [8054] BLU Bold N2 (23 specs)
+[14:10:07]     ✅ [8055] BLU Studio X10L 2022 (20 specs)
+[14:10:10]     ✅ [8056] BLU S91 Pro (22 specs)
+[14:10:12]     ✅ [8057] BLU J6S (21 specs)
+[14:10:14]     ✅ [8058] BLU C7X (20 specs)
+[14:10:17]     ✅ [8059] BLU S91 (22 specs)
+[14:10:24]     ✅ [8060] BLU G51 (22 specs)
+[14:10:26]     ✅ [8061] BLU G61s (20 specs)
+[14:10:29]     ✅ [8062] BLU G50 Mega 2022 (20 specs)
+[14:10:32]     ✅ [8063] BLU F91 (22 specs)
+[14:10:34]     ✅ [8064] BLU G71L (20 specs)
+[14:10:36]     ✅ [8065] BLU G91 Max (22 specs)
+[14:10:38]     ✅ [8066] BLU G71+ (20 specs)
+[14:10:42]     ✅ [8067] BLU M8L 2022 (20 specs)
+[14:10:44]   🛑  CAPTCHA/Block detected at 14:10:44
+[14:10:44]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:10:44]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_g51s-11348.php...
+[14:11:01]   🛑  HTTP 429 Rate Limit detected at 14:11:01
+[14:11:01]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:11:01]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_g51s-11348.php...
+[14:11:18]     ✅ [8068] BLU G51S (19 specs)
+[14:11:20]   🛑  HTTP 429 Rate Limit detected at 14:11:20
+[14:11:20]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:11:20]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_c5_max-11319.php...
+[14:11:46]     ✅ [8069] BLU C5 Max (20 specs)
+[14:11:48]   🛑  CAPTCHA/Block detected at 14:11:48
+[14:11:48]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:11:48]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_studio_x10_2022-11318.php...
+[14:12:05]     ✅ [8070] BLU Studio X10 2022 (22 specs)
+[14:12:07]     ✅ [8071] BLU C5L Max (22 specs)
+[14:12:09]   🛑  HTTP 429 Rate Limit detected at 14:12:09
+[14:12:09]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:12:09]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_g91s-11264.php...
+[14:12:26]   🛑  HTTP 429 Rate Limit detected at 14:12:26
+[14:12:26]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:12:26]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_g91s-11264.php...
+[14:12:42]     ✅ [8072] BLU G91s (22 specs)
+[14:12:48]     ✅ [8073] BLU View 3 (22 specs)
+[14:12:51]     ✅ [8074] BLU M8L Plus (20 specs)
+[14:12:55]     ✅ [8075] BLU M8L (20 specs)
+[14:12:58]     ✅ [8076] BLU Studio X10L (21 specs)
+[14:13:00]     ✅ [8077] BLU G91 Pro (22 specs)
+[14:13:02]     ✅ [8078] BLU J9L (20 specs)
+[14:13:05]     ✅ [8079] BLU G51 Plus (20 specs)
+[14:13:07]     ✅ [8080] BLU C7 (20 specs)
+[14:13:09]     ✅ [8081] BLU View 2 (22 specs)
+[14:13:20]     ✅ [8082] BLU G91 (20 specs)
+[14:13:22]     ✅ [8083] BLU G71 (20 specs)
+[14:13:24]     ✅ [8084] BLU Studio X12 (20 specs)
+[14:13:26]     ✅ [8085] BLU G61 (20 specs)
+[14:13:29]     ✅ [8086] BLU Studio X10+ (20 specs)
+[14:13:31]     ✅ [8087] BLU A5L (20 specs)
+[14:13:33]     ✅ [8088] BLU M7L (20 specs)
+[14:13:35]     ✅ [8089] BLU View Mega (22 specs)
+[14:13:37]     ✅ [8090] BLU G50 Mega (21 specs)
+[14:13:39]     ✅ [8091] BLU J7L (21 specs)
+[14:13:42]     ✅ [8092] BLU J5L (21 specs)
+[14:13:44]     ✅ [8093] BLU J6 2020 (21 specs)
+[14:13:46]     ✅ [8094] BLU C6L 2020 (21 specs)
+[14:13:48]     ✅ [8095] BLU C5L 2020 (21 specs)
+[14:13:50]   🛑  CAPTCHA/Block detected at 14:13:50
+[14:13:50]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:13:50]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_c6_2020-10539.php...
+[14:14:06]   🛑  HTTP 429 Rate Limit detected at 14:14:06
+[14:14:06]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:14:06]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_c6_2020-10539.php...
+[14:14:23]     ✅ [8096] BLU C6 2020 (21 specs)
+[14:14:26]     ✅ [8097] BLU G50 Plus (21 specs)
+[14:14:29]     ✅ [8098] BLU G50 (21 specs)
+[14:14:34]     ✅ [8099] BLU G90 Pro (22 specs)
+[14:14:37]     ✅ [8100] BLU Studio X10 (22 specs)
+[14:14:42]     ✅ [8101] BLU G90 (22 specs)
+[14:14:44]     ✅ [8102] BLU G80 (22 specs)
+[14:14:48]     ✅ [8103] BLU Studio X9 HD (22 specs)
+[14:14:52]     ✅ [8104] BLU J6 (22 specs)
+[14:14:55]     ✅ [8105] BLU J4 (21 specs)
+[14:14:58]     ✅ [8106] BLU J2 (21 specs)
+[14:15:00]     ✅ [8107] BLU Tank Xtreme (22 specs)
+[14:15:03]     ✅ [8108] BLU G70 (21 specs)
+[14:15:08]     ✅ [8109] BLU G60 (21 specs)
+[14:15:10]     ✅ [8110] BLU View 1 (22 specs)
+[14:15:12]     ✅ [8111] BLU C5 Plus (21 specs)
+[14:15:14]     ✅ [8112] BLU C5 2019 (21 specs)
+[14:15:18]     ✅ [8113] BLU C6 2019 (22 specs)
+[14:15:20]     ✅ [8114] BLU Advance L5 (20 specs)
+[14:15:23]     ✅ [8115] BLU Bold N1 (23 specs)
+[14:15:26]     ✅ [8116] BLU Studio Mini (21 specs)
+[14:15:29]     ✅ [8117] BLU Vivo XL5 (21 specs)
+[14:15:31]     ✅ [8118] BLU Vivo X5 (21 specs)
+[14:15:34]   🛑  CAPTCHA/Block detected at 14:15:34
+[14:15:34]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:15:34]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_g9_pro-9811.php...
+[14:15:53]   🛑  HTTP 429 Rate Limit detected at 14:15:53
+[14:15:53]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:15:53]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_g9_pro-9811.php...
+[14:16:11]     ✅ [8119] BLU G9 Pro (22 specs)
+[14:16:14]     ✅ [8120] BLU Studio Mega 2019 (21 specs)
+[14:16:17]     ✅ [8121] BLU G8 (21 specs)
+[14:16:21]     ✅ [8122] BLU G6 (21 specs)
+[14:16:23]     ✅ [8123] BLU G5 Plus (21 specs)
+[14:16:26]     ✅ [8124] BLU G5 (21 specs)
+[14:16:28]     ✅ [8125] BLU G9 (22 specs)
+[14:16:30]     ✅ [8126] BLU C5L (21 specs)
+[14:16:32]     ✅ [8127] BLU C6L (21 specs)
+[14:16:34]     ✅ [8128] BLU Vivo Go (22 specs)
+[14:16:37]     ✅ [8129] BLU Vivo XL4 (22 specs)
+[14:16:41]     ✅ [8130] BLU Advance L4 (21 specs)
+[14:16:44]     ✅ [8131] BLU Vivo XI (22 specs)
+[14:16:46]     ✅ [8132] BLU Vivo XI+ (23 specs)
+[14:16:48]     ✅ [8133] BLU C5 (21 specs)
+[14:16:50]     ✅ [8134] BLU C4 (21 specs)
+[14:16:53]     ✅ [8135] BLU Studio G4 (22 specs)
+[14:16:56]     ✅ [8136] BLU C6 (22 specs)
+[14:16:58]     ✅ [8137] BLU Grand M3 (22 specs)
+[14:17:00]     ✅ [8138] BLU Pure View (23 specs)
+[14:17:03]   🛑  CAPTCHA/Block detected at 14:17:03
+[14:17:03]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:17:03]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_studio_view-9184.php...
+[14:17:20]   🛑  HTTP 429 Rate Limit detected at 14:17:20
+[14:17:20]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:17:20]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_studio_view-9184.php...
+[14:17:37]   🛑  CAPTCHA/Block detected at 14:17:37
+[14:17:37]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[14:17:37]   💤  Waiting 15s to retry https://www.gsmarena.com/blu_studio_view-9184.php...
+[14:17:54]   🛑  HTTP 429 Rate Limit detected at 14:17:54
+[14:17:54]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
