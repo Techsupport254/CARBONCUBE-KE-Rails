@@ -3,7 +3,7 @@ class GoogleMerchantSyncJob < ApplicationJob
   queue_as :default
   
   # Retry configuration
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
   
   # Discard job if ad is not found
   discard_on ActiveRecord::RecordNotFound do |job, error|

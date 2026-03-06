@@ -1,4 +1,6 @@
 class Conversation < ApplicationRecord
+  self.primary_key = 'id'
+
   after_create :associate_guest_clicks_with_buyer
   belongs_to :admin, class_name: 'Admin', foreign_key: 'admin_id', optional: true
   belongs_to :buyer, class_name: 'Buyer', foreign_key: 'buyer_id', optional: true

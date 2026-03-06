@@ -5,11 +5,16 @@ class SourceTrackingController < ApplicationController
 
   def track
     # Check if this is an internal user that should be excluded
-    if internal_user_excluded?
-      Rails.logger.info "🚫 [SourceTrackingController] Request EXCLUDED from tracking (internal user detected)"
+    exclusion_reason = internal_user_excluded?
+    
+    # Allow tracking for internal users if they have UTM parameters (for testing/marketing verification)
+    has_utm = params[:utm_source].present? || params[:utm_medium].present? || params[:utm_campaign].present?
+    
+    if exclusion_reason && !has_utm
+      Rails.logger.info "🚫 [SourceTrackingController] Request EXCLUDED from tracking (internal user detected: #{exclusion_reason})"
       render json: { 
         success: true, 
-        message: 'Visit tracked successfully (internal user excluded)',
+        message: "Visit tracked successfully (internal user excluded: #{exclusion_reason})",
         source: 'internal_user_excluded',
         referrer: 'internal_user_excluded'
       }, status: :created

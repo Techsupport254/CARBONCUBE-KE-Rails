@@ -1,5 +1,7 @@
 # app/models/seller.rb
 class Seller < ApplicationRecord
+  self.primary_key = 'id'
+
   after_create :associate_guest_clicks
   before_create :generate_uuid
   before_validation :normalize_email

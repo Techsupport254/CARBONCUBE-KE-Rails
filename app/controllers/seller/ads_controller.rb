@@ -1,7 +1,7 @@
 class Seller::AdsController < ApplicationController
   include ExceptionHandler
   
-  before_action :authenticate_seller
+  before_action :authenticate_seller, except: [:prefill]
   before_action :set_ad, only: [:show, :update, :destroy]
   before_action :load_ad_with_offer, only: [:show]
 
@@ -67,6 +67,99 @@ class Seller::AdsController < ApplicationController
       **ad_json,
       reviews: reviews.as_json(include: [:buyer]),
       buyer_details: buyer_details
+    }
+  end
+
+  # GET /seller/ads/conditions
+  def conditions
+    condition_options = Ad.conditions.keys.map do |condition|
+      {
+        value: condition,
+        label: condition.to_s.humanize
+      }
+    end
+
+    render json: { conditions: condition_options }
+  end
+
+  # GET /seller/ads/prefill
+  # Category-aware prefill for add/edit forms using existing catalog ads.
+  def prefill
+    model_query = params[:model].presence || params[:title].presence || params[:query].presence
+    return render json: { error: 'model, title, or query is required' }, status: :unprocessable_entity if model_query.blank?
+
+    category = Category.find_by(id: params[:category_id])
+    subcategory = Subcategory.find_by(id: params[:subcategory_id])
+    if subcategory.present? && category.present? && subcategory.category_id != category.id
+      return render json: { error: 'subcategory does not belong to selected category' }, status: :unprocessable_entity
+    end
+
+    strategy = prefill_strategy_for(category&.name, subcategory&.name)
+    candidates = prefill_candidates_for(
+      query: model_query,
+      category_id: category&.id,
+      subcategory_id: subcategory&.id,
+      strategy: strategy
+    )
+
+    if candidates.empty? && subcategory.present?
+      # Fallback from subcategory to category scope to avoid empty responses.
+      candidates = prefill_candidates_for(
+        query: model_query,
+        category_id: category&.id,
+        subcategory_id: nil,
+        strategy: strategy
+      )
+    end
+
+    # Fetch Specifications (Favoring local catalog for speed)
+    gsm_specs = nil
+    if strategy == 'phones_computers' || (category&.name.to_s.downcase.include?('phone'))
+      matching_phones = DeviceCatalogService.search(model_query, subcategory&.name)
+      if matching_phones.any?
+        best = matching_phones.first
+        gsm_specs = {
+          title: best['title'],
+          brand: best['brand'],
+          specifications: best['specifications'] || {}
+        }
+      else
+        # Fallback to external scraping if not found in local catalog
+        gsm_specs = GsmArenaService.fetch_device_specs(model_query)
+      end
+    end
+
+    ranked_candidates = rank_prefill_candidates(candidates, model_query)
+    best_match = ranked_candidates.first
+
+    brand_options = top_prefill_values(ranked_candidates.map(&:brand))
+    manufacturer_options = top_prefill_values(ranked_candidates.map(&:manufacturer))
+    price_stats = build_price_stats(ranked_candidates)
+
+    render json: {
+      strategy: strategy,
+      confidence: prefill_confidence(best_match, ranked_candidates.length),
+      total_matches: ranked_candidates.length,
+      suggestions: {
+        title: gsm_specs&.dig(:title) || best_match&.title,
+        brand: gsm_specs&.dig(:brand) || best_match&.brand.presence || brand_options.first,
+        manufacturer: best_match&.manufacturer.presence || manufacturer_options.first,
+        description: build_prefill_description(
+          model_query: model_query,
+          category_name: category&.name,
+          subcategory_name: subcategory&.name,
+          strategy: strategy,
+          best_match: best_match
+        ),
+        price: price_stats[:median],
+        specifications: gsm_specs&.dig(:specifications) || {}
+      },
+      options: {
+        brands: brand_options,
+        manufacturers: manufacturer_options,
+        catalog_suggestions: DeviceCatalogService.search(model_query, subcategory&.name).map { |p| { title: p['title'], slug: p['slug'], brand: p['brand'] } }
+      },
+      price_stats: price_stats
     }
   end
 
@@ -375,6 +468,136 @@ class Seller::AdsController < ApplicationController
     @current_user
   end
 
+  def prefill_strategy_for(category_name, subcategory_name)
+    text = [category_name, subcategory_name].compact.join(' ').downcase
+    return 'phones_computers' if text.match?(/phone|mobile|laptop|computer|tablet|ipad|network|storage|peripheral/)
+    return 'automotive' if text.match?(/automotive|tyre|battery|spare|lubricant/)
+    return 'filtration' if text.match?(/filter|filtration/)
+    return 'hardware_tools' if text.match?(/hardware|tool|electrical|plumbing|safety/)
+    return 'equipment_leasing' if text.match?(/equipment|leasing|earth moving|drilling|lifting|concrete|compacting/)
+
+    'general'
+  end
+
+  def prefill_candidates_for(query:, category_id:, subcategory_id:, strategy:)
+    normalized_query = query.to_s.strip.downcase
+    tokens = normalized_query.split(/\s+/).reject(&:blank?)
+    like_query = "%#{normalized_query}%"
+
+    scope = Ad.active
+              .from_active_sellers
+              .where(ads: { flagged: false })
+              .where.not(title: [nil, ''])
+              .select(:title, :brand, :manufacturer, :description, :price, :category_id, :subcategory_id)
+
+    scope = scope.where(category_id: category_id) if category_id.present?
+    scope = scope.where(subcategory_id: subcategory_id) if subcategory_id.present?
+
+    case strategy
+    when 'phones_computers'
+      scope = scope.where(
+        "LOWER(ads.title) LIKE :q OR LOWER(COALESCE(ads.brand, '')) LIKE :q OR LOWER(COALESCE(ads.manufacturer, '')) LIKE :q",
+        q: like_query
+      )
+    when 'automotive', 'hardware_tools', 'filtration'
+      scope = scope.where(
+        "LOWER(ads.title) LIKE :q OR LOWER(COALESCE(ads.description, '')) LIKE :q OR LOWER(COALESCE(ads.brand, '')) LIKE :q",
+        q: like_query
+      )
+    else
+      scope = scope.where(
+        "LOWER(ads.title) LIKE :q OR LOWER(COALESCE(ads.description, '')) LIKE :q OR LOWER(COALESCE(ads.brand, '')) LIKE :q OR LOWER(COALESCE(ads.manufacturer, '')) LIKE :q",
+        q: like_query
+      )
+    end
+
+    tokens.each do |token|
+      scope = scope.where(
+        "LOWER(ads.title) LIKE :t OR LOWER(COALESCE(ads.brand, '')) LIKE :t OR LOWER(COALESCE(ads.manufacturer, '')) LIKE :t",
+        t: "%#{token}%"
+      )
+    end
+
+    scope.limit(60).to_a
+  end
+
+  def rank_prefill_candidates(candidates, query)
+    normalized_query = query.to_s.downcase.strip
+    tokens = normalized_query.split(/\s+/).reject(&:blank?)
+
+    candidates.sort_by do |ad|
+      title = ad.title.to_s.downcase
+      token_hits = tokens.count { |token| title.include?(token) }
+      exact_bonus = title.include?(normalized_query) ? 1 : 0
+      score = (token_hits * 10) + (exact_bonus * 20)
+      -score
+    end
+  end
+
+  def top_prefill_values(values)
+    values
+      .map { |value| value.to_s.strip }
+      .reject(&:blank?)
+      .group_by(&:itself)
+      .sort_by { |_value, group| -group.length }
+      .map(&:first)
+      .first(5)
+  end
+
+  def build_price_stats(candidates)
+    prices = candidates
+             .map { |ad| ad.price.to_f }
+             .select { |price| price.positive? }
+             .sort
+
+    return { min: nil, max: nil, median: nil } if prices.empty?
+
+    middle = prices.length / 2
+    median = if prices.length.odd?
+      prices[middle]
+    else
+      (prices[middle - 1] + prices[middle]) / 2.0
+    end
+
+    {
+      min: prices.first.round(2),
+      max: prices.last.round(2),
+      median: median.round(2)
+    }
+  end
+
+  def prefill_confidence(best_match, total_matches)
+    return 'low' if best_match.blank? || total_matches <= 1
+    return 'high' if total_matches >= 8
+
+    'medium'
+  end
+
+  def build_prefill_description(model_query:, category_name:, subcategory_name:, strategy:, best_match:)
+    return best_match.description.to_s.strip if best_match&.description.to_s.strip.length >= 120
+
+    category_label = category_name.presence || 'Product'
+    subcategory_label = subcategory_name.presence || 'General'
+    model_label = model_query.to_s.strip
+
+    opening = case strategy
+    when 'phones_computers'
+      "### #{model_label} - #{subcategory_label}\n\nReliable #{subcategory_label.downcase} from #{category_label.downcase}, suitable for daily use, business, and long-term performance."
+    when 'automotive'
+      "### #{model_label} - #{subcategory_label}\n\nQuality #{subcategory_label.downcase} designed for dependable performance in demanding automotive use."
+    when 'filtration'
+      "### #{model_label} - #{subcategory_label}\n\nHigh-quality #{subcategory_label.downcase} built for efficient filtration and long service life."
+    when 'hardware_tools'
+      "### #{model_label} - #{subcategory_label}\n\nDurable #{subcategory_label.downcase} suitable for workshop, site, and professional use."
+    when 'equipment_leasing'
+      "### #{model_label} - #{subcategory_label}\n\nWell-maintained #{subcategory_label.downcase} available for project-based and long-term operational needs."
+    else
+      "### #{model_label} - #{subcategory_label}\n\nQuality #{subcategory_label.downcase} in the #{category_label.downcase} segment."
+    end
+
+    "#{opening}\n\n- Key features and condition details available on request.\n- Suitable for buyers seeking value, reliability, and verified seller support.\n- Contact seller for delivery options, warranty terms, and availability."
+  end
+
   def set_ad
     @seller = current_seller
     return render json: { error: 'Seller not found' }, status: :not_found unless @seller
@@ -395,10 +618,10 @@ class Seller::AdsController < ApplicationController
       :title, :description, :category_id, :subcategory_id, :price, 
       :brand, :manufacturer, :item_length, :item_width, 
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
-      media: [], existing_media: []
-    )
+    media: [], existing_media: []
+  )
 
-    # Convert empty strings to nil for optional numeric fields (only for fields that are present in params)
+  # Convert empty strings to nil for optional numeric fields (only for fields that are present in params)
     %i[item_length item_width item_height item_weight].each do |field|
       if params[:ad].key?(field) && permitted[field].blank?
         permitted[field] = nil

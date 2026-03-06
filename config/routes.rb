@@ -19,9 +19,6 @@ Rails.application.routes.draw do
   # Redirect /ad/* to /ads/* (fix old ad URLs)
   get '/ad/:path', to: redirect('/ads/%{path}', status: 301), constraints: { path: /.*/ }
   
-  # Redirect /seller/tiers/ (with trailing slash) to /tiers
-  get '/seller/tiers/', to: redirect('/tiers', status: 301)
-  
   # Redirect /seller-help to /vendor-help
   get '/seller-help', to: redirect('/vendor-help', status: 301)
   
@@ -186,7 +183,11 @@ Rails.application.routes.draw do
   
 
   # Routes for logging ad searches and retrieving recent searches
-  resources :ad_searches, only: [:create, :index]
+  resources :ad_searches, only: [:create, :index] do
+    collection do
+      get :analytics
+    end
+  end
 
   # Routes for logging click events
   resources :click_events, only: [:create]
@@ -347,6 +348,7 @@ Rails.application.routes.draw do
       collection do
         get 'search'
         get 'flagged'
+        get 'conditions'
       end
       member do
         patch 'flag'
@@ -423,6 +425,7 @@ Rails.application.routes.draw do
         get :analytics
         post :bulk_actions
         get :templates
+        get :offer_types
       end
     end
     get 'identify', to: 'admins#identify'
@@ -475,9 +478,17 @@ Rails.application.routes.draw do
     
     # Consolidated dashboard endpoint
     get 'dashboard', to: 'dashboard#index'
+    get 'catalog/search', to: 'catalogs#search'
+    get 'catalog/brands', to: 'catalogs#brands'
+    get 'catalog/models', to: 'catalogs#models'
+    get 'catalog/model/:slug', to: 'catalogs#show', constraints: { slug: /[^\/]+/ }, format: false
     get 'catalog', to: 'catalogs#show'
     
     resources :ads do
+      collection do
+        get :conditions
+        get :prefill
+      end
       member do
         put 'restore'
         get 'buyer_details', to: 'buyer_details#show'
@@ -708,6 +719,7 @@ Rails.application.routes.draw do
         collection do
           get :flagged
           get :stats
+          get :conditions
         end
         member do
           patch :flag

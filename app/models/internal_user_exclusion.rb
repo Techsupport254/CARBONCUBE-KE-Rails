@@ -120,21 +120,25 @@ class InternalUserExclusion < ApplicationRecord
     if role.present?
       hardcoded_excluded_roles = ['admin', 'sales']
       role_lower = role.to_s.downcase.strip
-      return true if hardcoded_excluded_roles.any? { |excluded_role| role_lower == excluded_role.downcase }
+      if hardcoded_excluded_roles.any? { |excluded_role| role_lower == excluded_role.downcase }
+        return "Internal Role (#{role_lower})"
+      end
     end
     
     # Hardcoded name-based exclusions
     if user_name.present?
       hardcoded_excluded_names = ['Sales']
-      return true if hardcoded_excluded_names.any? { |excluded_name| user_name.strip.downcase == excluded_name.downcase }
+      if hardcoded_excluded_names.any? { |excluded_name| user_name.strip.downcase == excluded_name.downcase }
+        return "Internal Name (#{user_name})"
+      end
     end
     
-    return true if device_hash_excluded?(device_hash)
-    return true if user_agent_excluded?(user_agent)
-    return true if ip_excluded?(ip_address)
-    return true if email_domain_excluded?(email)
+    return "Excluded Device Hash (#{device_hash})" if device_hash_excluded?(device_hash)
+    return "Excluded User Agent" if user_agent_excluded?(user_agent)
+    return "Excluded IP Range (#{ip_address})" if ip_excluded?(ip_address)
+    return "Excluded Email/Domain (#{email})" if email_domain_excluded?(email)
     
-    false
+    nil
   end
   
   # Removal request methods
