@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_05_103500) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_06_105754) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -497,6 +497,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_05_103500) do
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
     t.index ["sender_type", "sender_id"], name: "index_messages_on_sender"
     t.index ["whatsapp_message_id"], name: "index_messages_on_whatsapp_message_id"
+  end
+
+  create_table "mobile_releases", force: :cascade do |t|
+    t.string "version_name", null: false
+    t.integer "version_code"
+    t.string "abi", null: false
+    t.string "download_url", null: false
+    t.boolean "is_stable", default: true
+    t.boolean "active", default: true
+    t.string "fingerprint"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_mobile_releases_on_active"
+    t.index ["version_name", "abi"], name: "index_mobile_releases_on_version_name_and_abi"
   end
 
   create_table "notifications", force: :cascade do |t|

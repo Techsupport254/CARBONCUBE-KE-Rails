@@ -581,6 +581,10 @@ Rails.application.routes.draw do
 
   # Support both /buyer and /api/buyer routes for backward compatibility
   scope '/api', defaults: { format: :json } do
+    # Mobile app release tracking
+    get 'mobile_releases/latest', to: 'api/mobile_releases#latest'
+    post 'mobile_releases', to: 'api/mobile_releases#create'
+
     # Unified conversations and messages endpoints
     resources :conversations, only: [:index, :show, :create] do
       resources :messages, only: [:index, :create] do
