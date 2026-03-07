@@ -68,6 +68,8 @@ BRANDS = [
   { name: 'Intex',     slug: 'intex-phones-90.php'      },
   { name: 'Spice',     slug: 'spice-phones-68.php'      },
   { name: 'XOLO',      slug: 'xolo-phones-85.php'       },
+  { name: 'Redmi',     slug: 'xiaomi-phones-80.php'     },  # Xiaomi/Redmi share the same page
+  { name: 'Poco',      slug: 'poco-phones-133.php'      },
   { name: 'O2',        slug: 'o2-phones-30.php'         },
   { name: 'Virgin',    slug: 'virgin-phones-35.php'     },
   { name: 'Palm',      slug: 'palm-phones-27.php'       },
@@ -240,7 +242,7 @@ def scrape_brand_page(html, brand_name)
   devices   = []
   makers_section = html[/<div class="makers">(.*?)<\/div>/m, 1] || html
 
-  makers_section.scan(/<a href="([a-z0-9_+\-]+-\d+\.php)"[^>]*>.*?<strong>\s*<span>([^<]+)<\/span>/im) do |slug, name|
+  makers_section.scan(/<a href="([^"]+-\d+\.php)"[^>]*>.*?<strong>\s*<span>([^<]+)<\/span>/im) do |slug, name|
     devices << { 'slug' => slug.strip, 'title' => name.strip, 'brand' => brand_name }
   end
 

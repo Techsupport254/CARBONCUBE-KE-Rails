@@ -10,6 +10,12 @@ class DeviceCatalogService
     
     normalized_query = query.to_s.downcase.strip
     
+    if subcategory.present? && data.first && data.first.key?('subcategory')
+      normalized_sub = subcategory.to_s.downcase.strip
+      filtered_data = data.select { |p| p['subcategory'].to_s.downcase.strip == normalized_sub }
+      data = filtered_data if filtered_data.any?
+    end
+
     # Rank matches: exact title first, then starts with, then includes
     matches = data.select do |p|
       p['title'].to_s.downcase.include?(normalized_query) ||
@@ -32,6 +38,12 @@ class DeviceCatalogService
     
     normalized_brand = brand.to_s.downcase.strip
     
+    if subcategory.present? && data.first && data.first.key?('subcategory')
+      normalized_sub = subcategory.to_s.downcase.strip
+      filtered_data = data.select { |p| p['subcategory'].to_s.downcase.strip == normalized_sub }
+      data = filtered_data if filtered_data.any?
+    end
+    
     data.select do |p|
       p['brand'].to_s.downcase == normalized_brand
     end
@@ -44,22 +56,40 @@ class DeviceCatalogService
 
   def self.brands(subcategory = 'phones')
     data = load_data(subcategory)
+    
+    # Filter by specific subcategory if present in the data (like Tyres vs Batteries)
+    if subcategory.present? && data.first && data.first.key?('subcategory')
+      normalized_sub = subcategory.to_s.downcase.strip
+      filtered_data = data.select { |p| p['subcategory'].to_s.downcase.strip == normalized_sub }
+      data = filtered_data if filtered_data.any?
+    end
+    
     data.map { |p| p['brand'] }.compact.uniq.sort
   end
 
   private
 
   def self.file_path_for(subcategory)
-    # Default to phones if no subcategory is given
     name = (subcategory || 'phones').to_s.downcase.strip
 
-    # Map subcategory to specific file
+    # Map using EXACT subcategory names from the DB
+    # "Computers, Phones and Accessories" subcategories
     filename = case name
-               when /tablet|ipad/ then 'tablets_filtered.json'
-               when /laptop|computer/ then 'laptops_filtered.json'
-               when /tv|television|entertainment/ then 'tvs_filtered.json'
-               when /watch/ then 'watches_filtered.json'
+               # --- Phones/Tablets/Watches ---
                when 'phones' then 'phones_filtered.json'
+               when 'tablets' then 'tablets_filtered.json'
+               when 'ipads' then 'ipads_filtered.json'
+               when 'smartwatches' then 'watches_filtered.json'
+               # --- Computers/Laptops ---
+               when 'laptops' then 'laptops_filtered.json'
+               when 'computers', 'computers ' then 'computers_filtered.json'
+               # --- TVs & Home Entertainment (all subcats share one file) ---
+               when 'smart tvs', 'led & lcd tvs', 'oled & qled tvs',
+                    'home theater systems', 'soundbars & speakers',
+                    'streaming devices', 'decoders & receivers',
+                    'projectors & screens', 'tv accessories' then 'tvs_filtered.json'
+               # --- Automotive Parts & Accessories ---
+               when 'tyres', 'batteries' then 'automotive_filtered.json'
                else 'phones_filtered.json'
                end
 
