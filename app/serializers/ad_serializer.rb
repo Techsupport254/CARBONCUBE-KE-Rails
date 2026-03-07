@@ -13,6 +13,18 @@ class AdSerializer < ActiveModel::Serializer
     object.category&.name || "N/A"
   end
 
+  def model
+    object.attributes.key?('model') ? object[:model] : nil
+  rescue StandardError
+    nil
+  end
+
+  def specifications
+    object.attributes.key?('specifications') ? object[:specifications] : nil
+  rescue StandardError
+    nil
+  end
+
   def subcategory_name
     object.subcategory&.name || "N/A"
   end

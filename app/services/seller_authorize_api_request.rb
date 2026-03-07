@@ -13,11 +13,9 @@ class SellerAuthorizeApiRequest
     decoded_result = decoded_token
     
     unless decoded_result[:success]
-      # Only log as error if token was provided but invalid (not just missing)
-      if decoded_result[:missing_token]
-        Rails.logger.debug "SellerAuthorizeApiRequest: No token provided"
-      else
-        Rails.logger.error "SellerAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+      # Only log if token was provided but invalid (not just missing)
+      unless decoded_result[:missing_token]
+        # Rails.logger.error "SellerAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
       end
       raise ExceptionHandler::InvalidToken, decoded_result[:error]
     end
@@ -30,7 +28,7 @@ class SellerAuthorizeApiRequest
 
     # Check if the token is actually for a seller
     if role && role.downcase != 'seller'
-      Rails.logger.debug "SellerAuthorizeApiRequest: Token is for #{role}, not seller. Email: #{seller_email}"
+      # Rails.logger.debug "SellerAuthorizeApiRequest: Token is for #{role}, not seller. Email: #{seller_email}"
       raise ExceptionHandler::InvalidToken, "Token is for #{role}, not seller"
     end
 
@@ -40,9 +38,9 @@ class SellerAuthorizeApiRequest
       if seller && !seller.deleted?
         return seller
       elsif seller&.deleted?
-        Rails.logger.error "SellerAuthorizeApiRequest: Seller #{seller_id} is deleted"
+        # Rails.logger.error "SellerAuthorizeApiRequest: Seller #{seller_id} is deleted"
       else
-        Rails.logger.error "SellerAuthorizeApiRequest: Seller #{seller_id} not found in database"
+        # Rails.logger.error "SellerAuthorizeApiRequest: Seller #{seller_id} not found in database"
       end
     end
 
@@ -52,9 +50,9 @@ class SellerAuthorizeApiRequest
       if seller && !seller.deleted?
         return seller
       elsif seller&.deleted?
-        Rails.logger.error "SellerAuthorizeApiRequest: Seller with email #{seller_email} is deleted"
+        # Rails.logger.error "SellerAuthorizeApiRequest: Seller with email #{seller_email} is deleted"
       else
-        Rails.logger.error "SellerAuthorizeApiRequest: Seller with email #{seller_email} not found in database"
+        # Rails.logger.error "SellerAuthorizeApiRequest: Seller with email #{seller_email} not found in database"
       end
     end
 
@@ -65,8 +63,7 @@ class SellerAuthorizeApiRequest
     error_message = "No seller found"
     error_message += " (#{error_details.join(', ')})" if error_details.any?
     
-    Rails.logger.error "SellerAuthorizeApiRequest: #{error_message}, raising InvalidToken"
-    Rails.logger.error "SellerAuthorizeApiRequest: Detailed error - Seller ID: #{seller_id || 'nil'}, Email: #{seller_email || 'nil'}"
+    # Rails.logger.error "SellerAuthorizeApiRequest: #{error_message}, raising InvalidToken"
     raise ExceptionHandler::InvalidToken, error_message
   end
 
@@ -77,12 +74,12 @@ class SellerAuthorizeApiRequest
       
       JsonWebToken.decode(token)
     rescue ExceptionHandler::MissingToken => e
-      # Missing token is normal for public endpoints, only log at debug level
-      Rails.logger.debug "SellerAuthorizeApiRequest: #{e.message}"
+      # Missing token is normal for public endpoints
+      # Rails.logger.debug "SellerAuthorizeApiRequest: #{e.message}"
       { success: false, error: 'No token provided', missing_token: true }
     rescue => e
       # Only log as error if token was provided but invalid
-      Rails.logger.error "SellerAuthorizeApiRequest: JWT Decode Error: #{e.message}"
+      # Rails.logger.error "SellerAuthorizeApiRequest: JWT Decode Error: #{e.message}"
       { success: false, error: 'Token validation failed' }
     end
   end
