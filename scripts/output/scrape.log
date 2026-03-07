@@ -16071,3 +16071,155 @@
 [13:03:40]   🛑  CAPTCHA/Block detected at 13:03:40
 [13:03:40]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
 [13:03:40]   💤  Waiting 15s to retry https://www.gsmarena.com/o2_xda_stealth-1709.php...
+[13:03:58]   🛑  HTTP 429 Rate Limit detected at 13:03:58
+[13:03:58]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:03:58]   💤  Waiting 15s to retry https://www.gsmarena.com/o2_xda_stealth-1709.php...
+[13:04:14]   🛑  CAPTCHA/Block detected at 13:04:14
+[13:04:14]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:04:14]   💤  Waiting 15s to retry https://www.gsmarena.com/o2_xda_stealth-1709.php...
+[13:04:33]     ✅ [9436] O2 XDA Stealth (18 specs)
+[13:04:37]     ✅ [9437] O2 Jet (15 specs)
+[13:04:40]     ✅ [9438] O2 Ice (16 specs)
+[13:04:44]     ✅ [9439] O2 XDA Atom Exec (18 specs)
+[13:04:48]     ✅ [9440] O2 XDA Trion (18 specs)
+[13:04:52]     ✅ [9441] O2 XDA Neo (19 specs)
+[13:04:55]     ✅ [9442] O2 XDA Atom (18 specs)
+[13:04:58]     ✅ [9443] O2 XDA Orion (18 specs)
+[13:05:01]     ✅ [9444] O2 XDA Exec (18 specs)
+[13:05:06]     ✅ [9445] O2 XDA mini S (19 specs)
+[13:05:10]     ✅ [9446] O2 X2i (16 specs)
+[13:05:13]     ✅ [9447] O2 X7 (15 specs)
+[13:05:16]     ✅ [9448] O2 XDA phone (19 specs)
+[13:05:19]     ✅ [9449] O2 Xphone IIm (18 specs)
+[13:05:22]     ✅ [9450] O2 X1b (14 specs)
+[13:05:25]     ✅ [9451] O2 XM (14 specs)
+[13:05:28]     ✅ [9452] O2 X4 (15 specs)
+[13:05:35]     ✅ [9453] O2 XDA II mini (18 specs)
+[13:05:41]     ✅ [9454] O2 XDA IIs (17 specs)
+[13:05:44]     ✅ [9455] O2 XDA IIi (17 specs)
+[13:05:48]     ✅ [9456] O2 Xphone II (17 specs)
+[13:05:51]     ✅ [9457] O2 X3 (16 specs)
+[13:05:54]     ✅ [9458] O2 X2 (16 specs)
+[13:05:58]     ✅ [9459] O2 X1i (15 specs)
+[13:06:02]     ✅ [9460] O2 XDA II (17 specs)
+[13:06:06]     ✅ [9461] O2 Xphone (18 specs)
+[13:06:09]   🛑  HTTP 429 Rate Limit detected at 13:06:09
+[13:06:09]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:06:09]   💤  Waiting 15s to retry https://www.gsmarena.com/o2_xda-696.php...
+[13:06:26]     ✅ [9462] O2 XDA (15 specs)
+[13:06:26]   ✅ O2 fully completed!
+[13:06:26] 
+[45/46] ━━━ Virgin ━━━ https://www.gsmarena.com/virgin-phones-35.php
+[13:06:27]   📄 Page 1 — https://www.gsmarena.com/virgin-phones-35.php
+[13:06:31]   → 34 devices
+[13:06:33]   📄 Page 2 — https://www.gsmarena.com/virgin-phones-f-35-0-p2.php
+[13:06:36]   → 0 devices
+[13:06:36]   📱 34 total devices across 1 page(s)
+[13:06:36]   📱 34 total devices found for Virgin
+[13:06:36]   ⏭  0 already done — 34 to scrape
+[13:06:40]     ✅ [9463] i-mate 810-F (19 specs)
+[13:06:43]     ✅ [9464] i-mate Ultimate 9502 (20 specs)
+[13:06:46]     ✅ [9465] i-mate Ultimate 8502 (20 specs)
+[13:06:49]     ✅ [9466] i-mate JAMA 201 (18 specs)
+[13:06:52]     ✅ [9467] i-mate JAMA 101 (18 specs)
+[13:06:58]     ✅ [9468] i-mate JAMA (18 specs)
+[13:07:01]     ✅ [9469] i-mate Ultimate 9150 (18 specs)
+[13:07:04]     ✅ [9470] i-mate Ultimate 8150 (18 specs)
+[13:07:07]     ✅ [9471] i-mate Ultimate 7150 (18 specs)
+[13:07:10]     ✅ [9472] i-mate Ultimate 6150 (18 specs)
+[13:07:12]     ✅ [9473] i-mate Ultimate 5150 (18 specs)
+[13:07:15]     ✅ [9474] i-mate JAQ4 (19 specs)
+[13:07:18]     ✅ [9475] i-mate PDAL (19 specs)
+[13:07:21]     ✅ [9476] i-mate JAQ3 (19 specs)
+[13:07:23]     ✅ [9477] i-mate SPL (18 specs)
+[13:07:26]     ✅ [9478] i-mate JAQ (18 specs)
+[13:07:29]     ✅ [9479] i-mate JASJAM (18 specs)
+[13:07:31]     ✅ [9480] i-mate SPJAS (17 specs)
+[13:07:34]     ✅ [9481] i-mate Smartflip (19 specs)
+[13:07:36]   🛑  CAPTCHA/Block detected at 13:07:36
+[13:07:36]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:07:36]   💤  Waiting 15s to retry https://www.gsmarena.com/i_mate_jamin-1420.php...
+[13:07:53]     ✅ [9482] i-mate JAMin (19 specs)
+[13:07:55]     ✅ [9483] i-mate JASJAR (18 specs)
+[13:07:57]   🛑  CAPTCHA/Block detected at 13:07:57
+[13:07:57]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:07:57]   💤  Waiting 15s to retry https://www.gsmarena.com/i_mate_k_jam-1278.php...
+[13:08:15]   🛑  HTTP 429 Rate Limit detected at 13:08:15
+[13:08:15]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:08:15]   💤  Waiting 15s to retry https://www.gsmarena.com/i_mate_k_jam-1278.php...
+[13:08:31]   🛑  CAPTCHA/Block detected at 13:08:31
+[13:08:31]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:08:31]   💤  Waiting 15s to retry https://www.gsmarena.com/i_mate_k_jam-1278.php...
+[13:08:59]     ✅ [9484] i-mate K-JAM (19 specs)
+[13:09:02]   🛑  HTTP 429 Rate Limit detected at 13:09:02
+[13:09:02]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:09:02]   💤  Waiting 15s to retry https://www.gsmarena.com/i_mate_sp5-1267.php...
+[13:09:18]   🛑  HTTP 429 Rate Limit detected at 13:09:18
+[13:09:18]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:09:18]   💤  Waiting 15s to retry https://www.gsmarena.com/i_mate_sp5-1267.php...
+[13:09:38]     ✅ [9485] i-mate SP5 (18 specs)
+[13:09:44]     ✅ [9486] i-mate SP5m (18 specs)
+[13:09:48]     ✅ [9487] i-mate SP4m (19 specs)
+[13:09:51]     ✅ [9488] i-mate JAM Black (18 specs)
+[13:09:55]     ✅ [9489] i-mate JAM (18 specs)
+[13:09:57]     ✅ [9490] i-mate PDA2 (17 specs)
+[13:09:59]     ✅ [9491] i-mate PDA2k (18 specs)
+[13:10:02]     ✅ [9492] i-mate SP3i (19 specs)
+[13:10:05]     ✅ [9493] i-mate SP3 (19 specs)
+[13:10:07]     ✅ [9494] i-mate Pocket PC (18 specs)
+[13:10:10]     ✅ [9495] i-mate Smartphone2 (18 specs)
+[13:10:12]     ✅ [9496] i-mate Smartphone (16 specs)
+[13:10:12]   ✅ Virgin fully completed!
+[13:10:12] 
+[46/46] ━━━ Palm ━━━ https://www.gsmarena.com/palm-phones-27.php
+[13:10:14]   📄 Page 1 — https://www.gsmarena.com/palm-phones-27.php
+[13:10:15]   → 17 devices
+[13:10:17]   📄 Page 2 — https://www.gsmarena.com/palm-phones-f-27-0-p2.php
+[13:10:18]   → 0 devices
+[13:10:18]   📱 17 total devices across 1 page(s)
+[13:10:18]   📱 17 total devices found for Palm
+[13:10:18]   ⏭  0 already done — 17 to scrape
+[13:10:20]     ✅ [9497] Palm Phone PVG100 (24 specs)
+[13:10:22]     ✅ [9498] Palm Pre 2 (19 specs)
+[13:10:25]     ✅ [9499] Palm Pre 2 CDMA (19 specs)
+[13:10:27]     ✅ [9500] Palm Pixi Plus (20 specs)
+[13:10:30]     ✅ [9501] Palm Pre Plus (20 specs)
+[13:10:33]     ✅ [9502] Palm Pixi (20 specs)
+[13:10:36]     ✅ [9503] Palm Pre (20 specs)
+[13:10:38]     ✅ [9504] Palm Treo Pro (20 specs)
+[13:10:40]   🛑  CAPTCHA/Block detected at 13:10:40
+[13:10:40]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:10:40]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_centro-2241.php...
+[13:10:57]   🛑  HTTP 429 Rate Limit detected at 13:10:57
+[13:10:57]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:10:57]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_centro-2241.php...
+[13:11:14]   🛑  HTTP 429 Rate Limit detected at 13:11:14
+[13:11:14]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:11:14]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_centro-2241.php...
+[13:11:31]   🛑  CAPTCHA/Block detected at 13:11:31
+[13:11:31]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[13:21:33]   🛑  HTTP 429 Rate Limit detected at 13:21:33
+[13:21:33]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:21:33]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_centro-2241.php...
+[13:21:50]   🛑  HTTP 429 Rate Limit detected at 13:21:50
+[13:21:50]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:21:50]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_centro-2241.php...
+[13:22:08]     ✅ [9505] Palm Centro (17 specs)
+[13:22:09]   🛑  HTTP 429 Rate Limit detected at 13:22:09
+[13:22:09]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:22:09]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_treo_500v-2100.php...
+[13:22:26]     ✅ [9506] Palm Treo 500v (17 specs)
+[13:22:28]   🛑  CAPTCHA/Block detected at 13:22:28
+[13:22:28]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:22:28]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_treo_750-1909.php...
+[13:22:45]   🛑  CAPTCHA/Block detected at 13:22:45
+[13:22:45]   🔄 Tor IP rotation requested (SIGNAL NEWNYM)
+[13:22:45]   💤  Waiting 15s to retry https://www.gsmarena.com/palm_treo_750-1909.php...
+[13:23:02]     ✅ [9507] Palm Treo 750 (17 specs)
+[13:23:05]     ✅ [9508] Palm Treo 680 (17 specs)
+[13:23:07]     ✅ [9509] Palm Treo 750v (17 specs)
+[13:23:10]     ✅ [9510] Palm Treo 650 (16 specs)
+[13:23:12]     ✅ [9511] Palm Treo 600 (18 specs)
+[13:23:14]     ✅ [9512] Palm Treo 270 (16 specs)
+[13:23:16]     ✅ [9513] Palm Treo 180 (16 specs)
+[13:23:16]   ✅ Palm fully completed!
