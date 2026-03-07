@@ -1762,7 +1762,7 @@ class Buyer::AdsController < ApplicationController
                     end
 
     # Preload essential associations for AdSerializer to avoid N+1 queries
-    ads_to_preload = ads.is_a?(ActiveRecord::Relation) ? ads.load.to_a : Array(ads)
+    ads_to_preload = ads.to_a
     if ads_to_preload.any?
       ActiveRecord::Associations::Preloader.new(records: ads_to_preload, associations: [:category, :subcategory, :reviews, { seller: { seller_tier: :tier } }, { offer_ads: :offer }]).call
     end

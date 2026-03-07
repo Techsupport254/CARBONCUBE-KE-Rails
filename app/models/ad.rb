@@ -27,6 +27,19 @@ class Ad < ApplicationRecord
   delegate :name, to: :category, prefix: true, allow_nil: true
   delegate :name, to: :subcategory, prefix: true, allow_nil: true
 
+  def model
+    # Use attributes.key? directly to avoid triggering AR's MissingAttributeError log subscriber
+    attributes.key?('model') ? self[:model] : nil
+  rescue StandardError
+    nil
+  end
+
+  def specifications
+    attributes.key?('specifications') ? self[:specifications] : nil
+  rescue StandardError
+    nil
+  end
+
   accepts_nested_attributes_for :category
   accepts_nested_attributes_for :reviews
 
