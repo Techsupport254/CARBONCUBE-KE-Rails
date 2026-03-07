@@ -4,7 +4,7 @@ class Ad < ApplicationRecord
   enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3, ex_uk: 4 }
 
   # tsearch only: trigram (%) requires pg_trgm and can raise "operator does not exist: unknown % text"
-  pg_search_scope :search_by_title_and_description, against: [:title, :description], using: { tsearch: { prefix: true } }
+  pg_search_scope :search_by_title_and_description, against: [:title, :description, :brand, :manufacturer, :model], using: { tsearch: { prefix: true } }
 
 
   scope :active, -> { where(deleted: false) }
@@ -252,10 +252,9 @@ class Ad < ApplicationRecord
 
   # Returns the current price, taking into account active discounts/flash sales
   def effective_price
-    # First check for active offer_ads through the association
-    # This matches the logic in AdSerializer but simplified for model use
+    # Check for active or scheduled offer_ads that are currently within time bounds
     active_offer = offer_ads.joins(:offer)
-                            .where(offers: { status: 'active' })
+                            .where(offers: { status: ['active', 'scheduled'] })
                             .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
                             .first
     
@@ -265,7 +264,7 @@ class Ad < ApplicationRecord
   # Returns true if the product currently has an active discount
   def on_sale?
     offer_ads.joins(:offer)
-             .where(offers: { status: 'active' })
+             .where(offers: { status: ['active', 'scheduled'] })
              .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
              .exists?
   end

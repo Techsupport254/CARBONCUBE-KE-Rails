@@ -616,7 +616,7 @@ class Seller::AdsController < ApplicationController
   def ad_params
     permitted = params.require(:ad).permit(
       :title, :description, :category_id, :subcategory_id, :price, 
-      :brand, :manufacturer, :item_length, :item_width, 
+      :brand, :manufacturer, :model, :specifications, :item_length, :item_width, 
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
     media: [], existing_media: []
   )

@@ -133,7 +133,7 @@ class Buyer::AdsController < ApplicationController
       {
         id: ad.id,
         title: ad.title,
-        price: ad.price,
+        price: ad.effective_price,
           media: media_json,
           media_urls: media_urls,
           first_media_url: first_media_url,
@@ -391,14 +391,28 @@ class Buyer::AdsController < ApplicationController
     # Define known brands and their common abbreviations
     known_brands = {
       'samsung' => ['samsung', 'samsung galaxy', 'galaxy'],
-      'apple' => ['apple', 'iphone', 'ipad', 'macbook', 'mac'],
+      'apple' => ['apple', 'iphone', 'ipad', 'macbook', 'mac', 'imac', 'mac mini'],
       'huawei' => ['huawei', 'honor'],
       'xiaomi' => ['xiaomi', 'redmi', 'poco'],
       'oppo' => ['oppo', 'realme'],
       'vivo' => ['vivo'],
       'tecno' => ['tecno', 'itel'],
       'infinix' => ['infinix'],
-      'sony' => ['sony', 'playstation', 'ps4', 'ps5']
+      'sony' => ['sony', 'playstation', 'ps4', 'ps5'],
+      'hp' => ['hp', 'hewlett packard', 'pavilion', 'envy', 'spectre', 'elitebook'],
+      'dell' => ['dell', 'latitude', 'xps', 'inspiron', 'vostro', 'alienware'],
+      'lenovo' => ['lenovo', 'thinkpad', 'ideapad', 'yoga', 'legion'],
+      'asus' => ['asus', 'rog', 'zenbook', 'vivobook', 'tuf'],
+      'acer' => ['acer', 'aspire', 'nitro', 'predator', 'swift'],
+      'toyota' => ['toyota', 'corolla', 'camry', 'vitz', 'fielder', 'hilux', 'prado', 'land cruiser'],
+      'nissan' => ['nissan', 'sunny', 'tiida', 'sylphy', 'x-trail', 'note', 'hardbody', 'navara'],
+      'mazda' => ['mazda', 'demio', 'axela', 'atenza', 'cx-5', 'cx-3'],
+      'honda' => ['honda', 'civic', 'fit', 'cr-v', 'stream', 'accord'],
+      'isuzu' => ['isuzu', 'd-max', 'npr', 'frr', 'fvr'],
+      'subaru' => ['subaru', 'impreza', 'forester', 'legacy', 'outback', 'xv'],
+      'mercedes' => ['mercedes', 'benz', 'c-class', 'e-class', 's-class', 'ml', 'gle'],
+      'bmw' => ['bmw', 'x5', 'x3', '3 series', '5 series'],
+      'volkswagen' => ['volkswagen', 'vw', 'golf', 'polo', 'tiguan', 'touran']
     }
 
     # Enhanced product types with semantic understanding (AI-like)
@@ -691,6 +705,31 @@ class Buyer::AdsController < ApplicationController
             "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
             "%accessories%", "%earphone%", "%headphone%"
           )
+        when 'ram'
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%ram%", "%ram%"
+          )
+        when 'ssd'
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.model) LIKE LOWER(?)",
+            "%ssd%", "%ssd%", "%ssd%"
+          )
+        when 'monitors'
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%monitor%", "%monitor%", "%screen%"
+          )
+        when 'shock_absorbers'
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%shock%", "%shock absorber%", "%suspension%"
+          )
+        when 'wiper_blades'
+          ads_query = ads_query.where(
+            "LOWER(subcategories.name) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?) OR LOWER(ads.title) LIKE LOWER(?)",
+            "%wiper%", "%wiper blade%", "%windshield%"
+          )
         end
       end
 
@@ -754,10 +793,12 @@ class Buyer::AdsController < ApplicationController
 
       # Perfect match: Exact brand + model (100 points)
       if search_intent[:model] && search_intent[:brand]
-        model_match = ad_title.include?(search_intent[:model].downcase) ||
+        model_match = (ad.model.present? && ad.model.downcase.include?(search_intent[:model].downcase)) ||
+                     ad_title.include?(search_intent[:model].downcase) ||
                      ad_title.include?("#{search_intent[:brand]} #{search_intent[:model].split.last}")
         brand_match = ad_brand.include?(search_intent[:brand]) ||
-                     ad_manufacturer.include?(search_intent[:brand])
+                     ad_manufacturer.include?(search_intent[:brand]) ||
+                     (ad.brand.present? && ad.brand.downcase.include?(search_intent[:brand]))
 
         if model_match && brand_match
           score += 100
@@ -792,62 +833,46 @@ class Buyer::AdsController < ApplicationController
         category_name = ad.category&.name&.downcase || ''
         subcategory_name = ad.subcategory&.name&.downcase || ''
 
-        if subcategory_name.include?('phone') || category_name.include?('phone') ||
+        if subcategory_name == 'phones' || subcategory_name == 'tablets' || subcategory_name == 'laptops'
+          score += 40  # Strong boost for main device categories
+        elsif (subcategory_name.include?('accessories') || subcategory_name.include?('peripherals')) && 
+              search_intent[:accessory_terms].blank?
+          score -= 50  # Strong penalty for accessories when looking for a device
+        elsif subcategory_name.include?('phone') || category_name.include?('phone') ||
            subcategory_name.include?('mobile') || category_name.include?('mobile')
-          score += 10  # Category boost
+          score += 10  # Mild category boost for related items
         end
       elsif search_intent[:product_type]
-        # AI-enhanced product type relevance scoring
         known_product_types = {
-          'air_filters' => {
-            keywords: ['air filter', 'air filters', 'air cleaner', 'air cleaners', 'filter air'],
-            synonyms: ['air intake', 'engine air filter', 'cabin air filter'],
-            categories: ['filtration', 'automotive']
-          },
-          'oil_filters' => {
-            keywords: ['oil filter', 'oil filters'],
-            synonyms: ['engine oil filter', 'motor oil filter'],
-            categories: ['filtration', 'automotive']
-          },
-          'fuel_filters' => {
-            keywords: ['fuel filter', 'fuel filters', 'diesel filter'],
-            synonyms: ['fuel pump filter', 'diesel fuel filter'],
-            categories: ['filtration', 'automotive']
-          },
-          'brake_pads' => {
-            keywords: ['brake pad', 'brake pads', 'brakes'],
-            synonyms: ['brake shoes', 'brake lining', 'disc brakes'],
-            categories: ['automotive', 'spare parts']
-          },
-          'tires' => {
-            keywords: ['tire', 'tires', 'tyre', 'tyres'],
-            synonyms: ['wheel', 'rim', 'car tire', 'truck tire'],
-            categories: ['automotive', 'tyres']
-          },
-          'batteries' => {
-            keywords: ['battery', 'batteries', 'car battery'],
-            synonyms: ['automotive battery', 'car battery', 'vehicle battery'],
-            categories: ['automotive', 'electrical']
-          },
-          'spark_plugs' => {
-            keywords: ['spark plug', 'spark plugs'],
-            synonyms: ['ignition plug', 'sparkplug'],
-            categories: ['automotive', 'electrical']
-          },
-          'phone_cases' => {
-            keywords: ['phone case', 'phone cases', 'case phone'],
-            synonyms: ['phone cover', 'mobile case', 'cell phone case'],
-            categories: ['accessories', 'phone accessories']
-          },
-          'chargers' => {
-            keywords: ['charger', 'chargers', 'phone charger'],
-            synonyms: ['power adapter', 'charging cable', 'wall charger'],
-            categories: ['accessories', 'electronics']
-          },
           'earphones' => {
             keywords: ['earphone', 'earphones', 'earbuds', 'headphones'],
             synonyms: ['ear pods', 'wireless earbuds', 'bluetooth headphones'],
             categories: ['accessories', 'audio']
+          },
+          'ram' => {
+            keywords: ['ram', 'memory', 'so-dimm', 'dimm'],
+            synonyms: ['computer memory', 'laptop ram', 'desktop ram'],
+            categories: ['computers', 'components']
+          },
+          'ssd' => {
+            keywords: ['ssd', 'solid state drive', 'nvme', 'm.2'],
+            synonyms: ['computer storage', 'internal storage'],
+            categories: ['computers', 'components']
+          },
+          'monitors' => {
+            keywords: ['monitor', 'screen', 'display'],
+            synonyms: ['computer screen', 'external monitor'],
+            categories: ['computers', 'peripherals']
+          },
+          'shock_absorbers' => {
+            keywords: ['shock absorber', 'shocks', 'suspension'],
+            synonyms: ['struts', 'dampers'],
+            categories: ['automotive', 'suspension']
+          },
+          'wiper_blades' => {
+            keywords: ['wiper', 'wiper blade', 'windshield wiper'],
+            synonyms: ['wipers'],
+            categories: ['automotive', 'accessories']
           }
         }
 
@@ -1736,8 +1761,14 @@ class Buyer::AdsController < ApplicationController
                       nil
                     end
 
+    # Preload essential associations for AdSerializer to avoid N+1 queries
+    ads_to_preload = ads.is_a?(ActiveRecord::Relation) ? ads.load.to_a : Array(ads)
+    if ads_to_preload.any?
+      ActiveRecord::Associations::Preloader.new(records: ads_to_preload, associations: [:category, :subcategory, :reviews, { seller: { seller_tier: :tier } }, { offer_ads: :offer }]).call
+    end
+
     response = {
-      ads: ads.map { |ad| AdSerializer.new(ad).as_json },
+      ads: ads_to_preload.map { |ad| AdSerializer.new(ad).as_json },
       grok_insights: grok_insights,
       shops: paginated_shops.map do |shop_data|
         shop = shop_data[:shop]
@@ -2073,7 +2104,7 @@ class Buyer::AdsController < ApplicationController
         id: ad.id,
         ad_id: ad.id,
         title: ad.title,
-        price: ad.price.to_f,
+        price: ad.effective_price.to_f,
         media: ad.media,
         media_urls: ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || []),
         first_media_url: ad.media.is_a?(String) ? (JSON.parse(ad.media || '[]').first || '') : (ad.media&.first || ''),
@@ -2368,7 +2399,7 @@ class Buyer::AdsController < ApplicationController
       {
         id: alt.id,
         title: alt.title,
-        price: alt.price&.to_f,
+        price: alt.effective_price&.to_f,
         original_price: original_price,
         first_media_url: alt.first_media_url,
         category_name: alt.category&.name,
@@ -2831,7 +2862,9 @@ class Buyer::AdsController < ApplicationController
     search_term = params[:search].strip
     
     ads_query.where(
-      'ads.title ILIKE ? OR ads.description ILIKE ? OR ads.brand ILIKE ?',
+      'ads.title ILIKE ? OR ads.description ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ? OR ads.specifications::text ILIKE ?',
+      "%#{search_term}%",
+      "%#{search_term}%",
       "%#{search_term}%",
       "%#{search_term}%",
       "%#{search_term}%"

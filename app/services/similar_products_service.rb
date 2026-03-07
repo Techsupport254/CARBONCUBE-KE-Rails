@@ -104,46 +104,42 @@ class SimilarProductsService
       same_product_scope = base_scope
                              .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
 
-      # Build title matching conditions
-      title_match_conditions = []
-      title_match_params = []
+      # Build matching conditions
+      match_conditions = []
+      match_params = []
 
-      # Exact match
-      title_match_conditions << "LOWER(TRIM(ads.title)) = LOWER(TRIM(?))"
-      title_match_params << ad.title.to_s.strip
+      # 1. Exact model match (Highest priority)
+      if ad.model.present?
+        match_conditions << "LOWER(TRIM(ads.model)) = LOWER(TRIM(?))"
+        match_params << ad.model
+      end
 
-      # Punctuation-insensitive exact key match (e.g. "Redmi A3x." == "Redmi A3x")
+      # 2. Exact title match
+      match_conditions << "LOWER(TRIM(ads.title)) = LOWER(TRIM(?))"
+      match_params << ad.title.to_s.strip
+
+      # 3. Punctuation-insensitive exact key match
       if normalized_title_key.present?
-        title_match_conditions << "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?"
-        title_match_params << normalized_title_key
+        match_conditions << "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?"
+        match_params << normalized_title_key
       end
 
-      # Brand matching
-      brand_match_conditions = []
-      brand_match_params = []
+      # Apply matching (OR conditions)
+      if match_conditions.any?
+        same_product_scope = same_product_scope.where(match_conditions.join(' OR '), *match_params)
+      end
 
+      # 4. Brand constraint (usually same products must share brand)
       if normalized_brand.present?
-        # Match brand
-        brand_match_conditions << "(LOWER(TRIM(COALESCE(ads.brand, ''))) = ?)"
-        brand_match_params << normalized_brand
-
-        # Match manufacturer if present
+        brand_sql = "(LOWER(TRIM(COALESCE(ads.brand, ''))) = ?)"
+        brand_params = [normalized_brand]
+        
         if normalized_manufacturer.present?
-          brand_match_conditions << "(LOWER(TRIM(COALESCE(ads.manufacturer, ''))) = ?)"
-          brand_match_params << normalized_manufacturer
+          brand_sql += " OR (LOWER(TRIM(COALESCE(ads.manufacturer, ''))) = ?)"
+          brand_params << normalized_manufacturer
         end
-      end
-
-      # Apply title matching
-      if title_match_conditions.any?
-        title_sql = title_match_conditions.join(' OR ')
-        same_product_scope = same_product_scope.where(title_sql, *title_match_params)
-      end
-
-      # Apply brand matching if brand exists
-      if brand_match_conditions.any? && normalized_brand.present?
-        brand_sql = brand_match_conditions.join(' OR ')
-        same_product_scope = same_product_scope.where(brand_sql, *brand_match_params)
+        
+        same_product_scope = same_product_scope.where(brand_sql, *brand_params)
       end
 
       # Get same products with scoring and ordering
@@ -175,14 +171,21 @@ class SimilarProductsService
                         .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
                         .where.not(id: exclude_ids)
 
-      # Extract key words from title (remove common words)
-      key_words = extract_key_words(ad.title)
+      # Extract key words from title/brand/model
+      search_text = "#{ad.title} #{ad.brand} #{ad.model}"
+      key_words = extract_key_words(search_text)
 
       if key_words.any?
-        # Build ILIKE conditions for key words
-        word_conditions = key_words.map { |word| "ads.title ILIKE ?" }.join(' OR ')
-        word_params = key_words.map { |word| "%#{word}%" }
-        similar_scope = similar_scope.where(word_conditions, *word_params)
+        # Build ILIKE conditions for key words across multiple columns
+        word_conditions = []
+        word_params = []
+        
+        key_words.each do |word|
+          word_conditions << "(ads.title ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ?)"
+          word_params += ["%#{word}%", "%#{word}%", "%#{word}%"]
+        end
+        
+        similar_scope = similar_scope.where(word_conditions.join(' AND '), *word_params)
       end
 
       # Prevent exact same products (ignoring punctuation) from showing as merely "similar"
@@ -263,7 +266,7 @@ class SimilarProductsService
     def calculate_alternative_score(alt, original_ad, normalized_title, normalized_brand, is_exact_match)
       score = 0.0
 
-      # Base score for tier priority (higher tier = higher score)
+      # 1. Base score for tier priority (higher tier = higher score)
       tier_score = case alt.tier_priority
                    when 1 then 50.0  # Premium
                    when 2 then 40.0  # Gold
@@ -273,7 +276,12 @@ class SimilarProductsService
                    end
       score += tier_score
 
-      # Title similarity (40% weight)
+      # 2. Model match (High priority)
+      if original_ad.model.present? && alt.model.present? && original_ad.model.strip.downcase == alt.model.strip.downcase
+        score += 60.0 # Higher than exact title match bonus
+      end
+
+      # 3. Title similarity (40% weight)
       if is_exact_match
         score += 40.0 # Exact matches get full title score
       else
@@ -288,19 +296,42 @@ class SimilarProductsService
         end
       end
 
-      # Brand match bonus (30% weight)
+      # 4. Brand match bonus (30% weight)
       if normalized_brand.present? && normalize_brand(alt.brand) == normalized_brand
         score += 30.0
       end
 
-      # Price similarity (20% weight) - prefer similar priced items
+      # 5. Specifications overlap (Bonus points for matching technical details)
+      if original_ad.specifications.present? && alt.specifications.present?
+        begin
+          orig_specs = original_ad.specifications.is_a?(String) ? JSON.parse(original_ad.specifications) : original_ad.specifications
+          alt_specs = alt.specifications.is_a?(String) ? JSON.parse(alt.specifications) : alt.specifications
+          
+          if orig_specs.is_a?(Hash) && alt_specs.is_a?(Hash)
+            # Find common keys with matching values
+            matches = 0
+            orig_specs.each do |k, v|
+              if alt_specs[k].to_s.strip.downcase == v.to_s.strip.downcase
+                matches += 1
+              end
+            end
+            
+            # Add 5 points per matching spec, up to 25
+            score += [matches * 5.0, 25.0].min
+          end
+        rescue => e
+          # Silently fail spec matching
+        end
+      end
+
+      # 6. Price similarity (20% weight) - prefer similar priced items
       if original_ad.price.present? && alt.price.present?
         price_ratio = [original_ad.price, alt.price].min.to_f / [original_ad.price, alt.price].max.to_f
         price_score = price_ratio * 20.0
         score += price_score
       end
 
-      # Review count bonus (10% weight) - prefer items with more reviews
+      # 7. Review count bonus (10% weight) - prefer items with more reviews
       review_score = [alt.reviews_count || 0, 10].min * 1.0 # Max 10 reviews = 10 points
       score += review_score
 
