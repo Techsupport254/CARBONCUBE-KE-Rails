@@ -1,648 +1,3094 @@
 [
   {
-    "slug": "samsung_galaxy_grand_prime_duos_tv-6790.php",
-    "title": "Samsung Galaxy Grand Prime Duos TV",
+    "title": "Samsung 50-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_galaxy_grand_prime_duos_tv-6790.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "5.0",
-      "Display Type": "TFT",
-      "Resolution": "540 x 960 pixels",
-      "Chipset": "Snapdragon 410",
-      "CPU": "Quad-core 1.2 GHz Cortex-A53",
-      "GPU": "Adreno 306",
-      "Ram": "1 GB",
-      "Internal Storage": "8GB",
-      "Card Slot": "microSDXC (dedicated slot)",
-      "Main Camera": "8 MP",
-      "Selfie Camera": "5 MP",
-      "Battery (mAh)": "2600",
-      "Network": "GSM / HSPA",
-      "SIM": "Dual SIM (Micro-SIM, dual stand-by)",
-      "NFC": "No",
-      "USB": "microUSB 2.0",
-      "Bluetooth": "4.0, A2DP",
-      "WiFi": "Wi-Fi 802.11 b/g/n, Wi-Fi Direct, hotspot",
-      "Operating System": "Android 4.4.2 (KitKat)",
-      "Color": "Black",
-      "Features": "Accelerometer, proximity, compass",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:00:52"
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "samsung_galaxy_s_ii_tv-6785.php",
-    "title": "Samsung Galaxy S II TV",
+    "title": "Samsung 55-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_galaxy_s_ii_tv-6785.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "4.0",
-      "Display Type": "TFT",
-      "Resolution": "480 x 800 pixels",
-      "CPU": "Dual-core 1.0 GHz",
-      "Ram": "1 GB",
-      "Internal Storage": "4GB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "5 MP",
-      "Selfie Camera": "VGA",
-      "Battery (mAh)": "1500",
-      "Network": "GSM / HSPA",
-      "SIM": "Dual SIM (Micro-SIM)",
-      "NFC": "No",
-      "USB": "microUSB 2.0",
-      "Bluetooth": "4.0, A2DP, aptX",
-      "WiFi": "Wi-Fi 802.11 b/g/n, hotspot",
-      "Operating System": "Android 4.2 (Jelly Bean)",
-      "Color": "Black",
-      "Features": "Accelerometer, proximity, compass",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:05:08"
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "samsung_galaxy_y_tv_s5367-4694.php",
-    "title": "Samsung Galaxy Y TV S5367",
+    "title": "Samsung 65-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_galaxy_y_tv_s5367-4694.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "3.14",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "240 x 320 pixels",
-      "CPU": "832 MHz ARMv6",
-      "Card Slot": "microSDHC (dedicated slot), 2 GB included",
-      "Main Camera": "3.15 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "1200",
-      "Network": "GSM / HSPA",
-      "SIM": "Mini-SIM",
-      "USB": "microUSB 2.0",
-      "Bluetooth": "3.0, A2DP",
-      "WiFi": "Wi-Fi 802.11 b/g/n, Hotspot functionality",
-      "Operating System": "Android 2.3 (Gingerbread)",
-      "Color": "Black/Silver",
-      "Features": "Accelerometer, proximity, compass",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:12:40"
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "samsung_mpower_tv_s239-3747.php",
-    "title": "Samsung Mpower TV S239",
+    "title": "Samsung 75-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_mpower_tv_s239-3747.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.4",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "240 x 320 pixels",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "1.3 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "960",
-      "Network": "CDMA / EVDO",
-      "SIM": "Mini-SIM",
-      "USB": "2.0",
-      "Bluetooth": "2.0",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:16:08"
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "samsung_metro_tv-3273.php",
-    "title": "Samsung Metro TV",
+    "title": "Samsung 85-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_metro_tv-3273.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.0",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "240 x 320 pixels",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "2 MP",
-      "Selfie Camera": "No",
-      "Network": "CDMA / EVDO",
-      "SIM": "Mini-SIM",
-      "USB": "Proprietary",
-      "Bluetooth": "2.2, A2DP, EDR",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:18:57"
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "samsung_corby_tv_f339-3272.php",
-    "title": "Samsung Corby TV F339",
+    "title": "Samsung 98-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_98_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_corby_tv_f339-3272.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.8",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "240 x 320 pixels",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "2 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "960",
-      "Network": "CDMA / EVDO",
-      "SIM": "Mini-SIM",
-      "USB": "2.0",
-      "Bluetooth": "2.0, A2DP",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Jamaican Yellow",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:18:59"
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "samsung_i6220_star_tv-2930.php",
-    "title": "Samsung I6220 Star TV",
+    "title": "Samsung 43-inch CU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_43_inch_cu7000_crystal_uhd_led_4k_2160p_smart_tv",
     "brand": "Samsung",
-    "gsmarena_url": "https://www.gsmarena.com/samsung_i6220_star_tv-2930.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "3.0",
-      "Display Type": "TFT resistive touchscreen, 256K colors",
-      "Resolution": "240 x 400 pixels",
-      "Card Slot": "microSDHC (dedicated slot), 1 GB included",
-      "Main Camera": "3.15 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "1000",
-      "Network": "GSM",
-      "SIM": "Mini-SIM",
-      "USB": "2.0",
-      "Bluetooth": "2.1, A2DP",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black",
-      "Features": "Accelerometer",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-02 16:21:56"
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "itel_vision_3_turbo-12492.php",
-    "title": "itel Vision 3 Turbo",
-    "brand": "itel",
-    "gsmarena_url": "https://www.gsmarena.com/itel_vision_3_turbo-12492.php",
+    "title": "Samsung 50-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "6.6",
-      "Display Type": "IPS LCD",
-      "Resolution": "720 x 1600 pixels",
-      "Chipset": "Unisoc SC9863A",
-      "CPU": "Octa-core (4x1.6 GHz Cortex-A55 & 4x1.2 GHz Cortex-A55)",
-      "GPU": "IMG8322",
-      "Ram": "3 GB",
-      "Internal Storage": "64GB",
-      "Card Slot": "microSDXC",
-      "Main Camera": "8 MP",
-      "Selfie Camera": "5 MP",
-      "Battery (mAh)": "5000",
-      "Network": "GSM / HSPA / LTE",
-      "SIM": "Dual SIM",
-      "NFC": "No",
-      "USB": "microUSB",
-      "Bluetooth": "Yes",
-      "WiFi": "Yes",
-      "Operating System": "Android 11 (Go edition)",
-      "Color": "Blue",
-      "Features": "Fingerprint (rear-mounted), accelerometer",
-      "Status": "Available. Released 2022"
-    },
-    "scraped_at": "2026-03-03 17:37:07"
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "itel_vision_3-12493.php",
-    "title": "itel Vision 3",
-    "brand": "itel",
-    "gsmarena_url": "https://www.gsmarena.com/itel_vision_3-12493.php",
+    "title": "Samsung 55-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "6.6",
-      "Display Type": "IPS LCD",
-      "Resolution": "720 x 1600 pixels",
-      "Chipset": "Unisoc SC9863A",
-      "CPU": "Octa-core (4x1.6 GHz Cortex-A55 & 4x1.2 GHz Cortex-A55)",
-      "GPU": "IMG8322",
-      "Ram": "2/3 GB",
-      "Internal Storage": "32GB/64GB",
-      "Card Slot": "microSDXC",
-      "Main Camera": "8 MP",
-      "Selfie Camera": "5 MP",
-      "Battery (mAh)": "5000",
-      "Network": "GSM / HSPA / LTE",
-      "SIM": "Dual SIM",
-      "NFC": "No",
-      "USB": "microUSB",
-      "Bluetooth": "Yes",
-      "WiFi": "Yes",
-      "Operating System": "Android 11 (Go edition)",
-      "Color": "Blue",
-      "Features": "Fingerprint (rear-mounted), accelerometer",
-      "Status": "Available. Released 2022"
-    },
-    "scraped_at": "2026-03-03 17:37:16"
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "itel_vision_2s-12498.php",
-    "title": "itel Vision 2S",
-    "brand": "itel",
-    "gsmarena_url": "https://www.gsmarena.com/itel_vision_2s-12498.php",
+    "title": "Samsung 65-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "6.52",
-      "Display Type": "IPS LCD",
-      "Resolution": "720 x 1600 pixels",
-      "Chipset": "Unisoc SC9863A",
-      "CPU": "Octa-core (4x1.6 GHz Cortex-A55 & 4x1.2 GHz Cortex-A55)",
-      "GPU": "IMG8322",
-      "Ram": "2 GB",
-      "Internal Storage": "32GB",
-      "Card Slot": "microSDXC",
-      "Main Camera": "8 MP",
-      "Selfie Camera": "5 MP",
-      "Battery (mAh)": "5000",
-      "Network": "GSM / HSPA / LTE",
-      "SIM": "Dual SIM",
-      "NFC": "No",
-      "USB": "microUSB",
-      "Bluetooth": "Yes",
-      "WiFi": "Yes",
-      "Operating System": "Android 11 (Go edition)",
-      "Color": "Gradation Purple",
-      "Features": "Fingerprint (rear-mounted), accelerometer",
-      "Status": "Available. Released 2021"
-    },
-    "scraped_at": "2026-03-03 17:38:02"
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "slug": "itel_vision_2-12500.php",
-    "title": "itel Vision 2",
-    "brand": "itel",
-    "gsmarena_url": "https://www.gsmarena.com/itel_vision_2-12500.php",
+    "title": "Samsung 75-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "6.6",
-      "Display Type": "IPS LCD",
-      "Resolution": "720 x 1600 pixels",
-      "Chipset": "Unisoc SC9863A",
-      "CPU": "Octa-core (4x1.6 GHz Cortex-A55 & 4x1.2 GHz Cortex-A55)",
-      "GPU": "IMG8322",
-      "Ram": "2 GB",
-      "Internal Storage": "32GB",
-      "Card Slot": "microSDXC (dedicated slot)",
-      "Main Camera": "13 MP",
-      "Selfie Camera": "8 MP",
-      "Battery (mAh)": "4000",
-      "Network": "GSM / HSPA / LTE",
-      "SIM": "Dual SIM",
-      "NFC": "No",
-      "USB": "microUSB",
-      "Bluetooth": "Yes",
-      "WiFi": "Yes",
-      "Operating System": "Android 10 (Go edition)",
-      "Color": "Green",
-      "Features": "Fingerprint (rear-mounted), accelerometer",
-      "Status": "Available. Released 2021"
-    },
-    "scraped_at": "2026-03-03 17:38:16"
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "title": "Huawei U8850 Vision",
-    "slug": "huawei_u8850_vision-4109.php",
-    "brand": "Huawei",
-    "gsmarena_url": "https://www.gsmarena.com/huawei_u8850_vision-4109.php",
+    "title": "Samsung 85-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "3.7",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "480 x 800 pixels",
-      "Chipset": "Snapdragon S2",
-      "CPU": "1.0 GHz Scorpion",
-      "GPU": "Adreno 205",
-      "Ram": "512 MB",
-      "Internal Storage": "2GB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "5 MP",
-      "Selfie Camera": "VGA",
-      "Battery (mAh)": "1400",
-      "Network": "GSM / HSPA",
-      "SIM": "Mini-SIM",
-      "USB": "microUSB 2.0",
-      "Bluetooth": "2.1, A2DP, EDR",
-      "WiFi": "Wi-Fi 802.11 b/g/n",
-      "Operating System": "Android 2.3.4 (Gingerbread)",
-      "Color": "Black",
-      "Features": "Accelerometer, proximity, compass",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-05 15:49:37"
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "title": "Nokia 5330 Mobile TV Edition",
-    "slug": "nokia_5330_mobile_tv_edition-3020.php",
-    "brand": "Nokia",
-    "gsmarena_url": "https://www.gsmarena.com/nokia_5330_mobile_tv_edition-3020.php",
+    "title": "Samsung 98-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_98_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.4",
-      "Display Type": "TFT, 16M colors",
-      "Resolution": "240 x 320 pixels",
-      "Internal Storage": "70MB",
-      "Card Slot": "microSDHC (dedicated slot), 1 GB included",
-      "Main Camera": "3.15 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "1000",
-      "Network": "GSM / UMTS",
-      "SIM": "Mini-SIM",
-      "USB": "microUSB",
-      "Bluetooth": "2.1, A2DP",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Glossy Black, Glossy White",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-05 16:38:48"
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "title": "Nokia 7900 Crystal Prism",
-    "slug": "nokia_7900_crystal_prism-2225.php",
-    "brand": "Nokia",
-    "gsmarena_url": "https://www.gsmarena.com/nokia_7900_crystal_prism-2225.php",
+    "title": "Samsung 43-inch CU8000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_43_inch_cu8000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.0",
-      "Display Type": "OLED, 16M colors",
-      "Resolution": "240 x 320 pixels",
-      "Internal Storage": "1GB",
-      "Card Slot": "No",
-      "Main Camera": "2 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "850",
-      "Network": "GSM / UMTS",
-      "SIM": "Mini-SIM",
-      "USB": "microUSB",
-      "Bluetooth": "2.0",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-05 17:17:01"
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen Plus",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    }
   },
   {
-    "title": "LG Scarlet II TV",
-    "slug": "lg_scarlet_ii_tv-3470.php",
+    "title": "Samsung 50-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 55-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 65-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 75-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 85-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 98-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_98_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 43-inch Q60C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_43_inch_q60c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 50-inch Q70C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_q70c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 55-inch Q70C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_q70c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 65-inch Q70C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_q70c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 75-inch Q70C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_q70c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 85-inch Q70C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_q70c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 98-inch Q70C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_98_inch_q70c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 50-inch Q80C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_q80c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 55-inch Q80C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_q80c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 65-inch Q80C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_q80c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 75-inch Q80C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_q80c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 85-inch Q80C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_q80c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 98-inch Q80C QLED QLED 4K (2160p) Smart TV",
+    "slug": "samsung_98_inch_q80c_qled_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 50-inch QN85C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_qn85c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 55-inch QN85C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_qn85c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 65-inch QN85C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_qn85c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 75-inch QN85C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_qn85c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 85-inch QN85C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_qn85c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 98-inch QN85C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_98_inch_qn85c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 43-inch QN90C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_43_inch_qn90c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Neo Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 50-inch QN90C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_qn90c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Neo Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 55-inch QN90C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_qn90c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Neo Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 65-inch QN90C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_qn90c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Neo Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 75-inch QN90C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_qn90c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Neo Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 85-inch QN90C Neo QLED Mini-LED 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_qn90c_neo_qled_mini_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Neo Quantum HDR+"
+    }
+  },
+  {
+    "title": "Samsung 55-inch S90C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_s90c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "OLED HDR+"
+    }
+  },
+  {
+    "title": "Samsung 65-inch S90C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_s90c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "OLED HDR+"
+    }
+  },
+  {
+    "title": "Samsung 77-inch S90C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_77_inch_s90c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "OLED HDR+"
+    }
+  },
+  {
+    "title": "Samsung 83-inch S90C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_83_inch_s90c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "83 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "OLED HDR+"
+    }
+  },
+  {
+    "title": "Samsung 55-inch S95C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_s95c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Quantum HDR OLED+"
+    }
+  },
+  {
+    "title": "Samsung 65-inch S95C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_s95c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Quantum HDR OLED+"
+    }
+  },
+  {
+    "title": "Samsung 77-inch S95C OLED OLED 4K (2160p) Smart TV",
+    "slug": "samsung_77_inch_s95c_oled_oled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz/144Hz",
+      "HDR": "Quantum HDR OLED+"
+    }
+  },
+  {
+    "title": "Samsung 65-inch QN800C Neo QLED Mini-LED 8K (4320p) Smart TV",
+    "slug": "samsung_65_inch_qn800c_neo_qled_mini_led_8k_4320p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR 8K+"
+    }
+  },
+  {
+    "title": "Samsung 75-inch QN800C Neo QLED Mini-LED 8K (4320p) Smart TV",
+    "slug": "samsung_75_inch_qn800c_neo_qled_mini_led_8k_4320p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR 8K+"
+    }
+  },
+  {
+    "title": "Samsung 85-inch QN800C Neo QLED Mini-LED 8K (4320p) Smart TV",
+    "slug": "samsung_85_inch_qn800c_neo_qled_mini_led_8k_4320p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "120Hz",
+      "HDR": "Neo Quantum HDR 8K+"
+    }
+  },
+  {
+    "title": "Samsung 65-inch QN900C Neo QLED Mini-LED 8K (4320p) Smart TV",
+    "slug": "samsung_65_inch_qn900c_neo_qled_mini_led_8k_4320p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "144Hz",
+      "HDR": "Neo Quantum HDR 8K Pro"
+    }
+  },
+  {
+    "title": "Samsung 75-inch QN900C Neo QLED Mini-LED 8K (4320p) Smart TV",
+    "slug": "samsung_75_inch_qn900c_neo_qled_mini_led_8k_4320p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "144Hz",
+      "HDR": "Neo Quantum HDR 8K Pro"
+    }
+  },
+  {
+    "title": "Samsung 85-inch QN900C Neo QLED Mini-LED 8K (4320p) Smart TV",
+    "slug": "samsung_85_inch_qn900c_neo_qled_mini_led_8k_4320p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "144Hz",
+      "HDR": "Neo Quantum HDR 8K Pro"
+    }
+  },
+  {
+    "title": "Samsung 32-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_32_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 40-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_40_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 43-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_43_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 50-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_50_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 55-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 65-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_65_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 75-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_75_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 85-inch The Frame QLED (Matte) 4K (2160p) Smart TV",
+    "slug": "samsung_85_inch_the_frame_qled_matte_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED (Matte)",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz/120Hz",
+      "HDR": "Quantum HDR"
+    }
+  },
+  {
+    "title": "Samsung 32-inch T4000 LED HD (720p)  TV",
+    "slug": "samsung_32_inch_t4000_led_hd_720p_tv",
+    "brand": "Samsung",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "LG 50-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_50_inch_ur8000_led_4k_2160p_smart_tv",
     "brand": "LG",
-    "gsmarena_url": "https://www.gsmarena.com/lg_scarlet_ii_tv-3470.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "3.0",
-      "Display Type": "TFT resistive touchscreen, 256K colors",
-      "Resolution": "240 x 400 pixels",
-      "Internal Storage": "microSDHC slot GB",
-      "Card Slot": "microSDHC (dedicated slot), 2 GB included",
-      "Main Camera": "3.15 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "1100",
-      "Network": "GSM",
-      "SIM": "Mini-SIM",
-      "USB": "2.0",
-      "Bluetooth": "2.0, A2DP",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 07:03:30"
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "LG GD900 Crystal",
-    "slug": "lg_gd900_crystal-2788.php",
+    "title": "LG 55-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_ur8000_led_4k_2160p_smart_tv",
     "brand": "LG",
-    "gsmarena_url": "https://www.gsmarena.com/lg_gd900_crystal-2788.php",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "3.0",
-      "Display Type": "TFT",
-      "Resolution": "480 x 800 pixels",
-      "Protection": "Corning Gorilla Glass",
-      "Internal Storage": "1.5GB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "8 MP",
-      "Selfie Camera": "Videocall camera",
-      "Battery (mAh)": "1000",
-      "Network": "GSM / HSPA",
-      "SIM": "Mini-SIM",
-      "USB": "microUSB 2.0",
-      "Bluetooth": "2.1, A2DP",
-      "WiFi": "Wi-Fi 802.11 b/g",
-      "Operating System": "Feature phone",
-      "Features": "Accelerometer, proximity",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 08:23:37"
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "alcatel Crystal",
-    "slug": "alcatel_crystal-3065.php",
-    "brand": "Alcatel",
-    "gsmarena_url": "https://www.gsmarena.com/alcatel_crystal-3065.php",
+    "title": "LG 65-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_ur8000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "1.8",
-      "Display Type": "TFT, 65K colors",
-      "Resolution": "128 x 160 pixels",
-      "Internal Storage": "10MB",
-      "Card Slot": "microSD (dedicated slot)",
-      "Main Camera": "1.3 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "720",
-      "Network": "GSM",
-      "SIM": "Mini-SIM",
-      "USB": "miniUSB 2.0",
-      "Bluetooth": "2.0, A2DP",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "White, Blue",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 11:20:27"
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "BLU Samba TV",
-    "slug": "blu_samba_tv-5747.php",
-    "brand": "BLU",
-    "gsmarena_url": "https://www.gsmarena.com/blu_samba_tv-5747.php",
+    "title": "LG 75-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_75_inch_ur8000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.0",
-      "Display Type": "TFT, 65K colors",
-      "Resolution": "176 x 220 pixels",
-      "Ram": "32 MB",
-      "Internal Storage": "32MB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "VGA",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "820",
-      "Network": "GSM",
-      "SIM": "Dual SIM (Mini-SIM)",
-      "NFC": "No",
-      "USB": "microUSB",
-      "Bluetooth": "3.0",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Red, Blue, White/Pink, White/Blue",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 22:38:24"
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "BLU Jenny TV 2.8",
-    "slug": "blu_jenny_tv_2_8-5746.php",
-    "brand": "BLU",
-    "gsmarena_url": "https://www.gsmarena.com/blu_jenny_tv_2_8-5746.php",
+    "title": "LG 85-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_85_inch_ur8000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.8",
-      "Display Type": "TFT, 65K colors",
-      "Resolution": "240 x 320 pixels",
-      "Ram": "24 MB",
-      "Internal Storage": "32MB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "1.3 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "820",
-      "Network": "GSM",
-      "SIM": "Dual SIM (Mini-SIM)",
-      "NFC": "No",
-      "USB": "microUSB",
-      "Bluetooth": "3.0",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Blue, Red, Yellow, White/Pink, Whtie/Blue, White/Green",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 22:38:27"
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "BLU Jenny TV",
-    "slug": "blu_jenny_tv-4944.php",
-    "brand": "BLU",
-    "gsmarena_url": "https://www.gsmarena.com/blu_jenny_tv-4944.php",
+    "title": "LG 98-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_98_inch_ur8000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.4",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "240 x 320 pixels",
-      "Ram": "32 MB",
-      "Internal Storage": "32MB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "VGA",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "820",
-      "Network": "GSM",
-      "SIM": "Dual SIM (Mini-SIM)",
-      "USB": "microUSB",
-      "Bluetooth": "2.1",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "White, Black, Red, Yellow, Blue",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 23:02:54"
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "BLU Tattoo TV",
-    "slug": "blu_tattoo_tv-3569.php",
-    "brand": "BLU",
-    "gsmarena_url": "https://www.gsmarena.com/blu_tattoo_tv-3569.php",
+    "title": "LG 43-inch UR8000 LED 4K (2160p) Smart TV",
+    "slug": "lg_43_inch_ur8000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.0",
-      "Display Type": "TFT, 65K colors",
-      "Internal Storage": "16MB",
-      "Card Slot": "microSD (dedicated slot)",
-      "Main Camera": "CIF",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "750",
-      "Network": "GSM",
-      "SIM": "Dual SIM (Mini-SIM)",
-      "USB": "Proprietary",
-      "Bluetooth": "1.2",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black, White, Blue, Pink, Yellow, Green",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 23:07:15"
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "BLU Slim TV",
-    "slug": "blu_slim_tv-3564.php",
-    "brand": "BLU",
-    "gsmarena_url": "https://www.gsmarena.com/blu_slim_tv-3564.php",
+    "title": "LG 50-inch UR9000 LED 4K (2160p) Smart TV",
+    "slug": "lg_50_inch_ur9000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.2",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "240 x 320 pixels",
-      "Internal Storage": "32MB",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "2 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "800",
-      "Network": "GSM",
-      "SIM": "Dual SIM (Mini-SIM)",
-      "USB": "Proprietary",
-      "Bluetooth": "2.0, A2DP",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black, Red, Blue",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-06 23:08:05"
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "Icemobile Crystal",
-    "slug": "icemobile_crystal-3979.php",
-    "brand": "Icemobile",
-    "gsmarena_url": "https://www.gsmarena.com/icemobile_crystal-3979.php",
+    "title": "LG 55-inch UR9000 LED 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_ur9000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "3.5",
-      "Display Type": "TFT,  65K colors",
-      "Resolution": "240 x 400 pixels",
-      "Chipset": "MT6516",
-      "CPU": "416 MHz",
-      "Ram": "256 MB",
-      "Internal Storage": "512MB",
-      "Card Slot": "microSD (dedicated slot)",
-      "Main Camera": "1.3 MP",
-      "Selfie Camera": "Yes",
-      "Battery (mAh)": "1050",
-      "Network": "GSM",
-      "SIM": "Dual SIM (Mini-SIM, dual stand-by)",
-      "USB": "microUSB 2.0",
-      "Bluetooth": "Yes",
-      "WiFi": "Wi-Fi 802.11",
-      "Operating System": "Android 2.2 (Froyo)",
-      "Color": "Black, White",
-      "Features": "Accelerometer",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-07 02:45:59"
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
   },
   {
-    "title": "Yezz Ritmo 3 TV YZ433",
-    "slug": "yezz_ritmo_3_tv_yz433-4784.php",
-    "brand": "Yezz",
-    "gsmarena_url": "https://www.gsmarena.com/yezz_ritmo_3_tv_yz433-4784.php",
+    "title": "LG 65-inch UR9000 LED 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_ur9000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
     "specifications": {
-      "Screen Size (inches)": "2.0",
-      "Display Type": "TFT, 256K colors",
-      "Resolution": "320 x 240 pixels",
-      "Ram": "32 MB",
-      "Internal Storage": "64Mb",
-      "Card Slot": "microSDHC (dedicated slot)",
-      "Main Camera": "1.3 MP",
-      "Selfie Camera": "No",
-      "Battery (mAh)": "700",
-      "Network": "GSM",
-      "SIM": "Triple SIM (Mini-SIM)",
-      "USB": "microUSB",
-      "Bluetooth": "2.0",
-      "WiFi": "No",
-      "Operating System": "Feature phone",
-      "Color": "Black, Blue, Silver, White",
-      "Status": "Discontinued"
-    },
-    "scraped_at": "2026-03-07 10:05:30"
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 43-inch UR9000 LED 4K (2160p) Smart TV",
+    "slug": "lg_43_inch_ur9000_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 50-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_50_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 55-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 65-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 75-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_75_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 85-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_85_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 98-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_98_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 43-inch QNED75 QNED 4K (2160p) Smart TV",
+    "slug": "lg_43_inch_qned75_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 50-inch QNED80 QNED 4K (2160p) Smart TV",
+    "slug": "lg_50_inch_qned80_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 55-inch QNED80 QNED 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_qned80_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 65-inch QNED80 QNED 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_qned80_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 75-inch QNED80 QNED 4K (2160p) Smart TV",
+    "slug": "lg_75_inch_qned80_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 85-inch QNED80 QNED 4K (2160p) Smart TV",
+    "slug": "lg_85_inch_qned80_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 98-inch QNED80 QNED 4K (2160p) Smart TV",
+    "slug": "lg_98_inch_qned80_qned_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QNED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "HDR10 Pro"
+    }
+  },
+  {
+    "title": "LG 55-inch B3 OLED OLED 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_b3_oled_oled_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 65-inch B3 OLED OLED 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_b3_oled_oled_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 77-inch B3 OLED OLED 4K (2160p) Smart TV",
+    "slug": "lg_77_inch_b3_oled_oled_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 42-inch C3 OLED OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_42_inch_c3_oled_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "42 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 48-inch C3 OLED OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_48_inch_c3_oled_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "48 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 55-inch C3 OLED OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_c3_oled_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 65-inch C3 OLED OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_c3_oled_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 77-inch C3 OLED OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_77_inch_c3_oled_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 83-inch C3 OLED OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_83_inch_c3_oled_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "83 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 55-inch G3 OLED OLED evo (MLA) 4K (2160p) Smart TV",
+    "slug": "lg_55_inch_g3_oled_oled_evo_mla_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo (MLA)",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 65-inch G3 OLED OLED evo (MLA) 4K (2160p) Smart TV",
+    "slug": "lg_65_inch_g3_oled_oled_evo_mla_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo (MLA)",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 77-inch G3 OLED OLED evo (MLA) 4K (2160p) Smart TV",
+    "slug": "lg_77_inch_g3_oled_oled_evo_mla_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo (MLA)",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 83-inch G3 OLED OLED evo (MLA) 4K (2160p) Smart TV",
+    "slug": "lg_83_inch_g3_oled_oled_evo_mla_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "83 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED evo (MLA)",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 77-inch Z3 OLED OLED 8K (4320p) Smart TV",
+    "slug": "lg_77_inch_z3_oled_oled_8k_4320p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 88-inch Z3 OLED OLED 8K (4320p) Smart TV",
+    "slug": "lg_88_inch_z3_oled_oled_8k_4320p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "88 inches",
+      "Resolution": "8K (4320p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    }
+  },
+  {
+    "title": "LG 32-inch LQ6300 LED FHD (1080p) Smart TV",
+    "slug": "lg_32_inch_lq6300_led_fhd_1080p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Sony 50-inch Bravia X77L LED 4K (2160p) Smart TV",
+    "slug": "sony_50_inch_bravia_x77l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "Sony 55-inch Bravia X77L LED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_x77l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia X77L LED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_x77l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "Sony 43-inch Bravia X77L LED 4K (2160p) Smart TV",
+    "slug": "sony_43_inch_bravia_x77l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "Sony 75-inch Bravia X77L LED 4K (2160p) Smart TV",
+    "slug": "sony_75_inch_bravia_x77l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "Sony 85-inch Bravia X77L LED 4K (2160p) Smart TV",
+    "slug": "sony_85_inch_bravia_x77l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "Sony 50-inch Bravia X80L LED 4K (2160p) Smart TV",
+    "slug": "sony_50_inch_bravia_x80l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 55-inch Bravia X80L LED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_x80l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia X80L LED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_x80l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 43-inch Bravia X80L LED 4K (2160p) Smart TV",
+    "slug": "sony_43_inch_bravia_x80l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 75-inch Bravia X80L LED 4K (2160p) Smart TV",
+    "slug": "sony_75_inch_bravia_x80l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 85-inch Bravia X80L LED 4K (2160p) Smart TV",
+    "slug": "sony_85_inch_bravia_x80l_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 50-inch Bravia X85L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_50_inch_bravia_x85l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 55-inch Bravia X85L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_x85l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia X85L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_x85l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 75-inch Bravia X85L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_75_inch_bravia_x85l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 50-inch Bravia X90L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_50_inch_bravia_x90l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 55-inch Bravia X90L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_x90l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia X90L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_x90l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 75-inch Bravia X90L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_75_inch_bravia_x90l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 85-inch Bravia X90L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_85_inch_bravia_x90l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 98-inch Bravia X90L Full Array LED 4K (2160p) Smart TV",
+    "slug": "sony_98_inch_bravia_x90l_full_array_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Full Array LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia X93L Mini-LED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_x93l_mini_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 75-inch Bravia X93L Mini-LED 4K (2160p) Smart TV",
+    "slug": "sony_75_inch_bravia_x93l_mini_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 85-inch Bravia X93L Mini-LED 4K (2160p) Smart TV",
+    "slug": "sony_85_inch_bravia_x93l_mini_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 85-inch Bravia X95L Mini-LED 4K (2160p) Smart TV",
+    "slug": "sony_85_inch_bravia_x95l_mini_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 55-inch Bravia A80L OLED OLED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_a80l_oled_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia A80L OLED OLED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_a80l_oled_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 77-inch Bravia A80L OLED OLED 4K (2160p) Smart TV",
+    "slug": "sony_77_inch_bravia_a80l_oled_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 83-inch Bravia A80L OLED OLED 4K (2160p) Smart TV",
+    "slug": "sony_83_inch_bravia_a80l_oled_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "83 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 55-inch Bravia A95L QD-OLED QD-OLED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_a95l_qd_oled_qd_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QD-OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 65-inch Bravia A95L QD-OLED QD-OLED 4K (2160p) Smart TV",
+    "slug": "sony_65_inch_bravia_a95l_qd_oled_qd_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QD-OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 77-inch Bravia A95L QD-OLED QD-OLED 4K (2160p) Smart TV",
+    "slug": "sony_77_inch_bravia_a95l_qd_oled_qd_oled_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "77 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QD-OLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Sony 32-inch W830K LED HD (720p) Smart TV",
+    "slug": "sony_32_inch_w830k_led_hd_720p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "TCL 32-inch S3 LED FHD (1080p) Smart TV",
+    "slug": "tcl_32_inch_s3_led_fhd_1080p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Roku TV",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "TCL 40-inch S3 LED FHD (1080p) Smart TV",
+    "slug": "tcl_40_inch_s3_led_fhd_1080p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Roku TV",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "TCL 43-inch S3 LED FHD (1080p) Smart TV",
+    "slug": "tcl_43_inch_s3_led_fhd_1080p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Roku TV",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "TCL 50-inch S4 LED 4K (2160p) Smart TV",
+    "slug": "tcl_50_inch_s4_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Roku",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "TCL 55-inch S4 LED 4K (2160p) Smart TV",
+    "slug": "tcl_55_inch_s4_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Roku",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "TCL 65-inch S4 LED 4K (2160p) Smart TV",
+    "slug": "tcl_65_inch_s4_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Roku",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "TCL 43-inch S4 LED 4K (2160p) Smart TV",
+    "slug": "tcl_43_inch_s4_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Roku",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "TCL 75-inch S4 LED 4K (2160p) Smart TV",
+    "slug": "tcl_75_inch_s4_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Roku",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "TCL 85-inch S4 LED 4K (2160p) Smart TV",
+    "slug": "tcl_85_inch_s4_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Roku",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    }
+  },
+  {
+    "title": "TCL 50-inch Q6 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_50_inch_q6_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Fire TV",
+      "Refresh Rate": "60Hz (120Hz VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 55-inch Q6 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_55_inch_q6_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Fire TV",
+      "Refresh Rate": "60Hz (120Hz VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 65-inch Q6 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_65_inch_q6_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Fire TV",
+      "Refresh Rate": "60Hz (120Hz VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 75-inch Q6 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_75_inch_q6_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Fire TV",
+      "Refresh Rate": "60Hz (120Hz VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 85-inch Q6 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_85_inch_q6_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google / Fire TV",
+      "Refresh Rate": "60Hz (120Hz VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 50-inch Q7 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_50_inch_q7_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 55-inch Q7 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_55_inch_q7_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 65-inch Q7 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_65_inch_q7_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 75-inch Q7 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_75_inch_q7_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 85-inch Q7 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_85_inch_q7_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 65-inch QM8 Mini-LED 4K (2160p) Smart TV",
+    "slug": "tcl_65_inch_qm8_mini_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 75-inch QM8 Mini-LED 4K (2160p) Smart TV",
+    "slug": "tcl_75_inch_qm8_mini_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 85-inch QM8 Mini-LED 4K (2160p) Smart TV",
+    "slug": "tcl_85_inch_qm8_mini_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "TCL 98-inch QM8 Mini-LED 4K (2160p) Smart TV",
+    "slug": "tcl_98_inch_qm8_mini_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "98 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "120Hz (144Hz VRR)",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 32-inch A4 Series LED FHD (1080p) Smart TV",
+    "slug": "hisense_32_inch_a4_series_led_fhd_1080p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa / Android",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Hisense 40-inch A4 Series LED FHD (1080p) Smart TV",
+    "slug": "hisense_40_inch_a4_series_led_fhd_1080p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa / Android",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Hisense 43-inch A4 Series LED FHD (1080p) Smart TV",
+    "slug": "hisense_43_inch_a4_series_led_fhd_1080p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa / Android",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Hisense 50-inch A6 Series LED 4K (2160p) Smart TV",
+    "slug": "hisense_50_inch_a6_series_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Hisense 55-inch A6 Series LED 4K (2160p) Smart TV",
+    "slug": "hisense_55_inch_a6_series_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Hisense 65-inch A6 Series LED 4K (2160p) Smart TV",
+    "slug": "hisense_65_inch_a6_series_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Hisense 43-inch A6 Series LED 4K (2160p) Smart TV",
+    "slug": "hisense_43_inch_a6_series_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Hisense 75-inch A6 Series LED 4K (2160p) Smart TV",
+    "slug": "hisense_75_inch_a6_series_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Hisense 85-inch A6 Series LED 4K (2160p) Smart TV",
+    "slug": "hisense_85_inch_a6_series_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision"
+    }
+  },
+  {
+    "title": "Hisense 50-inch U6K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_50_inch_u6k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz (VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 55-inch U6K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_55_inch_u6k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz (VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 65-inch U6K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_65_inch_u6k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz (VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 75-inch U6K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_75_inch_u6k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz (VRR)",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 50-inch U7K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_50_inch_u7k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 55-inch U7K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_55_inch_u7k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 65-inch U7K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_65_inch_u7k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 75-inch U7K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_75_inch_u7k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 85-inch U7K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_85_inch_u7k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 50-inch U8K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_50_inch_u8k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 55-inch U8K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_55_inch_u8k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 65-inch U8K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_65_inch_u8k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 75-inch U8K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_75_inch_u8k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 85-inch U8K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_85_inch_u8k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Hisense 100-inch U8K Mini-LED 4K (2160p) Smart TV",
+    "slug": "hisense_100_inch_u8k_mini_led_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "100 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "Mini-LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "144Hz",
+      "HDR": "Dolby Vision IQ / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 24-inch D-Series LED FHD (1080p) Smart TV",
+    "slug": "vizio_24_inch_d_series_led_fhd_1080p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "24 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Vizio 32-inch D-Series LED FHD (1080p) Smart TV",
+    "slug": "vizio_32_inch_d_series_led_fhd_1080p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Vizio 40-inch D-Series LED FHD (1080p) Smart TV",
+    "slug": "vizio_40_inch_d_series_led_fhd_1080p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Vizio 43-inch D-Series LED FHD (1080p) Smart TV",
+    "slug": "vizio_43_inch_d_series_led_fhd_1080p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz"
+    }
+  },
+  {
+    "title": "Vizio 50-inch V-Series LED 4K (2160p) Smart TV",
+    "slug": "vizio_50_inch_v_series_led_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 55-inch V-Series LED 4K (2160p) Smart TV",
+    "slug": "vizio_55_inch_v_series_led_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 65-inch V-Series LED 4K (2160p) Smart TV",
+    "slug": "vizio_65_inch_v_series_led_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 43-inch V-Series LED 4K (2160p) Smart TV",
+    "slug": "vizio_43_inch_v_series_led_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 70-inch V-Series LED 4K (2160p) Smart TV",
+    "slug": "vizio_70_inch_v_series_led_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "70 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 75-inch V-Series LED 4K (2160p) Smart TV",
+    "slug": "vizio_75_inch_v_series_led_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 50-inch M-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_50_inch_m_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 55-inch M-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_55_inch_m_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 65-inch M-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_65_inch_m_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 43-inch M-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_43_inch_m_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 70-inch M-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_70_inch_m_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "70 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 75-inch M-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_75_inch_m_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 65-inch P-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_65_inch_p_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 75-inch P-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_75_inch_p_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
+  },
+  {
+    "title": "Vizio 85-inch P-Series Quantum QLED 4K (2160p) Smart TV",
+    "slug": "vizio_85_inch_p_series_quantum_qled_4k_2160p_smart_tv",
+    "brand": "Vizio",
+    "category": "TVs & Home Entertainment",
+    "specifications": {
+      "Screen Size": "85 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "SmartCast",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    }
   }
 ]

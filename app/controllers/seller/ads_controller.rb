@@ -123,8 +123,8 @@ class Seller::AdsController < ApplicationController
           brand: best['brand'],
           specifications: best['specifications'] || {}
         }
-      else
-        # Fallback to external scraping if not found in local catalog
+      elsif subcategory&.name.to_s.downcase.match?(/phone|mobile|tablet|ipad/i)
+        # Fallback to external scraping if not found in local catalog, only for mobiles
         gsm_specs = GsmArenaService.fetch_device_specs(model_query)
       end
     end
@@ -470,11 +470,11 @@ class Seller::AdsController < ApplicationController
 
   def prefill_strategy_for(category_name, subcategory_name)
     text = [category_name, subcategory_name].compact.join(' ').downcase
-    return 'phones_computers' if text.match?(/phone|mobile|laptop|computer|tablet|ipad|network|storage|peripheral/)
-    return 'automotive' if text.match?(/automotive|tyre|battery|spare|lubricant/)
-    return 'filtration' if text.match?(/filter|filtration/)
-    return 'hardware_tools' if text.match?(/hardware|tool|electrical|plumbing|safety/)
-    return 'equipment_leasing' if text.match?(/equipment|leasing|earth moving|drilling|lifting|concrete|compacting/)
+    return 'phones_computers' if text.match?(/phone|mobile|laptop|computer|tablet|ipad|network|storage|peripheral|tv|television|smart tv/i)
+    return 'automotive' if text.match?(/automotive|tyre|battery|spare|lubricant/i)
+    return 'filtration' if text.match?(/filter|filtration/i)
+    return 'hardware_tools' if text.match?(/hardware|tool|electrical|plumbing|safety/i)
+    return 'equipment_leasing' if text.match?(/equipment|leasing|earth moving|drilling|lifting|concrete|compacting/i)
 
     'general'
   end
