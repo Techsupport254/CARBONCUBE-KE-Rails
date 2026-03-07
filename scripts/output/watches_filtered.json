@@ -6802,5 +6802,88 @@
       "Status": "Cancelled"
     },
     "scraped_at": "2026-03-06 10:46:42"
+  },
+  {
+    "title": "Lava Prowatch V1",
+    "slug": "lava_prowatch_v1-13619.php",
+    "brand": "Lava",
+    "gsmarena_url": "https://www.gsmarena.com/lava_prowatch_v1-13619.php",
+    "specifications": {
+      "Screen Size (inches)": "1.85",
+      "Display Type": "AMOLED, 500 nits",
+      "Resolution": "390 x 450 pixels",
+      "Protection": "Corning Gorilla Glass 3",
+      "Internal Storage": "No card slot GB",
+      "Card Slot": "No",
+      "Main Camera": "No",
+      "Battery (mAh)": "270",
+      "Network": "No cellular connectivity",
+      "SIM": "No",
+      "NFC": "No",
+      "USB": "No",
+      "Bluetooth": "5.3, A2DP, LE",
+      "WiFi": "No",
+      "Operating System": "Proprietary OS",
+      "Color": "Black Nebula, Bluish Ronin, Peachy Hikari, Mint Shinobi",
+      "Features": "Accelerometer, heart rate, SpO2",
+      "Water Resistance": "IP68",
+      "Status": "Available. Released 2025, January 11"
+    },
+    "scraped_at": "2026-03-07 10:17:44"
+  },
+  {
+    "title": "Lava Prowatch ZN",
+    "slug": "lava_prowatch_zn-12950.php",
+    "brand": "Lava",
+    "gsmarena_url": "https://www.gsmarena.com/lava_prowatch_zn-12950.php",
+    "specifications": {
+      "Screen Size (inches)": "1.43",
+      "Display Type": "AMOLED, 600 nits",
+      "Resolution": "466 x 466 pixels",
+      "Protection": "Corning Gorilla Glass 3",
+      "Internal Storage": "Unspecified storage, no card slot GB",
+      "Card Slot": "No",
+      "Main Camera": "No",
+      "Battery (mAh)": "350",
+      "Network": "No cellular connectivity",
+      "SIM": "No",
+      "NFC": "No",
+      "USB": "No",
+      "Bluetooth": "5.2, A2DP, LE",
+      "WiFi": "No",
+      "Operating System": "Proprietary OS",
+      "Color": "Black, Tarnish",
+      "Features": "Accelerometer, heart rate, SpO2",
+      "Water Resistance": "IP68",
+      "Status": "Available. Released 2024, April 26"
+    },
+    "scraped_at": "2026-03-07 10:18:41"
+  },
+  {
+    "title": "Lava Prowatch VN",
+    "slug": "lava_prowatch_vn-12951.php",
+    "brand": "Lava",
+    "gsmarena_url": "https://www.gsmarena.com/lava_prowatch_vn-12951.php",
+    "specifications": {
+      "Screen Size (inches)": "1.96",
+      "Display Type": "IPS LCD, 500 nits",
+      "Resolution": "320 x 386 pixels",
+      "Internal Storage": "No card slot GB",
+      "Card Slot": "No",
+      "Main Camera": "No",
+      "Battery (mAh)": "230",
+      "Network": "No cellular connectivity",
+      "SIM": "No",
+      "NFC": "No",
+      "USB": "No",
+      "Bluetooth": "5.2, A2DP, LE",
+      "WiFi": "No",
+      "Operating System": "Proprietary OS",
+      "Color": "Black, Blue, Silver",
+      "Features": "Accelerometer, heart rate, SpO2",
+      "Water Resistance": "IP67",
+      "Status": "Available. Released 2024, April 26"
+    },
+    "scraped_at": "2026-03-07 10:18:44"
   }
 ]
