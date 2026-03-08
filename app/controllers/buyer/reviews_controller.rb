@@ -1,11 +1,11 @@
 class Buyer::ReviewsController < ApplicationController
-  before_action :authenticate_buyer
+  before_action :authenticate_user
   before_action :set_ad, only: [:index, :create]
   before_action :set_review, only: [:show, :update, :destroy]
 
   # GET /buyer/ads/:ad_id/reviews
   def index
-    @reviews = @ad.reviews.includes(:buyer)
+    @reviews = @ad.reviews.includes(:buyer, :seller)
     
     # Calculate stats
     average_rating = @ad.mean_rating
@@ -13,7 +13,7 @@ class Buyer::ReviewsController < ApplicationController
     reviews_with_images = @reviews.select { |r| r.images.present? && r.images.any? }.count
     
     render json: {
-      reviews: @reviews.as_json(include: :buyer),
+      reviews: @reviews.as_json(include: [:buyer, :seller]),
       stats: {
         average_rating: average_rating,
         total_reviews: total_reviews,
@@ -24,14 +24,14 @@ class Buyer::ReviewsController < ApplicationController
 
   # GET /buyer/ads/:ad_id/reviews/:id
   def show
-    render json: @review
+    render json: @review.as_json(include: [:buyer, :seller])
   end
 
   # POST /buyer/ads/:ad_id/reviews
   def create
-    # Ensure only buyers can create reviews
-    unless current_buyer.is_a?(Buyer)
-      render json: { error: 'Only buyers can create reviews' }, status: :forbidden
+    # Ensure only buyers or sellers can create reviews
+    unless current_user.is_a?(Buyer) || current_user.is_a?(Seller)
+      render json: { error: 'Only registered accounts can create reviews' }, status: :forbidden
       return
     end
 
@@ -49,10 +49,14 @@ class Buyer::ReviewsController < ApplicationController
     end
 
     @review = @ad.reviews.new(review_params)
-    @review.buyer = current_buyer
+    if current_user.is_a?(Buyer)
+      @review.buyer = current_user
+    else
+      @review.seller = current_user
+    end
 
     if @review.save
-      render json: @review.as_json(include: :buyer), status: :created
+      render json: @review.as_json(include: [:buyer, :seller]), status: :created
     else
       render json: @review.errors, status: :unprocessable_entity
     end
@@ -82,7 +86,8 @@ class Buyer::ReviewsController < ApplicationController
   end
 
   def set_review
-    @review = current_buyer.reviews.find_by!(id: params[:id], ad_id: params[:ad_id])
+    reviews_relation = current_user.is_a?(Buyer) ? current_user.reviews : current_user.reviews_written
+    @review = reviews_relation.find_by!(id: params[:id], ad_id: params[:ad_id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Review not found' }, status: :not_found
   end
@@ -91,14 +96,14 @@ class Buyer::ReviewsController < ApplicationController
     params.require(:review).permit(:rating, :review, images: [])
   end
 
-  def authenticate_buyer
-    @current_user = BuyerAuthorizeApiRequest.new(request.headers).result
-    unless @current_user&.is_a?(Buyer)
+  def authenticate_user
+    @current_user = AuthorizeApiRequest.new(request.headers).result
+    unless @current_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end
 
-  def current_buyer
+  def current_user
     @current_user
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_07_101251) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_08_062137) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -84,8 +84,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_07_101251) do
     t.string "google_merchant_product_id"
     t.uuid "seller_id", null: false
     t.boolean "is_added_by_sales"
-    t.string "model"
-    t.jsonb "specifications"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"
@@ -235,6 +233,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_07_101251) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "buyer_id"
+    t.datetime "review_request_sent_at"
     t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"
@@ -720,10 +719,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_07_101251) do
     t.datetime "updated_at", null: false
     t.text "seller_reply"
     t.json "images", default: []
-    t.uuid "buyer_id", null: false
+    t.uuid "buyer_id"
+    t.string "seller_id"
     t.index ["ad_id", "rating"], name: "index_reviews_on_ad_id_rating"
     t.index ["ad_id"], name: "index_reviews_on_ad_id"
     t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
+    t.index ["seller_id"], name: "index_reviews_on_seller_id"
   end
 
   create_table "riders", force: :cascade do |t|

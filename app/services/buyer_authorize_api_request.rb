@@ -6,12 +6,12 @@ class BuyerAuthorizeApiRequest
   end
 
   def result
-    @buyer ||= find_buyer
+    @user ||= find_user
   end
 
   private
 
-  def find_buyer
+  def find_user
     decoded_result = decoded_token
     
     unless decoded_result[:success]
@@ -23,44 +23,42 @@ class BuyerAuthorizeApiRequest
     end
     
     payload = decoded_result[:payload]
-    buyer_id = payload[:user_id]
-    buyer_email = payload[:email]
+    user_id = payload[:user_id]
+    user_email = payload[:email]
     role = payload[:role]
 
-    # Check if the token is actually for a buyer
-    if role && role.downcase != 'buyer'
-      # Rails.logger.debug "BuyerAuthorizeApiRequest: Token is for #{role}, not buyer. Email: #{buyer_email}"
-      raise ExceptionHandler::InvalidToken, "Token is for #{role}, not buyer"
+    # Check if the token is for a buyer or seller
+    unless role && ['buyer', 'seller'].include?(role.downcase)
+      # Rails.logger.debug "BuyerAuthorizeApiRequest: Token is for #{role}, not buyer or seller. Email: #{user_email}"
+      raise ExceptionHandler::InvalidToken, "Token is for #{role}, not buyer or seller"
     end
 
-    # Try to find buyer by ID first
-    if buyer_id
-      # Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for buyer with ID: #{buyer_id}"
+    model = role.downcase == 'seller' ? Seller : Buyer
+
+    # Try to find user by ID first
+    if user_id
+      # Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for #{model.name} with ID: #{user_id}"
       
-      buyer = Buyer.find_by(id: buyer_id)
-      if buyer && !buyer.deleted?
-        # Rails.logger.debug "BuyerAuthorizeApiRequest: Found buyer: #{buyer.id}"
-        return buyer
-      elsif buyer&.deleted?
-        # Rails.logger.error "BuyerAuthorizeApiRequest: Buyer #{buyer_id} is deleted"
-      else
-        # Rails.logger.warn "BuyerAuthorizeApiRequest: Buyer with ID #{buyer_id} not found in database"
+      user = model.find_by(id: user_id)
+      if user && (!user.respond_to?(:deleted?) || !user.deleted?)
+        # Rails.logger.debug "BuyerAuthorizeApiRequest: Found user: #{user.id}"
+        return user
+      elsif user&.respond_to?(:deleted?) && user.deleted?
+        # Rails.logger.error "BuyerAuthorizeApiRequest: User #{user_id} is deleted"
       end
     end
 
-    # Try to find buyer by email if ID didn't work (this handles old tokens with numeric IDs)
-    if buyer_email
-      # Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for buyer with email: #{buyer_email}"
-      buyer = Buyer.find_by(email: buyer_email)
-      if buyer && !buyer.deleted?
-        # Rails.logger.info "BuyerAuthorizeApiRequest: Found buyer by email: #{buyer.id}"
-        return buyer
-      elsif buyer&.deleted?
-        # Rails.logger.error "BuyerAuthorizeApiRequest: Buyer with email #{buyer_email} is deleted"
+    # Try to find user by email if ID didn't work
+    if user_email
+      # Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for #{model.name} with email: #{user_email}"
+      user = model.find_by(email: user_email)
+      if user && (!user.respond_to?(:deleted?) || !user.deleted?)
+        # Rails.logger.info "BuyerAuthorizeApiRequest: Found user by email: #{user.id}"
+        return user
       end
     end
 
-    # Rails.logger.error "BuyerAuthorizeApiRequest: Could not find buyer with ID: #{buyer_id}, email: #{buyer_email}"
+    # Rails.logger.error "BuyerAuthorizeApiRequest: Could not find #{model.name} with ID: #{user_id}, email: #{user_email}"
     raise ExceptionHandler::InvalidToken, 'Invalid token'
   end
 
