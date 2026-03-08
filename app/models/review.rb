@@ -1,6 +1,7 @@
 class Review < ApplicationRecord
   belongs_to :ad, counter_cache: true
-  belongs_to :buyer
+  belongs_to :buyer, optional: true
+  belongs_to :seller, optional: true
   after_save :check_seller_rating
 
   # Note: images column is already JSON type in database, no need to serialize
@@ -10,8 +11,8 @@ class Review < ApplicationRecord
   validates :review, presence: true
   validates :images, length: { maximum: 5, message: "cannot have more than 5 images" }
 
-  # Ensure only buyers can create reviews
-  validate :buyer_can_review
+  # Ensure either a buyer or a seller is present
+  validate :reviewer_presence
 
   after_create :send_push_notification
 
@@ -47,9 +48,9 @@ class Review < ApplicationRecord
     ad.seller.check_and_block
   end
 
-  def buyer_can_review
-    unless buyer.is_a?(Buyer)
-      errors.add(:buyer, "Only buyers can create reviews")
+  def reviewer_presence
+    if buyer_id.blank? && seller_id.blank?
+      errors.add(:base, "Review must have a buyer or a seller as an author")
     end
   end
 end

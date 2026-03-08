@@ -13,7 +13,8 @@ class Seller < ApplicationRecord
   has_secure_password validations: false
   has_and_belongs_to_many :categories
   has_many :ads, dependent: :destroy
-  has_many :reviews, through: :ads
+  has_many :reviews_received, through: :ads, source: :reviews
+  has_many :reviews_written, class_name: 'Review', foreign_key: 'seller_id', dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
   has_many :sent_messages, as: :sender, class_name: 'Message'
@@ -71,10 +72,10 @@ class Seller < ApplicationRecord
 
   def calculate_mean_rating
     # Use cached reviews if available, otherwise calculate
-    if reviews.loaded?
-      reviews.any? ? reviews.sum(&:rating).to_f / reviews.size : 0.0
+    if reviews_received.loaded?
+      reviews_received.any? ? reviews_received.sum(&:rating).to_f / reviews_received.size : 0.0
     else
-      reviews.average(:rating).to_f
+      reviews_received.average(:rating).to_f
     end
   end
 
