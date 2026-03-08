@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_08_062137) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -234,6 +234,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_062137) do
     t.datetime "updated_at", null: false
     t.uuid "buyer_id"
     t.datetime "review_request_sent_at"
+    t.uuid "seller_id"
     t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"

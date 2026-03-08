@@ -1,5 +1,5 @@
 class ClickEventsController < ApplicationController
-  before_action :authenticate_buyer, only: [:create]
+  before_action :authenticate_user, only: [:create]
 
   def create
     # Check if this is an internal user that should be excluded
@@ -30,21 +30,22 @@ class ClickEventsController < ApplicationController
       # 2. If user_id_from_metadata exists and user_role is 'buyer', try to find that buyer
       # 3. Otherwise, set to nil (guest user or non-buyer user)
       buyer_id = nil
+      seller_id = nil
+
       if @current_user&.is_a?(Buyer)
         buyer_id = @current_user.id
-        Rails.logger.info "ClickEventsController: Setting buyer_id from authenticated buyer: #{buyer_id}"
+      elsif @current_user&.is_a?(Seller)
+        seller_id = @current_user.id
       elsif user_id_from_metadata && user_role_from_metadata&.downcase == 'buyer'
-        # Try to find buyer from metadata
         buyer = Buyer.find_by(id: user_id_from_metadata)
         if buyer && !buyer.deleted?
           buyer_id = buyer.id
-          Rails.logger.info "ClickEventsController: Setting buyer_id from metadata (buyer): #{buyer_id}"
-        else
-          Rails.logger.warn "ClickEventsController: Buyer ID #{user_id_from_metadata} from metadata not found or deleted"
         end
-      elsif user_id_from_metadata
-        # Logging disabled to reduce console noise
-        # Rails.logger.info "ClickEventsController: User ID #{user_id_from_metadata} (role: #{user_role_from_metadata}) is not a buyer, buyer_id will be nil"
+      elsif user_id_from_metadata && user_role_from_metadata&.downcase == 'seller'
+        seller = Seller.find_by(id: user_id_from_metadata)
+        if seller && !seller.deleted? && !seller.blocked?
+          seller_id = seller.id
+        end
       end
       
       # Resolve ad_id safely; invalid/non-existent IDs become nil to avoid FK violations
@@ -55,6 +56,7 @@ class ClickEventsController < ApplicationController
         event_type: click_event_params[:event_type],
         ad_id: ad_id,
         buyer_id: buyer_id,
+        seller_id: seller_id,
         metadata: metadata
       )
 
@@ -105,6 +107,7 @@ class ClickEventsController < ApplicationController
         click_event: {
           id: click_event.id,
           buyer_id: click_event.buyer_id,
+          seller_id: click_event.seller_id,
           ad_id: click_event.ad_id,
           event_type: click_event.event_type,
           user_id: user_id_from_metadata,
@@ -129,10 +132,15 @@ class ClickEventsController < ApplicationController
   private
 
   # Attempt to authenticate the buyer, but do not halt the request
-  def authenticate_buyer
+  def authenticate_user
+    # Try buyer auth first, then seller
     @current_user = BuyerAuthorizeApiRequest.new(request.headers).result
   rescue ExceptionHandler::MissingToken, ExceptionHandler::InvalidToken
-    @current_user = nil
+    begin
+      @current_user = SellerAuthorizeApiRequest.new(request.headers).result
+    rescue ExceptionHandler::MissingToken, ExceptionHandler::InvalidToken
+      @current_user = nil
+    end
   end
 
   def click_event_params

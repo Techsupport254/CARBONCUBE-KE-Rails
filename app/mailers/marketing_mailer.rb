@@ -79,4 +79,84 @@ class MarketingMailer < ApplicationMailer
       from: "Carbon Cube Team <#{ENV['BREVO_EMAIL']}>"
     )
   end
+  def product_review_request(name:, email:, products:)
+    @name = name
+    @products = products
+
+    # Override ApplicationMailer's bulk/newsletter headers AFTER they're set
+    # These must be set here to override the before_action in ApplicationMailer
+    headers['Precedence'] = nil
+    headers['List-Unsubscribe'] = nil
+    headers['List-Unsubscribe-Post'] = nil
+    headers['X-Auto-Response-Suppress'] = nil
+    
+    # Make it look transactional, not promotional
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['X-PM-Message-Stream'] = 'outbound' # Transactional stream signal
+    headers['Feedback-ID'] = "review_request:carboncube" # Gmail category signal
+
+    # Unique message ID to prevent threading
+    headers['Message-ID'] = "<#{Time.current.to_f}-review-#{SecureRandom.hex(4)}@carboncube-ke.com>"
+    headers['X-Entity-Ref-ID'] = SecureRandom.hex(6)
+    headers['In-Reply-To'] = nil
+    headers['References'] = nil
+
+    first_name = name.to_s.split.first || name
+
+    mail(
+      to: email,
+      subject: "#{first_name}, how was your experience?",
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      reply_to: ENV['BREVO_EMAIL']
+    ) do |format|
+      # Read the MJML template, substitute variables, then render
+      template_path = Rails.root.join('app', 'views', 'mailers', 'product_review_request.mjml')
+      mjml_source = File.read(template_path)
+
+      # Replace Handlebars-style variables
+      mjml_source.gsub!('{{name}}', @name)
+
+      # Replace product loop
+      if mjml_source.include?('{{#each products}}')
+        product_block_match = mjml_source.match(/\{\{#each products\}\}(.*?)\{\{\/each\}\}/m)
+        if product_block_match
+          product_template = product_block_match[1]
+          rendered_products = @products.map do |product|
+            block = product_template.dup
+            block.gsub!('{{this.image_url}}', product[:image_url].to_s)
+            block.gsub!('{{this.title}}', product[:title].to_s)
+            block.gsub!('{{this.seller_name}}', product[:seller_name].to_s)
+            block.gsub!('{{this.review_url}}', product[:review_url].to_s)
+            block
+          end.join("\n")
+          mjml_source.gsub!(product_block_match[0], rendered_products)
+        end
+      end
+
+      # Try to compile MJML to HTML
+      html_content = begin
+        require 'open3'
+        stdout, stderr, status = Open3.capture3('npx', 'mjml', '--stdin', stdin_data: mjml_source)
+        if status.success?
+          stdout
+        else
+          Rails.logger.warn "MJML compilation failed: #{stderr}"
+          mjml_source
+        end
+      rescue Errno::ENOENT => e
+        Rails.logger.warn "MJML binary not found: #{e.message}. Sending raw MJML."
+        mjml_source
+      end
+
+      format.html { render plain: html_content }
+    end
+  end
+
+  # Helper to build proper review URL for an ad
+  def self.review_url_for(ad)
+    slug = Ad.slugify(ad.title)
+    "https://carboncube-ke.com/ads/#{slug}/review?id=#{ad.id}"
+  end
 end
