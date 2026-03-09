@@ -1,0 +1,78 @@
+Set [36mDATABASE_URL[0m, [36mRAILS_MASTER_KEY[0m, [36mREDIS_URL[0m, [36mCLOUDINARY_API_KEY[0m, [36mCLOUDINARY_API_SECRET[0m, [36mCLOUDINARY_CLOUD_NAME[0m, [36mUPLOAD_PRESET[0m, [36mMPESA_CONSUMER_KEY[0m, [36mMPESA_CONSUMER_SECRET[0m, [36mMPESA_SHORTCODE[0m, [36mMPESA_ENV[0m, [36mBREVO_EMAIL[0m, [36mBREVO_SMTP_USER[0m, [36mBREVO_SMTP_PASSWORD[0m, [36mREACT_APP_BACKEND_URL[0m, [36mREACT_APP_CLOUDINARY_CLOUD_NAME[0m, [36mREACT_APP_CLOUDINARY_UPLOAD_PRESET[0m, [36mPILOT_PHASE_ENABLED[0m, [36mREACT_APP_PILOT_PHASE_ENABLED[0m, [36mPUBLIC_URL[0m, [36mREACT_APP_SITE_URL[0m, [36mREACT_APP_WEBSOCKET_URL[0m, [36mWEBSOCKET_URL[0m, [36mREACT_APP_GOOGLE_CLIENT_ID[0m, [36mREACT_APP_GOOGLE_REDIRECT_URI[0m, [36mGOOGLE_OAUTH_CLIENT_ID[0m, [36mGOOGLE_OAUTH_CLIENT_SECRET[0m, [36mGOOGLE_REDIRECT_URI[0m, [36mWHATSAPP_SERVICE_URL[0m, [36mWHATSAPP_NOTIFICATIONS_ENABLED[0m, [36mWHATSAPP_SERVICE_PORT[0m, [36mFRONTEND_URL[0m, [36mFIREBASE_PROJECT_ID[0m, and [36mgroq_api_Key[0m
+Loaded [33m.env.development[0m
+Set [36mNEXT_PUBLIC_BACKEND_URL[0m, [36mNEXT_PUBLIC_WEBSOCKET_URL[0m, [36mNEXT_PUBLIC_SITE_URL[0m, [36mNEXT_PUBLIC_GOOGLE_CLIENT_ID[0m, [36mNEXT_PUBLIC_GOOGLE_REDIRECT_URI[0m, [36mREACT_APP_FRONTEND_URL[0m, [36mWHATSAPP_CLOUD_VERIFY_TOKEN[0m, [36mWHATSAPP_CLOUD_PHONE_NUMBER_ID[0m, [36mWHATSAPP_CLOUD_ACCESS_TOKEN[0m, [36mMETA_APP_SECRET[0m, [36mWHATSAPP_CLOUD_WABA_ID[0m, [36mFCM_SERVER_KEY[0m, [36mFIREBASE_SERVICE_ACCOUNT_JSON[0m, and [36mMOBILE_RELEASE_TOKEN[0m
+Loaded [33m.env[0m
+✅ Redis connection pool initialized successfully
+✅ SMTP SSL verification disabled for development
+🚀 Starting Review Request Campaign...
+Exclude: shangwejunior5@gmail.com
+
+--- Processing Buyers ---
+Sending to Buyer: Kennedy  <kennedy.shikuku@pantech-ke.com> (1 products)
+  Rendering text template
+Sending to Buyer: Fredrick Mutai <graphicsmk28@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: David Mugu <davidmugu36@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: Martin Wafula <mwafula2007@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: peter njau <pnjau5093@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: doris bundotich <dorisbundotich88@gmail.com> (2 products)
+  Rendering text template
+Sending to Buyer: Margaret  <maggymburu48@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: Marvin Njukiah <marvonjukiah@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: Beko Industries <bekoindustriesltd@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: Dennis Limo <dennoleemore@gmail.com> (3 products)
+  Rendering text template
+Sending to Buyer: ochieng joseph <ochiengjoseph50@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: Maucan <maucan129@gmail.com> (1 products)
+  Rendering text template
+Sending to Buyer: victor kali <victorkali021@gmail.com> (1 products)
+  Rendering text template
+
+--- Processing Sellers ---
+Sending to Seller: Arus mobiles <trickykevoh@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: simon kiragu <simonkiragu23@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Electronics <muemacynthia444@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: PANTECH KENYA LIMITED <info@pantech-ke.com> (1 products)
+  Rendering text template
+Sending to Seller: FIZA TELECOMS <cyprianakhanyinya090@gmail.com> (2 products)
+  Rendering text template
+Sending to Seller: Mr Apple Technology <bookerotieno65@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Sales at Carbon <kiplangatdenis774@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Ariel tec <arielgithaiga@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Superia hub <sammykarimi72@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Spmat tech  <techspmat@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Samtech mobile <samtechmobile25@gmail.com> (3 products)
+  Rendering text template
+Sending to Seller: OG POWER TOOLS <vikingzmarley@gmail.com> (6 products)
+  Rendering text template
+Sending to Seller: Cath Mash Technologies  <cathymwangi353@gmail.com> (8 products)
+  Rendering text template
+Sending to Seller: Genuine Logistics  <esngary@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Phonetech  <imbogisylus1@gmail.com> (2 products)
+  Rendering text template
+Sending to Seller: Ilton Electronics <abdirashidabdisalan7@gmail.com> (1 products)
+  Rendering text template
+Sending to Seller: Phone world <zakariadan06@gmail.com> (2 products)
+  Rendering text template
+Sending to Seller: Mike <wawerumicheal@gmail.com> (1 products)
+  Rendering text template
+
+==================================================
+✅ Campaign Finished!
+Sent: 31 emails

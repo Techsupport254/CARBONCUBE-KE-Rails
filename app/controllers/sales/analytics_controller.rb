@@ -355,7 +355,7 @@ class Sales::AnalyticsController < ApplicationController
     
     if user_type == 'sellers'
       users = Seller.where(deleted: false)
-                    .includes(:seller_tier, :tier, :ads, :reviews)
+                    .includes(:seller_tier, :tier, :ads, :reviews_received, :carbon_code)
                     .order(created_at: :desc)
                     .limit(limit)
       
@@ -371,7 +371,7 @@ class Sales::AnalyticsController < ApplicationController
       
       users_data = users.map do |seller|
         active_ads = seller.ads.where(deleted: false).count
-        total_reviews = seller.reviews.count
+        total_reviews = seller.reviews_received.count
         avg_rating = seller.calculate_mean_rating
         tier_name = seller.seller_tier&.tier&.name || 'Free'
         signup_method = seller.oauth_user? ? 'google_oauth' : 'regular'
@@ -387,6 +387,9 @@ class Sales::AnalyticsController < ApplicationController
           created_at: seller.created_at&.iso8601,
           type: 'seller',
           signup_method: signup_method,
+          sales_added: seller.carbon_code_id.present?,
+          carbon_code: seller.carbon_code&.code,
+          carbon_code_label: seller.carbon_code&.label,
           stats: {
             ads_count: active_ads,
             reviews_count: total_reviews,

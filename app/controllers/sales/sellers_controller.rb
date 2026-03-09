@@ -53,6 +53,43 @@ class Sales::SellersController < ApplicationController
     end
   end
 
+  # PATCH /sales/sellers/:id/assign_carbon_code
+  def assign_carbon_code
+    code_string = params[:carbon_code].to_s.strip.upcase
+
+    if code_string.blank?
+      # Remove code if empty
+      if @seller.update(carbon_code_id: nil)
+        render json: { message: 'Carbon code removed successfully' }, status: :ok
+      else
+        render json: { error: 'Failed to remove carbon code', details: @seller.errors.full_messages }, status: :unprocessable_entity
+      end
+      return
+    end
+
+    carbon_code = CarbonCode.find_by(code: code_string)
+    
+    unless carbon_code
+      render json: { error: "Carbon code '#{code_string}' not found" }, status: :not_found
+      return
+    end
+
+    unless carbon_code.valid_for_use?
+      render json: { error: "Carbon code '#{code_string}' is expired or has reached its usage limit" }, status: :unprocessable_entity
+      return
+    end
+
+    if @seller.update(carbon_code_id: carbon_code.id)
+      # Increment usage if it's a new assignment and not just updating to the same code
+      if @seller.saved_change_to_carbon_code_id?
+        carbon_code.increment!(:times_used)
+      end
+      render json: { message: 'Carbon code assigned successfully', carbon_code: carbon_code.code, label: carbon_code.label }, status: :ok
+    else
+      render json: { error: 'Failed to assign carbon code', details: @seller.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def authenticate_sales_user
