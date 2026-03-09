@@ -99,16 +99,15 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   # Enable DNS rebinding protection and other `Host` header attacks.
-  config.hosts << "carboncube-ke.com"
-  config.hosts << "www.carboncube-ke.com"
-  config.hosts << "*.carboncube-ke.com"
-  config.hosts << "anko.carboncube-ke.com"
+  config.hosts << ".carboncube-ke.com"
   config.hosts << "backend"
   config.hosts << "localhost"
   config.hosts << "127.0.0.1"
-  # Removed IP address to prevent search engines from indexing it
   config.hosts << "carbon-frontend-1"
   config.hosts << "carbon-backend-1"
+  config.hosts << /10\.\d+\.\d+\.\d+/ # Allow internal network IPs (usually 10.x.x.x)
+  config.hosts << /172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+/ # Allow private class B CIDRs
+  config.hosts << /192\.168\.\d+\.\d+/ # Allow home network IPs
   # config.hosts.clear # Allow all hosts (only for debugging)
 
   # Skip DNS rebinding protection for the default health check endpoint.

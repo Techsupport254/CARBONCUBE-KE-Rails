@@ -742,7 +742,11 @@ Rails.application.routes.draw do
         end
       end
       resources :reviews, only: [:index, :show]
-      resources :sellers, only: [:index, :show, :destroy]
+      resources :sellers, only: [:index, :show, :destroy] do
+        member do
+          patch :assign_carbon_code
+        end
+      end
       resources :buyers, only: [:index, :show, :destroy]
       resources :conversations, only: [:index, :show, :create] do
         resources :messages, only: [:index, :create]
@@ -930,7 +934,11 @@ Rails.application.routes.draw do
         end
       end
       resources :reviews, only: [:index, :show]
-      resources :sellers, only: [:index, :show, :destroy]
+      resources :sellers, only: [:index, :show, :destroy] do
+        member do
+          patch :assign_carbon_code
+        end
+      end
       resources :buyers, only: [:index, :show, :destroy]
       resources :conversations, only: [:index, :show, :create] do
         resources :messages, only: [:index, :create]

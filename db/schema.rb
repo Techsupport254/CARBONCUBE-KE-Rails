@@ -84,6 +84,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
     t.string "google_merchant_product_id"
     t.uuid "seller_id", null: false
     t.boolean "is_added_by_sales"
+    t.string "model"
+    t.jsonb "specifications"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"

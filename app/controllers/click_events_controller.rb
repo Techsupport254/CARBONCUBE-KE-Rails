@@ -51,14 +51,20 @@ class ClickEventsController < ApplicationController
       # Resolve ad_id safely; invalid/non-existent IDs become nil to avoid FK violations
       ad_id = normalize_ad_id(click_event_params[:ad_id])
 
-      # Create click event with processed parameters
-      click_event = ClickEvent.new(
+      click_event_attributes = {
         event_type: click_event_params[:event_type],
         ad_id: ad_id,
         buyer_id: buyer_id,
-        seller_id: seller_id,
         metadata: metadata
-      )
+      }
+
+      # Be tolerant of environments where the seller_id migration has not been applied yet.
+      if ClickEvent.column_names.include?('seller_id')
+        click_event_attributes[:seller_id] = seller_id
+      end
+
+      # Create click event with processed parameters
+      click_event = ClickEvent.new(click_event_attributes)
 
       # Extract authentication status from metadata
       was_authenticated = metadata[:was_authenticated] || metadata['was_authenticated'] || false
@@ -107,7 +113,7 @@ class ClickEventsController < ApplicationController
         click_event: {
           id: click_event.id,
           buyer_id: click_event.buyer_id,
-          seller_id: click_event.seller_id,
+          seller_id: click_event.respond_to?(:seller_id) ? click_event.seller_id : nil,
           ad_id: click_event.ad_id,
           event_type: click_event.event_type,
           user_id: user_id_from_metadata,

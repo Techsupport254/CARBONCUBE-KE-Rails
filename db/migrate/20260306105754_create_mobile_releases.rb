@@ -1,6 +1,6 @@
 class CreateMobileReleases < ActiveRecord::Migration[7.1]
   def change
-    create_table :mobile_releases do |t|
+    create_table :mobile_releases, if_not_exists: true do |t|
       t.string :version_name, null: false
       t.integer :version_code
       t.string :abi, null: false
@@ -11,7 +11,7 @@ class CreateMobileReleases < ActiveRecord::Migration[7.1]
 
       t.timestamps
     end
-    add_index :mobile_releases, [:version_name, :abi]
-    add_index :mobile_releases, :active
+    add_index :mobile_releases, [:version_name, :abi], if_not_exists: true
+    add_index :mobile_releases, :active, if_not_exists: true
   end
 end
