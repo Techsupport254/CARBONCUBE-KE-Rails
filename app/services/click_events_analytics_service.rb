@@ -814,24 +814,29 @@ class ClickEventsAnalyticsService
         profile_picture: metadata['user_profile_picture'] || metadata[:user_profile_picture]
       }
       
-      # Try to enrich missing details from database
-      if user_info[:username].blank? || user_info[:email].blank? || user_info[:role].blank? || user_info[:profile_picture].blank?
+      # Try to enrich missing or generic details from database
+      is_generic_name = ['guest', 'anonymous', 'unknown', ''].include?(user_info[:username].to_s.downcase.strip)
+      
+      if is_generic_name || user_info[:email].blank? || user_info[:role].blank? || user_info[:profile_picture].blank?
         # Try finding as seller first
         if user_role&.downcase == 'seller' || user_role.blank?
           db_seller = event.seller || (event.ad&.seller if user_id.to_s == event.ad&.seller_id.to_s) || Seller.find_by(id: user_id)
           if db_seller
-            user_info[:username] ||= db_seller.enterprise_name.presence || db_seller.fullname.presence || db_seller.username.presence
+            seller_username = db_seller.enterprise_name.presence || db_seller.fullname.presence || db_seller.username.presence
+            user_info[:username] = seller_username if is_generic_name || user_info[:username].blank?
             user_info[:email] ||= db_seller.email
             user_info[:role] ||= 'seller'
             user_info[:profile_picture] ||= db_seller.profile_picture.presence
           end
         end
         
-        # Try finding as buyer if still missing details
-        if (user_info[:username].blank? && (user_role&.downcase == 'buyer' || user_role.blank?))
+        # Try finding as buyer if still missing details or still generic
+        is_generic_name = ['guest', 'anonymous', 'unknown', ''].include?(user_info[:username].to_s.downcase.strip)
+        if (is_generic_name && (user_role&.downcase == 'buyer' || user_role.blank?))
           db_buyer = event.buyer || Buyer.find_by(id: user_id)
           if db_buyer
-            user_info[:username] ||= db_buyer.fullname.presence || db_buyer.username.presence
+            buyer_username = db_buyer.fullname.presence || db_buyer.username.presence
+            user_info[:username] = buyer_username if is_generic_name || user_info[:username].blank?
             user_info[:email] ||= db_buyer.email
             user_info[:role] ||= 'buyer'
             user_info[:profile_picture] ||= db_buyer.profile_picture
@@ -849,6 +854,11 @@ class ClickEventsAnalyticsService
         email: event.seller.email,
         profile_picture: event.seller.profile_picture.presence
       }
+    end
+
+    # One last cleanup for Guest/Anonymous names
+    if user_info && ['guest', 'anonymous', 'unknown', ''].include?(user_info[:username].to_s.downcase.strip)
+      user_info[:username] = 'Anonymous'
     end
     
     # Ensure role is capitalized correctly for display if we have it
