@@ -1919,8 +1919,7 @@ class Buyer::AdsController < ApplicationController
       limit = params[:limit]&.to_i || 100
       limit = [limit, 500].min # Cap at 500
       
-      Rails.logger.info "Recommendations request: device_hash=#{device_hash.present? ? 'present' : 'missing'}, buyer_id=#{buyer_id || 'none'}"
-    
+
     # Get clicked/revealed ads for this user (device_hash for guests, buyer_id for authenticated)
     clicked_ad_ids = []
     clicked_categories = []
@@ -1974,9 +1973,7 @@ class Buyer::AdsController < ApplicationController
     
     # If user has no click history, fall back to best sellers
     if clicked_ad_ids.empty? && clicked_subcategories.empty? && clicked_categories.empty? && clicked_sellers.empty?
-      Rails.logger.info "No click history found, falling back to best sellers"
       best_sellers = calculate_best_sellers_fast(limit)
-      Rails.logger.info "Best sellers returned: #{best_sellers.count} ads"
       render json: best_sellers
       return
     end

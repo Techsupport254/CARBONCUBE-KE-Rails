@@ -32,6 +32,12 @@ class DualLogger < ActiveSupport::Logger
       super # Log to file only
       return self
     end
+
+    # Filter ActionMailer rendering/rendered view logs
+    if msg_str.match?(/^\s*(Rendering|Rendered)\s+\S+_mailer\//i)
+      super # Log to file only
+      return self
+    end
     
     super
     @stdout_logger.add(severity, message, progname, &block)

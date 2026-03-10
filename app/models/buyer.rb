@@ -6,6 +6,7 @@ class Buyer < ApplicationRecord
   before_create :generate_uuid
   before_validation :normalize_email
   before_validation :normalize_username
+  before_validation :normalize_phone_numbers
   before_validation :generate_username_from_fullname
   
   # Store device hash temporarily for association (set via attr_accessor)
@@ -146,11 +147,7 @@ class Buyer < ApplicationRecord
 
   def generate_uuid
     if id.blank?
-      generated_id = SecureRandom.uuid
-      Rails.logger.info "🔧 Generating UUID for buyer: #{generated_id}"
-      self.id = generated_id
-    else
-      Rails.logger.info "🔧 Buyer already has UUID: #{id}"
+      self.id = SecureRandom.uuid
     end
   end
 
@@ -225,6 +222,22 @@ class Buyer < ApplicationRecord
   def phone_numbers_must_be_different
     if phone_number.present? && secondary_phone_number.present? && phone_number == secondary_phone_number
       errors.add(:secondary_phone_number, "cannot be the same as your primary phone number")
+    end
+  end
+
+  def normalize_phone_numbers
+    self.phone_number = normalize_phone(phone_number) if phone_number.present?
+    self.secondary_phone_number = normalize_phone(secondary_phone_number) if secondary_phone_number.present?
+  end
+
+  def normalize_phone(phone)
+    digits = phone.to_s.gsub(/[^0-9]/, "")
+    if digits.start_with?("254") && digits.length == 12
+      "0#{digits[3..]}"
+    elsif digits.length > 10
+      digits.last(10)
+    else
+      digits
     end
   end
 

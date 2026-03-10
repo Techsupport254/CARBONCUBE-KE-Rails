@@ -54,6 +54,15 @@ class ClickEvent < ApplicationRecord
       exclusion_params = [device_hash, seller_id.to_s]
     end
     
+    # Condition 3: Authenticated seller clicking own ad (via seller_id column)
+    if ClickEvent.column_names.include?('seller_id')
+      exclusion_parts << "(
+        click_events.seller_id IS NOT NULL
+        AND ads.seller_id IS NOT NULL
+        AND click_events.seller_id = ads.seller_id
+      )"
+    end
+    
     # Exclude events where ANY of the conditions are true
     if exclusion_parts.any?
       query = query.where("NOT (#{exclusion_parts.join(' OR ')})", *exclusion_params)
@@ -102,119 +111,87 @@ class ClickEvent < ApplicationRecord
 
   # Scope to exclude internal users from analytics
   # This matches the logic in InternalUserExclusion.should_exclude?
-  # OPTIMIZED: Uses cached exclusion lists to avoid repeated queries
+  # OPTIMIZED: Uses batched WHERE NOT IN/LIKE clauses to reduce SQL overhead
   scope :excluding_internal_users, -> {
     # Get cached exclusion lists (avoids repeated queries)
     exclusion_lists = cached_exclusion_lists
-    hardcoded_excluded_emails = exclusion_lists[:hardcoded_excluded_emails]
-    hardcoded_excluded_domains = exclusion_lists[:hardcoded_excluded_domains]
-    device_hash_exclusions = exclusion_lists[:device_hash_exclusions]
-    email_domain_exclusions = exclusion_lists[:email_domain_exclusions]
-    user_agent_exclusions = exclusion_lists[:user_agent_exclusions]
+    hardcoded_excluded_emails = (exclusion_lists[:hardcoded_excluded_emails] || []).map(&:downcase)
+    hardcoded_excluded_domains = (exclusion_lists[:hardcoded_excluded_domains] || []).map(&:downcase)
+    device_hash_exclusions = exclusion_lists[:device_hash_exclusions] || []
+    email_domain_exclusions = exclusion_lists[:email_domain_exclusions] || []
     
-    # Merge hardcoded exclusions with database exclusions
-    all_email_exclusions = (hardcoded_excluded_emails + email_domain_exclusions).uniq
-    all_domain_exclusions = (hardcoded_excluded_domains + email_domain_exclusions.select { |e| !e.include?('@') }).uniq
-    
-    # Start with all records and join buyers table (needed for email exclusions and deleted check)
+    # Start with all records and join buyers table
     query = all.left_joins(:buyer)
     
     # Exclude deleted buyers
     query = query.where("buyers.id IS NULL OR buyers.deleted = ?", false)
     
-    # First apply hardcoded email exclusions
-    hardcoded_excluded_emails.each do |excluded_email|
+    # 1. Batch exclude by exact emails
+    if hardcoded_excluded_emails.any?
       query = query.where(
-        "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') != ?)",
-        excluded_email.downcase,
-        excluded_email.downcase
+        "(buyers.email IS NULL OR LOWER(buyers.email) NOT IN (?)) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT IN (?))",
+        hardcoded_excluded_emails,
+        hardcoded_excluded_emails
       )
     end
     
-    # Apply hardcoded domain exclusions
-    hardcoded_excluded_domains.each do |excluded_domain|
+    # 2. Exclude by domains (using a single OR-joined LIKE or regex if possible, but keeping it safe)
+    # Since LIKE can't be easily batched in a single IN, we use a loop for now or a regex.
+    # PostgreSQL regex ~* can handle multiple patterns separated by |
+    if hardcoded_excluded_domains.any?
+      domain_regex = hardcoded_excluded_domains.map { |d| "@#{Regexp.escape(d)}$" }.join('|')
       query = query.where(
-        "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT LIKE ?)",
-        "%@#{excluded_domain.downcase}",
-        "%@#{excluded_domain.downcase}"
+        "(buyers.email IS NULL OR LOWER(buyers.email) !~* ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') !~* ?)",
+        domain_regex,
+        domain_regex
       )
     end
     
-    # Exclude by device hash
-    # Logic: If metadata device_hash starts with exclusion hash OR exclusion hash starts with device_hash base
-    # This handles cases like exclusion="q4bjv0" should exclude "q4bjv0", "q4bjv01", "q4bjv02", etc.
+    # 3. Exclude by device hash
     if device_hash_exclusions.any?
-      device_hash_exclusions.each do |exclusion_hash|
-        # Exclude if device_hash matches exclusion exactly or starts with it
-        query = query.where(
-          "COALESCE(metadata->>'device_hash', '') NOT LIKE ? AND COALESCE(metadata->>'device_hash', '') != ?",
-          "#{exclusion_hash}%",
-          exclusion_hash
-        )
-        
-        # Also exclude device hashes that are variations of the exclusion hash
-        # (e.g., if exclusion is "q4bjv0", exclude "q4bjv01", "q4bjv02" by checking base hash)
-        base_exclusion = exclusion_hash.gsub(/\d+$/, '')
-        if base_exclusion != exclusion_hash && base_exclusion.present?
-          # Exclude hashes that start with the base exclusion hash
-          query = query.where("COALESCE(metadata->>'device_hash', '') NOT LIKE ?", "#{base_exclusion}%")
-        end
-      end
+      # Use same regex strategy for device hashes
+      hash_regex = device_hash_exclusions.map { |h| "^#{Regexp.escape(h)}" }.join('|')
+      query = query.where("COALESCE(metadata->>'device_hash', '') !~* ?", hash_regex)
     end
     
-    # Exclude by email (from buyers table or metadata) - only process database exclusions not already covered by hardcoded
-    # This matches InternalUserExclusion.email_domain_excluded? logic exactly
-    # Note: buyers table is already joined above
-    database_only_email_exclusions = email_domain_exclusions - hardcoded_excluded_emails - hardcoded_excluded_domains
-    if database_only_email_exclusions.any?
-      database_only_email_exclusions.each do |email_pattern|
-        email_pattern_lower = email_pattern.downcase
-        
-        # InternalUserExclusion.email_domain_excluded? does two checks:
-        # 1. Exact email match: if identifier_value equals the email exactly
-        # 2. Domain match: extracts domain from email and checks if identifier_value matches domain
-        
-        # Check for exact email match first
-        query = query.where(
-          "(buyers.email IS NULL OR LOWER(buyers.email) != ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') != ?)",
-          email_pattern_lower,
-          email_pattern_lower
-        )
-        
-        # Check for domain match (if email_pattern contains @, extract domain; otherwise use as-is)
-        if email_pattern.include?('@')
-          domain = email_pattern.split('@').last&.downcase
-          if domain.present?
-            # Exclude emails from this domain
-            # Also check if identifier_value contains the domain (matching the LIKE pattern in email_domain_excluded?)
-            query = query.where(
-              "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT LIKE ?)",
-              "%@#{domain}",
-              "%@#{domain}"
-            )
-          end
+    # 4. Exclude by database email patterns (mixed email and domain)
+    if email_domain_exclusions.any?
+      exact_emails = []
+      domain_patterns = []
+      
+      email_domain_exclusions.each do |pattern|
+        if pattern.include?('@')
+          exact_emails << pattern.downcase
+          domain = pattern.split('@').last&.downcase
+          domain_patterns << domain if domain.present?
         else
-          # Domain-only exclusion - exclude emails from this domain
-          # Also check if identifier_value matches domain (exact match) or contains it (LIKE pattern)
-          query = query.where(
-            "(buyers.email IS NULL OR LOWER(buyers.email) NOT LIKE ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT LIKE ?)",
-            "%@#{email_pattern_lower}",
-            "%@#{email_pattern_lower}"
-          )
+          domain_patterns << pattern.downcase
         end
+      end
+      
+      if exact_emails.any?
+        query = query.where(
+          "(buyers.email IS NULL OR LOWER(buyers.email) NOT IN (?)) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') NOT IN (?))",
+          exact_emails.uniq,
+          exact_emails.uniq
+        )
+      end
+      
+      if domain_patterns.any?
+        db_domain_regex = domain_patterns.uniq.map { |d| "@#{Regexp.escape(d)}$" }.join('|')
+        query = query.where(
+          "(buyers.email IS NULL OR LOWER(buyers.email) !~* ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') !~* ?)",
+          db_domain_regex,
+          db_domain_regex
+        )
       end
     end
     
-    # Exclude by user agent (regex pattern)
-    # This matches InternalUserExclusion.user_agent_excluded? logic
+    # 5. Exclude by user agent
+    user_agent_exclusions = exclusion_lists[:user_agent_exclusions] || []
     if user_agent_exclusions.any?
-      user_agent_exclusions.each do |pattern|
-        # Use PostgreSQL regex matching (!~* means does not match case-insensitive)
-        query = query.where(
-          "metadata->>'user_agent' IS NULL OR metadata->>'user_agent' !~* ?",
-          pattern
-        )
-      end
+      ua_regex = user_agent_exclusions.join('|')
+      query = query.where("metadata->>'user_agent' IS NULL OR metadata->>'user_agent' !~* ?", ua_regex)
     end
     
     query

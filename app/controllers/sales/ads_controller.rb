@@ -1,5 +1,7 @@
 class Sales::AdsController < ApplicationController
   before_action :authenticate_sales_user
+
+  EFFECTIVE_IS_ADDED_BY_SALES_SQL = Ad.effective_is_added_by_sales_sql
   
   # GET /sales/ads
   def index
@@ -50,9 +52,9 @@ class Sales::AdsController < ApplicationController
     if params[:added_by].present?
       case params[:added_by]
       when 'sales'
-        base_query = base_query.where(is_added_by_sales: true)
+        base_query = base_query.where("#{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = TRUE")
       when 'seller'
-        base_query = base_query.where(is_added_by_sales: false)
+        base_query = base_query.where("#{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = FALSE")
       end
     end
 
@@ -63,7 +65,7 @@ class Sales::AdsController < ApplicationController
     offset = (page - 1) * per_page
     @ads = base_query
          .order('ads.created_at DESC')  # Sort by latest first
-         .select('ads.*, seller_tiers.tier_id AS seller_tier')  # Select tier_id from seller_tiers
+         .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
          .limit(per_page)
          .offset(offset)
     
@@ -71,8 +73,8 @@ class Sales::AdsController < ApplicationController
     non_flagged_ads = @ads.reject { |ad| ad.flagged }
 
     render json: {
-      flagged: flagged_ads.as_json(methods: :seller_tier),
-      non_flagged: non_flagged_ads.as_json(methods: :seller_tier),
+      flagged: serialize_ads(flagged_ads),
+      non_flagged: serialize_ads(non_flagged_ads),
       pagination: {
         current_page: page,
         per_page: per_page,
@@ -110,7 +112,7 @@ class Sales::AdsController < ApplicationController
       },
       methods: [:mean_rating, :media_urls, :first_media_url],
       except: [:deleted]
-    )
+    ).merge("is_added_by_sales" => @ad.effective_is_added_by_sales)
   end
 
   # Update flagged status
@@ -155,8 +157,9 @@ class Sales::AdsController < ApplicationController
              .where(deleted: false)
              .where(sellers: { blocked: false, deleted: false })
     
-    # Get the date when tracking started (first ad with is_added_by_sales not null)
-    first_tracked_ad = Ad.where.not(is_added_by_sales: nil)
+    # Get the date when explicit sales-added tracking started.
+    # Anything before this is treated as legacy sales-added data.
+    first_tracked_ad = Ad.where(is_added_by_sales: true)
                          .order('ads.created_at ASC')
                          .select('ads.created_at')
                          .first
@@ -168,8 +171,8 @@ class Sales::AdsController < ApplicationController
       'COUNT(*) as total',
       'SUM(CASE WHEN ads.flagged = true THEN 1 ELSE 0 END) as flagged',
       'SUM(CASE WHEN ads.flagged = false THEN 1 ELSE 0 END) as active',
-      'SUM(CASE WHEN ads.is_added_by_sales = true THEN 1 ELSE 0 END) as sales_added',
-      'SUM(CASE WHEN ads.is_added_by_sales = false THEN 1 ELSE 0 END) as seller_added'
+      "SUM(CASE WHEN #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = TRUE THEN 1 ELSE 0 END) as sales_added",
+      "SUM(CASE WHEN #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = FALSE THEN 1 ELSE 0 END) as seller_added"
     ).unscope(:order).to_sql
     
     result = ActiveRecord::Base.connection.execute(sql).first
@@ -224,9 +227,9 @@ class Sales::AdsController < ApplicationController
     if params[:added_by].present?
       case params[:added_by]
       when 'sales'
-        base_query = base_query.where(is_added_by_sales: true)
+        base_query = base_query.where("#{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = TRUE")
       when 'seller'
-        base_query = base_query.where(is_added_by_sales: false)
+        base_query = base_query.where("#{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = FALSE")
       end
     end
 
@@ -237,12 +240,12 @@ class Sales::AdsController < ApplicationController
     offset = (page - 1) * per_page
     @ads = base_query
              .order('ads.created_at DESC')  # Sort by latest first
-             .select('ads.*, seller_tiers.tier_id AS seller_tier')
+             .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
              .limit(per_page)
              .offset(offset)
     
     render json: {
-      ads: @ads.as_json(methods: :seller_tier),
+      ads: serialize_ads(@ads),
       pagination: {
         current_page: page,
         per_page: per_page,
@@ -326,6 +329,13 @@ class Sales::AdsController < ApplicationController
   end
 
   private
+
+  def serialize_ads(ads)
+    ads.map do |ad|
+      ad.as_json(methods: :seller_tier)
+        .merge("is_added_by_sales" => ad.respond_to?(:derived_is_added_by_sales) ? ad.derived_is_added_by_sales : ad.effective_is_added_by_sales)
+    end
+  end
 
   def authenticate_sales_user
     @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result

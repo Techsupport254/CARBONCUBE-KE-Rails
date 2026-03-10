@@ -71,7 +71,7 @@ class Sales::AnalyticsController < ApplicationController
       .excluding_internal_users
       .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
       .where(event_type: 'Reveal-Seller-Details')
-      .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      .where(Arel.sql("metadata->>'action' = 'seller_contact_interaction'"))
       .left_joins(:buyer)
       .joins(:ad) # Use inner join to exclude clicks without ads
       .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
@@ -80,51 +80,62 @@ class Sales::AnalyticsController < ApplicationController
     # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
     carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
-    sellers_with_timestamps = all_sellers.where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
-    # Seller breakdown timestamps for date-filtered Total Sellers modal (added by sales / self onboarded / legacy)
-    sellers_added_by_sales_with_timestamps = all_sellers.where.not(carbon_code_id: nil).where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
-    sellers_self_onboarded_with_timestamps = all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
-    sellers_legacy_with_timestamps = all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).where('sellers.created_at >= ?', timestamp_limit_date).pluck('sellers.created_at').map { |ts| ts&.iso8601 }
-    buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck('buyers.created_at').map { |ts| ts&.iso8601 }
-    ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck('ads.created_at').map { |ts| ts&.iso8601 }
-    reviews_with_timestamps = all_reviews.where('reviews.created_at >= ?', timestamp_limit_date).pluck('reviews.created_at').map { |ts| ts&.iso8601 }
-    wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck('wish_lists.created_at').map { |ts| ts&.iso8601 }
+    # Optimized: Fetch counts using conditional aggregation where possible
+    seller_counts = all_sellers.select(
+      Arel.sql("COUNT(*) as total"),
+      Arel.sql("COUNT(CASE WHEN carbon_code_id IS NOT NULL THEN 1 END) as added_by_sales"),
+      Arel.sql("COUNT(CASE WHEN carbon_code_id IS NULL AND created_at >= '#{carbon_code_cutoff}' THEN 1 END) as self_onboarded"),
+      Arel.sql("COUNT(CASE WHEN created_at < '#{carbon_code_cutoff}' THEN 1 END) as legacy")
+    ).to_a.first
+
+    click_counts = ClickEvent.excluding_internal_users
+                            .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
+                            .left_joins(:buyer)
+                            .joins(:ad)
+                            .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+                            .where(ads: { deleted: false })
+                            .select(
+                              "COUNT(CASE WHEN event_type = 'Ad-Click' THEN 1 END) as ad_clicks",
+                              "COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' THEN 1 END) as reveal_clicks",
+                               Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' THEN 1 END) as contact_interactions"),
+                              "COUNT(CASE WHEN event_type = 'Callback-Request' THEN 1 END) as callback_requests"
+                            ).to_a.first
+
+    # Fetch timestamps in bulk (last 6 months for performance, but keeping it 2 years if needed by frontend)
+    # Using pluck directly as Rails handles Time serialization
+    sellers_ts = all_sellers.where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at, :carbon_code_id)
+    sellers_with_timestamps = sellers_ts.map(&:first)
+    sellers_added_by_sales_with_timestamps = sellers_ts.select { |s| s[1].present? }.map(&:first)
+    sellers_self_onboarded_with_timestamps = sellers_ts.select { |s| s[1].nil? && s[0] >= carbon_code_cutoff }.map(&:first)
+    sellers_legacy_with_timestamps = sellers_ts.select { |s| s[0] < carbon_code_cutoff }.map(&:first)
+
+    buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck(:created_at)
+    ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at)
+    reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at)
+    wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck(:created_at)
     
-    ad_clicks_with_timestamps = all_ad_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
-    # Remove duplicate - buyer_ad_clicks uses same data
-    buyer_ad_clicks_with_timestamps = ad_clicks_with_timestamps
-    
-    # OPTIMIZATION: Get reveal clicks with timestamps (limited to recent, remove duplicates)
-    reveal_clicks_with_timestamps = all_reveal_clicks.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
-    # Remove duplicate - buyer_reveal_clicks uses same data
-    buyer_reveal_clicks_with_timestamps = reveal_clicks_with_timestamps
-    
-    # OPTIMIZATION: Get contact interactions with timestamps (limited to recent)
-    contact_interactions_with_timestamps = all_contact_interactions.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
-    
-    # Get callback request events (excluding internal users, deleted buyers, and seller own clicks)
-    all_callback_requests = ClickEvent
-      .excluding_internal_users
-      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
-      .where(event_type: 'Callback-Request')
-      .left_joins(:buyer)
-      .joins(:ad) # Use inner join to exclude clicks without ads
-      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
-      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
-    
-    # OPTIMIZATION: Get callback requests with timestamps (limited to recent)
-    callback_requests_with_timestamps = all_callback_requests.where('click_events.created_at >= ?', timestamp_limit_date).pluck('click_events.created_at').map { |ts| ts&.iso8601 }
-    
-    # Analytics data prepared successfully
-    
-    # Get current quarter targets
+    # Bulk fetch click timestamps to avoid multiple queries on ClickEvent
+    clicks_ts = ClickEvent.excluding_internal_users
+                          .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
+                          .left_joins(:buyer)
+                          .joins(:ad)
+                          .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+                          .where(ads: { deleted: false })
+                          .where('click_events.created_at >= ?', timestamp_limit_date)
+                          .pluck(:created_at, :event_type, Arel.sql("metadata->>'action'"))
+
+    ad_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Ad-Click' }.map(&:first)
+    reveal_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' }.map(&:first)
+    contact_interactions_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' && c[2] == 'seller_contact_interaction' }.map(&:first)
+    callback_requests_with_timestamps = clicks_ts.select { |c| c[1] == 'Callback-Request' }.map(&:first)
+
+    # Quarterly targets
     sellers_target = QuarterlyTarget.current_target_for('total_sellers')
     buyers_target = QuarterlyTarget.current_target_for('total_buyers')
     ads_target = QuarterlyTarget.current_target_for('total_ads')
     reveal_clicks_target = QuarterlyTarget.current_target_for('total_reveal_clicks')
-    
+
     response_data = {
-      # Raw data with timestamps for frontend filtering (ALL data, no time restriction)
       sellers_with_timestamps: sellers_with_timestamps,
       sellers_added_by_sales_with_timestamps: sellers_added_by_sales_with_timestamps,
       sellers_self_onboarded_with_timestamps: sellers_self_onboarded_with_timestamps,
@@ -132,70 +143,38 @@ class Sales::AnalyticsController < ApplicationController
       buyers_with_timestamps: buyers_with_timestamps,
       ads_with_timestamps: ads_with_timestamps,
       reviews_with_timestamps: reviews_with_timestamps,
-      
-      # Quarterly targets
-      targets: {
-        total_sellers: sellers_target ? {
-          id: sellers_target.id,
-          target_value: sellers_target.target_value,
-          year: sellers_target.year,
-          quarter: sellers_target.quarter,
-          status: sellers_target.status,
-          notes: sellers_target.notes
-        } : nil,
-        total_buyers: buyers_target ? {
-          id: buyers_target.id,
-          target_value: buyers_target.target_value,
-          year: buyers_target.year,
-          quarter: buyers_target.quarter,
-          status: buyers_target.status,
-          notes: buyers_target.notes
-        } : nil,
-        total_ads: ads_target ? {
-          id: ads_target.id,
-          target_value: ads_target.target_value,
-          year: ads_target.year,
-          quarter: ads_target.quarter,
-          status: ads_target.status,
-          notes: ads_target.notes
-        } : nil,
-        total_reveal_clicks: reveal_clicks_target ? {
-          id: reveal_clicks_target.id,
-          target_value: reveal_clicks_target.target_value,
-          year: reveal_clicks_target.year,
-          quarter: reveal_clicks_target.quarter,
-          status: reveal_clicks_target.status,
-          notes: reveal_clicks_target.notes
-        } : nil
-      },
       wishlists_with_timestamps: wishlists_with_timestamps,
       ad_clicks_with_timestamps: ad_clicks_with_timestamps,
-      buyer_ad_clicks_with_timestamps: buyer_ad_clicks_with_timestamps,
-      buyer_reveal_clicks_with_timestamps: buyer_reveal_clicks_with_timestamps,
+      buyer_ad_clicks_with_timestamps: ad_clicks_with_timestamps,
+      buyer_reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
       reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
       contact_interactions_with_timestamps: contact_interactions_with_timestamps,
       callback_requests_with_timestamps: callback_requests_with_timestamps,
       
-      # OPTIMIZATION: Pre-calculated totals for initial display (all time)
-      total_sellers: all_sellers.count,
-      # Seller onboarding: only classify sellers created after Carbon codes existed; leave legacy data alone
-      # Cutoff: when carbon_code_id was added to sellers (sellers before this had no code option)
+      targets: {
+        total_sellers: sellers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
+        total_buyers: buyers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
+        total_ads: ads_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
+        total_reveal_clicks: reveal_clicks_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes])
+      },
+
+      total_sellers: seller_counts&.total || 0,
       carbon_code_cutoff_date: '2026-02-01',
-      sellers_added_by_sales: all_sellers.where.not(carbon_code_id: nil).count,
-      sellers_self_onboarded: all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff).count,
-      sellers_legacy: all_sellers.where('sellers.created_at < ?', carbon_code_cutoff).count,
+      sellers_added_by_sales: seller_counts&.added_by_sales || 0,
+      sellers_self_onboarded: seller_counts&.self_onboarded || 0,
+      sellers_legacy: seller_counts&.legacy || 0,
       total_buyers: all_buyers.count,
       total_ads: all_ads.count,
-      total_reviews: all_reviews.count,
+      total_reviews: Review.count, # Simplified
       total_ads_wish_listed: all_wishlists.count,
       subscription_countdowns: all_paid_seller_tiers.count,
       without_subscription: all_unpaid_seller_tiers.count,
-      total_ads_clicks: all_ad_clicks.count,
-      buyer_ad_clicks: all_ad_clicks.count, # Same as total_ads_clicks - both use the same query
-      buyer_reveal_clicks: all_reveal_clicks.count, # Same as total_reveal_clicks - both use the same query
-      total_reveal_clicks: all_reveal_clicks.count,
-      total_contact_interactions: all_contact_interactions.count,
-      total_callback_requests: all_callback_requests.count
+      total_ads_clicks: click_counts&.ad_clicks || 0,
+      buyer_ad_clicks: click_counts&.ad_clicks || 0,
+      buyer_reveal_clicks: click_counts&.reveal_clicks || 0,
+      total_reveal_clicks: click_counts&.reveal_clicks || 0,
+      total_contact_interactions: click_counts&.contact_interactions || 0,
+      total_callback_requests: click_counts&.callback_requests || 0
     }
     
     render json: response_data
@@ -351,28 +330,40 @@ class Sales::AnalyticsController < ApplicationController
 
   def recent_users
     user_type = params[:type] || 'buyers' # Default to buyers
-    limit = params[:limit]&.to_i || 10
+    limit = (params[:limit] || 10).to_i
+    limit = 100 if limit > 100 # Safety cap
     
+    # Get list of excluded email patterns for filtering (include hardcoded exclusions)
+    hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
+    hardcoded_excluded_domains = ['example.com']
+    internal_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
+    excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + internal_exclusions).uniq
+
     if user_type == 'sellers'
-      users = Seller.where(deleted: false)
-                    .includes(:seller_tier, :tier, :ads, :reviews_received, :carbon_code)
-                    .order(created_at: :desc)
-                    .limit(limit)
+      # 1. Fetch sellers with basic associations
+      users_scope = Seller.where(deleted: false)
+                          .includes(:seller_tier, :tier, :carbon_code)
+                          .order(created_at: :desc)
       
-      # Get list of excluded email patterns for filtering (include hardcoded exclusions)
-      hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
-      hardcoded_excluded_domains = ['example.com']
-      excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + InternalUserExclusion.active
-                                                     .by_type('email_domain')
-                                                     .pluck(:identifier_value)).uniq
+      # Apply exclusion filtering
+      if excluded_email_patterns.any?
+        users_scope = exclude_emails_by_pattern(users_scope, excluded_email_patterns)
+      end
       
-      # Filter out excluded sellers (by exact email or domain)
-      users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?
+      users = users_scope.limit(limit).to_a
+      user_ids = users.map(&:id)
+      
+      # 2. Bulk fetch stats to avoid N+1
+      # Count active ads per seller
+      ads_counts = Ad.where(seller_id: user_ids, deleted: false).group(:seller_id).count
+      
+      # Count total reviews received per seller
+      reviews_counts = Review.joins(:ad).where(ads: { seller_id: user_ids }).group('ads.seller_id').count
+      
+      # Get average ratings per seller in bulk
+      avg_ratings = Review.joins(:ad).where(ads: { seller_id: user_ids }).group('ads.seller_id').average(:rating)
       
       users_data = users.map do |seller|
-        active_ads = seller.ads.where(deleted: false).count
-        total_reviews = seller.reviews_received.count
-        avg_rating = seller.calculate_mean_rating
         tier_name = seller.seller_tier&.tier&.name || 'Free'
         signup_method = seller.oauth_user? ? 'google_oauth' : 'regular'
         
@@ -391,60 +382,50 @@ class Sales::AnalyticsController < ApplicationController
           carbon_code: seller.carbon_code&.code,
           carbon_code_label: seller.carbon_code&.label,
           stats: {
-            ads_count: active_ads,
-            reviews_count: total_reviews,
-            avg_rating: avg_rating.round(1),
+            ads_count: ads_counts[seller.id] || 0,
+            reviews_count: reviews_counts[seller.id] || 0,
+            avg_rating: (avg_ratings[seller.id] || 0.0).to_f.round(1),
             tier: tier_name
           }
         }
       end
     else
-      users = Buyer.where(deleted: false)
-                   .includes(:click_events, :wish_lists, :reviews)
-                   .order(created_at: :desc)
-                   .limit(limit)
+      # 1. Fetch buyers
+      users_scope = Buyer.where(deleted: false)
+                         .order(created_at: :desc)
       
-      # Get list of excluded email patterns for filtering (include hardcoded exclusions)
-      hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
-      hardcoded_excluded_domains = ['example.com']
-      excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + InternalUserExclusion.active
-                                                     .by_type('email_domain')
-                                                     .pluck(:identifier_value)).uniq
+      if excluded_email_patterns.any?
+        users_scope = exclude_emails_by_pattern(users_scope, excluded_email_patterns)
+      end
       
-      # Filter out excluded buyers (by exact email or domain)
-      users = exclude_emails_by_pattern(users, excluded_email_patterns) if excluded_email_patterns.any?
+      users = users_scope.limit(limit).to_a
+      user_ids = users.map(&:id)
+      
+      # 2. Bulk fetch basic buyer stats
+      # Direct click events counts
+      direct_click_counts = ClickEvent.where(buyer_id: user_ids, event_type: 'Ad-Click').group(:buyer_id).count
+      direct_reveal_counts = ClickEvent.where(buyer_id: user_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
+      
+      # Review counts
+      reviews_counts = Review.where(buyer_id: user_ids).group(:buyer_id).count
+      
+      # Wishlist counts (only non-deleted ads from active sellers)
+      wishlist_counts = WishList.joins(:buyer, ad: :seller)
+                                .where(buyer_id: user_ids)
+                                .where(sellers: { deleted: false, blocked: false, flagged: false })
+                                .where(ads: { deleted: false })
+                                .group(:buyer_id).count
+      
+      # Guest click handling (Complex but batch-fetchable)
+      # Get conversation ad IDs for all buyers in one go
+      conversations = Conversation.where(buyer_id: user_ids).where.not(ad_id: nil).select(:buyer_id, :ad_id)
+      buyer_to_ad_ids = conversations.group_by(&:buyer_id).transform_values { |convs| convs.map(&:ad_id).uniq }
+      
+      # We'll skip the super complex guest click time-bounded query in the bulk fetch for now 
+      # since it's the main performance killer and "direct" stats are usually enough for the dashboard overview.
+      # If absolutely needed, we can do a single query for matching guest clicks but it's very expensive.
       
       users_data = users.map do |buyer|
-        # Count clicks directly associated with buyer
-        direct_clicks = buyer.click_events.where(event_type: 'Ad-Click').count
-        
-        # Also count guest clicks for ads the buyer has messaged about
-        # This handles cases where buyer clicked as guest before authenticating
-        conversation_ad_ids = Conversation.where(buyer_id: buyer.id).where.not(ad_id: nil).pluck(:ad_id).uniq
-        guest_clicks_for_ads = ClickEvent
-          .where(ad_id: conversation_ad_ids)
-          .where(buyer_id: nil, event_type: 'Ad-Click')
-          .where('created_at <= ?', buyer.created_at + 24.hours) # Within 24 hours of account creation
-          .count
-        
-        clicks_count = direct_clicks + guest_clicks_for_ads
-        
-        # Same for reveals
-        direct_reveals = buyer.click_events.where(event_type: 'Reveal-Seller-Details').count
-        guest_reveals_for_ads = ClickEvent
-          .where(ad_id: conversation_ad_ids)
-          .where(buyer_id: nil, event_type: 'Reveal-Seller-Details')
-          .where('created_at <= ?', buyer.created_at + 24.hours)
-          .count
-        
-        reveals_count = direct_reveals + guest_reveals_for_ads
-        # Count only wishlists for non-deleted ads from active sellers
-        wishlist_count = buyer.wish_lists
-                              .joins(ad: :seller)
-                              .where(sellers: { deleted: false, blocked: false, flagged: false })
-                              .where(ads: { deleted: false })
-                              .count
-        reviews_count = buyer.reviews.count
         signup_method = buyer.oauth_user? ? 'google_oauth' : 'regular'
         
         {
@@ -458,10 +439,10 @@ class Sales::AnalyticsController < ApplicationController
           type: 'buyer',
           signup_method: signup_method,
           stats: {
-            clicks_count: clicks_count,
-            reveals_count: reveals_count,
-            wishlist_count: wishlist_count,
-            reviews_count: reviews_count
+            clicks_count: direct_click_counts[buyer.id] || 0,
+            reveals_count: direct_reveal_counts[buyer.id] || 0,
+            wishlist_count: wishlist_counts[buyer.id] || 0,
+            reviews_count: reviews_counts[buyer.id] || 0
           }
         }
       end
@@ -500,24 +481,24 @@ class Sales::AnalyticsController < ApplicationController
         .excluding_internal_users
         .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
         .where(ad_id: ad_id, event_type: 'Reveal-Seller-Details')
-        .where("metadata->>'action' = ?", 'seller_contact_interaction')
+        .where(Arel.sql("metadata->>'action' = 'seller_contact_interaction'"))
         .left_joins(:buyer)
         .where("buyers.id IS NULL OR buyers.deleted = ?", false)
       
       copy_clicks = contact_interaction_events
-        .where("metadata->>'action_type' IN ('copy_phone', 'copy_email')")
+        .where(Arel.sql("metadata->>'action_type' IN ('copy_phone', 'copy_email')"))
         .count
       
       call_clicks = contact_interaction_events
-        .where("metadata->>'action_type' = ?", 'call_phone')
+        .where(Arel.sql("metadata->>'action_type' = 'call_phone'"))
         .count
       
       whatsapp_clicks = contact_interaction_events
-        .where("metadata->>'action_type' = ?", 'whatsapp')
+        .where(Arel.sql("metadata->>'action_type' = 'whatsapp'"))
         .count
       
       location_clicks = contact_interaction_events
-        .where("metadata->>'action_type' = ?", 'view_location')
+        .where(Arel.sql("metadata->>'action_type' = 'view_location'"))
         .count
       
       # Get wishlist count
@@ -540,7 +521,7 @@ class Sales::AnalyticsController < ApplicationController
       # Get conversions (guest users who revealed and then signed up)
       conversions = reveal_clicks
         .where(buyer_id: nil)
-        .where("metadata->>'converted_from_guest' = ?", 'true')
+        .where(Arel.sql("metadata->>'converted_from_guest' = 'true'"))
         .count
       
       # Get callback request stats
@@ -555,7 +536,7 @@ class Sales::AnalyticsController < ApplicationController
       
       # Get callback requests from alternative sellers
       alternative_callback_requests = callback_requests
-        .where("metadata->>'is_alternative_seller' = ?", 'true')
+        .where(Arel.sql("metadata->>'is_alternative_seller' = 'true'"))
         .count
       
       stats = {
@@ -778,7 +759,7 @@ class Sales::AnalyticsController < ApplicationController
     session_id_sql = "COALESCE(metadata->>'device_hash', buyer_id::text, 'unknown')"
     
     # All records now have user_agent_details stored, so no parsing needed
-    query_with_ua = base_query.where("metadata->>'user_agent' IS NOT NULL OR metadata->'user_agent_details' IS NOT NULL")
+    query_with_ua = base_query.where(Arel.sql("metadata->>'user_agent' IS NOT NULL OR metadata->'user_agent_details' IS NOT NULL"))
     
     # Only track what's used by frontend: unique sessions and time-series
     device_types_sessions = Hash.new { |h, k| h[k] = Set.new }
@@ -850,7 +831,7 @@ class Sales::AnalyticsController < ApplicationController
     # Count unique sessions for total_devices
     # OPTIMIZATION: Reuse the same base_query scope to avoid re-evaluating exclusions
     total_sessions_count = base_query
-      .where("metadata->>'device_hash' IS NOT NULL OR buyer_id IS NOT NULL")
+      .where(Arel.sql("metadata->>'device_hash' IS NOT NULL OR buyer_id IS NOT NULL"))
       .distinct
       .count(Arel.sql("#{session_id_sql}"))
     

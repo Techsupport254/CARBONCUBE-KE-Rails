@@ -1,7 +1,7 @@
 class Seller::AdsController < ApplicationController
   include ExceptionHandler
   
-  before_action :authenticate_seller, except: [:prefill]
+  before_action :authenticate_seller, except: [:prefill, :conditions]
   before_action :set_ad, only: [:show, :update, :destroy]
   before_action :load_ad_with_offer, only: [:show]
 

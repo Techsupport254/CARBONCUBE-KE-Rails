@@ -212,6 +212,10 @@ class AdSerializer < ActiveModel::Serializer
     seller_document_verified
   end
 
+  def is_added_by_sales
+    object.effective_is_added_by_sales
+  end
+
   private
 
   def flash_sale_debug_logs_enabled?

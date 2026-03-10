@@ -92,7 +92,6 @@ class WhatsAppNotificationService
     
     # Prioritize WhatsApp Cloud API if credentials are present
     if ENV['WHATSAPP_CLOUD_ACCESS_TOKEN'].present? && ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID'].present?
-      Rails.logger.info "[WhatsAppNotificationService] Using WhatsApp Cloud API for message"
       return WhatsAppCloudService.send_message(phone_number, message)
     end
     
@@ -402,11 +401,9 @@ class WhatsAppNotificationService
     result = send_message_without_enabled_check(phone_number, welcome_message, nil)
 
     if result.is_a?(Hash) && result[:success]
-      Rails.logger.info "✅ Welcome WhatsApp message sent to #{user.class.name} #{user.email} (#{phone_number})"
       true
     else
       error_msg = result.is_a?(Hash) ? result[:error] : 'Unknown error'
-      Rails.logger.warn "⚠️ Failed to send welcome WhatsApp message to #{user.class.name} #{user.email}: #{error_msg}"
       false
     end
   rescue StandardError => e
@@ -429,13 +426,7 @@ class WhatsAppNotificationService
   # Used for critical messages like welcome messages that should always be sent
   # image_path: optional path to image file to attach
   def self.send_message_without_enabled_check(phone_number, message, image_path = nil)
-    if Rails.env.development?
-      Rails.logger.info "=== WhatsAppNotificationService.send_message_without_enabled_check START ==="
-      Rails.logger.info "Phone number: #{phone_number.inspect}"
-      Rails.logger.info "Message length: #{message.to_s.length} characters"
-      Rails.logger.info "Image path: #{image_path.inspect}" if image_path
-    end
-    
+
     unless phone_number.present?
       Rails.logger.error "Phone number is missing"
       return { success: false, error: 'Phone number is required' }
@@ -448,7 +439,6 @@ class WhatsAppNotificationService
     
     # Prioritize WhatsApp Cloud API if credentials are present
     if ENV['WHATSAPP_CLOUD_ACCESS_TOKEN'].present? && ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID'].present?
-      Rails.logger.info "[WhatsAppNotificationService] Using WhatsApp Cloud API for message"
       return WhatsAppCloudService.send_message(phone_number, message)
     end
 
@@ -1008,4 +998,3 @@ class WhatsAppNotificationService
     end
   end
 end
-

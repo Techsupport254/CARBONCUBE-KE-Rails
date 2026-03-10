@@ -1,6 +1,8 @@
 class Ad < ApplicationRecord
   include PgSearch::Model
 
+  SALES_ADDED_GRACE_PERIOD = 1.day
+
   enum :condition, { brand_new: 0, second_hand: 1, refurbished: 2, x_japan: 3, ex_uk: 4 }
 
   # tsearch only: trigram (%) requires pg_trgm and can raise "operator does not exist: unknown % text"
@@ -26,6 +28,22 @@ class Ad < ApplicationRecord
 
   delegate :name, to: :category, prefix: true, allow_nil: true
   delegate :name, to: :subcategory, prefix: true, allow_nil: true
+
+  def self.effective_is_added_by_sales_sql
+    <<~SQL.squish
+      CASE
+        WHEN ads.is_added_by_sales = TRUE THEN TRUE
+        WHEN sellers.created_at IS NOT NULL 
+          AND ads.created_at <= sellers.created_at + INTERVAL '1 day' 
+        THEN TRUE
+        WHEN ads.is_added_by_sales IS NULL AND (
+          (SELECT MIN(t.created_at) FROM ads t WHERE t.is_added_by_sales = TRUE) IS NULL
+          OR ads.created_at < (SELECT MIN(t.created_at) FROM ads t WHERE t.is_added_by_sales = TRUE)
+        ) THEN TRUE
+        ELSE FALSE
+      END
+    SQL
+  end
 
   def model
     # Use attributes.key? directly to avoid triggering AR's MissingAttributeError log subscriber
@@ -211,6 +229,24 @@ class Ad < ApplicationRecord
   # Get first valid media URL
   def first_valid_media_url
     valid_media_urls.first
+  end
+
+  def effective_is_added_by_sales
+    return true if self[:is_added_by_sales] == true
+    return true if seller&.created_at && created_at && created_at <= seller.created_at + SALES_ADDED_GRACE_PERIOD
+    return true if self[:is_added_by_sales].nil? && legacy_sales_added?
+    false
+  end
+
+  def legacy_sales_added?
+    return true unless tracking_started_at
+    return false unless created_at
+
+    created_at < tracking_started_at
+  end
+
+  def tracking_started_at
+    self.class.where(is_added_by_sales: true).minimum(:created_at)
   end
 
   # Google Merchant API integration methods
