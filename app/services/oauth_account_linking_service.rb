@@ -253,8 +253,6 @@ class OauthAccountLinkingService
     # Phone number is optional for buyers, but always include if available
     user_attributes[:phone_number] = phone_number if phone_number.present?
     
-    Rails.logger.info "📞 Creating buyer - Phone number: #{phone_number || 'Not provided (optional for buyers)'}"
-    
     buyer = Buyer.create!(user_attributes)
 
     # Auto-verify email for Google OAuth users (email is already verified by Google)
@@ -616,9 +614,6 @@ class OauthAccountLinkingService
       if response.success?
         ip_data = JSON.parse(response.body)
         
-        # Log full API response for debugging
-        Rails.logger.info "IP API Response: #{ip_data.inspect}"
-        
         if ip_data['status'] == 'success'
           city = ip_data['city']
           region = ip_data['region'] # Region code (e.g., "01", "02")
@@ -643,8 +638,6 @@ class OauthAccountLinkingService
           end
           
           Rails.logger.info "User location detected: #{location_data[:location]}"
-        else
-          Rails.logger.warn "IP API returned error: #{ip_data['message']}"
         end
       end
     rescue => e

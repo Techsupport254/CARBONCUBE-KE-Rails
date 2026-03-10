@@ -209,6 +209,163 @@ class Buyer::ProfilesController < ApplicationController
       render json: { verified: true, message: "Email verified successfully" }, status: :ok
     end
   end
+
+  # POST /buyer/profile/upgrade_to_seller
+  def upgrade_to_seller
+    # 1. Check if user is already a seller
+    if Seller.exists?(email: current_buyer.email)
+      return render json: { 
+        success: false, 
+        error: "You are already registered as a seller with this email." 
+      }, status: :unprocessable_entity
+    end
+
+    # 2. Validate required seller fields
+    required_params = [:enterprise_name, :location, :description, :county_id, :sub_county_id]
+    missing = required_params.select { |p| params[p].blank? }
+    
+    if missing.any?
+      return render json: { 
+        success: false, 
+        errors: missing.each_with_object({}) { |p, h| h[p] = ["is required for sellers"] }
+      }, status: :unprocessable_entity
+    end
+
+    buyer = current_buyer
+    @seller = nil
+
+    # 3. Run the entire upgrade inside a transaction so it's atomic.
+    #    If ANY step fails, the whole thing rolls back cleanly.
+    ActiveRecord::Base.transaction do
+      # --- 3a. Create the Seller record ---
+      # NOTE: We do NOT pass password_digest here because has_secure_password intercepts
+      # the assignment and still validates the virtual `password` attribute.
+      # Instead we save with a temp random password and then stamp the real digest directly
+      # via update_column (which skips all validations and callbacks).
+      temp_password = SecureRandom.hex(32)
+      @seller = Seller.new(
+        fullname:               buyer.fullname,
+        email:                  buyer.email.downcase.strip,
+        phone_number:           buyer.phone_number,
+        secondary_phone_number: buyer.secondary_phone_number,
+        username:               buyer.username,
+        password:               temp_password,
+        password_confirmation:  temp_password,
+        provider:               buyer.respond_to?(:provider)               ? buyer.provider               : nil,
+        uid:                    buyer.respond_to?(:uid)                    ? buyer.uid                    : nil,
+        oauth_token:            buyer.respond_to?(:oauth_token)            ? buyer.oauth_token            : nil,
+        oauth_refresh_token:    buyer.respond_to?(:oauth_refresh_token)    ? buyer.oauth_refresh_token    : nil,
+        oauth_expires_at:       buyer.respond_to?(:oauth_expires_at)       ? buyer.oauth_expires_at       : nil,
+        phone_provided_by_oauth: buyer.respond_to?(:phone_provided_by_oauth) ? buyer.phone_provided_by_oauth : nil,
+        enterprise_name:        params[:enterprise_name],
+        location:               params[:location],
+        description:            params[:description],
+        county_id:              params[:county_id],
+        sub_county_id:          params[:sub_county_id],
+        profile_picture:        buyer.profile_picture,
+        age_group_id:           buyer.age_group_id,
+        gender:                 buyer.gender,
+        city:                   buyer.city || params[:city],
+        zipcode:                buyer.zipcode || params[:zipcode]
+      )
+
+      @seller.category_ids = params[:category_ids] if params[:category_ids].present?
+
+      unless @seller.save
+        Rails.logger.error "Seller creation during upgrade failed: #{@seller.errors.full_messages.inspect}"
+        raise ActiveRecord::Rollback, @seller.errors.full_messages.join(", ")
+      end
+
+      # Overwrite temp password with the buyer's real password_digest (skips all validations)
+      if buyer.password_digest.present?
+        @seller.update_column(:password_digest, buyer.password_digest)
+      end
+
+      # --- 3b. Assign Premium tier (6 months) ---
+      seller_tier = SellerTier.new(
+        seller_id:       @seller.id,
+        tier_id:         4, # Premium
+        duration_months: 6,
+        expires_at:      6.months.from_now
+      )
+      unless seller_tier.save
+        Rails.logger.error "Failed to create SellerTier during upgrade: #{seller_tier.errors.full_messages.inspect}"
+        raise ActiveRecord::Rollback, "Failed to assign seller tier"
+      end
+
+      # --- 3c. Migrate all buyer-linked records to the new seller ---
+      conn = ActiveRecord::Base.connection
+
+      # Tables with a direct buyer_id foreign key
+      [
+        { table: :click_events,    fk: :buyer_id },
+        { table: :wish_lists,      fk: :buyer_id },
+        { table: :cart_items,      fk: :buyer_id },
+        { table: :reviews,         fk: :buyer_id },
+        { table: :conversations,   fk: :buyer_id },
+        { table: :ad_searches,     fk: :buyer_id },
+      ].each do |mapping|
+        rows = conn.execute("UPDATE #{mapping[:table]} SET #{mapping[:fk]} = '#{@seller.id}' WHERE #{mapping[:fk]} = '#{buyer.id}'")
+        Rails.logger.info "✅  Migrated #{mapping[:table]} (buyer_id) -> seller #{@seller.id}"
+      end
+
+      # Polymorphic: messages (sender_type = 'Buyer')
+      conn.execute("UPDATE messages SET sender_id = '#{@seller.id}', sender_type = 'Seller' WHERE sender_id = '#{buyer.id}' AND sender_type = 'Buyer'")
+      Rails.logger.info "✅  Migrated messages -> Seller sender"
+
+      # Polymorphic: password_otps (otpable_type = 'Buyer')
+      conn.execute("UPDATE password_otps SET otpable_id = '#{@seller.id}', otpable_type = 'Seller' WHERE otpable_id = '#{buyer.id}' AND otpable_type = 'Buyer'")
+      Rails.logger.info "✅  Migrated password_otps -> Seller"
+
+      # Polymorphic: device_tokens (user_type / tokenable_type)
+      begin
+        conn.execute("UPDATE device_tokens SET user_id = '#{@seller.id}', user_type = 'Seller' WHERE user_id = '#{buyer.id}' AND user_type = 'Buyer'")
+        Rails.logger.info "✅  Migrated device_tokens -> Seller"
+      rescue => e
+        Rails.logger.warn "⚠️  device_tokens migration skipped: #{e.message}"
+      end
+
+      # --- 3d. Destroy the buyer record (hard delete — they are now a seller) ---
+      buyer.destroy!
+      Rails.logger.info "✅  Buyer #{buyer.id} destroyed — fully migrated to Seller #{@seller.id}"
+    end
+
+    # --- 4. Post-transaction side effects ---
+    begin
+      WelcomeMailer.welcome_email(@seller).deliver_now
+    rescue => e
+      Rails.logger.error "Failed to send welcome email during upgrade: #{e.message}"
+    end
+
+    token = JsonWebToken.encode(
+      seller_id: @seller.id,
+      email:     @seller.email,
+      role:      'Seller',
+      remember_me: true
+    )
+
+    render json: { 
+      success: true, 
+      message: "Successfully upgraded to seller account!",
+      token: token,
+      user: {
+        id:               @seller.id,
+        email:            @seller.email,
+        role:             'Seller',
+        name:             @seller.fullname,
+        username:         @seller.username,
+        enterprise_name:  @seller.enterprise_name,
+        profile_picture:  @seller.profile_picture
+      }
+    }, status: :created
+
+  rescue ActiveRecord::Rollback => e
+    render json: { success: false, error: e.message.presence || "Upgrade failed. Please try again." }, status: :unprocessable_entity
+  rescue => e
+    Rails.logger.error "Unexpected error during upgrade: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+    render json: { success: false, error: "Upgrade failed: #{e.message}" }, status: :internal_server_error
+  end
+
   
 
   private

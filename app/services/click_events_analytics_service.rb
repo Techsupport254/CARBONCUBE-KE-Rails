@@ -348,7 +348,7 @@ class ClickEventsAnalyticsService
       .order("click_events.created_at DESC")
       .offset(offset)
       .limit(per_page)
-      .includes(:buyer, ad: [:category, :subcategory, :seller])
+      .includes(:buyer, :seller, ad: [:category, :subcategory, :seller])
     
     # Map events with optional user agent parsing
     events = events_query.map { |event| format_click_event(event, parse_user_agent: parse_user_agent) }
@@ -797,19 +797,74 @@ class ClickEventsAnalyticsService
         name: buyer.fullname,
         email: buyer.email,
         username: buyer.username,
-        phone: buyer.phone_number
+        phone: buyer.phone_number,
+        profile_picture: buyer.profile_picture
       }
     end
     
-    user_info_from_metadata = nil
+    user_info = nil
     if metadata['user_id'] || metadata[:user_id]
-      user_info_from_metadata = {
-        id: metadata['user_id'] || metadata[:user_id],
-        role: metadata['user_role'] || metadata[:user_role],
+      user_id = metadata['user_id'] || metadata[:user_id]
+      user_role = metadata['user_role'] || metadata[:user_role]
+      user_info = {
+        id: user_id,
+        role: user_role,
         email: metadata['user_email'] || metadata[:user_email],
-        username: metadata['user_username'] || metadata[:user_username]
+        username: metadata['user_username'] || metadata[:user_username],
+        profile_picture: metadata['user_profile_picture'] || metadata[:user_profile_picture]
+      }
+      
+      # Try to enrich missing details from database
+      if user_info[:username].blank? || user_info[:email].blank? || user_info[:role].blank? || user_info[:profile_picture].blank?
+        # Try finding as seller first
+        if user_role&.downcase == 'seller' || user_role.blank?
+          db_seller = event.seller || (event.ad&.seller if user_id.to_s == event.ad&.seller_id.to_s) || Seller.find_by(id: user_id)
+          if db_seller
+            user_info[:username] ||= db_seller.enterprise_name.presence || db_seller.fullname.presence || db_seller.username.presence
+            user_info[:email] ||= db_seller.email
+            user_info[:role] ||= 'seller'
+            user_info[:profile_picture] ||= db_seller.profile_picture.presence
+          end
+        end
+        
+        # Try finding as buyer if still missing details
+        if (user_info[:username].blank? && (user_role&.downcase == 'buyer' || user_role.blank?))
+          db_buyer = event.buyer || Buyer.find_by(id: user_id)
+          if db_buyer
+            user_info[:username] ||= db_buyer.fullname.presence || db_buyer.username.presence
+            user_info[:email] ||= db_buyer.email
+            user_info[:role] ||= 'buyer'
+            user_info[:profile_picture] ||= db_buyer.profile_picture
+          end
+        end
+      end
+    end
+    
+    # Fallback to direct seller_id column if metadata user is missing
+    if user_info.nil? && event.respond_to?(:seller_id) && event.seller
+      user_info = {
+        id: event.seller.id,
+        role: 'seller',
+        username: event.seller.enterprise_name.presence || event.seller.fullname.presence || event.seller.username.presence,
+        email: event.seller.email,
+        profile_picture: event.seller.profile_picture.presence
       }
     end
+    
+    # Ensure role is capitalized correctly for display if we have it
+    if user_info && user_info[:role]
+      user_info[:role] = user_info[:role].to_s.capitalize
+    end
+
+    # Determine guest status based on whether we successfully identified a user
+    is_guest_from_metadata = metadata.key?('is_guest') ? metadata['is_guest'] : (metadata.key?(:is_guest) ? metadata[:is_guest] : nil)
+    is_guest = if user_info.present? || event.buyer_id || (event.respond_to?(:seller_id) && event.seller_id)
+                 false
+               elsif is_guest_from_metadata.nil?
+                 true
+               else
+                 is_guest_from_metadata
+               end
     
     # Extract contact interaction details if this is a seller contact interaction
     contact_interaction = nil
@@ -838,9 +893,9 @@ class ClickEventsAnalyticsService
       created_at: event.created_at&.iso8601,
       buyer_id: event.buyer_id,
       buyer_info: buyer_info,
-      user_info: user_info_from_metadata,
-      was_authenticated: metadata['was_authenticated'] || metadata[:was_authenticated] || false,
-      is_guest: metadata['is_guest'] || metadata[:is_guest] || !event.buyer_id,
+      user_info: user_info,
+      was_authenticated: (metadata['was_authenticated'] == true || metadata[:was_authenticated] == true || user_info.present? || false),
+      is_guest: is_guest,
       device_hash: metadata['device_hash'] || metadata[:device_hash],
       user_agent: user_agent_raw,
       user_agent_details: user_agent_details,

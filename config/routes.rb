@@ -618,6 +618,7 @@ Rails.application.routes.draw do
         post 'change-password', to: 'profiles#change_password'
         post 'request-verification', to: 'profiles#request_verification'
         post 'verify-email', to: 'profiles#verify_email'
+        post 'upgrade_to_seller', to: 'profiles#upgrade_to_seller'
       end
 
       resources :wish_lists, only: [:index, :create, :destroy] do
@@ -766,6 +767,7 @@ Rails.application.routes.draw do
       post 'change-password', to: 'profiles#change_password'
       post 'request-verification', to: 'profiles#request_verification'
       post 'verify-email', to: 'profiles#verify_email'
+      post 'upgrade_to_seller', to: 'profiles#upgrade_to_seller'
     end
 
     resources :wish_lists, only: [:index, :create, :destroy] do

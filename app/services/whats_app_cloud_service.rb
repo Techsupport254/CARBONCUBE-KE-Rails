@@ -47,7 +47,6 @@ class WhatsAppCloudService
         Rails.logger.info "[WhatsAppCloudService] Message sent to #{formatted_to}: #{result['messages']&.first&.[]('id')}"
         { success: true, message_id: result['messages']&.first&.[]('id') }
       else
-        Rails.logger.error "[WhatsAppCloudService] Failed to send message: #{response.body}"
         { success: false, error: result['error']&.[]('message') || 'Unknown error' }
       end
     rescue StandardError => e

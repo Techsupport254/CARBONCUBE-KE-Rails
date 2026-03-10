@@ -6,6 +6,7 @@ class Seller < ApplicationRecord
   before_create :generate_uuid
   before_validation :normalize_email
   before_validation :normalize_username
+  before_validation :normalize_phone_numbers
   
   # Store device hash temporarily for association (set via attr_accessor)
   attr_accessor :device_hash_for_association
@@ -216,12 +217,9 @@ class Seller < ApplicationRecord
   end
 
   def auto_verify_document_for_2025_and_2026_sellers
-    # Automatically verify documents for sellers registered in 2025 or 2026 (same logic as premium promo for first half of 2026)
-    # Sales team confirms these registrations physically, so all should be verified
     seller_year = new_record? ? Time.current.year : (created_at&.year || Time.current.year)
     if [2025, 2026].include?(seller_year) && !document_verified?
       self.document_verified = true
-      Rails.logger.info "✅ Auto-verifying document for #{seller_year} seller #{id || 'new'} (premium promo cohort)"
     end
   end
 
@@ -236,5 +234,21 @@ class Seller < ApplicationRecord
           Rails.cache.delete('buyer_categories_with_ads_count')
       Rails.cache.delete('buyer_category_analytics')
     Rails.cache.delete('buyer_subcategories_all')
+  end
+
+  def normalize_phone_numbers
+    self.phone_number = normalize_phone(phone_number) if phone_number.present?
+    self.secondary_phone_number = normalize_phone(secondary_phone_number) if secondary_phone_number.present?
+  end
+
+  def normalize_phone(phone)
+    digits = phone.to_s.gsub(/[^0-9]/, "")
+    if digits.start_with?("254") && digits.length == 12
+      "0#{digits[3..]}"
+    elsif digits.length > 10
+      digits.last(10)
+    else
+      digits
+    end
   end
 end

@@ -1666,9 +1666,10 @@ class AuthenticationController < ApplicationController
   end
 
   def find_user_by_email(email)
-    # Only search by email
-    Buyer.find_by(email: email) ||
+    # Priority: Seller -> Buyer -> Admin -> others
+    # Sellers take priority — upgraded buyers no longer have a buyer record (it was destroyed).
     Seller.find_by(email: email) ||
+    Buyer.find_by(email: email) ||
     Admin.find_by(email: email) ||
     SalesUser.find_by(email: email) ||
     MarketingUser.find_by(email: email)

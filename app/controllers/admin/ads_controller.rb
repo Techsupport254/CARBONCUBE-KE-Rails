@@ -1,5 +1,7 @@
 class Admin::AdsController < ApplicationController
   before_action :authenticate_admin
+
+  EFFECTIVE_IS_ADDED_BY_SALES_SQL = Ad.effective_is_added_by_sales_sql
   
   # GET /admin/ads
   def index
@@ -36,7 +38,7 @@ class Admin::AdsController < ApplicationController
     offset = (page - 1) * per_page
     @ads = base_query
          .order(created_at: :desc)  # Sort by latest first
-         .select('ads.*, seller_tiers.tier_id AS seller_tier')  # Select tier_id from seller_tiers
+         .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
          .limit(per_page)
          .offset(offset)
     
@@ -44,8 +46,8 @@ class Admin::AdsController < ApplicationController
     non_flagged_ads = @ads.reject { |ad| ad.flagged }
 
     render json: {
-      flagged: flagged_ads.as_json(methods: :seller_tier),
-      non_flagged: non_flagged_ads.as_json(methods: :seller_tier),
+      flagged: serialize_ads(flagged_ads),
+      non_flagged: serialize_ads(non_flagged_ads),
       pagination: {
         current_page: page,
         per_page: per_page,
@@ -83,7 +85,7 @@ class Admin::AdsController < ApplicationController
       },
       methods: [:mean_rating, :media_urls, :first_media_url],
       except: [:deleted]
-    )
+    ).merge("is_added_by_sales" => @ad.effective_is_added_by_sales)
   end
 
   # POST /admin/ads
@@ -145,12 +147,12 @@ class Admin::AdsController < ApplicationController
     offset = (page - 1) * per_page
     @ads = base_query
              .order(created_at: :desc)  # Sort by latest first
-             .select('ads.*, seller_tiers.tier_id AS seller_tier')
+             .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
              .limit(per_page)
              .offset(offset)
     
     render json: {
-      ads: @ads.as_json(methods: :seller_tier),
+      ads: serialize_ads(@ads),
       pagination: {
         current_page: page,
         per_page: per_page,
@@ -208,6 +210,13 @@ end
 
 
   private
+
+  def serialize_ads(ads)
+    ads.map do |ad|
+      ad.as_json(methods: :seller_tier)
+        .merge("is_added_by_sales" => ad.respond_to?(:derived_is_added_by_sales) ? ad.derived_is_added_by_sales : ad.effective_is_added_by_sales)
+    end
+  end
 
   def ad_params
     params.require(:ad).permit(:title, :description, :price, :category_id, :subcategory_id, :brand, :manufacturer, :package_dimensions, :package_weight, :seller_id, :condition)
