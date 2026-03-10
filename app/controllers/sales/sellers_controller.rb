@@ -1,6 +1,6 @@
 class Sales::SellersController < ApplicationController
   before_action :authenticate_sales_user
-  before_action :set_seller, only: [:show, :destroy]
+  before_action :set_seller, only: [:show, :destroy, :assign_carbon_code]
 
   # GET /sales/sellers
   def index

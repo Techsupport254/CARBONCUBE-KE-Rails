@@ -45,6 +45,27 @@ class Ad < ApplicationRecord
     SQL
   end
 
+  def self.is_legacy_sales_added_sql
+    <<~SQL.squish
+      (ads.is_added_by_sales IS NULL AND (
+        (SELECT MIN(t.created_at) FROM ads t WHERE t.is_added_by_sales = TRUE) IS NULL
+        OR ads.created_at < (SELECT MIN(t.created_at) FROM ads t WHERE t.is_added_by_sales = TRUE)
+      ))
+    SQL
+  end
+
+  def self.is_window_sales_added_sql
+    <<~SQL.squish
+      (ads.is_added_by_sales IS NOT TRUE AND 
+       sellers.created_at IS NOT NULL AND 
+       ads.created_at <= sellers.created_at + INTERVAL '1 day' AND NOT #{is_legacy_sales_added_sql})
+    SQL
+  end
+
+  def self.is_explicit_sales_added_sql
+    "(ads.is_added_by_sales = TRUE)"
+  end
+
   def model
     # Use attributes.key? directly to avoid triggering AR's MissingAttributeError log subscriber
     attributes.key?('model') ? self[:model] : nil

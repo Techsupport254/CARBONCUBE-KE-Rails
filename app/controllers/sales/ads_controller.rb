@@ -158,7 +158,6 @@ class Sales::AdsController < ApplicationController
              .where(sellers: { blocked: false, deleted: false })
     
     # Get the date when explicit sales-added tracking started.
-    # Anything before this is treated as legacy sales-added data.
     first_tracked_ad = Ad.where(is_added_by_sales: true)
                          .order('ads.created_at ASC')
                          .select('ads.created_at')
@@ -171,8 +170,11 @@ class Sales::AdsController < ApplicationController
       'COUNT(*) as total',
       'SUM(CASE WHEN ads.flagged = true THEN 1 ELSE 0 END) as flagged',
       'SUM(CASE WHEN ads.flagged = false THEN 1 ELSE 0 END) as active',
-      "SUM(CASE WHEN #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = TRUE THEN 1 ELSE 0 END) as sales_added",
-      "SUM(CASE WHEN #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = FALSE THEN 1 ELSE 0 END) as seller_added"
+      "SUM(CASE WHEN #{Ad.effective_is_added_by_sales_sql} = TRUE THEN 1 ELSE 0 END) as sales_added",
+      "SUM(CASE WHEN #{Ad.effective_is_added_by_sales_sql} = FALSE THEN 1 ELSE 0 END) as seller_added",
+      "SUM(CASE WHEN #{Ad.is_legacy_sales_added_sql} = TRUE THEN 1 ELSE 0 END) as legacy_sales_added",
+      "SUM(CASE WHEN #{Ad.is_window_sales_added_sql} = TRUE THEN 1 ELSE 0 END) as window_sales_added",
+      "SUM(CASE WHEN #{Ad.is_explicit_sales_added_sql} = TRUE THEN 1 ELSE 0 END) as explicit_sales_added"
     ).unscope(:order).to_sql
     
     result = ActiveRecord::Base.connection.execute(sql).first
@@ -186,6 +188,9 @@ class Sales::AdsController < ApplicationController
       flagged: get_value.call('flagged').to_i,
       sales_added: get_value.call('sales_added').to_i,
       seller_added: get_value.call('seller_added').to_i,
+      legacy_sales_added: get_value.call('legacy_sales_added').to_i,
+      window_sales_added: get_value.call('window_sales_added').to_i,
+      explicit_sales_added: get_value.call('explicit_sales_added').to_i,
       tracking_start_date: tracking_start_date.iso8601
     }
   end
