@@ -15,6 +15,7 @@ class Seller < ApplicationRecord
   has_and_belongs_to_many :categories
   has_many :ads, dependent: :destroy
   has_many :reviews_received, through: :ads, source: :reviews
+  has_many :reviews, through: :ads
   has_many :reviews_written, class_name: 'Review', foreign_key: 'seller_id', dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
