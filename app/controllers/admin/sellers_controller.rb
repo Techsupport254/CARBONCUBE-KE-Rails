@@ -162,7 +162,7 @@ class Admin::SellersController < ApplicationController
   end
 
   def reviews
-    reviews = @seller.reviews.joins(:ad, :buyer)
+    reviews = @seller.reviews_received.joins(:ad, :buyer)
                            .where(ads: { id: @seller.ads.pluck(:id) })
                            .select('reviews.*, buyers.fullname AS buyer_name, ads.title AS ad_title')
     render json: reviews.as_json(only: [:id, :rating, :review, :created_at],
@@ -177,7 +177,7 @@ class Admin::SellersController < ApplicationController
 
   def block
     if @seller
-      mean_rating = @seller.reviews.average(:rating).to_f
+      mean_rating = @seller.reviews_received.average(:rating).to_f
 
       if mean_rating < 3.0
         if @seller.update(blocked: true)
@@ -489,12 +489,12 @@ class Admin::SellersController < ApplicationController
       total_ads_wishlisted: WishList.where(ad_id: ad_ids).count,
 
       # Rating
-      mean_rating: seller.reviews.joins(:ad)
+      mean_rating: seller.reviews_received.joins(:ad)
                                 .where(ads: { id: ad_ids })
                                 .average(:rating).to_f.round(2),
   
       # Total Reviews
-      total_reviews: seller.reviews.joins(:ad)
+      total_reviews: seller.reviews_received.joins(:ad)
                                    .where(ads: { id: ad_ids })
                                    .group(:rating)
                                    .count
@@ -504,7 +504,7 @@ class Admin::SellersController < ApplicationController
       rating_pie_chart: (1..5).map do |rating|
         {
           rating: rating,
-          count: seller.reviews.joins(:ad)
+          count: seller.reviews_received.joins(:ad)
                               .where(ads: { id: ad_ids })
                               .group(:rating)
                               .count[rating] || 0
@@ -512,7 +512,7 @@ class Admin::SellersController < ApplicationController
       end,
   
       # Reviews
-      reviews: seller.reviews.joins(:ad, :buyer)
+      reviews: seller.reviews_received.joins(:ad, :buyer)
                       .where(ads: { id: ad_ids })
                       .select('reviews.*, buyers.fullname AS buyer_name')
                       .as_json(only: [:id, :rating, :review, :created_at],
