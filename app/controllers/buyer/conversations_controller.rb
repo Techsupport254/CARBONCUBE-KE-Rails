@@ -188,20 +188,24 @@ class Buyer::ConversationsController < ApplicationController
     # Get all conversations for the current buyer with unread message counts
     conversations = Conversation.where(buyer_id: @current_user.id)
                                 .active_participants
-    
-    unread_counts = conversations.map do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
-                                .where(read_at: nil)
-                                .count
-      
+
+    grouped_conversations = conversations.group_by(&:seller_id)
+
+    unread_counts = grouped_conversations.values.map do |conversation_group|
+      most_recent_conversation = conversation_group.max_by(&:updated_at)
+      unread_count = conversation_group.sum do |conversation|
+        conversation.messages
+                    .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
+                    .where(read_at: nil)
+                    .count
+      end
+
       {
-        conversation_id: conversation.id,
+        conversation_id: most_recent_conversation.id,
         unread_count: unread_count
       }
     end
-    
-    # Count conversations with unread messages
+
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
     
     render json: { 

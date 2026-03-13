@@ -3,13 +3,17 @@ class ConversationSerializer < ActiveModel::Serializer
              :admin, :buyer, :seller, :inquirer_seller, :ad, :is_whatsapp
 
   def admin
-    return nil unless object.admin
+    admin_user = object.admin || 
+                 SalesUser.find_by(id: object.admin_id) ||
+                 MarketingUser.find_by(id: object.admin_id)
+    return nil unless admin_user
+
     {
-      id: object.admin.id,
-      fullname: object.admin.fullname,
-      username: object.admin.username,
-      email: object.admin.email,
-      profile_picture: nil  # Admin model doesn't have profile_picture
+      id: admin_user.id,
+      fullname: admin_user.fullname,
+      username: admin_user.try(:username) || admin_user.fullname,
+      email: admin_user.email,
+      profile_picture: nil  # Admin/Sales/Marketing models don't have profile_picture
     }
   end
 

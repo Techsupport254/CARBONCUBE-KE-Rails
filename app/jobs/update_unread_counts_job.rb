@@ -1,8 +1,8 @@
 class UpdateUnreadCountsJob < ApplicationJob
   queue_as :default
   
-  # Retry configuration with exponential backoff
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  # Retry configuration with the Rails-supported polynomial backoff
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
   
   def perform(conversation_id, message_id)
     # Rails.logger.info "UpdateUnreadCountsJob: Starting for conversation #{conversation_id}, message #{message_id}"

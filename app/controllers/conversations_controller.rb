@@ -117,7 +117,8 @@ class ConversationsController < ApplicationController
       return
     end
 
-    unread_messages = @conversation.messages.unread.where.not(sender: @current_user)
+    unread_messages = related_conversations_for_mark_read
+      .flat_map { |conversation| conversation.messages.unread.where.not(sender: @current_user).to_a }
     
     processed_count = 0
     unread_messages.each do |message|
@@ -487,17 +488,59 @@ class ConversationsController < ApplicationController
     Conversation.active_participants.find_by(id: params[:id])
   end
 
+  def related_conversations_for_mark_read
+    return [@conversation] unless @conversation
+
+    case @current_user.class.name
+    when 'Buyer'
+      if @conversation.seller_id.present?
+        Conversation.where(buyer_id: @current_user.id, seller_id: @conversation.seller_id).active_participants.to_a
+      elsif @conversation.admin_id.present?
+        Conversation.where(buyer_id: @current_user.id, admin_id: @conversation.admin_id).active_participants.to_a
+      else
+        [@conversation]
+      end
+    when 'Seller'
+      if @conversation.seller_id == @current_user.id
+        if @conversation.buyer_id.present?
+          Conversation.where(seller_id: @current_user.id, buyer_id: @conversation.buyer_id).active_participants.to_a
+        elsif @conversation.inquirer_seller_id.present?
+          Conversation.where(seller_id: @current_user.id, inquirer_seller_id: @conversation.inquirer_seller_id).active_participants.to_a
+        elsif @conversation.admin_id.present?
+          Conversation.where(seller_id: @current_user.id, admin_id: @conversation.admin_id).active_participants.to_a
+        else
+          [@conversation]
+        end
+      elsif @conversation.inquirer_seller_id == @current_user.id && @conversation.seller_id.present?
+        Conversation.where(seller_id: @conversation.seller_id, inquirer_seller_id: @current_user.id).active_participants.to_a
+      elsif @conversation.buyer_id == @current_user.id && @conversation.seller_id.present?
+        Conversation.where(buyer_id: @current_user.id, seller_id: @conversation.seller_id).active_participants.to_a
+      else
+        [@conversation]
+      end
+    else
+      [@conversation]
+    end
+  end
+
   # Buyer conversation methods
   def fetch_buyer_conversations
-    # Implementation from buyer conversations controller
-    # Only return conversations that have at least one message
-    @conversations = Conversation.where("conversations.buyer_id = ?", @current_user.id)
+    conversations = Conversation.where("conversations.buyer_id = ?", @current_user.id)
                                 .active_participants
                                 .includes(:admin, :buyer, :seller, :ad, :messages)
                                 .joins(:messages)
                                 .distinct
                                 .order("conversations.updated_at DESC")
-    render json: @conversations, each_serializer: ConversationSerializer
+
+    grouped_conversations = conversations.group_by do |conversation|
+      if conversation.admin_id.present? && conversation.seller_id.blank?
+        "admin_#{conversation.admin_id}"
+      else
+        "seller_#{conversation.seller_id || 'unknown'}"
+      end
+    end
+
+    render json: serialize_grouped_conversations(grouped_conversations)
   end
 
   def render_buyer_conversation
@@ -588,9 +631,7 @@ class ConversationsController < ApplicationController
 
   # Seller conversation methods
   def fetch_seller_conversations
-    # Implementation from seller conversations controller
-    # Only return conversations that have at least one message
-    @conversations = Conversation.where(
+    conversations = Conversation.where(
       "(conversations.seller_id = ? OR conversations.buyer_id = ? OR conversations.inquirer_seller_id = ?)", 
       @current_user.id, 
       @current_user.id,
@@ -600,40 +641,12 @@ class ConversationsController < ApplicationController
      .joins(:messages)
      .distinct
      .order("conversations.updated_at DESC")
-    
-    # Group and format as per seller controller logic
-    grouped_conversations = @conversations.group_by do |conv|
-      if conv.seller_id == @current_user.id
-        # Current seller is the ad owner, group by the inquirer
-        if conv.buyer_id.present?
-          "buyer_#{conv.buyer_id}"
-        elsif conv.inquirer_seller_id.present?
-          "inquirer_seller_#{conv.inquirer_seller_id}"
-        elsif conv.admin_id.present?
-          # Admin-initiated conversation with seller
-          "admin_#{conv.admin_id}"
-        else
-          # Fallback: no participant
-          "unknown_#{conv.id}"
-        end
-      elsif conv.inquirer_seller_id == @current_user.id
-        # Current seller is the inquirer, group by the ad owner
-        "seller_#{conv.seller_id}"
-      else
-        # Current seller is the buyer, group by the ad owner
-        "seller_#{conv.seller_id}"
-      end
+
+    grouped_conversations = conversations.group_by do |conversation|
+      seller_group_key_for(conversation)
     end
-    
-    # Serialize each conversation group to include user associations
-    serialized_groups = {}
-    grouped_conversations.each do |key, conversations|
-      serialized_groups[key] = conversations.map do |conv|
-        ConversationSerializer.new(conv).as_json
-      end
-    end
-    
-    render json: serialized_groups
+
+    render json: serialize_grouped_conversations(grouped_conversations)
   end
 
   def render_seller_conversation
@@ -732,21 +745,26 @@ class ConversationsController < ApplicationController
     # For Admins, show conversations where they are the admin_id
     if @current_user.is_a?(SalesUser)
       # Sales users can see all conversations
-      @conversations = Conversation.active_participants
-                                      .includes(:admin, :buyer, :seller, :ad, :messages)
-                                      .joins(:messages)
-                                      .distinct
-                                      .order("conversations.updated_at DESC")
+      conversations = Conversation.active_participants
+                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+                                  .joins(:messages)
+                                  .distinct
+                                  .order("conversations.updated_at DESC")
     else
       # Admins see conversations where they are assigned (admin_id)
-      @conversations = Conversation.where(admin_id: @current_user.id)
-                                      .active_participants
-                                      .includes(:admin, :buyer, :seller, :ad, :messages)
-                                      .joins(:messages)
-                                      .distinct
-                                      .order("conversations.updated_at DESC")
+      conversations = Conversation.where(admin_id: @current_user.id)
+                                  .active_participants
+                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+                                  .joins(:messages)
+                                  .distinct
+                                  .order("conversations.updated_at DESC")
     end
-    render json: @conversations, each_serializer: ConversationSerializer
+
+    grouped_conversations = conversations.group_by do |conversation|
+      admin_group_key_for(conversation)
+    end
+
+    render json: serialize_grouped_conversations(grouped_conversations)
   end
 
   def render_admin_conversation
@@ -811,22 +829,29 @@ class ConversationsController < ApplicationController
   def fetch_buyer_unread_counts
     conversations = Conversation.where(buyer_id: @current_user.id)
                                 .active_participants
-    
-    unread_counts = conversations.map do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
-                                .where(read_at: nil)
-                                .count
-      
+
+    grouped_conversations = conversations.group_by do |conversation|
+      if conversation.admin_id.present? && conversation.seller_id.blank?
+        "admin_#{conversation.admin_id}"
+      else
+        "seller_#{conversation.seller_id || 'unknown'}"
+      end
+    end
+
+    unread_counts = grouped_conversations.values.map do |conversation_group|
+      representative = representative_conversation_for(conversation_group)
+      unread_count = conversation_group.sum do |conversation|
+        buyer_unread_count_for(conversation)
+      end
+
       {
-        conversation_id: conversation.id,
+        conversation_id: representative.id,
         unread_count: unread_count
       }
     end
-    
-    # Count conversations with unread messages
+
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
-    
+
     render json: { 
       unread_counts: unread_counts,
       conversations_with_unread: conversations_with_unread
@@ -839,35 +864,25 @@ class ConversationsController < ApplicationController
       @current_user.id, 
       @current_user.id
     ).active_participants
-    
-    unread_counts = conversations.map do |conversation|
-      # For seller-to-seller conversations, count messages not sent by current user
-      # For regular conversations, count messages from buyers, admins, and sales users
-      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-        # Seller-to-seller conversation: count messages not sent by current user
-        unread_count = conversation.messages
-                                  .where.not(sender_id: @current_user.id)
-                                  .where(read_at: nil)
-                                  .count
-      else
-        # Regular conversation: count messages from buyers, admins, and sales users
-        unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                                  .where(read_at: nil)
-                                  .count
+
+    grouped_conversations = conversations.group_by do |conversation|
+      seller_group_key_for(conversation)
+    end
+
+    unread_counts = grouped_conversations.values.map do |conversation_group|
+      representative = representative_conversation_for(conversation_group)
+      unread_count = conversation_group.sum do |conversation|
+        seller_unread_count_for(conversation)
       end
-      
+
       {
-        conversation_id: conversation.id,
+        conversation_id: representative.id,
         unread_count: unread_count
       }
     end
-    
-    # Count conversations with unread messages
+
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
-    
-    total_unread = unread_counts.sum { |item| item[:unread_count] || 0 }
-    
+
     render json: { 
       unread_counts: unread_counts,
       conversations_with_unread: conversations_with_unread
@@ -883,24 +898,28 @@ class ConversationsController < ApplicationController
       conversations = Conversation.where(admin_id: @current_user.id)
                                   .active_participants
     end
-    
-    unread_counts = conversations.map do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
-      
+
+    grouped_conversations = conversations.group_by do |conversation|
+      admin_group_key_for(conversation)
+    end
+
+    unread_counts = grouped_conversations.values.map do |conversation_group|
+      representative = representative_conversation_for(conversation_group)
+      unread_count = conversation_group.sum do |conversation|
+        conversation.messages
+                    .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+                    .where(read_at: nil)
+                    .count
+      end
+
       {
-        conversation_id: conversation.id,
+        conversation_id: representative.id,
         unread_count: unread_count
       }
     end
-    
-    # Count conversations with unread messages
+
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
-    
-    total_unread = unread_counts.sum { |item| item[:unread_count] || 0 }
-    
+
     render json: { 
       unread_counts: unread_counts,
       conversations_with_unread: conversations_with_unread
@@ -952,6 +971,96 @@ class ConversationsController < ApplicationController
     end
     
     render json: { count: total_unread }
+  end
+
+  def seller_group_key_for(conversation)
+    if conversation.seller_id == @current_user.id
+      return "buyer_#{conversation.buyer_id}" if conversation.buyer_id.present?
+      return "inquirer_seller_#{conversation.inquirer_seller_id}" if conversation.inquirer_seller_id.present?
+      return "admin_#{conversation.admin_id}" if conversation.admin_id.present?
+    elsif conversation.inquirer_seller_id == @current_user.id || conversation.buyer_id == @current_user.id
+      return "seller_#{conversation.seller_id}" if conversation.seller_id.present?
+    end
+
+    "unknown_#{conversation.id}"
+  end
+
+  def admin_group_key_for(conversation)
+    buyer_key = conversation.buyer_id.presence || 'none'
+    seller_key = conversation.seller_id.presence || 'none'
+    inquirer_key = conversation.inquirer_seller_id.presence || 'none'
+    admin_key = conversation.admin_id.presence || 'none'
+
+    "admin_thread_#{admin_key}_buyer_#{buyer_key}_seller_#{seller_key}_inquirer_#{inquirer_key}"
+  end
+
+  def representative_conversation_for(conversations)
+    conversations.max_by do |conversation|
+      last_message_time = conversation.messages.maximum(:created_at)
+      last_message_time || conversation.updated_at
+    end
+  end
+
+  def serialize_grouped_conversations(grouped_conversations)
+    grouped_conversations.values.map do |conversation_group|
+      representative = representative_conversation_for(conversation_group)
+      serialized = ConversationSerializer.new(representative).as_json
+      last_message = conversation_group.flat_map(&:messages).max_by(&:created_at)
+
+      serialized.merge(
+        id: representative.id,
+        updated_at: (last_message&.created_at || representative.updated_at),
+        last_message: serialized_last_message(last_message),
+        last_message_time: last_message&.created_at,
+        all_conversation_ids: conversation_group.map(&:id)
+      )
+    end.compact.sort_by do |conversation|
+      conversation[:last_message_time] || conversation[:updated_at] || Time.zone.at(0)
+    end.reverse
+  end
+
+  def serialized_last_message(message)
+    return nil unless message
+
+    status = if message.read_at.present?
+      'read'
+    elsif message.delivered_at.present?
+      'delivered'
+    else
+      message.status.presence || 'sent'
+    end
+
+    {
+      id: message.id,
+      content: message.content,
+      created_at: message.created_at,
+      sender_type: message.sender_type,
+      sender_id: message.sender_id,
+      status: status,
+      read_at: message.read_at,
+      delivered_at: message.delivered_at
+    }
+  end
+
+  def buyer_unread_count_for(conversation)
+    conversation.messages
+                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
+                .where(read_at: nil)
+                .count
+  end
+
+  def seller_unread_count_for(conversation)
+    if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
+      conversation.messages
+                  .where.not(sender_id: @current_user.id)
+                  .where(read_at: nil)
+                  .count
+    else
+      conversation.messages
+                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                  .where(read_at: nil)
+                  .count
+    end
   end
 
   def fetch_admin_unread_count

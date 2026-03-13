@@ -185,31 +185,47 @@ class Seller::ConversationsController < ApplicationController
       @current_seller.id, 
       @current_seller.id
     ).active_participants
-    
-    unread_counts = conversations.map do |conversation|
-      # For seller-to-seller conversations, count messages not sent by current user
-      # For regular conversations, count messages from buyers, admins, and sales users
-      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-        # Seller-to-seller conversation: count messages not sent by current user
-        unread_count = conversation.messages
-                                  .where.not(sender_id: @current_seller.id)
-                                  .where(read_at: nil)
-                                  .count
+
+    grouped_conversations = conversations.group_by do |conv|
+      if conv.seller_id == @current_seller.id
+        if conv.buyer_id.present?
+          "buyer_#{conv.buyer_id}"
+        elsif conv.inquirer_seller_id.present?
+          "inquirer_seller_#{conv.inquirer_seller_id}"
+        elsif conv.admin_id.present?
+          "admin_#{conv.admin_id}"
+        else
+          "unknown_#{conv.id}"
+        end
+      elsif conv.inquirer_seller_id == @current_seller.id
+        "seller_#{conv.seller_id}"
       else
-        # Regular conversation: count messages from buyers, admins, and sales users
-        unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                                  .where(read_at: nil)
-                                  .count
+        "seller_#{conv.seller_id}"
       end
-      
+    end
+
+    unread_counts = grouped_conversations.values.map do |conversation_group|
+      most_recent_conversation = conversation_group.max_by(&:updated_at)
+      unread_count = conversation_group.sum do |conversation|
+        if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
+          conversation.messages
+                      .where.not(sender_id: @current_seller.id)
+                      .where(read_at: nil)
+                      .count
+        else
+          conversation.messages
+                      .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                      .where(read_at: nil)
+                      .count
+        end
+      end
+
       {
-        conversation_id: conversation.id,
+        conversation_id: most_recent_conversation.id,
         unread_count: unread_count
       }
     end
-    
-    # Count conversations with unread messages
+
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
     
     render json: { 

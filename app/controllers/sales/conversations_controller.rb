@@ -5,34 +5,48 @@ class Sales::ConversationsController < ApplicationController
     # Fetch conversations where current sales user is involved
     @conversations = Conversation.where(admin_id: @current_user.id)
                                 .active_participants
-                                .includes(:admin, :seller, :buyer, :ad, :messages, ad: [:category, :subcategory])
+                                .includes(:admin, :seller, :buyer, :inquirer_seller, :ad, :messages, ad: [:category, :subcategory])
                                 .order(updated_at: :desc)
     
-    # Group conversations by seller and get the most recent one for each seller
-    grouped_conversations = @conversations.group_by(&:seller_id)
+    # Group conversations by unique participant pairs to avoid merging different threads
+    grouped_conversations = @conversations.group_by do |c|
+      [c.seller_id, c.buyer_id, c.inquirer_seller_id, c.admin_id]
+    end
     
-    # For each seller, get the most recent conversation and combine all messages
-    conversations_data = grouped_conversations.map do |seller_id, conversations|
-      # Get the most recent conversation for this seller
+    # For each group, get the most recent conversation and combine all messages
+    conversations_data = grouped_conversations.map do |participant_key, conversations|
+      # Get the most recent conversation for this group
       most_recent_conversation = conversations.max_by(&:updated_at)
       
-      # Get all messages from all conversations with this seller
+      # Get all messages from all conversations in this group
       all_messages = conversations.flat_map(&:messages).sort_by(&:created_at)
       last_message = all_messages.last
       
-      # Get the most recent ad context (from the most recent conversation)
+      # Get the most recent ad context
       current_ad = most_recent_conversation.ad
       
+      # Ensure admin info is correctly fetched even if it's a SalesUser/MarketingUser
+      admin_user = most_recent_conversation.admin || 
+                   SalesUser.find_by(id: most_recent_conversation.admin_id) ||
+                   MarketingUser.find_by(id: most_recent_conversation.admin_id)
+
       {
         id: most_recent_conversation.id,
-        seller_id: seller_id,
+        seller_id: most_recent_conversation.seller_id,
         buyer_id: most_recent_conversation.buyer_id,
         admin_id: most_recent_conversation.admin_id,
         created_at: most_recent_conversation.created_at,
         updated_at: most_recent_conversation.updated_at,
-        admin: most_recent_conversation.admin,
+        admin: admin_user ? {
+          id: admin_user.id,
+          fullname: admin_user.fullname,
+          username: admin_user.try(:username),
+          email: admin_user.email,
+          profile_picture: nil
+        } : nil,
         seller: most_recent_conversation.seller,
         buyer: most_recent_conversation.buyer,
+        inquirer_seller: most_recent_conversation.inquirer_seller,
         ad: current_ad,
         messages_count: all_messages.count,
         last_message: last_message&.content,
@@ -87,7 +101,7 @@ class Sales::ConversationsController < ApplicationController
       end
       
       render json: {
-        conversation: @conversation,
+        conversation: @conversation.as_json(include: [:admin, :buyer, :seller, :inquirer_seller]),
         messages: messages_with_ads,
         total_messages: messages_with_ads.count
       }
