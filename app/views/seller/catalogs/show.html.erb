@@ -26,8 +26,8 @@
             font-family: 'Inter', sans-serif;
             background-color: #fafafa;
             color: var(--dark);
-            line-height: 1.6;
-            padding: 30px;
+            line-height: 1.45;
+            padding: 16px;
             position: relative;
         }
 
@@ -36,16 +36,15 @@
             max-width: 1100px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.98);
-            padding: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            border-radius: 12px;
-            border-top: 8px solid var(--primary);
+            padding: 18px;
+            border-radius: 10px;
+            border-top: 4px solid var(--primary);
+            border: 1px solid var(--border);
         }
 
         header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 30px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
             border-bottom: 1px solid var(--border);
             position: relative;
         }
@@ -54,75 +53,140 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 10px;
             width: 100%;
         }
 
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .brand-logo-wrap,
+        .cc-logo-wrap {
+            height: 42px;
+            min-width: 42px;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .header-logo {
-            height: 60px;
-            max-width: 180px;
+            height: 44px;
+            max-width: 140px;
             object-fit: contain;
         }
 
         .cc-logo {
-            height: 50px;
+            height: 38px;
             object-fit: contain;
+        }
+
+        .header-copy {
+            min-width: 0;
+            text-align: left;
+            flex: 1;
+        }
+
+        .catalog-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: var(--primary-dark);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
 
         header h1 {
             color: var(--dark);
-            font-size: 28px;
-            margin: 10px 0 5px;
+            font-size: 20px;
+            margin: 0;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 0.6px;
             font-weight: 800;
+            line-height: 1.15;
         }
 
         header .subtitle {
-            color: var(--primary-dark);
-            font-size: 16px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
+            color: var(--secondary);
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .meta-cluster {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         header .meta {
-            font-size: 12px;
+            font-size: 10px;
             color: var(--secondary);
-            background: var(--accent);
-            display: inline-block;
-            padding: 4px 15px;
-            border-radius: 20px;
-            font-weight: 500;
+            background: #f9fafb;
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+
+        .meta-emphasis {
+            color: var(--dark);
+            font-weight: 700;
         }
 
         table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
         th {
             background-color: var(--dark);
             color: var(--white);
             text-align: left;
-            padding: 18px 15px;
+            padding: 10px 10px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.6px;
         }
 
         th:first-child { border-top-left-radius: 8px; }
         th:last-child { border-top-right-radius: 8px; }
 
         td {
-            padding: 15px;
+            padding: 10px;
             border-bottom: 1px solid var(--border);
             vertical-align: top;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         tr:nth-child(even) {
@@ -134,23 +198,23 @@
         }
 
         .img-cell {
-            width: 90px;
+            width: 72px;
         }
 
         .product-img {
-            width: 70px;
-            height: 70px;
-            object-fit: cover;
-            border-radius: 8px;
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            border-radius: 6px;
             border: 1px solid var(--border);
             background: #fff;
         }
 
         .price {
             font-weight: 800;
-            color: var(--dark);
+            color: var(--primary-dark);
             white-space: nowrap;
-            font-size: 15px;
+            font-size: 12px;
         }
 
         .deleted-badge {
@@ -168,23 +232,82 @@
         }
 
         .desc {
-            max-width: 450px;
+            max-width: 440px;
             color: var(--secondary);
+            font-size: 11px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .desc > *:first-child {
+            margin-top: 0;
+        }
+
+        .desc > *:last-child {
+            margin-bottom: 0;
+        }
+
+        .desc p,
+        .desc ul,
+        .desc ol,
+        .desc blockquote,
+        .desc pre,
+        .desc h1,
+        .desc h2,
+        .desc h3,
+        .desc h4,
+        .desc h5,
+        .desc h6 {
+            margin: 0 0 6px;
+        }
+
+        .desc ul,
+        .desc ol {
+            padding-left: 16px;
+        }
+
+        .desc h1,
+        .desc h2,
+        .desc h3,
+        .desc h4,
+        .desc h5,
+        .desc h6 {
+            color: var(--dark);
             font-size: 12px;
-            margin-top: 5px;
-            line-height: 1.5;
+            font-weight: 700;
+        }
+
+        .desc code,
+        .desc pre {
+            font-size: 10px;
+            background: #f3f4f6;
+            border-radius: 4px;
+        }
+
+        .desc code {
+            padding: 1px 4px;
+        }
+
+        .desc pre {
+            padding: 6px;
+            overflow-x: auto;
+        }
+
+        .desc a {
+            color: var(--primary-dark);
+            text-decoration: none;
         }
 
         .view-link {
             display: inline-flex;
             align-items: center;
-            margin-top: 12px;
-            padding: 5px 12px;
+            margin-top: 8px;
+            padding: 4px 10px;
             background-color: var(--dark);
             color: var(--white);
             text-decoration: none;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             transition: all 0.2s;
         }
@@ -198,36 +321,36 @@
             width: 40px;
             color: var(--secondary);
             font-weight: 600;
+            font-size: 11px;
         }
 
         .no-print-actions {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
+            bottom: 16px;
+            right: 16px;
             display: flex;
-            gap: 15px;
+            gap: 10px;
             z-index: 1000;
         }
 
         .action-btn {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
+            gap: 6px;
+            padding: 8px 14px;
             background: var(--dark);
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             font-weight: 700;
-            font-size: 14px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 11px;
             transition: all 0.3s;
             text-decoration: none;
         }
 
         .action-btn:hover {
-            transform: translateY(-3px);
+            transform: translateY(-1px);
             background: var(--primary-dark);
             color: white;
         }
@@ -270,6 +393,7 @@
                 max-width: 100% !important; 
                 padding: 0 !important; 
                 border-top: none !important;
+                border: none !important;
                 background: white !important;
             }
             .no-print-actions { display: none !important; }
@@ -306,6 +430,47 @@
                 size: portrait;
             }
         }
+
+        .footer {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            color: var(--secondary);
+            font-size: 10px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 12px;
+            }
+
+            .logos-row {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .header-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .footer {
+                flex-direction: column;
+            }
+        }
     </style>
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -323,16 +488,29 @@
     <div class="container">
         <header>
             <div class="logos-row">
-                <% if @seller.profile_picture.present? %>
-                    <img src="<%= @seller.profile_picture %>" alt="<%= @seller.enterprise_name %> Logo" class="header-logo">
-                <% else %>
-                    <div style="width:60px;"></div>
-                <% end %>
-                <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Logo" class="cc-logo">
+                <div class="brand-lockup">
+                    <% if @seller.profile_picture.present? %>
+                        <div class="brand-logo-wrap">
+                            <img src="<%= @seller.profile_picture %>" alt="<%= @seller.enterprise_name %> Logo" class="header-logo">
+                        </div>
+                    <% end %>
+                    <div class="header-copy">
+                        <div class="catalog-chip">Seller Catalog</div>
+                        <h1><%= @seller.enterprise_name.upcase %></h1>
+                        <p class="subtitle">Official product catalog and inventory list</p>
+                    </div>
+                </div>
+                <div class="cc-logo-wrap">
+                    <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Logo" class="cc-logo">
+                </div>
             </div>
-            <h1><%= @seller.enterprise_name.upcase %></h1>
-            <p class="subtitle">Official Product Catalog & Inventory List</p>
-            <p class="meta">Generated on <%= Time.current.strftime('%B %d, %Y') %> | Total Inventory: <%= @products.size %> Items</p>
+            <div class="header-meta">
+                <div class="meta-cluster">
+                    <span class="meta">Generated on <span class="meta-emphasis">&nbsp;<%= Time.current.strftime('%B %d, %Y') %></span></span>
+                    <span class="meta">Inventory <span class="meta-emphasis">&nbsp;<%= @products.size %> items</span></span>
+                </div>
+                <span class="meta">Powered by <span class="meta-emphasis">&nbsp;Carbon Cube</span></span>
+            </div>
         </header>
 
         <table>
@@ -357,20 +535,20 @@
                         <% end %>
                     </td>
                     <td>
-                        <div style="font-weight: 600; font-size: 15px;">
+                        <div style="font-weight: 700; font-size: 13px; line-height: 1.3;">
                             <%= p.title %>
                             <% if p.deleted %>
                                 <span class="deleted-badge">Deleted</span>
                             <% end %>
                         </div>
-                        <div class="desc"><%= p.description %></div>
+                        <div class="desc"><%= render_catalog_markdown(p.description) %></div>
                         <% unless p.deleted %>
                             <a href="https://carboncube-ke.com/ads/<%= Ad.slugify(p.title) %>?id=<%= p.id %>" target="_blank" class="view-link">View Online</a>
                         <% end %>
                     </td>
                     <td>
-                        <div style="font-weight: 600;"><%= p.category_name %></div>
-                        <div style="color: var(--secondary);"><%= p.subcategory_name %></div>
+                        <div style="font-weight: 600; font-size: 11px;"><%= p.category_name %></div>
+                        <div style="color: var(--secondary); font-size: 10px;"><%= p.subcategory_name %></div>
                     </td>
                     <td class="price">
                         <%= number_with_delimiter(p.price) %>

@@ -33,7 +33,7 @@ class MessagesController < ApplicationController
     
     begin
       message_id = params[:id] || params[:message_id]
-      message = @conversation.messages.find(message_id)
+      message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
         message.mark_as_read!
@@ -60,7 +60,7 @@ class MessagesController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
       # Message doesn't exist - return success to prevent frontend errors
-      Rails.logger.info "Message #{message_id} not found in conversation #{@conversation.id}, likely deleted"
+      Rails.logger.info "Message #{message_id} not found in conversation thread #{@conversation.id}, likely deleted"
       render json: { 
         success: true, 
         message_id: message_id, 
@@ -88,7 +88,7 @@ class MessagesController < ApplicationController
     
     begin
       message_id = params[:id] || params[:message_id]
-      message = @conversation.messages.find(message_id)
+      message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
         message.mark_as_delivered!
@@ -107,7 +107,7 @@ class MessagesController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
       # Message doesn't exist - return success to prevent frontend errors
-      Rails.logger.info "Message #{message_id} not found in conversation #{@conversation.id}, likely deleted"
+      Rails.logger.info "Message #{message_id} not found in conversation thread #{@conversation.id}, likely deleted"
       render json: { 
         success: true, 
         message_id: message_id, 
@@ -120,7 +120,7 @@ class MessagesController < ApplicationController
   def status
     begin
       message_id = params[:id] || params[:message_id]
-      message = @conversation.messages.find(message_id)
+      message = find_message_for_status_update(message_id)
       
       if message
         render json: {
@@ -136,7 +136,7 @@ class MessagesController < ApplicationController
       end
     rescue ActiveRecord::RecordNotFound
       # Message doesn't exist - return not found status
-      Rails.logger.info "Message #{message_id} not found in conversation #{@conversation.id}, likely deleted"
+      Rails.logger.info "Message #{message_id} not found in conversation thread #{@conversation.id}, likely deleted"
       render json: { 
         error: 'Message not found',
         message_id: params[:message_id],
@@ -231,8 +231,8 @@ class MessagesController < ApplicationController
   private
 
   def authenticate_user
-    # Try authenticating as different user types
-    @current_user = authenticate_seller || authenticate_buyer || authenticate_admin || authenticate_sales_user
+    # Check sales/admin first to avoid noisy role-mismatch logs on shared message routes
+    @current_user = authenticate_sales_user || authenticate_admin || authenticate_seller || authenticate_buyer
     
     unless @current_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
@@ -446,6 +446,57 @@ class MessagesController < ApplicationController
 
   def message_params
     params.require(:message).permit(:content, :ad_id)
+  end
+
+  def find_message_for_status_update(message_id)
+    message = @conversation.messages.find_by(id: message_id)
+    return message if message
+
+    related_conversations_for_status_update.each do |conversation|
+      next if conversation.id == @conversation.id
+
+      related_message = conversation.messages.find_by(id: message_id)
+      return related_message if related_message
+    end
+
+    raise ActiveRecord::RecordNotFound
+  end
+
+  def related_conversations_for_status_update
+    case @current_user.class.name
+    when 'Buyer'
+      if @conversation.seller_id.present?
+        Conversation.where(
+          buyer_id: @current_user.id,
+          seller_id: @conversation.seller_id
+        ).active_participants
+      else
+        Conversation.where(id: @conversation.id)
+      end
+    when 'Seller'
+      if @conversation.admin_id.present?
+        Conversation.where(id: @conversation.id)
+      elsif @conversation.buyer_id.present?
+        Conversation.where(
+          seller_id: @conversation.seller_id,
+          buyer_id: @conversation.buyer_id
+        ).active_participants
+      elsif @conversation.inquirer_seller_id.present? && @conversation.seller_id == @current_user.id
+        Conversation.where(
+          seller_id: @current_user.id,
+          inquirer_seller_id: @conversation.inquirer_seller_id
+        ).active_participants
+      elsif @conversation.inquirer_seller_id == @current_user.id && @conversation.seller_id.present?
+        Conversation.where(
+          seller_id: @conversation.seller_id,
+          inquirer_seller_id: @current_user.id
+        ).active_participants
+      else
+        Conversation.where(id: @conversation.id)
+      end
+    else
+      Conversation.where(id: @conversation.id)
+    end
   end
 
   def broadcast_read_receipt(message)

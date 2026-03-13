@@ -55,6 +55,61 @@ class WhatsAppCloudService
     end
   end
 
+  def self.send_template_with_image(to, template_name, image_url, body_params = [])
+    phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+
+    formatted_to = format_phone_number(to)
+    uri = URI("#{GRAPH_URL}/#{phone_number_id}/messages")
+    
+    # Structure for a Media Template
+    payload = {
+      messaging_product: 'whatsapp',
+      to: formatted_to,
+      type: 'template',
+      template: {
+        name: template_name,
+        language: { code: 'en_US' },
+        components: [
+          {
+            type: 'header',
+            parameters: [
+              { type: 'image', image: { link: image_url } }
+            ]
+          },
+          {
+            type: 'body',
+            parameters: body_params.map { |val| { type: 'text', text: val } }
+          }
+        ]
+      }
+    }
+
+    send_request(uri, payload, access_token)
+  end
+
+  private
+
+  def self.send_request(uri, payload, access_token)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+    request = Net::HTTP::Post.new(uri.path)
+    request['Authorization'] = "Bearer #{access_token}"
+    request['Content-Type'] = 'application/json'
+    request.body = payload.to_json
+
+    response = http.request(request)
+    result = JSON.parse(response.body)
+
+    if response.code.to_i == 200
+      { success: true, message_id: result['messages']&.first&.[]('id') }
+    else
+      { success: false, error: result['error']&.[]('message') || 'Unknown error' }
+    end
+  end
+
   def self.format_phone_number(number)
     cleaned = number.to_s.gsub(/\D/, '')
     if cleaned.start_with?('0')
