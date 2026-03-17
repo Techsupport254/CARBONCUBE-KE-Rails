@@ -16,20 +16,8 @@ class MessagesController < ApplicationController
   end
 
   def mark_as_read
-    # Sales users should not mark messages as read in conversations they're just viewing
-    # They can only mark messages as read if they are a direct participant (admin_id matches)
-    if @current_user.is_a?(SalesUser)
-      # For Sales users, only allow marking as read if they are the admin of this conversation
-      # AND the message was sent to them (not by them)
-      unless @conversation.admin_id == @current_user.id
-        Rails.logger.info "Sales user #{@current_user.id} attempted to mark message as read in conversation #{@conversation.id} where they are not the admin"
-        render json: { 
-          error: 'Sales users cannot mark messages as read in conversations they are viewing',
-          success: false
-        }, status: :forbidden
-        return
-      end
-    end
+    # Sales users can now mark messages as read even if they are just viewing as support
+    # (Previously restricted to direct participants)
     
     begin
       message_id = params[:id] || params[:message_id]
@@ -71,20 +59,8 @@ class MessagesController < ApplicationController
   end
 
   def mark_as_delivered
-    # Sales users should not mark messages as delivered in conversations they're just viewing
-    # They can only mark messages as delivered if they are a direct participant (admin_id matches)
-    if @current_user.is_a?(SalesUser)
-      # For Sales users, only allow marking as delivered if they are the admin of this conversation
-      # AND the message was sent to them (not by them)
-      unless @conversation.admin_id == @current_user.id
-        Rails.logger.info "Sales user #{@current_user.id} attempted to mark message as delivered in conversation #{@conversation.id} where they are not the admin"
-        render json: { 
-          error: 'Sales users cannot mark messages as delivered in conversations they are viewing',
-          success: false
-        }, status: :forbidden
-        return
-      end
-    end
+    # Sales users can now mark messages as delivered even if they are just viewing as support
+    # (Previously restricted to direct participants)
     
     begin
       message_id = params[:id] || params[:message_id]
