@@ -1,6 +1,6 @@
 class Admin::SellersController < ApplicationController
-  before_action :authenticate_admin_or_sales, only: [:index, :show]
-  before_action :authenticate_admin, except: [:index, :show]
+  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics]
+  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics]
   before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
 
   def index

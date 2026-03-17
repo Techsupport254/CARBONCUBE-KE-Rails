@@ -518,6 +518,13 @@ class ConversationsController < ApplicationController
       else
         [@conversation]
       end
+    when 'SalesUser', 'MarketingUser', 'Admin'
+      Conversation.where(
+        admin_id: @conversation.admin_id,
+        buyer_id: @conversation.buyer_id,
+        seller_id: @conversation.seller_id,
+        inquirer_seller_id: @conversation.inquirer_seller_id
+      ).active_participants.to_a
     else
       [@conversation]
     end
