@@ -8,11 +8,22 @@ class ConversationSerializer < ActiveModel::Serializer
                  MarketingUser.find_by(id: object.admin_id)
     return nil unless admin_user
 
+    user_role =
+      case admin_user
+      when SalesUser
+        'sales'
+      when MarketingUser
+        'marketing'
+      else
+        'admin'
+      end
+
     {
       id: admin_user.id,
       fullname: admin_user.fullname,
       username: admin_user.try(:username) || admin_user.fullname,
       email: admin_user.email,
+      role: user_role,
       profile_picture: nil  # Admin/Sales/Marketing models don't have profile_picture
     }
   end

@@ -214,8 +214,8 @@ class Message < ApplicationRecord
       else
         nil
       end
-    when 'Admin'
-      # If admin sent, recipient depends on conversation
+    when 'Admin', 'SalesUser', 'MarketingUser'
+      # If staff sent, recipient depends on conversation
       if conversation.buyer_id
         Buyer.find_by(id: conversation.buyer_id)
       elsif conversation.seller_id
@@ -325,6 +325,15 @@ class Message < ApplicationRecord
     phone_number = recipient.phone_number
     return unless phone_number.present?
     
+    # Check WhatsApp 24-hour window policy
+    # We can only send a free-form message if the customer sent a message within the last 24 hours.
+    last_recipient_msg = conversation.messages.where(sender: recipient).order(created_at: :desc).first
+    
+    if last_recipient_msg.nil? || last_recipient_msg.created_at < 24.hours.ago
+      Rails.logger.info "[Message] Skipping out-bound WhatsApp message to #{phone_number} because the 24hr window is closed. Message stays local."
+      return
+    end
+    
     # In WhatsApp conversations, the recipient might be a Buyer or Seller
     # We send the actual message content directly
     begin
@@ -376,7 +385,7 @@ class Message < ApplicationRecord
       sender.username.present? ? sender.username : sender.email.split('@').first
     when 'Seller'
       sender.fullname.present? ? sender.fullname : sender.enterprise_name
-    when 'Admin'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       'Carbon Cube Support'
     else
       sender.email.split('@').first

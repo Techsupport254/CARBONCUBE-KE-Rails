@@ -64,13 +64,18 @@ class Sales::ConversationsController < ApplicationController
     
     if @conversation
       # Get all conversations with the same seller
-      all_conversations_with_seller = Conversation.where(
-        admin_id: @current_user.id,
-        seller_id: @conversation.seller_id
-      ).active_participants
+      related_conv_ids = [@conversation.id]
       
-      # Get all messages from all conversations with this seller, including ad info
-      all_messages = all_conversations_with_seller.flat_map(&:messages).sort_by(&:created_at)
+      if @conversation.seller_id.present?
+        # Find all Admin-Seller support conversations (no buyer) for this seller
+        admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id)
+                                        .where(buyer_id: nil)
+                                        .pluck(:id)
+        related_conv_ids.concat(admin_seller_convs)
+      end
+      
+      # Get all messages from all conversations in this set
+      all_messages = Message.where(conversation_id: related_conv_ids.uniq).order(created_at: :asc)
       
       # Include ad information for each message
       messages_with_ads = all_messages.map do |message|
@@ -86,15 +91,17 @@ class Sales::ConversationsController < ApplicationController
         
         # Add ad information if the message has an ad_id
         if message.ad_id
-          ad = Ad.find(message.ad_id)
-          message_data[:ad] = {
-            id: ad.id,
-            title: ad.title,
-            price: ad.price,
-            first_media_url: ad.media.first,
-            category: ad.category&.name,
-            subcategory: ad.subcategory&.name
-          }
+          ad = Ad.find_by(id: message.ad_id)
+          if ad
+            message_data[:ad] = {
+              id: ad.id,
+              title: ad.title,
+              price: ad.price,
+              first_media_url: ad.media.first,
+              category: ad.category&.name,
+              subcategory: ad.subcategory&.name
+            }
+          end
         end
         
         message_data

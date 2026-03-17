@@ -4,8 +4,30 @@ class Admin::MessagesController < ApplicationController
 
   # GET /admin/conversations/:conversation_id/messages
   def index
-    # Get all messages from this conversation, including ad info
-    all_messages = @conversation.messages.order(created_at: :asc)
+    # Get all related conversation IDs for this participant set
+    # This ensures marketing broadcasts (admin-seller) show up in specific marketplace threads
+    related_conv_ids = [@conversation.id]
+    
+    if @conversation.seller_id.present?
+      # Find all Admin-Seller support conversations (no buyer) for this seller
+      admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id)
+                                      .where(buyer_id: nil)
+                                      .where.not(admin_id: nil)
+                                      .pluck(:id)
+      related_conv_ids.concat(admin_seller_convs)
+    end
+    
+    if @conversation.buyer_id.present?
+      # Find all Admin-Buyer support conversations (no seller) for this buyer
+      admin_buyer_convs = Conversation.where(buyer_id: @conversation.buyer_id)
+                                     .where(seller_id: nil)
+                                     .where.not(admin_id: nil)
+                                     .pluck(:id)
+      related_conv_ids.concat(admin_buyer_convs)
+    end
+    
+    # Get all messages from these conversations
+    all_messages = Message.where(conversation_id: related_conv_ids.uniq).order(created_at: :asc)
     
     # Include ad information for each message
     messages_with_ads = all_messages.map do |message|

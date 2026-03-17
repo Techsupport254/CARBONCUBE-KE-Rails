@@ -88,6 +88,28 @@ class WhatsAppCloudService
     send_request(uri, payload, access_token)
   end
 
+  def self.send_template(to, template_name, language_code = 'sw', components = [])
+    phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+
+    formatted_to = format_phone_number(to)
+    uri = URI("#{GRAPH_URL}/#{phone_number_id}/messages")
+
+    payload = {
+      messaging_product: 'whatsapp',
+      to: formatted_to,
+      type: 'template',
+      template: {
+        name: template_name,
+        language: { code: language_code }
+      }
+    }
+
+    payload[:template][:components] = components if components.any?
+
+    send_request(uri, payload, access_token)
+  end
+
   private
 
   def self.send_request(uri, payload, access_token)
@@ -157,8 +179,11 @@ class WhatsAppCloudService
       return
     end
 
-    content = if msg_data['type'] == 'text'
+    content = case msg_data['type']
+              when 'text'
                 msg_data['text']['body']
+              when 'reaction'
+                msg_data.dig('reaction', 'emoji') || "👍"
               else
                 "[Message type: #{msg_data['type']}]"
               end
@@ -187,22 +212,32 @@ class WhatsAppCloudService
   end
 
   def self.find_or_create_incoming_conversation(user)
-    # Strategy: 
-    # 1. Look for an existing conversation with an admin (support)
-    # 2. Or look for the most recent conversation the user had
-    # 3. Or create a support conversation
-    
     conv_attrs = if user.is_a?(Buyer)
                    { buyer_id: user.id }
                  else
                    { seller_id: user.id }
                  end
                  
-    # Prefer existing conversation with messages that is marked as whatsapp
-    existing = Conversation.where(conv_attrs).where(is_whatsapp: true).order(updated_at: :desc).first
-    return existing if existing
+    # 1. Prefer existing conversation with an admin (Support/Marketing)
+    # This ensures replies to broadcasts stay in the support thread
+    existing_support = Conversation.where(conv_attrs).where.not(admin_id: nil).order(updated_at: :desc).first
+    if existing_support
+      existing_support.update(is_whatsapp: true) unless existing_support.is_whatsapp?
+      return existing_support
+    end
 
-    # Create a new conversation marked as WhatsApp
+    # 2. Prefer existing conversation marked as WhatsApp (even if no admin yet)
+    existing_whatsapp = Conversation.where(conv_attrs).where(is_whatsapp: true, buyer_id: nil).order(updated_at: :desc).first
+    return existing_whatsapp if existing_whatsapp
+
+    # 3. Last resort: ANY conversation that looks like support (no buyer partner)
+    existing_any_support = Conversation.where(conv_attrs).where(buyer_id: nil).order(updated_at: :desc).first
+    if existing_any_support
+      existing_any_support.update(is_whatsapp: true)
+      return existing_any_support
+    end
+
+    # 4. Create a new conversation marked as WhatsApp
     Conversation.create(conv_attrs.merge(is_whatsapp: true))
   end
 end
