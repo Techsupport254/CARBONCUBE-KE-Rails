@@ -186,6 +186,33 @@ class Admin::SellerCommunicationsController < ApplicationController
     }
   end
 
+  def whatsapp_broadcast
+    template_name = params[:template_name] || 'seller_intro_marketing_text_only'
+    language_code = params[:language_code] || 'sw'
+
+    # Check for active sellers count for the response
+    sellers_count = Seller.where(deleted: [false, nil], blocked: [false, nil])
+                          .where.not(phone_number: [nil, ""]).count
+
+    if params[:execute] == 'true' || params[:execute] == true
+      job = SendSellerMarketingBroadcastJob.perform_later(template_name, language_code)
+      render json: {
+        message: "WhatsApp broadcast for '#{template_name}' queued for #{sellers_count} sellers.",
+        job_id: job.job_id,
+        sellers_targeted: sellers_count,
+        status: 'queued'
+      }
+    else
+      render json: {
+        message: "API Ready. To execute this broadcast to #{sellers_count} sellers, repeat the request with exchange parameter 'execute=true'.",
+        template_requested: template_name,
+        language_requested: language_code,
+        sellers_targeted: sellers_count,
+        status: 'dry_run'
+      }
+    end
+  end
+
   def authenticate_admin!
     # This method should be implemented to check if the current user is an admin
     # For now, we'll assume it's handled by application controller or other middleware

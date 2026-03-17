@@ -342,6 +342,7 @@ Rails.application.routes.draw do
         post 'send_to_test_seller'
         post 'send_bulk_emails'
         post 'send_bulk_communication'
+        post 'whatsapp_broadcast'
       end
     end
     resources :ads do
