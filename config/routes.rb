@@ -692,71 +692,76 @@ Rails.application.routes.draw do
 
       get 'identify', to: 'buyers#identify'
     end
+  end
 
-    # Sales namespace under /api
-    namespace :sales do
-      resources :analytics, only: [:index] do
-        collection do
-          get :recent_users
-          get :devices
-          get :sources
-          get :categories
-          get :searches
-        end
+  # Sales namespace for sales-specific functionality
+  namespace :sales do
+    resources :analytics, only: [:index] do
+      collection do
+        get :recent_users
+        get :devices
+        get :sources
+        get :categories
+        get :searches
       end
-      resources :ad_searches, only: [:index] do
-        collection do
-          get :analytics
-        end
-      end
-      # Direct route for ad stats
-      get 'analytics/ads/:id/stats', to: 'analytics#ad_stats'
-      resources :seller_rankings, only: [:index] do
-        collection do
-          get :by_metric
-        end
-      end
-      resource :profile, only: [:show, :update] do
-        collection do
-          post 'change-password'
-        end
-      end
-      resources :ads, only: [:index, :show, :create, :destroy] do
-        collection do
-          get :flagged
-          get :stats
-          get :conditions
-        end
-        member do
-          patch :flag
-          patch :restore
-        end
-      end
-      resources :click_events, only: [] do
-        collection do
-          get :analytics
-          get :best_ads
-        end
-      end
-      resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
-        collection do
-          get :current
-        end
-      end
-      resources :reviews, only: [:index, :show]
-      resources :sellers, only: [:index, :show, :destroy] do
-        member do
-          patch :assign_carbon_code
-        end
-      end
-      resources :buyers, only: [:index, :show, :destroy]
-      resources :conversations, only: [:index, :show, :create] do
-        resources :messages, only: [:index, :create]
-        get :unread_count, on: :collection
-        get :unread_counts, on: :collection
-      end
-      resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
     end
+    resources :ad_searches, only: [:index] do
+      collection do
+        get :analytics
+      end
+    end
+    # Direct route for ad stats
+    get 'analytics/ads/:id/stats', to: 'analytics#ad_stats'
+    resources :seller_rankings, only: [:index] do
+      collection do
+        get :by_metric
+      end
+    end
+    resource :profile, only: [:show, :update] do
+      collection do
+        post 'change-password'
+      end
+    end
+    resources :ads, only: [:index, :show, :create, :update, :destroy] do
+      collection do
+        get :flagged
+        get :stats
+        get :conditions
+        post :bulk_flag
+        post :bulk_restore
+        post :bulk_destroy
+      end
+      member do
+        patch :flag
+        patch :restore
+        post :offer, to: 'ads#create_offer'
+        delete :offer, to: 'ads#remove_offer'
+      end
+    end
+    resources :click_events, only: [] do
+      collection do
+        get :analytics
+        get :best_ads
+      end
+    end
+    resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
+      collection do
+        get :current
+      end
+    end
+    resources :reviews, only: [:index, :show]
+    resources :sellers, only: [:index, :show, :destroy] do
+      member do
+        patch :assign_carbon_code
+      end
+    end
+    resources :buyers, only: [:index, :show, :destroy]
+    resources :conversations, only: [:index, :show, :create] do
+      resources :messages, only: [:index, :create]
+      get :unread_count, on: :collection
+      get :unread_counts, on: :collection
+    end
+    resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
   end
 
   # Original routes without /api prefix for backward compatibility
@@ -886,70 +891,6 @@ Rails.application.routes.draw do
       end
     end
 
-    # Sales namespace for backward compatibility (without /api prefix)
-    namespace :sales do
-      resources :analytics, only: [:index] do
-        collection do
-          get :recent_users
-          get :devices
-          get :sources
-          get :categories
-          get :searches
-        end
-      end
-      resources :ad_searches, only: [:index] do
-        collection do
-          get :analytics
-        end
-      end
-      # Direct route for ad stats
-      get 'analytics/ads/:id/stats', to: 'analytics#ad_stats'
-      resources :seller_rankings, only: [:index] do
-        collection do
-          get :by_metric
-        end
-      end
-      resource :profile, only: [:show, :update] do
-        collection do
-          post 'change-password'
-        end
-      end
-      resources :ads, only: [:index, :show, :create, :destroy] do
-        collection do
-          get :flagged
-          get :stats
-        end
-        member do
-          patch :flag
-          patch :restore
-        end
-      end
-      resources :click_events, only: [] do
-        collection do
-          get :analytics
-          get :best_ads
-          get :shops
-        end
-      end
-      resources :quarterly_targets, only: [:index, :create, :update, :destroy] do
-        collection do
-          get :current
-        end
-      end
-      resources :reviews, only: [:index, :show]
-      resources :sellers, only: [:index, :show, :destroy] do
-        member do
-          patch :assign_carbon_code
-        end
-      end
-      resources :buyers, only: [:index, :show, :destroy]
-      resources :conversations, only: [:index, :show, :create] do
-        resources :messages, only: [:index, :create]
-        get :unread_count, on: :collection
-        get :unread_counts, on: :collection
-      end
-      resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
-    end
 
   mount ActionCable.server => '/cable'
 

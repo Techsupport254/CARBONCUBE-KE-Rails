@@ -31,8 +31,8 @@ class Sales::AdSearchesController < ApplicationController
           user_id: search[:user_id] || search['user_id'],
           seller_id: search[:seller_id] || search['seller_id'],
           role: search[:role] || search['role'] || 'guest',
-          created_at: (search[:created_at] || search[:timestamp] || search['created_at'] || search['timestamp']).to_s,
-          timestamp: (search[:timestamp] || search['timestamp']).to_s,
+          created_at: (search[:created_at] || search[:timestamp] || search['created_at'] || search['timestamp']).then { |t| t.respond_to?(:iso8601) ? t.iso8601 : t.to_s },
+          timestamp: (search[:timestamp] || search['timestamp']).then { |t| t.respond_to?(:iso8601) ? t.iso8601 : t.to_s },
           device_hash: search[:device_hash] || search['device_hash'],
           user_agent: search[:user_agent] || search['user_agent'],
           ip_address: search[:ip_address] || search['ip_address']
