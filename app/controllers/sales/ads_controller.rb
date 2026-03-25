@@ -1,5 +1,6 @@
 class Sales::AdsController < ApplicationController
-  before_action :authenticate_sales_user
+  before_action :authenticate_sales_user, except: [:conditions]
+  before_action :set_ad, only: [:show, :update, :flag, :restore, :destroy, :create_offer, :remove_offer]
 
   EFFECTIVE_IS_ADDED_BY_SALES_SQL = Ad.effective_is_added_by_sales_sql
   
@@ -14,21 +15,19 @@ class Sales::AdsController < ApplicationController
          .where(sellers: { blocked: false, deleted: false }) # Only active sellers
 
     # Handle status filtering
-    if params[:status].present?
-      case params[:status]
-      when 'active'
-        base_query = base_query.where(flagged: false, deleted: false)
-      when 'flagged'
-        base_query = base_query.where(flagged: true, deleted: false)
-      when 'deleted'
-        base_query = base_query.where(deleted: true)
-      when 'all'
-        # Do nothing, show all including deleted and flagged
-      else
-        base_query = base_query.where(deleted: false)
-      end
+    # Default to 'all' status when searching, so you can find deleted/flagged items easily
+    status = params[:status].presence || (params[:query].present? ? 'all' : 'active')
+
+    case status
+    when 'active'
+      base_query = base_query.where(flagged: false, deleted: false)
+    when 'flagged'
+      base_query = base_query.where(flagged: true, deleted: false)
+    when 'deleted'
+      base_query = base_query.where(deleted: true)
+    when 'all'
+      # Do nothing, show all including deleted and flagged
     else
-      # Default: show non-deleted ads
       base_query = base_query.where(deleted: false)
     end
     if params[:category_id].present?
@@ -49,7 +48,7 @@ class Sales::AdsController < ApplicationController
       base_query = base_query.where(title_description_conditions, *search_terms.flat_map { |term| ["%#{term}%", "%#{term}%"] })
     end
 
-    if params[:added_by].present?
+    if params[:added_by].present? && params[:query].blank?
       case params[:added_by]
       when 'sales'
         base_query = base_query.where("#{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = TRUE")
@@ -85,73 +84,181 @@ class Sales::AdsController < ApplicationController
   end
   
 
+  # GET /sales/ads/:id
   def show
-    @ad = Ad.includes(:seller, :category, :subcategory, :reviews => :buyer)
-                      .find(params[:id])
-                      .tap do |ad|
-                        ad.define_singleton_method(:mean_rating) do
-                          # Use cached reviews if available, otherwise calculate
-                          if reviews.loaded?
-                            reviews.any? ? reviews.sum(&:rating).to_f / reviews.size : 0.0
-                          else
-                            reviews.average(:rating).to_f
-                          end
-                        end
-                      end
-    render json: @ad.as_json(
-      include: {
-        seller: { only: [:fullname, :email] },
-        category: { only: [:name] },
-        subcategory: { only: [:name] },
-        reviews: {
-          include: {
-            buyer: { only: [:fullname] }
-          },
-          only: [:rating, :review, :created_at]
-        }
-      },
-      methods: [:mean_rating, :media_urls, :first_media_url],
-      except: [:deleted]
-    ).merge("is_added_by_sales" => @ad.effective_is_added_by_sales)
+    # Get reviews
+    reviews = @ad.reviews.includes(:buyer)
+    
+    # Get buyer details using the BuyerDetailsUtility
+    buyer_details = nil
+    begin
+      buyer_details = BuyerDetailsUtility.get_ad_reviewers_details(@ad.id)
+    rescue => e
+      Rails.logger.error "Error fetching buyer details: #{e.message}"
+      buyer_details = { error: "Failed to fetch buyer details" }
+    end
+    
+    # Build ad JSON with offer information
+    ad_json = @ad.as_json(include: [:category, :subcategory], methods: [:mean_rating, :media_urls, :first_media_url])
+    
+    # Add offer information if exists (including scheduled offers for sales view)
+    active_offer_ad = @ad.offer_ads.joins(:offer)
+                        .where(is_active: true)
+                        .where('offers.end_time > ?', DateTime.now)
+                        .where("offers.status IN ('active', 'scheduled', 'paused')")
+                        .includes(:offer)
+                        .order('offers.start_time ASC')
+                        .first
+    
+    if active_offer_ad
+      ad_json[:discount_percentage] = active_offer_ad.discount_percentage
+      ad_json[:discounted_price] = active_offer_ad.discounted_price
+      ad_json[:offer_start_date] = active_offer_ad.offer.start_time
+      ad_json[:offer_end_date] = active_offer_ad.offer.end_time
+      ad_json[:offer_description] = active_offer_ad.seller_notes || active_offer_ad.offer.description
+      ad_json[:offer_type] = active_offer_ad.offer.offer_type
+      ad_json[:offer_status] = active_offer_ad.offer.status
+      ad_json[:offer_name] = active_offer_ad.offer.name
+      ad_json[:offer_id] = active_offer_ad.offer.id
+      ad_json[:minimum_quantity] = active_offer_ad.offer.minimum_order_amount
+    end
+
+    # Add seller email for convenience in the sales edit form
+    ad_json[:seller_email] = @ad.seller.email
+    
+    # Render the complete ad data with reviews and buyer details
+    render json: {
+      **ad_json,
+      reviews: reviews.as_json(include: [:buyer]),
+      buyer_details: buyer_details
+    }
   end
 
-  # Update flagged status
+  # PATCH /sales/ads/:id/flag
   def flag
-    @ad = Ad.find(params[:id])
-    @ad.update(flagged: true)  # Set flagged to true
-    head :no_content
+    if @ad.update(flagged: true)
+      render json: { status: 'success', message: 'Ad flagged successfully' }
+    else
+      render json: { status: 'error', message: 'Failed to flag ad' }, status: :unprocessable_entity
+    end
   end
 
-  # Update flagged status
+  # PATCH /sales/ads/:id/restore
   def restore
-    @ad = Ad.find(params[:id])
-    @ad.update(flagged: false, deleted: false)
-    head :no_content
+    if @ad.update(flagged: false, deleted: false)
+      render json: { status: 'success', message: 'Ad restored successfully' }
+    else
+      render json: { status: 'error', message: 'Failed to restore ad' }, status: :unprocessable_entity
+    end
+  end
+
+  # PUT /sales/ads/:id
+  def update
+    media_param = params[:ad][:media]
+    existing_media_param = params[:ad][:existing_media]
+
+    # Handle image updates based on whether we have new files and/or existing media
+    if media_param.present? || existing_media_param.present?
+      # Start with existing media URLs that should be kept
+      final_media = existing_media_param.present? ? existing_media_param : []
+
+      # Add new uploaded files if any
+      if media_param.present?
+        new_files = media_param.select { |m| m.is_a?(ActionDispatch::Http::UploadedFile) }
+        if new_files.any?
+          uploaded_urls = process_and_upload_images(new_files)
+          final_media += uploaded_urls
+        end
+      end
+
+      # Update with final media array
+      updated = @ad.update(ad_params.except(:media, :existing_media).merge(media: final_media))
+    else
+      # No media changes, just update other fields
+      updated = @ad.update(ad_params.except(:media, :existing_media))
+    end
+
+    if updated
+      # Update seller's last active timestamp when updating an ad
+      @ad.seller.update_last_active!
+      render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating])
+    else
+      render json: { error: @ad.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   # DELETE /sales/ads/:id - Permanent delete
   def destroy
-    begin
-      @ad = Ad.find(params[:id])
-      # Standard destroy performs permanent deletion in this app's architecture
-      # unless specific soft-delete logic is added to the model
-      if @ad.destroy
-        render json: { message: "Ad '#{@ad.title}' permanently deleted successfully" }, status: :ok
-      else
-        render json: { error: "Failed to delete ad permanently", details: @ad.errors.full_messages }, status: :unprocessable_entity
-      end
-    rescue ActiveRecord::RecordNotFound
-      render json: { error: "Ad not found" }, status: :not_found
-    rescue => e
-      Rails.logger.error "❌ Error permanently deleting ad: #{e.message}"
-      render json: { error: "Internal server error during deletion", details: e.message }, status: :internal_server_error
+    # Standard destroy performs permanent deletion in this app's architecture
+    if @ad.destroy
+      render json: { message: "Ad '#{@ad.title}' permanently deleted successfully" }, status: :ok
+    else
+      render json: { error: "Failed to delete ad permanently", details: @ad.errors.full_messages }, status: :unprocessable_entity
     end
+  rescue => e
+    Rails.logger.error "❌ Error permanently deleting ad: #{e.message}"
+    render json: { error: "Internal server error during deletion", details: e.message }, status: :internal_server_error
+  end
+
+  # POST /sales/ads/bulk_flag
+  def bulk_flag
+    ids = Array(params[:ids])
+    if ids.empty?
+      return render json: { error: 'No ad IDs provided' }, status: :unprocessable_entity
+    end
+
+    ads = Ad.where(id: ids)
+    count = ads.count
+    ads.update_all(flagged: true)
+    
+    render json: { 
+      status: 'success', 
+      message: "Successfully flagged #{count} ads",
+      affected_count: count
+    }
+  end
+
+  # POST /sales/ads/bulk_restore
+  def bulk_restore
+    ids = Array(params[:ids])
+    if ids.empty?
+      return render json: { error: 'No ad IDs provided' }, status: :unprocessable_entity
+    end
+
+    ads = Ad.where(id: ids)
+    count = ads.count
+    ads.update_all(flagged: false, deleted: false)
+    
+    render json: { 
+      status: 'success', 
+      message: "Successfully restored #{count} ads",
+      affected_count: count
+    }
+  end
+
+  # POST /sales/ads/bulk_destroy
+  def bulk_destroy
+    ids = Array(params[:ids])
+    if ids.empty?
+      return render json: { error: 'No ad IDs provided' }, status: :unprocessable_entity
+    end
+
+    # Use destroy_all to ensure callbacks/associations are handled
+    # Though performance might be slightly slower than delete_all
+    ads = Ad.where(id: ids)
+    count = ads.count
+    ads.destroy_all
+    
+    render json: { 
+      status: 'success', 
+      message: "Successfully deleted #{count} ads permanently",
+      affected_count: count
+    }
   end
 
   # GET /sales/ads/stats
   def stats
     # Use a single efficient SQL query with conditional aggregation
-    # This performs all counts in one database query instead of multiple queries
     base_query = Ad.joins(seller: :seller_tier)
              .joins(:category, :subcategory)
              .where(deleted: false)
@@ -179,7 +286,6 @@ class Sales::AdsController < ApplicationController
     
     result = ActiveRecord::Base.connection.execute(sql).first
     
-    # Handle both string and symbol keys (different database adapters)
     get_value = ->(key) { result[key] || result[key.to_sym] || result[key.to_s] }
     
     render json: {
@@ -200,14 +306,12 @@ class Sales::AdsController < ApplicationController
     per_page = params[:per_page]&.to_i || 20
     page = params[:page]&.to_i || 1
     
-    # Build base query without select for counting
     base_query = Ad.joins(seller: :seller_tier)
              .joins(:category, :subcategory)
              .where(deleted: false)
              .where(sellers: { blocked: false, deleted: false })
              .where(flagged: true)
 
-    # Apply same filters as index (category, subcategory, search)
     if params[:category_id].present?
       base_query = base_query.where(category_id: params[:category_id])
     end
@@ -228,8 +332,7 @@ class Sales::AdsController < ApplicationController
       )
     end
     
-    # Filter by who added the ad (sales vs seller) if requested
-    if params[:added_by].present?
+    if params[:added_by].present? && params[:query].blank?
       case params[:added_by]
       when 'sales'
         base_query = base_query.where("#{EFFECTIVE_IS_ADDED_BY_SALES_SQL} = TRUE")
@@ -238,13 +341,11 @@ class Sales::AdsController < ApplicationController
       end
     end
 
-    # Get total count before applying select and pagination
     total_count = base_query.count
     
-    # Apply select, order, and pagination
     offset = (page - 1) * per_page
     @ads = base_query
-             .order('ads.created_at DESC')  # Sort by latest first
+             .order('ads.created_at DESC')
              .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
              .limit(per_page)
              .offset(offset)
@@ -309,27 +410,166 @@ class Sales::AdsController < ApplicationController
           params[:ad][:media] = uploaded_media
         rescue => e
           Rails.logger.error "❌ Error processing images: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
           return render json: { error: "Failed to process images. Please try again." }, status: :unprocessable_entity
         end
       end
 
       @ad = seller.ads.build(ad_params)
-      @ad.is_added_by_sales = true # Set to true when sales team creates ad
+      @ad.is_added_by_sales = true
 
       if @ad.save
-        # Update seller's last active timestamp when creating an ad
         seller.update_last_active!
         render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :created
       else
-        Rails.logger.error "❌ Ad save failed: #{@ad.errors.full_messages.join(', ')}"
-        Rails.logger.error "❌ Ad attributes: #{@ad.attributes.inspect}"
         render json: { errors: @ad.errors.full_messages }, status: :unprocessable_entity
       end
     rescue => e
       Rails.logger.error "❌ Error creating ad: #{e.message}"
-      Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
       render json: { error: "Failed to create ad. Please try again." }, status: :internal_server_error
+    end
+  end
+
+  # POST /sales/ads/:id/offer
+  def create_offer
+    begin
+      ActiveRecord::Base.transaction do
+        # Validate required parameters
+        unless params[:discount_percentage].present? && params[:offer_end_date].present?
+          return render json: { 
+            error: 'discount_percentage and offer_end_date are required' 
+          }, status: :unprocessable_entity
+        end
+
+        discount = params[:discount_percentage].to_f
+        if discount <= 0 || discount >= 100
+          return render json: { 
+            error: 'Discount percentage must be between 1 and 99' 
+          }, status: :unprocessable_entity
+        end
+
+        begin
+          end_time = DateTime.parse(params[:offer_end_date])
+        rescue ArgumentError
+          return render json: { 
+            error: 'Invalid offer_end_date format' 
+          }, status: :unprocessable_entity
+        end
+
+        start_time = params[:offer_start_date].present? ? DateTime.parse(params[:offer_start_date]) : DateTime.now rescue DateTime.now
+
+        if end_time <= start_time
+          return render json: { 
+            error: 'Offer end date must be after start date' 
+          }, status: :unprocessable_entity
+        end
+
+        offer_type = params[:offer_type].presence || 'limited_time_offer'
+        offer_status = params[:offer_status].presence || 'active'
+        
+        if offer_status == 'active'
+          if start_time > DateTime.now
+            offer_status = 'scheduled'
+          elsif end_time < DateTime.now
+            offer_status = 'expired'
+          end
+        end
+
+        existing_offer_ad = @ad.offer_ads.joins(:offer)
+                              .where(is_active: true)
+                              .where('offers.end_time > ?', DateTime.now)
+                              .first
+
+        if existing_offer_ad
+          offer = existing_offer_ad.offer
+          offer.update!(
+            description: params[:offer_description].presence || offer.description,
+            offer_type: offer_type,
+            start_time: start_time,
+            end_time: end_time,
+            status: offer_status,
+            discount_percentage: discount
+          )
+          
+          existing_offer_ad.update!(
+            discount_percentage: discount,
+            original_price: @ad.price,
+            discounted_price: @ad.price * (1 - discount / 100.0),
+            seller_notes: params[:offer_description]
+          )
+        else
+          offer_name = params[:offer_name].presence || "#{@ad.title.truncate(30)} - Special Offer"
+          offer = @ad.seller.offers.create!(
+            name: offer_name,
+            description: params[:offer_description].presence || "Special discount on #{@ad.title}",
+            offer_type: offer_type,
+            discount_type: 'percentage',
+            status: offer_status,
+            start_time: start_time,
+            end_time: end_time,
+            discount_percentage: discount,
+            show_on_homepage: false,
+            featured: false,
+            priority: 0
+          )
+
+          OfferAd.create!(
+            offer: offer,
+            ad: @ad,
+            discount_percentage: discount,
+            original_price: @ad.price,
+            discounted_price: @ad.price * (1 - discount / 100.0),
+            is_active: true,
+            seller_notes: params[:offer_description]
+          )
+        end
+
+        @ad.reload
+        active_offer_ad = @ad.offer_ads.joins(:offer)
+                            .where(is_active: true)
+                            .where('offers.end_time > ?', DateTime.now)
+                            .includes(:offer)
+                            .first
+
+        ad_json = @ad.as_json(include: [:category, :subcategory], methods: [:mean_rating])
+        
+        if active_offer_ad
+          ad_json[:discount_percentage] = active_offer_ad.discount_percentage
+          ad_json[:discounted_price] = active_offer_ad.discounted_price
+          ad_json[:offer_start_date] = active_offer_ad.offer.start_time
+          ad_json[:offer_end_date] = active_offer_ad.offer.end_time
+          ad_json[:offer_description] = active_offer_ad.seller_notes || active_offer_ad.offer.description
+          ad_json[:offer_type] = active_offer_ad.offer.offer_type
+          ad_json[:offer_status] = active_offer_ad.offer.status
+          ad_json[:offer_name] = active_offer_ad.offer.name
+          ad_json[:offer_id] = active_offer_ad.offer.id
+        end
+
+        render json: ad_json, status: :ok
+      end
+    rescue => e
+      Rails.logger.error "Error creating offer: #{e.message}"
+      render json: { error: 'Failed to create offer' }, status: :internal_server_error
+    end
+  end
+
+  # DELETE /sales/ads/:id/offer
+  def remove_offer
+    begin
+      offer_ad = @ad.offer_ads.joins(:offer)
+                    .where(is_active: true)
+                    .where('offers.end_time > ?', DateTime.now)
+                    .first
+
+      if offer_ad
+        offer_ad.update!(is_active: false)
+        offer = offer_ad.offer
+        offer.update!(status: 'paused') if offer.offer_ads.where(is_active: true).count == 0
+      end
+
+      render json: @ad.as_json(include: [:category, :subcategory], methods: [:mean_rating]), status: :ok
+    rescue => e
+      Rails.logger.error "Error removing offer: #{e.message}"
+      render json: { error: 'Failed to remove offer' }, status: :internal_server_error
     end
   end
 
@@ -349,30 +589,26 @@ class Sales::AdsController < ApplicationController
     end
   end
 
-  def current_sales_user
-    @current_sales_user
+  def set_ad
+    @ad = Ad.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Ad not found' }, status: :not_found
   end
 
   def ad_params
     permitted = params.require(:ad).permit(
       :title, :description, :category_id, :subcategory_id, :price, 
-      :brand, :manufacturer, :item_length, :item_width, 
+      :brand, :manufacturer, :item_length, :item_width, :model, :specifications,
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
       media: [], existing_media: []
     )
 
-    # Convert empty strings to nil for optional numeric fields (only for fields that are present in params)
     %i[item_length item_width item_height item_weight].each do |field|
-      if params[:ad].key?(field) && permitted[field].blank?
-        permitted[field] = nil
-      end
+      permitted[field] = nil if params[:ad].key?(field) && permitted[field].blank?
     end
 
-    # Set default weight_unit if empty or invalid (only when field is present in params)
     if params[:ad].key?(:weight_unit)
-      if permitted[:weight_unit].blank? || !['Grams', 'Kilograms'].include?(permitted[:weight_unit])
-        permitted[:weight_unit] = 'Grams'
-      end
+      permitted[:weight_unit] = 'Grams' if permitted[:weight_unit].blank? || !['Grams', 'Kilograms'].include?(permitted[:weight_unit])
     end
 
     permitted
@@ -380,43 +616,17 @@ class Sales::AdsController < ApplicationController
 
   def process_and_upload_images(images)
     uploaded_urls = []
-
-    begin
-      Array(images).each do |image|
-        begin
-          # Check if tempfile exists and is readable
-          unless image.tempfile && File.exist?(image.tempfile.path)
-            Rails.logger.error "❌ Tempfile not found for image: #{image.original_filename}"
-            next
-          end
-          
-          # Check Cloudinary configuration
-          unless ENV['UPLOAD_PRESET'].present?
-            Rails.logger.error "❌ UPLOAD_PRESET environment variable is not set"
-            raise "UPLOAD_PRESET not configured"
-          end
-          
-          # Upload original image directly to Cloudinary without any processing
-          uploaded_image = Cloudinary::Uploader.upload(
-            image.tempfile.path,
-            upload_preset: ENV['UPLOAD_PRESET']
-          )
-
-          uploaded_urls << uploaded_image["secure_url"]
-        rescue => e
-          Rails.logger.error "❌ Error uploading image #{image.original_filename}: #{e.message}"
-          Rails.logger.error "❌ Error class: #{e.class}"
-          Rails.logger.error e.backtrace.join("\n")
-          # Don't fail completely, just skip this image
-        end
+    Array(images).each do |image|
+      begin
+        next unless image.tempfile && File.exist?(image.tempfile.path)
+        raise "UPLOAD_PRESET not configured" unless ENV['UPLOAD_PRESET'].present?
+        
+        uploaded_image = Cloudinary::Uploader.upload(image.tempfile.path, upload_preset: ENV['UPLOAD_PRESET'])
+        uploaded_urls << uploaded_image["secure_url"]
+      rescue => e
+        Rails.logger.error "❌ Error uploading image: #{e.message}"
       end
-    rescue => e
-      Rails.logger.error "❌ Error in process_and_upload_images: #{e.message}"
-      Rails.logger.error "❌ Error class: #{e.class}"
-      Rails.logger.error e.backtrace.join("\n")
-      raise e # Re-raise to be caught by the calling method
     end
-
     uploaded_urls
   end
 end

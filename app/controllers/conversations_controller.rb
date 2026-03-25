@@ -117,8 +117,15 @@ class ConversationsController < ApplicationController
       return
     end
 
-    unread_messages = related_conversations_for_mark_read
-      .flat_map { |conversation| conversation.messages.unread.where.not(sender: @current_user).to_a }
+    unread_messages = related_conversations_for_mark_read.flat_map do |conversation|
+      # For staff roles, only mark as read if they are the assigned admin/salesperson
+      is_staff = ['Admin', 'SalesUser', 'MarketingUser'].include?(@current_user.class.name)
+      if is_staff && conversation.admin_id != @current_user.id
+        next []
+      end
+
+      conversation.messages.unread.where.not(sender: @current_user).to_a
+    end
     
     processed_count = 0
     unread_messages.each do |message|

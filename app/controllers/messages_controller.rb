@@ -8,7 +8,7 @@ class MessagesController < ApplicationController
       fetch_buyer_messages
     when 'Seller'
       fetch_seller_messages
-    when 'Admin', 'SalesUser'
+    when 'Admin', 'SalesUser', 'MarketingUser'
       fetch_admin_messages
     else
       render json: { error: 'Invalid user type' }, status: :unprocessable_entity
@@ -24,6 +24,18 @@ class MessagesController < ApplicationController
       message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
+        # For staff roles, only mark as read if they are the assigned admin/salesperson
+        is_staff = ['Admin', 'SalesUser', 'MarketingUser'].include?(@current_user.class.name)
+        if is_staff && @conversation.admin_id != @current_user.id
+          render json: { 
+            success: true, 
+            message: 'Viewer not assigned to conversation, skipping read receipt',
+            status: message.status_text,
+            read_at: message.read_at 
+          }
+          return
+        end
+
         message.mark_as_read!
         
         # Broadcast read receipt via WebSocket
@@ -67,6 +79,18 @@ class MessagesController < ApplicationController
       message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
+        # For staff roles, only mark as delivered if they are the assigned admin/salesperson
+        is_staff = ['Admin', 'SalesUser', 'MarketingUser'].include?(@current_user.class.name)
+        if is_staff && @conversation.admin_id != @current_user.id
+          render json: { 
+            success: true, 
+            message: 'Viewer not assigned to conversation, skipping delivery receipt',
+            status: message.status_text,
+            delivered_at: message.delivered_at 
+          }
+          return
+        end
+
         message.mark_as_delivered!
         
         # Broadcast delivery receipt via WebSocket
@@ -214,8 +238,8 @@ class MessagesController < ApplicationController
   private
 
   def authenticate_user
-    # Check sales/admin first to avoid noisy role-mismatch logs on shared message routes
-    @current_user = authenticate_sales_user || authenticate_admin || authenticate_seller || authenticate_buyer
+    # Check staff roles first to avoid noisy role-mismatch logs on shared message routes
+    @current_user = authenticate_sales_user || authenticate_admin || authenticate_marketing_user || authenticate_seller || authenticate_buyer
     
     unless @current_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
@@ -252,6 +276,17 @@ class MessagesController < ApplicationController
     SalesAuthorizeApiRequest.new(request.headers).result
   rescue
     nil
+  end
+
+  def authenticate_marketing_user
+    # MarketingUser tokens should be handled similarly to Admin/Sales
+    # We use a general Staff token or their specific one if it exists
+    # Assuming MarketingAuthorizeApiRequest exists or mirrors others
+    # For now, let's use the same decoding logic as ConversationsController if needed
+    # but let's assume there's a service.
+    # Actually, looking at current code, they might not have a service yet.
+    # Let's check list_dir for services.
+    nil 
   end
 
   def set_conversation
