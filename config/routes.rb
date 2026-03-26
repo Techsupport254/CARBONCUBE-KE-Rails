@@ -736,6 +736,7 @@ Rails.application.routes.draw do
         patch :restore
         post :offer, to: 'ads#create_offer'
         delete :offer, to: 'ads#remove_offer'
+        post :ai_suggestions
       end
     end
     resources :click_events, only: [] do

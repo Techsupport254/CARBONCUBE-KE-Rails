@@ -1,6 +1,8 @@
+require 'net/http'
+
 class Sales::AdsController < ApplicationController
   before_action :authenticate_sales_user, except: [:conditions]
-  before_action :set_ad, only: [:show, :update, :flag, :restore, :destroy, :create_offer, :remove_offer]
+  before_action :set_ad, only: [:show, :update, :flag, :restore, :destroy, :create_offer, :remove_offer, :ai_suggestions]
 
   EFFECTIVE_IS_ADDED_BY_SALES_SQL = Ad.effective_is_added_by_sales_sql
   
@@ -573,7 +575,100 @@ class Sales::AdsController < ApplicationController
     end
   end
 
+  # POST /sales/ads/:id/ai_suggestions
+  def ai_suggestions
+    begin
+      urls = Array(@ad.media).compact.select { |u| u.is_a?(String) && u.start_with?('http') }
+
+      if urls.empty?
+        return render json: { error: 'No images found on this ad to analyse.' }, status: :unprocessable_entity
+      end
+
+      groq_api_key = ENV['groq_api_Key'].presence
+      unless groq_api_key
+        return render json: { error: 'Groq API key not configured.' }, status: :internal_server_error
+      end
+
+      # Use up to 3 image URLs for the vision prompt
+      image_urls = urls.first(3)
+
+      # Build the image_url content blocks for Groq vision
+      image_content = image_urls.map do |img_url|
+        { type: 'image_url', image_url: { url: img_url } }
+      end
+
+      category_hint = [@ad.category&.name, @ad.subcategory&.name].compact.join(' > ')
+
+      system_prompt = <<~PROMPT
+        You are a professional product copywriter for an e-commerce marketplace.
+        Analyse the provided product image(s) and return ONLY valid JSON (no markdown fences, no extra text) with these exact keys:
+        {
+          "title": "<concise, specific product title, max 80 chars>",
+          "description": "<rich product description in markdown, 3-5 paragraphs with ## headings and bullet points>"
+        }
+        Rules:
+        - Read any text visible in the image (brand names, model numbers, labels, packaging) carefully.
+        - The title must be specific and include brand + model if visible.
+        - The description must be compelling, well-structured, and use real product details from the image.
+        - Do NOT include placeholder text or generic phrases.
+        - Category context (may be empty): #{category_hint}
+      PROMPT
+
+      user_content = image_content + [
+        { type: 'text', text: 'Analyse these product image(s) and return the JSON as instructed.' }
+      ]
+
+      uri = URI('https://api.groq.com/openai/v1/chat/completions')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.read_timeout = 30
+
+      request = Net::HTTP::Post.new(uri)
+      request['Authorization'] = "Bearer #{groq_api_key}"
+      request['Content-Type'] = 'application/json'
+      request.body = {
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [
+          { role: 'system', content: system_prompt },
+          { role: 'user',   content: user_content }
+        ],
+        max_tokens: 1024,
+        temperature: 0.4
+      }.to_json
+
+      response = http.request(request)
+
+      unless response.is_a?(Net::HTTPSuccess)
+        Rails.logger.error "Groq API error: #{response.code} - #{response.body}"
+        return render json: { error: "Vision AI returned #{response.code}" }, status: :bad_gateway
+      end
+
+      groq_data = JSON.parse(response.body)
+      raw_content = groq_data.dig('choices', 0, 'message', 'content').to_s.strip
+
+      # Strip markdown fences if model wraps the JSON
+      raw_content = raw_content.gsub(/\A```(?:json)?\s*/i, '').gsub(/\s*```\z/, '').strip
+
+      parsed = JSON.parse(raw_content)
+
+      render json: {
+        status: 'success',
+        suggested_title:       parsed['title'].to_s.strip,
+        suggested_description: parsed['description'].to_s.strip,
+        images_analysed:       image_urls.length
+      }
+
+    rescue JSON::ParserError => e
+      Rails.logger.error "Groq JSON parse error: #{e.message}"
+      render json: { error: 'AI returned an unexpected format. Please try again.' }, status: :unprocessable_entity
+    rescue => e
+      Rails.logger.error "Error in AI Suggestions: #{e.message}\n#{e.backtrace.first(5).join('\n')}"
+      render json: { error: 'Failed to generate AI suggestions' }, status: :internal_server_error
+    end
+  end
+
   private
+
 
   def serialize_ads(ads)
     ads.map do |ad|
@@ -621,7 +716,12 @@ class Sales::AdsController < ApplicationController
         next unless image.tempfile && File.exist?(image.tempfile.path)
         raise "UPLOAD_PRESET not configured" unless ENV['UPLOAD_PRESET'].present?
         
-        uploaded_image = Cloudinary::Uploader.upload(image.tempfile.path, upload_preset: ENV['UPLOAD_PRESET'])
+        uploaded_image = Cloudinary::Uploader.upload(
+          image.tempfile.path,
+          upload_preset: ENV['UPLOAD_PRESET'],
+          format: nil,               # Keep original format
+          background: "transparent"  # Ensure no colored background is added
+        )
         uploaded_urls << uploaded_image["secure_url"]
       rescue => e
         Rails.logger.error "❌ Error uploading image: #{e.message}"
