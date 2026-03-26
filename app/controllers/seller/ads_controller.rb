@@ -741,7 +741,9 @@ class Seller::AdsController < ApplicationController
           # Upload original image directly to Cloudinary without any processing
           uploaded_image = Cloudinary::Uploader.upload(
             image.tempfile.path,
-            upload_preset: ENV['UPLOAD_PRESET']
+            upload_preset: ENV['UPLOAD_PRESET'],
+            format: nil,               # Keep original format
+            background: "transparent"  # Ensure no colored background is added
           )
 
           uploaded_urls << uploaded_image["secure_url"]

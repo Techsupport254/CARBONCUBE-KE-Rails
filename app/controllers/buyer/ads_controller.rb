@@ -340,7 +340,7 @@ class Buyer::AdsController < ApplicationController
     basic_intent = analyze_search_intent(query)
 
     # Combine insights
-    final_intent = (grok_insights[:intent] || {}).merge(basic_intent || {})
+    final_intent = intent.merge(basic_intent || {})
     final_intent[:suggestions] = grok_insights[:suggestions] || []
     final_intent[:related_terms] = grok_insights[:related_terms] || []
     final_intent[:confidence] = grok_insights[:confidence]
@@ -566,6 +566,29 @@ class Buyer::AdsController < ApplicationController
       intent[:category_hint] = 'laptops'
     end
 
+    # Location detection (In Nairobi, Near me, etc.)
+    location_keywords = {
+      'nairobi' => ['nairobi', 'nrb', 'cbd'],
+      'mombasa' => ['mombasa', 'msa'],
+      'kisumu' => ['kisumu'],
+      'nakuru' => ['nakuru'],
+      'eldoret' => ['eldoret'],
+      'thika' => ['thika'],
+      'kiambu' => ['kiambu'],
+      'machakos' => ['machakos'],
+      'kajiado' => ['kajiado', 'ngong', 'kitengela', 'rongai']
+    }
+
+    intent[:is_near_me] = normalized_query.include?('near me') || normalized_query.include?('nearme')
+    
+    location_keywords.each do |city, aliases|
+      if aliases.any? { |al| words.include?(al) || normalized_query.include?("in #{al}") || normalized_query.include?("at #{al}") }
+        intent[:location_hint] = city
+        intent[:query_type] = :location_specific
+        break
+      end
+    end
+
     # Check for accessory searches
     accessory_keywords.each do |kw|
       if normalized_query.include?(kw)
@@ -584,7 +607,7 @@ class Buyer::AdsController < ApplicationController
       intent[:priority_terms] << intent[:brand]
     elsif intent[:product_type]
       # For product type searches, add the detected keywords as priority terms
-      known_product_types[intent[:product_type]].each do |keyword|
+      known_product_types[intent[:product_type]][:keywords].each do |keyword|
         intent[:priority_terms] << keyword
       end
       intent[:priority_terms] << intent[:product_type].gsub('_', ' ')  # "air filters"
@@ -744,6 +767,25 @@ class Buyer::AdsController < ApplicationController
         end
       end
 
+      # Location specific filtering (e.g. "in Nairobi")
+      if search_intent[:location_hint].present?
+        # Directly filter by seller city
+        ads_query = ads_query.joins(:seller)
+                      .where("LOWER(sellers.city) LIKE ?", "%#{search_intent[:location_hint]}%")
+      end
+
+      # "Near me" handling - Requires frontend to pass lat/lng
+      if search_intent[:is_near_me] && params[:lat].present? && params[:lng].present?
+        lat = params[:lat].to_f
+        lng = params[:lng].to_f
+        # Simple distance ordering (square of distance for performance)
+        distance_sql = "(POW(sellers.latitude - ?, 2) + POW(sellers.longitude - ?, 2))"
+        ads_query = ads_query.joins(:seller)
+                      .reorder(Arel.sql("#{distance_sql} ASC"))
+        search_params << lat
+        search_params << lng
+      end
+
     else
       # Fallback to general search for non-product queries
       words.each do |word|
@@ -759,6 +801,12 @@ class Buyer::AdsController < ApplicationController
         # Brand matches
         if word.length > 2
           search_conditions << "LOWER(ads.brand) LIKE LOWER(?)"
+          search_params << "%#{word}%"
+        end
+
+        # City matches in query (e.g. "hardware nairobi")
+        if word.length > 3
+          search_conditions << "LOWER(sellers.city) LIKE LOWER(?)"
           search_params << "%#{word}%"
         end
 
