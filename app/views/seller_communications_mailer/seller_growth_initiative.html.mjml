@@ -1,240 +1,221 @@
 <mjml>
   <mj-head>
     <mj-title><%= Time.current.strftime('%B') %> Inventory Strategy | Carbon Cube Kenya</mj-title>
-    <mj-font name="Outfit" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" />
+    <mj-include path="../mjml/shared/baseline-head.mjml" />
     <mj-attributes>
-      <mj-all font-family="Outfit, sans-serif" color="#0f172a" />
-      <mj-section padding="0px" />
-      <mj-column padding="0px" />
-      <mj-text font-size="12px" line-height="140%" padding="0px" />
       <mj-button
         background-color="#f59e0b"
         color="#111827"
-        font-size="11px"
         font-weight="800"
         text-transform="uppercase"
-        border-radius="8px"
-        inner-padding="12px 20px"
+        border-radius="12px"
       />
     </mj-attributes>
     <mj-style inline="inline">
-      .muted {
-        color: #64748b;
-      }
       .card-label {
         color: #94a3b8;
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.8px;
       }
       .card-value {
         color: #0f172a;
-        font-size: 16px;
+        font-size: 20px;
         line-height: 1.2;
         font-weight: 900;
       }
       .guide-title {
         color: #0f172a;
-        font-size: 12px;
-        line-height: 1.4;
+        font-size: 16px;
+        line-height: 1.45;
         font-weight: 800;
       }
       .guide-text {
         color: #64748b;
-        font-size: 11px;
-        line-height: 1.5;
+        font-size: 14px;
+        line-height: 1.7;
       }
     </mj-style>
   </mj-head>
   <mj-body background-color="#e2e8f0" width="600px">
     <mj-raw><% utm_params = "utm_source=internal_system&utm_medium=email&utm_campaign=seller_growth_#{Time.current.strftime('%B').downcase}_#{Time.current.year}&utm_content=seller_growth_initiative" %></mj-raw>
 
-    <mj-section padding="12px 4px 0px">
+    <mj-section padding="20px 20px 0px">
       <mj-column>
-        <mj-text align="center" color="#64748b" font-size="11px" font-weight="700" letter-spacing="0.8px" text-transform="uppercase" padding="0px 0px 12px">
+        <mj-text align="center" color="#64748b" font-size="12px" font-weight="700" letter-spacing="0.8px" text-transform="uppercase" padding="0px 0px 12px">
           Carbon Cube Kenya Seller Growth Update
         </mj-text>
       </mj-column>
     </mj-section>
 
-    <mj-section background-color="#0b1324" padding="4px">
-      <mj-column width="100%">
-        <mj-image
-          src="https://carboncube-ke.com/logo.png?<%= utm_params %>&utm_term=logo"
-          width="32px"
-          alt="Carbon Cube Kenya"
-          align="left"
-          padding="4px"
-          href="https://carboncube-ke.com/?<%= utm_params %>&utm_term=logo"
-        />
-        <mj-text
-          background-color="#1e293b"
-          color="#e2e8f0"
-          font-size="10px"
-          font-weight="700"
-          text-transform="uppercase"
-          letter-spacing="0.8px"
-          padding="6px 12px"
-          align="left"
-        >
-          <%= Time.current.strftime('%B %Y') %> Inventory Brief
-        </mj-text>
-        <mj-text color="#f8fafc" font-size="16px" line-height="115%" font-weight="900" padding="4px">
-          Keep <%= @enterprise_name %> in front of active buyers
-        </mj-text>
-        <mj-text color="#e2e8f0" font-size="12px" padding="4px">
-          Hello <%= @first_name %>, buyer demand is climbing this month across your categories. A quick inventory refresh now helps your store hold position in search and category feeds.
-        </mj-text>
-      </mj-column>
-    </mj-section>
-
-    <mj-section background-color="#ffffff" padding="4px">
-      <mj-column width="100%" background-color="#f8fafc" border="1px solid #e2e8f0" border-radius="8px" padding="4px">
-        <mj-text font-size="11px" font-weight="800" color="#475569" text-transform="uppercase" letter-spacing="0.8px" padding="4px">
-          Live Demand Snapshot
-        </mj-text>
-        <mj-text padding="2px">
-          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 4px;">
-            <tr>
-              <td style="padding: 6px;">
-                <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                  <tr valign="bottom">
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #93c5fd; height: 8px; border-radius: 2px;"></div></td>
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #93c5fd; height: 12px; border-radius: 2px;"></div></td>
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #60a5fa; height: 10px; border-radius: 2px;"></div></td>
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #3b82f6; height: 20px; border-radius: 2px;"></div></td>
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #2563eb; height: 16px; border-radius: 2px;"></div></td>
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #1d4ed8; height: 28px; border-radius: 2px;"></div></td>
-                    <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #1d4ed8; height: 24px; border-radius: 2px;"></div></td>
-                  </tr>
-                  <tr>
-                    <td colspan="5" style="padding-top: 4px; font-size: 9px; color: #64748b; font-family: sans-serif;">Demand</td>
-                    <td colspan="2" align="right" style="padding-top: 4px; font-size: 9px; color: #1d4ed8; font-weight: 800; font-family: sans-serif;">RISING ↑</td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </mj-text>
-      </mj-column>
-    </mj-section>
-
-    <mj-section background-color="#ffffff" padding="4px">
-      <mj-group>
-        <mj-column width="48%" background-color="#f8fafc" border="1px solid #e2e8f0" border-radius="8px" padding="4px">
-          <mj-text css-class="card-label" padding="2px">
-            Footprint
+    <mj-wrapper css-class="email-shell" padding="0px 20px 20px">
+      <mj-section background-color="#0b1324" padding="28px 24px">
+        <mj-column width="100%">
+          <mj-image
+            src="https://carboncube-ke.com/logo.png?<%= utm_params %>&utm_term=logo"
+            width="40px"
+            alt="Carbon Cube Kenya"
+            align="left"
+            padding="0px 0px 16px"
+            href="https://carboncube-ke.com/?<%= utm_params %>&utm_term=logo"
+          />
+          <mj-text
+            background-color="#1e293b"
+            color="#e2e8f0"
+            font-size="12px"
+            font-weight="700"
+            text-transform="uppercase"
+            letter-spacing="0.8px"
+            padding="8px 14px"
+            align="left"
+          >
+            <%= Time.current.strftime('%B %Y') %> Inventory Brief
           </mj-text>
-          <mj-text css-class="card-value" color="#1d4ed8" padding="2px">
-            <%= @ads_count %>
+          <mj-text color="#f8fafc" font-size="28px" line-height="1.2" font-weight="900" padding="18px 0px 12px">
+            Keep <%= @enterprise_name %> in front of active buyers
+          </mj-text>
+          <mj-text color="#e2e8f0" font-size="16px" line-height="26px" padding="0px">
+            Hello <%= @first_name %>, buyer demand is climbing this month across your categories. A quick inventory refresh now helps your store hold position in search and category feeds.
           </mj-text>
         </mj-column>
-        <mj-column width="4%"></mj-column>
-        <mj-column width="48%" background-color="#fff7ed" border="1px solid #fed7aa" border-radius="8px" padding="4px">
-          <mj-text css-class="card-label" color="#9a3412" padding="2px">
-            Action
+      </mj-section>
+
+      <mj-section background-color="#ffffff" padding="24px 24px 0px">
+        <mj-column width="100%" background-color="#f8fafc" border="1px solid #e2e8f0" border-radius="18px" padding="18px">
+          <mj-text font-size="12px" font-weight="800" color="#475569" text-transform="uppercase" letter-spacing="0.8px" padding="0px 0px 12px">
+            Live Demand Snapshot
           </mj-text>
-          <mj-text css-class="card-value" color="#b45309" padding="2px">
-            Upload
+          <mj-text padding="0px">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px;">
+              <tr>
+                <td style="padding: 12px;">
+                  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                    <tr valign="bottom">
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #93c5fd; height: 8px; border-radius: 2px;"></div></td>
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #93c5fd; height: 12px; border-radius: 2px;"></div></td>
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #60a5fa; height: 10px; border-radius: 2px;"></div></td>
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #3b82f6; height: 20px; border-radius: 2px;"></div></td>
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #2563eb; height: 16px; border-radius: 2px;"></div></td>
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #1d4ed8; height: 28px; border-radius: 2px;"></div></td>
+                      <td align="center" width="14%" height="30" style="padding: 0 1px;"><div style="background-color: #1d4ed8; height: 24px; border-radius: 2px;"></div></td>
+                    </tr>
+                    <tr>
+                      <td colspan="5" style="padding-top: 8px; font-size: 11px; color: #64748b; font-family: sans-serif;">Demand</td>
+                      <td colspan="2" align="right" style="padding-top: 8px; font-size: 11px; color: #1d4ed8; font-weight: 800; font-family: sans-serif;">RISING ↑</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
           </mj-text>
         </mj-column>
-      </mj-group>
-    </mj-section>
+      </mj-section>
 
-    <mj-section background-color="#ffffff" padding="4px">
-      <mj-column width="100%" background-color="#f8fafc" border="1px solid #e2e8f0" border-radius="8px" padding="4px">
-        <mj-text font-size="11px" font-weight="800" color="#0f172a" text-transform="uppercase" padding="4px">
-          Action Plan
-        </mj-text>
-        <mj-text padding="4px">
-          <table width="100%" border="0" cellpadding="0" cellspacing="0">
-            <tr>
-              <td width="33%" align="center">
-                <div style="width: 10px; height: 10px; background: #1d4ed8; border-radius: 50%; display: inline-block;"></div>
-                <div style="font-size: 9px; color: #475569; padding-top: 2px; font-weight: 800;">NOW</div>
-              </td>
-              <td width="33%" align="center">
-                <div style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block;"></div>
-                <div style="font-size: 9px; color: #475569; padding-top: 2px; font-weight: 800;">48H</div>
-              </td>
-              <td width="33%" align="center">
-                <div style="width: 10px; height: 10px; background: #16a34a; border-radius: 50%; display: inline-block;"></div>
-                <div style="font-size: 9px; color: #475569; padding-top: 2px; font-weight: 800;">7D</div>
-              </td>
-            </tr>
-          </table>
-        </mj-text>
-        <mj-text css-class="guide-title" padding="4px 4px 2px">
-          1. Prioritize <%= Time.current.strftime('%b') %> listings
-        </mj-text>
-        <mj-text css-class="guide-text" padding="2px 4px 4px">
-          Refresh inventory and pricing for fast-moving items.
-        </mj-text>
-      </mj-column>
-    </mj-section>
+      <mj-section background-color="#ffffff" padding="24px 24px 0px">
+        <mj-group>
+          <mj-column width="48%" background-color="#f8fafc" border="1px solid #e2e8f0" border-radius="18px" padding="18px">
+            <mj-text css-class="card-label" padding="0px 0px 8px">
+              Footprint
+            </mj-text>
+            <mj-text css-class="card-value" color="#1d4ed8" padding="0px">
+              <%= @ads_count %>
+            </mj-text>
+          </mj-column>
+          <mj-column width="4%"></mj-column>
+          <mj-column width="48%" background-color="#fff7ed" border="1px solid #fed7aa" border-radius="18px" padding="18px">
+            <mj-text css-class="card-label" color="#9a3412" padding="0px 0px 8px">
+              Action
+            </mj-text>
+            <mj-text css-class="card-value" color="#b45309" padding="0px">
+              Upload
+            </mj-text>
+          </mj-column>
+        </mj-group>
+      </mj-section>
 
-    <mj-raw><% if @top_ad %></mj-raw>
-    <mj-section background-color="#ffffff" padding="4px">
-      <mj-column width="100%" background-color="#eef2ff" border="1px solid #c7d2fe" border-radius="8px" padding="4px">
-        <mj-text font-size="11px" font-weight="800" color="#312e81" text-transform="uppercase" padding="4px">
-          Top Asset
-        </mj-text>
-        <mj-text padding="4px">
-          <table width="100%" border="0" cellpadding="0" cellspacing="0">
-            <tr>
-              <td width="48" style="vertical-align: top;">
-                <img src="<%= @top_ad.first_valid_media_url || 'https://carboncube-ke.com/logo.png' %>" style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover; display: block;" />
-              </td>
-              <td width="8"></td>
-              <td style="vertical-align: middle;">
-                <div style="font-size: 11px; line-height: 1.2; font-weight: 800; color: #0f172a;">
-                  <%= @top_ad.title.truncate(30) %>
-                </div>
-                <div style="margin-top: 2px; font-size: 10px; color: #4338ca; font-weight: 700;">
-                  <%= @top_ad_clicks %> engagements
-                </div>
-              </td>
-            </tr>
-          </table>
-        </mj-text>
-      </mj-column>
-    </mj-section>
-    <mj-raw><% end %></mj-raw>
+      <mj-section background-color="#ffffff" padding="24px 24px 0px">
+        <mj-column width="100%" background-color="#f8fafc" border="1px solid #e2e8f0" border-radius="18px" padding="18px">
+          <mj-text font-size="12px" font-weight="800" color="#0f172a" text-transform="uppercase" padding="0px 0px 12px">
+            Action Plan
+          </mj-text>
+          <mj-text padding="0px 0px 16px">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="33%" align="center">
+                  <div style="width: 10px; height: 10px; background: #1d4ed8; border-radius: 50%; display: inline-block;"></div>
+                  <div style="font-size: 10px; color: #475569; padding-top: 4px; font-weight: 800;">NOW</div>
+                </td>
+                <td width="33%" align="center">
+                  <div style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block;"></div>
+                  <div style="font-size: 10px; color: #475569; padding-top: 4px; font-weight: 800;">48H</div>
+                </td>
+                <td width="33%" align="center">
+                  <div style="width: 10px; height: 10px; background: #16a34a; border-radius: 50%; display: inline-block;"></div>
+                  <div style="font-size: 10px; color: #475569; padding-top: 4px; font-weight: 800;">7D</div>
+                </td>
+              </tr>
+            </table>
+          </mj-text>
+          <mj-text css-class="guide-title" padding="0px 0px 8px">
+            1. Prioritize <%= Time.current.strftime('%b') %> listings
+          </mj-text>
+          <mj-text css-class="guide-text" padding="0px">
+            Refresh inventory and pricing for fast-moving items.
+          </mj-text>
+        </mj-column>
+      </mj-section>
 
-    <mj-section background-color="#ffffff" padding="4px">
-      <mj-column width="100%">
-        <mj-button href="<%= @upload_url %>&<%= utm_params %>&utm_term=cta_button" width="100%" padding="4px" inner-padding="10px 16px" font-size="11px">
-          Refresh <%= Time.current.strftime('%b') %> Inventory
-        </mj-button>
-      </mj-column>
-    </mj-section>
+      <mj-raw><% if @top_ad %></mj-raw>
+      <mj-section background-color="#ffffff" padding="24px 24px 0px">
+        <mj-column width="100%" background-color="#eef2ff" border="1px solid #c7d2fe" border-radius="18px" padding="18px">
+          <mj-text font-size="12px" font-weight="800" color="#312e81" text-transform="uppercase" padding="0px 0px 12px">
+            Top Asset
+          </mj-text>
+          <mj-text padding="0px">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="64" style="vertical-align: top;">
+                  <img src="<%= @top_ad.first_valid_media_url || 'https://carboncube-ke.com/logo.png' %>" style="width: 64px; height: 64px; border-radius: 10px; object-fit: cover; display: block;" />
+                </td>
+                <td width="12"></td>
+                <td style="vertical-align: middle;">
+                  <div style="font-size: 15px; line-height: 1.4; font-weight: 800; color: #0f172a;">
+                    <%= @top_ad.title.truncate(30) %>
+                  </div>
+                  <div style="margin-top: 8px; font-size: 12px; color: #4338ca; font-weight: 700;">
+                    <%= @top_ad_clicks %> engagements
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+      <mj-raw><% end %></mj-raw>
 
-    <!-- App Promo Section -->
-    <!-- <mj-section background-color="#ffffff" padding="4px">
-      <mj-column width="100%" background-color="#0b1324" border-radius="8px" padding="10px">
-        <mj-text align="center" color="#ffffff" font-size="12px" font-weight="900" padding="4px">
-          Carbon Cube Mobile
-        </mj-text>
-        <mj-button href="https://carboncube-ke.com/?<%= utm_params %>&utm_term=app_promo_button#app-promo" background-color="#f59e0b" color="#111827" font-size="10px" font-weight="800" inner-padding="8px 16px" padding="4px">
-          GET THE APP
-        </mj-button>
-      </mj-column>
-    </mj-section> -->
+      <mj-section background-color="#ffffff" padding="28px 24px 0px">
+        <mj-column width="100%">
+          <mj-button href="<%= @upload_url %>&<%= utm_params %>&utm_term=cta_button" width="100%" padding="0px">
+            Refresh <%= Time.current.strftime('%b') %> Inventory
+          </mj-button>
+        </mj-column>
+      </mj-section>
 
-    <mj-section background-color="#ffffff" padding="0px 4px 14px">
-      <mj-column>
-        <mj-divider border-width="1px" border-color="#e2e8f0" padding="0px 0px 8px" />
-      </mj-column>
-    </mj-section>
+      <mj-section background-color="#ffffff" padding="24px 24px 0px">
+        <mj-column>
+          <mj-divider border-width="1px" border-color="#e2e8f0" padding="0px" />
+        </mj-column>
+      </mj-section>
 
-    <mj-section padding="8px 4px 12px">
-      <mj-column>
-        <mj-text align="center" font-size="11px" color="#64748b">
-          Carbon Cube Kenya • CMS Africa, Kilimani<br/>
-          <a href="https://carboncube-ke.com/confirm_unsubscribe?email=<%= @seller.email %>" style="color: #64748b; text-decoration: underline;">Manage Email Preferences</a>
-        </mj-text>
-      </mj-column>
-    </mj-section>
+      <mj-section padding="22px 24px 24px">
+        <mj-column>
+          <mj-text align="center" font-size="12px" line-height="22px" color="#64748b">
+            Carbon Cube Kenya • CMS Africa, Kilimani<br/>
+            <a href="https://carboncube-ke.com/confirm_unsubscribe?email=<%= @seller.email %>" style="color: #64748b; text-decoration: underline;">Manage Email Preferences</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
   </mj-body>
 </mjml>
