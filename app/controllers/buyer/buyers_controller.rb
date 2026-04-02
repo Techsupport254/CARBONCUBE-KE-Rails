@@ -64,8 +64,6 @@ class Buyer::BuyersController < ApplicationController
           # Don't fail the registration if email fails
         end
         
-        # Send welcome WhatsApp in background — never block or fail account creation
-        WhatsAppNotificationService.send_welcome_message_async(@buyer)
         
         # New buyers get remember_me by default for better user experience
         token = JsonWebToken.encode(user_id: @buyer.id, email: @buyer.email, role: 'Buyer', remember_me: true)

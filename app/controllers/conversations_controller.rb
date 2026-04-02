@@ -215,7 +215,7 @@ class ConversationsController < ApplicationController
     end
 
     # Check if WhatsApp notifications are enabled
-    unless WhatsAppNotificationService.enabled?
+    unless ENV['WHATSAPP_NOTIFICATIONS_ENABLED'] == 'true'
       # In development, return success with a dev message
       if Rails.env.development?
         render json: { 
@@ -238,120 +238,73 @@ class ConversationsController < ApplicationController
     # Build notification message
     sender_name = @current_user.is_a?(Admin) ? 'Carbon Cube Support' : 'Carbon Cube Sales Team'
     
-    # Use environment-aware URL: localhost for development, production URL for production
-    base_url = if Rails.env.development?
-      ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-    else
-      ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
-    end
-    raw_conversation_url = "#{base_url}/messages?conversationId=#{conversation.id}"
-    # Get last message to check for callback request
-    last_unread_message = conversation.messages
-      .where.not(sender_id: seller.id)
-      .where(read_at: nil)
-      .order(created_at: :desc)
-      .first
-    
-    # Detect campaign
-    campaign = last_unread_message&.content&.to_s&.start_with?("[Callback Request]") ? "callback_request" : "message"
-
-    conversation_url = UtmUrlHelper.append_utm(
-      raw_conversation_url,
-      source: 'whatsapp',
-      medium: 'notification',
-      campaign: campaign,
-      content: conversation.id
-    )
-    
-    # Get last message preview
+    # Message preview for template
     last_message = conversation.messages
       .where.not(sender: seller)
       .order(created_at: :desc)
       .first
     
     message_preview = last_message&.content&.truncate(100) || "You have #{unread_count} unread message#{unread_count > 1 ? 's' : ''}"
+
+    # Send WhatsApp notification using the new professional UTILITY template
+    # Template: ping_seller_message_v1 (Utility)
+    # Variable 1: Seller Name
+    # Variable 2: Unread Count
+    # Variable 3: Sender Name
+    # Variable 4: Message Preview
+    # Button Variable 1: Conversation ID
     
-    # Format with WhatsApp-compatible markdown
-    # WhatsApp supports: *bold*, _italic_, ~strikethrough~, ```monospace```, `inline code`, > block quotes, and lists
-    notification_message = <<~MESSAGE
-      🔔 *You have #{unread_count} unread message#{unread_count > 1 ? 's' : ''} on Carbon Cube Kenya*
-      
-      *#{sender_name}* sent you a message:
-      
-      > #{message_preview}
-      
-      👉 View and reply: #{conversation_url}
-      
-      ────────────────
-      *Carbon Cube Kenya*
-    MESSAGE
+    result = WhatsAppCloudService.send_template(
+      seller.phone_number,
+      'ping_seller_message_v1',
+      'en',
+      [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: seller.fullname || 'Seller' },
+            { type: 'text', text: unread_count.to_s },
+            { type: 'text', text: sender_name },
+            { type: 'text', text: message_preview }
+          ]
+        },
+        {
+          type: 'button',
+          sub_type: 'url',
+          index: 0,
+          parameters: [
+            { type: 'text', text: conversation.id.to_s }
+          ]
+        }
+      ]
+    )
 
-    # Check WhatsApp service availability before attempting to send
-    service_available = begin
-      WhatsAppNotificationService.health_check
-    rescue => e
-      Rails.logger.warn "WhatsApp service health check failed: #{e.message}"
-      false
-    end
-
-    # Send WhatsApp notification
-    result = WhatsAppNotificationService.send_message(seller.phone_number, notification_message)
-
-    if result.is_a?(Hash) && result[:success]
+    if result[:success]
       render json: { 
         success: true, 
-        message: 'Seller notified via WhatsApp',
+        message: 'Seller notified via professional WhatsApp template',
         unread_count: unread_count
       }, status: :ok
     else
       # Handle different error types
-      error_type = result.is_a?(Hash) ? result[:error_type] : 'unknown'
-      error_message = result.is_a?(Hash) ? result[:error] : 'Failed to send WhatsApp notification'
+      error_type = result[:error_type] || 'unknown'
+      error_message = result[:error] || 'Failed to send WhatsApp template notification'
       
-      # If service is unavailable (connection errors, timeouts, or service_unavailable),
-      # return a graceful response instead of 503
+      # If service is unavailable, return a graceful response
       if ['service_unavailable', 'connection_error', 'timeout'].include?(error_type) || !service_available
-        Rails.logger.warn "WhatsApp service unavailable: #{error_type} - #{error_message}"
-        
-        # Return success with a warning message - the action was attempted and logged
-        # This prevents the frontend from showing an error when the service is temporarily down
         render json: { 
           success: true,
-          message: 'Notification attempt logged. WhatsApp service is currently unavailable - the seller will be notified when the service is back online.',
+          message: 'Notification attempt logged. WhatsApp service is temporarily unavailable.',
           unread_count: unread_count,
-          warning: true,
-          error_type: error_type,
-          note: 'The notification has been logged and will be retried automatically when the WhatsApp service is available.'
+          warning: true
         }, status: :ok
         return
       end
       
-      case error_type
-      when 'not_registered'
-        render json: { 
-          error: 'Seller\'s phone number is not registered on WhatsApp',
-          message: 'The phone number exists but is not registered on WhatsApp. Please contact the seller to register their number.',
-          error_type: error_type
-        }, status: :bad_request
-      when 'no_phone_number', 'invalid_phone_format'
-        # These should have been caught earlier, but handle just in case
-        render json: { 
-          error: error_message,
-          error_type: error_type
-        }, status: :unprocessable_entity
-      else
-        # For other errors, still return success but with a warning
-        # This ensures the UI doesn't break when there are unexpected issues
-        Rails.logger.warn "WhatsApp notification failed with error type: #{error_type}, message: #{error_message}"
-        render json: { 
-          success: true,
-          message: 'Notification attempt logged. There was an issue sending the WhatsApp notification.',
-          unread_count: unread_count,
-          warning: true,
-          error_type: error_type,
-          error_details: error_message
-        }, status: :ok
-      end
+      render json: { 
+        error: error_message,
+        error_type: error_type
+      }, status: :unprocessable_entity
     end
   rescue => e
     Rails.logger.error "Error pinging seller: #{e.message}"

@@ -535,8 +535,6 @@ class GoogleOauthService
       # Generate JWT token for new user
       token = generate_jwt_token(seller)
       
-      # Send welcome WhatsApp in background — never block or fail account creation
-      WhatsAppNotificationService.send_welcome_message_async(seller)
       
       # Return success response with missing fields if any
       # Frontend will show modal to collect missing fields
@@ -769,8 +767,6 @@ class GoogleOauthService
       # Generate JWT token for new user
       token = generate_jwt_token(buyer)
       
-      # Send welcome WhatsApp in background — never block or fail account creation
-      WhatsAppNotificationService.send_welcome_message_async(buyer)
       
       # Return success response
       { 

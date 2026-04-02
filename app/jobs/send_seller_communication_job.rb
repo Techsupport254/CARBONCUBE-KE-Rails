@@ -100,7 +100,7 @@ class SendSellerCommunicationJob < ApplicationJob
             message_text = build_communication_message(user, user_type, email_type)
           end
 
-          whatsapp_result = WhatsAppNotificationService.send_message(user.phone_number, message_text)
+          whatsapp_result = WhatsAppCloudService.send_message(user.phone_number, message_text)
 
           if whatsapp_result.is_a?(Hash) && whatsapp_result[:success]
             sent_channels << "whatsapp"

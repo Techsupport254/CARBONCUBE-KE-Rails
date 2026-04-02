@@ -13,7 +13,6 @@ class Message < ApplicationRecord
   after_create :send_push_notification
   after_create :send_message_notification_email
   after_create :send_message_notification_whatsapp, unless: -> { conversation.is_whatsapp? }
-  after_create :send_direct_whatsapp_message, if: -> { conversation.is_whatsapp? }
 
   # Status constants
   STATUS_SENT = 'sent'
@@ -126,6 +125,13 @@ class Message < ApplicationRecord
         name: get_sender_display_name(sender)
       },
       ad_id: ad_id,
+      ad: ad ? {
+        id: ad.id,
+        title: ad.title,
+        price: ad.price,
+        image_url: ad.first_media_url,
+        category: ad.category&.name
+      } : nil,
       product_context: product_context,
       status: determine_status,
       status_text: status_text,
@@ -272,82 +278,71 @@ class Message < ApplicationRecord
   def send_message_notification_whatsapp
     recipient = get_recipient
     return unless recipient
-    
-    # Only send WhatsApp to sellers
     return unless recipient.is_a?(Seller)
     
-    # Check if WhatsApp notifications are enabled before attempting
-    unless WhatsAppNotificationService.enabled?
-      # Rails.logger.debug "WhatsApp notifications are disabled, skipping notification for message #{id}"
-      return
-    end
+    # Don't send if recipient is online
+    return if is_recipient_online?(recipient)
     
-    # Don't send WhatsApp if recipient is online (they'll see it in real-time)
-    if is_recipient_online?(recipient)
-      # Rails.logger.info "Recipient #{recipient.class.name} #{recipient.id} is online, skipping WhatsApp notification"
-      return
-    end
-    
-    # Don't send WhatsApp to the sender
-    if sender == recipient
-      # Rails.logger.info "Sender and recipient are the same, skipping WhatsApp notification"
-      return
-    end
-    
-    begin
-      result = WhatsAppNotificationService.send_message_notification(self, recipient, conversation)
-      if result
-        # Rails.logger.info "WhatsApp notification sent to #{recipient.class.name} #{recipient.id} for message #{id}"
-      else
-        # Service returned false (e.g., service unavailable) - log as debug, not error
-        # Rails.logger.debug "WhatsApp notification not sent for message #{id} (service may be unavailable)"
-      end
-    rescue => e
-      # Log connection errors gracefully - don't treat as critical failures
-      if e.is_a?(Errno::ECONNREFUSED) || e.is_a?(SocketError) || e.is_a?(Net::ReadTimeout) || e.is_a?(Net::OpenTimeout)
-        Rails.logger.debug "WhatsApp service unavailable for message #{id}: #{e.message}"
-      else
-        Rails.logger.warn "Failed to send WhatsApp notification for message #{id}: #{e.message}"
-      end
-      # Don't fail message creation if WhatsApp sending fails
-    end
-  end
+    # Don't send to self
+    return if sender == recipient
 
-  # Send direct WhatsApp message for WhatsApp-initiated conversations
-  def send_direct_whatsapp_message
-    # Don't send if we already have a whatsapp_message_id (meaning it came from WhatsApp)
-    return if whatsapp_message_id.present?
-    
-    recipient = get_recipient
-    return unless recipient
-    
-    # Get phone number
-    phone_number = recipient.phone_number
-    return unless phone_number.present?
-    
-    # Check WhatsApp 24-hour window policy
-    # We can only send a free-form message if the customer sent a message within the last 24 hours.
-    last_recipient_msg = conversation.messages.where(sender: recipient).order(created_at: :desc).first
-    
-    if last_recipient_msg.nil? || last_recipient_msg.created_at < 24.hours.ago
-      Rails.logger.info "[Message] Skipping out-bound WhatsApp message to #{phone_number} because the 24hr window is closed. Message stays local."
-      return
-    end
-    
-    # In WhatsApp conversations, the recipient might be a Buyer or Seller
-    # We send the actual message content directly
-    begin
+    # If it is a WhatsApp-initiated conversation, send directly
+    if conversation.is_whatsapp?
+      # Only send if we do not have a whatsapp_message_id yet (prevent loops)
+      return if whatsapp_message_id.present?
+      
+      phone_number = recipient.phone_number
+      return unless phone_number.present?
+
+      # Check 24-hour window
+      last_recipient_msg = conversation.messages.where(sender: recipient).order(created_at: :desc).first
+      if last_recipient_msg.nil? || last_recipient_msg.created_at < 24.hours.ago
+        # Window closed - optionally use templates here if needed, but for now we skip
+        return
+      end
+
       result = WhatsAppCloudService.send_message(phone_number, content)
       if result[:success]
         update_column(:whatsapp_message_id, result[:message_id])
-        update_column(:status, STATUS_DELIVERED) # Meta confirmed receipt
-        # Rails.logger.info "[Message] Direct WhatsApp message sent to #{phone_number}: #{result[:message_id]}"
-      else
-        Rails.logger.error "[Message] Failed to send direct WhatsApp message: #{result[:error]}"
+        update_column(:status, STATUS_DELIVERED)
       end
-    rescue => e
-      Rails.logger.error "[Message] Exception sending direct WhatsApp message: #{e.message}"
+    else
+      # Regular conversation - send a template notification to ping the seller
+      # We use the new professional Utility template we just created
+      unread_count = conversation.messages.unread.where.not(sender: recipient).count
+      last_message = conversation.messages.where.not(sender: recipient).order(created_at: :desc).first
+      message_preview = last_message&.content&.truncate(100) || "New message"
+      
+      sender_display_name = @current_user.is_a?(Admin) ? 'Carbon Cube Support' : 'Carbon Cube Team'
+
+      WhatsAppCloudService.send_template(
+        recipient.phone_number,
+        'ping_seller_message_v1',
+        'en',
+        [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: recipient.fullname || 'Seller' },
+              { type: 'text', text: unread_count.to_s },
+              { type: 'text', text: sender_display_name },
+              { type: 'text', text: message_preview }
+            ]
+          },
+          {
+            type: 'button',
+            sub_type: 'url',
+            index: 0,
+            parameters: [
+              { type: 'text', text: conversation.id.to_s }
+            ]
+          }
+        ]
+      )
     end
+  rescue => e
+    # Graceful logging for WhatsApp failures
+    Rails.logger.warn "WhatsApp notification failed for message #{id}: #{e.message}"
   end
 
   def send_push_notification

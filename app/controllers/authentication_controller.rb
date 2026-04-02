@@ -1498,10 +1498,6 @@ class AuthenticationController < ApplicationController
         end
       end
       
-      if should_send_welcome
-        Rails.logger.info "📱 Sending welcome WhatsApp message - phone number: #{user.phone_number}"
-        WhatsAppNotificationService.send_welcome_message_async(user)
-      end
       
       # Prepare user response data (include phone_number so frontend updates UI instantly)
       user_response = {
