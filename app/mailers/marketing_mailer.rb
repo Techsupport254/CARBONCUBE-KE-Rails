@@ -138,7 +138,14 @@ class MarketingMailer < ApplicationMailer
       # Try to compile MJML to HTML
       html_content = begin
         require 'open3'
-        stdout, stderr, status = Open3.capture3('npx', 'mjml', '--stdin', stdin_data: mjml_source)
+        stdout, stderr, status = Open3.capture3(
+          'npx',
+          'mjml',
+          '--stdin',
+          '--config.filePath',
+          template_path.dirname.to_s,
+          stdin_data: mjml_source
+        )
         if status.success?
           stdout
         else
