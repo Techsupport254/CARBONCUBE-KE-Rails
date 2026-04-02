@@ -27,6 +27,7 @@ class SendSellerMarketingBroadcastJob < ApplicationJob
       begin
         # Build components for personalized message
         # Template uses named parameter 'customer_name'
+        # Build components for personalized message
         components = [
           {
             type: 'body',
@@ -34,11 +35,26 @@ class SendSellerMarketingBroadcastJob < ApplicationJob
               {
                 type: 'text',
                 parameter_name: 'customer_name',
-                text: seller.fullname.presence || 'Muuzaji' # Fallback to Swahili for 'Seller'
+                text: seller.fullname.presence || seller.username.presence || 'Muuzaji'
               }
             ]
           }
         ]
+
+        # Add Button parameter for Easter template (Shop Slug)
+        if template_name == 'easter_seller_utility_v1'
+          components << {
+            type: 'button',
+            sub_type: 'url',
+            index: 1, # The 'View and Share Your Shop' button is at index 1
+            parameters: [
+              {
+                type: 'text',
+                text: seller.username.presence || seller.slug.presence || 'shop'
+              }
+            ]
+          }
+        end
 
         # Using Cloud Service
         result = WhatsAppCloudService.send_template(seller.phone_number, template_name, language_code, components)

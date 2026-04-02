@@ -85,7 +85,6 @@ class Buyer::ProfilesController < ApplicationController
         # Send welcome WhatsApp when phone was just added (e.g. OAuth user completing signup modal)
         if phone_being_added && current_buyer.phone_number.present? && !current_buyer.phone_provided_by_oauth
           Rails.logger.info "📱 Sending welcome WhatsApp after phone added via profile - buyer #{current_buyer.email}"
-          WhatsAppNotificationService.send_welcome_message_async(current_buyer)
         end
         buyer_data = current_buyer.as_json
         buyer_data[:profile_completion_percentage] = current_buyer.profile_completion_percentage

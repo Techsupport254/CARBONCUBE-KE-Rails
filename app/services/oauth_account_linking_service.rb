@@ -258,8 +258,6 @@ class OauthAccountLinkingService
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
-    # Send welcome WhatsApp in background — never block or fail account creation
-    WhatsAppNotificationService.send_welcome_message_async(buyer)
     
     buyer
   rescue ActiveRecord::RecordInvalid => e
@@ -372,8 +370,6 @@ class OauthAccountLinkingService
     seller.reload
     assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
     
-    # Send welcome WhatsApp in background — never block or fail account creation
-    WhatsAppNotificationService.send_welcome_message_async(seller)
     
     seller
   rescue ActiveRecord::RecordInvalid => e

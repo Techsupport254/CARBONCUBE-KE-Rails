@@ -198,9 +198,6 @@ class Seller::SellersController < ApplicationController
         # Don't fail the registration if email fails
       end
       
-      # Send welcome WhatsApp in background — never block or fail account creation
-      WhatsAppNotificationService.send_welcome_message_async(@seller)
-      
       # New sellers get remember_me by default for better user experience
       token = JsonWebToken.encode(seller_id: @seller.id, email: @seller.email, role: 'Seller', remember_me: true)
       # Rails.logger.info "Seller created successfully: #{@seller.id}"

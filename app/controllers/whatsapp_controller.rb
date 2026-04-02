@@ -24,24 +24,17 @@ class WhatsappController < ApplicationController
     end
     
     begin
-      # Use the WhatsApp notification service to check if number is registered
-      result = WhatsAppNotificationService.check_number(cleaned_number)
+      # Since the legacy node-based bridge service is decommissioned, 
+      # we perform a basic format check. Official Cloud API 'check' 
+      # for marketing is restricted, so we assume valid formats are on WhatsApp.
+      is_valid_format = cleaned_number.length >= 7 && cleaned_number.length <= 15
       
-      if result[:success]
-        render json: {
-          isRegistered: result[:isRegistered],
-          phoneNumber: result[:phoneNumber],
-          formattedNumber: result[:formattedNumber],
-          method: result[:method] || 'unknown'
-        }, status: :ok
-      else
-        # If format is invalid, return false
-        render json: {
-          isRegistered: false,
-          phoneNumber: cleaned_number,
-          error: result[:error]
-        }, status: :ok
-      end
+      render json: {
+        isRegistered: is_valid_format,
+        phoneNumber: cleaned_number,
+        formattedNumber: cleaned_number,
+        method: 'format_validation'
+      }, status: :ok
     rescue => e
       Rails.logger.error "WhatsApp check error: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
