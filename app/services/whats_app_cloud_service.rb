@@ -113,9 +113,6 @@ class WhatsAppCloudService
   private
 
   def self.send_request(uri, payload, access_token)
-    # Log the targeted ID for observability
-    Rails.logger.info "[WhatsAppCloudAPI] Sending request via Phone ID: #{uri.path.split('/')[2]}"
-
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
