@@ -35,30 +35,37 @@ class BuyerAuthorizeApiRequest
 
     model = role.downcase == 'seller' ? Seller : Buyer
 
-    # Try to find user by ID first
+    # Try to find user by ID
     if user_id
-      # Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for #{model.name} with ID: #{user_id}"
-      
       user = model.find_by(id: user_id)
       if user && (!user.respond_to?(:deleted?) || !user.deleted?)
-        # Rails.logger.debug "BuyerAuthorizeApiRequest: Found user: #{user.id}"
         return user
-      elsif user&.respond_to?(:deleted?) && user.deleted?
-        # Rails.logger.error "BuyerAuthorizeApiRequest: User #{user_id} is deleted"
       end
     end
 
-    # Try to find user by email if ID didn't work
+    # Try to find user by email
     if user_email
-      # Rails.logger.debug "BuyerAuthorizeApiRequest: Looking for #{model.name} with email: #{user_email}"
       user = model.find_by(email: user_email)
       if user && (!user.respond_to?(:deleted?) || !user.deleted?)
-        # Rails.logger.info "BuyerAuthorizeApiRequest: Found user by email: #{user.id}"
         return user
       end
     end
 
-    # Rails.logger.error "BuyerAuthorizeApiRequest: Could not find #{model.name} with ID: #{user_id}, email: #{user_email}"
+    # --- FALLBACK: Check the other model (Buyer/Seller swap) ---
+    # This handles the transition period during upgrade/migration 
+    # when the JWT role might not yet match the database state.
+    other_model = (model == Seller) ? Buyer : Seller
+    
+    # Check other model by email (ID might have changed during migration, but email is unique)
+    if user_email
+      user = other_model.find_by(email: user_email)
+      if user && (!user.respond_to?(:deleted?) || !user.deleted?)
+        # Rails.logger.info "BuyerAuthorizeApiRequest: Found user in FALLBACK model (#{other_model.name}) by email: #{user_email}"
+        return user
+      end
+    end
+
+    # Rails.logger.error "BuyerAuthorizeApiRequest: Could not find user in primary (#{model.name}) or fallback (#{other_model.name}) tables."
     raise ExceptionHandler::InvalidToken, 'Invalid token'
   end
 

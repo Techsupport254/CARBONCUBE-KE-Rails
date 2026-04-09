@@ -116,19 +116,37 @@ class WhatsAppCloudService
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+    http.read_timeout = 10 # Set a timeout
 
     request = Net::HTTP::Post.new(uri.path)
     request['Authorization'] = "Bearer #{access_token}"
     request['Content-Type'] = 'application/json'
     request.body = payload.to_json
 
-    response = http.request(request)
-    result = JSON.parse(response.body)
+    begin
+      response = http.request(request)
+      
+      if response.body.blank?
+        return { success: false, error: "Empty response from WhatsApp API", error_type: 'service_unavailable' }
+      end
 
-    if response.code.to_i == 200
-      { success: true, message_id: result['messages']&.first&.[]('id') }
-    else
-      { success: false, error: result['error']&.[]('message') || 'Unknown error' }
+      result = JSON.parse(response.body)
+
+      if response.code.to_i == 200
+        { success: true, message_id: result['messages']&.first&.[]('id') }
+      else
+        { 
+          success: false, 
+          error: result['error']&.[]('message') || 'Unknown error',
+          error_type: result['error']&.[]('type') || 'unknown'
+        }
+      end
+    rescue Net::ReadTimeout, Net::OpenTimeout
+      { success: false, error: "Connection to WhatsApp API timed out", error_type: 'timeout' }
+    rescue JSON::ParserError
+      { success: false, error: "Invalid JSON response from WhatsApp API", error_type: 'service_unavailable' }
+    rescue StandardError => e
+      { success: false, error: "WhatsApp API error: #{e.message}", error_type: 'connection_error' }
     end
   end
 
@@ -184,8 +202,32 @@ class WhatsAppCloudService
                 msg_data['text']['body']
               when 'reaction'
                 msg_data.dig('reaction', 'emoji') || "👍"
+              when 'image', 'video'
+                media_data = msg_data[msg_data['type']]
+                media_id = media_data['id']
+                caption = media_data['caption']
+                
+                # Attempt to download and upload to Cloudinary
+                url = download_and_upload_media(media_id, msg_data['type'])
+                if url
+                  if msg_data['type'] == 'image'
+                    caption.present? ? "![#{caption}](#{url})\n\n#{caption}" : "![Image](#{url})"
+                  else
+                    # For video, we can store it as a link or a special markdown if the frontend handles it
+                    caption.present? ? "[Video: #{caption}](#{url})\n\n#{caption}" : "[Video Message](#{url})"
+                  end
+                else
+                  "[Message type: #{msg_data['type']}]"
+                end
+              when 'document'
+                doc_data = msg_data['document']
+                "[Document: #{doc_data['filename'] || 'File'}]"
+              when 'audio'
+                "[Audio Message]"
+              when 'sticker'
+                "![Sticker](#{download_and_upload_media(msg_data['sticker']['id'], 'image')})"
               else
-                "[Message type: #{msg_data['type']}]"
+                "[Unsupported Message: #{msg_data['type']}]"
               end
 
     # Find or create a conversation
@@ -208,6 +250,64 @@ class WhatsAppCloudService
       Rails.logger.info "[WhatsAppCloudService] Saved incoming message from #{user.class.name} #{user.id}"
     else
       Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
+    end
+  end
+
+  def self.download_and_upload_media(media_id, type)
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+    return nil if access_token.blank?
+
+    begin
+      # 1. Get the media URL from Meta
+      uri = URI("#{GRAPH_URL}/#{media_id}")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+      request = Net::HTTP::Get.new(uri)
+      request['Authorization'] = "Bearer #{access_token}"
+      
+      response = http.request(request)
+      return nil unless response.code.to_i == 200
+      
+      media_info = JSON.parse(response.body)
+      download_url = media_info['url']
+      return nil unless download_url
+
+      # 2. Download the media file
+      download_uri = URI(download_url)
+      download_http = Net::HTTP.new(download_uri.host, download_uri.port)
+      download_http.use_ssl = true
+      download_http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+      download_request = Net::HTTP::Get.new(download_uri)
+      download_request['Authorization'] = "Bearer #{access_token}"
+      
+      file_response = download_http.request(download_request)
+      return nil unless file_response.code.to_i == 200
+
+      # 3. Upload to Cloudinary
+      # We create a temp file to pass to Cloudinary
+      temp_file = Tempfile.new(['whatsapp_media', ".#{media_info['mime_type'].split('/').last}"])
+      temp_file.binmode
+      temp_file.write(file_response.body)
+      temp_file.rewind
+
+      resource_type = ['video', 'audio'].include?(type) ? 'video' : 'image'
+      
+      uploaded = Cloudinary::Uploader.upload(temp_file.path,
+        upload_preset: ENV['UPLOAD_PRESET'],
+        folder: "whatsapp_media",
+        resource_type: resource_type
+      )
+      
+      temp_file.close
+      temp_file.unlink
+
+      uploaded['secure_url']
+    rescue => e
+      Rails.logger.error "[WhatsAppCloudService] Media processing failed: #{e.message}"
+      nil
     end
   end
 
