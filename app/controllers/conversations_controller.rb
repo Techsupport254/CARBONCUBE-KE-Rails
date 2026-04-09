@@ -254,6 +254,12 @@ class ConversationsController < ApplicationController
     # Variable 4: Message Preview
     # Button Variable 1: Conversation ID
     
+    # Ultra-safe cleaning for WhatsApp parameters
+    safe_fullname = (seller.fullname || 'Seller').to_s.gsub(/[^a-zA-Z0-9 ]/, '').truncate(30)
+    safe_preview = message_preview.to_s.gsub(/[^a-zA-Z0-9 ]/, '').truncate(60)
+    safe_unread = unread_count.to_s
+    safe_sender = sender_name.to_s.gsub(/[^a-zA-Z0-9 ]/, '').truncate(30)
+
     result = WhatsAppCloudService.send_template(
       seller.phone_number,
       'ping_seller_message_v1',
@@ -262,10 +268,10 @@ class ConversationsController < ApplicationController
         {
           type: 'body',
           parameters: [
-            { type: 'text', text: seller.fullname || 'Seller' },
-            { type: 'text', text: unread_count.to_s },
-            { type: 'text', text: sender_name },
-            { type: 'text', text: message_preview }
+            { type: 'text', text: safe_fullname },
+            { type: 'text', text: safe_unread },
+            { type: 'text', text: safe_sender },
+            { type: 'text', text: safe_preview }
           ]
         },
         {
