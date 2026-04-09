@@ -212,11 +212,29 @@ class Buyer::ProfilesController < ApplicationController
   # POST /buyer/profile/upgrade_to_seller
   def upgrade_to_seller
     # 1. Check if user is already a seller
-    if Seller.exists?(email: current_buyer.email)
+    existing_seller = Seller.find_by(email: current_buyer.email)
+    if existing_seller
+      token = JsonWebToken.encode(
+        seller_id: existing_seller.id,
+        email:     existing_seller.email,
+        role:      'Seller',
+        remember_me: true
+      )
+      
       return render json: { 
-        success: false, 
-        error: "You are already registered as a seller with this email." 
-      }, status: :unprocessable_entity
+        success: true, 
+        message: "You have already been upgraded to a seller account.",
+        token: token,
+        user: {
+          id:               existing_seller.id,
+          email:            existing_seller.email,
+          role:             'Seller',
+          name:             existing_seller.fullname,
+          username:         existing_seller.username,
+          enterprise_name:  existing_seller.enterprise_name,
+          profile_picture:  existing_seller.profile_picture
+        }
+      }, status: :ok
     end
 
     # 2. Validate required seller fields
@@ -295,34 +313,46 @@ class Buyer::ProfilesController < ApplicationController
       # --- 3c. Migrate all buyer-linked records to the new seller ---
       conn = ActiveRecord::Base.connection
 
-      # Tables with a direct buyer_id foreign key
-      [
-        { table: :click_events,    fk: :buyer_id },
-        { table: :wish_lists,      fk: :buyer_id },
-        { table: :cart_items,      fk: :buyer_id },
-        { table: :reviews,         fk: :buyer_id },
-        { table: :conversations,   fk: :buyer_id },
-        { table: :ad_searches,     fk: :buyer_id },
-      ].each do |mapping|
-        rows = conn.execute("UPDATE #{mapping[:table]} SET #{mapping[:fk]} = '#{@seller.id}' WHERE #{mapping[:fk]} = '#{buyer.id}'")
-        Rails.logger.info "✅  Migrated #{mapping[:table]} (buyer_id) -> seller #{@seller.id}"
-      end
+      # 1. Tables that support both buyer_id AND seller_id (Move to seller_id and NULL out buyer_id)
+      # This avoids Foreign Key violations since buyer_id MUST point to the buyers table
+      
+      # Conversations: Move buyer to inquirer_seller_id
+      conn.execute("UPDATE conversations SET inquirer_seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
+      Rails.logger.info "✅ Migrated conversations: buyer_id -> inquirer_seller_id (#{@seller.id})"
 
-      # Polymorphic: messages (sender_type = 'Buyer')
+      # Wish Lists: Move to seller_id
+      conn.execute("UPDATE wish_lists SET seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
+      Rails.logger.info "✅ Migrated wish_lists: buyer_id -> seller_id (#{@seller.id})"
+
+      # Click Events: Move to seller_id
+      conn.execute("UPDATE click_events SET seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
+      Rails.logger.info "✅ Migrated click_events: buyer_id -> seller_id (#{@seller.id})"
+
+      # Reviews: Move to seller_id
+      # Note: seller_id is a string in this table, Postgres handles the UUID-to-string cast
+      conn.execute("UPDATE reviews SET seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
+      Rails.logger.info "✅ Migrated reviews: buyer_id -> seller_id (#{@seller.id})"
+
+      # 2. Polymorphic associations (Safe to update directly)
+      
+      # Messages: Update sender
       conn.execute("UPDATE messages SET sender_id = '#{@seller.id}', sender_type = 'Seller' WHERE sender_id = '#{buyer.id}' AND sender_type = 'Buyer'")
-      Rails.logger.info "✅  Migrated messages -> Seller sender"
+      Rails.logger.info "✅ Migrated messages -> Seller sender"
 
-      # Polymorphic: password_otps (otpable_type = 'Buyer')
+      # Password OTPs: Update recipient
       conn.execute("UPDATE password_otps SET otpable_id = '#{@seller.id}', otpable_type = 'Seller' WHERE otpable_id = '#{buyer.id}' AND otpable_type = 'Buyer'")
-      Rails.logger.info "✅  Migrated password_otps -> Seller"
+      Rails.logger.info "✅ Migrated password_otps -> Seller"
 
-      # Polymorphic: device_tokens (user_type / tokenable_type)
+      # Device Tokens: Update owner
       begin
         conn.execute("UPDATE device_tokens SET user_id = '#{@seller.id}', user_type = 'Seller' WHERE user_id = '#{buyer.id}' AND user_type = 'Buyer'")
-        Rails.logger.info "✅  Migrated device_tokens -> Seller"
+        Rails.logger.info "✅ Migrated device_tokens -> Seller"
       rescue => e
-        Rails.logger.warn "⚠️  device_tokens migration skipped: #{e.message}"
+        Rails.logger.warn "⚠️ device_tokens migration skipped: #{e.message}"
       end
+
+      # Note: cart_items and ad_searches will be automatically deleted via ON DELETE CASCADE 
+      # during buyer.destroy! since they don't have a seller_id equivalent for personal use.
 
       # --- 3d. Destroy the buyer record (hard delete — they are now a seller) ---
       buyer.destroy!
@@ -371,7 +401,7 @@ class Buyer::ProfilesController < ApplicationController
 
   def authenticate_buyer
     @current_user = BuyerAuthorizeApiRequest.new(request.headers).result
-    unless @current_user && @current_user.is_a?(Buyer)
+    unless @current_user && (@current_user.is_a?(Buyer) || @current_user.is_a?(Seller))
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end

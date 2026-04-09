@@ -291,7 +291,7 @@ class ConversationsController < ApplicationController
       error_message = result[:error] || 'Failed to send WhatsApp template notification'
       
       # If service is unavailable, return a graceful response
-      if ['service_unavailable', 'connection_error', 'timeout'].include?(error_type) || !service_available
+      if ['service_unavailable', 'connection_error', 'timeout'].include?(error_type)
         render json: { 
           success: true,
           message: 'Notification attempt logged. WhatsApp service is temporarily unavailable.',
