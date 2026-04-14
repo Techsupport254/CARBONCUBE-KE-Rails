@@ -77,7 +77,7 @@ class Buyer::OffersController < ApplicationController
         AND sellers.blocked = false
         AND sellers.deleted = false
         AND sellers.flagged = false
-      ORDER BY offers.priority DESC, offers.created_at DESC
+      ORDER BY offers.priority DESC, RANDOM(), offers.created_at DESC
       LIMIT ? OFFSET ?
     SQL
 
@@ -308,7 +308,7 @@ class Buyer::OffersController < ApplicationController
         AND sellers.deleted = false
         AND sellers.flagged = false
       GROUP BY offers.id, sellers.id, seller_tiers.id, tiers.id
-      ORDER BY offers.priority DESC, offers.created_at DESC
+      ORDER BY offers.priority DESC, RANDOM(), offers.created_at DESC
       LIMIT 5
     SQL
 
@@ -393,7 +393,7 @@ class Buyer::OffersController < ApplicationController
         AND sellers.deleted = false
         AND sellers.flagged = false
       GROUP BY offers.id, sellers.id, seller_tiers.id, tiers.id
-      ORDER BY offers.priority DESC, offers.created_at DESC
+      ORDER BY offers.priority DESC, RANDOM(), offers.created_at DESC
       LIMIT 10
     SQL
 

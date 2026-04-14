@@ -36,11 +36,19 @@ class Seller::AnalyticsController < ApplicationController
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
 
+        # Get ads, reviews, and orders timestamps for trend analysis
+        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        orders_timestamps = [] # orders tracking not yet implemented
+
         response_data.merge!(
           # Add timestamps for dynamic filtering (all time)
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
-          add_to_wishlist_timestamps: add_to_wishlist_timestamps
+          add_to_wishlist_timestamps: add_to_wishlist_timestamps,
+          ads_with_timestamps: ads_timestamps,
+          reviews_with_timestamps: reviews_timestamps,
+          orders_with_timestamps: orders_timestamps
         )
       when 3 # Standard tier
         # Get all timestamps for Standard tier (all time, no limits)
@@ -57,11 +65,19 @@ class Seller::AnalyticsController < ApplicationController
         competitor_category_id = get_competitor_category_id
         primary_category_id = competitor_category_id || get_primary_category_id
 
+        # Get ads, reviews, and orders timestamps for trend analysis
+        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        orders_timestamps = [] # orders tracking not yet implemented
+
         response_data.merge!(
           # Add timestamps for dynamic filtering (all time)
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
           add_to_wishlist_timestamps: add_to_wishlist_timestamps,
+          ads_with_timestamps: ads_timestamps,
+          reviews_with_timestamps: reviews_timestamps,
+          orders_with_timestamps: orders_timestamps,
           # Add demographics stats for audience page (tier 3+)
           click_events_stats: top_click_event_stats,
           wishlist_stats: top_wishlist_stats,
@@ -100,6 +116,11 @@ class Seller::AnalyticsController < ApplicationController
         # OPTIMIZATION: Pre-load common data used by multiple methods
         preload_common_data_for_premium
 
+        # Get ads, reviews, and orders timestamps for trend analysis
+        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        orders_timestamps = [] # orders tracking not yet implemented
+
         # Calculate all advanced metrics for premium tier (used on advanced analytics page)
         response_data.merge!(
           # Timestamps for audience page (tier 2+)
@@ -107,6 +128,9 @@ class Seller::AnalyticsController < ApplicationController
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
           add_to_wishlist_timestamps: add_to_wishlist_timestamps,
           wishlist_timestamps: wishlist_timestamps,
+          ads_with_timestamps: ads_timestamps,
+          reviews_with_timestamps: reviews_timestamps,
+          orders_with_timestamps: orders_timestamps,
           # Demographics stats for audience page (tier 3+)
           click_events_stats: top_click_event_stats,
           wishlist_stats: top_wishlist_stats,
@@ -2107,7 +2131,6 @@ class Seller::AnalyticsController < ApplicationController
 
   # 11. Review and Reputation Metrics
   def calculate_review_reputation_metrics
-    ads = current_seller.ads.active
     reviews = Review.joins(:ad).where(ads: { seller_id: current_seller.id })
 
     # Review response rate
