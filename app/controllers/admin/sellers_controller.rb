@@ -321,46 +321,8 @@ class Admin::SellersController < ApplicationController
   end
 
   def orders
-  
-    orders = @seller.orders.includes(order_items: [:ad, :order], buyer: :orders)
-                          .where(order_items: { ad_id: @seller.ads.pluck(:id) })
-  
-    filtered_orders = orders.map do |order|
-      {
-        id: order.id,
-        status: order.status,
-        total_amount: order.total_amount,
-        processing_fee: order.processing_fee,
-        delivery_fee: order.delivery_fee,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-        mpesa_transaction_code: order.mpesa_transaction_code,
-        buyer: {
-          id: order.buyer.id,
-          fullname: order.buyer.fullname,
-          email: order.buyer.email,
-          phone_number: order.buyer.phone_number
-        },
-        order_items: order.order_items
-                          .select { |item| @seller.ads.exists?(item.ad_id) }
-                          .map do |item|
-          {
-            id: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            total_price: item.total_price,
-            ad: {
-              id: item.ad.id,
-              title: item.ad.title,
-              seller_id: item.ad.seller_id,
-              price: item.ad.price
-            }
-          }
-        end
-      }
-    end
-  
-    render json: filtered_orders, status: :ok
+    # Orders tracking not yet implemented
+    render json: [], status: :ok
   end
 
   private

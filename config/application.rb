@@ -6,6 +6,15 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+module Mjml
+  def self.valid_mjml_binary
+    true
+  end
+  def self.check_for_custom_mjml_binary
+    true
+  end
+end
+
 module CarbonecomRails
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.

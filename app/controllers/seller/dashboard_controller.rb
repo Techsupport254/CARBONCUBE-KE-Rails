@@ -57,13 +57,20 @@ class Seller::DashboardController < ApplicationController
                                                           .pluck(Arel.sql("click_events.created_at"))
                                                           .map { |ts| ts&.iso8601 }
 
+        # Get ads, reviews, and orders timestamps for trend analysis
+        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+
         response_data[:analytics] = {
           basic_click_event_stats: {
             click_event_trends: click_events_service.click_event_trends(months: nil)
           },
           ad_clicks_timestamps: timestamps[:ad_clicks_timestamps],
           reveal_events_timestamps: timestamps[:reveal_events_timestamps],
-          add_to_wishlist_timestamps: add_to_wishlist_timestamps
+          add_to_wishlist_timestamps: add_to_wishlist_timestamps,
+          ads_with_timestamps: ads_timestamps,
+          reviews_with_timestamps: reviews_timestamps,
+          orders_with_timestamps: [] # Safe placeholder as Order model is removed
         }
 
         # Add wishlist stats for tier 2+

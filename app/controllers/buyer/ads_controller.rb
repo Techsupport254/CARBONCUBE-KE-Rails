@@ -2085,7 +2085,7 @@ class Buyer::AdsController < ApplicationController
                  WHEN 2 THEN 3
                  WHEN 1 THEN 4
                  ELSE 5
-               END ASC, ads.created_at DESC'))
+               END ASC, RANDOM(), ads.created_at DESC'))
       .limit(limit * 3) # Get more to allow for scoring
     
     # Use .load.size instead of .count to avoid a separate COUNT query
@@ -2142,8 +2142,9 @@ class Buyer::AdsController < ApplicationController
         (click_score * 0.15)
       )
       
-      # Personalization boost based on similarity
-      personalized_score = comprehensive_score + (similarity_score * 2.0) # Boost for similarity
+      # Personalization boost based on similarity + random jitter for freshness
+      jitter = (rand * 0.4) - 0.2
+      personalized_score = comprehensive_score + (similarity_score * 2.0) + jitter
       
       {
         id: ad.id,
@@ -2699,6 +2700,7 @@ class Buyer::AdsController < ApplicationController
           WHEN 1 THEN 4
           ELSE 5
         END,
+        RANDOM(), -- Add variety within tiers
         ads.created_at DESC
     SQL
 
@@ -2921,123 +2923,109 @@ class Buyer::AdsController < ApplicationController
   end
 
   def calculate_best_sellers_fast(limit)
-    # OPTIMIZED: Use caching for best sellers calculation
-    cache_key = "best_sellers_optimized_#{limit}_#{Date.current.strftime('%Y%m%d')}"
+    # OPTIMIZED: Use caching for best sellers calculation with 15-minute rotation
+    rotation_key = Time.current.to_i / 900
+    cache_key = "best_sellers_dynamic_#{limit}_#{rotation_key}"
     
-    Rails.cache.fetch(cache_key, expires_in: 1.hour) do
-      # OPTIMIZATION: Use raw SQL with pre-aggregated metrics to avoid expensive joins
+    Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
       sql = <<-SQL
-        SELECT
-                     ads.id,
-                     ads.title,
-                     ads.price,
-                     ads.media,
-                     ads.created_at,
-          ads.category_id,
-          ads.subcategory_id,
-          ads.seller_id,
-                     sellers.fullname as seller_name,
-                     categories.name as category_name,
-                     subcategories.name as subcategory_name,
-                     COALESCE(tiers.id, 1) as seller_tier_id,
-                     COALESCE(tiers.name, 'Free') as seller_tier_name,
+        SELECT * FROM (
+          SELECT
+                       ads.id,
+                       ads.title,
+                       ads.price,
+                       ads.media,
+                       ads.created_at,
+            ads.category_id,
+            ads.subcategory_id,
+            ads.seller_id,
+                       sellers.fullname as seller_name,
+                       categories.name as category_name,
+                       subcategories.name as subcategory_name,
+                       COALESCE(tiers.id, 1) as seller_tier_id,
+                       COALESCE(tiers.name, 'Free') as seller_tier_name,
 
-          -- Pre-calculated metrics (much faster than separate joins)
-          COALESCE(wishlist_stats.wishlist_count, 0) as wishlist_count,
-          COALESCE(review_stats.review_count, 0) as review_count,
-          COALESCE(review_stats.avg_rating, 0.0) as avg_rating,
-          COALESCE(click_stats.click_count, 0) as click_count,
+            -- Pre-calculated metrics (much faster than separate joins)
+            COALESCE(wishlist_stats.wishlist_count, 0) as wishlist_count,
+            COALESCE(review_stats.review_count, 0) as review_count,
+            COALESCE(review_stats.avg_rating, 0.0) as avg_rating,
+            COALESCE(click_stats.click_count, 0) as click_count,
 
-          -- Pre-calculated scores (moved from Ruby to SQL for performance)
-          CASE
-            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 8
-            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 5
-            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 3
-            WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
-            ELSE 0
-          END as recency_score,
-
-          CASE COALESCE(tiers.id, 1)
-            WHEN 4 THEN 15
-            WHEN 3 THEN 8
-            WHEN 2 THEN 4
-            ELSE 0
-          END as tier_bonus,
-
-          -- Calculated comprehensive score in SQL
-          (
+            -- Calculated comprehensive score in SQL
             (
-              CASE
-                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 8
-                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 5
-                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 3
-                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
-                ELSE 0
-              END * 0.25
-            ) + (
-              CASE COALESCE(tiers.id, 1)
-                WHEN 4 THEN 15
-                WHEN 3 THEN 8
-                WHEN 2 THEN 4
-                ELSE 0
-              END * 0.15
-            ) + (
-              LN(COALESCE(wishlist_stats.wishlist_count, 0) + 1) * 20 * 0.25
-            ) + (
               (
-                (COALESCE(review_stats.avg_rating, 0.0) / 5.0) * 30 +
-                LN(COALESCE(review_stats.review_count, 0) + 1) * 10
-              ) * 0.20
-            ) + (
-              LN(COALESCE(click_stats.click_count, 0) + 1) * 15 * 0.15
-            )
-          ) as comprehensive_score
+                CASE
+                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 8
+                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 5
+                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 3
+                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
+                  ELSE 0
+                END * 0.25
+              ) + (
+                CASE COALESCE(tiers.id, 1)
+                  WHEN 4 THEN 15
+                  WHEN 3 THEN 8
+                  WHEN 2 THEN 4
+                  ELSE 0
+                END * 0.15
+              ) + (
+                LN(COALESCE(wishlist_stats.wishlist_count, 0) + 1) * 20 * 0.25
+              ) + (
+                (
+                  (COALESCE(review_stats.avg_rating, 0.0) / 5.0) * 30 +
+                  LN(COALESCE(review_stats.review_count, 0) + 1) * 10
+                ) * 0.20
+              ) + (
+                LN(COALESCE(click_stats.click_count, 0) + 1) * 15 * 0.15
+              )
+            ) as comprehensive_score
 
-        FROM ads
-        INNER JOIN sellers ON sellers.id = ads.seller_id
-        INNER JOIN categories ON categories.id = ads.category_id
-        INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
-        LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
-        LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+          FROM ads
+          INNER JOIN sellers ON sellers.id = ads.seller_id
+          INNER JOIN categories ON categories.id = ads.category_id
+          INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
+          LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
+          LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
 
-        -- Pre-aggregated metrics (much faster than individual joins)
-        LEFT JOIN (
-          SELECT ad_id, COUNT(*) as wishlist_count
-          FROM wish_lists
-          GROUP BY ad_id
-        ) wishlist_stats ON wishlist_stats.ad_id = ads.id
+          -- Pre-aggregated metrics (much faster than individual joins)
+          LEFT JOIN (
+            SELECT ad_id, COUNT(*) as wishlist_count
+            FROM wish_lists
+            GROUP BY ad_id
+          ) wishlist_stats ON wishlist_stats.ad_id = ads.id
 
-        LEFT JOIN (
-          SELECT ad_id, COUNT(*) as review_count, AVG(rating) as avg_rating
-          FROM reviews
-          GROUP BY ad_id
-        ) review_stats ON review_stats.ad_id = ads.id
+          LEFT JOIN (
+            SELECT ad_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+            FROM reviews
+            GROUP BY ad_id
+          ) review_stats ON review_stats.ad_id = ads.id
 
-        LEFT JOIN (
-          SELECT ad_id, COUNT(*) as click_count
-          FROM click_events
-          WHERE event_type = 'Ad-Click'
-          GROUP BY ad_id
-        ) click_stats ON click_stats.ad_id = ads.id
+          LEFT JOIN (
+            SELECT ad_id, COUNT(*) as click_count
+            FROM click_events
+            WHERE event_type = 'Ad-Click'
+            GROUP BY ad_id
+          ) click_stats ON click_stats.ad_id = ads.id
 
-        WHERE ads.deleted = false
-          AND ads.flagged = false
-          AND sellers.blocked = false
-          AND sellers.deleted = false
-          AND sellers.flagged = false
-          AND ads.media IS NOT NULL
-          AND ads.media != ''
-          AND ads.media::text != '[]'
-          AND (ads.media::jsonb -> 0) IS NOT NULL
-
-        ORDER BY comprehensive_score DESC, RANDOM()
-        LIMIT #{limit}
+          WHERE ads.deleted = false
+            AND ads.flagged = false
+            AND sellers.blocked = false
+            AND sellers.deleted = false
+            AND sellers.flagged = false
+            AND ads.media IS NOT NULL
+            AND ads.media != ''
+            AND ads.media::text != '[]'
+            AND (ads.media::jsonb -> 0) IS NOT NULL
+        ) as sub
+        ORDER BY (comprehensive_score * (1.0 + (RANDOM() * 0.4))) DESC
+        LIMIT #{[limit * 3, 100].max}
       SQL
 
-      results = ActiveRecord::Base.connection.execute(sql)
+      results = ActiveRecord::Base.connection.execute(sql).to_a
 
       # OPTIMIZATION: Process media URLs for frontend compatibility
-      results.map do |row|
+      # Final randomization in Ruby - pick limit random items from the top pool
+      results.sample(limit).map do |row|
         media_json = row['media']
 
         # Process media URLs similar to recommendations method

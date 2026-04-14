@@ -41,42 +41,6 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
     
-    # Get click events without time filtering for totals (excluding internal users, deleted buyers, and seller own clicks)
-    # Includes ALL clicks (guest + authenticated) for both "Total Ads Clicks" and "Buyer Engagement"
-    # Guest clicks have buyer_id = nil, so they're included in the query
-    # Exclude clicks with deleted ads or clicks without ads to match category analytics
-    all_ad_clicks = ClickEvent
-      .excluding_internal_users
-      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
-      .where(event_type: 'Ad-Click')
-      .left_joins(:buyer)
-      .joins(:ad) # Use inner join to exclude clicks without ads
-      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
-      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
-    # Get reveal click events without time filtering for totals (excluding internal users, deleted buyers, and seller own clicks)
-    # Includes ALL reveal clicks (guest + authenticated) for both "Total Click Reveals" and "Buyer Engagement"
-    # Exclude clicks with deleted ads or clicks without ads to match category analytics
-    all_reveal_clicks = ClickEvent
-      .excluding_internal_users
-      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
-      .where(event_type: 'Reveal-Seller-Details')
-      .left_joins(:buyer)
-      .joins(:ad) # Use inner join to exclude clicks without ads
-      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
-      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
-    
-    # Get contact interaction events (copy, whatsapp, call, location views after reveal)
-    # These are clicks where users interacted with seller contact info after revealing it
-    all_contact_interactions = ClickEvent
-      .excluding_internal_users
-      .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
-      .where(event_type: 'Reveal-Seller-Details')
-      .where(Arel.sql("metadata->>'action' = 'seller_contact_interaction'"))
-      .left_joins(:buyer)
-      .joins(:ad) # Use inner join to exclude clicks without ads
-      .where("buyers.id IS NULL OR buyers.deleted = ?", false) # Include guest clicks (buyer_id IS NULL) or non-deleted buyers
-      .where(ads: { deleted: false }) # Exclude clicks with deleted ads
-    
     # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
     # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
     carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
@@ -111,6 +75,7 @@ class Sales::AnalyticsController < ApplicationController
 
     buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck(:created_at)
     ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at)
+    ads_data_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at, :price)
     reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at)
     wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck(:created_at)
     
@@ -144,6 +109,7 @@ class Sales::AnalyticsController < ApplicationController
       ads_with_timestamps: ads_with_timestamps,
       reviews_with_timestamps: reviews_with_timestamps,
       wishlists_with_timestamps: wishlists_with_timestamps,
+      ads_data_with_timestamps: ads_data_with_timestamps.map { |ts, price| [ts.iso8601, price.to_f] },
       ad_clicks_with_timestamps: ad_clicks_with_timestamps,
       buyer_ad_clicks_with_timestamps: ad_clicks_with_timestamps,
       buyer_reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
@@ -165,6 +131,7 @@ class Sales::AnalyticsController < ApplicationController
       sellers_legacy: seller_counts&.legacy || 0,
       total_buyers: all_buyers.count,
       total_ads: all_ads.count,
+      active_ads_valuation: all_ads.sum(:price) || 0,
       total_reviews: Review.count, # Simplified
       total_ads_wish_listed: all_wishlists.count,
       subscription_countdowns: all_paid_seller_tiers.count,
@@ -309,6 +276,9 @@ class Sales::AnalyticsController < ApplicationController
       }
     end
 
+    # Normalize searches to remove incremental/incomplete phrases from same session
+    formatted_searches = normalize_search_history(formatted_searches)
+
     render json: {
       analytics: analytics_data,
       popular_searches: popular_searches,
@@ -415,11 +385,6 @@ class Sales::AnalyticsController < ApplicationController
                                 .where(sellers: { deleted: false, blocked: false, flagged: false })
                                 .where(ads: { deleted: false })
                                 .group(:buyer_id).count
-      
-      # Guest click handling (Complex but batch-fetchable)
-      # Get conversation ad IDs for all buyers in one go
-      conversations = Conversation.where(buyer_id: user_ids).where.not(ad_id: nil).select(:buyer_id, :ad_id)
-      buyer_to_ad_ids = conversations.group_by(&:buyer_id).transform_values { |convs| convs.map(&:ad_id).uniq }
       
       # We'll skip the super complex guest click time-bounded query in the bulk fetch for now 
       # since it's the main performance killer and "direct" stats are usually enough for the dashboard overview.
@@ -568,6 +533,52 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   private
+
+  def normalize_search_history(searches)
+    return searches if searches.empty?
+
+    normalized = []
+    # Group by key identifying user session
+    grouped = searches.group_by { |s| s[:buyer_id] || s[:device_hash] || s[:ip_address] || 'unknown' }
+
+    grouped.each do |ident, session_searches|
+      next if ident == 'unknown' # Don't normalize unknown sessions
+
+      # Sort by timestamp ascending to process chronologically
+      sorted = session_searches.sort_by { |s| s[:timestamp] }
+      
+      session_normalized = []
+      
+      sorted.each do |search|
+        if session_normalized.empty?
+          session_normalized << search
+        else
+          last_search = session_normalized.last
+          time_diff = search[:timestamp] - last_search[:timestamp]
+          
+          # Normalize if searches happen within 10 seconds
+          # Check if one is a prefix/substring of the other (incremental typing)
+          term1 = last_search[:search_term].to_s.downcase.strip
+          term2 = search[:search_term].to_s.downcase.strip
+          
+          is_continuation = term2.start_with?(term1) || term1.start_with?(term2)
+          
+          if time_diff < 10 && is_continuation
+            # Keep the longer (more complete) search term
+            if term2.length >= term1.length
+              session_normalized[session_normalized.length - 1] = search
+            end
+          else
+            session_normalized << search
+          end
+        end
+      end
+      normalized.concat(session_normalized)
+    end
+
+    # Re-sort normalized results by timestamp descending
+    normalized.sort_by { |s| s[:timestamp] }.reverse
+  end
 
   def authenticate_sales_user
     @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result
@@ -732,6 +743,7 @@ class Sales::AnalyticsController < ApplicationController
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
       visit_timestamps: visit_timestamps,
+      shop_share_data_with_timestamps: base_scope.where(utm_campaign: 'shop_share').pluck(:created_at).map { |ts| ts&.iso8601 },
       daily_unique_visitors: daily_unique_visitors,
       top_sources: top_sources,
       top_referrers: top_referrers
