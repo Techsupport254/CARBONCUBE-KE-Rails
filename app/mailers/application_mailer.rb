@@ -31,9 +31,6 @@ class ApplicationMailer < ActionMailer::Base
     # Add organization header
     headers['Organization'] = 'Carbon Cube Kenya'
     
-    # Add content type for better rendering
-    headers['Content-Type'] = 'text/html; charset=UTF-8'
-    
     # Add Precedence header to prevent threading
     headers['Precedence'] = 'bulk'
     

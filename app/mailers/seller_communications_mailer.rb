@@ -2,9 +2,10 @@ class SellerCommunicationsMailer < ApplicationMailer
   default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
   
   # Skip global headers for full control over Primary inboxing
-  skip_before_action :add_deliverability_headers, only: [:seller_growth_initiative]
+  skip_before_action :add_deliverability_headers, only: [:seller_growth_initiative, :app_promo]
   
   helper UtmUrlHelper
+  layout false
   
   def custom_communication
     @user = params[:user] || params[:seller] || @seller
@@ -288,5 +289,63 @@ class SellerCommunicationsMailer < ApplicationMailer
       from: "Victor from Carbon Cube <#{ENV['BREVO_EMAIL']}>",
       subject: subject_text
     )
+  end
+
+  def app_promo
+    @seller = params[:seller]
+    @fullname = @seller.fullname
+    @enterprise_name = @seller.enterprise_name
+    
+    # Personal greeting name (First name)
+    @first_name = @fullname.to_s.split(' ').first.presence || "Partner"
+
+    # High-engagement subject line
+    # PROVEN SUCCESS: Transactional pattern with unique reference to target Primary Inbox
+    subject_text = "[Official] Your Store Access Update: Carbon Cube Mobile"
+    subject_text += " [Ref: #{Time.current.to_i.to_s[-4..-1]}]"
+
+    # Minimal headers to mimic transactional system email for better Inbox placement
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['Auto-Submitted'] = 'auto-generated'
+    headers['X-Auto-Response-Suppress'] = 'All'
+    headers['List-Id'] = "platform.carboncube-ke.com"
+    headers['Precedence'] = nil
+    headers['List-Unsubscribe'] = nil
+    headers['List-Unsubscribe-Post'] = nil
+    headers['Message-ID'] = "<#{Time.current.to_f}-app-promo-#{@seller.id}@carboncube-ke.com>"
+
+    mail(
+      to: @seller.email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text
+    ) do |format|
+      # 1. Read the pure MJML template
+      template_path = Rails.root.join('app', 'views', 'seller_communications_mailer', 'app_promo.mjml')
+      mjml_source = File.read(template_path)
+      
+      # 2. Flexible variable replacement
+      mjml_source.gsub!(/\{\{\s*first_name.*\}\}/, @first_name)
+
+      # 3. Compile MJML to HTML manually
+      require 'open3'
+      node_bin = "/Users/Quaint/.nvm/versions/node/v18.20.6/bin/node"
+      mjml_bin = Rails.root.join('node_modules', 'mjml', 'bin', 'mjml').to_s
+      
+      stdout, stderr, status = Open3.capture3(
+        node_bin,
+        mjml_bin,
+        '--stdin',
+        stdin_data: mjml_source
+      )
+
+      if status.success?
+        format.html { render html: stdout.html_safe }
+      else
+        Rails.logger.error "MJML compilation FAILED: #{stderr}"
+        format.html { render plain: "Error rendering email" }
+      end
+    end
   end
 end

@@ -41,12 +41,12 @@ class Buyer::AdsController < ApplicationController
                        .where(flagged: false)
                        .includes(:category, :subcategory, seller: { seller_tier: :tier })
 
-          ads_query = filter_by_category(ads_query) if params[:category_id].present?
-          ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+          ads_query = filter_by_category(ads_query) if params[:category_id].present? && params[:category_id] != 'All'
+          ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present? && params[:subcategory_id] != 'All'
           ads_query = filter_by_price_range(ads_query) if params[:price_range].present? && params[:price_range] != 'All'
           ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
           ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
-          ads_query = filter_by_search(ads_query) if params[:search].present?
+          ads_query = filter_by_search(ads_query) if params[:search].present? || params[:query].present?
 
           # Enhanced randomization with multiple factors for better distribution
           get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
@@ -67,12 +67,12 @@ class Buyer::AdsController < ApplicationController
                     .where(sellers: { blocked: false, deleted: false, flagged: false })
                     .where(flagged: false)
       
-      ads_query = filter_by_category(ads_query) if params[:category_id].present?
-      ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present?
+      ads_query = filter_by_category(ads_query) if params[:category_id].present? && params[:category_id] != 'All'
+      ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present? && params[:subcategory_id] != 'All'
       ads_query = filter_by_price_range(ads_query) if params[:price_range].present? && params[:price_range] != 'All'
       ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
       ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
-      ads_query = filter_by_search(ads_query) if params[:search].present?
+      ads_query = filter_by_search(ads_query) if params[:search].present? || params[:query].present?
 
       ads_query.count
     end
@@ -475,6 +475,7 @@ class Buyer::AdsController < ApplicationController
       expansion = CatalogSearchExpansionService.expand(normalized_query)
       if expansion.present? && expansion[:brand].present?
         intent[:brand] = expansion[:brand]
+        intent[:brand_inferred] = true
         intent[:model] = expansion[:model]
         intent[:category_hint] = expansion[:category_hint]
         intent[:query_type] = :product_specific
@@ -659,13 +660,21 @@ class Buyer::AdsController < ApplicationController
         search_params << "%#{search_intent[:brand]}%"
       end
 
-      # Category filtering for product searches
+      # New: Always include word-based matches as fallback for broad searches
+      # to ensure we don't miss items if brand/model detection was too aggressive
+      words.each do |word|
+        next if word.length < 3
+        search_conditions << "LOWER(ads.title) LIKE LOWER(?)"
+        search_params << "%#{word}%"
+      end
+
+      # Category filtering for product searches - only apply if confidence is high enough
       if search_intent[:category_hint] == 'phones'
         ads_query = ads_query.where(
           "LOWER(categories.name) LIKE LOWER(?) OR LOWER(subcategories.name) LIKE LOWER(?)",
           "%phone%", "%phone%"
         )
-      elsif search_intent[:product_type]
+      elsif search_intent[:product_type] && (search_intent[:confidence] || 1.0) >= 0.6
         # For specific product types, prioritize relevant categories
         case search_intent[:product_type]
         when 'air_filters'
@@ -835,6 +844,13 @@ class Buyer::AdsController < ApplicationController
     ad_brand = ad.brand&.downcase || ''
     ad_description = ad.description&.downcase || ''
     ad_manufacturer = ad.manufacturer&.downcase || ''
+
+    # Absolute priority for exact title matches (regardless of brand/intent)
+    if ad_title == normalized_query
+      score += 150
+    elsif ad_title.start_with?(normalized_query) || ad_title.end_with?(normalized_query)
+      score += 50
+    end
 
     if search_intent && search_intent[:is_product_search]
       # Smart scoring for product searches
@@ -1582,31 +1598,48 @@ class Buyer::AdsController < ApplicationController
         brand_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 && brand_match?(item[:ad], search_intent[:brand]) } # Strong brand matches
         brand_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && brand_match?(item[:ad], search_intent[:brand]) } # Brand matches with lower scores
         
-        # For brand searches, ONLY show brand-matched items - no "other_matches" or related products
-        relevant_ads = brand_exact_matches + brand_strong_matches + brand_weak_matches
+        # Standard relevance-based sorting for non-brand searches
+        exact_matches = ads_with_scores.select { |item| item[:score] >= 80 }
+        high_relevance = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 }
+        medium_relevance = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 }
+        low_relevance = ads_with_scores.select { |item| item[:score] > 0 && item[:score] < 20 }
         
-        # Only add more brand-matched items if we have slots remaining
-        if relevant_ads.size < ads_per_page
-          # Find additional brand-matched items that weren't in the initial search results
-          additional_brand_ads = find_related_products(brand_exact_matches + brand_strong_matches, search_intent)
-          # Filter to only include items that match the brand
-          additional_brand_ads = additional_brand_ads.select { |item| brand_match?(item[:ad], search_intent[:brand]) }
-          slots_remaining = ads_per_page - relevant_ads.size
-          additional_brand_ads = additional_brand_ads.first(slots_remaining)
-          relevant_ads.concat(additional_brand_ads)
+        # New: If we have an EXACT title match (score >= 150), prioritize it even if brand doesn't match
+        # This fixes cases like "Crane scale" where a brand might be misclassified
+        exact_title_matches_any_brand = ads_with_scores.select { |item| item[:score] >= 150 }
+
+        # New: If the brand was just INFERRED (not explicit), be much more relaxed
+        if search_intent[:brand_inferred]
+          # For inferred brands, include all high-relevance matches
+          relevant_ads = brand_exact_matches + brand_strong_matches + high_relevance + exact_title_matches_any_brand
+          relevant_ads = relevant_ads.uniq { |item| item[:ad].id }
+        else
+          # For explicit brand searches, prioritize brand matches but don't EXCLUDE high-relevance non-brand matches
+          # especially if the score is very high (exact title match)
+          relevant_ads = brand_exact_matches + brand_strong_matches + brand_weak_matches + exact_title_matches_any_brand
+          
+          # Add a few high-relevance non-brand matches if we have space
+          if relevant_ads.size < ads_per_page
+            other_strong_matches = high_relevance.reject { |item| brand_match?(item[:ad], search_intent[:brand]) }.first(5)
+            relevant_ads.concat(other_strong_matches)
+          end
         end
       elsif search_intent && search_intent[:is_product_search] && search_intent[:product_type]
         # For product type searches, prioritize product type matches
         product_type_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 } # Perfect product type matches
         product_type_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 } # Strong product type matches
         product_type_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && product_type_match?(item[:ad], search_intent[:product_type]) } # Product type matches with lower scores
+        
+        # Also include exact title matches regardless of product type detection
+        exact_title_matches_fallback = ads_with_scores.select { |item| item[:score] >= 150 }
+        
         other_matches = ads_with_scores.select { |item| item[:score] < 20 || !product_type_match?(item[:ad], search_intent[:product_type]) } # Non-product type matches
 
         # Limit non-product-type matches to fill remaining slots
         max_other_matches = [ads_per_page / 4, 2].max # At most 1/4 of results for product type searches, minimum 2
-        other_matches = other_matches.sort_by { |item| -item[:score] }.first(max_other_matches)
+        other_matches = other_matches.sort_by { |item| -item[:score] }.reject { |i| exact_title_matches_fallback.include?(i) }.first(max_other_matches)
 
-        relevant_ads = product_type_exact_matches + product_type_strong_matches + product_type_weak_matches + other_matches
+        relevant_ads = product_type_exact_matches + product_type_strong_matches + product_type_weak_matches + exact_title_matches_fallback + other_matches
 
         # Add related products (prioritizing same product type)
         if relevant_ads.size < ads_per_page
@@ -2906,7 +2939,7 @@ class Buyer::AdsController < ApplicationController
 
   # Filter by search term (within category context)
   def filter_by_search(ads_query)
-    search_term = params[:search].strip
+    search_term = (params[:search] || params[:query]).to_s.strip
     
     ads_query.where(
       'ads.title ILIKE ? OR ads.description ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ? OR ads.specifications::text ILIKE ?',

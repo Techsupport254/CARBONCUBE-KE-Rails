@@ -77,6 +77,12 @@ class SendSellerCommunicationJob < ApplicationJob
           Rails.logger.info "About to deliver email..."
           mail.deliver_now
           Rails.logger.info "Email delivered successfully!"
+        when 'app_promo'
+          mail = SellerCommunicationsMailer.with(seller: user).app_promo
+          Rails.logger.info "Mailer called successfully"
+          Rails.logger.info "About to deliver email..."
+          mail.deliver_now
+          Rails.logger.info "Email delivered successfully!"
         else
           Rails.logger.error "SendSellerCommunicationJob: Unknown email type '#{email_type}'"
           Rails.logger.error "=== #{user_type.upcase} COMMUNICATION JOB FAILED ==="
