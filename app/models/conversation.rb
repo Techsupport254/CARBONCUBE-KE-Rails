@@ -233,7 +233,7 @@ class Conversation < ApplicationRecord
   validate :seller_exists_if_present
   validate :admin_exists_if_present
   validates :ad_id, uniqueness: { 
-    scope: [:buyer_id, :seller_id, :inquirer_seller_id], 
+    scope: [:buyer_id, :seller_id, :inquirer_seller_id, :admin_id], 
     message: "conversation already exists for this ad with these participants" 
   }
 

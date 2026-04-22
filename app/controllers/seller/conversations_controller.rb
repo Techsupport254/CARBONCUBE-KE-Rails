@@ -55,17 +55,49 @@ class Seller::ConversationsController < ApplicationController
         inquirer_seller_id: most_recent_conversation.inquirer_seller_id,
         created_at: most_recent_conversation.created_at,
         updated_at: most_recent_conversation.updated_at,
-        admin: most_recent_conversation.admin,
-        buyer: most_recent_conversation.buyer,
-        seller: most_recent_conversation.seller,
-        inquirer_seller: most_recent_conversation.inquirer_seller,
+        admin: most_recent_conversation.admin ? {
+          id: most_recent_conversation.admin.id,
+          fullname: most_recent_conversation.admin.fullname,
+          profile_picture: 'https://carboncube-ke.com/logo.png'
+        } : nil,
+        buyer: most_recent_conversation.buyer ? {
+          id: most_recent_conversation.buyer.id,
+          fullname: most_recent_conversation.buyer.fullname,
+          profile_picture: most_recent_conversation.buyer.profile_picture
+        } : nil,
+        seller: most_recent_conversation.seller ? {
+          id: most_recent_conversation.seller.id,
+          fullname: most_recent_conversation.seller.fullname,
+          profile_picture: most_recent_conversation.seller.profile_picture
+        } : nil,
+        inquirer_seller: most_recent_conversation.inquirer_seller ? {
+          id: most_recent_conversation.inquirer_seller.id,
+          fullname: most_recent_conversation.inquirer_seller.fullname,
+          profile_picture: most_recent_conversation.inquirer_seller.profile_picture
+        } : nil,
         ad: most_recent_conversation.ad,
         messages_count: conversations.sum { |c| c.messages.count },
-        last_message: last_message&.content,
+        last_message: strip_markdown(last_message&.content),
         last_message_time: last_message&.created_at,
         all_conversation_ids: conversations.map(&:id)
       }
     end.compact
+  end
+
+  private
+
+  def strip_markdown(text)
+    return "" if text.blank?
+    text.to_s
+      .gsub(/^#+\s+/, '')
+      .gsub(/\*\*(.*?)\*\*/, '\1')
+      .gsub(/\*(.*?)\*/, '\1')
+      .gsub(/__(.*?)__/, '\1')
+      .gsub(/_(.*?)_/, '\1')
+      .gsub(/\[(.*?)\]\(.*?\)/, '\1')
+      .gsub(/`+(.*?)`+/, '\1')
+      .gsub(/^\s*[-*+]\s+/, '')
+  end
     
     render json: conversations_data
   end
