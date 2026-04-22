@@ -82,23 +82,7 @@ class Seller::ConversationsController < ApplicationController
         all_conversation_ids: conversations.map(&:id)
       }
     end.compact
-  end
 
-  private
-
-  def strip_markdown(text)
-    return "" if text.blank?
-    text.to_s
-      .gsub(/^#+\s+/, '')
-      .gsub(/\*\*(.*?)\*\*/, '\1')
-      .gsub(/\*(.*?)\*/, '\1')
-      .gsub(/__(.*?)__/, '\1')
-      .gsub(/_(.*?)_/, '\1')
-      .gsub(/\[(.*?)\]\(.*?\)/, '\1')
-      .gsub(/`+(.*?)`+/, '\1')
-      .gsub(/^\s*[-*+]\s+/, '')
-  end
-    
     render json: conversations_data
   end
 
@@ -299,6 +283,19 @@ class Seller::ConversationsController < ApplicationController
   end
 
   private
+
+  def strip_markdown(text)
+    return "" if text.blank?
+    text.to_s
+      .gsub(/^#+\s+/, '')
+      .gsub(/\*\*(.*?)\*\*/, '\1')
+      .gsub(/\*(.*?)\*/, '\1')
+      .gsub(/__(.*?)__/, '\1')
+      .gsub(/_(.*?)_/, '\1')
+      .gsub(/\[(.*?)\]\(.*?\)/, '\1')
+      .gsub(/`+(.*?)`+/, '\1')
+      .gsub(/^\s*[-*+]\s+/, '')
+  end
 
   def authenticate_seller
     @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
