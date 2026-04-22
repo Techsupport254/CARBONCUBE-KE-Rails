@@ -24,7 +24,7 @@ class ConversationSerializer < ActiveModel::Serializer
       username: admin_user.try(:username) || admin_user.fullname,
       email: admin_user.email,
       role: user_role,
-      profile_picture: nil  # Admin/Sales/Marketing models don't have profile_picture
+      profile_picture: 'https://carboncube-ke.com/logo.png'
     }
   end
 
@@ -95,7 +95,7 @@ class ConversationSerializer < ActiveModel::Serializer
     
     {
       id: message.id,
-      content: message.content,
+      content: strip_markdown(message.content),
       created_at: message.created_at,
       sender_type: message.sender_type,
       sender_id: message.sender_id,
@@ -106,6 +106,19 @@ class ConversationSerializer < ActiveModel::Serializer
   end
 
   private
+
+  def strip_markdown(text)
+    return "" if text.blank?
+    text.to_s
+      .gsub(/^#+\s+/, '')
+      .gsub(/\*\*(.*?)\*\*/, '\1')
+      .gsub(/\*(.*?)\*/, '\1')
+      .gsub(/__(.*?)__/, '\1')
+      .gsub(/_(.*?)_/, '\1')
+      .gsub(/\[(.*?)\]\(.*?\)/, '\1')
+      .gsub(/`+(.*?)`+/, '\1')
+      .gsub(/^\s*[-*+]\s+/, '')
+  end
 
   # Avoid using cached profile pictures - always return nil for cached URLs
   def resolve_profile_picture(url)

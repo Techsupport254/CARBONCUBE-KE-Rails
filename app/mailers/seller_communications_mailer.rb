@@ -2,7 +2,7 @@ class SellerCommunicationsMailer < ApplicationMailer
   default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
   
   # Skip global headers for full control over Primary inboxing
-  skip_before_action :add_deliverability_headers, only: [:seller_growth_initiative, :app_promo]
+  skip_before_action :add_deliverability_headers, only: [:seller_growth_initiative, :app_promo, :listing_reminder]
   
   helper UtmUrlHelper
   layout false
@@ -64,16 +64,18 @@ class SellerCommunicationsMailer < ApplicationMailer
   end
 
   def general_update
-    @seller = params[:seller] || @seller
+    @user = params[:seller] || params[:user] || @seller
+    @user_type = @user.respond_to?(:user_type) ? @user.user_type : 'seller'
 
     # Log to both Rails logger and stdout for Sidekiq visibility
-    log_message = "=== SELLER COMMUNICATION EMAIL START ==="
+    log_message = "=== #{@user_type.upcase} COMMUNICATION EMAIL START ==="
     Rails.logger.info log_message
     
-    log_message = "Seller ID: #{@seller.id} | Name: #{@seller.fullname} | Email: #{@seller.email}"
+    log_message = "#{@user_type.capitalize} ID: #{@user.id} | Name: #{@user.fullname} | Email: #{@user.email}"
     Rails.logger.info log_message
     
-    log_message = "Recipient Email: #{@seller.email} | Enterprise: #{@seller.enterprise_name}"
+    enterprise = @user.respond_to?(:enterprise_name) ? " | Enterprise: #{@user.enterprise_name}" : ""
+    log_message = "Recipient Email: #{@user.email}#{enterprise}"
     Rails.logger.info log_message
     
     Rails.logger.info "SMTP Settings: #{ActionMailer::Base.smtp_settings}"
@@ -85,18 +87,12 @@ class SellerCommunicationsMailer < ApplicationMailer
     unique_subject = "Platform Update #{timestamp} - Let's Grow Together!"
     
     mail(
-      to: @seller.email,
+      to: @user.email,
       subject: unique_subject
     ) do |format|
       Rails.logger.info "Generating email content..."
       format.html { render 'general_update' }
     end
-    
-    # AGGRESSIVE threading prevention
-    mail['In-Reply-To'] = nil
-    mail['References'] = nil
-    mail['Thread-Topic'] = nil
-    mail['Thread-Index'] = nil
     
     # Force new conversation
     mail['X-Threading'] = 'false'
@@ -105,34 +101,40 @@ class SellerCommunicationsMailer < ApplicationMailer
     log_message = "Email object created successfully | To: #{mail.to.join(', ')} | From: #{mail.from.join(', ')}"
     Rails.logger.info log_message
     
-    log_message = "About to deliver email to: #{@seller.email}"
+    log_message = "About to deliver email to: #{@user.email}"
     Rails.logger.info log_message
     
-    log_message = "=== SELLER COMMUNICATION EMAIL END ==="
+    log_message = "=== #{@user_type.upcase} COMMUNICATION EMAIL END ==="
     Rails.logger.info log_message
     
     mail
   end
 
   def black_friday_email
-    @seller = params[:seller] || @seller
+    @user = params[:seller] || params[:user] || @seller
+    @user_type = @user.respond_to?(:user_type) ? @user.user_type : 'seller'
     
-    # Get top 4 best performing products for this seller
-    @top_products = @seller.ads
+    # Get top 4 best performing products for this user (if they are a seller)
+    @top_products = if @user.respond_to?(:ads)
+                      @user.ads
                            .where(deleted: false)
                            .where.not(media: [nil, [], ""])
                            .includes(:category)
                            .order('reviews_count DESC, created_at DESC')
                            .limit(4)
+                    else
+                      []
+                    end
     
     # Log to both Rails logger and stdout for Sidekiq visibility
     log_message = "=== PLATFORM NOTIFICATION EMAIL START ==="
     Rails.logger.info log_message
     
-    log_message = "Seller ID: #{@seller.id} | Name: #{@seller.fullname} | Email: #{@seller.email}"
+    log_message = "#{@user_type.capitalize} ID: #{@user.id} | Name: #{@user.fullname} | Email: #{@user.email}"
     Rails.logger.info log_message
     
-    log_message = "Recipient Email: #{@seller.email} | Enterprise: #{@seller.enterprise_name}"
+    enterprise = @user.respond_to?(:enterprise_name) ? " | Enterprise: #{@user.enterprise_name}" : ""
+    log_message = "Recipient Email: #{@user.email}#{enterprise}"
     Rails.logger.info log_message
     
     Rails.logger.info "SMTP Settings: #{ActionMailer::Base.smtp_settings}"
@@ -186,7 +188,7 @@ class SellerCommunicationsMailer < ApplicationMailer
     
     # Create mail message (attachments must be added before this)
     mail_message = mail(
-      to: @seller.email,
+      to: @user.email,
       subject: subject_text
     ) do |format|
       Rails.logger.info "Generating email content..."
@@ -292,9 +294,11 @@ class SellerCommunicationsMailer < ApplicationMailer
   end
 
   def app_promo
-    @seller = params[:seller]
-    @fullname = @seller.fullname
-    @enterprise_name = @seller.enterprise_name
+    @user = params[:user] || params[:seller]
+    @user_type = @user.respond_to?(:user_type) ? @user.user_type : 'seller'
+    
+    @fullname = @user.fullname
+    @enterprise_name = @user.respond_to?(:enterprise_name) ? @user.enterprise_name : nil
     
     # Personal greeting name (First name)
     @first_name = @fullname.to_s.split(' ').first.presence || "Partner"
@@ -314,10 +318,10 @@ class SellerCommunicationsMailer < ApplicationMailer
     headers['Precedence'] = nil
     headers['List-Unsubscribe'] = nil
     headers['List-Unsubscribe-Post'] = nil
-    headers['Message-ID'] = "<#{Time.current.to_f}-app-promo-#{@seller.id}@carboncube-ke.com>"
+    headers['Message-ID'] = "<#{Time.current.to_f}-app-promo-#{@user.id}@carboncube-ke.com>"
 
     mail(
-      to: @seller.email,
+      to: @user.email,
       from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
       subject: subject_text
     ) do |format|
@@ -348,4 +352,44 @@ class SellerCommunicationsMailer < ApplicationMailer
       end
     end
   end
+  def listing_reminder
+    @user = params[:seller] || params[:user]
+    @fullname = @user.fullname
+    @first_name = @fullname.to_s.split(' ').first.presence || "Partner"
+
+    # Subject line – kept exactly as requested
+    subject_text = "Listing Update Reminder"
+
+    # Transactional‑style headers for Primary Inbox placement
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['Auto-Submitted'] = 'auto-generated'
+    headers['X-Auto-Response-Suppress'] = 'All'
+    headers['List-Id'] = "platform.carboncube-ke.com"
+
+    mail(to: @user.email, from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>", subject: subject_text) do |format|
+      # 1️⃣ Load pure MJML template
+      template_path = Rails.root.join('app', 'views', 'seller_communications_mailer', 'listing_reminder.mjml')
+      mjml_source = File.read(template_path)
+
+      # 2️⃣ Insert the seller’s full name – no other text changes
+      mjml_source.gsub!(/{{\s*full_name.*}}/, @fullname.to_s.presence || "Partner")
+
+      # 3️⃣ Compile MJML → HTML (manual, no gem)
+      require 'open3'
+      node_bin = "/Users/Quaint/.nvm/versions/node/v18.20.6/bin/node"
+      mjml_bin = Rails.root.join('node_modules', 'mjml', 'bin', 'mjml').to_s
+
+      stdout, stderr, status = Open3.capture3(node_bin, mjml_bin, '--stdin', stdin_data: mjml_source)
+
+      if status.success?
+        format.html { render html: stdout.html_safe }
+      else
+        Rails.logger.error "MJML compilation FAILED: #{stderr}"
+        format.html { render plain: "Error rendering email" }
+      end
+    end
+  end
+
 end

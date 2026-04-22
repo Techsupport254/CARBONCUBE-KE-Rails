@@ -22,6 +22,8 @@ class MessageNotificationMailer < ApplicationMailer
     @product_context = message.product_context
     @ad = message.ad
     
+    @message_content = strip_markdown(message.content)
+    
     mail(
       to: @recipient.email,
       subject: "New message from #{@sender_name} on Carbon Cube Kenya",
@@ -30,6 +32,20 @@ class MessageNotificationMailer < ApplicationMailer
   end
 
   private
+
+  def strip_markdown(text)
+    return "" if text.blank?
+    # Simple regex to strip basic markdown for preview
+    text.to_s
+      .gsub(/^#+\s+/, '') # Remove headers
+      .gsub(/\*\*(.*?)\*\*/, '\1') # Remove bold
+      .gsub(/\*(.*?)\*/, '\1') # Remove italic
+      .gsub(/__(.*?)__/, '\1') # Remove bold underscores
+      .gsub(/_(.*?)_/, '\1') # Remove italic underscores
+      .gsub(/\[(.*?)\]\(.*?\)/, '\1') # Remove links but keep text
+      .gsub(/`+(.*?)`+/, '\1') # Remove code
+      .gsub(/^\s*[-*+]\s+/, '') # Remove list markers
+  end
 
   def get_conversation_url(recipient, campaign: "message")
     base = case recipient.class.name

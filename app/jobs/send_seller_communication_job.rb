@@ -77,12 +77,15 @@ class SendSellerCommunicationJob < ApplicationJob
           Rails.logger.info "About to deliver email..."
           mail.deliver_now
           Rails.logger.info "Email delivered successfully!"
-        when 'app_promo'
-          mail = SellerCommunicationsMailer.with(seller: user).app_promo
+        when 'listing_reminder'
+          mail = SellerCommunicationsMailer.with(seller: user).listing_reminder
           Rails.logger.info "Mailer called successfully"
           Rails.logger.info "About to deliver email..."
           mail.deliver_now
           Rails.logger.info "Email delivered successfully!"
+          
+          # Send in-app message
+          send_in_app_listing_reminder(user) if user_type == 'seller'
         else
           Rails.logger.error "SendSellerCommunicationJob: Unknown email type '#{email_type}'"
           Rails.logger.error "=== #{user_type.upcase} COMMUNICATION JOB FAILED ==="
@@ -131,7 +134,7 @@ class SendSellerCommunicationJob < ApplicationJob
       end
 
     rescue => e
-      Rails.logger.error "SendSellerCommunicationJob: Failed to send email to seller #{user_id}: #{e.message}"
+      Rails.logger.error "SendSellerCommunicationJob: Failed to send email to #{user_type} #{user_id}: #{e.message}"
       Rails.logger.error "Error Class: #{e.class}"
       Rails.logger.error "Error Backtrace:"
       e.backtrace.first(10).each { |line| Rails.logger.error "  #{line}" }
@@ -206,5 +209,65 @@ class SendSellerCommunicationJob < ApplicationJob
     else
       "Hello #{user_name}, you have an important update from Carbon Cube Kenya. Please check your email for details."
     end
+  end
+
+  def send_in_app_listing_reminder(user)
+    full_name = user.fullname.presence || "Partner"
+    
+    markdown_content = <<~MARKDOWN
+      **Listing Update Reminder**
+
+      Greetings **#{full_name}**,
+
+      We hope this finds you well.
+
+      This is a quick reminder to review and keep your listings on **Carbon Cube Kenya** up to date.
+      Regular updates help ensure your products remain visible and relevant to buyers browsing the platform.
+
+      You can manage your listings at your convenience by visiting your [Dashboard](https://carboncube-ke.com/dashboard/listings?utm_source=listing_reminder&utm_medium=in_app&utm_campaign=listing_update).
+
+      If you require any assistance, feel free to reach out.
+
+      Thank you.
+
+      Kind Regards,
+      **Carbon Cube Team**
+    MARKDOWN
+
+    # Find or create a system admin for support messages
+    system_admin = Admin.find_by(email: 'support@carboncube-ke.com') || 
+                   Admin.find_by(username: 'admin') || 
+                   Admin.first
+
+    unless system_admin
+      Rails.logger.error "❌ Cannot send in-app message: No Admin user found in database"
+      return
+    end
+
+    # Find or create conversation
+    # Explicitly pass ad_id: nil to match the unique index for system messages
+    conversation = Conversation.find_or_create_conversation!(
+      admin_id: system_admin.id,
+      seller_id: user.id,
+      ad_id: nil,
+      buyer_id: nil,
+      inquirer_seller_id: nil
+    )
+
+    unless conversation
+      Rails.logger.error "❌ Failed to find or create conversation for seller #{user.id}"
+      return
+    end
+
+    # Create the message
+    message = conversation.messages.create!(
+      content: markdown_content,
+      sender: system_admin
+    )
+    
+    Rails.logger.info "✅ In-app message sent to seller #{user.id} (Conv: #{conversation.id}, Msg: #{message.id})"
+  rescue => e
+    Rails.logger.error "❌ Failed to send in-app message to seller #{user.id}: #{e.message}"
+    Rails.logger.error e.backtrace.first(5).join("\n")
   end
 end

@@ -1,0 +1,61 @@
+<mjml>
+  <mj-head>
+    <mj-title>Listing Update Reminder</mj-title>
+    <mj-font name="Outfit" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" />
+    <mj-attributes>
+      <mj-all
+        font-family="Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        color="#334155"
+        padding="0px"
+      />
+      <mj-text font-size="16px" line-height="26px" color="#334155" padding="0px" />
+      <mj-section padding="0px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#ffffff" width="600px">
+    <mj-section padding="40px 20px">
+      <mj-column>
+        <!-- Logo for branding -->
+        <mj-image
+          src="https://carboncube-ke.com/logo.png"
+          width="32px"
+          alt="Carbon Cube Kenya"
+          align="left"
+          padding-bottom="24px"
+        />
+
+        <mj-text padding-bottom="16px">Greetings, {{full_name}}</mj-text>
+
+        <mj-text padding-bottom="16px">
+          We hope this finds you well.
+        </mj-text>
+
+        <mj-text padding-bottom="16px">
+          This is a quick reminder to review and keep your listings on Carbon Cube Kenya up to date.
+          Regular updates help ensure your products remain visible and relevant to buyers browsing the platform.
+        </mj-text>
+
+        <mj-text padding-bottom="24px">
+          You can manage your listings at your convenience:<br/><br/>
+          <a href="https://carboncube-ke.com/dashboard/listings?utm_source=listing_reminder&utm_medium=email&utm_campaign=listing_update" style="color: #f59e0b; font-weight: 800; text-decoration: underline;">Manage My Listings</a>
+        </mj-text>
+
+        <mj-text padding-bottom="32px">
+          If you require any assistance, feel free to reach out.<br/>
+          Thank you.
+        </mj-text>
+
+        <mj-text>
+          Kind Regards,<br/>
+          <strong>Carbon Cube Team</strong>
+        </mj-text>
+        
+        <mj-divider border-width="1px" border-color="#e2e8f0" padding="40px 0px 20px" />
+        
+        <mj-text font-size="12px" color="#94a3b8">
+          Nairobi, Kenya • <a href="https://carboncube-ke.com" style="color: #94a3b8; text-decoration: underline;">Visit Website</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

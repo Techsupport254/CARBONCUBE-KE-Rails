@@ -34,11 +34,19 @@ class Buyer::ConversationsController < ApplicationController
         buyer_id: most_recent_conversation.buyer_id,
         created_at: most_recent_conversation.created_at,
         updated_at: most_recent_conversation.updated_at,
-        admin: most_recent_conversation.admin,
-        seller: most_recent_conversation.seller,
+        admin: most_recent_conversation.admin ? {
+          id: most_recent_conversation.admin.id,
+          fullname: most_recent_conversation.admin.fullname,
+          profile_picture: 'https://carboncube-ke.com/logo.png'
+        } : nil,
+        seller: most_recent_conversation.seller ? {
+          id: most_recent_conversation.seller.id,
+          fullname: most_recent_conversation.seller.fullname,
+          profile_picture: most_recent_conversation.seller.profile_picture
+        } : nil,
         ad: current_ad,
         messages_count: all_messages.count,
-        last_message: last_message&.content,
+        last_message: strip_markdown(last_message&.content),
         last_message_time: last_message&.created_at,
         all_conversation_ids: conversations.map(&:id)
       }
@@ -235,6 +243,19 @@ class Buyer::ConversationsController < ApplicationController
   end
 
   private
+
+  def strip_markdown(text)
+    return "" if text.blank?
+    text.to_s
+      .gsub(/^#+\s+/, '')
+      .gsub(/\*\*(.*?)\*\*/, '\1')
+      .gsub(/\*(.*?)\*/, '\1')
+      .gsub(/__(.*?)__/, '\1')
+      .gsub(/_(.*?)_/, '\1')
+      .gsub(/\[(.*?)\]\(.*?\)/, '\1')
+      .gsub(/`+(.*?)`+/, '\1')
+      .gsub(/^\s*[-*+]\s+/, '')
+  end
 
   def authenticate_user
     # Try to authenticate as buyer first
