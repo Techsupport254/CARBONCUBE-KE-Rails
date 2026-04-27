@@ -353,6 +353,7 @@ Rails.application.routes.draw do
         get :errors
         get :metrics
         get :health
+        get :uptime_data
       end
       member do
         post :resolve_error
