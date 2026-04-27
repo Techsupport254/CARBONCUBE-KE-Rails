@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
+ActiveRecord::Schema[7.1].define(version: 2026_04_22_140000) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -97,6 +97,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id"], name: "index_ads_on_seller_id"
+    t.index ["seller_id"], name: "index_ads_seller_id"
     t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
@@ -264,10 +265,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
     t.uuid "admin_id"
     t.boolean "is_whatsapp", default: false
     t.index ["ad_id"], name: "index_conversations_on_ad_id"
+    t.index ["admin_id", "seller_id", "ad_id", "buyer_id", "inquirer_seller_id"], name: "index_conversations_unique_lookup", unique: true
+    t.index ["admin_id", "seller_id"], name: "index_conversations_admin_seller"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
+    t.index ["buyer_id", "seller_id"], name: "index_conversations_buyer_seller"
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
     t.index ["inquirer_seller_id"], name: "index_conversations_on_inquirer_seller_id"
     t.index ["is_whatsapp"], name: "index_conversations_on_is_whatsapp"
+    t.index ["seller_id", "inquirer_seller_id"], name: "index_conversations_seller_inquirer"
     t.index ["seller_id"], name: "index_conversations_on_seller_id"
   end
 
@@ -498,8 +503,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
     t.datetime "delivered_at"
     t.string "whatsapp_message_id"
     t.index ["ad_id"], name: "index_messages_on_ad_id"
+    t.index ["conversation_id", "read_at"], name: "index_messages_conversation_read"
+    t.index ["conversation_id", "sender_id", "read_at"], name: "index_messages_conversation_senderid_read"
+    t.index ["conversation_id", "sender_type", "read_at"], name: "index_messages_conversation_sender_read"
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
+    t.index ["read_at"], name: "index_messages_read_at"
     t.index ["sender_type", "sender_id"], name: "index_messages_on_sender"
+    t.index ["sender_type"], name: "index_messages_sender_type"
     t.index ["whatsapp_message_id"], name: "index_messages_on_whatsapp_message_id"
   end
 
@@ -515,6 +525,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_mobile_releases_on_active"
     t.index ["version_name", "abi"], name: "index_mobile_releases_on_version_name_and_abi"
+  end
+
+  create_table "monitoring_errors", force: :cascade do |t|
+    t.string "message"
+    t.text "stack_trace"
+    t.string "level"
+    t.json "context"
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "monitoring_metrics", force: :cascade do |t|
+    t.string "name"
+    t.decimal "value"
+    t.datetime "timestamp"
+    t.json "tags"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -728,6 +757,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_08_064445) do
     t.index ["ad_id"], name: "index_reviews_on_ad_id"
     t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
     t.index ["seller_id"], name: "index_reviews_on_seller_id"
+    t.index ["seller_id"], name: "index_reviews_seller_id"
   end
 
   create_table "riders", force: :cascade do |t|

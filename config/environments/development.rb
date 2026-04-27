@@ -1,8 +1,26 @@
 require "active_support/core_ext/integer/time"
 
 # Custom logger class for Rails 7.1.5.2 compatibility
-# Logs to both file and STDOUT, but filters out request logs ("Started GET", etc.)
+# Logs to both file and STDOUT, but keeps stdout clean for development.
 class DualLogger < ActiveSupport::Logger
+  # Lines matching these patterns are written to the log FILE but suppressed
+  # from STDOUT to reduce terminal noise during development.
+  STDOUT_SUPPRESS_PATTERNS = [
+    /^Started (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)/i,
+    /^Processing by/i,
+    /Rendered ActiveModel::Serializer/i,
+    /ActiveModelSerializers/i,
+    /ActiveModel::Serializer/i,
+    /Serializer.*Adapter/i,
+    /^\s*(Rendering|Rendered)\s+\S+_mailer\//i,
+    # Suppress per-request MONITORING_METRIC lines — metrics are stored in DB already
+    /^MONITORING_METRIC:/,
+    # Suppress verbose Sentry/Skylight startup banners
+    /Please add the 'stackprof' gem/,
+    /\[Sentry::MetricEventBuffer\]/,
+    /Initializing the Sentry background worker/,
+  ].freeze
+
   def initialize(*args)
     super
     @stdout_logger = ActiveSupport::Logger.new(STDOUT)
@@ -11,34 +29,14 @@ class DualLogger < ActiveSupport::Logger
   end
 
   def add(severity, message = nil, progname = nil, &block)
-    # Get the actual message string
     msg = message || (block && block.call) || progname
-    
-    # Convert to string for matching
     msg_str = msg.to_s
-    
-    # Filter out request logs and serializer logs
-    # Filter "Started GET/POST" request logs
-    if msg_str.match?(/^Started (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)/i) || msg_str.match?(/^Processing by/i)
-      super # Log to file only
-      return self
-    end
-    
-    # Filter ActiveModel Serializer rendering logs (comprehensive pattern)
-    if msg_str.match?(/Rendered ActiveModel::Serializer/i) || 
-       msg_str.match?(/ActiveModelSerializers/i) ||
-       msg_str.match?(/ActiveModel::Serializer/i) ||
-       msg_str.match?(/Serializer.*Adapter/i)
-      super # Log to file only
+
+    if STDOUT_SUPPRESS_PATTERNS.any? { |p| msg_str.match?(p) }
+      super   # file only
       return self
     end
 
-    # Filter ActionMailer rendering/rendered view logs
-    if msg_str.match?(/^\s*(Rendering|Rendered)\s+\S+_mailer\//i)
-      super # Log to file only
-      return self
-    end
-    
     super
     @stdout_logger.add(severity, message, progname, &block)
   end

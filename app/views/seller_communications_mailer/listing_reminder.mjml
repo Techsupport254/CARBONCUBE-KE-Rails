@@ -37,7 +37,7 @@
 
         <mj-text padding-bottom="24px">
           You can manage your listings at your convenience:<br/><br/>
-          <a href="https://carboncube-ke.com/dashboard/listings?utm_source=listing_reminder&utm_medium=email&utm_campaign=listing_update" style="color: #f59e0b; font-weight: 800; text-decoration: underline;">Manage My Listings</a>
+          <a href="https://carboncube-ke.com/seller/ads?utm_source=listing_reminder&utm_medium=email&utm_campaign=listing_update" style="color: #f59e0b; font-weight: 800; text-decoration: underline;">Manage My Listings</a>
         </mj-text>
 
         <mj-text padding-bottom="32px">

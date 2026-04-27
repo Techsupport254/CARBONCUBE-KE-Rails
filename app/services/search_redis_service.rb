@@ -186,36 +186,52 @@ class SearchRedisService
         all_keys = redis.keys("searches:search:*")
         filtered_keys = apply_filters(all_keys, filters, redis)
 
-        sorted_keys = filtered_keys.sort_by { |key| redis.hget(key, 'timestamp').to_i }.reverse
-        start_index = (page - 1) * per_page
-        paginated_keys = sorted_keys[start_index, per_page] || []
-        total_count = filtered_keys.size
-
-        searches = paginated_keys.map do |key|
+        # Fetch ALL matching records first — deduplication must see every
+        # record for every user before we can decide what to suppress.
+        all_searches = filtered_keys.filter_map do |key|
           data = redis.hgetall(key)
           next if data.empty?
 
           {
             id: key.split(':').last,
             search_term: data['search_term'],
-            user_id: data['user_id'].present? ? data['user_id'] : nil,
-            buyer_id: data['user_id'].present? && data['role'] == 'buyer' ? data['user_id'] : nil,
-            seller_id: data['user_id'].present? && data['role'] == 'seller' ? data['user_id'] : nil,
-            role: data['role'].present? ? data['role'] : 'guest',
+            user_id: data['user_id'].presence,
+            buyer_id: data['user_id'].presence && data['role'] == 'buyer' ? data['user_id'] : nil,
+            seller_id: data['user_id'].presence && data['role'] == 'seller' ? data['user_id'] : nil,
+            role: data['role'].presence || 'guest',
+            session_id: data['session_id'].presence,
             timestamp: Time.at(data['timestamp'].to_i),
             created_at: Time.at(data['timestamp'].to_i),
             device_hash: data['device_hash'],
             user_agent: data['user_agent'],
             ip_address: data['ip_address']
           }
-        end.compact
+        end
+
+        # ── Typing-session deduplication (LNSQ) ───────────────────────────────
+        # Industry standard (Algolia Insights / Amplitude / Mixpanel):
+        # Within a 90-second window, if a later query from the SAME user
+        # starts with an earlier query (forward typing) OR the earlier query
+        # starts with the later query (backspace then retype), the earlier
+        # record is a keystroke fragment and is suppressed. Only the terminal
+        # committed query of each typing chain is returned.
+        deduplicated = deduplicate_prefix_chains(all_searches, window_seconds: 90)
+
+        # Sort descending AFTER deduplication so the correct terminal queries
+        # appear at the top.
+        sorted = deduplicated.sort_by { |s| -s[:timestamp].to_i }
+
+        # Paginate the deduplicated set — counts now reflect real searches only.
+        total_count  = sorted.size
+        start_index  = (page - 1) * per_page
+        page_records = sorted[start_index, per_page] || []
 
         {
-          searches: searches,
+          searches: page_records,
           total_count: total_count,
           current_page: page,
           per_page: per_page,
-          total_pages: (total_count.to_f / per_page).ceil
+          total_pages: total_count.zero? ? 1 : (total_count.to_f / per_page).ceil
         }
       end
     end
@@ -228,6 +244,68 @@ class SearchRedisService
 
     private
 
+    # ── LNSQ: Last Non-Superseded Query ─────────────────────────────────────
+    # Groups searches by per-user identity (user_id > session_id > device_hash).
+    # For each user, sorts records chronologically and marks a record as a
+    # "keystroke fragment" (suppressed) when EITHER:
+    #   (a) a later record within `window_seconds` starts with it  → forward typing
+    #   (b) it starts with a later record within `window_seconds`  → backspace + retype
+    # In both cases the earlier record was just a stepping stone; the later
+    # record is the user's actual committed intent.
+    # Returns only the terminal (non-suppressed) records.
+    def deduplicate_prefix_chains(searches, window_seconds: 90)
+      return searches if searches.size <= 1
+
+      # Choose the most specific stable identifier for each record
+      identity = lambda do |s|
+        s[:user_id].to_s.strip.presence ||
+          s[:session_id].to_s.strip.presence ||
+          s[:device_hash].to_s.strip.presence ||
+          'anonymous'
+      end
+
+      grouped = searches.group_by { |s| identity.call(s) }
+      suppressed_ids = Set.new
+
+      grouped.each_value do |user_searches|
+        # Sort ascending so we can scan forward in time
+        sorted = user_searches.sort_by { |s| s[:timestamp].to_i }
+
+        sorted.each_with_index do |earlier, i|
+          next if suppressed_ids.include?(earlier[:id])
+
+          earlier_term = earlier[:search_term].to_s.strip.downcase
+          next if earlier_term.empty?
+
+          # Scan later records within the window
+          sorted[(i + 1)..].each do |later|
+            time_diff = later[:timestamp].to_i - earlier[:timestamp].to_i
+            break if time_diff > window_seconds  # outside window — stop scanning
+
+            later_term = later[:search_term].to_s.strip.downcase
+            next if later_term.empty?
+
+            # (a) Forward typing: user extended the query
+            forward = later_term.start_with?(earlier_term)
+            # (b) Backspace then retype: user deleted back to a shorter prefix,
+            #     then extended in a new direction — the earlier longer term is
+            #     an abandoned branch.
+            backward = earlier_term.start_with?(later_term) && later_term.length >= 2
+
+            if forward || backward
+              suppressed_ids.add(earlier[:id])
+              break  # this earlier record is settled — no need to check more
+            end
+          end
+        end
+      end
+
+      searches.reject { |s| suppressed_ids.include?(s[:id]) }
+    rescue => e
+      Rails.logger.warn "deduplicate_prefix_chains error: #{e.message} — returning unfiltered"
+      searches
+    end
+
     def generate_search_key(timestamp, user_id, role = nil)
       user_identifier = if user_id.present? && role.present?
         "#{role}:#{user_id}"
@@ -239,13 +317,34 @@ class SearchRedisService
       "searches:search:#{timestamp}:#{user_identifier}:#{SecureRandom.hex(4)}"
     end
 
+    # Returns true if this is a duplicate (exact match) within the window.
+    # Also removes any recent terms from this session that are a *prefix* of
+    # the new term — those are abandoned keystrokes from the same typing
+    # session and should not be counted as separate searches.
     def duplicate_search_recently?(search_term, user_id, session_id, device_hash)
       return false if session_id == 'unknown'
 
+      window_seconds = 60
+
       RedisConnection.with do |redis|
         session_key = "searches:session:#{session_id}:recent"
-        recent_searches = redis.zrangebyscore(session_key, Time.current.to_i - 30, Time.current.to_i, with_scores: true)
-        recent_searches.any? { |term, timestamp| term == search_term && (Time.current.to_i - timestamp.to_i) < 30 }
+        cutoff = Time.current.to_i - window_seconds
+        recent_entries = redis.zrangebyscore(session_key, cutoff, Time.current.to_i)
+
+        # Remove any prior terms that are a prefix of the new term — they
+        # are abandoned keystrokes in the same typing session.
+        recent_entries.each do |prior_term|
+          next if prior_term == search_term
+          if search_term.downcase.start_with?(prior_term.downcase)
+            # Remove from the sorted set so it no longer contributes to
+            # "recently searched" suggestions.
+            redis.zrem(session_key, prior_term)
+            Rails.logger.info "Typing-session dedup: removed prefix '#{prior_term}' superseded by '#{search_term}'"
+          end
+        end
+
+        # Exact duplicate check
+        recent_entries.any? { |term| term == search_term }
       end
     rescue => e
       Rails.logger.warn "Error checking for duplicate search: #{e.message}"
