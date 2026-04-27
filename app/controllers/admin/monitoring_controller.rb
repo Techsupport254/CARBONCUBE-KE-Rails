@@ -5,11 +5,14 @@ class Admin::MonitoringController < ApplicationController
   def index
     @error_summary = MonitoringService.get_error_summary(24.hours)
     @metric_summary = MonitoringService.get_metric_summary(24.hours)
-    @recent_errors = MonitoringError.where('created_at > ?', 24.hours.ago)
+    # Include all unresolved errors + recent resolved errors from the last 24h
+    @recent_errors = MonitoringError.where(resolved_at: nil)
+                                   .or(MonitoringError.where('created_at > ?', 24.hours.ago))
                                    .order(created_at: :desc)
                                    .limit(50)
     @unresolved_count = MonitoringError.where(resolved_at: nil).count
-    @total_errors_today = MonitoringError.where('created_at > ?', 24.hours.ago).count
+    # Count all errors created since midnight today (regardless of resolved status)
+    @total_errors_today = MonitoringError.where('created_at > ?', Time.current.beginning_of_day).count
 
     render json: {
       error_summary: @error_summary,
@@ -77,6 +80,31 @@ class Admin::MonitoringController < ApplicationController
     }
   end
 
+  # GET /admin/monitoring/uptime_data
+  def uptime_data
+    require 'net/http'
+    base_url = ENV['NEXT_PUBLIC_UPTIME_KUMA_URL'] || 'http://victor-uptimekuma-1ee082-49-12-235-140.traefik.me'
+    slug     = 'carboncube-status'
+
+    # Fetch heartbeat data and status page config in parallel
+    heartbeat_url   = URI("#{base_url}/api/status-page/heartbeat/#{slug}")
+    status_page_url = URI("#{base_url}/api/status-page/#{slug}")
+
+    heartbeat_data  = JSON.parse(Net::HTTP.get(heartbeat_url))
+    status_page     = JSON.parse(Net::HTTP.get(status_page_url))
+
+    # Build a monitor list from the status page config (contains names + IDs)
+    monitor_list = (status_page['publicGroupList'] || []).flat_map do |group|
+      (group['monitorList'] || []).map do |m|
+        { id: m['id'].to_s, name: m['name'] }
+      end
+    end
+
+    render json: heartbeat_data.merge('monitorList' => monitor_list)
+  rescue => e
+    render json: { error: e.message }, status: :service_unavailable
+  end
+
   private
 
   def authenticate_admin
@@ -87,9 +115,17 @@ class Admin::MonitoringController < ApplicationController
   end
 
   def calculate_uptime
-    # Simple uptime calculation - in production, you'd want to track this properly
-    start_time = Rails.cache.read('app_start_time') || Time.current
-    ((Time.current - start_time) / 1.hour).round(2)
+    # Read actual system/process uptime from /proc/uptime (Linux/Docker)
+    if File.exist?('/proc/uptime')
+      uptime_seconds = File.read('/proc/uptime').split.first.to_f
+      (uptime_seconds / 3600).round(2)
+    else
+      # Fallback: time since Rails booted (stored once in cache at boot)
+      start_time = Rails.cache.fetch('app_start_time') { Time.current }
+      ((Time.current - start_time) / 1.hour).round(2)
+    end
+  rescue
+    0
   end
 
   def check_database
