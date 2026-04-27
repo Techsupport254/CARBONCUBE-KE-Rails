@@ -66,47 +66,89 @@ class SearchRedisService
     # @param limit [Integer] number of terms to return
     # @param timeframe [Symbol] :all, :daily, :weekly, :monthly
     def popular_searches(limit = 20, timeframe = :all)
+      # Fetch all records and apply global deduplication for accuracy
       RedisConnection.with do |redis|
-        case timeframe
-        when :daily
-          start_of_day = Date.current.beginning_of_day.to_i
-          end_of_day = Date.current.end_of_day.to_i
-          all_keys = redis.keys("searches:search:*")
-
-          term_counts = Hash.new(0)
-          all_keys.each do |key|
-            timestamp = redis.hget(key, 'timestamp').to_i
-            if timestamp >= start_of_day && timestamp <= end_of_day
-              term = redis.hget(key, 'search_term')
-              term_counts[term] += 1 if term.present?
-            end
-          end
-
-          term_counts.sort_by { |_, count| -count }.first(limit)
-        when :weekly
-          keys = (0..6).map { |i| "searches:daily:#{(Date.current - i.days).iso8601}" }
-          aggregate_daily_searches(redis, keys, limit)
-        when :monthly
-          keys = (0..29).map { |i| "searches:daily:#{(Date.current - i.days).iso8601}" }
-          aggregate_daily_searches(redis, keys, limit)
-        else
-          redis.zrevrange("searches:popular", 0, limit - 1, with_scores: true)
+        all_keys = redis.keys("searches:search:*")
+        all_searches = all_keys.filter_map do |key|
+          data = redis.hgetall(key)
+          next if data.empty?
+          {
+            search_term: data['search_term'],
+            user_id: data['user_id'],
+            session_id: data['session_id'],
+            timestamp: Time.at(data['timestamp'].to_i),
+            role: data['role']
+          }
         end
+
+        # Filter and deduplicate
+        filtered = all_searches.reject { |s| ['admin', 'sales'].include?(s[:role].to_s.downcase) }
+        deduplicated = deduplicate_prefix_chains(filtered, window_seconds: 90)
+
+        # Apply timeframe filter
+        cutoff = case timeframe
+                 when :daily   then Date.current.beginning_of_day.to_time
+                 when :weekly  then 7.days.ago.beginning_of_day.to_time
+                 when :monthly then 30.days.ago.beginning_of_day.to_time
+                 else nil
+                 end
+
+        final_set = cutoff ? deduplicated.select { |s| s[:timestamp] >= cutoff } : deduplicated
+
+        # Group and count
+        final_set.group_by { |s| s[:search_term].to_s.downcase.strip }
+                 .transform_values(&:size)
+                 .sort_by { |_, count| -count }
+                 .first(limit)
       end
     end
 
     def analytics
       RedisConnection.with do |redis|
-        today_key = "searches:daily:#{Date.current.iso8601}"
-        weekly_keys = (0..6).map { |i| "searches:daily:#{(Date.current - i.days).iso8601}" }
-        total_searches_weekly = weekly_keys.sum { |key| redis.scard(key) }
+        all_keys = redis.keys("searches:search:*")
+        
+        # Fetch data for all searches to allow for global deduplication and filtering
+        all_searches = all_keys.filter_map do |key|
+          data = redis.hgetall(key)
+          next if data.empty?
+
+          {
+            id: key.split(':').last,
+            search_term: data['search_term'],
+            user_id: data['user_id'].presence,
+            role: data['role'].presence || 'guest',
+            session_id: data['session_id'].presence,
+            timestamp: Time.at(data['timestamp'].to_i),
+            device_hash: data['device_hash']
+          }
+        end
+
+        # 1. Filter: Exclude internal roles (admin, sales) from analytics
+        filtered = all_searches.reject { |s| ['admin', 'sales'].include?(s[:role].to_s.downcase) }
+
+        # 2. Deduplicate: Apply LNSQ logic to remove keystroke fragments
+        deduplicated = deduplicate_prefix_chains(filtered, window_seconds: 90)
+
+        # 3. Calculate Timeframes
+        today_start = Date.current.beginning_of_day.to_time
+        weekly_start = 7.days.ago.beginning_of_day.to_time
+
+        # 4. Calculate Popular Searches from deduplicated set
+        popular_counts = deduplicated.group_by { |s| s[:search_term].to_s.downcase.strip }
+                                   .transform_values(&:size)
+                                   .sort_by { |_, count| -count }
+                                   .first(10)
 
         {
-          total_searches_today: redis.scard(today_key),
-          unique_search_terms_today: redis.scard(today_key),
-          total_searches_weekly: total_searches_weekly,
-          popular_searches: redis.zrevrange("searches:popular", 0, 9, with_scores: true),
-          total_search_records: redis.keys("searches:search:*").size
+          total_searches_today: deduplicated.count { |s| s[:timestamp] >= today_start },
+          total_searches_weekly: deduplicated.count { |s| s[:timestamp] >= weekly_start },
+          total_search_records: deduplicated.size,
+          popular_searches: popular_counts,
+          data_quality: {
+            raw_records: all_keys.size,
+            deduplicated_records: deduplicated.size,
+            fragments_removed: all_keys.size - deduplicated.size
+          }
         }
       end
     end
