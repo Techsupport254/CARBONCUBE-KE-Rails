@@ -10,6 +10,7 @@ class ApplicationController < ActionController::Base
   
   # Add query timeout protection for database operations
   around_action :set_query_timeout
+  around_action :track_request_performance
   
   # Log all requests for debugging (disabled)
   # before_action :log_all_requests
@@ -68,5 +69,43 @@ class ApplicationController < ActionController::Base
 
   def json_response(object, status = :ok)
     render json: object, status: status
+  end
+
+  def track_request_performance
+    start_time = Time.current
+    yield
+  ensure
+    duration = Time.current - start_time
+    MonitoringService.track_performance(
+      controller_name,
+      action_name,
+      duration
+    )
+  end
+
+  def track_error(exception)
+    MonitoringService.track_error(exception, {
+      controller: controller_name,
+      action: action_name,
+      user_id: current_user&.id,
+      ip_address: request.remote_ip,
+      user_agent: request.user_agent,
+      params: sanitize_params(params)
+    })
+  end
+
+  private
+
+  def sanitize_params(params)
+    # Remove sensitive data from params before logging
+    sanitized = params.except(:password, :password_confirmation, :token, :secret, :key)
+    # Truncate long values to prevent log bloat
+    sanitized.transform_values do |value|
+      if value.is_a?(String) && value.length > 500
+        "#{value[0..497]}..."
+      else
+        value
+      end
+    end
   end
 end

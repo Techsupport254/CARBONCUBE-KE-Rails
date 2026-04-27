@@ -5,214 +5,139 @@ class UpdateUnreadCountsJob < ApplicationJob
   retry_on StandardError, wait: :polynomially_longer, attempts: 3
   
   def perform(conversation_id, message_id)
-    # Rails.logger.info "UpdateUnreadCountsJob: Starting for conversation #{conversation_id}, message #{message_id}"
-    
     conversation = Conversation.find_by(id: conversation_id)
-    unless conversation
-      Rails.logger.warn "UpdateUnreadCountsJob: Conversation #{conversation_id} not found"
-      return
-    end
+    return unless conversation
     
     message = Message.find_by(id: message_id)
-    unless message
-      Rails.logger.warn "UpdateUnreadCountsJob: Message #{message_id} not found"
-      return
-    end
+    return unless message
     
-    # Rails.logger.info "UpdateUnreadCountsJob: Found conversation #{conversation.id} and message #{message.id}"
-    
-    # Update unread counts for all participants
-    update_participant_unread_counts(conversation, message)
+    # Update unread counts for all participants using optimized queries
+    update_participant_unread_counts_optimized(conversation, message)
     
     # Broadcast unread count updates to all participants
-    broadcast_unread_count_updates(conversation)
-    
-    # Rails.logger.info "UpdateUnreadCountsJob: Completed successfully"
+    broadcast_unread_count_updates_optimized(conversation)
     
   rescue StandardError => e
     Rails.logger.error "UpdateUnreadCountsJob: Failed to update unread counts: #{e.message}"
-    Rails.logger.error e.backtrace.join("\n")
     raise e
   end
   
   private
   
-  def update_participant_unread_counts(conversation, message)
-    # For buyer - calculate total unread across all their conversations
+  def update_participant_unread_counts_optimized(conversation, message)
+    # OPTIMIZATION: Use single bulk SQL queries instead of N+1 queries
+    
+    # For buyer
     if conversation.buyer_id
-      buyer_unread_count = calculate_total_unread_for_buyer(conversation.buyer_id)
-      broadcast_unread_count_to_user('buyer', conversation.buyer_id, buyer_unread_count)
+      buyer_unread_count = calculate_total_unread_for_buyer_optimized(conversation.buyer_id)
+      Rails.cache.write("buyer_unread_count:#{conversation.buyer_id}", buyer_unread_count, expires_in: 1.hour)
     end
     
-    # For seller - calculate total unread across all their conversations
+    # For seller
     if conversation.seller_id
-      seller_unread_count = calculate_total_unread_for_seller(conversation.seller_id)
-      broadcast_unread_count_to_user('seller', conversation.seller_id, seller_unread_count)
+      seller_unread_count = calculate_total_unread_for_seller_optimized(conversation.seller_id)
+      Rails.cache.write("seller_unread_count:#{conversation.seller_id}", seller_unread_count, expires_in: 1.hour)
     end
     
-    # For inquirer seller (if different from main seller) - calculate total unread
+    # For inquirer seller (if different from main seller)
     if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
-      inquirer_unread_count = calculate_total_unread_for_seller(conversation.inquirer_seller_id)
-      broadcast_unread_count_to_user('seller', conversation.inquirer_seller_id, inquirer_unread_count)
+      inquirer_unread_count = calculate_total_unread_for_seller_optimized(conversation.inquirer_seller_id)
+      Rails.cache.write("seller_unread_count:#{conversation.inquirer_seller_id}", inquirer_unread_count, expires_in: 1.hour)
     end
     
-    # For admin (if present) - calculate total unread across all their conversations
+    # For admin
     if conversation.admin_id
-      admin = Admin.find_by(id: conversation.admin_id)
-      sales_user = SalesUser.find_by(id: conversation.admin_id)
-      
-      if admin
-        admin_unread_count = calculate_total_unread_for_admin(conversation.admin_id)
-        broadcast_unread_count_to_user('admin', conversation.admin_id, admin_unread_count)
-      elsif sales_user
-        sales_unread_count = calculate_total_unread_for_sales_user(sales_user.id)
-        broadcast_unread_count_to_user('sales', sales_user.id, sales_unread_count)
-      end
+      admin_unread_count = calculate_total_unread_for_admin_optimized(conversation.admin_id)
+      Rails.cache.write("admin_unread_count:#{conversation.admin_id}", admin_unread_count, expires_in: 1.hour)
     end
     
-    # For Sales users viewing all conversations, broadcast total unread count
-    # This ensures they get real-time updates when messages arrive in any conversation
-    # We broadcast to all active Sales users so they see the updated total count
+    # OPTIMIZATION: Update sales users counts in bulk
+    update_sales_users_unread_counts_optimized(conversation)
+  end
+  
+  # OPTIMIZED: Single SQL query for buyer unread count
+  def calculate_total_unread_for_buyer_optimized(buyer_id)
+    Message.joins(:conversation)
+           .where(conversations: { buyer_id: buyer_id })
+           .where.not(sender_id: buyer_id)
+           .where(read_at: nil)
+           .count
+  end
+  
+  # OPTIMIZED: Single SQL query for seller unread count
+  def calculate_total_unread_for_seller_optimized(seller_id)
+    Message.joins(:conversation)
+           .where(conversations: { seller_id: seller_id })
+           .where.not(sender_id: seller_id)
+           .where(read_at: nil)
+           .count
+  end
+  
+  # OPTIMIZED: Single SQL query for admin unread count
+  def calculate_total_unread_for_admin_optimized(admin_id)
+    Message.joins(:conversation)
+           .where(conversations: { admin_id: admin_id })
+           .where.not(sender_id: admin_id)
+           .where(read_at: nil)
+           .count
+  end
+  
+  # OPTIMIZED: Cache total unread count for sales users
+  def update_sales_users_unread_counts_optimized(conversation)
+    # OPTIMIZATION: Cache total unread for all sales users to avoid repeated calculations
+    # Since Admin model doesn't have role column, use all admins for sales functionality
+    total_unread_for_sales = Rails.cache.fetch("sales_total_unread", expires_in: 5.minutes) do
+      Message.joins(:conversation)
+             .where(conversations: { admin_id: Admin.select(:id) })
+             .where.not(sender_id: SalesUser.select(:id))
+             .where(read_at: nil)
+             .count
+    end
+    
+    # Broadcast to all sales users
     SalesUser.find_each do |sales_user|
-      # Calculate total unread count across all conversations for this sales user
-      total_unread = calculate_total_unread_for_sales_user(sales_user.id)
-      broadcast_unread_count_to_user('sales', sales_user.id, total_unread)
+      Rails.cache.write("sales_unread_count:#{sales_user.id}", total_unread_for_sales, expires_in: 1.hour)
     end
   end
   
-  def calculate_unread_count_for_user(conversation, user_id, user_type)
-    case user_type
-    when 'Buyer'
-      # Count messages from sellers, admins, and sales users that are unread (read_at is nil)
-      conversation.messages
-                  .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
-                  .where(read_at: nil)
-                  .count
-    when 'Seller'
-      # Handle seller-to-seller conversations differently
-      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-        # Seller-to-seller conversation: count messages not sent by current user
-        conversation.messages
-                    .where.not(sender_id: user_id)
-                    .where(read_at: nil)
-                    .count
-      else
-        # Regular conversation: count messages from buyers, admins, and sales users
-        conversation.messages
-                    .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                    .where(read_at: nil)
-                    .count
-      end
-    when 'Admin'
-      # Count messages from sellers, buyers, and purchasers that are unread (read_at is nil)
-      conversation.messages
-                  .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                  .where(read_at: nil)
-                  .count
-    when 'SalesUser'
-      # For Sales users, count messages from sellers, buyers, and purchasers
-      conversation.messages
-                  .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                  .where(read_at: nil)
-                  .count
-    else
-      0
-    end
-  end
-  
-  def calculate_total_unread_for_buyer(buyer_id)
-    conversations = Conversation.where(buyer_id: buyer_id).active_participants
-    total_unread = 0
-    
-    conversations.each do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
-                                .where(read_at: nil)
-                                .count
-      total_unread += unread_count
+  def broadcast_unread_count_updates_optimized(conversation)
+    # Broadcast to buyer
+    if conversation.buyer_id
+      buyer_unread = Rails.cache.read("buyer_unread_count:#{conversation.buyer_id}")
+      broadcast_unread_count_to_user('buyer', conversation.buyer_id, buyer_unread) if buyer_unread
     end
     
-    total_unread
-  end
-  
-  def calculate_total_unread_for_seller(seller_id)
-    conversations = Conversation.where(
-      "(seller_id = ? OR inquirer_seller_id = ?)", 
-      seller_id, 
-      seller_id
-    ).active_participants
-    
-    total_unread = 0
-    conversations.each do |conversation|
-      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-        # Seller-to-seller conversation: count messages not sent by current user
-        unread_count = conversation.messages
-                                  .where.not(sender_id: seller_id)
-                                  .where(read_at: nil)
-                                  .count
-      else
-        # Regular conversation: count messages from buyers, admins, and sales users
-        unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                                  .where(read_at: nil)
-                                  .count
-      end
-      total_unread += unread_count
+    # Broadcast to seller
+    if conversation.seller_id
+      seller_unread = Rails.cache.read("seller_unread_count:#{conversation.seller_id}")
+      broadcast_unread_count_to_user('seller', conversation.seller_id, seller_unread) if seller_unread
     end
     
-    total_unread
-  end
-  
-  def calculate_total_unread_for_admin(admin_id)
-    conversations = Conversation.where(admin_id: admin_id).active_participants
-    total_unread = 0
-    
-    conversations.each do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
-      total_unread += unread_count
+    # Broadcast to inquirer seller (if different)
+    if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
+      inquirer_unread = Rails.cache.read("seller_unread_count:#{conversation.inquirer_seller_id}")
+      broadcast_unread_count_to_user('seller', conversation.inquirer_seller_id, inquirer_unread) if inquirer_unread
     end
     
-    total_unread
-  end
-  
-  def calculate_total_unread_for_sales_user(sales_user_id)
-    # Sales users see all conversations
-    conversations = Conversation.active_participants
-    total_unread = 0
-    
-    conversations.each do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
-      total_unread += unread_count
+    # Broadcast to admin
+    if conversation.admin_id
+      admin_unread = Rails.cache.read("admin_unread_count:#{conversation.admin_id}")
+      broadcast_unread_count_to_user('admin', conversation.admin_id, admin_unread) if admin_unread
     end
     
-    total_unread
+    # Broadcast to all sales users
+    SalesUser.find_each do |sales_user|
+      sales_unread = Rails.cache.read("sales_unread_count:#{sales_user.id}")
+      broadcast_unread_count_to_user('sales', sales_user.id, sales_unread) if sales_unread
+    end
   end
   
   def broadcast_unread_count_to_user(user_type, user_id, unread_count)
-    channel_name = "conversations_#{user_type.downcase}_#{user_id}"
-    
-    # Rails.logger.info "UpdateUnreadCountsJob: Broadcasting to #{channel_name} with count: #{unread_count}"
-    
-    # Use ActionCable.server.broadcast to match the Message model
-    ActionCable.server.broadcast(channel_name, {
-      type: 'unread_count_update',
-      unread_count: unread_count,
-      timestamp: Time.current.iso8601
-    })
-    
-    # Rails.logger.info "UpdateUnreadCountsJob: Successfully broadcasted to #{channel_name}"
-  rescue StandardError => e
-    Rails.logger.warn "UpdateUnreadCountsJob: Failed to broadcast unread count to #{channel_name}: #{e.message}"
-  end
-  
-  def broadcast_unread_count_updates(conversation)
-    # This method can be used for additional broadcasting logic if needed
-    # For now, the individual user broadcasts are handled in update_participant_unread_counts
+    ActionCable.server.broadcast(
+      "#{user_type}_#{user_id}_unread_counts",
+      { unread_count: unread_count, timestamp: Time.current.iso8601 }
+    )
+  rescue => e
+    Rails.logger.error "Failed to broadcast unread count to #{user_type} #{user_id}: #{e.message}"
   end
 end

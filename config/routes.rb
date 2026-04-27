@@ -1,5 +1,7 @@
 
 Rails.application.routes.draw do
+  get '/health', to: proc { [200, { 'Content-Type' => 'application/json' }, ['{"status":"ok"}']] }
+
 
   # Reject requests for static files (these should be served by Next.js frontend)
   # This prevents Rails from trying to process .js, .css, and other static files
@@ -96,6 +98,15 @@ Rails.application.routes.draw do
   
   # WhatsApp check route
   post 'whatsapp/check', to: 'whatsapp#check_number'
+
+  # API v1 routes
+  namespace :api do
+    namespace :v1 do
+      # Monitoring endpoints
+      post 'monitoring/errors', to: 'monitoring#create_error'
+      post 'monitoring/metrics', to: 'monitoring#create_metric'
+    end
+  end
   get 'whatsapp/check', to: 'whatsapp#check_number'
   
   # Contact form routes
@@ -335,6 +346,19 @@ Rails.application.routes.draw do
       end
     end
     
+    # Monitoring System
+    resources :monitoring, only: [] do
+      collection do
+        get :index
+        get :errors
+        get :metrics
+        get :health
+      end
+      member do
+        post :resolve_error
+      end
+    end
+
     # Seller Communications
     resources :seller_communications, only: [] do
       collection do
