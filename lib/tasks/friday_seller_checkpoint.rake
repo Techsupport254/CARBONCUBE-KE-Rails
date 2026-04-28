@@ -1,23 +1,29 @@
 namespace :admin do
-  desc "Export new sellers since last checkpoint and send via email"
+  desc "Export new sellers from last Friday to this Friday and send via email"
   task friday_seller_checkpoint: :environment do
     require 'csv'
 
-    # Find sellers that haven't been exported yet
-    unexported_sellers = Seller.where(checkpoint_exported: false)
-    seller_count = unexported_sellers.count
+    # Calculate date range from last Friday to this Friday
+    today = Date.today
+    this_friday = today + ((5 - today.wday) % 7)
+    last_friday = this_friday - 7
+
+    puts "Exporting sellers from #{last_friday} to #{this_friday}"
+
+    # Find sellers in the date range
+    sellers = Seller.where('created_at >= ? AND created_at <= ?', last_friday, this_friday.end_of_day)
+    seller_count = sellers.count
 
     if seller_count == 0
-      puts "No new sellers to export."
+      puts "No sellers found in the specified date range."
       # We still send an email so the admin knows the job ran successfully
+    else
+      puts "Found #{seller_count} sellers to export"
     end
-
-    require 'prawn'
-    require 'prawn/table'
 
     csv_data = CSV.generate(headers: true) do |csv|
       csv << ["Date Registered", "Company Name", "Location", "Name of Contact", "Contact Number", "Category"]
-      unexported_sellers.includes(:category).each do |seller|
+      sellers.includes(:category).each do |seller|
         csv << [
           seller.created_at&.strftime("%Y-%m-%d"),
           seller.enterprise_name,
@@ -29,20 +35,29 @@ namespace :admin do
       end
     end
 
-    # Generate PDF
+    # Generate PDF with UTF-8 support
+    require 'prawn'
+    require 'prawn/table'
+
     pdf = Prawn::Document.new(page_layout: :landscape)
-    pdf.text "Weekly Seller Checkpoint - #{Date.today.to_s}", size: 18, style: :bold
+    pdf.font "Helvetica"
+    pdf.text "Weekly Seller Checkpoint: #{last_friday} to #{this_friday}", size: 18, style: :bold
     pdf.move_down 20
-    
+
+    # Sanitize text for PDF
+    sanitize = lambda { |text|
+      text.to_s.encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')
+    }
+
     table_data = [["Date", "Company Name", "Location", "Contact Name", "Number", "Category"]]
-    unexported_sellers.includes(:category).each do |seller|
+    sellers.includes(:category).each do |seller|
       table_data << [
-        seller.created_at&.strftime("%Y-%m-%d").to_s,
-        seller.enterprise_name.to_s,
-        seller.location.to_s,
-        seller.fullname.to_s,
-        seller.phone_number.to_s,
-        seller.category&.name || "N/A"
+        sanitize.call(seller.created_at&.strftime("%Y-%m-%d")),
+        sanitize.call(seller.enterprise_name),
+        sanitize.call(seller.location),
+        sanitize.call(seller.fullname),
+        sanitize.call(seller.phone_number),
+        sanitize.call(seller.category&.name || "N/A")
       ]
     end
 
@@ -57,14 +72,16 @@ namespace :admin do
     # Define admin emails
     admin_emails = [
       "victor@carboncube-ke.com",
-      "beverlyne.sales@carboncube-ke.com"
+      "beverlyne.sales@carboncube-ke.com",
+      "arwabeverlyne2@gmail.com",
+      "kiruivictor097@gmail.com"
     ]
 
-    # Send email
-    AdminReportsMailer.weekly_seller_checkpoint(admin_emails, csv_data, pdf_content, seller_count).deliver_now
-
-    # Mark as exported
-    unexported_sellers.update_all(checkpoint_exported: true)
+    # Send email to each admin
+    admin_emails.each do |email|
+      AdminReportsMailer.weekly_seller_checkpoint(email, csv_data, pdf_content, seller_count).deliver_now
+      puts "Sent email to #{email}"
+    end
 
     puts "Successfully exported and emailed #{seller_count} sellers."
   end
