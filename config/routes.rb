@@ -55,6 +55,9 @@ Rails.application.routes.draw do
   # Health check endpoints
   get '/health/websocket', to: 'health#websocket_status'
   get '/health/overall', to: 'health#overall_health'
+
+  # Automation endpoints for scheduled tasks
+  post '/automation/trigger_friday_seller_checkpoint', to: 'automation#trigger_friday_seller_checkpoint'
   
   # Proxy endpoints
   get '/proxy-image', to: 'proxy#proxy_image'
@@ -354,6 +357,7 @@ Rails.application.routes.draw do
         get :metrics
         get :health
         get :uptime_data
+        post :trigger_friday_seller_checkpoint
       end
       member do
         post :resolve_error

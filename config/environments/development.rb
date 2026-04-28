@@ -196,7 +196,8 @@ Rails.application.configure do
   config.active_support.disallowed_deprecation_warnings = []
 
   # Raise an error on page load if there are pending migrations.
-  config.active_record.migration_error = :page_load
+  # Temporarily set to :log for testing automation endpoint
+  config.active_record.migration_error = :log
 
   # Highlight code that triggered database queries in logs.
   config.active_record.verbose_query_logs = false
