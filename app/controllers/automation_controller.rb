@@ -32,10 +32,18 @@ class AutomationController < ApplicationController
   private
 
   def authenticate_automation
+    # Try different header name formats
     token = request.headers['Authorization']&.split(' ')&.last
+    token ||= request.headers['HTTP_AUTHORIZATION']&.split(' ')&.last
+    token ||= request.headers['authorization']&.split(' ')&.last
+
     expected_token = ENV['ADMIN_API_TOKEN']
 
+    # Log for debugging (remove in production)
+    Rails.logger.info "Automation auth - Token present: #{token.present?}, Expected: #{expected_token.present?}"
+
     unless token == expected_token
+      Rails.logger.error "Automation auth failed - Token: #{token&.first(10)}..., Expected: #{expected_token&.first(10)}..."
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end
   end
