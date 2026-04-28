@@ -30,7 +30,8 @@ class AddPerformanceIndexes < ActiveRecord::Migration[7.1]
     add_index :tiers, :id, name: 'index_tiers_on_id' unless index_exists?(:tiers, :id, name: 'index_tiers_on_id')
     
     # Indexes for media validation queries
-    add_index :ads, [:media], name: 'index_ads_on_media', using: 'gin' unless index_exists?(:ads, [:media], name: 'index_ads_on_media')
+    # Note: GIN index not compatible with text column, using standard btree instead
+    add_index :ads, [:media], name: 'index_ads_on_media' unless index_exists?(:ads, [:media], name: 'index_ads_on_media')
     
     # Partial indexes for active ads only (most common query)
     add_index :ads, [:created_at], name: 'index_ads_active_created_at', where: 'deleted = false AND flagged = false' unless index_exists?(:ads, [:created_at], name: 'index_ads_active_created_at')

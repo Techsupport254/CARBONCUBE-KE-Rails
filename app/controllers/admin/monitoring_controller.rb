@@ -1,5 +1,6 @@
 class Admin::MonitoringController < ApplicationController
-  before_action :authenticate_admin
+  before_action :authenticate_admin, except: [:trigger_friday_seller_checkpoint]
+  before_action :authenticate_for_automation, only: [:trigger_friday_seller_checkpoint]
 
   # GET /admin/monitoring
   def index
@@ -105,9 +106,54 @@ class Admin::MonitoringController < ApplicationController
     render json: { error: e.message }, status: :service_unavailable
   end
 
+  # POST /admin/monitoring/trigger_friday_seller_checkpoint
+  def trigger_friday_seller_checkpoint
+    # Execute the rake task directly without loading monitoring services
+    output = `RAILS_ENV=#{Rails.env} bin/rails admin:friday_seller_checkpoint 2>&1`
+    success = $?.success?
+
+    if success
+      render json: {
+        status: 'success',
+        message: 'Friday seller checkpoint executed successfully',
+        output: output
+      }, status: :ok
+    else
+      render json: {
+        status: 'error',
+        message: 'Failed to execute Friday seller checkpoint',
+        output: output
+      }, status: :internal_server_error
+    end
+  rescue => e
+    render json: {
+      status: 'error',
+      message: 'Failed to execute Friday seller checkpoint',
+      output: e.message
+    }, status: :internal_server_error
+  end
+
   private
 
   def authenticate_admin
+    @current_user = AdminAuthorizeApiRequest.new(request.headers).result
+    unless @current_user && @current_user.is_a?(Admin)
+      render json: { error: 'Unauthorized' }, status: :unauthorized
+    end
+  end
+
+  def authenticate_for_automation
+    # Check for simple API token first (for n8n automation)
+    token = request.headers['Authorization']&.split(' ')&.last
+    expected_token = ENV['ADMIN_API_TOKEN']
+
+    if token == expected_token
+      # Allow access with valid API token without database lookup
+      @current_user = OpenStruct.new(id: 0, email: 'automation@carboncube-ke.com')
+      return
+    end
+
+    # Fall back to JWT authentication
     @current_user = AdminAuthorizeApiRequest.new(request.headers).result
     unless @current_user && @current_user.is_a?(Admin)
       render json: { error: 'Unauthorized' }, status: :unauthorized
