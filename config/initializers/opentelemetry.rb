@@ -22,7 +22,6 @@ if Rails.env.production? || Rails.env.staging?
             headers: { 'Content-Type' => 'application/json' },
             timeout: 5 # Add timeout to prevent hanging
           ),
-          export_timeout: 5, # Add export timeout
           max_queue_size: 100, # Reduce queue size
           max_export_batch_size: 50 # Reduce batch size
         )
@@ -51,14 +50,17 @@ if Rails.env.production?
       module Trace
         module Export
           class BatchSpanProcessor
-            alias_method :original_export, :export
-            
-            def export(spans, timeout: nil)
-              original_export(spans, timeout: timeout)
-            rescue StandardError => e
-              # Silently handle export errors in production
-              Rails.logger.debug "OpenTelemetry export error (suppressed): #{e.message}" if Rails.env.development?
-              0 # Return success code to prevent retries
+            # Only patch if the export method exists
+            if instance_methods.include?(:export)
+              alias_method :original_export, :export
+              
+              def export(spans, timeout: nil)
+                original_export(spans, timeout: timeout)
+              rescue StandardError => e
+                # Silently handle export errors in production
+                Rails.logger.debug "OpenTelemetry export error (suppressed): #{e.message}" if Rails.env.development?
+                0 # Return success code to prevent retries
+              end
             end
           end
         end
