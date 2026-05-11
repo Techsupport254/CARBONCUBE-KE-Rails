@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_04_22_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_11_090349) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -890,6 +890,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_22_140000) do
     t.string "secondary_phone_number", limit: 10
     t.boolean "phone_provided_by_oauth", default: false
     t.bigint "carbon_code_id"
+    t.boolean "checkpoint_exported", default: false
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -995,6 +996,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_22_140000) do
     t.index ["visitor_id"], name: "index_visitors_on_visitor_id", unique: true
   end
 
+  create_table "whatsapp_message_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "phone_number", null: false
+    t.string "template_name", null: false
+    t.string "message_id"
+    t.boolean "sent_successfully", default: false
+    t.text "error_message"
+    t.datetime "sent_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phone_number"], name: "index_whatsapp_message_logs_on_phone_number"
+    t.index ["seller_id", "template_name"], name: "index_whatsapp_message_logs_on_seller_id_and_template_name", unique: true
+    t.index ["sent_at"], name: "index_whatsapp_message_logs_on_sent_at"
+  end
+
   create_table "wish_lists", force: :cascade do |t|
     t.bigint "ad_id", null: false
     t.datetime "created_at", null: false
@@ -1069,6 +1085,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_04_22_140000) do
   add_foreign_key "sub_counties", "counties"
   add_foreign_key "tier_features", "tiers"
   add_foreign_key "tier_pricings", "tiers"
+  add_foreign_key "whatsapp_message_logs", "sellers"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade
