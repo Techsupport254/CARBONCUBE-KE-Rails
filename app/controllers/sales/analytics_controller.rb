@@ -597,6 +597,13 @@ class Sales::AnalyticsController < ApplicationController
     start_date = params[:start_date]
     end_date = params[:end_date]
 
+    Rails.logger.info "get_source_analytics called with:"
+    Rails.logger.info "  selected_source: #{selected_source}"
+    Rails.logger.info "  selected_utm_type: #{selected_utm_type}"
+    Rails.logger.info "  selected_utm_value: #{selected_utm_value}"
+    Rails.logger.info "  start_date: #{start_date}"
+    Rails.logger.info "  end_date: #{end_date}"
+
     # Build date filter
     date_filter = nil
     if start_date && end_date
