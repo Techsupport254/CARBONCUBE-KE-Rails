@@ -773,7 +773,22 @@ class Sales::AnalyticsController < ApplicationController
                                  .pluck(:created_at)
                                  .map { |ts| ts&.iso8601 }
     end
-    
+
+    # Get unique visitor timestamps for client-side filtering (like dashboard pattern)
+    unique_visitor_timestamps = if date_filter
+      visitor_scope.select(:created_at, "#{visitor_id_sql} as vid")
+                   .limit(50000)
+                   .pluck(:created_at)
+                   .map { |ts| ts&.iso8601 }
+    else
+      six_months_ago = 6.months.ago
+      visitor_scope.where('created_at >= ?', six_months_ago)
+                   .select(:created_at, "#{visitor_id_sql} as vid")
+                   .limit(50000)
+                   .pluck(:created_at)
+                   .map { |ts| ts&.iso8601 }
+    end
+
     # OPTIMIZATION: Get unique visitors trend - use same visitor scope
     daily_unique_visitors = visitor_scope.group("DATE(created_at)")
                                          .order("DATE(created_at)")
@@ -809,6 +824,7 @@ class Sales::AnalyticsController < ApplicationController
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
       visit_timestamps: visit_timestamps,
+      unique_visitor_timestamps: unique_visitor_timestamps,
       shop_share_data_with_timestamps: base_scope.where(utm_campaign: 'shop_share').pluck(:created_at).map { |ts| ts&.iso8601 },
       daily_unique_visitors: daily_unique_visitors,
       top_sources: top_sources,
