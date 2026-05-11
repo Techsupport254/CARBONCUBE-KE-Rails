@@ -507,14 +507,14 @@ class ClickEventsAnalyticsService
   end
 
   # Get subcategory click events - optimized to use SQL aggregations
+  # Now includes all subcategories even with 0 ads/clicks
   def subcategory_click_events
-    # Use base_query subquery to ensure consistency with dashboard totals
-    # Optimize by using SQL aggregations instead of loading all records into memory
+    # Get subcategories that actually have click events first
     subcategory_query = Subcategory
       .joins(:category)
       .joins('INNER JOIN ads ON ads.subcategory_id = subcategories.id')
       .joins('INNER JOIN click_events ON click_events.ad_id = ads.id')
-      .where('ads.deleted = ?', false)
+      .where(ads: { deleted: false })
       .where("click_events.id IN (#{base_query.select(:id).to_sql})")
     
     # Filter by seller_id if provided
@@ -523,17 +523,8 @@ class ClickEventsAnalyticsService
       subcategory_query = subcategory_query.where(click_events: { ad_id: ad_ids })
     end
     
-    # Get ads_count for each subcategory in a single query - use subquery for better performance
-    subcategory_ids = subcategory_query.distinct.pluck('subcategories.id')
-    ads_counts = Subcategory
-      .joins(:ads)
-      .where(id: subcategory_ids, ads: { deleted: false })
-      .group('subcategories.name')
-      .count('ads.id')
-    
-    # Use SQL aggregations to get counts and timestamps in a single query
-    # Limit timestamps to recent events for performance
-    subcategory_query
+    # Get click events for subcategories that have them
+    click_events_data = subcategory_query
       .group('subcategories.id', 'subcategories.name', 'categories.id', 'categories.name')
       .select(
         'subcategories.id AS subcategory_id',
@@ -555,15 +546,36 @@ class ClickEventsAnalyticsService
         end
         
         {
-          category_name: row.category_name,
+          subcategory_id: row.subcategory_id,
           subcategory_name: row.subcategory_name,
-          ads_count: ads_counts[row.subcategory_name] || 0,
+          category_name: row.category_name,
           ad_clicks: row.ad_clicks.to_i,
           wish_list_clicks: row.wish_list_clicks.to_i,
           reveal_clicks: row.reveal_clicks.to_i,
           timestamps: timestamps
         }
       end
+    
+    # Get all subcategories with their categories to include those with 0 clicks
+    all_subcategories = Subcategory.joins(:category).order('categories.name, subcategories.name')
+    
+    # Build result including all subcategories
+    all_subcategories.map do |subcategory|
+      click_data = click_events_data.find { |d| d[:subcategory_name] == subcategory.name }
+      
+      # Get ads count for this subcategory
+      ads_count = subcategory.ads.where(deleted: false).count
+      
+      {
+        category_name: subcategory.category.name,
+        subcategory_name: subcategory.name,
+        ads_count: ads_count,
+        ad_clicks: click_data&.[](:ad_clicks) || 0,
+        wish_list_clicks: click_data&.[](:wish_list_clicks) || 0,
+        reveal_clicks: click_data&.[](:reveal_clicks) || 0,
+        timestamps: click_data&.[](:timestamps) || []
+      }
+    end
   end
 
   private
