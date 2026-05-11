@@ -620,30 +620,41 @@ class Sales::AnalyticsController < ApplicationController
       Analytic.excluding_internal_users.where('created_at >= ?', two_years_ago)
     end
 
-    # Apply source/UTM filter if provided
+    # Apply source/UTM filter if provided (case-insensitive matching)
     if selected_source
       base_scope = base_scope.where(
         Arel.sql(
           "CASE
-            WHEN source IS NOT NULL AND source != '' THEN source
-            WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+            WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+            WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
             ELSE 'other'
-          END = ?"
+          END = LOWER(?)"
         ),
         selected_source
       )
     elsif selected_utm_type && selected_utm_value
+      # Case-insensitive matching for UTM parameters (frontend normalizes to lowercase)
+      # For UTM source, require complete UTM records to match distribution counts
       case selected_utm_type
       when 'source'
-        base_scope = base_scope.where(utm_source: selected_utm_value)
+        base_scope = base_scope
+          .where("LOWER(utm_source) = LOWER(?)", selected_utm_value)
+          .where.not(utm_medium: [nil, ''])
+          .where.not(utm_campaign: [nil, ''])
       when 'medium'
-        base_scope = base_scope.where(utm_medium: selected_utm_value)
+        base_scope = base_scope
+          .where("LOWER(utm_medium) = LOWER(?)", selected_utm_value)
+          .where.not(utm_source: [nil, '', 'direct', 'other'])
+          .where.not(utm_campaign: [nil, ''])
       when 'campaign'
-        base_scope = base_scope.where(utm_campaign: selected_utm_value)
+        base_scope = base_scope
+          .where("LOWER(utm_campaign) = LOWER(?)", selected_utm_value)
+          .where.not(utm_source: [nil, '', 'direct', 'other'])
+          .where.not(utm_medium: [nil, ''])
       when 'content'
-        base_scope = base_scope.where(utm_content: selected_utm_value)
+        base_scope = base_scope.where("LOWER(utm_content) = LOWER(?)", selected_utm_value)
       when 'term'
-        base_scope = base_scope.where(utm_term: selected_utm_value)
+        base_scope = base_scope.where("LOWER(utm_term) = LOWER(?)", selected_utm_value)
       end
     end
     
