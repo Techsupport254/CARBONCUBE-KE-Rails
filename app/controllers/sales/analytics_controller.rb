@@ -172,7 +172,12 @@ class Sales::AnalyticsController < ApplicationController
   def sources
     # Get source analytics only - optimized endpoint for sources page
     begin
-      source_analytics = get_source_analytics
+      # Get source/UTM filter parameters
+      selected_source = params[:source]
+      selected_utm_type = params[:utm_type] # 'source', 'medium', 'campaign', 'content', 'term'
+      selected_utm_value = params[:utm_value]
+
+      source_analytics = get_source_analytics(selected_source, selected_utm_type, selected_utm_value)
       render json: source_analytics
     rescue => e
       Rails.logger.error "Error getting source analytics: #{e.message}"
@@ -587,11 +592,11 @@ class Sales::AnalyticsController < ApplicationController
     end
   end
 
-  def get_source_analytics
+  def get_source_analytics(selected_source = nil, selected_utm_type = nil, selected_utm_value = nil)
     # Get date parameters for filtering
     start_date = params[:start_date]
     end_date = params[:end_date]
-    
+
     # Build date filter
     date_filter = nil
     if start_date && end_date
@@ -606,6 +611,33 @@ class Sales::AnalyticsController < ApplicationController
       # Limit to last 2 years for performance when no date filter
       two_years_ago = 2.years.ago
       Analytic.excluding_internal_users.where('created_at >= ?', two_years_ago)
+    end
+
+    # Apply source/UTM filter if provided
+    if selected_source
+      base_scope = base_scope.where(
+        Arel.sql(
+          "CASE
+            WHEN source IS NOT NULL AND source != '' THEN source
+            WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+            ELSE 'other'
+          END = ?"
+        ),
+        selected_source
+      )
+    elsif selected_utm_type && selected_utm_value
+      case selected_utm_type
+      when 'source'
+        base_scope = base_scope.where(utm_source: selected_utm_value)
+      when 'medium'
+        base_scope = base_scope.where(utm_medium: selected_utm_value)
+      when 'campaign'
+        base_scope = base_scope.where(utm_campaign: selected_utm_value)
+      when 'content'
+        base_scope = base_scope.where(utm_content: selected_utm_value)
+      when 'term'
+        base_scope = base_scope.where(utm_term: selected_utm_value)
+      end
     end
     
     # OPTIMIZATION: Run all distribution queries in parallel using threads or optimize queries
