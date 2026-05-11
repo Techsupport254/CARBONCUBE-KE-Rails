@@ -679,9 +679,25 @@ class Sales::AnalyticsController < ApplicationController
       avg_visits_per_visitor: avg_visits_per_visitor
     }
     
-    # Get unique visitors by source with date filtering
-    unique_visitors_by_source = visitor_scope.group(:utm_source).distinct.count(Arel.sql(visitor_id_sql))
-    visits_by_source = base_scope.group(:utm_source).count
+    # Get unique visitors by source with date filtering - use same logic as source_distribution
+    unique_visitors_by_source = visitor_scope.group(
+      Arel.sql(
+        "CASE
+          WHEN source IS NOT NULL AND source != '' THEN source
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          ELSE 'other'
+        END"
+      )
+    ).distinct.count(Arel.sql(visitor_id_sql))
+    visits_by_source = base_scope.group(
+      Arel.sql(
+        "CASE
+          WHEN source IS NOT NULL AND source != '' THEN source
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          ELSE 'other'
+        END"
+      )
+    ).count
     
     # OPTIMIZATION: Get visits by day - use DATE() function for efficient grouping
     daily_visits = base_scope.group("DATE(created_at)")
