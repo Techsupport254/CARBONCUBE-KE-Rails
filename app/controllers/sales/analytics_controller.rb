@@ -177,9 +177,10 @@ class Sales::AnalyticsController < ApplicationController
       selected_utm_type = params[:utm_type] # 'source', 'medium', 'campaign', 'content', 'term'
       selected_utm_value = params[:utm_value]
 
-      # OPTIMIZATION: Cache analytics results to reduce database load
-      cache_key = "analytics_sources_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}_#{params[:start_date]}_#{params[:end_date]}"
-      source_analytics = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+      # OPTIMIZATION: Cache analytics results for 1 hour to reduce database load
+      # Client-side filtering makes subsequent filter changes instant
+      cache_key = "analytics_sources_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}"
+      source_analytics = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
         get_source_analytics(selected_source, selected_utm_type, selected_utm_value)
       end
 
