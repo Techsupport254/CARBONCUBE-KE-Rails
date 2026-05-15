@@ -778,17 +778,20 @@ class Sales::AnalyticsController < ApplicationController
     end
 
     # Get unique visitor timestamps for client-side filtering (like dashboard pattern)
+    # Select earliest timestamp per unique visitor_id to avoid duplicate timestamps
     unique_visitor_timestamps = if date_filter
-      visitor_scope.select(:created_at, "#{visitor_id_sql} as vid")
+      visitor_scope.select(Arel.sql("MIN(created_at) as first_visit, #{visitor_id_sql} as vid"))
+                   .group(Arel.sql(visitor_id_sql))
                    .limit(50000)
-                   .pluck(:created_at)
+                   .pluck(:first_visit)
                    .map { |ts| ts&.iso8601 }
     else
       six_months_ago = 6.months.ago
       visitor_scope.where('created_at >= ?', six_months_ago)
-                   .select(:created_at, "#{visitor_id_sql} as vid")
+                   .select(Arel.sql("MIN(created_at) as first_visit, #{visitor_id_sql} as vid"))
+                   .group(Arel.sql(visitor_id_sql))
                    .limit(50000)
-                   .pluck(:created_at)
+                   .pluck(:first_visit)
                    .map { |ts| ts&.iso8601 }
     end
 
