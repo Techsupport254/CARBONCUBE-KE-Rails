@@ -779,20 +779,27 @@ class Sales::AnalyticsController < ApplicationController
 
     # Get unique visitor timestamps for client-side filtering (like dashboard pattern)
     # Select earliest timestamp per unique visitor_id to avoid duplicate timestamps
+    # Use a hash to track earliest timestamp per visitor_id
     unique_visitor_timestamps = if date_filter
-      visitor_scope.select(Arel.sql("MIN(created_at) as first_visit, #{visitor_id_sql} as vid"))
-                   .group(Arel.sql(visitor_id_sql))
+      visitor_map = {}
+      visitor_scope.select(:id, :created_at, Arel.sql("#{visitor_id_sql} as vid"))
                    .limit(50000)
-                   .pluck(:first_visit)
-                   .map { |ts| ts&.iso8601 }
+                   .find_each do |record|
+        vid = record.attributes['vid']
+        visitor_map[vid] = record.created_at if visitor_map[vid].nil? || record.created_at < visitor_map[vid]
+      end
+      visitor_map.values.map { |ts| ts&.iso8601 }
     else
       six_months_ago = 6.months.ago
+      visitor_map = {}
       visitor_scope.where('created_at >= ?', six_months_ago)
-                   .select(Arel.sql("MIN(created_at) as first_visit, #{visitor_id_sql} as vid"))
-                   .group(Arel.sql(visitor_id_sql))
+                   .select(:id, :created_at, Arel.sql("#{visitor_id_sql} as vid"))
                    .limit(50000)
-                   .pluck(:first_visit)
-                   .map { |ts| ts&.iso8601 }
+                   .find_each do |record|
+        vid = record.attributes['vid']
+        visitor_map[vid] = record.created_at if visitor_map[vid].nil? || record.created_at < visitor_map[vid]
+      end
+      visitor_map.values.map { |ts| ts&.iso8601 }
     end
 
     # OPTIMIZATION: Get unique visitors trend - use same visitor scope
