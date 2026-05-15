@@ -177,7 +177,12 @@ class Sales::AnalyticsController < ApplicationController
       selected_utm_type = params[:utm_type] # 'source', 'medium', 'campaign', 'content', 'term'
       selected_utm_value = params[:utm_value]
 
-      source_analytics = get_source_analytics(selected_source, selected_utm_type, selected_utm_value)
+      # OPTIMIZATION: Cache analytics results to reduce database load
+      cache_key = "analytics_sources_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}_#{params[:start_date]}_#{params[:end_date]}"
+      source_analytics = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+        get_source_analytics(selected_source, selected_utm_type, selected_utm_value)
+      end
+
       render json: source_analytics
     rescue => e
       Rails.logger.error "Error getting source analytics: #{e.message}"
