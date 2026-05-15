@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_11_090349) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_15_065046) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -339,6 +339,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_11_090349) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["level"], name: "index_educations_on_level", unique: true
+  end
+
+  create_table "email_communication_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "email_type", null: false
+    t.string "message_id"
+    t.boolean "sent_successfully", default: false
+    t.text "error_message"
+    t.datetime "sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seller_id", "email_type"], name: "index_email_communication_logs_on_seller_id_and_email_type", unique: true
+    t.index ["seller_id"], name: "index_email_communication_logs_on_seller_id"
   end
 
   create_table "email_otps", force: :cascade do |t|
@@ -1050,6 +1063,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_11_090349) do
   add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", on_delete: :cascade
+  add_foreign_key "email_communication_logs", "sellers"
   add_foreign_key "issue_attachments", "issues"
   add_foreign_key "issue_comments", "issues"
   add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade

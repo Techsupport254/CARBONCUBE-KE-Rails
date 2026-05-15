@@ -1,3 +1,5 @@
+require 'timeout'
+
 class SendSellerCommunicationJob < ApplicationJob
   queue_as :default
 
@@ -73,7 +75,7 @@ class SendSellerCommunicationJob < ApplicationJob
           end
           Rails.logger.info "Mailer called successfully"
           Rails.logger.info "About to deliver email..."
-          mail.deliver_now
+          Timeout.timeout(30) { mail.deliver_now }
           Rails.logger.info "Email delivered successfully!"
         when 'black_friday'
           mail = SellerCommunicationsMailer.with(seller: user).black_friday_email
@@ -85,11 +87,20 @@ class SendSellerCommunicationJob < ApplicationJob
           mail = SellerCommunicationsMailer.with(seller: user).listing_reminder
           Rails.logger.info "Mailer called successfully"
           Rails.logger.info "About to deliver email..."
-          mail.deliver_now
+          Timeout.timeout(30) { mail.deliver_now }
           Rails.logger.info "Email delivered successfully!"
           
           # Send in-app message
           send_in_app_listing_reminder(user) if user_type == 'seller'
+        when 'share_shop_feature'
+          mail = SellerCommunicationsMailer.with(seller: user).share_shop_feature
+          Rails.logger.info "Mailer called successfully"
+          Rails.logger.info "About to deliver email..."
+          Timeout.timeout(30) { mail.deliver_now }
+          Rails.logger.info "Email delivered successfully!"
+
+          # Send in-app message
+          send_in_app_share_shop_feature(user) if user_type == 'seller'
         else
           Rails.logger.error "SendSellerCommunicationJob: Unknown email type '#{email_type}'"
           Rails.logger.error "=== #{user_type.upcase} COMMUNICATION JOB FAILED ==="
@@ -277,6 +288,64 @@ class SendSellerCommunicationJob < ApplicationJob
     Rails.logger.info "In-app message sent to seller #{user.id} (Conv: #{conversation.id}, Msg: #{message.id})"
   rescue => e
     Rails.logger.error "Failed to send in-app message to seller #{user.id}: #{e.message}"
+    Rails.logger.error e.backtrace.first(5).join("\n")
+  end
+
+  def send_in_app_share_shop_feature(user)
+    full_name = user.fullname.presence || "Partner"
+    
+    markdown_content = <<~MARKDOWN
+      **"Share Shop" Feature Highlight**
+
+      Greetings **#{full_name}**,
+
+      We hope you are well.
+
+      This is to highlight the **"Share Shop"** feature available on your Carbon Cube Kenya seller dashboard. The feature allows you to generate a direct link to your shop, making it easier to present your products in one place when needed.
+
+      The link reflects your current listings as displayed on the platform and can be used across your preferred communication channels.
+
+      You can access and manage this feature directly from your [Dashboard](https://carboncube-ke.com/seller/dashboard?utm_source=in_app&utm_medium=seller_communication&utm_campaign=share_shop_feature).
+
+      For any questions or clarification, feel free to reach out.
+
+      Best regards,
+      **Carbon Cube Kenya Team**
+    MARKDOWN
+
+    system_admin = Rails.cache.fetch("system_admin_user", expires_in: 1.hour) do
+      Admin.find_by(email: 'support@carboncube-ke.com') || 
+             Admin.find_by(username: 'admin') || 
+             Admin.first
+    end
+
+    unless system_admin
+      Rails.logger.error "Cannot send in-app message: No Admin user found in database"
+      return
+    end
+
+    conversation = Conversation.find_or_create_by!(
+      admin_id: system_admin.id,
+      seller_id: user.id,
+      ad_id: nil,
+      buyer_id: nil,
+      inquirer_seller_id: nil
+    )
+
+    message = conversation.messages.create!(
+      content: markdown_content,
+      sender: system_admin
+    )
+    
+    begin
+      UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
+    rescue => e
+      Rails.logger.warn "Failed to enqueue unread count update: #{e.message}"
+    end
+    
+    Rails.logger.info "In-app Share Shop message sent to seller #{user.id} (Conv: #{conversation.id}, Msg: #{message.id})"
+  rescue => e
+    Rails.logger.error "Failed to send in-app Share Shop message to seller #{user.id}: #{e.message}"
     Rails.logger.error e.backtrace.first(5).join("\n")
   end
 end

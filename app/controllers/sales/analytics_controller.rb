@@ -623,14 +623,12 @@ class Sales::AnalyticsController < ApplicationController
     # Apply source/UTM filter if provided (case-insensitive matching)
     if selected_source
       base_scope = base_scope.where(
-        Arel.sql(
-          "CASE
-            WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
-            WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
-            ELSE 'other'
-          END = LOWER(?)"
-        ),
-        selected_source
+        "CASE
+          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
+          ELSE 'other'
+        END = LOWER(?)",
+        selected_source.downcase
       )
     elsif selected_utm_type && selected_utm_value
       # Case-insensitive matching for UTM parameters (frontend normalizes to lowercase)

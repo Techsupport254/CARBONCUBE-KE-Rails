@@ -1,0 +1,65 @@
+<mjml>
+  <mj-head>
+    <mj-title>Share Shop Feature | Carbon Cube Kenya</mj-title>
+    <mj-font name="Outfit" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" />
+    <mj-attributes>
+      <mj-all
+        font-family="Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        color="#334155"
+        padding="0px"
+      />
+      <mj-text font-size="16px" line-height="26px" color="#334155" padding="0px" />
+      <mj-section padding="0px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#ffffff" width="600px">
+    <mj-section padding="40px 20px">
+      <mj-column>
+        <!-- Logo for branding -->
+        <mj-image
+          src="https://carboncube-ke.com/logo.png"
+          width="32px"
+          alt="Carbon Cube Kenya"
+          align="left"
+          padding-bottom="24px"
+        />
+
+        <mj-text padding-bottom="16px">Greetings,</mj-text>
+
+        <mj-text padding-bottom="16px">Dear Valued Partner,</mj-text>
+
+        <mj-text padding-bottom="16px">
+          We hope you are well.
+        </mj-text>
+
+        <mj-text padding-bottom="16px">
+          This is to highlight the <strong>"Share Shop"</strong> feature available on your Carbon Cube Kenya seller dashboard. The feature allows you to generate a direct link to your shop, making it easier to present your products in one place when needed.
+        </mj-text>
+
+        <mj-text padding-bottom="16px">
+          The link reflects your current listings as displayed on the platform and can be used across your preferred communication channels.
+        </mj-text>
+
+        <mj-text padding-bottom="24px">
+          You can access and manage this feature directly from your dashboard:<br/><br/>
+          <a href="https://carboncube-ke.com/seller/dashboard?utm_source=email&utm_medium=seller_communication&utm_campaign=share_shop_feature" style="color: #f59e0b; font-weight: 800; text-decoration: underline;">Visit Seller Dashboard</a>
+        </mj-text>
+
+        <mj-text padding-bottom="32px">
+          For any questions or clarification, feel free to reach out.
+        </mj-text>
+
+        <mj-text>
+          Best regards,<br/>
+          <strong>Carbon Cube Kenya Team</strong>
+        </mj-text>
+        
+        <mj-divider border-width="1px" border-color="#e2e8f0" padding="40px 0px 20px" />
+        
+        <mj-text font-size="12px" color="#94a3b8">
+          Nairobi, Kenya • <a href="https://carboncube-ke.com" style="color: #94a3b8; text-decoration: underline;">Visit Website</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

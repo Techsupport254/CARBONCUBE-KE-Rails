@@ -924,6 +924,13 @@ Rails.application.routes.draw do
 
   mount ActionCable.server => '/cable'
 
+  # Visitor analytics routes
+  post '/visitor/track', to: 'visitor_analytics#track_visitor'
+  get '/visitor/analytics', to: 'visitor_analytics#analytics'
+  get '/visitor/list', to: 'visitor_analytics#visitors_list'
+  get '/visitor/:visitor_id', to: 'visitor_analytics#visitor_details'
+  get '/visitor/:visitor_id/click_events', to: 'visitor_analytics#visitor_click_events'
+
     # Fallback preflight handler. This guarantees CORS headers on OPTIONS
     # requests even when upstream routing/proxy behavior is inconsistent.
     match '*path', via: :options, to: proc { |env|
@@ -954,10 +961,4 @@ Rails.application.routes.draw do
         []
       ]
     }
-
-    post '/visitor/track', to: 'visitor_analytics#track_visitor'
-    get '/visitor/analytics', to: 'visitor_analytics#analytics'
-    get '/visitor/list', to: 'visitor_analytics#visitors_list'
-    get '/visitor/:visitor_id', to: 'visitor_analytics#visitor_details'
-    get '/visitor/:visitor_id/click_events', to: 'visitor_analytics#visitor_click_events'
 end
