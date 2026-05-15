@@ -35,21 +35,9 @@ class SourceTrackingService
     # Fill in utm_content/utm_term from URL if missing from params (e.g. ParamsWrapper or truncated client URL)
     utm_params = merge_utm_from_url(utm_params, actual_page_url)
 
-    # If no UTM source but source is determined from referrer/click ID,
-    # set utm_source to match source for data consistency
-    # This ensures External Sources matches UTM Source Distribution
-    # EXCEPT for 'direct' and 'other' which shouldn't be in UTM Source Distribution
+    # Save UTM source as-is without sanitization
+    # Sanitization happens only in frontend for display
     final_utm_source = utm_params[:utm_source]
-    if final_utm_source.blank? && source.present? && source != 'direct' && source != 'other'
-      # Only set utm_source if source is a valid UTM source name
-      # Exclude 'direct' and 'other' since they represent traffic classifications, not UTM-tracked traffic
-      # This maintains data integrity while ensuring consistency
-      final_utm_source = source
-    end
-    
-    # Ensure utm_source is never 'direct' or 'other' (these are invalid UTM values)
-    # If somehow we get these values, set to nil
-    final_utm_source = nil if final_utm_source.present? && (final_utm_source.downcase == 'direct' || final_utm_source.downcase == 'other')
     
     # Parse referrer
     referrer = parse_referrer
@@ -61,9 +49,10 @@ class SourceTrackingService
     location_info = parse_location_info
     
     # Create analytics record with better error handling
+    # Use create instead of create! to avoid losing records on validation errors
     begin
-      analytic = Analytic.create!(
-        source: source,
+      analytic = Analytic.create(
+        source: source || 'direct', # Ensure source always has a value
         referrer: referrer,
         utm_source: final_utm_source,
         utm_medium: utm_params[:utm_medium],
@@ -96,18 +85,54 @@ class SourceTrackingService
         }
       )
       
-      Rails.logger.info "Successfully tracked visit from source: #{source}"
-      analytic
+      if analytic.persisted?
+        Rails.logger.info "Successfully tracked visit from source: #{source}"
+        analytic
+      else
+        # If create failed, try to save with minimal data to ensure we never lose the record
+        Rails.logger.warn "Failed to save full analytic record, attempting minimal save"
+        Rails.logger.warn "Errors: #{analytic.errors.full_messages.join(', ')}"
+        
+        minimal_analytic = Analytic.create(
+          source: source || 'direct',
+          user_agent: @user_agent,
+          ip_address: @ip_address,
+          data: {
+            timestamp: Time.current,
+            full_url: actual_page_url,
+            path: actual_page_path,
+            device_fingerprint: param_value(:device_fingerprint),
+            visitor_id: param_value(:visitor_id),
+            is_unique_visit: param_value(:is_unique_visit) == 'true'
+          }
+        )
+        
+        if minimal_analytic.persisted?
+          Rails.logger.info "Successfully saved minimal analytic record"
+          minimal_analytic
+        else
+          Rails.logger.error "Failed to save even minimal analytic record"
+          Rails.logger.error "Errors: #{minimal_analytic.errors.full_messages.join(', ')}"
+          nil
+        end
+      end
       
-    rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "Validation failed for source tracking: #{e.message}"
-      Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
-      Rails.logger.error "Source: #{source}, Referrer: #{referrer}"
-      nil
     rescue => e
-      Rails.logger.error "Failed to track source: #{e.message}"
+      Rails.logger.error "Unexpected error tracking source: #{e.message}"
       Rails.logger.error "Error details: #{e.backtrace.first(5)}"
       Rails.logger.error "Source: #{source}, Referrer: #{referrer}"
+      # Last resort: try to save absolute minimum record
+      begin
+        Analytic.create(
+          source: 'direct',
+          user_agent: @user_agent,
+          ip_address: @ip_address,
+          data: { timestamp: Time.current }
+        )
+        Rails.logger.info "Saved emergency minimal record"
+      rescue => emergency_error
+        Rails.logger.error "Even emergency save failed: #{emergency_error.message}"
+      end
       nil
     end
   end
@@ -116,10 +141,10 @@ class SourceTrackingService
 
   def parse_source_from_params
     # Priority 1: UTM source (highest priority - campaign tracking)
+    # Save raw value without sanitization - sanitize only for display
     utm_source = param_value(:utm_source)
     if utm_source.present?
-      source = self.class.sanitize_source(utm_source)
-      return source
+      return utm_source.to_s.strip
     end
 
     # Priority 2: Check for platform click IDs (Google, Facebook, etc.)
@@ -133,14 +158,14 @@ class SourceTrackingService
     if param_value(:msclkid).present?
       return 'microsoft' # Microsoft Ads click
     end
-    
+
     # Priority 3: Check referrer domain and map to proper source
     # This handles organic search, social media, etc.
     referrer_source = parse_referrer_source
     if referrer_source.present?
       return referrer_source
     end
-    
+
     # Default to 'direct' if no source indicators found
     'direct'
   end
@@ -239,12 +264,14 @@ class SourceTrackingService
   end
 
   def parse_utm_params(_page_url = nil)
+    # Save raw UTM parameters without sanitization
+    # Sanitization happens only in frontend for display
     {
-      utm_source: sanitize_utm_param(param_value(:utm_source)),
-      utm_medium: sanitize_utm_medium(param_value(:utm_medium)),
-      utm_campaign: sanitize_utm_param(param_value(:utm_campaign)),
-      utm_content: sanitize_utm_param(param_value(:utm_content)),
-      utm_term: sanitize_utm_param(param_value(:utm_term))
+      utm_source: param_value(:utm_source)&.strip,
+      utm_medium: param_value(:utm_medium)&.strip,
+      utm_campaign: param_value(:utm_campaign)&.strip,
+      utm_content: param_value(:utm_content)&.strip,
+      utm_term: param_value(:utm_term)&.strip
     }
   end
 
@@ -259,8 +286,8 @@ class SourceTrackingService
 
       parsed = URI.decode_www_form(query).to_h
       result = utm_params.dup
-      result[:utm_content] = sanitize_utm_param(parsed['utm_content']) if result[:utm_content].blank? && parsed['utm_content'].present?
-      result[:utm_term] = sanitize_utm_param(parsed['utm_term']) if result[:utm_term].blank? && parsed['utm_term'].present?
+      result[:utm_content] = parsed['utm_content']&.strip if result[:utm_content].blank? && parsed['utm_content'].present?
+      result[:utm_term] = parsed['utm_term']&.strip if result[:utm_term].blank? && parsed['utm_term'].present?
       result
     rescue URI::InvalidURIError, ArgumentError
       utm_params

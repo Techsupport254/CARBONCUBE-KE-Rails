@@ -37,10 +37,12 @@ class CategoriesController < ApplicationController
     end
 
     # Get counties where there are active ads for this category
+    # Only return counties from onboarded Kenyan counties
     counties = @category.ads
                       .joins(seller: :county)
                       .where(deleted: false)
                       .where(sellers: { blocked: false, deleted: false, flagged: false })
+                      .where.not(sellers: { county_id: nil })
                       .select('counties.id, counties.name')
                       .distinct
                       .order('counties.name')
