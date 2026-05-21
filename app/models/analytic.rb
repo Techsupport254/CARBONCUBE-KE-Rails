@@ -17,102 +17,72 @@ class Analytic < ApplicationRecord
   # Scope for date range filtering
   scope :date_range, ->(start_date, end_date) { 
     if start_date && end_date
-      where('DATE(created_at) >= ? AND DATE(created_at) <= ?', start_date, end_date)
+      begin
+        start_time = Date.parse(start_date.to_s).beginning_of_day
+        end_time = Date.parse(end_date.to_s).end_of_day
+        where(created_at: start_time..end_time)
+      rescue Date::Error, ArgumentError
+        all
+      end
     else
       all
     end
   }
 
+  def self.cached_exclusion_lists
+    Rails.cache.fetch('analytic_exclusion_lists', expires_in: 5.minutes) do
+      {
+        device_hash_exclusions: InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value),
+        email_domain_exclusions: InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value),
+        user_agent_exclusions: InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
+      }
+    end
+  end
+
   # Scope to exclude internal users from analytics
   # This matches the logic in InternalUserExclusion.should_exclude?
   scope :excluding_internal_users, -> {
+    # Get cached exclusions
+    exclusions = cached_exclusion_lists
+    device_hash_exclusions = exclusions[:device_hash_exclusions] || []
+    email_domain_exclusions = exclusions[:email_domain_exclusions] || []
+    user_agent_exclusions = exclusions[:user_agent_exclusions] || []
+    
     # Hardcoded exclusions (always apply these, don't rely on database)
     hardcoded_excluded_emails = ['sales@example.com', 'shangwejunior5@gmail.com']
     hardcoded_excluded_domains = ['example.com']
     
-    # Get all active exclusion identifiers from database
-    device_hash_exclusions = InternalUserExclusion.active.by_type('device_hash').pluck(:identifier_value)
-    email_domain_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
-    user_agent_exclusions = InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
-    
-    # Start with all records
     query = all
     
-    # First apply hardcoded email exclusions
-    hardcoded_excluded_emails.each do |excluded_email|
+    # 1. Batch email exclusions using NOT IN
+    emails_to_exclude = (hardcoded_excluded_emails + email_domain_exclusions.select { |p| p.include?('@') }).map(&:downcase).uniq
+    if emails_to_exclude.any?
       query = query.where(
-        "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') != ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') != ?)",
-        excluded_email.downcase,
-        excluded_email.downcase
+        "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') NOT IN (?)) AND (data->>'email' IS NULL OR LOWER(data->>'email') NOT IN (?))",
+        emails_to_exclude, emails_to_exclude
       )
     end
     
-    # Apply hardcoded domain exclusions
-    hardcoded_excluded_domains.each do |excluded_domain|
+    # 2. Batch domain exclusions using regex
+    domains_to_exclude = (hardcoded_excluded_domains + email_domain_exclusions.reject { |p| p.include?('@') }).map(&:downcase).uniq
+    if domains_to_exclude.any?
+      domain_regex = domains_to_exclude.map { |d| "@#{Regexp.escape(d)}$" }.join('|')
       query = query.where(
-        "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') NOT LIKE ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') NOT LIKE ?)",
-        "%@#{excluded_domain.downcase}",
-        "%@#{excluded_domain.downcase}"
+        "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') !~* ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') !~* ?)",
+        domain_regex, domain_regex
       )
     end
     
-    # Exclude by device hash (from data->>'device_fingerprint')
+    # 3. Batch device hash exclusions using regex
     if device_hash_exclusions.any?
-      device_hash_exclusions.each do |exclusion_hash|
-        # Exclude if device_fingerprint matches exclusion exactly or starts with it
-        query = query.where(
-          "COALESCE(data->>'device_fingerprint', '') NOT LIKE ? AND COALESCE(data->>'device_fingerprint', '') != ?",
-          "#{exclusion_hash}%",
-          exclusion_hash
-        )
-        
-        # Also exclude device hashes that are variations of the exclusion hash
-        base_exclusion = exclusion_hash.gsub(/\d+$/, '')
-        if base_exclusion != exclusion_hash && base_exclusion.present?
-          query = query.where("COALESCE(data->>'device_fingerprint', '') NOT LIKE ?", "#{base_exclusion}%")
-        end
-      end
+      hash_regex = device_hash_exclusions.map { |h| "^#{Regexp.escape(h)}" }.join('|')
+      query = query.where("COALESCE(data->>'device_fingerprint', '') !~* ?", hash_regex)
     end
     
-    # Exclude by email (from data->>'user_email' or data->>'email') - only process database exclusions not already covered by hardcoded
-    database_only_email_exclusions = email_domain_exclusions - hardcoded_excluded_emails - hardcoded_excluded_domains
-    if database_only_email_exclusions.any?
-      database_only_email_exclusions.each do |email_pattern|
-        email_pattern_lower = email_pattern.downcase
-        
-        # Check for exact email match first
-        query = query.where(
-          "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') != ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') != ?)",
-          email_pattern_lower,
-          email_pattern_lower
-        )
-        
-        # Check for domain match (if email_pattern contains @, extract domain; otherwise use as-is)
-        if email_pattern.include?('@')
-          domain = email_pattern.split('@').last&.downcase
-          if domain.present?
-            query = query.where(
-              "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') NOT LIKE ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') NOT LIKE ?)",
-              "%@#{domain}",
-              "%@#{domain}"
-            )
-          end
-        else
-          # Domain-only exclusion
-          query = query.where(
-            "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') NOT LIKE ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') NOT LIKE ?)",
-            "%@#{email_pattern_lower}",
-            "%@#{email_pattern_lower}"
-          )
-        end
-      end
-    end
-    
-    # Exclude by user agent (regex pattern)
+    # 4. Batch user agent exclusions using regex
     if user_agent_exclusions.any?
-      user_agent_exclusions.each do |pattern|
-        query = query.where("user_agent IS NULL OR user_agent !~* ?", pattern)
-      end
+      ua_regex = user_agent_exclusions.join('|')
+      query = query.where("user_agent IS NULL OR user_agent !~* ?", ua_regex)
     end
     
     query
@@ -140,11 +110,12 @@ class Analytic < ApplicationRecord
     # 2. If source is empty but utm_source is present and valid (not 'direct', not 'other'), use utm_source
     # 3. If source is empty and utm_source is 'direct' or empty/null, this is broken UTM - count as 'other'
     # 4. Only count as 'direct' if source='direct' (regardless of utm_source, since source takes priority)
+    # Grouping is case-insensitive.
     scope.group(
       Arel.sql(
         "CASE 
-          WHEN source IS NOT NULL AND source != '' THEN source
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
           ELSE 'other'
         END"
       )
@@ -152,62 +123,43 @@ class Analytic < ApplicationRecord
   end
   
   def self.utm_source_distribution(date_filter = nil)
-    # Only include UTM sources for records with complete UTM parameters (source + medium + campaign)
-    # This ensures consistency across all UTM distributions
-    scope = filtered_scope(date_filter)
-    
-    # Get UTM source counts only for records with complete UTM tracking
     # Exclude 'direct' and 'other' which are fallback values, not real UTM sources
-    scope.where.not(utm_source: [nil, '', 'direct', 'other'])
-         .where.not(utm_medium: [nil, ''])
-         .where.not(utm_campaign: [nil, ''])
-         .group(:utm_source)
+    # Grouping is case-insensitive.
+    filtered_scope(date_filter)
+         .where.not(utm_source: [nil, '', 'direct', 'other'])
+         .group(Arel.sql("LOWER(utm_source)"))
          .count
   end
   
   def self.utm_medium_distribution(date_filter = nil)
-    # Only include mediums for records with complete UTM parameters (source + medium + campaign)
-    # This ensures consistency with utm_source_distribution and utm_campaign_distribution
-    scope = filtered_scope(date_filter)
-    scope.where.not(utm_medium: [nil, ''])
-         .where.not(utm_source: [nil, '', 'direct', 'other'])
-         .where.not(utm_campaign: [nil, ''])
-         .group(:utm_medium)
+    # Grouping is case-insensitive.
+    filtered_scope(date_filter)
+         .where.not(utm_medium: [nil, ''])
+         .group(Arel.sql("LOWER(utm_medium)"))
          .count
   end
   
   def self.utm_campaign_distribution(date_filter = nil)
-    # Only include campaigns for records that have complete UTM parameters (valid source + medium)
-    # This ensures consistency with utm_source_distribution and utm_medium_distribution
-    scope = filtered_scope(date_filter)
-    scope.where.not(utm_campaign: [nil, ''])
-         .where.not(utm_source: [nil, '', 'direct', 'other'])
-         .where.not(utm_medium: [nil, ''])
-         .group(:utm_campaign)
+    # Grouping is case-insensitive.
+    filtered_scope(date_filter)
+         .where.not(utm_campaign: [nil, ''])
+         .group(Arel.sql("LOWER(utm_campaign)"))
          .count
   end
   
   def self.utm_content_distribution(date_filter = nil)
-    # Only include content for records with complete UTM parameters (source + medium + campaign)
-    # This ensures consistency with other UTM distributions
-    scope = filtered_scope(date_filter)
-    scope.where.not(utm_content: [nil, ''])
-         .where.not(utm_source: [nil, '', 'direct', 'other'])
-         .where.not(utm_medium: [nil, ''])
-         .where.not(utm_campaign: [nil, ''])
-         .group(:utm_content)
+    # Grouping is case-insensitive.
+    filtered_scope(date_filter)
+         .where.not(utm_content: [nil, ''])
+         .group(Arel.sql("LOWER(utm_content)"))
          .count
   end
   
   def self.utm_term_distribution(date_filter = nil)
-    # Only include terms for records with complete UTM parameters (source + medium + campaign)
-    # This ensures consistency with other UTM distributions
-    scope = filtered_scope(date_filter)
-    scope.where.not(utm_term: [nil, ''])
-         .where.not(utm_source: [nil, '', 'direct', 'other'])
-         .where.not(utm_medium: [nil, ''])
-         .where.not(utm_campaign: [nil, ''])
-         .group(:utm_term)
+    # Grouping is case-insensitive.
+    filtered_scope(date_filter)
+         .where.not(utm_term: [nil, ''])
+         .group(Arel.sql("LOWER(utm_term)"))
          .count
   end
   
@@ -227,12 +179,30 @@ class Analytic < ApplicationRecord
   def self.unique_visitors_by_source(date_filter = nil)
     filtered_scope(date_filter)
       .where("data->>'visitor_id' IS NOT NULL")
-      .group(:utm_source)
+      .group(
+        Arel.sql(
+          "CASE
+            WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+            WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
+            ELSE 'other'
+          END"
+        )
+      )
       .distinct.count("data->>'visitor_id'")
   end
 
   def self.visits_by_source(date_filter = nil)
-    filtered_scope(date_filter).group(:utm_source).count
+    filtered_scope(date_filter)
+      .group(
+        Arel.sql(
+          "CASE
+            WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+            WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
+            ELSE 'other'
+          END"
+        )
+      )
+      .count
   end
 
   def self.unique_visitors_trend(date_filter = nil)

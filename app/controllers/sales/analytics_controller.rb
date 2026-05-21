@@ -5,152 +5,157 @@ class Sales::AnalyticsController < ApplicationController
   before_action :authenticate_sales_user
 
   def index
-    # Get list of excluded emails/domains for filtering
-    excluded_email_patterns = InternalUserExclusion.active
-                                                    .by_type('email_domain')
-                                                    .pluck(:identifier_value)
-    
-    # OPTIMIZATION: Limit timestamp queries to last 2 years for performance
-    timestamp_limit_date = 2.years.ago
-    
-    # Get all data without time filtering for totals
-    # Exclude sellers with excluded email domains
-    all_sellers = exclude_emails_by_pattern(Seller.where(deleted: false), excluded_email_patterns)
-    # Exclude buyers with excluded email domains
-    all_buyers = exclude_emails_by_pattern(Buyer.where(deleted: false), excluded_email_patterns)
-    
-    
-    all_ads = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false })
-    all_ads = exclude_emails_by_pattern(all_ads, excluded_email_patterns)
-    all_reviews = Review.all
-    # Filter wishlists to exclude deleted/blocked buyers, blocked/deleted sellers, and deleted ads
-    all_wishlists = WishList.joins(:buyer, ad: :seller)
-                            .where(buyers: { deleted: false })
-                            .where(sellers: { deleted: false, blocked: false, flagged: false })
-                            .where(ads: { deleted: false })
-    
-    # Get seller tiers without time filtering for totals
-    all_paid_seller_tiers = SellerTier
-      .joins(:seller)
-      .where(tier_id: [2, 3, 4], sellers: { deleted: false })
-    
-    all_unpaid_seller_tiers = SellerTier
-      .joins(:seller)
-      .where(tier_id: 1, sellers: { deleted: false })
-    
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-    
-    # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
-    # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
-    carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
-    # Optimized: Fetch counts using conditional aggregation where possible
-    seller_counts = all_sellers.select(
-      Arel.sql("COUNT(*) as total"),
-      Arel.sql("COUNT(CASE WHEN carbon_code_id IS NOT NULL THEN 1 END) as added_by_sales"),
-      Arel.sql("COUNT(CASE WHEN carbon_code_id IS NULL AND created_at >= '#{carbon_code_cutoff}' THEN 1 END) as self_onboarded"),
-      Arel.sql("COUNT(CASE WHEN created_at < '#{carbon_code_cutoff}' THEN 1 END) as legacy")
-    ).to_a.first
 
-    click_counts = ClickEvent.excluding_internal_users
+    cache_key = "sales_analytics_index_v2_#{device_hash}"
+    response_data = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+      # Get list of excluded emails/domains for filtering
+      excluded_email_patterns = InternalUserExclusion.active
+                                                      .by_type('email_domain')
+                                                      .pluck(:identifier_value)
+      
+      # OPTIMIZATION: Limit timestamp queries to last 2 years for performance
+      timestamp_limit_date = 2.years.ago
+      
+      # Get all data without time filtering for totals
+      # Exclude sellers with excluded email domains
+      all_sellers = exclude_emails_by_pattern(Seller.where(deleted: false), excluded_email_patterns)
+      # Exclude buyers with excluded email domains
+      all_buyers = exclude_emails_by_pattern(Buyer.where(deleted: false), excluded_email_patterns)
+      
+      all_ads = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false })
+      all_ads = exclude_emails_by_pattern(all_ads, excluded_email_patterns)
+      all_reviews = Review.all
+      # Filter wishlists to exclude deleted/blocked buyers, blocked/deleted sellers, and deleted ads
+      all_wishlists = WishList.joins(:buyer, ad: :seller)
+                              .where(buyers: { deleted: false })
+                              .where(sellers: { deleted: false, blocked: false, flagged: false })
+                              .where(ads: { deleted: false })
+      
+      # Get seller tiers without time filtering for totals
+      all_paid_seller_tiers = SellerTier
+        .joins(:seller)
+        .where(tier_id: [2, 3, 4], sellers: { deleted: false })
+      
+      all_unpaid_seller_tiers = SellerTier
+        .joins(:seller)
+        .where(tier_id: 1, sellers: { deleted: false })
+      
+      # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
+      # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
+      carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
+      # Optimized: Fetch counts using conditional aggregation where possible
+      seller_counts = all_sellers.select(
+        Arel.sql("COUNT(*) as total"),
+        Arel.sql("COUNT(CASE WHEN carbon_code_id IS NOT NULL THEN 1 END) as added_by_sales"),
+        Arel.sql("COUNT(CASE WHEN carbon_code_id IS NULL AND created_at >= '#{carbon_code_cutoff}' THEN 1 END) as self_onboarded"),
+        Arel.sql("COUNT(CASE WHEN created_at < '#{carbon_code_cutoff}' THEN 1 END) as legacy")
+      ).to_a.first
+
+      click_counts = ClickEvent.excluding_internal_users
+                              .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
+                              .left_joins(:buyer)
+                              .joins(:ad)
+                              .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+                              .where(ads: { deleted: false })
+                              .select(
+                                "COUNT(CASE WHEN event_type = 'Ad-Click' THEN 1 END) as ad_clicks",
+                                "COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' THEN 1 END) as reveal_clicks",
+                                 Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' THEN 1 END) as contact_interactions"),
+                                "COUNT(CASE WHEN event_type = 'Callback-Request' THEN 1 END) as callback_requests"
+                              ).to_a.first
+
+      # Fetch timestamps in bulk (last 6 months for performance, but keeping it 2 years if needed by frontend)
+      # Using pluck directly as Rails handles Time serialization
+      sellers_ts = all_sellers.where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at, :carbon_code_id)
+      sellers_with_timestamps = sellers_ts.map(&:first)
+      sellers_added_by_sales_with_timestamps = sellers_ts.select { |s| s[1].present? }.map(&:first)
+      sellers_self_onboarded_with_timestamps = sellers_ts.select { |s| s[1].nil? && s[0] >= carbon_code_cutoff }.map(&:first)
+      sellers_legacy_with_timestamps = sellers_ts.select { |s| s[0] < carbon_code_cutoff }.map(&:first)
+
+      buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck(:created_at)
+      ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at)
+      ads_data_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at, :price)
+      reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at)
+      wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck(:created_at)
+      
+      # Bulk fetch click timestamps to avoid multiple queries on ClickEvent
+      clicks_ts = ClickEvent.excluding_internal_users
                             .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
                             .left_joins(:buyer)
                             .joins(:ad)
                             .where("buyers.id IS NULL OR buyers.deleted = ?", false)
                             .where(ads: { deleted: false })
-                            .select(
-                              "COUNT(CASE WHEN event_type = 'Ad-Click' THEN 1 END) as ad_clicks",
-                              "COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' THEN 1 END) as reveal_clicks",
-                               Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' THEN 1 END) as contact_interactions"),
-                              "COUNT(CASE WHEN event_type = 'Callback-Request' THEN 1 END) as callback_requests"
-                            ).to_a.first
+                            .where('click_events.created_at >= ?', timestamp_limit_date)
+                            .pluck(:created_at, :event_type, Arel.sql("metadata->>'action'"))
 
-    # Fetch timestamps in bulk (last 6 months for performance, but keeping it 2 years if needed by frontend)
-    # Using pluck directly as Rails handles Time serialization
-    sellers_ts = all_sellers.where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at, :carbon_code_id)
-    sellers_with_timestamps = sellers_ts.map(&:first)
-    sellers_added_by_sales_with_timestamps = sellers_ts.select { |s| s[1].present? }.map(&:first)
-    sellers_self_onboarded_with_timestamps = sellers_ts.select { |s| s[1].nil? && s[0] >= carbon_code_cutoff }.map(&:first)
-    sellers_legacy_with_timestamps = sellers_ts.select { |s| s[0] < carbon_code_cutoff }.map(&:first)
+      ad_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Ad-Click' }.map(&:first)
+      reveal_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' }.map(&:first)
+      contact_interactions_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' && c[2] == 'seller_contact_interaction' }.map(&:first)
+      callback_requests_with_timestamps = clicks_ts.select { |c| c[1] == 'Callback-Request' }.map(&:first)
 
-    buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck(:created_at)
-    ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at)
-    ads_data_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at, :price)
-    reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at)
-    wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck(:created_at)
-    
-    # Bulk fetch click timestamps to avoid multiple queries on ClickEvent
-    clicks_ts = ClickEvent.excluding_internal_users
-                          .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
-                          .left_joins(:buyer)
-                          .joins(:ad)
-                          .where("buyers.id IS NULL OR buyers.deleted = ?", false)
-                          .where(ads: { deleted: false })
-                          .where('click_events.created_at >= ?', timestamp_limit_date)
-                          .pluck(:created_at, :event_type, Arel.sql("metadata->>'action'"))
+      # Quarterly targets
+      sellers_target = QuarterlyTarget.current_target_for('total_sellers')
+      buyers_target = QuarterlyTarget.current_target_for('total_buyers')
+      ads_target = QuarterlyTarget.current_target_for('total_ads')
+      reveal_clicks_target = QuarterlyTarget.current_target_for('total_reveal_clicks')
 
-    ad_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Ad-Click' }.map(&:first)
-    reveal_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' }.map(&:first)
-    contact_interactions_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' && c[2] == 'seller_contact_interaction' }.map(&:first)
-    callback_requests_with_timestamps = clicks_ts.select { |c| c[1] == 'Callback-Request' }.map(&:first)
+      {
+        sellers_with_timestamps: sellers_with_timestamps,
+        sellers_added_by_sales_with_timestamps: sellers_added_by_sales_with_timestamps,
+        sellers_self_onboarded_with_timestamps: sellers_self_onboarded_with_timestamps,
+        sellers_legacy_with_timestamps: sellers_legacy_with_timestamps,
+        buyers_with_timestamps: buyers_with_timestamps,
+        ads_with_timestamps: ads_with_timestamps,
+        reviews_with_timestamps: reviews_with_timestamps,
+        wishlists_with_timestamps: wishlists_with_timestamps,
+        ads_data_with_timestamps: ads_data_with_timestamps.map { |ts, price| [ts.iso8601, price.to_f] },
+        ad_clicks_with_timestamps: ad_clicks_with_timestamps,
+        buyer_ad_clicks_with_timestamps: ad_clicks_with_timestamps,
+        buyer_reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
+        reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
+        contact_interactions_with_timestamps: contact_interactions_with_timestamps,
+        callback_requests_with_timestamps: callback_requests_with_timestamps,
+        
+        targets: {
+          total_sellers: sellers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
+          total_buyers: buyers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
+          total_ads: ads_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
+          total_reveal_clicks: reveal_clicks_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes])
+        },
 
-    # Quarterly targets
-    sellers_target = QuarterlyTarget.current_target_for('total_sellers')
-    buyers_target = QuarterlyTarget.current_target_for('total_buyers')
-    ads_target = QuarterlyTarget.current_target_for('total_ads')
-    reveal_clicks_target = QuarterlyTarget.current_target_for('total_reveal_clicks')
+        total_sellers: seller_counts&.total || 0,
+        carbon_code_cutoff_date: '2026-02-01',
+        sellers_added_by_sales: seller_counts&.added_by_sales || 0,
+        sellers_self_onboarded: seller_counts&.self_onboarded || 0,
+        sellers_legacy: seller_counts&.legacy || 0,
+        total_buyers: all_buyers.count,
+        total_ads: all_ads.count,
+        active_ads_valuation: all_ads.sum(:price) || 0,
+        total_reviews: Review.count, # Simplified
+        total_ads_wish_listed: all_wishlists.count,
+        subscription_countdowns: all_paid_seller_tiers.count,
+        without_subscription: all_unpaid_seller_tiers.count,
+        total_ads_clicks: click_counts&.ad_clicks || 0,
+        buyer_ad_clicks: click_counts&.ad_clicks || 0,
+        buyer_reveal_clicks: click_counts&.reveal_clicks || 0,
+        total_reveal_clicks: click_counts&.reveal_clicks || 0,
+        total_contact_interactions: click_counts&.contact_interactions || 0,
+        total_callback_requests: click_counts&.callback_requests || 0
+      }
+    end
 
-    response_data = {
-      sellers_with_timestamps: sellers_with_timestamps,
-      sellers_added_by_sales_with_timestamps: sellers_added_by_sales_with_timestamps,
-      sellers_self_onboarded_with_timestamps: sellers_self_onboarded_with_timestamps,
-      sellers_legacy_with_timestamps: sellers_legacy_with_timestamps,
-      buyers_with_timestamps: buyers_with_timestamps,
-      ads_with_timestamps: ads_with_timestamps,
-      reviews_with_timestamps: reviews_with_timestamps,
-      wishlists_with_timestamps: wishlists_with_timestamps,
-      ads_data_with_timestamps: ads_data_with_timestamps.map { |ts, price| [ts.iso8601, price.to_f] },
-      ad_clicks_with_timestamps: ad_clicks_with_timestamps,
-      buyer_ad_clicks_with_timestamps: ad_clicks_with_timestamps,
-      buyer_reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
-      reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
-      contact_interactions_with_timestamps: contact_interactions_with_timestamps,
-      callback_requests_with_timestamps: callback_requests_with_timestamps,
-      
-      targets: {
-        total_sellers: sellers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
-        total_buyers: buyers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
-        total_ads: ads_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),
-        total_reveal_clicks: reveal_clicks_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes])
-      },
-
-      total_sellers: seller_counts&.total || 0,
-      carbon_code_cutoff_date: '2026-02-01',
-      sellers_added_by_sales: seller_counts&.added_by_sales || 0,
-      sellers_self_onboarded: seller_counts&.self_onboarded || 0,
-      sellers_legacy: seller_counts&.legacy || 0,
-      total_buyers: all_buyers.count,
-      total_ads: all_ads.count,
-      active_ads_valuation: all_ads.sum(:price) || 0,
-      total_reviews: Review.count, # Simplified
-      total_ads_wish_listed: all_wishlists.count,
-      subscription_countdowns: all_paid_seller_tiers.count,
-      without_subscription: all_unpaid_seller_tiers.count,
-      total_ads_clicks: click_counts&.ad_clicks || 0,
-      buyer_ad_clicks: click_counts&.ad_clicks || 0,
-      buyer_reveal_clicks: click_counts&.reveal_clicks || 0,
-      total_reveal_clicks: click_counts&.reveal_clicks || 0,
-      total_contact_interactions: click_counts&.contact_interactions || 0,
-      total_callback_requests: click_counts&.callback_requests || 0
-    }
-    
     render json: response_data
   end
 
   def devices
     # Get device analytics only - much faster than full analytics endpoint
     begin
-      device_analytics = get_device_analytics
+      cache_key = "sales_analytics_devices_v2"
+      device_analytics = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+        get_device_analytics
+      end
       render json: { device_analytics: device_analytics }
     rescue => e
       Rails.logger.error "Error getting device analytics: #{e.message}"
@@ -176,11 +181,13 @@ class Sales::AnalyticsController < ApplicationController
       selected_source = params[:source]
       selected_utm_type = params[:utm_type] # 'source', 'medium', 'campaign', 'content', 'term'
       selected_utm_value = params[:utm_value]
+      start_date = params[:start_date]
+      end_date = params[:end_date]
 
-      # OPTIMIZATION: Cache analytics results for 1 hour to reduce database load
-      # Client-side filtering makes subsequent filter changes instant
-      cache_key = "analytics_sources_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}"
-      source_analytics = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+      # OPTIMIZATION: Cache analytics results for 1 minute (safe Redis cache)
+      # Include all filter parameters to ensure correct cache partitioning
+      cache_key = "analytics_sources_v3_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}_#{start_date}_#{end_date}"
+      source_analytics = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
         get_source_analytics(selected_source, selected_utm_type, selected_utm_value)
       end
 
@@ -221,18 +228,20 @@ class Sales::AnalyticsController < ApplicationController
       # Get device_hash from params or headers if available for excluding seller own clicks
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
       
-      # Use unified service for category click events
-      click_events_service = ClickEventsAnalyticsService.new(
-        filters: {},
-        device_hash: device_hash
-      )
-      category_click_events = click_events_service.category_click_events
-      subcategory_click_events = click_events_service.subcategory_click_events
-      
-      render json: {
-        category_click_events: category_click_events,
-        subcategory_click_events: subcategory_click_events
-      }
+      cache_key = "sales_analytics_categories_v2_#{device_hash}"
+      response_data = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+        # Use unified service for category click events
+        click_events_service = ClickEventsAnalyticsService.new(
+          filters: {},
+          device_hash: device_hash
+        )
+        {
+          category_click_events: click_events_service.category_click_events,
+          subcategory_click_events: click_events_service.subcategory_click_events
+        }
+      end
+
+      render json: response_data
     rescue => e
       Rails.logger.error "Error getting category analytics: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
@@ -638,23 +647,13 @@ class Sales::AnalyticsController < ApplicationController
       )
     elsif selected_utm_type && selected_utm_value
       # Case-insensitive matching for UTM parameters (frontend normalizes to lowercase)
-      # For UTM source, require complete UTM records to match distribution counts
       case selected_utm_type
       when 'source'
-        base_scope = base_scope
-          .where("LOWER(utm_source) = LOWER(?)", selected_utm_value)
-          .where.not(utm_medium: [nil, ''])
-          .where.not(utm_campaign: [nil, ''])
+        base_scope = base_scope.where("LOWER(utm_source) = LOWER(?)", selected_utm_value)
       when 'medium'
-        base_scope = base_scope
-          .where("LOWER(utm_medium) = LOWER(?)", selected_utm_value)
-          .where.not(utm_source: [nil, '', 'direct', 'other'])
-          .where.not(utm_campaign: [nil, ''])
+        base_scope = base_scope.where("LOWER(utm_medium) = LOWER(?)", selected_utm_value)
       when 'campaign'
-        base_scope = base_scope
-          .where("LOWER(utm_campaign) = LOWER(?)", selected_utm_value)
-          .where.not(utm_source: [nil, '', 'direct', 'other'])
-          .where.not(utm_medium: [nil, ''])
+        base_scope = base_scope.where("LOWER(utm_campaign) = LOWER(?)", selected_utm_value)
       when 'content'
         base_scope = base_scope.where("LOWER(utm_content) = LOWER(?)", selected_utm_value)
       when 'term'
@@ -662,30 +661,23 @@ class Sales::AnalyticsController < ApplicationController
       end
     end
     
-    # OPTIMIZATION: Run all distribution queries in parallel using threads or optimize queries
-    # Get source tracking data with optional date filtering
+    # Get source tracking data grouped case-insensitively
     source_distribution = base_scope.group(
       Arel.sql(
         "CASE 
-          WHEN source IS NOT NULL AND source != '' THEN source
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
           ELSE 'other'
         END"
       )
     ).count
     
-    # OPTIMIZATION: Use single query with conditional aggregation for UTM distributions
-    # Build base scope for UTM queries (records with complete UTM parameters)
-    utm_base_scope = base_scope.where.not(utm_source: [nil, '', 'direct', 'other'])
-                               .where.not(utm_medium: [nil, ''])
-                               .where.not(utm_campaign: [nil, ''])
-    
-    # Get all UTM distributions in one pass using select with aggregations
-    utm_source_distribution = utm_base_scope.group(:utm_source).count
-    utm_medium_distribution = utm_base_scope.group(:utm_medium).count
-    utm_campaign_distribution = utm_base_scope.group(:utm_campaign).count
-    utm_content_distribution = utm_base_scope.where.not(utm_content: [nil, '']).group(:utm_content).count
-    utm_term_distribution = utm_base_scope.where.not(utm_term: [nil, '']).group(:utm_term).count
+    # Get all UTM distributions grouped case-insensitively
+    utm_source_distribution = base_scope.where.not(utm_source: [nil, '', 'direct', 'other']).group(Arel.sql("LOWER(utm_source)")).count
+    utm_medium_distribution = base_scope.where.not(utm_medium: [nil, '']).group(Arel.sql("LOWER(utm_medium)")).count
+    utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count
+    utm_content_distribution = base_scope.where.not(utm_content: [nil, '']).group(Arel.sql("LOWER(utm_content)")).count
+    utm_term_distribution = base_scope.where.not(utm_term: [nil, '']).group(Arel.sql("LOWER(utm_term)")).count
     
     referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count
     
@@ -733,12 +725,12 @@ class Sales::AnalyticsController < ApplicationController
       avg_visits_per_visitor: avg_visits_per_visitor
     }
     
-    # Get unique visitors by source with date filtering - use same logic as source_distribution
+    # Get unique visitors by source with date filtering - group case-insensitively
     unique_visitors_by_source = visitor_scope.group(
       Arel.sql(
         "CASE
-          WHEN source IS NOT NULL AND source != '' THEN source
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
           ELSE 'other'
         END"
       )
@@ -746,8 +738,8 @@ class Sales::AnalyticsController < ApplicationController
     visits_by_source = base_scope.group(
       Arel.sql(
         "CASE
-          WHEN source IS NOT NULL AND source != '' THEN source
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN utm_source
+          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
+          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
           ELSE 'other'
         END"
       )
@@ -761,46 +753,32 @@ class Sales::AnalyticsController < ApplicationController
     # OPTIMIZATION: Limit visit timestamps more aggressively for performance
     # Only fetch timestamps if date filter is provided or limit to last 6 months
     # Frontend can request specific date ranges via date filter params if needed
+    # OPTIMIZATION: Limit visit timestamps more aggressively for performance
+    # Only fetch timestamps if date filter is provided or limit to last 6 months
+    # Format directly in database as UTC ISO8601 to avoid Ruby object instantiation overhead
     visit_timestamps = if date_filter
       # If date filter provided, fetch all timestamps in range (but limit to 50k for safety)
-      base_scope.select(:created_at)
-                .limit(50000)
-                                 .pluck(:created_at)
-                                 .map { |ts| ts&.iso8601 }
+      base_scope.limit(50000)
+                .pluck(Arel.sql("TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
     else
       # Limit to last 6 months for better performance (reduced from 1 year)
-      # Frontend can use date filter params to get specific ranges
       six_months_ago = 6.months.ago
       base_scope.where('created_at >= ?', six_months_ago)
-                .select(:created_at)
                 .limit(50000)
-                                 .pluck(:created_at)
-                                 .map { |ts| ts&.iso8601 }
+                .pluck(Arel.sql("TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
     end
 
-    # Get unique visitor timestamps for client-side filtering (like dashboard pattern)
-    # Select earliest timestamp per unique visitor_id to avoid duplicate timestamps
-    # Use a hash to track earliest timestamp per visitor_id
+    # OPTIMIZATION: Calculate earliest timestamp per unique visitor directly in database
     unique_visitor_timestamps = if date_filter
-      visitor_map = {}
-      visitor_scope.select(:id, :created_at, Arel.sql("#{visitor_id_sql} as vid"))
+      visitor_scope.group(Arel.sql("data->>'visitor_id'"))
                    .limit(50000)
-                   .find_each do |record|
-        vid = record.attributes['vid']
-        visitor_map[vid] = record.created_at if visitor_map[vid].nil? || record.created_at < visitor_map[vid]
-      end
-      visitor_map.values.map { |ts| ts&.iso8601 }
+                   .pluck(Arel.sql("TO_CHAR(MIN(created_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
     else
       six_months_ago = 6.months.ago
-      visitor_map = {}
       visitor_scope.where('created_at >= ?', six_months_ago)
-                   .select(:id, :created_at, Arel.sql("#{visitor_id_sql} as vid"))
+                   .group(Arel.sql("data->>'visitor_id'"))
                    .limit(50000)
-                   .find_each do |record|
-        vid = record.attributes['vid']
-        visitor_map[vid] = record.created_at if visitor_map[vid].nil? || record.created_at < visitor_map[vid]
-      end
-      visitor_map.values.map { |ts| ts&.iso8601 }
+                   .pluck(Arel.sql("TO_CHAR(MIN(created_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
     end
 
     # OPTIMIZATION: Get unique visitors trend - use same visitor scope
@@ -839,7 +817,7 @@ class Sales::AnalyticsController < ApplicationController
       daily_visits: daily_visits,
       visit_timestamps: visit_timestamps,
       unique_visitor_timestamps: unique_visitor_timestamps,
-      shop_share_data_with_timestamps: base_scope.where(utm_campaign: 'shop_share').pluck(:created_at).map { |ts| ts&.iso8601 },
+      shop_share_data_with_timestamps: base_scope.where("LOWER(utm_campaign) = 'shop_share'").pluck(Arel.sql("TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')")),
       daily_unique_visitors: daily_unique_visitors,
       top_sources: top_sources,
       top_referrers: top_referrers
