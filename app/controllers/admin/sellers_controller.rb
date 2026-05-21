@@ -76,6 +76,7 @@ class Admin::SellersController < ApplicationController
     # Prepare sellers data with last_active_at, carbon_code, and onboarding_type
     @sellers_data = @sellers.map do |seller|
       row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
+      row['total_ads'] = seller.ads.count
       row['onboarding_type'] = if seller.carbon_code_id.present?
         'added_by_sales'
       elsif seller.created_at && seller.created_at >= carbon_code_cutoff
@@ -376,7 +377,10 @@ class Admin::SellersController < ApplicationController
         ad_id: ad.id,
         title: ad.title,
         total_clicks: most_clicked[1],
-        category: ad.category.name
+        category: ad.category.name,
+        first_media_url: ad.first_media_url,
+        media_urls: ad.media_urls,
+        media: ad.media
       }
     else
       nil
@@ -386,13 +390,50 @@ class Admin::SellersController < ApplicationController
   def fetch_analytics(seller)
     seller_ads = seller.ads
     ad_ids = seller_ads.pluck(:id)
-    click_events = ClickEvent.where(ad_id: ad_ids)
+    
+    # Apply same filtering as SellerRankingService for consistency
+    click_events = ClickEvent
+      .excluding_internal_users
+      .where(ad_id: ad_ids)
+      .joins(:ad)
+      .where(ads: { deleted: false })
+      .left_joins(:buyer)
+      .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+    
+    # Exclude seller own clicks using SQL (same as rankings service)
+    click_events = click_events.where(
+      "NOT (
+        (metadata->>'user_role' = 'seller' OR metadata->>'user_role' = 'Seller')
+        AND metadata->>'user_id' IS NOT NULL
+        AND ads.seller_id IS NOT NULL
+        AND CAST(metadata->>'user_id' AS TEXT) = CAST(ads.seller_id AS TEXT)
+      )"
+    )
+    
+    # Aggregate contact interaction clicks by action type (same as rankings service)
+    contact_interaction_events = click_events
+      .where(event_type: 'Reveal-Seller-Details')
+      .where("metadata->>'action' = ?", 'seller_contact_interaction')
+      .group(Arel.sql("metadata->>'action_type'"))
+      .pluck(
+        Arel.sql("metadata->>'action_type'"),
+        Arel.sql('COUNT(*)')
+      )
+      .to_h
+    
     click_event_counts = click_events.group(:event_type).count
   
     # Seller Engagement & Visibility
     total_clicks = click_event_counts["Ad-Click"] || 0
     total_profile_views = click_event_counts["Reveal-Seller-Details"] || 0
     reveal_seller_details_clicks = click_event_counts["Reveal-Seller-Details"] || 0
+    
+    # Contact interaction metrics (same as rankings service)
+    copy_clicks = (contact_interaction_events['copy_phone'] || 0) + (contact_interaction_events['copy_email'] || 0)
+    call_clicks = contact_interaction_events['call_phone'] || 0
+    whatsapp_clicks = contact_interaction_events['whatsapp'] || 0
+    location_clicks = contact_interaction_events['view_location'] || 0
+    total_contact_interactions = copy_clicks + call_clicks + whatsapp_clicks + location_clicks
     ad_performance_rankings = Seller.joins(ads: :click_events)
                                 .group("sellers.id")
                                 .order(Arel.sql("COUNT(click_events.id) DESC"))
@@ -441,7 +482,14 @@ class Admin::SellersController < ApplicationController
                         .count(:id)
                         .first
   
-    most_wishlisted_ad_data = most_wishlisted_ad ? Ad.find(most_wishlisted_ad[0]).as_json(only: [:id, :title]) : nil
+    most_wishlisted_ad_data = most_wishlisted_ad ? Ad.find(most_wishlisted_ad[0]).as_json(methods: [:first_media_url, :media_urls, :media], only: [:id, :title]) : nil
+    
+    # Calculate total reviews for composite score
+    total_reviews_count = seller.reviews_received.joins(:ad)
+                                   .where(ads: { id: ad_ids })
+                                   .group(:rating)
+                                   .count
+                                   .values.sum
   
     {
       # Ad Inventory
@@ -485,6 +533,13 @@ class Admin::SellersController < ApplicationController
       add_to_wish_list: click_event_counts["Add-to-Wish-List"] || 0,
       reveal_seller_details: reveal_seller_details_clicks,
       total_click_events: click_events.count,
+      
+      # Contact Interaction Metrics (same as rankings service)
+      copy_clicks: copy_clicks,
+      call_clicks: call_clicks,
+      whatsapp_clicks: whatsapp_clicks,
+      location_clicks: location_clicks,
+      total_contact_interactions: total_contact_interactions,
   
       # Engagement & Visibility Metrics
       total_profile_views: total_profile_views,
@@ -507,7 +562,17 @@ class Admin::SellersController < ApplicationController
       most_clicked_ad: most_clicked_ad(seller),
   
       last_ad_posted_at: seller_ads.order(created_at: :desc).limit(1).pluck(:created_at).first,
-      account_age_days: (Time.current.to_date - seller.created_at.to_date).to_i
+      account_age_days: (Time.current.to_date - seller.created_at.to_date).to_i,
+      
+      # Composite Score (same calculation as rankings service)
+      composite_score: (
+        (total_clicks * 0.20) +
+        (reveal_seller_details_clicks * 0.35) +
+        (total_contact_interactions * 0.15) +
+        ((click_event_counts["Add-to-Wish-List"] || 0) * 0.10) +
+        (total_reviews_count * 0.10) +
+        (seller.reviews_received.joins(:ad).where(ads: { id: ad_ids }).average(:rating).to_f * 10 * 0.10)
+      ).round(2)
     }
   end  
 end

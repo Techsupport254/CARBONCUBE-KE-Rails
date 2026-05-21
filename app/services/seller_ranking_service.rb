@@ -30,11 +30,10 @@ class SellerRankingService
                                     metrics[:whatsapp_clicks] + metrics[:location_clicks]
       
       composite_score = (
-        (metrics[:ad_clicks] * 0.25) +
-        (metrics[:reveal_clicks] * 0.20) +
+        (metrics[:ad_clicks] * 0.20) +
+        (metrics[:reveal_clicks] * 0.35) +
         (total_contact_interactions * 0.15) +
-        (metrics[:wishlists_count] * 0.15) +
-        (metrics[:reviews_count] * 0.15) +
+        (metrics[:reviews_count] * 0.10) +
         (metrics[:avg_rating] * 10 * 0.10)
       ).round(2)
       
@@ -87,11 +86,10 @@ class SellerRankingService
                                     metrics[:whatsapp_clicks] + metrics[:location_clicks]
       
       composite_score = (
-        (metrics[:ad_clicks] * 0.25) +
-        (metrics[:reveal_clicks] * 0.20) +
+        (metrics[:ad_clicks] * 0.20) +
+        (metrics[:reveal_clicks] * 0.35) +
         (total_contact_interactions * 0.15) +
-        (metrics[:wishlists_count] * 0.15) +
-        (metrics[:reviews_count] * 0.15) +
+        (metrics[:reviews_count] * 0.10) +
         (metrics[:avg_rating] * 10 * 0.10)
       ).round(2)
       
