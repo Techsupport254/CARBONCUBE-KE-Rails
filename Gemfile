@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.4.4"
+ruby "3.4.8"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.1.0"
@@ -62,6 +62,9 @@ gem 'httparty'
 
 # Google APIs for OAuth
 gem 'google-apis-oauth2_v2'
+
+# Google Analytics Data API (GA4)
+gem 'google-apis-analyticsdata_v1beta'
 
 # Dry validation for form validation
 gem 'dry-validation'

@@ -170,6 +170,8 @@ GEM
       net-http (>= 0.5.0)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    google-apis-analyticsdata_v1beta (0.41.0)
+      google-apis-core (>= 0.15.0, < 2.a)
     google-apis-content_v2_1 (0.45.0)
       google-apis-core (>= 0.15.0, < 2.a)
     google-apis-core (1.0.2)
@@ -610,6 +612,7 @@ DEPENDENCIES
   dotenv-rails
   dry-validation
   factory_bot_rails
+  google-apis-analyticsdata_v1beta
   google-apis-content_v2_1
   google-apis-oauth2_v2
   googleauth
@@ -636,7 +639,7 @@ DEPENDENCIES
   web-console
 
 RUBY VERSION
-   ruby 3.4.4p34
+   ruby 3.4.8p72
 
 BUNDLED WITH
    2.7.1
