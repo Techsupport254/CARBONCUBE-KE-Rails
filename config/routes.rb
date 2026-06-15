@@ -725,6 +725,8 @@ Rails.application.routes.draw do
 
   # Sales namespace for sales-specific functionality
   namespace :sales do
+    get 'google_analytics/sources', to: 'google_analytics#sources'
+
     resources :analytics, only: [:index] do
       collection do
         get :recent_users
