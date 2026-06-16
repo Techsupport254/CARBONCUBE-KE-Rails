@@ -139,8 +139,8 @@ class GoogleAnalyticsService
     return File.open(creds_file) if File.exist?(creds_file)
 
     # 2. ENV var — fix newlines that dotenv may have corrupted
-    json_str = ENV['GA4_SERVICE_ACCOUNT_JSON'] || ENV['FIREBASE_SERVICE_ACCOUNT_JSON']
-    raise "No GA4 credentials found. Add config/ga4_credentials.json or set GA4_SERVICE_ACCOUNT_JSON in .env" unless json_str.present?
+    json_str = ENV['GOOGLE_SERVICE_ACCOUNT_JSON']
+    raise "No GA4 credentials found. Add config/ga4_credentials.json or set GOOGLE_SERVICE_ACCOUNT_JSON in .env" unless json_str.present?
 
     key_data = JSON.parse(json_str)
     key_data['private_key'] = key_data['private_key'].to_s.gsub('\n', "\n")

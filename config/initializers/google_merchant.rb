@@ -10,9 +10,12 @@ Rails.application.configure do
   # Google Cloud Project ID
   config.google_cloud_project_id = ENV['GOOGLE_CLOUD_PROJECT_ID']
   
-  # Service Account Key File Path
-  # This should point to your Google Cloud service account JSON key file
+  # Service Account Key
+  # This can point to your Google Cloud service account JSON key file
   config.google_service_account_key_path = ENV['GOOGLE_SERVICE_ACCOUNT_KEY_PATH']
+  
+  # Or provide the JSON string directly
+  config.google_service_account_json = ENV['GOOGLE_SERVICE_ACCOUNT_JSON']
   
   # API Base URL
   config.google_merchant_api_base_url = 'https://merchantapi.googleapis.com/products/v1'
@@ -39,10 +42,13 @@ Rails.application.config.after_initialize do
     required_env_vars = %w[
       GOOGLE_MERCHANT_ACCOUNT_ID
       GOOGLE_CLOUD_PROJECT_ID
-      GOOGLE_SERVICE_ACCOUNT_KEY_PATH
     ]
     
     missing_vars = required_env_vars.select { |var| ENV[var].blank? }
+    
+    unless Rails.application.config.google_service_account_key_path.present? || Rails.application.config.google_service_account_json.present?
+      missing_vars << 'GOOGLE_SERVICE_ACCOUNT_KEY_PATH or GOOGLE_SERVICE_ACCOUNT_JSON'
+    end
     
     if missing_vars.any?
       Rails.logger.warn "Google Merchant API configuration incomplete. Missing: #{missing_vars.join(', ')}"

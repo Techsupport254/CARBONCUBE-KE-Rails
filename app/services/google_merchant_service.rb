@@ -104,11 +104,12 @@ class GoogleMerchantService
       
       # Check service account key
       key_path = Rails.application.config.google_service_account_key_path
-      unless key_path.present? && File.exist?(key_path)
+      json_creds = Rails.application.config.google_service_account_json
+      unless (key_path.present? && File.exist?(key_path)) || json_creds.present?
         return {
           success: false,
           error: "Service account key not found",
-          details: "Set GOOGLE_SERVICE_ACCOUNT_KEY_PATH and ensure file exists"
+          details: "Set GOOGLE_SERVICE_ACCOUNT_KEY_PATH and ensure file exists, or set GOOGLE_SERVICE_ACCOUNT_JSON"
         }
       end
       
@@ -554,13 +555,25 @@ class GoogleMerchantService
       return nil unless Rails.application.config.google_merchant_sync[:enabled]
       
       key_path = Rails.application.config.google_service_account_key_path
-      return nil unless key_path.present? && File.exist?(key_path)
+      json_creds = Rails.application.config.google_service_account_json
+      
+      return nil unless (key_path.present? && File.exist?(key_path)) || json_creds.present?
       
       # Load service account credentials
-      credentials = Google::Auth::ServiceAccountCredentials.make_creds(
-        json_key_io: File.open(key_path),
-        scope: 'https://www.googleapis.com/auth/content'
-      )
+      if json_creds.present?
+        key_data = JSON.parse(json_creds)
+        key_data['private_key'] = key_data['private_key'].to_s.gsub('\n', "\n")
+        key_io = StringIO.new(key_data.to_json)
+        credentials = Google::Auth::ServiceAccountCredentials.make_creds(
+          json_key_io: key_io,
+          scope: 'https://www.googleapis.com/auth/content'
+        )
+      else
+        credentials = Google::Auth::ServiceAccountCredentials.make_creds(
+          json_key_io: File.open(key_path),
+          scope: 'https://www.googleapis.com/auth/content'
+        )
+      end
       
       credentials
     end
