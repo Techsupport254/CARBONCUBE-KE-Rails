@@ -9,7 +9,7 @@ class GoogleAnalyticsService
     @service.authorization = authorize
   end
 
-  def sources_report(start_date: '30daysAgo', end_date: 'today')
+  def sources_report(start_date: '2024-10-07', end_date: 'today')
     return empty_response unless PROPERTY_ID.present?
 
     property = "properties/#{PROPERTY_ID}"
@@ -41,7 +41,46 @@ class GoogleAnalyticsService
     empty_response.merge(error: e.message)
   end
 
-  def totals_report(start_date: '30daysAgo', end_date: 'today')
+  def sources_by_source_report(start_date: '2024-10-07', end_date: 'today')
+    return empty_source_breakdown unless PROPERTY_ID.present?
+
+    property = "properties/#{PROPERTY_ID}"
+
+    request = Google::Apis::AnalyticsdataV1beta::RunReportRequest.new(
+      date_ranges: [
+        Google::Apis::AnalyticsdataV1beta::DateRange.new(
+          start_date: start_date,
+          end_date: end_date
+        )
+      ],
+      dimensions: [
+        Google::Apis::AnalyticsdataV1beta::Dimension.new(name: 'sessionSource')
+      ],
+      metrics: [
+        Google::Apis::AnalyticsdataV1beta::Metric.new(name: 'sessions'),
+        Google::Apis::AnalyticsdataV1beta::Metric.new(name: 'totalUsers'),
+        Google::Apis::AnalyticsdataV1beta::Metric.new(name: 'newUsers')
+      ],
+      order_bys: [
+        Google::Apis::AnalyticsdataV1beta::OrderBy.new(
+          metric: Google::Apis::AnalyticsdataV1beta::MetricOrderBy.new(metric_name: 'sessions'),
+          desc: true
+        )
+      ],
+      limit: 20
+    )
+
+    response = @service.run_property_report(property, request)
+    parse_source_breakdown_response(response)
+  rescue Google::Apis::Error => e
+    Rails.logger.error("GA4 API error (source breakdown): #{e.message}")
+    empty_source_breakdown.merge(error: e.message)
+  rescue StandardError => e
+    Rails.logger.error("GA4 service error (source breakdown): #{e.message}")
+    empty_source_breakdown.merge(error: e.message)
+  end
+
+  def totals_report(start_date: '2024-10-07', end_date: 'today')
     return empty_totals unless PROPERTY_ID.present?
 
     property = "properties/#{PROPERTY_ID}"
@@ -171,5 +210,83 @@ class GoogleAnalyticsService
 
   def empty_totals
     { sessions: 0, users: 0, new_users: 0, page_views: 0, error: nil }
+  end
+
+  SOURCE_NORMALIZATION = {
+    # Facebook variants
+    'facebook'       => 'Facebook',
+    'facebook.com'   => 'Facebook',
+    'm.facebook.com' => 'Facebook',
+    'l.facebook.com' => 'Facebook',
+    'lm.facebook.com'=> 'Facebook',
+    'fb'             => 'Facebook',
+    'fb.com'         => 'Facebook',
+    # Instagram variants
+    'instagram'      => 'Instagram',
+    'instagram.com'  => 'Instagram',
+    'l.instagram.com'=> 'Instagram',
+    'ig'             => 'Instagram',
+    # Google variants
+    'google'         => 'Google',
+    'google.com'     => 'Google',
+    'accounts.google.com' => 'Google',
+    'cpc'            => 'Google',
+    # WhatsApp variants
+    'whatsapp'       => 'WhatsApp',
+    'whatsapp.com'   => 'WhatsApp',
+    'wa.me'          => 'WhatsApp',
+    # LinkedIn variants
+    'linkedin'       => 'LinkedIn',
+    'linkedin.com'   => 'LinkedIn',
+    'lnkd.in'        => 'LinkedIn',
+    # TikTok variants
+    'tiktok'         => 'TikTok',
+    'tiktok.com'     => 'TikTok',
+    't.co'           => 'Twitter/X',
+    'twitter.com'    => 'Twitter/X',
+    'x.com'          => 'Twitter/X',
+    # Email
+    'email'          => 'Email',
+    'mail'           => 'Email',
+    # Direct / unknown
+    '(direct)'       => 'Direct',
+    '(not set)'      => 'Other',
+    '(data not available)' => 'Other',
+  }.freeze
+
+  def normalize_source(raw)
+    SOURCE_NORMALIZATION[raw.downcase.strip] || raw.split('.').first&.capitalize || raw
+  end
+
+  def parse_source_breakdown_response(response)
+    return empty_source_breakdown unless response&.rows.present?
+
+    # Aggregate after normalizing source names
+    aggregated = Hash.new { |h, k| h[k] = { sessions: 0, users: 0, new_users: 0 } }
+
+    response.rows.each do |row|
+      raw    = row.dimension_values.first&.value || 'unknown'
+      name   = normalize_source(raw)
+      aggregated[name][:sessions]  += row.metric_values[0]&.value.to_i
+      aggregated[name][:users]     += row.metric_values[1]&.value.to_i
+      aggregated[name][:new_users] += row.metric_values[2]&.value.to_i
+    end
+
+    sources = aggregated
+      .map { |name, data| { source: name }.merge(data) }
+      .sort_by { |s| -s[:sessions] }
+
+    total = sources.sum { |s| s[:sessions] }
+
+    {
+      sources: sources,
+      total_sessions: total,
+      top_source: sources.first&.dig(:source),
+      error: nil
+    }
+  end
+
+  def empty_source_breakdown
+    { sources: [], total_sessions: 0, top_source: nil, error: nil }
   end
 end

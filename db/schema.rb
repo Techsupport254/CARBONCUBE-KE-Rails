@@ -124,17 +124,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_21_095733) do
     t.string "ip_address"
     t.string "utm_content"
     t.string "utm_term"
-    t.index "((data -> 'visitor_id'::text))", name: "index_analytics_on_visitor_id", using: :gin
-    t.index ["created_at", "source"], name: "index_analytics_on_created_at_and_source"
-    t.index ["created_at", "utm_source"], name: "index_analytics_on_created_at_and_utm_source"
-    t.index ["created_at"], name: "index_analytics_on_created_at"
-    t.index ["referrer"], name: "index_analytics_on_referrer"
-    t.index ["source"], name: "index_analytics_on_source"
-    t.index ["utm_campaign"], name: "index_analytics_on_utm_campaign"
-    t.index ["utm_content"], name: "index_analytics_on_utm_content"
-    t.index ["utm_medium"], name: "index_analytics_on_utm_medium"
-    t.index ["utm_source"], name: "index_analytics_on_utm_source"
-    t.index ["utm_term"], name: "index_analytics_on_utm_term"
   end
 
   create_table "banners", force: :cascade do |t|

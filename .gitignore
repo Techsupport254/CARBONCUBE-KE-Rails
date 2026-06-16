@@ -54,3 +54,6 @@ credentials.yaml
 
 # Database dumps
 /db/dumps/*
+
+# GA4 service account credentials
+config/ga4_credentials.json

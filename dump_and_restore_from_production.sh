@@ -24,7 +24,7 @@ if [ -z "$PRODUCTION_DB" ]; then
 fi
 
 # Local database URL
-LOCAL_DB="postgresql://Quaint:3323@localhost:5432/carbon_development"
+LOCAL_DB="postgresql://postgres:postgres@localhost:5432/carbon_development"
 
 # Create dump directory if it doesn't exist
 DUMP_DIR="db/dumps"
