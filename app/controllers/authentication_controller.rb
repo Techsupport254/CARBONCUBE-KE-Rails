@@ -3,6 +3,14 @@ class AuthenticationController < ApplicationController
   require 'timeout'
   require 'digest'
 
+  def sales_users
+    # Public endpoint for dev/internal use to get available sales agents
+    users = SalesUser.select(:id, :fullname, :email).map do |u|
+      { id: u.id, name: u.fullname, email: u.email }
+    end
+    render json: { success: true, users: users }, status: :ok
+  end
+
 
   def login
     email = params[:email]

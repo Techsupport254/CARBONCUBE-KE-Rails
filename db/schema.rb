@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_21_095733) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_29_093715) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -184,6 +184,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_21_095733) do
     t.index ["sector_id"], name: "index_buyers_on_sector_id"
     t.index ["sub_county_id"], name: "index_buyers_on_sub_county_id"
     t.index ["username"], name: "index_buyers_on_username"
+  end
+
+  create_table "call_queues", force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "queue_type", null: false
+    t.integer "priority", default: 0, null: false
+    t.jsonb "metadata", default: {}
+    t.string "status", default: "pending", null: false
+    t.datetime "resolved_at"
+    t.uuid "resolved_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["priority"], name: "index_call_queues_on_priority"
+    t.index ["queue_type"], name: "index_call_queues_on_queue_type"
+    t.index ["seller_id"], name: "index_call_queues_on_seller_id"
+    t.index ["status", "priority"], name: "index_call_queues_on_status_and_priority"
+    t.index ["status"], name: "index_call_queues_on_status"
+  end
+
+  create_table "call_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "customer_type"
+    t.uuid "customer_id"
+    t.uuid "sales_user_id"
+    t.integer "status"
+    t.integer "call_type"
+    t.integer "duration_seconds"
+    t.datetime "started_at"
+    t.datetime "ended_at"
+    t.integer "csat_score"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "caller_name"
+    t.string "caller_phone"
+    t.index ["customer_type", "customer_id"], name: "index_call_records_on_customer"
+    t.index ["sales_user_id"], name: "index_call_records_on_sales_user_id"
   end
 
   create_table "carbon_codes", force: :cascade do |t|
@@ -1048,6 +1083,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_21_095733) do
   add_foreign_key "buyers", "incomes"
   add_foreign_key "buyers", "sectors"
   add_foreign_key "buyers", "sub_counties"
+  add_foreign_key "call_queues", "sales_users", column: "resolved_by_id"
+  add_foreign_key "call_queues", "sellers"
+  add_foreign_key "call_records", "sales_users"
   add_foreign_key "cart_items", "ads"
   add_foreign_key "cart_items", "buyers", on_delete: :cascade
   add_foreign_key "cart_items", "buyers", on_delete: :cascade

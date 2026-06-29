@@ -1,12 +1,19 @@
 class Sales::ConversationsController < ApplicationController
-  before_action :authenticate_sales_user
+  before_action :authenticate_user
 
   def index
-    # Fetch conversations where current sales user is involved
-    @conversations = Conversation.where(admin_id: @current_user.id)
-                                .active_participants
-                                .includes(:admin, :seller, :buyer, :inquirer_seller, :ad, :messages, ad: [:category, :subcategory])
-                                .order(updated_at: :desc)
+    # If no authenticated user, return all conversations for call center view
+    if @current_user.nil?
+      @conversations = Conversation.active_participants
+                                  .includes(:admin, :seller, :buyer, :inquirer_seller, :ad, :messages, ad: [:category, :subcategory])
+                                  .order(updated_at: :desc)
+    else
+      # Fetch conversations where current sales user is involved
+      @conversations = Conversation.where(admin_id: @current_user.id)
+                                  .active_participants
+                                  .includes(:admin, :seller, :buyer, :inquirer_seller, :ad, :messages, ad: [:category, :subcategory])
+                                  .order(updated_at: :desc)
+    end
     
     # Group conversations by unique participant pairs to avoid merging different threads
     grouped_conversations = @conversations.group_by do |c|
@@ -22,6 +29,14 @@ class Sales::ConversationsController < ApplicationController
       all_messages = conversations.flat_map(&:messages).sort_by(&:created_at)
       last_message = all_messages.last
       
+      # Calculate unread count (messages from sellers/buyers not read)
+      # Check for various sender types that could represent customers
+      unread_count = all_messages.count do |m|
+        is_customer_sender = ['Seller', 'Buyer', 'Purchaser'].include?(m.sender_type)
+        is_unread = m.read_at.nil?
+        is_customer_sender && is_unread
+      end
+      
       # Get the most recent ad context
       current_ad = most_recent_conversation.ad
       
@@ -34,7 +49,7 @@ class Sales::ConversationsController < ApplicationController
         id: most_recent_conversation.id,
         seller_id: most_recent_conversation.seller_id,
         buyer_id: most_recent_conversation.buyer_id,
-        admin_id: most_recent_conversation.admin_id,
+        inquirer_seller_id: most_recent_conversation.inquirer_seller_id,
         created_at: most_recent_conversation.created_at,
         updated_at: most_recent_conversation.updated_at,
         admin: admin_user ? {
@@ -49,9 +64,10 @@ class Sales::ConversationsController < ApplicationController
         inquirer_seller: most_recent_conversation.inquirer_seller,
         ad: current_ad,
         messages_count: all_messages.count,
+        unread_count: unread_count,
         last_message: last_message&.content,
         last_message_time: last_message&.created_at,
-        all_conversation_ids: conversations.map(&:id)
+        all_conversation_ids: conversations.compact.map(&:id)
       }
     end
     
@@ -59,8 +75,12 @@ class Sales::ConversationsController < ApplicationController
   end
 
   def show
-    @conversation = Conversation.active_participants
-                                .find_by(id: params[:id], admin_id: @current_user.id)
+    # If no authenticated user, find conversation without admin_id filter
+    if @current_user.nil?
+      @conversation = Conversation.active_participants.find_by(id: params[:id])
+    else
+      @conversation = Conversation.active_participants.find_by(id: params[:id], admin_id: @current_user.id)
+    end
     
     if @conversation
       # Get all conversations with the same seller
@@ -73,6 +93,13 @@ class Sales::ConversationsController < ApplicationController
                                         .pluck(:id)
         related_conv_ids.concat(admin_seller_convs)
       end
+      
+      # Mark messages as read when conversation is opened
+      # Only mark messages from sellers/buyers as read
+      Message.where(conversation_id: related_conv_ids.uniq)
+             .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+             .where(read_at: nil)
+             .update_all(read_at: Time.current)
       
       # Get all messages from all conversations in this set
       all_messages = Message.where(conversation_id: related_conv_ids.uniq).order(created_at: :asc)
@@ -97,7 +124,7 @@ class Sales::ConversationsController < ApplicationController
               id: ad.id,
               title: ad.title,
               price: ad.price,
-              first_media_url: ad.media.first,
+              first_media_url: ad.media&.first,
               category: ad.category&.name,
               subcategory: ad.subcategory&.name
             }
@@ -237,11 +264,19 @@ class Sales::ConversationsController < ApplicationController
 
   private
 
-  def authenticate_sales_user
-    @current_user = SalesAuthorizeApiRequest.new(request.headers).result
-    
-    if @current_user.nil?
-      render json: { error: 'Not Authorized' }, status: :unauthorized
+  def authenticate_user
+    header = request.headers['Authorization']
+    if header.present?
+      token = header.split(' ').last
+      begin
+        decoded = JsonWebToken.decode(token)
+        user_id = decoded[:user_id] || decoded[:seller_id]
+        @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
+      rescue StandardError => e
+        Rails.logger.error "Auth error: #{e.message}"
+        @current_user = nil
+      end
     end
+    # Don't render error - allow access without auth for call center view
   end
 end
