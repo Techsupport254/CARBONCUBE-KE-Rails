@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_29_093715) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_29_121812) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -217,6 +217,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_093715) do
     t.datetime "updated_at", null: false
     t.string "caller_name"
     t.string "caller_phone"
+    t.string "rating_token"
+    t.string "customer_email"
+    t.integer "customer_rating"
+    t.text "customer_feedback"
+    t.datetime "rating_submitted_at"
+    t.string "call_reason"
+    t.string "issue_category"
+    t.string "disposition"
+    t.boolean "issue_resolved"
+    t.text "agent_notes"
+    t.boolean "follow_up_required"
+    t.date "follow_up_date"
+    t.string "follow_up_action"
     t.index ["customer_type", "customer_id"], name: "index_call_records_on_customer"
     t.index ["sales_user_id"], name: "index_call_records_on_sales_user_id"
   end

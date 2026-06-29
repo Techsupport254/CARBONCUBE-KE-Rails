@@ -19,4 +19,13 @@ class CallRecord < ApplicationRecord
 
   validates :status, presence: true
   validates :call_type, presence: true
+  validates :rating_token, uniqueness: true, allow_nil: true
+
+  before_create :generate_rating_token
+
+  private
+
+  def generate_rating_token
+    self.rating_token = SecureRandom.hex(16) if rating_token.blank?
+  end
 end
