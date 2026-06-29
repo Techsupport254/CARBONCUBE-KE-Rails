@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
 class CallQueueService
+  # Returns seller IDs that are currently in the queue (pending) or were resolved in the last 1 month
+  def self.excluded_seller_ids_for_type(queue_type)
+    CallQueue.where(queue_type: queue_type)
+      .where("status = ? OR (status = ? AND resolved_at > ?)", 
+             CallQueue::STATUS_PENDING, 
+             CallQueue::STATUS_RESOLVED, 
+             1.month.ago)
+      .select(:seller_id)
+  end
+
   # Main method to populate the call queue based on metrics
   def self.populate_queue
     # Clear existing pending entries to avoid duplicates
@@ -24,7 +34,7 @@ class CallQueueService
     sellers_with_unread = Seller.active.joins(:conversations)
       .where(conversations: { updated_at: 24.hours.ago.. })
       .where.not(conversations: { seller_id: nil })
-      .where.not(id: CallQueue.where(queue_type: CallQueue::UNREAD_MESSAGES).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::UNREAD_MESSAGES))
       .distinct
 
     sellers_with_unread.find_each do |seller|
@@ -51,18 +61,18 @@ class CallQueueService
 
   # Metric 2: Sellers who haven't uploaded ads in 14+ days
   def self.add_no_ads_uploaded_queue
-    # Remove sellers who now have ads from this queue
+    # Remove sellers who now have ads from this queue (only pending ones)
     sellers_with_ads = Seller.active
       .where('ads_count > 0')
-      .where(id: CallQueue.where(queue_type: CallQueue::NO_ADS_UPLOADED).select(:seller_id))
+      .where(id: CallQueue.pending.where(queue_type: CallQueue::NO_ADS_UPLOADED).select(:seller_id))
     
-    CallQueue.where(queue_type: CallQueue::NO_ADS_UPLOADED, seller_id: sellers_with_ads).destroy_all
+    CallQueue.pending.where(queue_type: CallQueue::NO_ADS_UPLOADED, seller_id: sellers_with_ads).destroy_all
 
     # Add sellers who still have no ads
     sellers_no_ads = Seller.active
       .where('created_at < ?', 14.days.ago)
       .where('ads_count = 0 OR ads_count IS NULL')
-      .where.not(id: CallQueue.where(queue_type: CallQueue::NO_ADS_UPLOADED).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::NO_ADS_UPLOADED))
 
     sellers_no_ads.find_each do |seller|
       CallQueue.create!(
@@ -81,7 +91,7 @@ class CallQueueService
   def self.add_inactive_seller_queue
     inactive_sellers = Seller.active
       .where('last_active_at < ?', 7.days.ago)
-      .where.not(id: CallQueue.where(queue_type: CallQueue::INACTIVE_SELLER).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::INACTIVE_SELLER))
 
     inactive_sellers.find_each do |seller|
       days_inactive = (Time.current - seller.last_active_at).to_i / 86400
@@ -105,7 +115,7 @@ class CallQueueService
     new_sellers = Seller.active
       .where(created_at: 3.days.ago..7.days.ago)
       .where('ads_count = 0 OR ads_count IS NULL')
-      .where.not(id: CallQueue.where(queue_type: CallQueue::NEW_SELLER_ONBOARDING).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::NEW_SELLER_ONBOARDING))
 
     new_sellers.find_each do |seller|
       CallQueue.create!(
@@ -128,7 +138,7 @@ class CallQueueService
       .where('conversations.created_at > ?', 30.days.ago)
       .group('sellers.id')
       .having('COUNT(conversations.id) < 3')
-      .where.not(id: CallQueue.where(queue_type: CallQueue::LOW_ENGAGEMENT).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::LOW_ENGAGEMENT))
 
     low_engagement_sellers.find_each do |seller|
       conversation_count = seller.conversations.where('created_at > ?', 30.days.ago).count
@@ -151,7 +161,7 @@ class CallQueueService
       .joins(:seller_documents)
       .where('seller_documents.document_expiry_date > ?', Time.current)
       .where('seller_documents.document_expiry_date < ?', 30.days.from_now)
-      .where.not(id: CallQueue.where(queue_type: CallQueue::DOCUMENT_EXPIRY).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::DOCUMENT_EXPIRY))
       .distinct
 
     expiring_sellers.find_each do |seller|
@@ -183,7 +193,7 @@ class CallQueueService
       .joins(:reviews_received)
       .group('sellers.id')
       .having('AVG(reviews.rating) < 3.0')
-      .where.not(id: CallQueue.where(queue_type: CallQueue::LOW_RATING).select(:seller_id))
+      .where.not(id: excluded_seller_ids_for_type(CallQueue::LOW_RATING))
       .distinct
 
     low_rated_sellers.find_each do |seller|
@@ -227,7 +237,11 @@ class CallQueueService
         'fullname ILIKE ? OR phone_number ILIKE ? OR email ILIKE ? OR enterprise_name ILIKE ?',
         search_term, search_term, search_term, search_term
       ).pluck(:id)
-      query = query.where(seller_id: seller_ids) if seller_ids.any?
+      if seller_ids.any?
+        query = query.where(seller_id: seller_ids)
+      else
+        query = query.where(id: nil) # Return empty if no seller matches search
+      end
     end
     
     # Always use includes to avoid N+1 queries

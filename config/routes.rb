@@ -745,8 +745,17 @@ Rails.application.routes.draw do
         post :resolve
         post :start
         post :send_email
+        put :update_log
+        delete :delete_log
       end
     end
+
+    # Public rating endpoints (no auth required)
+    get 'call_center/rating/:token', to: 'call_center#rating'
+    post 'call_center/rating/:token', to: 'call_center#submit_rating'
+
+    # AI summary generation
+    post 'ai/generate_summary', to: 'call_center#generate_summary'
 
     # Messages for call center
     resources :conversations, only: [:index, :show, :create] do
