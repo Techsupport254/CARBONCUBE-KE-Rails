@@ -149,6 +149,7 @@ Rails.application.routes.draw do
   #========================================Public namespace for public-specific functionality==========================================#
   
   get "up" => "rails/health#show", as: :rails_health_check
+  get 'auth/sales_users', to: 'authentication#sales_users'
   post 'auth/login', to: 'authentication#login'
   post 'auth/refresh', to: 'authentication#refresh_token'
   post 'auth/logout', to: 'authentication#logout'
@@ -726,6 +727,38 @@ Rails.application.routes.draw do
   # Sales namespace for sales-specific functionality
   namespace :sales do
     get 'google_analytics/sources', to: 'google_analytics#sources'
+    
+    # Call Center Dashboard Routes
+    resources :call_center, only: [] do
+      collection do
+        get :kpis
+        get :chart_data
+        get :history
+        get :customers
+        get :queue
+        get :queue_types
+        get :logs
+        post :log_call
+        post :send_email_direct
+      end
+      member do
+        post :resolve
+        post :start
+        post :send_email
+      end
+    end
+
+    # Messages for call center
+    resources :conversations, only: [:index, :show, :create] do
+      resources :messages, only: [:index, :create]
+      member do
+        post :mark_read
+      end
+      collection do
+        get :unread_count
+        get :unread_counts
+      end
+    end
 
     resources :analytics, only: [:index] do
       collection do
