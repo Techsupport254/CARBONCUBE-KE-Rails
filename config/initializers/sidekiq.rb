@@ -15,7 +15,7 @@ end
 
 # Configure Rails to use Redis
 Rails.application.configure do
-  config.active_job.queue_adapter = :sidekiq
+  config.active_job.queue_adapter = :sidekiq unless Rails.env.development? || Rails.env.test?
   
   # Enable WebSocket functionality
   config.websocket_enabled = true

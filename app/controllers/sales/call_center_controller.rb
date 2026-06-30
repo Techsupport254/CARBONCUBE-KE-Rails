@@ -9,7 +9,8 @@ module Sales
 
     # GET /sales/call_center/kpis
     def kpis
-      cached_data = RedisConnection.get('call_center:kpis')
+      period = params[:period].presence || '7d'
+      cached_data = RedisConnection.get("call_center:kpis:#{period}")
       
       if cached_data.present?
         render json: JSON.parse(cached_data)
@@ -18,11 +19,27 @@ module Sales
         # Enqueue the job immediately to get data for next time
         CallCenterMetricsJob.perform_later
         
+        start_date = case period
+                     when 'today'
+                       Time.zone.now.beginning_of_day
+                     when '7d'
+                       7.days.ago.beginning_of_day
+                     when '30d'
+                       30.days.ago.beginning_of_day
+                     when '1y'
+                       11.months.ago.beginning_of_month
+                     else
+                       Time.zone.now.beginning_of_month
+                     end
+
+        completed_calls = CallRecord.where(status: :completed).where('started_at >= ?', start_date)
+        avg_handling = completed_calls.any? ? completed_calls.average(:duration_seconds).to_i : 0
+        
         render json: {
-          queue_count: CallRecord.where(status: :pending).count,
+          queue_count: CallQueue.pending.distinct.count(:seller_id),
           call_queue_count: CallQueue.pending.count,
-          avg_handling_time_seconds: 0,
-          handled_count: 0,
+          avg_handling_time_seconds: avg_handling,
+          handled_count: completed_calls.count,
           handled_trend: 0,
           csat_score: 100
         }
