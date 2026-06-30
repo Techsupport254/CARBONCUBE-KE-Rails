@@ -984,9 +984,11 @@ Rails.application.routes.draw do
         'https://carboncube-ke.com',
         'https://www.carboncube-ke.com',
         'https://anko.carboncube-ke.com',
+        'https://calls.carboncube-ke.com',
         'https://carboncube-ke.vercel.app',
         'http://localhost:3000',
-        'http://localhost:3001'
+        'http://localhost:3001',
+        'http://localhost:5173'
       ]
 
       allow_origin = allowed_origins.include?(origin) ? origin : allowed_origins.first
