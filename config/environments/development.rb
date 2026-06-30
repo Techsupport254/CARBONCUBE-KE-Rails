@@ -197,6 +197,9 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = false
 
+  # Use async queue adapter in development to run background jobs in-process
+  config.active_job.queue_adapter = :async
+
 
   # Assets are not used in API-only mode
 

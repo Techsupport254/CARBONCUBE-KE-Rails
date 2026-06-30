@@ -10,6 +10,7 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     'https://carboncube-ke.com',
     'https://www.carboncube-ke.com',
     'https://anko.carboncube-ke.com',
+    'https://calls.carboncube-ke.com',
     'https://carboncube-ke.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',

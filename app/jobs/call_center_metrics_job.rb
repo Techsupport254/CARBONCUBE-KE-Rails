@@ -2,43 +2,17 @@ class CallCenterMetricsJob < ApplicationJob
   queue_as :default
 
   def perform(*args)
-    # 1. Compute KPIs
-    queue_count = CallRecord.where(status: :pending).count
-
-    completed_today = CallRecord.where(status: :completed)
-                                .where('started_at >= ?', Time.zone.now.beginning_of_day)
+    # 1. Compute KPIs for all periods
+    periods = ['today', '7d', '30d', '1y', 'all']
     
-    avg_handling_time_seconds = if completed_today.any?
-                                  completed_today.average(:duration_seconds).to_i
-                                else
-                                  0
-                                end
+    periods.each do |period|
+      kpis = compute_kpis(period)
+      RedisConnection.setex("call_center:kpis:#{period}", 10.minutes.to_i, kpis.to_json)
+    end
 
-    handled_count = completed_today.count
-
-    handled_yesterday = CallRecord.where(status: :completed)
-                                  .where(started_at: 1.day.ago.beginning_of_day..1.day.ago.end_of_day).count
-    handled_trend = handled_count - handled_yesterday
-
-    recent_csat = CallRecord.where.not(csat_score: nil)
-                            .where('started_at >= ?', 30.days.ago)
-    
-    csat_avg = if recent_csat.any?
-                 (recent_csat.average(:csat_score).to_f / 5.0 * 100).round
-               else
-                 100
-               end
-
-    kpis = {
-      queue_count: queue_count,
-      call_queue_count: CallQueue.pending.count,
-      avg_handling_time_seconds: avg_handling_time_seconds,
-      handled_count: handled_count,
-      handled_trend: handled_trend,
-      csat_score: csat_avg
-    }
-
-    RedisConnection.setex('call_center:kpis', 10.minutes.to_i, kpis.to_json)
+    # Keep backwards compatibility for legacy calls without period suffix
+    seven_day_kpis = compute_kpis('7d')
+    RedisConnection.setex('call_center:kpis', 10.minutes.to_i, seven_day_kpis.to_json)
 
     # 1.5. Populate call queue based on seller metrics
     CallQueueService.populate_queue
@@ -58,6 +32,75 @@ class CallCenterMetricsJob < ApplicationJob
 
   private
 
+  def compute_kpis(period)
+    queue_count = CallQueue.pending.distinct.count(:seller_id)
+    call_queue_count = CallQueue.pending.count
+
+    start_date = case period
+                 when 'today'
+                   Time.zone.now.beginning_of_day
+                 when '7d'
+                   7.days.ago.beginning_of_day
+                 when '30d'
+                   30.days.ago.beginning_of_day
+                 when '1y'
+                   11.months.ago.beginning_of_month
+                 else # 'all'
+                   first_record = CallRecord.order(started_at: :asc).first
+                   first_record ? first_record.started_at : Time.zone.now.beginning_of_month
+                 end
+
+    completed_calls = CallRecord.where(status: :completed)
+                                .where('started_at >= ?', start_date)
+
+    avg_handling_time_seconds = if completed_calls.any?
+                                  completed_calls.average(:duration_seconds).to_i
+                                else
+                                  0
+                                end
+
+    handled_count = completed_calls.count
+
+    previous_start_date = case period
+                          when 'today'
+                            1.day.ago.beginning_of_day
+                          when '7d'
+                            14.days.ago.beginning_of_day
+                          when '30d'
+                            60.days.ago.beginning_of_day
+                          when '1y'
+                            23.months.ago.beginning_of_month
+                          else
+                            nil
+                          end
+
+    handled_trend = if previous_start_date
+                      previous_completed_calls = CallRecord.where(status: :completed)
+                                                           .where(started_at: previous_start_date..start_date)
+                      handled_count - previous_completed_calls.count
+                    else
+                      0
+                    end
+
+    recent_csat = CallRecord.where.not(customer_rating: nil)
+                            .where('started_at >= ?', start_date)
+
+    csat_avg = if recent_csat.any?
+                 (recent_csat.average(:customer_rating).to_f / 5.0 * 100).round
+               else
+                 100
+               end
+
+    {
+      queue_count: queue_count,
+      call_queue_count: call_queue_count,
+      avg_handling_time_seconds: avg_handling_time_seconds,
+      handled_count: handled_count,
+      handled_trend: handled_trend,
+      csat_score: csat_avg
+    }
+  end
+
   def compute_chart_data(period)
     case period
     when 'today'
@@ -76,7 +119,7 @@ class CallCenterMetricsJob < ApplicationJob
         }
       end
     when '1y'
-      start_date = 1.year.ago.beginning_of_month
+      start_date = 11.months.ago.beginning_of_month
       records = CallRecord.where('started_at >= ?', start_date)
       
       handled_by_month = records.where(status: :completed).group("DATE_TRUNC('month', started_at)").count
