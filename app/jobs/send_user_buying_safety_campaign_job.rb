@@ -70,7 +70,7 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
   private
 
   def send_email_via_nextjs(user, email, user_type)
-    call_center_url = ENV['CALL_CENTER_API_URL'] || 'http://localhost:3000'
+    call_center_url = ENV['CALL_CENTER_API_URL'] || (Rails.env.production? ? 'http://victor-calls-ik6o0z:3000' : 'http://localhost:3000')
     uri = URI.parse("#{call_center_url}/api/send-safety")
     
     http = Net::HTTP.new(uri.host, uri.port)
