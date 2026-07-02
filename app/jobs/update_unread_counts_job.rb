@@ -1,9 +1,9 @@
 class UpdateUnreadCountsJob < ApplicationJob
-  queue_as :default
-  
-  # Retry configuration with the Rails-supported polynomial backoff
+  queue_as :critical  # Unread badge counts are real-time UX — must stay responsive
+
   retry_on StandardError, wait: :polynomially_longer, attempts: 3
-  
+  discard_on ActiveJob::DeserializationError
+
   def perform(conversation_id, message_id)
     conversation = Conversation.find_by(id: conversation_id)
     return unless conversation

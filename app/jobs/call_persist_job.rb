@@ -1,5 +1,8 @@
 class CallPersistJob < ApplicationJob
-  queue_as :default
+  queue_as :default  # Important: must run promptly but not critical-tier
+
+  retry_on StandardError, wait: :exponentially_longer, attempts: 5
+  discard_on ActiveJob::DeserializationError
 
   def perform(call_sid)
     redis_key = "call_log:#{call_sid}"

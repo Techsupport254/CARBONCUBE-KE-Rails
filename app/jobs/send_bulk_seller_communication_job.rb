@@ -1,5 +1,7 @@
 class SendBulkSellerCommunicationJob < ApplicationJob
-  queue_as :default
+  queue_as :broadcast  # Bulk orchestrator — runs for a long time, must not block real-time queues
+
+  retry_on StandardError, wait: 30.seconds, attempts: 2
 
   def perform(email_type = 'general_update', auto_confirm = false, channels = { email: true, whatsapp: false }, custom_subject = nil, custom_message = nil)
     # Log to both Rails logger and Sidekiq logger for visibility
@@ -35,13 +37,10 @@ class SendBulkSellerCommunicationJob < ApplicationJob
     end
     
     
-    # Ask for confirmation unless auto_confirm is true
+    # In a Sidekiq job, STDIN is never available. auto_confirm must be passed as true
+    # when calling from a background context. If false, log a warning and proceed anyway.
     unless auto_confirm
-      confirmation = STDIN.gets.chomp.downcase
-      
-      unless confirmation == 'y' || confirmation == 'yes'
-        return { status: 'cancelled', message: 'User cancelled the operation' }
-      end
+      Rails.logger.warn "[SendBulkSellerCommunicationJob] auto_confirm is false in a background job context. Proceeding without interactive confirmation."
     end
     
     

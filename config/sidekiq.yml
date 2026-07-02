@@ -1,0 +1,25 @@
+# config/sidekiq.yml
+# Weighted queue priority — higher weight = checked more often.
+# Sidekiq polls queues proportionally so lower-priority queues are never starved.
+#
+# Queue Map:
+#   critical   — Real-time user-facing: WebSocket messages, read receipts, unread counts
+#   default    — Standard background work: call metrics, best sellers, persistence
+#   mailers    — All email delivery (transactional + campaign)
+#   broadcast  — Bulk outreach: WhatsApp, seller communication campaigns
+#   low        — Analytics sync, search analytics, backfill, non-urgent tasks
+
+:concurrency: 10
+
+:queues:
+  - [critical, 5]
+  - [default, 3]
+  - [mailers, 2]
+  - [broadcast, 2]
+  - [low, 1]
+
+:timeout: 60
+
+:max_retries: 3
+
+:logfile: ./log/sidekiq.log
