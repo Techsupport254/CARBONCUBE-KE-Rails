@@ -25,12 +25,35 @@ class CallCenterMetricsJob < ApplicationJob
       RedisConnection.setex("call_center:chart_data:#{period}", 10.minutes.to_i, chart_data.to_json)
     end
 
-    # 3. Schedule next run recursively
-    # This acts as a poor man's cron if sidekiq-cron isn't installed
-    CallCenterMetricsJob.set(wait: 5.minutes).perform_later
+    # 3. Schedule next run — deduplicated to prevent exponential queue growth.
+    # Only enqueue if no other instance is already pending in the scheduled set or default queue.
+    schedule_next_run
   end
 
   private
+
+  def schedule_next_run
+    require 'sidekiq/api'
+
+    job_class = self.class.name
+
+    # Check scheduled set for a pending future run
+    already_scheduled = Sidekiq::ScheduledSet.new.any? do |job|
+      job.item['wrapped'] == job_class || job.item['class'] == job_class
+    end
+
+    # Check default queue for one already waiting
+    already_queued = Sidekiq::Queue.new('default').any? do |job|
+      job.item['wrapped'] == job_class || job.item['class'] == job_class
+    end
+
+    if already_scheduled || already_queued
+      Rails.logger.info "[CallCenterMetricsJob] Next run already scheduled/queued. Skipping duplicate enqueue."
+    else
+      self.class.set(wait: 5.minutes).perform_later
+      Rails.logger.info "[CallCenterMetricsJob] Scheduled next run in 5 minutes."
+    end
+  end
 
   def compute_kpis(period)
     queue_count = CallQueue.pending.distinct.count(:seller_id)
