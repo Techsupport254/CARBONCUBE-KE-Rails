@@ -77,10 +77,6 @@ gem 'mini_magick'
 # QR code generation for welcome images
 gem 'rqrcode'
 
-# OpenTelemetry for SigNoz
-gem "opentelemetry-sdk"
-gem "opentelemetry-exporter-otlp"
-gem "opentelemetry-instrumentation-all"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
