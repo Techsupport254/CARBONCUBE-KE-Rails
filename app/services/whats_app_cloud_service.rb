@@ -173,11 +173,20 @@ class WhatsAppCloudService
         next unless change['field'] == 'messages'
 
         value = change['value']
-        next unless value['messages']
+        next unless value
 
-        value['messages'].each do |msg_data|
-          Rails.logger.info "[WhatsAppCloudService] Processing message: #{msg_data['id']}"
-          process_incoming_message(msg_data, value['metadata'])
+        if value['messages']
+          value['messages'].each do |msg_data|
+            Rails.logger.info "[WhatsAppCloudService] Processing message: #{msg_data['id']}"
+            process_incoming_message(msg_data, value['metadata'])
+          end
+        end
+
+        if value['statuses']
+          value['statuses'].each do |status_data|
+            Rails.logger.info "[WhatsAppCloudService] Processing status: #{status_data['id']} -> #{status_data['status']}"
+            process_status_update(status_data)
+          end
         end
       end
     end
@@ -339,5 +348,76 @@ class WhatsAppCloudService
 
     # 4. Create a new conversation marked as WhatsApp
     Conversation.create(conv_attrs.merge(is_whatsapp: true))
+  end
+
+  def self.process_status_update(status_data)
+    msg_id = status_data['id']
+    status = status_data['status'] # 'sent', 'delivered', 'read', 'failed'
+
+    message = Message.find_by(whatsapp_message_id: msg_id)
+    unless message
+      Rails.logger.debug "[WhatsAppCloudService] Status update for untracked message: #{msg_id}"
+      return
+    end
+
+    case status
+    when 'delivered'
+      unless message.read? || message.delivered?
+        message.update(status: Message::STATUS_DELIVERED, delivered_at: Time.current)
+        broadcast_status_receipt(message, 'delivered')
+      end
+    when 'read'
+      unless message.read?
+        message.update(status: Message::STATUS_READ, read_at: Time.current)
+        broadcast_status_receipt(message, 'read')
+      end
+    when 'failed'
+      Rails.logger.error "[WhatsAppCloudService] Message delivery failed for #{msg_id}: #{status_data['errors']&.inspect}"
+    end
+  end
+
+  def self.broadcast_status_receipt(message, status)
+    sender_type = message.sender_type.downcase
+    sender_id = message.sender_id
+
+    # Broadcast to the presence channel of the sender
+    ActionCable.server.broadcast(
+      "presence_#{sender_type}_#{sender_id}",
+      {
+        type: status == 'read' ? 'message_read' : 'message_delivered',
+        message_id: message.id,
+        conversation_id: message.conversation_id,
+        "#{status}_at" => message.send("#{status}_at"),
+        status: status
+      }
+    )
+
+    # Broadcast to the conversation channel to update UI in real-time
+    broadcast_payload = {
+      type: status == 'read' ? 'message_read' : 'message_delivered',
+      message_id: message.id,
+      conversation_id: message.conversation_id,
+      status: status
+    }
+    broadcast_payload["#{status}_at"] = message.send("#{status}_at")
+
+    if message.conversation.buyer_id
+      ActionCable.server.broadcast(
+        "conversations_buyer_#{message.conversation.buyer_id}",
+        broadcast_payload
+      )
+    end
+    if message.conversation.seller_id
+      ActionCable.server.broadcast(
+        "conversations_seller_#{message.conversation.seller_id}",
+        broadcast_payload
+      )
+    end
+    if message.conversation.inquirer_seller_id && message.conversation.inquirer_seller_id != message.conversation.seller_id
+      ActionCable.server.broadcast(
+        "conversations_seller_#{message.conversation.inquirer_seller_id}",
+        broadcast_payload
+      )
+    end
   end
 end
