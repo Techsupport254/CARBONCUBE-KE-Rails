@@ -1,0 +1,30 @@
+# config/schedule.yml
+# Recurring jobs managed by sidekiq-cron.
+# Replaces all recursive self-scheduling patterns.
+# Cron format: minute hour day-of-month month day-of-week
+# Reference: https://crontab.guru
+
+# --- CALL CENTER ---
+# Refresh call center KPIs and chart data every 5 minutes.
+# Replaces the recursive CallCenterMetricsJob.set(wait: 5.minutes).perform_later pattern.
+call_center_metrics:
+  cron: "*/5 * * * *"
+  class: "CallCenterMetricsJob"
+  queue: default
+  description: "Refresh call center KPIs and chart data for all periods"
+
+# --- BEST SELLERS ---
+# Precompute best-seller rankings every 30 minutes for fast homepage loading.
+precompute_best_sellers:
+  cron: "*/30 * * * *"
+  class: "PrecomputeBestSellersJob"
+  queue: low
+  description: "Precompute best-seller scores for homepage and category pages"
+
+# --- SEARCH ANALYTICS ---
+# Sync search analytics from Redis to PostgreSQL nightly at 1:00 AM EAT (22:00 UTC).
+sync_search_analytics:
+  cron: "0 22 * * *"
+  class: "SyncSearchAnalyticsJob"
+  queue: low
+  description: "Persist daily search analytics from Redis to PostgreSQL"

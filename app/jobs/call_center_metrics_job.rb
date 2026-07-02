@@ -1,58 +1,36 @@
+# Refreshes call center KPIs and chart data every 5 minutes.
+# Triggered by sidekiq-cron (config/schedule.yml) — do NOT add self-scheduling here.
 class CallCenterMetricsJob < ApplicationJob
   queue_as :default
 
-  def perform(*args)
+  # Idempotent: safely retried. Data will just be recomputed and overwritten.
+  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  discard_on ActiveRecord::StatementInvalid  # Skip if DB statement times out
+
+  def perform
+    Rails.logger.info "[CallCenterMetricsJob] Starting metrics refresh"
+
     # 1. Compute KPIs for all periods
-    periods = ['today', '7d', '30d', '1y', 'all']
-    
+    periods = %w[today 7d 30d 1y all]
+
     periods.each do |period|
       kpis = compute_kpis(period)
       RedisConnection.setex("call_center:kpis:#{period}", 10.minutes.to_i, kpis.to_json)
     end
 
-    # Keep backwards compatibility for legacy calls without period suffix
-    seven_day_kpis = compute_kpis('7d')
-    RedisConnection.setex('call_center:kpis', 10.minutes.to_i, seven_day_kpis.to_json)
+    # Keep backwards-compatibility key (legacy clients use call_center:kpis)
+    RedisConnection.setex('call_center:kpis', 10.minutes.to_i, compute_kpis('7d').to_json)
 
-    # 1.5. Populate call queue based on seller metrics
+    # 2. Populate call queue based on seller metrics
     CallQueueService.populate_queue
 
-    # 2. Compute Chart Data for all periods
-    periods = ['today', '7d', '30d', '1y', 'all']
-    
+    # 3. Compute Chart Data for all periods
     periods.each do |period|
       chart_data = compute_chart_data(period)
       RedisConnection.setex("call_center:chart_data:#{period}", 10.minutes.to_i, chart_data.to_json)
     end
 
-    # 3. Schedule next run — deduplicated to prevent exponential queue growth.
-    # Only enqueue if no other instance is already pending in the scheduled set or default queue.
-    schedule_next_run
-  end
-
-  private
-
-  def schedule_next_run
-    require 'sidekiq/api'
-
-    job_class = self.class.name
-
-    # Check scheduled set for a pending future run
-    already_scheduled = Sidekiq::ScheduledSet.new.any? do |job|
-      job.item['wrapped'] == job_class || job.item['class'] == job_class
-    end
-
-    # Check default queue for one already waiting
-    already_queued = Sidekiq::Queue.new('default').any? do |job|
-      job.item['wrapped'] == job_class || job.item['class'] == job_class
-    end
-
-    if already_scheduled || already_queued
-      Rails.logger.info "[CallCenterMetricsJob] Next run already scheduled/queued. Skipping duplicate enqueue."
-    else
-      self.class.set(wait: 5.minutes).perform_later
-      Rails.logger.info "[CallCenterMetricsJob] Scheduled next run in 5 minutes."
-    end
+    Rails.logger.info "[CallCenterMetricsJob] Metrics refresh complete"
   end
 
   def compute_kpis(period)

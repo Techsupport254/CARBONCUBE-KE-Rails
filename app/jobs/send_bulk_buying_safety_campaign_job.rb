@@ -1,5 +1,7 @@
 class SendBulkBuyingSafetyCampaignJob < ApplicationJob
-  queue_as :default
+  queue_as :broadcast  # Long-running bulk orchestrator — never block real-time queues
+
+  retry_on StandardError, wait: 30.seconds, attempts: 2
 
   def perform(dry_run = true)
     Rails.logger.info "=== [SendBulkBuyingSafetyCampaignJob] STARTING CAMPAIGN ==="

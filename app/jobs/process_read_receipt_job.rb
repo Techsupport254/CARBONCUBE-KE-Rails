@@ -1,8 +1,9 @@
 class ProcessReadReceiptJob < ApplicationJob
-  queue_as :websocket
-  
+  queue_as :critical  # Real-time read receipts — must not be delayed
+
   retry_on StandardError, wait: :exponentially_longer, attempts: 2
-  
+  discard_on ActiveRecord::RecordNotFound  # Message deleted before receipt processed
+
   def perform(message_id, reader_user_id)
     Rails.logger.info "Processing read receipt: message_id=#{message_id}, reader_id=#{reader_user_id}"
     

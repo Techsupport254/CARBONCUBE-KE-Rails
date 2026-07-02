@@ -1,5 +1,8 @@
 class MessageDeliveryJob < ApplicationJob
-  queue_as :default
+  queue_as :critical  # Real-time chat receipt delivery — must stay responsive
+
+  retry_on StandardError, wait: 10.seconds, attempts: 3
+  discard_on ActiveRecord::RecordNotFound
 
   def perform(message_id)
     message = Message.find_by(id: message_id)
@@ -15,10 +18,11 @@ class MessageDeliveryJob < ApplicationJob
     else
       # Recipient is still offline - reschedule for later
       Rails.logger.info "Message #{message_id} recipient still offline, rescheduling delivery"
-      MessageDeliveryJob.perform_in(30.seconds, message_id)
+      self.class.set(wait: 30.seconds).perform_later(message_id)
     end
   rescue => e
     Rails.logger.error "MessageDeliveryJob failed for message #{message_id}: #{e.message}"
+    raise e
   end
 
   private

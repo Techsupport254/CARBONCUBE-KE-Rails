@@ -3,10 +3,11 @@ require 'uri'
 require 'json'
 
 class SendUserBuyingSafetyCampaignJob < ApplicationJob
-  queue_as :default
+  queue_as :broadcast  # Individual delivery worker for bulk campaign
 
-  # Retries configuration (handled natively by Sidekiq, but we can declare it here)
-  # retry_on StandardError, wait: :exponentially_longer, attempts: 5
+  # Retry with backoff: WhatsApp/email can have transient failures
+  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  discard_on ActiveJob::DeserializationError
 
   def perform(user_id, user_type, dry_run = true, channels = { email: true, whatsapp: true })
     model_class = user_type == 'buyer' ? Buyer : Seller

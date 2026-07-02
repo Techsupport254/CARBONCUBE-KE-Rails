@@ -47,6 +47,8 @@ gem 'activestorage-cloudinary-service'
 
 # Sidekiq for background jobs
 gem 'sidekiq'
+# Sidekiq cron for reliable recurring job scheduling (replaces recursive self-scheduling)
+gem 'sidekiq-cron', '~> 2.0'
 
 # Markdown processing
 gem 'redcarpet'

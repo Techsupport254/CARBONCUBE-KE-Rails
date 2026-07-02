@@ -1,9 +1,10 @@
 class ProcessWebsocketMessageJob < ApplicationJob
-  queue_as :websocket
-  
-  # Retry configuration with exponential backoff - reduced attempts for graceful degradation
+  queue_as :critical  # Real-time user-facing — must not be blocked by slower jobs
+
+  # Only retry twice: WebSocket context expires quickly, stale retries waste threads
   retry_on StandardError, wait: :exponentially_longer, attempts: 2
-  
+  discard_on ActiveJob::DeserializationError  # Discard if message data can't be deserialized
+
   def perform(message_data)
     # Extract data
     conversation_id = message_data['conversation_id']
