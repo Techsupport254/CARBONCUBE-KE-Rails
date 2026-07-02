@@ -79,6 +79,8 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
     http.open_timeout = 10
 
     request = Net::HTTP::Post.new(uri.path, { 'Content-Type' => 'application/json' })
+    token = ENV['ADMIN_API_TOKEN'] || ENV['INTERNAL_API_KEY'] || 'carboncube-internal-campaign-key-2026-xyz'
+    request['Authorization'] = "Bearer #{token}"
     
     avatar_url = user.respond_to?(:profile_picture) ? user.profile_picture.presence : nil
     shop_name = user_type == 'seller' && user.respond_to?(:enterprise_name) ? user.enterprise_name.presence : nil
