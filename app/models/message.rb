@@ -11,7 +11,7 @@ class Message < ApplicationRecord
   after_create :broadcast_new_message
   after_create :schedule_delivery_receipt
   after_create :send_push_notification
-  after_create :send_message_notification_email
+  after_create :send_message_notification_email, unless: -> { conversation.is_whatsapp? }
   after_create :send_message_notification_whatsapp, unless: -> { conversation.is_whatsapp? }
 
   # Status constants
