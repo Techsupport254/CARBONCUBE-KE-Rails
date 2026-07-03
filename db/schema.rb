@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_29_121812) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_03_100009) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -86,6 +86,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_121812) do
     t.boolean "is_added_by_sales"
     t.string "model"
     t.jsonb "specifications"
+    t.uuid "branch_id"
+    t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"
@@ -140,6 +142,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_121812) do
     t.datetime "updated_at", null: false
     t.index ["cache_key"], name: "index_best_sellers_caches_on_cache_key", unique: true
     t.index ["expires_at"], name: "index_best_sellers_caches_on_expires_at"
+  end
+
+  create_table "branches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "name"
+    t.text "description"
+    t.string "location"
+    t.float "latitude"
+    t.float "longitude"
+    t.string "phone"
+    t.boolean "is_main_branch", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seller_id"], name: "index_branches_on_seller_id"
   end
 
   create_table "buyers", id: :uuid, default: nil, force: :cascade do |t|
@@ -1085,10 +1101,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_121812) do
 
   add_foreign_key "ad_searches", "buyers", on_delete: :cascade
   add_foreign_key "ad_searches", "buyers", on_delete: :cascade
+  add_foreign_key "ads", "branches"
   add_foreign_key "ads", "categories"
   add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "subcategories"
+  add_foreign_key "branches", "sellers"
   add_foreign_key "buyers", "age_groups"
   add_foreign_key "buyers", "counties"
   add_foreign_key "buyers", "educations"

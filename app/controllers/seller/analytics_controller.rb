@@ -1,10 +1,14 @@
 class Seller::AnalyticsController < ApplicationController
   before_action :authenticate_seller
+  before_action :set_branch_context
 
   def index
     begin
       # Get seller's tier_id
       tier_id = current_seller.seller_tier&.tier_id || 1
+
+      # Get branch context if available
+      branch_id = @current_branch&.id
 
       # Base response data - only include tier_id (other fields removed as unused on audience page)
       response_data = {
@@ -17,8 +21,13 @@ class Seller::AnalyticsController < ApplicationController
       # Add more data based on the seller's tier
       # OPTIMIZATION: Only return data actually used on the overview page
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      
+      # Build filters for click events service
+      filters = { seller_id: current_seller.id }
+      filters[:branch_id] = branch_id if branch_id
+      
       click_events_service = ClickEventsAnalyticsService.new(
-        filters: { seller_id: current_seller.id },
+        filters: filters,
         device_hash: device_hash
       )
       
@@ -37,8 +46,8 @@ class Seller::AnalyticsController < ApplicationController
                                                           .map { |ts| ts&.iso8601 }
 
         # Get ads, reviews, and orders timestamps for trend analysis
-        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
-        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        ads_timestamps = branch_ads_scope(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = branch_reviews_scope.order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
         orders_timestamps = [] # orders tracking not yet implemented
 
         response_data.merge!(
@@ -66,8 +75,8 @@ class Seller::AnalyticsController < ApplicationController
         primary_category_id = competitor_category_id || get_primary_category_id
 
         # Get ads, reviews, and orders timestamps for trend analysis
-        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
-        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        ads_timestamps = branch_ads_scope(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = branch_reviews_scope.order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
         orders_timestamps = [] # orders tracking not yet implemented
 
         response_data.merge!(
@@ -117,8 +126,8 @@ class Seller::AnalyticsController < ApplicationController
         preload_common_data_for_premium
 
         # Get ads, reviews, and orders timestamps for trend analysis
-        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
-        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        ads_timestamps = branch_ads_scope(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = branch_reviews_scope.order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
         orders_timestamps = [] # orders tracking not yet implemented
 
         # Calculate all advanced metrics for premium tier (used on advanced analytics page)
@@ -181,6 +190,24 @@ class Seller::AnalyticsController < ApplicationController
 
 
   private
+
+  def authenticate_seller
+    @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
+    unless @current_seller && @current_seller.is_a?(Seller)
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
+  end
+
+  def set_branch_context
+    branch_id = request.headers['X-Branch-Id']
+    if branch_id
+      @current_branch = @current_seller.branches.find_by(id: branch_id) if @current_seller
+    end
+  end
+
+  def current_seller
+    @current_seller
+  end
 
 
 
@@ -866,7 +893,20 @@ class Seller::AnalyticsController < ApplicationController
 
   # OPTIMIZATION: Cache seller_ad_ids to avoid repeated queries
   def seller_ad_ids
-    @cached_seller_ad_ids ||= current_seller.ads.active.pluck(:id)
+    @cached_seller_ad_ids ||= branch_ads_scope(deleted: false).pluck(:id)
+  end
+
+  def branch_ads_scope(deleted: nil)
+    scope = current_seller.ads
+    scope = scope.where(deleted: deleted) unless deleted.nil?
+    scope = scope.for_branch(@current_branch) if @current_branch
+    scope
+  end
+
+  def branch_reviews_scope
+    scope = Review.joins(:ad).where(ads: { seller_id: current_seller.id })
+    scope = scope.merge(current_seller.ads.for_branch(@current_branch)) if @current_branch
+    scope
   end
   
   # OPTIMIZATION: Pre-load common data for premium tier calculations
@@ -2316,7 +2356,9 @@ class Seller::AnalyticsController < ApplicationController
     category_keywords = seller_category_ids.flat_map do |category_id|
       category = Category.find_by(id: category_id)
       next [] unless category
-      [category.name.downcase, category.name.downcase.split].flatten.uniq
+      # Clean up category name: remove punctuation, remove stop words, split into keywords
+      clean_name = category.name.downcase.gsub(/[,\.]/, '').gsub(/\band\b/, '').strip
+      [clean_name, clean_name.split].flatten.uniq.reject(&:empty?)
     end.uniq
 
     return [] if category_keywords.empty?
@@ -2325,7 +2367,8 @@ class Seller::AnalyticsController < ApplicationController
       term_str = term.to_s
       next false if term_str.blank?
       term_lower = term_str.downcase
-      category_keywords.any? { |kw| term_lower.include?(kw) }
+      # Match if search term includes keyword OR keyword includes search term (for partial matches)
+      category_keywords.any? { |kw| term_lower.include?(kw) || kw.include?(term_lower) }
     end
 
     by_term = related.group_by { |t, _| t.to_s.downcase }.transform_values { |pairs| pairs.max_by { |_, c| c } }
@@ -2341,14 +2384,17 @@ class Seller::AnalyticsController < ApplicationController
       category = Category.find_by(id: category_id)
       next unless category
 
-      category_keywords = [category.name.downcase, category.name.downcase.split].flatten.uniq
+      # Clean up category name: remove punctuation, remove stop words, split into keywords
+      clean_name = category.name.downcase.gsub(/[,\.]/, '').gsub(/\band\b/, '').strip
+      category_keywords = [clean_name, clean_name.split].flatten.uniq.reject(&:empty?)
 
       # Filter Redis popular searches (full phrases) that match this category
       related_searches = (popular_all + popular_weekly).uniq { |t, _| t.to_s.downcase }.select do |term, _|
         term_str = term.to_s
         next false if term_str.blank?
         term_lower = term_str.downcase
-        category_keywords.any? { |kw| term_lower.include?(kw) }
+        # Match if search term includes keyword OR keyword includes search term (for partial matches)
+        category_keywords.any? { |kw| term_lower.include?(kw) || kw.include?(term_lower) }
       end
 
       # Dedupe by term, keep higher count

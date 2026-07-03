@@ -1,13 +1,18 @@
 class Seller::DashboardController < ApplicationController
   before_action :authenticate_seller
+  before_action :set_branch_context
 
   def index
     begin
       seller = current_seller
       tier_id = seller.seller_tier&.tier_id || 1
+      
+      # Get branch context if available
+      branch_id = request.headers['X-Branch-Id']
+      branch = branch_id ? seller.branches.find_by(id: branch_id) : nil
 
-      # Calculate base stats
-      base_stats = calculate_base_stats_optimized(seller)
+      # Calculate base stats (filtered by branch if selected)
+      base_stats = calculate_base_stats_optimized(seller, branch)
 
       # Build consolidated dashboard response
       response_data = {
@@ -42,8 +47,10 @@ class Seller::DashboardController < ApplicationController
       # Add tier-specific analytics (only what's used on dashboard)
       if tier_id >= 2
         device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+        click_filters = { seller_id: seller.id }
+        click_filters[:branch_id] = branch.id if branch
         click_events_service = ClickEventsAnalyticsService.new(
-          filters: { seller_id: seller.id },
+          filters: click_filters,
           device_hash: device_hash
         )
 
@@ -58,8 +65,8 @@ class Seller::DashboardController < ApplicationController
                                                           .map { |ts| ts&.iso8601 }
 
         # Get ads, reviews, and orders timestamps for trend analysis
-        ads_timestamps = current_seller.ads.where(deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
-        reviews_timestamps = Review.joins(:ad).where(ads: { seller_id: current_seller.id }).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
+        ads_timestamps = branch_ads_scope(seller, branch, deleted: false).order('created_at DESC').pluck(:created_at).map { |ts| ts&.iso8601 }
+        reviews_timestamps = branch_reviews_scope(seller, branch).order('reviews.created_at DESC').pluck('reviews.created_at').map { |ts| ts&.iso8601 }
 
         response_data[:analytics] = {
           basic_click_event_stats: {
@@ -76,15 +83,14 @@ class Seller::DashboardController < ApplicationController
         # Add wishlist stats for tier 2+
         if tier_id >= 2
           response_data[:analytics][:basic_wishlist_stats] = {
-            wishlist_trends: get_wishlist_trends(seller.id)
+            wishlist_trends: get_wishlist_trends(seller.id, branch)
           }
         end
 
         # Add wishlist timestamps for tier 4
         if tier_id >= 4
-          wishlist_timestamps = WishList.joins(:ad)
-                                       .where(ads: { seller_id: seller.id, deleted: false })
-                                       .order('wish_lists.created_at DESC')
+          wishlist_scope = WishList.joins(:ad).merge(seller.ads.where(deleted: false).for_branch(branch))
+          wishlist_timestamps = wishlist_scope.order('wish_lists.created_at DESC')
                                        .pluck(:created_at)
                                        .map { |ts| ts&.iso8601 }
           response_data[:analytics][:wishlist_timestamps] = wishlist_timestamps
@@ -92,7 +98,7 @@ class Seller::DashboardController < ApplicationController
 
         # Add top performing ads for tier 4
         if tier_id >= 4
-          response_data[:analytics][:top_performing_ads] = get_top_performing_ads(seller.id)
+          response_data[:analytics][:top_performing_ads] = get_top_performing_ads(seller.id, 10, branch)
         end
       end
 
@@ -106,25 +112,28 @@ class Seller::DashboardController < ApplicationController
 
   private
 
-  def calculate_base_stats_optimized(seller)
-    # Single query to get all base stats
+  def calculate_base_stats_optimized(seller, branch = nil)
     ads_scope = seller.ads.where(deleted: false)
-    
+    ads_scope = ads_scope.for_branch(branch) if branch
+
+    branch_ad_ids = ads_scope.select(:id)
+
     {
       total_ads: ads_scope.count,
-      total_reviews: Review.joins(:ad).where(ads: { seller_id: seller.id }).count,
-      average_rating: calculate_average_rating(seller),
+      total_reviews: Review.joins(:ad).where(ad_id: branch_ad_ids).count,
+      average_rating: calculate_average_rating(seller, branch),
       total_ads_wishlisted: WishList.joins(:ad)
-                                   .where(ads: { seller_id: seller.id, deleted: false })
+                                   .where(ad_id: branch_ad_ids)
                                    .distinct
                                    .count('ads.id')
     }
   end
 
-  def calculate_average_rating(seller)
-    # Calculate average rating per ad, then average those
-    ad_ratings = Review.joins(:ad)
-                      .where(ads: { seller_id: seller.id })
+  def calculate_average_rating(seller, branch = nil)
+    reviews_scope = Review.joins(:ad).where(ads: { seller_id: seller.id })
+    reviews_scope = reviews_scope.merge(seller.ads.for_branch(branch)) if branch
+    
+    ad_ratings = reviews_scope
                       .group('ads.id')
                       .select('AVG(reviews.rating) as avg_rating')
                       .pluck('AVG(reviews.rating)')
@@ -197,11 +206,11 @@ class Seller::DashboardController < ApplicationController
     ReviewRequest.where(seller_id: seller_id, status: 'pending').exists?
   end
 
-  def get_wishlist_trends(seller_id)
-    # Get monthly wishlist trends (all time)
-    WishList.joins(:ad)
-            .where(ads: { seller_id: seller_id, deleted: false })
-            .group(Arel.sql("DATE_TRUNC('month', wish_lists.created_at)"))
+  def get_wishlist_trends(seller_id, branch = @current_branch)
+    seller = Seller.find(seller_id)
+    wishlist_scope = WishList.joins(:ad).merge(seller.ads.where(deleted: false).for_branch(branch))
+
+    wishlist_scope.group(Arel.sql("DATE_TRUNC('month', wish_lists.created_at)"))
             .order(Arel.sql("DATE_TRUNC('month', wish_lists.created_at) ASC"))
             .pluck(
               Arel.sql("DATE_TRUNC('month', wish_lists.created_at) as month"),
@@ -215,9 +224,9 @@ class Seller::DashboardController < ApplicationController
             end
   end
 
-  def get_top_performing_ads(seller_id, limit = 10)
+  def get_top_performing_ads(seller_id, limit = 10, branch = @current_branch)
     # Avoid inflated metrics from multi-table joins by aggregating each source separately.
-    seller_ads = Ad.where(seller_id: seller_id, deleted: false)
+    seller_ads = branch_ads_scope(current_seller, branch, deleted: false)
                    .select(:id, :title, :price, :media, :created_at)
                    .limit(100)
 
@@ -225,8 +234,10 @@ class Seller::DashboardController < ApplicationController
     return [] if ad_ids.empty?
 
     device_hash = request.headers['X-Device-Hash']
+    click_filters = { seller_id: seller_id }
+    click_filters[:branch_id] = branch.id if branch
     click_events_service = ClickEventsAnalyticsService.new(
-      filters: { seller_id: seller_id },
+      filters: click_filters,
       device_hash: device_hash
     )
     filtered_clicks = click_events_service.base_query.where(ad_id: ad_ids)
@@ -317,7 +328,27 @@ class Seller::DashboardController < ApplicationController
     end
   end
 
+  def set_branch_context
+    branch_id = request.headers['X-Branch-Id']
+    if branch_id
+      @current_branch = @current_seller.branches.find_by(id: branch_id) if @current_seller
+    end
+  end
+
   def current_seller
     @current_seller
+  end
+
+  def branch_ads_scope(seller, branch = @current_branch, deleted: nil)
+    scope = seller.ads
+    scope = scope.where(deleted: deleted) unless deleted.nil?
+    scope = scope.for_branch(branch) if branch
+    scope
+  end
+
+  def branch_reviews_scope(seller, branch = @current_branch)
+    scope = Review.joins(:ad).where(ads: { seller_id: seller.id })
+    scope = scope.merge(seller.ads.for_branch(branch)) if branch
+    scope
   end
 end
