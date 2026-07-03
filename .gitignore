@@ -57,3 +57,6 @@ credentials.yaml
 
 # GA4 service account credentials
 config/ga4_credentials.json
+
+# Production environment secrets file
+.env.production

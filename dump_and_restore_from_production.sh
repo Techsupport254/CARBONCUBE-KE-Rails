@@ -12,15 +12,9 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Production database URL (READ-ONLY operations only)
-# Load from .env file
-if [ -f ".env" ]; then
-  # Use a safer way to extract DATABASE_URL that handles quotes and doesn't use xargs
-  PRODUCTION_DB=$(grep '^DATABASE_URL=' .env | head -1 | cut -d '=' -f2- | sed -e 's/^"//' -e 's/"$//')
-fi
-
+# Can be overridden by setting the PRODUCTION_DB env variable
 if [ -z "$PRODUCTION_DB" ]; then
-  echo -e "${RED}✗ Error: DATABASE_URL not found in .env file${NC}"
-  exit 1
+  PRODUCTION_DB="postgresql://carbon:Nx9CC4ENjmmpcnqPeWLV@49.12.235.140:6543/postgres?sslmode=disable"
 fi
 
 # Local database URL
