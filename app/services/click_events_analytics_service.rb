@@ -621,8 +621,14 @@ class ClickEventsAnalyticsService
     query = query.joins(:ad)
     query = query.where(ads: { deleted: false })
     
-    # Filter by seller_id if provided
-    if filters[:seller_id].present?
+    # Filter by branch if provided
+    if filters[:branch_id].present?
+      branch = Branch.find_by(id: filters[:branch_id])
+      ad_scope = Ad.where(seller_id: filters[:seller_id])
+      ad_scope = ad_scope.for_branch(branch) if branch
+      ad_ids = ad_scope.pluck(:id)
+      query = query.where(ad_id: ad_ids)
+    elsif filters[:seller_id].present?
       ad_ids = Ad.where(seller_id: filters[:seller_id]).pluck(:id)
       query = query.where(ad_id: ad_ids)
     end

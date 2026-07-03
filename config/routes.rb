@@ -549,6 +549,7 @@ Rails.application.routes.draw do
       end
     end
     get 'subcategories', to: 'subcategories#index'
+    resources :branches, only: [:index, :show, :create, :update, :destroy]
     resources :analytics, only: [:index] do
       collection do
         get :search_insights

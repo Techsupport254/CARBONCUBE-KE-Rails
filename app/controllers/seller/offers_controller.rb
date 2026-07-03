@@ -1,10 +1,18 @@
 class Seller::OffersController < ApplicationController
   before_action :authenticate_seller, except: [:offer_types, :templates]
+  before_action :set_branch_context, except: [:offer_types, :templates]
   before_action :set_offer, only: [:show, :update, :destroy, :activate, :pause, :add_ads, :remove_ads]
-  
+
   # GET /seller/offers
   def index
-    @offers = current_seller.offers
+    offers_scope = current_seller.offers
+    
+    # Filter by branch if provided
+    if @current_branch
+      offers_scope = offers_scope.joins(:offer_ads).where(offer_ads: { branch_id: @current_branch.id })
+    end
+    
+    @offers = offers_scope
                            .order(priority: :desc, created_at: :desc)
     
     # Filtering
@@ -318,11 +326,29 @@ class Seller::OffersController < ApplicationController
   end
   
   private
-  
+
+  def authenticate_seller
+    @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
+    unless @current_seller && @current_seller.is_a?(Seller)
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
+  end
+
+  def set_branch_context
+    branch_id = request.headers['X-Branch-Id']
+    if branch_id
+      @current_branch = current_seller.branches.find_by(id: branch_id) if current_seller
+    end
+  end
+
+  def current_seller
+    @current_seller
+  end
+
   def set_offer
     @offer = current_seller.offers.find(params[:id])
   end
-  
+
   def offer_params
     params.require(:offer).permit(
       :name, :description, :offer_type, :status, :banner_color, :badge_color,

@@ -4,22 +4,20 @@ class NotificationsController < ApplicationController
   # GET /notifications
   def index
     per_page = (params[:per_page] || 50).to_i
-    notifications = Notification.where(recipient: @current_user)
-                                .order(created_at: :desc)
-                                .limit(per_page)
+    notifications = visible_notifications.first(per_page)
 
     render json: {
       notifications: notifications.map { |n| serialize_notification(n) },
       meta: {
-        total_count: Notification.where(recipient: @current_user).count,
-        unread_count: Notification.where(recipient: @current_user, read_at: nil).count
+        total_count: visible_notifications.length,
+        unread_count: visible_notifications.count { |notification| notification.read_at.nil? }
       }
     }
   end
 
   # POST /api/notifications/:id/read
   def mark_as_read
-    notification = Notification.find_by(id: params[:id], recipient: @current_user)
+    notification = visible_notifications.find { |item| item.id.to_s == params[:id].to_s }
 
     if notification
       notification.mark_as_read!
@@ -31,11 +29,52 @@ class NotificationsController < ApplicationController
 
   # POST /api/notifications/read_all
   def mark_all_as_read
-    Notification.where(recipient: @current_user, read_at: nil).update_all(read_at: Time.current)
+    visible_notification_ids = visible_notifications.select { |notification| notification.read_at.nil? }.map(&:id)
+    Notification.where(recipient: @current_user, id: visible_notification_ids).update_all(read_at: Time.current)
     render json: { message: 'All notifications marked as read' }
   end
 
   private
+
+  def current_branch
+    return @current_branch if defined?(@current_branch)
+
+    branch_id = request.headers['X-Branch-Id']
+    @current_branch = if branch_id.present? && @current_user.respond_to?(:branches)
+      @current_user.branches.find_by(id: branch_id)
+    else
+      nil
+    end
+  end
+
+  def visible_notifications
+    @visible_notifications ||= begin
+      scope = Notification.where(recipient: @current_user).order(created_at: :desc).to_a
+      branch = current_branch
+
+      branch ? scope.select { |notification| notification_visible_for_branch?(notification, branch) } : scope
+    end
+  end
+
+  def notification_visible_for_branch?(notification, branch)
+    notification_branch_id = notification_branch_id(notification)
+    return true if notification_branch_id.nil?
+
+    notification_branch_id == branch.id
+  end
+
+  def notification_branch_id(notification)
+    if notification.notifiable_type == 'Ad' && notification.notifiable_id.present?
+      Ad.where(id: notification.notifiable_id).pick(:branch_id)
+    elsif notification.notifiable_type == 'Conversation' && notification.notifiable_id.present?
+      Conversation.joins(:ad).where(conversations: { id: notification.notifiable_id }).pick('ads.branch_id')
+    elsif notification.data.is_a?(Hash)
+      ad_id = notification.data['ad_id'] || notification.data[:ad_id]
+      if ad_id.present?
+        Ad.where(id: ad_id).pick(:branch_id)
+      end
+    end
+  end
 
   def serialize_notification(notification)
     base = {

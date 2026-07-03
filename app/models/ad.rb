@@ -13,10 +13,20 @@ class Ad < ApplicationRecord
   scope :deleted, -> { where(deleted: true) }
   scope :with_valid_images, -> { where.not(media: [nil, [], ""]) }
   scope :from_active_sellers, -> { joins(:seller).where(sellers: { blocked: false, deleted: false, flagged: false }) }
+  scope :for_branch, ->(branch) {
+    return all unless branch
+
+    if branch.is_main_branch?
+      where(branch_id: [nil, branch.id])
+    else
+      where(branch_id: branch.id)
+    end
+  }
 
   belongs_to :seller
   belongs_to :category
   belongs_to :subcategory
+  belongs_to :branch, optional: true
   
   has_many :reviews, dependent: :destroy
   has_many :cart_items, dependent: :destroy

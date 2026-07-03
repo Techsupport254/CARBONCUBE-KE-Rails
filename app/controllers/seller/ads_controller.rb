@@ -1,19 +1,27 @@
 class Seller::AdsController < ApplicationController
   include ExceptionHandler
-  
+
   before_action :authenticate_seller, except: [:prefill, :conditions]
+  before_action :set_branch_context, except: [:prefill, :conditions]
   before_action :set_ad, only: [:show, :update, :destroy]
   before_action :load_ad_with_offer, only: [:show]
 
 
   # app/controllers/seller/ads_controller.rb
   def index
-    active_ads = current_seller.ads.active.includes(:category, :reviews)
-    deleted_ads = current_seller.ads.deleted.includes(:category, :reviews)
+    ads_scope = current_seller.ads
+    
+    # Filter by branch if provided
+    if @current_branch
+      ads_scope = ads_scope.for_branch(@current_branch)
+    end
+    
+    active_ads = ads_scope.active.includes(:category, :reviews)
+    deleted_ads = ads_scope.deleted.includes(:category, :reviews)
 
     # Get device_hash if available to exclude seller's own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-    
+
     # Get click event stats for all ads
     active_ads_with_stats = add_click_event_stats(active_ads, device_hash)
     deleted_ads_with_stats = add_click_event_stats(deleted_ads, device_hash)
@@ -196,6 +204,7 @@ class Seller::AdsController < ApplicationController
 
       @ad = current_seller.ads.build(ad_params)
       @ad.is_added_by_sales = false # Set to false when seller creates ad themselves
+      @ad.branch_id = @current_branch&.id if @current_branch
 
       if @ad.save
         # Update seller's last active timestamp when creating an ad
@@ -461,6 +470,13 @@ class Seller::AdsController < ApplicationController
     @current_user = SellerAuthorizeApiRequest.new(request.headers).result
     unless @current_user && @current_user.is_a?(Seller)
       render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
+  end
+
+  def set_branch_context
+    branch_id = request.headers['X-Branch-Id']
+    if branch_id
+      @current_branch = current_seller.branches.find_by(id: branch_id) if current_seller
     end
   end
 
