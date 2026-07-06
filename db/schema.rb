@@ -819,3 +819,374 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_06_104332) do
     t.index ["status"], name: "index_review_requests_on_status"
   end
 
+  create_table "reviews", force: :cascade do |t|
+    t.bigint "ad_id", null: false
+    t.integer "rating", limit: 2, null: false
+    t.text "review"
+    t.text "reply"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "seller_reply"
+    t.json "images", default: []
+    t.uuid "buyer_id"
+    t.string "seller_id"
+    t.index ["ad_id", "rating"], name: "index_reviews_on_ad_id_rating"
+    t.index ["ad_id"], name: "index_reviews_on_ad_id"
+    t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
+    t.index ["seller_id"], name: "index_reviews_on_seller_id"
+    t.index ["seller_id"], name: "index_reviews_seller_id"
+  end
+
+  create_table "riders", force: :cascade do |t|
+    t.string "full_name"
+    t.string "phone_number"
+    t.bigint "age_group_id", null: false
+    t.string "email"
+    t.string "id_number"
+    t.string "driving_license"
+    t.string "vehicle_type"
+    t.string "license_plate"
+    t.string "physical_address"
+    t.string "gender", default: "Male"
+    t.boolean "blocked", default: false
+    t.string "password_digest"
+    t.string "kin_full_name"
+    t.string "kin_relationship"
+    t.string "kin_phone_number"
+    t.bigint "county_id", null: false
+    t.bigint "sub_county_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.string "oauth_expires_at"
+    t.index ["age_group_id"], name: "index_riders_on_age_group_id"
+    t.index ["county_id"], name: "index_riders_on_county_id"
+    t.index ["sub_county_id"], name: "index_riders_on_sub_county_id"
+  end
+
+  create_table "sales_users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "fullname"
+    t.string "email"
+    t.string "password_digest"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.string "oauth_expires_at"
+    t.index ["id"], name: "index_sales_users_on_uuid", unique: true
+  end
+
+  create_table "search_analytics", force: :cascade do |t|
+    t.date "date", null: false
+    t.integer "total_searches_today", default: 0
+    t.integer "unique_search_terms_today", default: 0
+    t.integer "total_search_records", default: 0
+    t.text "popular_searches_all_time"
+    t.text "popular_searches_daily"
+    t.text "popular_searches_weekly"
+    t.text "popular_searches_monthly"
+    t.jsonb "raw_analytics_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["date"], name: "index_search_analytics_on_date", unique: true
+  end
+
+  create_table "sectors", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_sectors_on_name", unique: true
+  end
+
+  create_table "seller_documents", force: :cascade do |t|
+    t.bigint "document_type_id", null: false
+    t.string "document_url"
+    t.date "document_expiry_date"
+    t.boolean "document_verified", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "seller_id", null: false
+    t.index ["document_type_id"], name: "index_seller_documents_on_document_type_id"
+    t.index ["seller_id", "document_type_id"], name: "index_seller_documents_on_seller_id_and_document_type_id", unique: true
+    t.index ["seller_id"], name: "index_seller_documents_on_seller_id"
+  end
+
+  create_table "seller_tiers", force: :cascade do |t|
+    t.bigint "tier_id", null: false
+    t.integer "duration_months", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "expires_at"
+    t.bigint "payment_transaction_id"
+    t.uuid "seller_id", null: false
+    t.index ["expires_at"], name: "index_seller_tiers_on_expires_at"
+    t.index ["payment_transaction_id"], name: "index_seller_tiers_on_payment_transaction_id"
+    t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_id_tier_id"
+    t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
+    t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
+  end
+
+  create_table "sellers", id: :uuid, default: nil, force: :cascade do |t|
+    t.string "fullname"
+    t.string "username"
+    t.string "description"
+    t.string "phone_number", limit: 10
+    t.string "location"
+    t.string "business_registration_number"
+    t.string "enterprise_name"
+    t.bigint "county_id"
+    t.bigint "sub_county_id"
+    t.string "email"
+    t.string "profile_picture"
+    t.bigint "age_group_id"
+    t.string "zipcode"
+    t.string "city"
+    t.string "gender", default: "Male"
+    t.boolean "blocked", default: false
+    t.string "password_digest"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "document_url"
+    t.boolean "deleted", default: false, null: false
+    t.bigint "document_type_id"
+    t.date "document_expiry_date"
+    t.boolean "document_verified", default: false
+    t.integer "ads_count", default: 0, null: false
+    t.datetime "last_active_at"
+    t.string "provider"
+    t.string "uid"
+    t.string "oauth_token"
+    t.string "oauth_refresh_token"
+    t.string "oauth_expires_at"
+    t.boolean "flagged", default: false, null: false
+    t.string "secondary_phone_number", limit: 10
+    t.boolean "phone_provided_by_oauth", default: false
+    t.bigint "carbon_code_id"
+    t.boolean "checkpoint_exported", default: false
+    t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
+    t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
+    t.index ["ads_count"], name: "index_sellers_on_ads_count"
+    t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
+    t.index ["blocked"], name: "index_sellers_on_blocked"
+    t.index ["business_registration_number"], name: "index_sellers_on_business_registration_number", unique: true, where: "((business_registration_number IS NOT NULL) AND ((business_registration_number)::text <> ''::text))"
+    t.index ["carbon_code_id"], name: "index_sellers_on_carbon_code_id"
+    t.index ["county_id"], name: "index_sellers_on_county_id"
+    t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
+    t.index ["id"], name: "index_sellers_on_uuid", unique: true
+    t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
+    t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"
+    t.index ["username"], name: "index_sellers_on_username", unique: true, where: "((username IS NOT NULL) AND ((username)::text <> ''::text))"
+  end
+
+  create_table "sub_counties", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "sub_county_code", null: false
+    t.bigint "county_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["county_id"], name: "index_sub_counties_on_county_id"
+  end
+
+  create_table "subcategories", force: :cascade do |t|
+    t.string "name"
+    t.integer "category_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "ads_count", default: 0, null: false
+    t.text "image_url"
+    t.index ["ads_count"], name: "index_subcategories_on_ads_count"
+    t.index ["category_id", "name"], name: "index_subcategories_on_category_id_name"
+  end
+
+  create_table "tier_features", force: :cascade do |t|
+    t.bigint "tier_id", null: false
+    t.string "feature_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tier_id"], name: "index_tier_features_on_tier_id"
+  end
+
+  create_table "tier_pricings", force: :cascade do |t|
+    t.bigint "tier_id", null: false
+    t.integer "duration_months", null: false
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tier_id"], name: "index_tier_pricings_on_tier_id"
+  end
+
+  create_table "tiers", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "ads_limit", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "vehicle_types", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "visitors", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "visitor_id", null: false
+    t.string "device_fingerprint_hash"
+    t.string "first_source"
+    t.string "first_referrer"
+    t.string "first_utm_source"
+    t.string "first_utm_medium"
+    t.string "first_utm_campaign"
+    t.string "first_utm_content"
+    t.string "first_utm_term"
+    t.string "ip_address"
+    t.string "country"
+    t.string "city"
+    t.string "region"
+    t.string "timezone"
+    t.jsonb "device_info", default: {}
+    t.string "user_agent"
+    t.datetime "first_visit_at", null: false
+    t.datetime "last_visit_at", null: false
+    t.integer "visit_count", default: 1, null: false
+    t.boolean "has_clicked_ad", default: false
+    t.datetime "first_ad_click_at"
+    t.datetime "last_ad_click_at"
+    t.integer "ad_click_count", default: 0
+    t.boolean "is_internal_user", default: false
+    t.uuid "registered_user_id"
+    t.string "registered_user_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_fingerprint_hash"], name: "index_visitors_on_device_fingerprint_hash"
+    t.index ["first_source"], name: "index_visitors_on_first_source"
+    t.index ["first_visit_at"], name: "index_visitors_on_first_visit_at"
+    t.index ["has_clicked_ad"], name: "index_visitors_on_has_clicked_ad"
+    t.index ["ip_address"], name: "index_visitors_on_ip_address"
+    t.index ["is_internal_user"], name: "index_visitors_on_is_internal_user"
+    t.index ["last_visit_at"], name: "index_visitors_on_last_visit_at"
+    t.index ["registered_user_id", "registered_user_type"], name: "index_visitors_on_registered_user_id_and_registered_user_type"
+    t.index ["visitor_id"], name: "index_visitors_on_visitor_id", unique: true
+  end
+
+  create_table "whatsapp_message_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "phone_number", null: false
+    t.string "template_name", null: false
+    t.string "message_id"
+    t.boolean "sent_successfully", default: false
+    t.text "error_message"
+    t.datetime "sent_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phone_number"], name: "index_whatsapp_message_logs_on_phone_number"
+    t.index ["seller_id", "template_name"], name: "index_whatsapp_message_logs_on_seller_id_and_template_name", unique: true
+    t.index ["sent_at"], name: "index_whatsapp_message_logs_on_sent_at"
+  end
+
+  create_table "whatsapp_product_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "phone_number", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "step", default: 1, null: false
+    t.text "product_data"
+    t.datetime "last_message_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phone_number"], name: "index_whatsapp_product_sessions_on_phone_number"
+    t.index ["seller_id", "status"], name: "index_whatsapp_product_sessions_on_seller_id_and_status"
+    t.index ["status"], name: "index_whatsapp_product_sessions_on_status"
+  end
+
+  create_table "wish_lists", force: :cascade do |t|
+    t.bigint "ad_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "seller_id"
+    t.uuid "buyer_id"
+    t.index ["ad_id"], name: "index_wish_lists_on_ad_id"
+    t.index ["buyer_id"], name: "index_wish_lists_on_buyer_id"
+    t.index ["seller_id"], name: "index_wish_lists_on_seller_id"
+  end
+
+  add_foreign_key "ad_searches", "buyers", on_delete: :cascade
+  add_foreign_key "ad_searches", "buyers", on_delete: :cascade
+  add_foreign_key "ads", "branches"
+  add_foreign_key "ads", "categories"
+  add_foreign_key "ads", "sellers", on_delete: :cascade
+  add_foreign_key "ads", "sellers", on_delete: :cascade
+  add_foreign_key "ads", "subcategories"
+  add_foreign_key "branches", "sellers"
+  add_foreign_key "buyers", "age_groups"
+  add_foreign_key "buyers", "counties"
+  add_foreign_key "buyers", "educations"
+  add_foreign_key "buyers", "employments"
+  add_foreign_key "buyers", "incomes"
+  add_foreign_key "buyers", "sectors"
+  add_foreign_key "buyers", "sub_counties"
+  add_foreign_key "call_queues", "sales_users", column: "resolved_by_id"
+  add_foreign_key "call_queues", "sellers"
+  add_foreign_key "call_records", "sales_users"
+  add_foreign_key "cart_items", "ads"
+  add_foreign_key "cart_items", "buyers", on_delete: :cascade
+  add_foreign_key "cart_items", "buyers", on_delete: :cascade
+  add_foreign_key "click_events", "ads"
+  add_foreign_key "click_events", "buyers", on_delete: :cascade
+  add_foreign_key "click_events", "buyers", on_delete: :cascade
+  add_foreign_key "conversations", "admins", on_delete: :cascade
+  add_foreign_key "conversations", "admins", on_delete: :cascade
+  add_foreign_key "conversations", "ads"
+  add_foreign_key "conversations", "buyers", on_delete: :cascade
+  add_foreign_key "conversations", "buyers", on_delete: :cascade
+  add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
+  add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
+  add_foreign_key "conversations", "sellers", on_delete: :cascade
+  add_foreign_key "conversations", "sellers", on_delete: :cascade
+  add_foreign_key "email_communication_logs", "sellers"
+  add_foreign_key "issue_attachments", "issues"
+  add_foreign_key "issue_comments", "issues"
+  add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
+  add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
+  add_foreign_key "messages", "ads", on_delete: :nullify
+  add_foreign_key "messages", "conversations", on_delete: :cascade
+  add_foreign_key "offer_ads", "ads"
+  add_foreign_key "offer_ads", "offers"
+  add_foreign_key "offers", "sellers", on_delete: :cascade
+  add_foreign_key "offers", "sellers", on_delete: :cascade
+  add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
+  add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
+  add_foreign_key "payment_transactions", "tier_pricings"
+  add_foreign_key "payment_transactions", "tiers"
+  add_foreign_key "review_requests", "sellers"
+  add_foreign_key "reviews", "ads"
+  add_foreign_key "reviews", "buyers", on_delete: :cascade
+  add_foreign_key "reviews", "buyers", on_delete: :cascade
+  add_foreign_key "riders", "age_groups"
+  add_foreign_key "riders", "counties"
+  add_foreign_key "riders", "sub_counties"
+  add_foreign_key "seller_documents", "document_types"
+  add_foreign_key "seller_documents", "sellers", on_delete: :cascade
+  add_foreign_key "seller_documents", "sellers", on_delete: :cascade
+  add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
+  add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
+  add_foreign_key "seller_tiers", "tiers"
+  add_foreign_key "sellers", "age_groups"
+  add_foreign_key "sellers", "carbon_codes"
+  add_foreign_key "sellers", "counties"
+  add_foreign_key "sellers", "document_types"
+  add_foreign_key "sellers", "sub_counties"
+  add_foreign_key "sub_counties", "counties"
+  add_foreign_key "tier_features", "tiers"
+  add_foreign_key "tier_pricings", "tiers"
+  add_foreign_key "whatsapp_message_logs", "sellers"
+  add_foreign_key "whatsapp_product_sessions", "sellers"
+  add_foreign_key "wish_lists", "ads"
+  add_foreign_key "wish_lists", "buyers", on_delete: :cascade
+  add_foreign_key "wish_lists", "buyers", on_delete: :cascade
+  add_foreign_key "wish_lists", "sellers", on_delete: :cascade
+  add_foreign_key "wish_lists", "sellers", on_delete: :cascade
+end
