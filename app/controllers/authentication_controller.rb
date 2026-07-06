@@ -210,7 +210,7 @@ class AuthenticationController < ApplicationController
         # Update last_active_at for sellers before logout
         if role == 'Seller' && user_id
           seller = Seller.find_by(id: user_id)
-          seller&.update_last_active!
+          seller&.update_column(:last_active_at, Time.current)
         end
         
         # Blacklist the token

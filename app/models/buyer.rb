@@ -97,11 +97,6 @@ class Buyer < ApplicationRecord
     'buyer'
   end
 
-  # Update last active timestamp
-  def update_last_active!
-    update_column(:last_active_at, Time.current)
-  end
-
   def profile_completion_percentage
     # All fields (required + optional) for a more realistic completion percentage
     all_fields = [

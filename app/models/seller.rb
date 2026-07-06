@@ -139,11 +139,6 @@ class Seller < ApplicationRecord
     'seller'
   end
 
-  # Update last active timestamp
-  def update_last_active!
-    update_column(:last_active_at, Time.current)
-  end
-
   # Associate guest click events with this seller based on device hash
   def associate_guest_clicks
     return if new_record? # Only run after save
