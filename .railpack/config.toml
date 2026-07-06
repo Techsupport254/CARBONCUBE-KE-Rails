@@ -1,0 +1,10 @@
+[ruby]
+version = "3.4.8"
+use_prebuilt = true
+
+[npm]
+use_cache = true
+
+[build]
+cache = true
+cache_dir = "/app/cache"
