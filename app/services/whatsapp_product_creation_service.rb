@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'whats_app_ai_prefill_service'
-
-class WhatsAppProductCreationService
+class WhatsappProductCreationService
   COMMAND_START = 'ADD'
   COMMAND_CANCEL = 'CANCEL'
   COMMAND_HELP = 'HELP'
@@ -576,7 +574,7 @@ class WhatsAppProductCreationService
       }
     end
   rescue => e
-    Rails.logger.error "WhatsAppProductCreationService: Error creating product - #{e.message}"
+    Rails.logger.error "WhatsappProductCreationService: Error creating product - #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
     
     {
