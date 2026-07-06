@@ -114,7 +114,7 @@ class WhatsappAiPrefillService
       count: prices.length
     }
   rescue => e
-    Rails.logger.error "WhatsAppAIPrefillService: Error getting price suggestions - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error getting price suggestions - #{e.message}"
     { min: nil, max: nil, median: nil, recommended: nil, count: 0 }
   end
   
@@ -149,7 +149,7 @@ class WhatsappAiPrefillService
     
     {}
   rescue => e
-    Rails.logger.error "WhatsAppAIPrefillService: Error fetching specifications - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error fetching specifications - #{e.message}"
     {}
   end
   
@@ -170,7 +170,7 @@ class WhatsappAiPrefillService
       build_template_description(title, category_name, subcategory_name, strategy)
     end
   rescue => e
-    Rails.logger.error "WhatsAppAIPrefillService: Error generating description - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error generating description - #{e.message}"
     "Quality product available. Contact seller for more details."
   end
   
