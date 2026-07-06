@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class WhatsAppAiPrefillService
+class WhatsappAiPrefillService
   # Analyze user input to extract brand, model, and suggest improvements
   def self.analyze_input(title, category = nil)
     return { brand: nil, model: nil, suggested_title: nil, confidence: 0 } if title.blank?
@@ -35,7 +35,7 @@ class WhatsAppAiPrefillService
       }
     end
   rescue => e
-    Rails.logger.error "WhatsAppAiPrefillService: Error analyzing input - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error analyzing input - #{e.message}"
     { brand: nil, model: nil, suggested_title: nil, confidence: 0 }
   end
   
@@ -75,7 +75,7 @@ class WhatsAppAiPrefillService
     
     { category_id: nil, category_name: nil, confidence: 0 }
   rescue => e
-    Rails.logger.error "WhatsAppAiPrefillService: Error suggesting category - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error suggesting category - #{e.message}"
     { category_id: nil, category_name: nil, confidence: 0 }
   end
   
@@ -114,7 +114,7 @@ class WhatsAppAiPrefillService
       count: prices.length
     }
   rescue => e
-    Rails.logger.error "WhatsAppAiPrefillService: Error getting price suggestions - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error getting price suggestions - #{e.message}"
     { min: nil, max: nil, median: nil, recommended: nil, count: 0 }
   end
   
@@ -149,7 +149,7 @@ class WhatsAppAiPrefillService
     
     {}
   rescue => e
-    Rails.logger.error "WhatsAppAiPrefillService: Error fetching specifications - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error fetching specifications - #{e.message}"
     {}
   end
   
@@ -170,7 +170,7 @@ class WhatsAppAiPrefillService
       build_template_description(title, category_name, subcategory_name, strategy)
     end
   rescue => e
-    Rails.logger.error "WhatsAppAiPrefillService: Error generating description - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error generating description - #{e.message}"
     "Quality product available. Contact seller for more details."
   end
   
