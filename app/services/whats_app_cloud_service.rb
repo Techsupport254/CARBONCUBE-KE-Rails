@@ -3,7 +3,6 @@
 require 'net/http'
 require 'uri'
 require 'json'
-require_relative 'whatsapp_product_creation_service'
 
 class WhatsAppCloudService
   GRAPH_URL = 'https://graph.facebook.com/v22.0'
@@ -212,7 +211,7 @@ class WhatsAppCloudService
     
     # Check if this is a seller using product creation commands
     if user.is_a?(Seller)
-      product_creation_result = WhatsAppProductCreationService.process_message(
+      product_creation_result = WhatsappProductCreationService.process_message(
         user,
         local_number,
         content,
