@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class WhatsAppAIPrefillService
+class WhatsappAiPrefillService
   # Analyze user input to extract brand, model, and suggest improvements
   def self.analyze_input(title, category = nil)
     return { brand: nil, model: nil, suggested_title: nil, confidence: 0 } if title.blank?
@@ -35,7 +35,7 @@ class WhatsAppAIPrefillService
       }
     end
   rescue => e
-    Rails.logger.error "WhatsAppAIPrefillService: Error analyzing input - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error analyzing input - #{e.message}"
     { brand: nil, model: nil, suggested_title: nil, confidence: 0 }
   end
   
@@ -75,7 +75,7 @@ class WhatsAppAIPrefillService
     
     { category_id: nil, category_name: nil, confidence: 0 }
   rescue => e
-    Rails.logger.error "WhatsAppAIPrefillService: Error suggesting category - #{e.message}"
+    Rails.logger.error "WhatsappAiPrefillService: Error suggesting category - #{e.message}"
     { category_id: nil, category_name: nil, confidence: 0 }
   end
   
