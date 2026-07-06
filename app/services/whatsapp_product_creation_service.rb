@@ -140,7 +140,7 @@ class WhatsAppProductCreationService
     end
     
     # Use AI to analyze title and detect brand
-    ai_analysis = WhatsappAiPrefillService.analyze_input(title)
+    ai_analysis = WhatsAppAiPrefillService.analyze_input(title)
     
     session.update_product_data('title', title)
     
@@ -229,7 +229,7 @@ class WhatsAppProductCreationService
     
     if title && category_id
       category = Category.find_by(id: category_id)
-      ai_description = WhatsappAiPrefillService.generate_description(title, category, specifications)
+      ai_description = WhatsAppAiPrefillService.generate_description(title, category, specifications)
       session.update_product_data('ai_description', ai_description)
     end
     
@@ -275,7 +275,7 @@ class WhatsAppProductCreationService
     # Get AI price suggestions
     title = session.get_product_data('title')
     category_id = session.get_product_data('category_id')
-    price_suggestions = WhatsappAiPrefillService.get_price_suggestions(title, category_id) if title
+    price_suggestions = WhatsAppAiPrefillService.get_price_suggestions(title, category_id) if title
     
     session.advance_step!
     
@@ -347,7 +347,7 @@ class WhatsAppProductCreationService
     else
       # Use AI to suggest category based on title
       title = session.get_product_data('title')
-      ai_suggestion = WhatsappAiPrefillService.suggest_category(title) if title
+      ai_suggestion = WhatsAppAiPrefillService.suggest_category(title) if title
       
       categories = Category.all.limit(10).pluck(:name)
       category_list = categories.map.with_index(1) { |cat, i| "#{i}. #{cat}" }.join("\n")
@@ -384,7 +384,7 @@ class WhatsAppProductCreationService
     title = session.get_product_data('title')
     category_id = session.get_product_data('category_id')
     if title && category_id
-      specs = WhatsappAiPrefillService.fetch_specifications(title, category_id)
+      specs = WhatsAppAiPrefillService.fetch_specifications(title, category_id)
       if specs && specs.any?
         session.update_product_data('specifications', specs)
       end
