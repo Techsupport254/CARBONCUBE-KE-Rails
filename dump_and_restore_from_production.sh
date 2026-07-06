@@ -70,15 +70,15 @@ echo -e "${YELLOW}Step 2: Restoring to local database...${NC}"
 echo "Local database: carbon_development"
 echo ""
 
-# Drop existing database connections (if any) before restore
-echo "Closing existing connections to local database..."
-psql "$LOCAL_DB" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'carbon_development' AND pid <> pg_backend_pid();" 2>/dev/null || true
+# Drop and recreate the database for a clean restore
+echo "Dropping existing database for clean restore..."
+psql -d "postgresql://postgres:postgres@localhost:5432/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
+echo "Creating fresh database..."
+psql -d "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
 
 # Restore using pg_restore
 pg_restore \
   --dbname="$LOCAL_DB" \
-  --clean \
-  --if-exists \
   --no-owner \
   --no-privileges \
   --verbose \
@@ -97,6 +97,15 @@ echo ""
 # Step 3: Run pending migrations
 echo -e "${YELLOW}Step 3: Running pending migrations...${NC}"
 echo ""
+
+# Check if whatsapp_product_sessions table already exists (from production dump)
+TABLE_EXISTS=$(psql "$LOCAL_DB" -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'whatsapp_product_sessions')" 2>/dev/null || echo "f")
+
+if [ "$TABLE_EXISTS" = "t" ]; then
+  echo "whatsapp_product_sessions table already exists in production dump"
+  echo "Marking migration 20260706104332 as already run..."
+  psql "$LOCAL_DB" -c "INSERT INTO schema_migrations (version) VALUES ('20260706104332') ON CONFLICT (version) DO NOTHING;" 2>/dev/null || true
+fi
 
 # Run pending migrations
 bundle exec rake db:migrate \
