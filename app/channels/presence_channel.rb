@@ -218,8 +218,8 @@ class PresenceChannel < ApplicationCable::Channel
   def update_user_last_active
     # Update the user's last_active_at timestamp when they send a heartbeat
     user = connection.current_user
-    if user.respond_to?(:update_last_active!)
-      user.update_last_active!
+    if user.respond_to?(:last_active_at)
+      user.update_column(:last_active_at, Time.current)
     end
   rescue => e
     # Don't re-raise to prevent connection issues

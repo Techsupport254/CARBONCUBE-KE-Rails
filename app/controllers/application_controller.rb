@@ -1,6 +1,7 @@
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::Base  
   include ExceptionHandler
+  include ActivityTracking
 
   # Protect from CSRF for non-API endpoints
   protect_from_forgery with: :exception, unless: -> { request.format.json? }
