@@ -3,6 +3,7 @@
 require 'net/http'
 require 'uri'
 require 'json'
+require_relative 'whatsapp_product_creation_service'
 
 class WhatsAppCloudService
   GRAPH_URL = 'https://graph.facebook.com/v22.0'
@@ -206,6 +207,49 @@ class WhatsAppCloudService
       return
     end
 
+    # Extract content and media URLs
+    content, media_urls = extract_message_content(msg_data)
+    
+    # Check if this is a seller using product creation commands
+    if user.is_a?(Seller)
+      product_creation_result = WhatsAppProductCreationService.process_message(
+        user,
+        local_number,
+        content,
+        media_urls
+      )
+      
+      if product_creation_result.is_a?(Hash) && product_creation_result[:should_respond]
+        send_message(from_number, product_creation_result[:response])
+        Rails.logger.info "[WhatsAppCloudService] Sent product creation response to seller #{user.id}"
+        return
+      end
+    end
+
+    # Find or create a conversation
+    # For now, we'll try to find the most recent conversation for this user
+    # or create a new one with a default admin/support if it's a general inquiry
+    conversation = find_or_create_incoming_conversation(user)
+    
+    return unless conversation
+
+    # Create the message
+    # We skip callbacks that might trigger an infinite loop (sending back a notification)
+    message = conversation.messages.build(
+      content: content,
+      sender: user,
+      whatsapp_message_id: msg_data['id'],
+      status: Message::STATUS_SENT # Meta already sent it to us
+    )
+    
+    if message.save
+      Rails.logger.info "[WhatsAppCloudService] Saved incoming message from #{user.class.name} #{user.id}"
+    else
+      Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
+    end
+  end
+  
+  def self.extract_message_content(msg_data)
     content = case msg_data['type']
               when 'text'
                 msg_data['text']['body']
@@ -238,28 +282,17 @@ class WhatsAppCloudService
               else
                 "[Unsupported Message: #{msg_data['type']}]"
               end
-
-    # Find or create a conversation
-    # For now, we'll try to find the most recent conversation for this user
-    # or create a new one with a default admin/support if it's a general inquiry
-    conversation = find_or_create_incoming_conversation(user)
     
-    return unless conversation
-
-    # Create the message
-    # We skip callbacks that might trigger an infinite loop (sending back a notification)
-    message = conversation.messages.build(
-      content: content,
-      sender: user,
-      whatsapp_message_id: msg_data['id'],
-      status: Message::STATUS_SENT # Meta already sent it to us
-    )
-    
-    if message.save
-      Rails.logger.info "[WhatsAppCloudService] Saved incoming message from #{user.class.name} #{user.id}"
-    else
-      Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
+    # Extract media URLs for product creation
+    media_urls = []
+    if ['image', 'video'].include?(msg_data['type'])
+      media_data = msg_data[msg_data['type']]
+      media_id = media_data['id']
+      url = download_and_upload_media(media_id, msg_data['type'])
+      media_urls << url if url
     end
+    
+    [content, media_urls]
   end
 
   def self.download_and_upload_media(media_id, type)
