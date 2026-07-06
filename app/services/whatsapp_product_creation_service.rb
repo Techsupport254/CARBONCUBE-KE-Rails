@@ -275,7 +275,7 @@ class WhatsAppProductCreationService
     # Get AI price suggestions
     title = session.get_product_data('title')
     category_id = session.get_product_data('category_id')
-    price_suggestions = WhatsAppAIPrefillService.get_price_suggestions(title, category_id) if title
+    price_suggestions = WhatsappAiPrefillService.get_price_suggestions(title, category_id) if title
     
     session.advance_step!
     
@@ -347,7 +347,7 @@ class WhatsAppProductCreationService
     else
       # Use AI to suggest category based on title
       title = session.get_product_data('title')
-      ai_suggestion = WhatsAppAIPrefillService.suggest_category(title) if title
+      ai_suggestion = WhatsappAiPrefillService.suggest_category(title) if title
       
       categories = Category.all.limit(10).pluck(:name)
       category_list = categories.map.with_index(1) { |cat, i| "#{i}. #{cat}" }.join("\n")
@@ -384,7 +384,7 @@ class WhatsAppProductCreationService
     title = session.get_product_data('title')
     category_id = session.get_product_data('category_id')
     if title && category_id
-      specs = WhatsAppAIPrefillService.fetch_specifications(title, category_id)
+      specs = WhatsappAiPrefillService.fetch_specifications(title, category_id)
       if specs && specs.any?
         session.update_product_data('specifications', specs)
       end
