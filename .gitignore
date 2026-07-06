@@ -60,6 +60,3 @@ config/ga4_credentials.json
 
 # Production environment secrets file
 .env.production
-
-# Railpack cache directory (keep config file)
-.railpack/cache
