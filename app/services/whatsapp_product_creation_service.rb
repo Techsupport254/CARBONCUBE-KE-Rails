@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'whatsapp_ai_prefill_service'
+require_relative 'whats_app_ai_prefill_service'
 
 class WhatsAppProductCreationService
   COMMAND_START = 'ADD'
