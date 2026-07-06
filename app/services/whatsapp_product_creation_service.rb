@@ -140,7 +140,7 @@ class WhatsAppProductCreationService
     end
     
     # Use AI to analyze title and detect brand
-    ai_analysis = WhatsAppAIPrefillService.analyze_input(title)
+    ai_analysis = WhatsappAiPrefillService.analyze_input(title)
     
     session.update_product_data('title', title)
     
@@ -229,7 +229,7 @@ class WhatsAppProductCreationService
     
     if title && category_id
       category = Category.find_by(id: category_id)
-      ai_description = WhatsAppAIPrefillService.generate_description(title, category, specifications)
+      ai_description = WhatsappAiPrefillService.generate_description(title, category, specifications)
       session.update_product_data('ai_description', ai_description)
     end
     
