@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_03_100009) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_06_104332) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -1088,6 +1088,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_03_100009) do
     t.index ["sent_at"], name: "index_whatsapp_message_logs_on_sent_at"
   end
 
+  create_table "whatsapp_product_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "phone_number", null: false
+    t.string "status", default: "pending", null: false
+    t.integer "step", default: 1, null: false
+    t.text "product_data"
+    t.datetime "last_message_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["phone_number"], name: "index_whatsapp_product_sessions_on_phone_number"
+    t.index ["seller_id", "status"], name: "index_whatsapp_product_sessions_on_seller_id_and_status"
+    t.index ["status"], name: "index_whatsapp_product_sessions_on_status"
+  end
+
   create_table "wish_lists", force: :cascade do |t|
     t.bigint "ad_id", null: false
     t.datetime "created_at", null: false
@@ -1169,6 +1183,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_03_100009) do
   add_foreign_key "tier_features", "tiers"
   add_foreign_key "tier_pricings", "tiers"
   add_foreign_key "whatsapp_message_logs", "sellers"
+  add_foreign_key "whatsapp_product_sessions", "sellers"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade

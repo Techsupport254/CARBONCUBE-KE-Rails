@@ -35,10 +35,13 @@ class WebhooksController < ApplicationController
     raw_body = request.raw_post.to_s
     signature = request.headers['X-Hub-Signature-256']
 
-    unless verify_signature(raw_body, signature)
-      Rails.logger.warn '[Webhooks#whatsapp] Invalid X-Hub-Signature-256'
-      head :forbidden
-      return
+    # Skip signature verification in development mode for testing
+    unless Rails.env.development?
+      unless verify_signature(raw_body, signature)
+        Rails.logger.warn '[Webhooks#whatsapp] Invalid X-Hub-Signature-256'
+        head :forbidden
+        return
+      end
     end
 
     payload = JSON.parse(raw_body)

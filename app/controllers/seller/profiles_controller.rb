@@ -111,12 +111,6 @@ class Seller::ProfilesController < ApplicationController
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       update_params[:document_url] = uploaded_document_url if uploaded_document_url
       
-      # Track if phone is being added (for welcome WhatsApp when user didn't have phone from OAuth)
-      phone_number_before = @seller.phone_number
-      phone_being_added = update_params[:phone_number].present? && phone_number_before.blank?
-      # When adding phone via profile/completion modal, mark as not from OAuth
-      update_params[:phone_provided_by_oauth] = false if phone_being_added
-
       # Resolve carbon_code string to carbon_code_id (for OAuth completion modal)
       carbon_code_param = update_params.delete(:carbon_code)
       carbon_code = nil
@@ -134,11 +128,6 @@ class Seller::ProfilesController < ApplicationController
       
       if @seller.update(update_params)
         carbon_code&.increment!(:times_used)
-        # Send welcome WhatsApp when phone was just added (e.g. OAuth user completing signup modal)
-        if phone_being_added && @seller.phone_number.present? && !@seller.phone_provided_by_oauth
-          Rails.logger.info "📱 Sending welcome WhatsApp after phone added via profile - seller #{@seller.email}"
-          WhatsAppNotificationService.send_welcome_message_async(@seller)
-        end
         seller_data = SellerSerializer.new(@seller).as_json
         # Check if email is verified
         # Google OAuth users are treated as automatically verified
