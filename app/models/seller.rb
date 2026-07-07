@@ -139,6 +139,13 @@ class Seller < ApplicationRecord
     'seller'
   end
 
+  def update_last_active!
+    update(last_active_at: Time.current)
+  rescue => e
+    Rails.logger.error "Failed to update last_active_at: #{e.message}"
+    # Don't fail the operation if this update fails
+  end
+
   # Associate guest click events with this seller based on device hash
   def associate_guest_clicks
     return if new_record? # Only run after save
