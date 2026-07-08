@@ -187,7 +187,7 @@ class ImageAnalysisService
     confidences.sum / confidences.length.to_f
   end
   
-  def self estimate_condition(analysis_data)
+  def self.estimate_condition(analysis_data)
     # Estimate condition based on image quality indicators
     # This is a simplified version - could be enhanced with more sophisticated analysis
     return nil unless analysis_data['quality']
