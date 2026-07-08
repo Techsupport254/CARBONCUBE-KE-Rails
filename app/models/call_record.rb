@@ -17,6 +17,13 @@ class CallRecord < ApplicationRecord
     outbound: 1 
   }
 
+  # Call Source: queue, proactive_outreach, manual
+  enum call_source: {
+    queue: 'queue',
+    proactive_outreach: 'proactive_outreach',
+    manual: 'manual'
+  }
+
   validates :status, presence: true
   validates :call_type, presence: true
   validates :rating_token, uniqueness: true, allow_nil: true

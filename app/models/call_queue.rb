@@ -7,9 +7,8 @@ class CallQueue < ApplicationRecord
   NO_ADS_UPLOADED = 'no_ads_uploaded'
   INACTIVE_SELLER = 'inactive_seller'
   NEW_SELLER_ONBOARDING = 'new_seller_onboarding'
-  LOW_ENGAGEMENT = 'low_engagement'
   DOCUMENT_EXPIRY = 'document_expiry'
-  LOW_RATING = 'low_rating'
+  PROACTIVE_OUTREACH = 'proactive_outreach'
 
   # Queue types mapping for API
   QUEUE_TYPES = {
@@ -17,9 +16,8 @@ class CallQueue < ApplicationRecord
     NO_ADS_UPLOADED => 'No Ads Uploaded',
     INACTIVE_SELLER => 'Inactive Seller',
     NEW_SELLER_ONBOARDING => 'New Seller Onboarding',
-    LOW_ENGAGEMENT => 'Low Engagement',
     DOCUMENT_EXPIRY => 'Document Expiry',
-    LOW_RATING => 'Low Rating'
+    PROACTIVE_OUTREACH => 'Proactive Outreach'
   }.freeze
 
   # Status
@@ -43,7 +41,7 @@ class CallQueue < ApplicationRecord
   # Validations
   validates :queue_type, presence: true, inclusion: {
     in: [UNREAD_MESSAGES, NO_ADS_UPLOADED, INACTIVE_SELLER, NEW_SELLER_ONBOARDING,
-         LOW_ENGAGEMENT, DOCUMENT_EXPIRY, LOW_RATING]
+         DOCUMENT_EXPIRY, PROACTIVE_OUTREACH]
   }
   validates :status, presence: true, inclusion: {
     in: [STATUS_PENDING, STATUS_IN_PROGRESS, STATUS_RESOLVED]

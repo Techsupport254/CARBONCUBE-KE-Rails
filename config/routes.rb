@@ -739,6 +739,7 @@ Rails.application.routes.draw do
         get :queue
         get :queue_types
         get :logs
+        get :proactive_outreach
         post :log_call
         post :send_email_direct
       end

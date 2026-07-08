@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_06_104332) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_141317) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -246,6 +246,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_06_104332) do
     t.boolean "follow_up_required"
     t.date "follow_up_date"
     t.string "follow_up_action"
+    t.string "call_source"
     t.index ["customer_type", "customer_id"], name: "index_call_records_on_customer"
     t.index ["sales_user_id"], name: "index_call_records_on_sales_user_id"
   end

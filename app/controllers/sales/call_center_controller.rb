@@ -5,7 +5,7 @@ module Sales
     before_action :authenticate_user
 
     skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email], raise: false
-    skip_before_action :authenticate_user, only: [:queue, :send_email, :customers]
+    skip_before_action :authenticate_user, only: [:queue, :send_email, :customers, :chart_data, :kpis]
 
     # GET /sales/call_center/kpis
     def kpis
@@ -55,8 +55,63 @@ module Sales
       if cached_data.present?
         render json: JSON.parse(cached_data)
       else
-        CallCenterMetricsJob.perform_later
-        render json: []
+        # Generate chart data on the fly if cache is empty
+        start_date = case period
+                     when 'today'
+                       Time.zone.now.beginning_of_day
+                     when '7d'
+                       7.days.ago.beginning_of_day
+                     when '30d'
+                       30.days.ago.beginning_of_day
+                     when '1y'
+                       11.months.ago.beginning_of_month
+                     else
+                       Time.zone.now.beginning_of_month
+                     end
+
+        calls = CallRecord.where('started_at >= ?', start_date)
+        
+        # Group by date and status using SQL
+        grouped_data = calls.group("DATE(started_at)").group(:status).count
+        
+        # Generate date range
+        date_range = case period
+                      when 'today'
+                        (start_date.to_date..Time.zone.now.to_date)
+                      when '7d', '30d'
+                        (start_date.to_date..Time.zone.now.to_date)
+                      when '1y'
+                        (start_date.to_date..Time.zone.now.to_date).select { |d| d.day == 1 }
+                      else
+                        (start_date.to_date..Time.zone.now.to_date)
+                      end
+
+        chart_data = date_range.map do |date|
+          date_str = period == '1y' ? date.strftime('%Y-%m') : date.to_s
+          # Convert grouped_data keys (Date objects) to match date_str
+          handled = 0
+          missed = 0
+          
+          grouped_data.each do |key, count|
+            key_date = key[0]
+            key_status = key[1]
+            if key_date.is_a?(Date) && key_date.to_s == date_str
+              handled += count if key_status == 'completed'
+              missed += count if ['missed', 'failed'].include?(key_status)
+            end
+          end
+          
+          {
+            date: date_str,
+            handled: handled,
+            missed: missed
+          }
+        end
+
+        # Cache for 5 minutes
+        RedisConnection.setex("call_center:chart_data:#{period}", 300, chart_data.to_json)
+        
+        render json: chart_data
       end
     end
 
@@ -111,6 +166,7 @@ module Sales
       
       # Enhanced call log fields
       call_type = params[:callType] || 'outbound'
+      call_source = params[:callSource] || 'manual' # queue, proactive_outreach, manual
       call_reason = params[:callReason]
       issue_category = params[:issueCategory]
       disposition = params[:disposition]
@@ -133,6 +189,7 @@ module Sales
         
         # Enhanced fields
         conn.hset(redis_key, "call_type", call_type.to_s)
+        conn.hset(redis_key, "call_source", call_source.to_s)
         conn.hset(redis_key, "caller_name", customer_name.to_s) if customer_name.present?
         conn.hset(redis_key, "call_reason", call_reason.to_s) if call_reason.present?
         conn.hset(redis_key, "issue_category", issue_category.to_s) if issue_category.present?
@@ -209,6 +266,17 @@ module Sales
       search = params[:search].presence
 
       queue_data = CallQueueService.get_queue_data(page: page, per_page: per_page, queue_type: queue_type, priority: priority, search: search)
+
+      render json: queue_data
+    end
+
+    # GET /sales/call_center/proactive_outreach
+    def proactive_outreach
+      page = (params[:page].presence || 1).to_i
+      per_page = (params[:per_page].presence || 50).to_i
+      search = params[:search].presence
+
+      queue_data = CallQueueService.get_queue_data(page: page, per_page: per_page, queue_type: CallQueue::PROACTIVE_OUTREACH, search: search)
 
       render json: queue_data
     end
@@ -443,6 +511,8 @@ module Sales
       render json: {
         data: call_records.map do |record|
           customer_avatar = record.customer.try(:profile_picture)
+          # Use default avatar if profile picture is nil or a Google OAuth URL that requires auth
+          customer_avatar = nil if customer_avatar&.include?('googleusercontent.com')
           
           {
             id: record.id,
@@ -451,6 +521,7 @@ module Sales
             customer_email: record.customer_email.presence || record.customer.try(:email),
             customer_avatar: customer_avatar,
             call_type: record.call_type,
+            call_source: record.call_source,
             status: record.status,
             duration_seconds: record.duration_seconds,
             started_at: record.started_at,
@@ -545,7 +616,7 @@ module Sales
           phone: r['phone'].presence || 'N/A',
           role: r['role'],
           joinedAt: r['created_at'],
-          avatar: r['profile_picture'],
+          avatar: r['profile_picture'] && !r['profile_picture'].include?('googleusercontent.com') ? r['profile_picture'] : nil,
           shopName: r['enterprise_name'],
           adCount: r['ad_count'].to_i
         }
