@@ -23,6 +23,9 @@ class CallPersistJob < ApplicationJob
       call_type = log_data['call_type']
       call_type = 'outbound' unless CallRecord.call_types.key?(call_type)
 
+      call_source = log_data['call_source']
+      call_source = 'manual' unless CallRecord.call_sources.key?(call_source)
+
       # Find customer (Seller first, then Buyer)
       customer = nil
       if log_data['customer_email'].present?
@@ -47,6 +50,7 @@ class CallPersistJob < ApplicationJob
         duration_seconds: log_data['duration'].to_i,
         started_at: Time.at(log_data['updated_at'].to_i),
         call_type: call_type,
+        call_source: call_source,
         caller_name: log_data['caller_name'],
         caller_phone: log_data['to'],
         customer_email: log_data['customer_email'],
