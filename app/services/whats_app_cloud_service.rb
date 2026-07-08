@@ -295,6 +295,13 @@ class WhatsAppCloudService
       if product_creation_result.is_a?(Hash) && product_creation_result[:should_respond]
         send_message(from_number, product_creation_result[:response])
         Rails.logger.info "[WhatsAppCloudService] Sent product creation response to seller #{user.id}"
+        
+        # Handle interactive category selection trigger
+        if product_creation_result[:trigger_category_selection]
+          category_result = WhatsappProductCreationService.send_category_selection(from_number)
+          Rails.logger.info "[WhatsAppCloudService] Category selection triggered: #{category_result}"
+        end
+        
         return
       end
     end

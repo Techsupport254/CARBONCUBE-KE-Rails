@@ -115,6 +115,11 @@ class WhatsappProductCreationService
       handle_edit_input(session, message_content)
     when 5 # Category selection (triggered when AI confidence is low)
       send_category_selection(session.phone_number)
+      {
+        success: true,
+        response: nil,
+        should_respond: false
+      }
     else
       session.cancel!
       {
@@ -469,18 +474,22 @@ class WhatsappProductCreationService
     
     # Handle condition edit
     if input.start_with?('CONDITION ')
-      condition_num = input.sub('CONDITION ', '').strip.to_i
-      conditions = Ad.conditions.keys
-      if condition_num >= 1 && condition_num <= conditions.length
-        condition = conditions[condition_num - 1]
-        session.update_product_data('condition', condition)
+      condition_value = input.sub('CONDITION ', '').strip.downcase
+      valid_conditions = Ad.conditions.keys
+      
+      if valid_conditions.include?(condition_value)
+        session.update_product_data('condition', condition_value)
         return {
           success: true,
-          response: "✅ Condition updated to #{condition.humanize}\n\nReply DONE to finish editing or edit another field.",
+          response: "✅ Condition updated to #{condition_value.humanize}\n\nReply DONE to finish editing or edit another field.",
           should_respond: true
         }
       else
-        return { success: false, response: "Invalid condition number. Please try again.", should_respond: true }
+        return { 
+          success: false, 
+          response: "Invalid condition. Valid options: #{valid_conditions.join(', ')}", 
+          should_respond: true 
+        }
       end
     end
     
@@ -667,6 +676,11 @@ class WhatsappProductCreationService
     
     category = Category.find_by(id: data['category_id'])
     summary += "*Category:* #{category&.name || 'N/A'}\n"
+    
+    if data['subcategory_id']
+      subcategory = Subcategory.find_by(id: data['subcategory_id'])
+      summary += "*Subcategory:* #{subcategory&.name || 'N/A'}\n"
+    end
     
     if data['media']&.any?
       summary += "*Images:* #{data['media'].length} image(s)\n"
