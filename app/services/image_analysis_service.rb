@@ -1,12 +1,33 @@
 # frozen_string_literal: true
 
 class ImageAnalysisService
-  # Analyze image using Cloudinary AI to extract product information
+  # Analyze image using available AI capabilities to extract product information
   def self.analyze_image(image_url)
     return { success: false, error: "No image URL provided" } if image_url.blank?
     
+    # Try Groq AI first (primary vision AI service)
+    if GroqAiService.available?
+      groq_result = GroqAiService.analyze_images([image_url])
+      if groq_result[:success]
+        Rails.logger.info "ImageAnalysisService: Successfully analyzed image using Groq AI"
+        return {
+          success: true,
+          detected_objects: groq_result[:detected_objects] || [],
+          categories: [groq_result[:category]].compact,
+          confidence: groq_result[:confidence] || 0.5,
+          condition: groq_result[:condition],
+          brand: groq_result[:brand],
+          description: groq_result[:description],
+          raw_analysis: groq_result[:raw_response],
+          ai_source: 'groq'
+        }
+      else
+        Rails.logger.warn "ImageAnalysisService: Groq AI failed - #{groq_result[:error]}"
+      end
+    end
+    
+    # Fallback to Cloudinary AI
     begin
-      # Try to use Cloudinary's AI Content Analysis add-on
       cloudinary_response = Cloudinary::Api.resource(image_url, 
         analysis: true,
         analysis_type: 'coco_v2'
@@ -22,10 +43,11 @@ class ImageAnalysisService
           categories: extract_categories(analysis_data),
           confidence: calculate_confidence(analysis_data),
           condition: estimate_condition(analysis_data),
-          raw_analysis: analysis_data
+          raw_analysis: analysis_data,
+          ai_source: 'cloudinary'
         }
       else
-        # Fallback: Use basic image info without AI
+        # Fallback: Use basic image info with enhanced AI integration
         {
           success: true,
           detected_objects: [],
@@ -33,7 +55,8 @@ class ImageAnalysisService
           confidence: 0,
           condition: nil,
           raw_analysis: nil,
-          note: "Cloudinary AI analysis not available, will use title-based analysis"
+          note: "Cloudinary AI analysis not available, will use title-based analysis with existing AI services",
+          ai_source: 'fallback'
         }
       end
     rescue => e
@@ -46,8 +69,76 @@ class ImageAnalysisService
         confidence: 0,
         condition: nil,
         raw_analysis: nil,
-        note: "Cloudinary AI analysis failed, will use title-based analysis"
+        note: "Cloudinary AI analysis failed, will use title-based analysis with existing AI services",
+        ai_source: 'fallback'
       }
+    end
+  end
+  
+  # Analyze image using available AI services with title context
+  def self.analyze_with_title(image_url, title)
+    return { success: false, error: "No image URL provided" } if image_url.blank?
+    
+    # Try Groq AI with title context (primary vision AI service)
+    if GroqAiService.available?
+      groq_result = GroqAiService.analyze_images([image_url], title)
+      if groq_result[:success]
+        Rails.logger.info "ImageAnalysisService: Successfully analyzed image with title using Groq AI"
+        
+        # Map Groq results to our format
+        category_result = suggest_category(groq_result[:detected_objects], title)
+        brand_result = suggest_brand(groq_result[:detected_objects], title)
+        
+        return {
+          success: true,
+          detected_objects: groq_result[:detected_objects] || [],
+          categories: [groq_result[:category]].compact,
+          confidence: groq_result[:confidence] || 0.5,
+          condition: groq_result[:condition],
+          brand: groq_result[:brand] || brand_result[:brand],
+          description: groq_result[:description],
+          category_suggestion: category_result,
+          brand_suggestion: brand_result,
+          device_specs: nil, # Can add DeviceCatalogService integration here
+          raw_analysis: groq_result[:raw_response],
+          ai_source: 'groq'
+        }
+      else
+        Rails.logger.warn "ImageAnalysisService: Groq AI with title failed - #{groq_result[:error]}"
+      end
+    end
+    
+    # Fallback to original analysis
+    cloudinary_result = analyze_image(image_url)
+    
+    # Enhance with existing AI services using title
+    if title.present?
+      category_result = suggest_category(cloudinary_result[:detected_objects], title)
+      brand_result = suggest_brand(cloudinary_result[:detected_objects], title)
+      
+      # Try to get device specifications if it's a phone/tablet
+      device_specs = nil
+      if category_result[:category_name] && category_result[:category_name].downcase.include?('computer')
+        device_specs = DeviceCatalogService.search(title, 'phones').first
+        if device_specs && device_specs['specifications']
+          Rails.logger.info "ImageAnalysisService: Found device specs from DeviceCatalogService"
+        end
+      end
+      
+      {
+        success: true,
+        detected_objects: cloudinary_result[:detected_objects],
+        categories: cloudinary_result[:categories],
+        confidence: cloudinary_result[:confidence],
+        condition: cloudinary_result[:condition],
+        category_suggestion: category_result,
+        brand_suggestion: brand_result,
+        device_specs: device_specs,
+        raw_analysis: cloudinary_result[:raw_analysis],
+        ai_source: cloudinary_result[:ai_source] || 'fallback'
+      }
+    else
+      cloudinary_result
     end
   end
   

@@ -156,13 +156,17 @@ class WhatsappProductCreationService
     media_urls = session.get_product_data('media') || []
     
     if media_urls.any?
-      # Analyze images using AI
+      # Analyze images using AI with available services
       image_analysis = ImageAnalysisService.analyze_multiple_images(media_urls)
       
+      # Use enhanced analysis with title context for better AI integration
+      enhanced_analysis = ImageAnalysisService.analyze_with_title(media_urls.first, title) if media_urls.any?
+      
       if image_analysis[:success]
-        # Extract AI insights
-        category_suggestion = ImageAnalysisService.suggest_category(image_analysis[:detected_objects], title)
-        brand_suggestion = ImageAnalysisService.suggest_brand(image_analysis[:detected_objects], title)
+        # Extract AI insights using enhanced analysis when available
+        detected_objects = enhanced_analysis&.[](:detected_objects) || image_analysis[:detected_objects]
+        category_suggestion = ImageAnalysisService.suggest_category(detected_objects, title)
+        brand_suggestion = ImageAnalysisService.suggest_brand(detected_objects, title)
         
         # Save AI-detected data
         session.update_product_data('category_id', category_suggestion[:category_id]) if category_suggestion[:category_id]
