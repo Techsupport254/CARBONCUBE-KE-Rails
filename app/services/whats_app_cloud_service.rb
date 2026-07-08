@@ -110,6 +110,80 @@ class WhatsAppCloudService
     send_request(uri, payload, access_token)
   end
 
+  def self.send_interactive_buttons(to, body_text, buttons)
+    phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+
+    formatted_to = format_phone_number(to)
+    uri = URI("#{GRAPH_URL}/#{phone_number_id}/messages")
+
+    payload = {
+      messaging_product: 'whatsapp',
+      to: formatted_to,
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: {
+          text: body_text
+        },
+        action: {
+          buttons: buttons.map { |btn|
+            {
+              type: 'reply',
+              reply: {
+                id: btn[:id],
+                title: btn[:title]
+              }
+            }
+          }
+        }
+      }
+    }
+
+    send_request(uri, payload, access_token)
+  end
+
+  def self.send_interactive_list(to, body_text, header_text, button_text, sections)
+    phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+
+    formatted_to = format_phone_number(to)
+    uri = URI("#{GRAPH_URL}/#{phone_number_id}/messages")
+
+    payload = {
+      messaging_product: 'whatsapp',
+      to: formatted_to,
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        header: {
+          type: 'text',
+          text: header_text
+        },
+        body: {
+          text: body_text
+        },
+        action: {
+          button: button_text,
+          sections: sections.map { |section|
+            {
+              title: section[:title],
+              rows: section[:rows].map { |row|
+                {
+                  id: row[:id],
+                  title: row[:title],
+                  description: row[:description]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    send_request(uri, payload, access_token)
+  end
+
   private
 
   def self.send_request(uri, payload, access_token)
@@ -252,6 +326,15 @@ class WhatsAppCloudService
     content = case msg_data['type']
               when 'text'
                 msg_data['text']['body']
+              when 'interactive'
+                # Handle interactive button responses
+                if msg_data['interactive']['type'] == 'button_reply'
+                  msg_data['interactive']['button_reply']['id'] # Returns the button ID (e.g., "category_123")
+                elsif msg_data['interactive']['type'] == 'list_reply'
+                  msg_data['interactive']['list_reply']['id'] # Returns the list item ID (e.g., "category_123")
+                else
+                  "[Interactive Message]"
+                end
               when 'reaction'
                 msg_data.dig('reaction', 'emoji') || "👍"
               when 'image', 'video'
