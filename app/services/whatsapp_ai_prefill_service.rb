@@ -47,11 +47,12 @@ class WhatsappAiPrefillService
     
     # Category keywords mapping
     category_keywords = {
-      'Computers Phones and Accessories' => %w[phone mobile laptop tablet computer ipad iphone samsung galaxy macbook dell hp lenovo android ios],
-      'Automotive' => %w[car tyre tire battery oil engine wheel brake motor vehicle toyota honda bmw],
+      'Computers, Phones and Accessories' => %w[phone mobile laptop tablet computer ipad iphone samsung galaxy macbook dell hp lenovo android ios],
+      'Automotive Parts & Accessories' => %w[car tyre tire battery oil engine wheel brake motor vehicle toyota honda bmw],
       'Filtration' => %w[filter water air oil fuel],
-      'Hardware Tools' => %w[tool drill hammer screw wrench saw hardware electrical plumbing],
-      'Equipment Leasing' => %w[equipment excavator bulldozer crane leasing machine construction]
+      'Hardware' => %w[tool drill hammer screw wrench saw hardware electrical plumbing],
+      'Services' => %w[service repair maintenance installation cleaning],
+      'TVs & Home Entertainment' => %w[tv television monitor display sound audio speaker]
     }
     
     best_match = nil

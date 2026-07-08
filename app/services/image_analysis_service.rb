@@ -6,8 +6,7 @@ class ImageAnalysisService
     return { success: false, error: "No image URL provided" } if image_url.blank?
     
     begin
-      # Use Cloudinary's AI Content Analysis add-on
-      # This requires the Cloudinary AI Content Analysis add-on to be enabled
+      # Try to use Cloudinary's AI Content Analysis add-on
       cloudinary_response = Cloudinary::Api.resource(image_url, 
         analysis: true,
         analysis_type: 'coco_v2'
@@ -26,7 +25,7 @@ class ImageAnalysisService
           raw_analysis: analysis_data
         }
       else
-        # Fallback: Try to get basic image info without AI
+        # Fallback: Use basic image info without AI
         {
           success: true,
           detected_objects: [],
@@ -34,14 +33,20 @@ class ImageAnalysisService
           confidence: 0,
           condition: nil,
           raw_analysis: nil,
-          note: "AI analysis not available, using basic image info"
+          note: "Cloudinary AI analysis not available, will use title-based analysis"
         }
       end
     rescue => e
       Rails.logger.error "ImageAnalysisService: Error analyzing image - #{e.message}"
+      # Fallback to basic analysis if Cloudinary AI fails
       {
-        success: false,
-        error: "Failed to analyze image: #{e.message}"
+        success: true,
+        detected_objects: [],
+        categories: [],
+        confidence: 0,
+        condition: nil,
+        raw_analysis: nil,
+        note: "Cloudinary AI analysis failed, will use title-based analysis"
       }
     end
   end
@@ -83,26 +88,26 @@ class ImageAnalysisService
     
     # Object to category mapping
     object_category_map = {
-      'phone' => 'Computers Phones and Accessories',
-      'mobile phone' => 'Computers Phones and Accessories',
-      'smartphone' => 'Computers Phones and Accessories',
-      'laptop' => 'Computers Phones and Accessories',
-      'computer' => 'Computers Phones and Accessories',
-      'tablet' => 'Computers Phones and Accessories',
-      'ipad' => 'Computers Phones and Accessories',
-      'car' => 'Automotive',
-      'automobile' => 'Automotive',
-      'vehicle' => 'Automotive',
+      'phone' => 'Computers, Phones and Accessories',
+      'mobile phone' => 'Computers, Phones and Accessories',
+      'smartphone' => 'Computers, Phones and Accessories',
+      'laptop' => 'Computers, Phones and Accessories',
+      'computer' => 'Computers, Phones and Accessories',
+      'tablet' => 'Computers, Phones and Accessories',
+      'ipad' => 'Computers, Phones and Accessories',
+      'car' => 'Automotive Parts & Accessories',
+      'automobile' => 'Automotive Parts & Accessories',
+      'vehicle' => 'Automotive Parts & Accessories',
       'tire' => 'Automotive Parts & Accessories',
       'wheel' => 'Automotive Parts & Accessories',
-      'furniture' => 'Furniture',
-      'chair' => 'Furniture',
-      'table' => 'Furniture',
-      'sofa' => 'Furniture',
+      'furniture' => 'Hardware',
+      'chair' => 'Hardware',
+      'table' => 'Hardware',
+      'sofa' => 'Hardware',
       'tv' => 'TVs & Home Entertainment',
       'television' => 'TVs & Home Entertainment',
-      'camera' => 'Cameras & Optics',
-      'watch' => 'Watches & Accessories'
+      'camera' => 'Computers, Phones and Accessories',
+      'watch' => 'Computers, Phones and Accessories'
     }
     
     # Find best matching category based on detected objects
