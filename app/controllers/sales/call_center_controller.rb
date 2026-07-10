@@ -2,10 +2,35 @@
 
 module Sales
   class CallCenterController < ApplicationController
-    before_action :authenticate_user
+    def current_user
+      @current_user
+    end
+    private :current_user
 
+    def authenticate_user
+      # Assuming standard JWT auth is handled here or in ApplicationController
+      # For now, we'll just parse the header if present
+      header = request.headers['Authorization']
+      if header.present?
+        token = header.split(' ').last
+        begin
+          decoded = JsonWebToken.decode(token)
+          user_id = decoded[:user_id] || decoded[:seller_id]
+          # Try to find user
+          @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
+        rescue StandardError => e
+          Rails.logger.error "Auth error: #{e.message}"
+        end
+      end
+
+      # For development, allow request to proceed even if auth fails
+      # In production, you'd return 401 Unauthorized here
+    end
+    private :authenticate_user
+
+    before_action :authenticate_user
     skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue], raise: false
-    skip_before_action :authenticate_user, only: [:queue, :send_email, :customers, :chart_data, :kpis, :populate_queue]
+    skip_before_action :authenticate_user, only: [:populate_queue]
 
     # GET /sales/call_center/kpis
     def kpis
@@ -699,28 +724,5 @@ module Sales
       }
     end
 
-    def current_user
-      @current_user
-    end
-
-    def authenticate_user
-      # Assuming standard JWT auth is handled here or in ApplicationController
-      # For now, we'll just parse the header if present
-      header = request.headers['Authorization']
-      if header.present?
-        token = header.split(' ').last
-        begin
-          decoded = JsonWebToken.decode(token)
-          user_id = decoded[:user_id] || decoded[:seller_id]
-          # Try to find user
-          @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
-        rescue StandardError => e
-          Rails.logger.error "Auth error: #{e.message}"
-        end
-      end
-      
-      # For development, allow request to proceed even if auth fails
-      # In production, you'd return 401 Unauthorized here
-    end
   end
 end

@@ -746,7 +746,6 @@ Rails.application.routes.draw do
         get :proactive_outreach
         post :log_call
         post :send_email_direct
-        post :populate_queue
       end
       member do
         post :resolve
@@ -756,6 +755,9 @@ Rails.application.routes.draw do
         delete :delete_log
       end
     end
+
+    # Call Center populate queue (no auth required for n8n)
+    post 'call_center/populate_queue', to: 'call_center#populate_queue'
 
     # Public rating endpoints (no auth required)
     get 'call_center/rating/:token', to: 'call_center#rating'
