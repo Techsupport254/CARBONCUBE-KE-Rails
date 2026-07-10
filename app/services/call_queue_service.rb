@@ -50,13 +50,20 @@ class CallQueueService
       max_priority = entry[:priorities].max
       # Combine all metadata
       combined_metadata = entry[:metadata].reduce({}, :merge)
+      # Determine primary queue type from the reason with the highest priority
+      primary_type = entry[:reasons][entry[:priorities].index(max_priority)]
 
-      CallQueue.create!(
+      create_attrs = {
         seller: entry[:seller],
         reasons: entry[:reasons].uniq,
         priority: max_priority,
         metadata: combined_metadata
-      )
+      }
+      # Support deployments that have not yet run the migration that removes
+      # the queue_type column (which has a not-null constraint in those DBs).
+      create_attrs[:queue_type] = primary_type if CallQueue.column_names.include?('queue_type')
+
+      CallQueue.create!(create_attrs)
     end
 
     # Cache the queue count for KPIs
