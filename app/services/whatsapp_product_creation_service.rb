@@ -94,9 +94,11 @@ class WhatsappProductCreationService
       return cancel_product_creation(session.seller, session.phone_number)
     end
     
-    # Handle interactive button responses (format: "category_123" or "subcategory_456")
+    # Handle interactive button responses (format: "category_123", "subcategory_456", or "condition_brand_new")
     if message_content.to_s.start_with?('category_') || message_content.to_s.start_with?('subcategory_')
       return handle_category_selection(session, message_content.to_s.strip)
+    elsif message_content.to_s.start_with?('condition_')
+      return handle_condition_selection(session, message_content.to_s.strip)
     end
     
     # Handle text-based category selection (fallback)
@@ -287,7 +289,7 @@ class WhatsappProductCreationService
     response += "Reply with:\n"
     response += "• 'PRICE [amount]' - Set price\n"
     response += "• 'BRAND [name]' - Set brand\n"
-    response += "• 'CONDITION [number]' - Set condition (1-5)\n"
+    response += "• 'CONDITION' - Select condition from options\n"
     response += "• 'CATEGORY' - Change category\n"
     response += "• 'DONE' - Finish editing"
     
@@ -339,6 +341,39 @@ class WhatsappProductCreationService
     }
   end
   
+  def self.send_condition_selection(phone_number)
+    # Create interactive buttons for condition selection
+    conditions = Ad.conditions.keys.map(&:humanize)
+    
+    buttons = conditions.map.with_index do |condition, index|
+      {
+        id: "condition_#{Ad.conditions.keys[index]}",
+        title: condition
+      }
+    end
+    
+    # Send interactive buttons message
+    WhatsAppCloudService.send_interactive_buttons(
+      phone_number,
+      "Please select the condition of your product:",
+      buttons
+    )
+    
+    {
+      success: true,
+      response: nil,
+      should_respond: false,
+      interactive: true
+    }
+  rescue => e
+    Rails.logger.error "WhatsappProductCreationService: Error sending condition selection - #{e.message}"
+    {
+      success: false,
+      response: "Error loading condition options. Please try again.",
+      should_respond: true
+    }
+  end
+  
   def self.send_subcategory_selection(phone_number, category_id)
     category = Category.find_by(id: category_id)
     return { success: false, response: "Category not found", should_respond: true } unless category
@@ -386,6 +421,29 @@ class WhatsappProductCreationService
       response: "Error loading subcategories. Please try again.",
       should_respond: true
     }
+  end
+  
+  def self.handle_condition_selection(session, selection_id)
+    # Parse selection_id (format: "condition_brand_new")
+    condition_value = selection_id.sub('condition_', '')
+    
+    if Ad.conditions.keys.include?(condition_value)
+      session.update_product_data('condition', condition_value)
+      
+      # Return to confirm step
+      session.update(step: 3)
+      
+      return {
+        success: true,
+        response: "✅ Condition updated to #{condition_value.humanize}\n\n#{product_summary(session)}\n\nReply CONFIRM to post or EDIT to change anything.",
+        should_respond: true
+      }
+    else
+      return { success: false, response: "Invalid condition. Please try again.", should_respond: true }
+    end
+  rescue => e
+    Rails.logger.error "WhatsappProductCreationService: Error handling condition selection - #{e.message}"
+    { success: false, response: "Error processing selection. Please try again.", should_respond: true }
   end
   
   def self.handle_category_selection(session, selection_id)
@@ -446,7 +504,7 @@ class WhatsappProductCreationService
       }
     end
     
-    # Handle price edit
+    # Handle price edit - manual input only
     if input.start_with?('PRICE ')
       price = input.sub('PRICE ', '').gsub(/[^0-9.]/, '').to_f
       if price > 0 && price <= 1000000
@@ -476,25 +534,9 @@ class WhatsappProductCreationService
       end
     end
     
-    # Handle condition edit
-    if input.start_with?('CONDITION ')
-      condition_value = input.sub('CONDITION ', '').strip.downcase
-      valid_conditions = Ad.conditions.keys
-      
-      if valid_conditions.include?(condition_value)
-        session.update_product_data('condition', condition_value)
-        return {
-          success: true,
-          response: "✅ Condition updated to #{condition_value.humanize}\n\nReply DONE to finish editing or edit another field.",
-          should_respond: true
-        }
-      else
-        return { 
-          success: false, 
-          response: "Invalid condition. Valid options: #{valid_conditions.join(', ')}", 
-          should_respond: true 
-        }
-      end
+    # Handle condition edit - trigger interactive selection
+    if input == 'CONDITION'
+      return send_condition_selection(session.phone_number)
     end
     
     # Handle category edit
@@ -504,7 +546,7 @@ class WhatsappProductCreationService
     
     {
       success: false,
-      response: "Unknown command. Available commands: PRICE [amount], BRAND [name], CONDITION [1-5], CATEGORY, DONE",
+      response: "Unknown command. Available commands: PRICE [amount], BRAND [name], CONDITION, CATEGORY, DONE",
       should_respond: true
     }
   end
@@ -626,10 +668,19 @@ class WhatsappProductCreationService
     
     # Set default values for optional fields
     brand = product_data['brand'] || 'Unknown'
+    manufacturer = product_data['brand'] || 'Unknown' # Use brand as manufacturer if not specified
     condition = product_data['condition'] || 'second_hand'
     description = product_data['description'] || product_data['ai_description'] || "Quality product available. Contact seller for more details."
     media = product_data['media'] || []
     subcategory_id = product_data['subcategory_id']
+    
+    # If no subcategory is selected, try to find a default one for the category
+    unless subcategory_id.present?
+      category = Category.find_by(id: product_data['category_id'])
+      if category && category.subcategories.any?
+        subcategory_id = category.subcategories.first.id
+      end
+    end
     
     # Create the ad with subcategory support
     ad_params = {
@@ -638,6 +689,7 @@ class WhatsappProductCreationService
       price: product_data['price'],
       category_id: product_data['category_id'],
       brand: brand,
+      manufacturer: manufacturer,
       condition: condition,
       media: media,
       is_added_by_sales: false
@@ -676,7 +728,13 @@ class WhatsappProductCreationService
     summary += "*Title:* #{data['title']}\n"
     summary += "*Price:* #{data['price']} KES\n"
     summary += "*Brand:* #{data['brand']}\n"
-    summary += "*Condition:* #{data['condition']&.humanize}\n"
+    
+    # Handle condition being either string or array
+    condition_value = data['condition']
+    if condition_value.is_a?(Array)
+      condition_value = condition_value.first
+    end
+    summary += "*Condition:* #{condition_value&.humanize}\n"
     
     category = Category.find_by(id: data['category_id'])
     summary += "*Category:* #{category&.name || 'N/A'}\n"

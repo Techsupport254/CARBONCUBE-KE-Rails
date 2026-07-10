@@ -238,23 +238,47 @@ class ImageAnalysisService
   def self.suggest_brand(detected_objects, title = nil)
     common_brands = %w[samsung apple iphone xiaomi huawei oppo vivo tecno infinix nokia lg sony htc motorola lenovo dell hp asus acer toshiba msi macbook toyota honda bmw mercedes audi ford nissan mazda volkswagen]
     
-    # Check detected objects for brand names
+    # Check detected objects for brand names (visual detection - higher priority)
     object_brand = detected_objects.find { |obj| common_brands.any? { |brand| obj.downcase.include?(brand) } }
     
     if object_brand
       brand = common_brands.find { |b| object_brand.downcase.include?(b) }&.capitalize
-      return { brand: brand, confidence: 0.7 }
+      return { brand: brand, confidence: 0.8 }
     end
     
-    # Fallback to title analysis
-    if title.present?
+    # Only use title analysis if visual detection failed and title doesn't conflict with detected objects
+    if title.present? && !title_conflicts_with_objects(title, detected_objects)
       title_brand = WhatsappAiPrefillService.analyze_input(title)[:brand]
       if title_brand
-        return { brand: title_brand, confidence: 0.5 }
+        return { brand: title_brand, confidence: 0.4 } # Lower confidence for title-only detection
       end
     end
     
     { brand: nil, confidence: 0 }
+  end
+  
+  # Check if title conflicts with visually detected objects
+  def self.title_conflicts_with_objects(title, detected_objects)
+    return false if detected_objects.blank?
+    
+    title_lower = title.downcase
+    objects_lower = detected_objects.map(&:downcase).join(' ')
+    
+    # If title mentions phone/smartphone but images show laptop/computer, that's a conflict
+    if title_lower.include?('phone') || title_lower.include?('smartphone') || title_lower.include?('galaxy') || title_lower.include?('iphone')
+      if objects_lower.include?('laptop') || objects_lower.include?('computer') || objects_lower.include?('keyboard')
+        return true
+      end
+    end
+    
+    # If title mentions laptop but images show phone, that's a conflict
+    if title_lower.include?('laptop') || title_lower.include?('macbook')
+      if objects_lower.include?('phone') || objects_lower.include?('smartphone')
+        return true
+      end
+    end
+    
+    false
   end
   
   private

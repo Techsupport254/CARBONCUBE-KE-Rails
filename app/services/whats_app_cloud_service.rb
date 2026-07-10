@@ -374,11 +374,24 @@ class WhatsAppCloudService
     
     # Extract media URLs for product creation
     media_urls = []
+    image_caption = nil
+    
     if ['image', 'video'].include?(msg_data['type'])
       media_data = msg_data[msg_data['type']]
       media_id = media_data['id']
       url = download_and_upload_media(media_id, msg_data['type'])
       media_urls << url if url
+      
+      # Extract image caption if present
+      image_caption = media_data['caption'] if media_data['caption']
+    end
+    
+    # If there's an image caption, use it as the content (for product details)
+    if image_caption && content.blank?
+      content = image_caption
+    elsif image_caption && content.present?
+      # Combine caption with existing content
+      content = "#{content}\n\nCaption: #{image_caption}"
     end
     
     [content, media_urls]

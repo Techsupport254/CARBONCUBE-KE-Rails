@@ -36,17 +36,21 @@ class CallQueue < ApplicationRecord
   scope :in_progress, -> { where(status: STATUS_IN_PROGRESS) }
   scope :resolved, -> { where(status: STATUS_RESOLVED) }
   scope :by_priority, -> { order(priority: :desc, created_at: :asc) }
-  scope :by_type, ->(type) { where(queue_type: type) }
+  scope :by_type, ->(type) { where("reasons::jsonb @> ?", "[\"#{type}\"]") }
+  scope :with_reason, ->(type) { where("reasons::jsonb @> ?", "[\"#{type}\"]") }
+
+  # Serialize reasons array
+  serialize :reasons, coder: JSON
 
   # Validations
-  validates :queue_type, presence: true, inclusion: {
-    in: [UNREAD_MESSAGES, NO_ADS_UPLOADED, INACTIVE_SELLER, NEW_SELLER_ONBOARDING,
-         DOCUMENT_EXPIRY, PROACTIVE_OUTREACH]
-  }
+  validates :reasons, presence: true
   validates :status, presence: true, inclusion: {
     in: [STATUS_PENDING, STATUS_IN_PROGRESS, STATUS_RESOLVED]
   }
   validates :priority, numericality: { only_integer: true, in: 0..3 }
+  
+  # Ensure unique seller per queue (only for pending entries)
+  validates :seller_id, uniqueness: { scope: :status }, if: -> { status == STATUS_PENDING }
 
   # Mark as resolved
   def resolve!(user_id)
@@ -73,8 +77,8 @@ class CallQueue < ApplicationRecord
       seller_phone: seller.phone_number,
       seller_enterprise: seller.enterprise_name,
       seller_profile_picture: seller.profile_picture,
-      queue_type: queue_type,
-      queue_type_display: queue_type.humanize,
+      reasons: reasons,
+      reasons_display: reasons.map { |r| QUEUE_TYPES[r] || r.humanize },
       priority: priority,
       priority_display: priority_display,
       status: status,
