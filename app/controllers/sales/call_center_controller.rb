@@ -4,8 +4,8 @@ module Sales
   class CallCenterController < ApplicationController
     before_action :authenticate_user
 
-    skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email], raise: false
-    skip_before_action :authenticate_user, only: [:queue, :send_email, :customers, :chart_data, :kpis]
+    skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue], raise: false
+    skip_before_action :authenticate_user, only: [:queue, :send_email, :customers, :chart_data, :kpis, :populate_queue]
 
     # GET /sales/call_center/kpis
     def kpis
