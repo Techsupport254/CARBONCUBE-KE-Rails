@@ -3,9 +3,14 @@ require 'sidekiq'
 require 'sidekiq-cron'
 
 redis_url = ENV['REDIS_URL'] || 'redis://localhost:6379/0'
+redis_options = {
+  url: redis_url,
+  network_timeout: 5,
+  reconnect_attempts: 3
+}
 
 Sidekiq.configure_server do |config|
-  config.redis = { url: redis_url, size: 25 }
+  config.redis = redis_options.merge(size: 25)
 
   # Load recurring job schedule from config/schedule.yml.
   # Only runs inside the Sidekiq server process — never in web/console.
@@ -18,7 +23,7 @@ Sidekiq.configure_server do |config|
 end
 
 Sidekiq.configure_client do |config|
-  config.redis = { url: redis_url, size: 5 }
+  config.redis = redis_options.merge(size: 5)
 end
 
 # Use Sidekiq as the Active Job adapter in all environments.
