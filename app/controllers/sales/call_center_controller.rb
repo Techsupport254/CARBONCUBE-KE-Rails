@@ -281,6 +281,15 @@ module Sales
       render json: queue_data
     end
 
+    # POST /sales/call_center/populate_queue
+    def populate_queue
+      CallQueueService.populate_queue
+      render json: { success: true, message: 'Call queue populated successfully' }
+    rescue StandardError => e
+      Rails.logger.error "Call Queue Population Failed: #{e.message}"
+      render json: { error: e.message }, status: :internal_server_error
+    end
+
     # GET /sales/call_center/queue_types
     def queue_types
       # Get all queue types with their current counts and priorities
