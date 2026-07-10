@@ -18,6 +18,7 @@ class CallRecord < ApplicationRecord
   }
 
   # Call Source: queue, proactive_outreach, manual
+  attribute :call_source, :string
   enum call_source: {
     queue: 'queue',
     proactive_outreach: 'proactive_outreach',
