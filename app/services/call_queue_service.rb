@@ -3,10 +3,10 @@
 class CallQueueService
   # Returns seller IDs that are currently in the queue (pending) or were resolved in the last 1 month
   def self.excluded_seller_ids_for_type(queue_type)
-    CallQueue.where(queue_type: queue_type)
-      .where("status = ? OR (status = ? AND resolved_at > ?)", 
-             CallQueue::STATUS_PENDING, 
-             CallQueue::STATUS_RESOLVED, 
+    CallQueue.where("reasons::jsonb @> ?", "[\"#{queue_type}\"]")
+      .where("status = ? OR (status = ? AND resolved_at > ?)",
+             CallQueue::STATUS_PENDING,
+             CallQueue::STATUS_RESOLVED,
              1.month.ago)
       .select(:seller_id)
   end
@@ -27,24 +27,35 @@ class CallQueueService
     all_entries.concat(collect_document_expiry_queue)
     all_entries.concat(collect_proactive_outreach_queue)
 
-    # Deduplicate: keep only the highest priority entry for each seller
-    deduplicated = {}
+    # Group by seller and collect all reasons for each seller
+    seller_entries = {}
     all_entries.each do |entry|
       seller_id = entry[:seller_id]
-      existing = deduplicated[seller_id]
-      # Keep the entry with higher priority (or keep existing if equal or higher)
-      if existing.nil? || entry[:priority] > existing[:priority]
-        deduplicated[seller_id] = entry
+      if seller_entries[seller_id].nil?
+        seller_entries[seller_id] = {
+          seller: entry[:seller],
+          reasons: [],
+          priorities: [],
+          metadata: []
+        }
       end
+      seller_entries[seller_id][:reasons] << entry[:queue_type]
+      seller_entries[seller_id][:priorities] << entry[:priority]
+      seller_entries[seller_id][:metadata] << entry[:metadata]
     end
 
-    # Create the deduplicated queue entries
-    deduplicated.values.each do |entry|
+    # Create the queue entries with reasons array
+    seller_entries.values.each do |entry|
+      # Use highest priority
+      max_priority = entry[:priorities].max
+      # Combine all metadata
+      combined_metadata = entry[:metadata].reduce({}, :merge)
+
       CallQueue.create!(
         seller: entry[:seller],
-        queue_type: entry[:queue_type],
-        priority: entry[:priority],
-        metadata: entry[:metadata]
+        reasons: entry[:reasons].uniq,
+        priority: max_priority,
+        metadata: combined_metadata
       )
     end
 
@@ -204,7 +215,6 @@ class CallQueueService
       .where.not(id: excluded_seller_ids_for_type(CallQueue::PROACTIVE_OUTREACH))
 
     successful_sellers.find_each do |seller|
-      conversation_count = seller.conversations.where('created_at > ?', 30.days.ago).count
       total_ads = seller.ads_count
       days_active = (Time.current - seller.created_at).to_i / 86400
 
@@ -214,7 +224,6 @@ class CallQueueService
         queue_type: CallQueue::PROACTIVE_OUTREACH,
         priority: CallQueue::PRIORITY_LOW,
         metadata: {
-          conversation_count_30d: conversation_count,
           total_ads: total_ads,
           days_active: days_active,
           last_active_at: seller.last_active_at.to_s
@@ -229,11 +238,23 @@ class CallQueueService
   def self.cache_queue_metrics
     queue_data = {
       total_count: CallQueue.pending.count,
-      by_type: CallQueue.pending.group(:queue_type).count,
+      by_type: get_reasons_distribution,
       by_priority: CallQueue.pending.group(:priority).count
     }
 
     RedisConnection.setex('call_center:queue_metrics', 300, queue_data.to_json) # 5 minutes
+  end
+  
+  # Get distribution of reasons across all pending queue entries
+  def self.get_reasons_distribution
+    distribution = {}
+    CallQueue.pending.find_each do |queue|
+      queue.reasons.each do |reason|
+        distribution[reason] ||= 0
+        distribution[reason] += 1
+      end
+    end
+    distribution
   end
 
   # Get queue data for API response
@@ -241,7 +262,7 @@ class CallQueueService
     query = CallQueue.pending
     query = query.by_type(queue_type) if queue_type.present?
     query = query.where(priority: priority.to_i) if priority.present?
-    
+
     # Search by seller name, phone, email, or enterprise
     if search.present?
       search_term = "%#{search}%"
@@ -256,47 +277,37 @@ class CallQueueService
         query = query.where(id: nil) # Return empty if no seller matches search
       end
     end
-    
+
     # Always use includes to avoid N+1 queries
     query = query.includes(:seller)
-    
-    total_count = query.distinct.count(:seller_id)
-    
-    # Group by seller to avoid duplicates
-    grouped_entries = query.group_by(&:seller_id).map do |seller_id, entries|
-      seller = entries.first.seller
-      # Get all queue types for this seller
-      queue_types = entries.map(&:queue_type).uniq
-      # Get highest priority
-      max_priority = entries.map(&:priority).max
-      # Get earliest created_at
-      earliest_created = entries.map(&:created_at).min
-      # Get all queue IDs for actions
-      queue_ids = entries.map(&:id)
-      
+
+    total_count = query.count
+
+    # Map entries to API response format
+    entries = query.map do |queue|
+      seller = queue.seller
       {
-        id: queue_ids.first, # Use first ID for reference
-        queue_ids: queue_ids, # All IDs for bulk actions
-        seller_id: seller_id,
+        id: queue.id,
+        seller_id: queue.seller_id,
         seller_name: seller.fullname,
         seller_email: seller.email,
         seller_phone: seller.phone_number,
         seller_enterprise: seller.enterprise_name,
         seller_profile_picture: seller.profile_picture && !seller.profile_picture.include?('googleusercontent.com') ? seller.profile_picture : nil,
-        queue_types: queue_types,
-        queue_type_display: queue_types.map { |qt| qt.humanize }.uniq.join(', '),
-        priority: max_priority,
-        priority_display: priority_display(max_priority),
-        status: 'pending',
-        metadata: entries.map(&:metadata),
-        created_at: earliest_created,
-        days_in_queue: ((Time.current - earliest_created).to_i / 86400).to_i
+        reasons: queue.reasons,
+        reasons_display: queue.reasons.map { |r| CallQueue::QUEUE_TYPES[r] || r.humanize },
+        priority: queue.priority,
+        priority_display: priority_display(queue.priority),
+        status: queue.status,
+        metadata: queue.metadata,
+        created_at: queue.created_at,
+        days_in_queue: ((Time.current - queue.created_at).to_i / 86400).to_i
       }
     end
-    
+
     # Sort by priority and created_at
-    sorted_entries = grouped_entries.sort_by { |e| [-e[:priority], e[:created_at]] }
-    
+    sorted_entries = entries.sort_by { |e| [-e[:priority], e[:created_at]] }
+
     # Apply pagination
     paginated_entries = sorted_entries.slice((page - 1) * per_page, per_page) || []
 

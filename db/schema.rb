@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_141317) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_10_073114) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -204,7 +204,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_141317) do
 
   create_table "call_queues", force: :cascade do |t|
     t.uuid "seller_id", null: false
-    t.string "queue_type", null: false
     t.integer "priority", default: 0, null: false
     t.jsonb "metadata", default: {}
     t.string "status", default: "pending", null: false
@@ -212,8 +211,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_141317) do
     t.uuid "resolved_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "reasons", default: "[]", null: false
     t.index ["priority"], name: "index_call_queues_on_priority"
-    t.index ["queue_type"], name: "index_call_queues_on_queue_type"
     t.index ["seller_id"], name: "index_call_queues_on_seller_id"
     t.index ["status", "priority"], name: "index_call_queues_on_status_and_priority"
     t.index ["status"], name: "index_call_queues_on_status"

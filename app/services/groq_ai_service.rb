@@ -80,11 +80,21 @@ Focus on accuracy for e-commerce product classification."
         analysis_result = JSON.parse(raw_content)
       end
 
+      # Normalize brand to always be a string
+      brand_value = analysis_result['brand']
+      normalized_brand = if brand_value.is_a?(Array)
+                           brand_value.first
+                         elsif brand_value.is_a?(String)
+                           brand_value
+                         else
+                           nil
+                         end
+
       {
         success: true,
         detected_objects: analysis_result['detected_objects'] || [],
         category: analysis_result['category'],
-        brand: analysis_result['brand'],
+        brand: normalized_brand,
         condition: analysis_result['condition'],
         confidence: analysis_result['confidence'] || 0.5,
         description: analysis_result['description'],

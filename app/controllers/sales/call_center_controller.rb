@@ -284,16 +284,17 @@ module Sales
     # GET /sales/call_center/queue_types
     def queue_types
       # Get all queue types with their current counts and priorities
-      queue_stats = CallQueue.pending.group(:queue_type).count
-      
+      # Since we now use reasons array, we need to count occurrences of each reason
+      distribution = CallQueueService.get_reasons_distribution
+
       # Calculate weighted priority for each type
       queue_types_data = CallQueue::QUEUE_TYPES.map do |type_const, display_name|
-        count = queue_stats[type_const] || 0
+        count = distribution[type_const] || 0
         priority = CallQueueService.get_priority_for_type(type_const)
-        
+
         # Calculate weighted score: count * priority
         weighted_score = count * priority
-        
+
         {
           type: type_const,
           display: display_name,
@@ -302,10 +303,10 @@ module Sales
           weighted_score: weighted_score
         }
       end
-      
+
       # Sort by weighted score (highest first)
       sorted_types = queue_types_data.sort_by { |t| -t[:weighted_score] }
-      
+
       render json: { queue_types: sorted_types }
     end
 
