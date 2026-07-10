@@ -108,6 +108,10 @@ Rails.application.routes.draw do
       # Monitoring endpoints
       post 'monitoring/errors', to: 'monitoring#create_error'
       post 'monitoring/metrics', to: 'monitoring#create_metric'
+      
+      # Seller locations endpoints
+      get 'seller/locations', to: 'seller_locations#index'
+      post 'seller/geocode-batch', to: 'seller_locations#geocode_batch'
     end
   end
   get 'whatsapp/check', to: 'whatsapp#check_number'

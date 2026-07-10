@@ -14,53 +14,52 @@ module RedisConnection
     def current
       @current ||= Redis.new(url: REDIS_URL, timeout: 5)
     end
-    
+
     def with
       pool.with { |conn| yield conn }
     end
-    
+
     def ping
       current.ping
     end
-    
+
     def setex(key, ttl, value)
       with { |conn| conn.setex(key, ttl, value) }
     end
-    
+
     def get(key)
       with { |conn| conn.get(key) }
     end
-    
+
     def del(key)
       with { |conn| conn.del(key) }
     end
-    
+
     def incrby(key, value)
       with { |conn| conn.incrby(key, value) }
     end
-    
+
     def expire(key, ttl)
       with { |conn| conn.expire(key, ttl) }
     end
-    
+
     def exists?(key)
       with { |conn| conn.exists?(key) }
     end
-    
+
     def keys(pattern)
       with { |conn| conn.keys(pattern) }
     end
   end
 end
 
-# Eagerly initialize Redis connection pool at startup
+# Lazily initialize Redis connection pool at startup.
+# Avoid eager connections so the Rails/Puma process boots even when Redis is
+# temporarily unreachable. Real Redis failures will surface when the app actually
+# uses Redis (Action Cable, Sidekiq, cache store, etc.).
 begin
-  # Initialize the pool
-  RedisConnection.pool
-  # Test connection
   RedisConnection.ping
-  Rails.logger.info "✅ Redis connection pool initialized successfully"
+  Rails.logger.info "✅ Redis is reachable at boot"
 rescue => e
-  Rails.logger.error "❌ Redis connection failed: #{e.message}"
-  Rails.logger.error "Please ensure Redis is running: redis-server"
+  Rails.logger.warn "⚠️  Redis not reachable at boot (#{e.message}). Connection will be retried on first use."
 end
