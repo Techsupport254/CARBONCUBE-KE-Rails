@@ -746,6 +746,7 @@ Rails.application.routes.draw do
         get :proactive_outreach
         post :log_call
         post :send_email_direct
+        post :populate_queue
       end
       member do
         post :resolve
