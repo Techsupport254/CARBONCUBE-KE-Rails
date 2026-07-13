@@ -63,7 +63,10 @@ class CallQueueService
       # the queue_type column (which has a not-null constraint in those DBs).
       create_attrs[:queue_type] = primary_type if CallQueue.column_names.include?('queue_type')
 
-      CallQueue.create!(create_attrs)
+      # Use find_or_create_by to handle race conditions gracefully
+      CallQueue.find_or_create_by(seller: entry[:seller], status: CallQueue::STATUS_PENDING) do |queue|
+        queue.update(create_attrs)
+      end
     end
 
     # Cache the queue count for KPIs
@@ -221,9 +224,13 @@ class CallQueueService
       .where('created_at < ?', 30.days.ago)
       .where.not(id: excluded_seller_ids_for_type(CallQueue::PROACTIVE_OUTREACH))
 
+    Rails.logger.info "[ProactiveOutreach] Found #{successful_sellers.count} qualifying sellers"
+
     successful_sellers.find_each do |seller|
       total_ads = seller.ads_count
       days_active = (Time.current - seller.created_at).to_i / 86400
+
+      Rails.logger.info "[ProactiveOutreach] Adding seller #{seller.fullname} (ID: #{seller.id}) to queue"
 
       entries << {
         seller_id: seller.id,
@@ -237,6 +244,7 @@ class CallQueueService
         }
       }
     end
+    Rails.logger.info "[ProactiveOutreach] Total entries collected: #{entries.count}"
     entries
   end
 

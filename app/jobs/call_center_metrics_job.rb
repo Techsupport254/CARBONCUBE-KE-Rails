@@ -22,7 +22,12 @@ class CallCenterMetricsJob < ApplicationJob
     RedisConnection.setex('call_center:kpis', 10.minutes.to_i, compute_kpis('7d').to_json)
 
     # 2. Populate call queue based on seller metrics
-    CallQueueService.populate_queue
+    begin
+      CallQueueService.populate_queue
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.warn "[CallCenterMetricsJob] Queue population had validation errors: #{e.message}"
+      # Continue with other tasks even if queue population has issues
+    end
 
     # 3. Compute Chart Data for all periods
     periods.each do |period|
