@@ -63,9 +63,23 @@ class CallQueueService
       # the queue_type column (which has a not-null constraint in those DBs).
       create_attrs[:queue_type] = primary_type if CallQueue.column_names.include?('queue_type')
 
-      # Use find_or_create_by to handle race conditions gracefully
-      CallQueue.find_or_create_by(seller: entry[:seller], status: CallQueue::STATUS_PENDING) do |queue|
-        queue.update(create_attrs)
+      # Use find_or_initialize_by to handle race conditions gracefully
+      queue = CallQueue.find_or_initialize_by(seller: entry[:seller], status: CallQueue::STATUS_PENDING)
+      queue.assign_attributes(create_attrs)
+      
+      # Save with rescue to handle race conditions
+      begin
+        queue.save!
+      rescue ActiveRecord::RecordInvalid => e
+        # If validation fails due to duplicate, try to find the existing record and update it
+        if e.message.include?('Seller has already been taken')
+          existing_queue = CallQueue.find_by(seller: entry[:seller], status: CallQueue::STATUS_PENDING)
+          if existing_queue
+            existing_queue.update(create_attrs) rescue nil
+          end
+        else
+          Rails.logger.warn "[CallQueueService] Failed to create queue entry for seller #{entry[:seller].id}: #{e.message}"
+        end
       end
     end
 
