@@ -60,3 +60,6 @@ config/ga4_credentials.json
 
 # Production environment secrets file
 .env.production
+
+# Generated scraping output files
+/scripts/output/*
