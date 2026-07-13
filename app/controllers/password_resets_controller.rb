@@ -112,7 +112,12 @@ class PasswordResetsController < ApplicationController
   private
 
   def find_user_by_email(email)
-    Buyer.find_by(email: email) || Seller.find_by(email: email) || Admin.find_by(email: email)
+    normalized_email = email.to_s.strip.downcase
+    Buyer.find_by('lower(email) = ?', normalized_email) ||
+      Seller.find_by('lower(email) = ?', normalized_email) ||
+      Admin.find_by('lower(email) = ?', normalized_email) ||
+      SalesUser.find_by('lower(email) = ?', normalized_email) ||
+      MarketingUser.find_by('lower(email) = ?', normalized_email)
   end
 
   def validate_password_strength(password, user)
