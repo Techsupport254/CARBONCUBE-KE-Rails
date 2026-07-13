@@ -5,6 +5,10 @@
 
 set -e  # Exit on error
 
+# Use postgresql@17 binaries (must match or exceed production server version)
+PG_BIN_DIR="/opt/homebrew/opt/postgresql@17/bin"
+export PATH="$PG_BIN_DIR:$PATH"
+
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -72,9 +76,9 @@ echo ""
 
 # Drop and recreate the database for a clean restore
 echo "Dropping existing database for clean restore..."
-psql -d "postgresql://postgres:postgres@localhost:5432/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
+psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
 echo "Creating fresh database..."
-psql -d "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
+psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
 
 # Restore using pg_restore
 pg_restore \
