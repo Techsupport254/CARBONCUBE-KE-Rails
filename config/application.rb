@@ -68,6 +68,6 @@ module CarbonecomRails
 
     # Strip trailing dots from URL paths to prevent RoutingError on slug URLs
     require_relative '../lib/middleware/strip_trailing_dot'
-    config.middleware.insert_before Rack::Runtime, StripTrailingDot
+    config.middleware.insert_before Rack::Runtime, Middleware::StripTrailingDot
   end
 end
