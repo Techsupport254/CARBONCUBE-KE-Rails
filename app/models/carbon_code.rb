@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class CarbonCode < ApplicationRecord
+  self.primary_key = 'id'
   # Dynamic association: code can be linked to SalesUser (or later Admin, MarketingUser, etc.)
   belongs_to :associable, polymorphic: true
   has_many :sellers, dependent: :nullify

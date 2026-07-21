@@ -11,7 +11,7 @@ class BackfillEmailVerifiedFor2026Sellers < ActiveRecord::Migration[7.1]
     SQL
     result = execute(sql)
     count = result.respond_to?(:cmd_tuples) ? result.cmd_tuples : 0
-    Rails.logger.info "✅ Backfilled email verification for #{count} 2026 seller(s)" if count && count > 0
+    Rails.logger.info "Backfilled email verification for #{count} 2026 seller(s)" if count && count > 0
   end
 
   def down

@@ -65,5 +65,9 @@ module CarbonecomRails
     # Add connection pool middleware
     # require_relative '../app/middleware/connection_pool_middleware'
     # config.middleware.use ConnectionPoolMiddleware
+
+    # Strip trailing dots from URL paths to prevent RoutingError on slug URLs
+    require_relative '../lib/middleware/strip_trailing_dot'
+    config.middleware.insert_before Rack::Runtime, StripTrailingDot
   end
 end

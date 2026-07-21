@@ -1585,8 +1585,14 @@ class Buyer::AdsController < ApplicationController
 
     # Build smart relevance scoring for search results
     if query.present?
+      # Limit the number of ads loaded into memory for relevance scoring.
+      # Without this, the search loads ALL matching ads into Ruby memory,
+      # causing 500K+ allocations. 200 candidates is sufficient for ranking.
+      candidate_limit = [ads_per_page * 8, 200].max
+      ads_for_scoring = ads.limit(candidate_limit)
+
       # Calculate smart relevance score for each ad based on search intent
-      ads_with_scores = ads.map do |ad|
+      ads_with_scores = ads_for_scoring.map do |ad|
         relevance_score = calculate_smart_relevance_score(ad, query, search_intent)
         { ad: ad, score: relevance_score }
       end
@@ -1774,7 +1780,14 @@ class Buyer::AdsController < ApplicationController
       
       # Combine and deduplicate shops
       all_matching_shops = (name_matching_shops + product_matching_shops).uniq
-      
+
+      # Batch-fetch product counts and average ratings to avoid N+1 queries
+      shop_ids = all_matching_shops.map(&:id)
+      product_counts_by_shop = shop_ids.any? ?
+        Ad.active.with_valid_images.where(seller_id: shop_ids, flagged: false).group(:seller_id).count : {}
+      avg_ratings_by_shop = shop_ids.any? ?
+        Ad.joins(:reviews).where(seller_id: shop_ids).group(:seller_id).average('reviews.rating') : {}
+
       # Calculate shop scores for ranking
       matching_shops = all_matching_shops.map do |shop|
         # Calculate various scoring factors
@@ -1787,13 +1800,11 @@ class Buyer::AdsController < ApplicationController
                     end
         
         # Product count score (more products = higher score)
-        product_count = Ad.active.with_valid_images.where(seller_id: shop.id, flagged: false).count
+        product_count = product_counts_by_shop[shop.id] || 0
         product_score = [product_count * 2, 50].min # Cap at 50 points
         
         # Rating score (if reviews exist) - get overall average for the seller
-        avg_rating = Ad.joins(:reviews)
-                      .where(seller_id: shop.id)
-                      .average('reviews.rating')
+        avg_rating = avg_ratings_by_shop[shop.id]
         avg_rating = avg_rating ? avg_rating.to_f : 0.0
         rating_score = avg_rating > 0 ? (avg_rating * 10).round : 0
         
@@ -2031,9 +2042,7 @@ class Buyer::AdsController < ApplicationController
         .limit(100)
         .includes(:ad)
         .where.not(ad_id: nil)
-      
-      Rails.logger.info "Found #{click_events.count} click events for user"
-      
+
       # Extract ad IDs, categories, subcategories, and sellers from clicked ads
       click_events.each do |event|
         next unless event.ad && !event.ad.deleted
@@ -2048,8 +2057,6 @@ class Buyer::AdsController < ApplicationController
       clicked_categories.uniq!
       clicked_subcategories.uniq!
       clicked_sellers.uniq!
-      
-      Rails.logger.info "Extracted: #{clicked_ad_ids.count} ad_ids, #{clicked_subcategories.count} subcategories, #{clicked_categories.count} categories, #{clicked_sellers.count} sellers"
     end
     
     # If user has no click history, fall back to best sellers

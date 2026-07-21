@@ -8,23 +8,22 @@ module Sales
     private :current_user
 
     def authenticate_user
-      # Assuming standard JWT auth is handled here or in ApplicationController
-      # For now, we'll just parse the header if present
       header = request.headers['Authorization']
       if header.present?
         token = header.split(' ').last
         begin
           decoded = JsonWebToken.decode(token)
-          user_id = decoded[:user_id] || decoded[:seller_id]
-          # Try to find user
-          @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
+          if decoded[:success]
+            payload = decoded[:payload]
+            user_id = payload[:user_id] || payload[:seller_id] || payload[:sales_id] || payload[:admin_id]
+            @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
+          else
+            Rails.logger.warn "CallCenter auth failed: #{decoded[:error]}"
+          end
         rescue StandardError => e
           Rails.logger.error "Auth error: #{e.message}"
         end
       end
-
-      # For development, allow request to proceed even if auth fails
-      # In production, you'd return 401 Unauthorized here
     end
     private :authenticate_user
 
@@ -35,109 +34,13 @@ module Sales
     # GET /sales/call_center/kpis
     def kpis
       period = params[:period].presence || '7d'
-      cached_data = RedisConnection.get("call_center:kpis:#{period}")
-      
-      if cached_data.present?
-        render json: JSON.parse(cached_data)
-      else
-        # Fallback if job hasn't run or redis fails
-        # Enqueue the job immediately to get data for next time
-        CallCenterMetricsJob.perform_later
-        
-        start_date = case period
-                     when 'today'
-                       Time.zone.now.beginning_of_day
-                     when '7d'
-                       7.days.ago.beginning_of_day
-                     when '30d'
-                       30.days.ago.beginning_of_day
-                     when '1y'
-                       11.months.ago.beginning_of_month
-                     else
-                       Time.zone.now.beginning_of_month
-                     end
-
-        completed_calls = CallRecord.where(status: :completed).where('started_at >= ?', start_date)
-        avg_handling = completed_calls.any? ? completed_calls.average(:duration_seconds).to_i : 0
-        
-        render json: {
-          queue_count: CallQueue.pending.distinct.count(:seller_id),
-          call_queue_count: CallQueue.pending.count,
-          avg_handling_time_seconds: avg_handling,
-          handled_count: completed_calls.count,
-          handled_trend: 0,
-          csat_score: 100
-        }
-      end
+      render json: CallCenterMetricsJob.new.compute_kpis(period)
     end
 
     # GET /sales/call_center/chart_data
     def chart_data
       period = params[:period].presence || '7d'
-      
-      cached_data = RedisConnection.get("call_center:chart_data:#{period}")
-      
-      if cached_data.present?
-        render json: JSON.parse(cached_data)
-      else
-        # Generate chart data on the fly if cache is empty
-        start_date = case period
-                     when 'today'
-                       Time.zone.now.beginning_of_day
-                     when '7d'
-                       7.days.ago.beginning_of_day
-                     when '30d'
-                       30.days.ago.beginning_of_day
-                     when '1y'
-                       11.months.ago.beginning_of_month
-                     else
-                       Time.zone.now.beginning_of_month
-                     end
-
-        calls = CallRecord.where('started_at >= ?', start_date)
-        
-        # Group by date and status using SQL
-        grouped_data = calls.group("DATE(started_at)").group(:status).count
-        
-        # Generate date range
-        date_range = case period
-                      when 'today'
-                        (start_date.to_date..Time.zone.now.to_date)
-                      when '7d', '30d'
-                        (start_date.to_date..Time.zone.now.to_date)
-                      when '1y'
-                        (start_date.to_date..Time.zone.now.to_date).select { |d| d.day == 1 }
-                      else
-                        (start_date.to_date..Time.zone.now.to_date)
-                      end
-
-        chart_data = date_range.map do |date|
-          date_str = period == '1y' ? date.strftime('%Y-%m') : date.to_s
-          # Convert grouped_data keys (Date objects) to match date_str
-          handled = 0
-          missed = 0
-          
-          grouped_data.each do |key, count|
-            key_date = key[0]
-            key_status = key[1]
-            if key_date.is_a?(Date) && key_date.to_s == date_str
-              handled += count if key_status == 'completed'
-              missed += count if ['missed', 'failed'].include?(key_status)
-            end
-          end
-          
-          {
-            date: date_str,
-            handled: handled,
-            missed: missed
-          }
-        end
-
-        # Cache for 5 minutes
-        RedisConnection.setex("call_center:chart_data:#{period}", 300, chart_data.to_json)
-        
-        render json: chart_data
-      end
+      render json: CallCenterMetricsJob.new.compute_chart_data(period)
     end
 
 
@@ -243,7 +146,9 @@ module Sales
 
     # PUT /sales/call_center/:id/update_log
     def update_log
-      call_record = CallRecord.find_by(id: params[:id], sales_user_id: current_user.id)
+      return render json: { error: 'Unauthorized' }, status: :unauthorized unless current_user
+
+      call_record = CallRecord.find_by(id: params[:id])
       return render json: { error: 'Call record not found' }, status: :not_found unless call_record
 
       # Map params back to model attributes
@@ -272,7 +177,9 @@ module Sales
 
     # DELETE /sales/call_center/:id/delete_log
     def delete_log
-      call_record = CallRecord.find_by(id: params[:id], sales_user_id: current_user.id)
+      return render json: { error: 'Unauthorized' }, status: :unauthorized unless current_user
+
+      call_record = CallRecord.find_by(id: params[:id])
       return render json: { error: 'Call record not found' }, status: :not_found unless call_record
 
       if call_record.destroy

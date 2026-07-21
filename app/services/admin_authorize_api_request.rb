@@ -71,8 +71,21 @@ class AdminAuthorizeApiRequest
     if @headers['Authorization'].present?
       @headers['Authorization'].split(' ').last
     else
+      token = cookie_token
+      return token if token.present?
       # Don't log missing tokens - they're normal for public endpoints
       raise ExceptionHandler::MissingToken, 'Missing token'
+    end
+  end
+
+  def cookie_token
+    cookie_str = @headers['Cookie'] || @headers['HTTP_COOKIE']
+    return nil if cookie_str.blank?
+    
+    if cookie_str =~ /__Secure-auth_token=([^;]+)/ || cookie_str =~ /auth_token=([^;]+)/
+      CGI.unescape($1)
+    else
+      nil
     end
   end
 end

@@ -1,4 +1,6 @@
 class OfferAd < ApplicationRecord
+  self.primary_key = 'id'
+
   belongs_to :offer
   belongs_to :ad
   

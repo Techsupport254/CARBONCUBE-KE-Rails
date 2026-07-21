@@ -42,10 +42,12 @@ class Seller < ApplicationRecord
   validates :fullname, presence: true
   validates :phone_number, presence: true, uniqueness: true, length: { is: 10, message: "must be exactly 10 digits" },
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, unless: :oauth_user?
+  validate :phone_number_must_have_valid_kenyan_prefix, unless: :oauth_user?
   # Secondary phone number is optional
   validates :secondary_phone_number, length: { is: 10, message: "must be exactly 10 digits" },
             format: { with: /\A\d{10}\z/, message: "should only contain numbers" }, 
             allow_blank: true
+  validate :secondary_phone_number_must_have_valid_kenyan_prefix, if: -> { secondary_phone_number.present? }
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :enterprise_name, presence: true, uniqueness: { case_sensitive: false }, unless: :oauth_user?
   validates :location, presence: true, unless: :oauth_user?
@@ -137,6 +139,33 @@ class Seller < ApplicationRecord
   
   def user_type
     'seller'
+  end
+
+  def profile_completion_percentage
+    # Only required fields for profile completion
+    # For OAuth users, some fields are optional during signup
+    required_fields = [
+      fullname.present?,
+      email.present?,
+      username.present?
+    ]
+
+    # Add additional required fields for non-OAuth users
+    unless oauth_user?
+      required_fields += [
+        phone_number.present?,
+        enterprise_name.present?,
+        location.present?,
+        county_id.present?,
+        sub_county_id.present?
+      ]
+    end
+
+    # Calculate completion based on required fields
+    completed_fields = required_fields.count(true)
+    total_completion = (completed_fields.to_f / required_fields.length * 100).round
+
+    total_completion
   end
 
   def update_last_active!
@@ -253,6 +282,36 @@ class Seller < ApplicationRecord
       digits.last(10)
     else
       digits
+    end
+  end
+
+  KENYAN_MOBILE_PREFIXES = %w[
+    070 071 072 0740 0741 0742 0743 0745 0746 0748 0757 0758 0759 0768 0769 079
+    0110 0111 0112 0113 0114 0115
+    0730 0731 0732 0733 0734 0735 0736 0737 0738 0739 0750 0751 0752 0753 0754 0755 0756
+    0780 0781 0782 0783 0784 0785 0786 0787 0788 0789 0100 0101 0102 0103 0104 0105 0106 0107 0108
+    0770 0771 0772 0773 0774 0775 0776 0777 0778 0779
+    0763 0764 0765 0766
+    0747
+  ].freeze
+
+  def valid_kenyan_prefix?(number)
+    return false if number.blank?
+    digits = number.to_s.gsub(/\D/, '')
+    return false unless digits.match?(/\A0[17]\d{8}\z/)
+    KENYAN_MOBILE_PREFIXES.any? { |prefix| digits.start_with?(prefix) }
+  end
+
+  def phone_number_must_have_valid_kenyan_prefix
+    return if phone_number.blank?
+    unless valid_kenyan_prefix?(phone_number)
+      errors.add(:phone_number, "is not a valid Kenyan mobile number (invalid prefix)")
+    end
+  end
+
+  def secondary_phone_number_must_have_valid_kenyan_prefix
+    unless valid_kenyan_prefix?(secondary_phone_number)
+      errors.add(:secondary_phone_number, "is not a valid Kenyan mobile number (invalid prefix)")
     end
   end
 end

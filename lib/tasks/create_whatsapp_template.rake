@@ -80,4 +80,79 @@ namespace :admin do
       puts "❌ Error connecting to Graph API: #{e.message}"
     end
   end
+
+  desc "Create the accurate_listings WhatsApp template via Graph API"
+  task create_accurate_listings_template: :environment do
+    require 'net/http'
+    require 'uri'
+    require 'json'
+
+    waba_id = ENV['WHATSAPP_CLOUD_WABA_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+    graph_url = 'https://graph.facebook.com/v22.0'
+
+    if waba_id.blank? || access_token.blank?
+      puts "❌ Error: WHATSAPP_CLOUD_WABA_ID or WHATSAPP_CLOUD_ACCESS_TOKEN is missing in .env"
+      exit 1
+    end
+
+    uri = URI("#{graph_url}/#{waba_id}/message_templates")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+    request = Net::HTTP::Post.new(uri.path)
+    request['Authorization'] = "Bearer #{access_token}"
+    request['Content-Type'] = 'application/json'
+
+    body_text = "Hello *Dear Seller*,\n\nTrust begins with honest product information.\n\nTo help buyers make informed decisions:\n• Use genuine product photos.\n• Provide accurate descriptions.\n• Display correct pricing.\n• Update listings whenever details change.\n\nClear and accurate listings help build confidence in your business and create a better marketplace experience for everyone.\n\nRegards,\n*Carbon Cube Kenya*"
+
+    payload = {
+      name: 'accurate_listings',
+      language: 'en',
+      category: 'MARKETING',
+      components: [
+        {
+          type: 'BODY',
+          text: body_text
+        },
+        {
+          type: 'BUTTONS',
+          buttons: [
+            {
+              type: 'URL',
+              text: 'Manage Listings',
+              url: 'https://carboncube-ke.com/seller/ads?utm_source=whatsapp&utm_medium=waba_template&utm_campaign=accurate_listings&utm_term=trust_building&utm_content=manage_ads_button'
+            },
+            {
+              type: 'URL',
+              text: 'Go to Dashboard',
+              url: 'https://carboncube-ke.com/seller/dashboard?utm_source=whatsapp&utm_medium=waba_template&utm_campaign=accurate_listings&utm_term=trust_building&utm_content=dashboard_button'
+            }
+          ]
+        }
+      ]
+    }
+
+    request.body = payload.to_json
+
+    puts "Sending request to Meta Graph API to create template 'accurate_listings'..."
+    
+    begin
+      response = http.request(request)
+      result = JSON.parse(response.body)
+
+      if response.code.to_i == 200 || response.code.to_i == 201
+        puts "✅ Template successfully submitted for creation/approval!"
+        puts "ID: #{result['id']}"
+        puts "Status: #{result['status']}"
+        puts "Category: #{result['category']}"
+      else
+        puts "❌ Failed to create template:"
+        puts JSON.pretty_generate(result)
+      end
+    rescue StandardError => e
+      puts "❌ Error connecting to Graph API: #{e.message}"
+    end
+  end
 end

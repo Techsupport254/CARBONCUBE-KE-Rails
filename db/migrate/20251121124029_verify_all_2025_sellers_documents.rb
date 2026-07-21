@@ -11,7 +11,7 @@ class VerifyAll2025SellersDocuments < ActiveRecord::Migration[7.1]
     SQL
     )
     
-    Rails.logger.info "✅ Updated #{sellers_updated.cmd_tuples} 2025 sellers with document verification (sales team confirmed physically)"
+    Rails.logger.info "Updated #{sellers_updated.cmd_tuples} 2025 sellers with document verification (sales team confirmed physically)"
   end
 
   def down

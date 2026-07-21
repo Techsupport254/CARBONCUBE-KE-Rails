@@ -2,17 +2,10 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
   queue_as :default
 
   def perform
-    Rails.logger.info "=== PRODUCT DETAILS TO ALL SELLERS JOB START ==="
-    
-    # Process all sellers with phone numbers
     sellers_to_process = Seller.where.not(phone_number: [nil, ''])
-    
-    Rails.logger.info "Processing all sellers with phone numbers"
-    Rails.logger.info "Found #{sellers_to_process.count} seller(s) to process"
     
     if sellers_to_process.none?
       Rails.logger.warn "No sellers found to process"
-      Rails.logger.info "=== PRODUCT DETAILS TO ALL SELLERS JOB COMPLETED ==="
       return
     end
     
@@ -21,35 +14,27 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
     
     sellers_to_process.find_each do |seller|
       begin
-        Rails.logger.info "Processing seller: #{seller.fullname || seller.enterprise_name || 'Unnamed'} (#{seller.email})"
-        
-        # Send WhatsApp template message
         if seller.phone_number.present?
-          Rails.logger.info "Sending WhatsApp template to #{seller.phone_number}..."
-          
           whatsapp_result = WhatsAppCloudService.send_template(
             seller.phone_number,
             'product_details',
-            'sw'  # Swahili language code
+            'sw'
           )
 
           if whatsapp_result.is_a?(Hash) && whatsapp_result[:success]
-            Rails.logger.info "✅ WhatsApp template sent to #{seller.phone_number}"
             success_count += 1
           else
             error_msg = whatsapp_result.is_a?(Hash) ? whatsapp_result[:error] : 'Unknown error'
-            Rails.logger.warn "⚠️ Failed to send WhatsApp template to #{seller.phone_number}: #{error_msg}"
+            Rails.logger.warn "Failed to send WhatsApp template to #{seller.phone_number}: #{error_msg}"
             failure_count += 1
           end
         else
-          Rails.logger.warn "⚠️ Seller #{seller.id} has no phone number - skipping WhatsApp"
+          Rails.logger.warn "Seller #{seller.id} has no phone number - skipping WhatsApp"
           failure_count += 1
         end
         
-        # Send in-app message
         send_in_app_product_details_message(seller)
         
-        # Small delay to avoid rate limiting
         sleep(0.5)
         
       rescue => e
@@ -58,11 +43,7 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
       end
     end
     
-    Rails.logger.info "=== PRODUCT DETAILS TO ALL SELLERS JOB SUMMARY ==="
-    Rails.logger.info "Total Sellers Processed: #{sellers_to_process.count}"
-    Rails.logger.info "✅ Successful: #{success_count}"
-    Rails.logger.info "❌ Failed: #{failure_count}"
-    Rails.logger.info "=== PRODUCT DETAILS TO ALL SELLERS JOB COMPLETED ==="
+    Rails.logger.info "Product details to all sellers job complete. Success: #{success_count}, Failed: #{failure_count}"
   end
 
   private
@@ -89,7 +70,6 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
       **Carbon Cube Kenya**
     MARKDOWN
 
-    # Find system admin for sending messages
     system_admin = Rails.cache.fetch("system_admin_user", expires_in: 1.hour) do
       Admin.find_by(email: 'support@carboncube-ke.com') || 
              Admin.find_by(username: 'admin') || 
@@ -101,7 +81,6 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
       return
     end
 
-    # Create conversation
     conversation = Conversation.find_or_create_by!(
       admin_id: system_admin.id,
       seller_id: seller.id,
@@ -110,13 +89,11 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
       inquirer_seller_id: nil
     )
 
-    # Create the message
     message = conversation.messages.create!(
       content: markdown_content,
       sender: system_admin
     )
     
-    # Update unread counts
     begin
       UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
     rescue => e

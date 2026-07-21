@@ -77,31 +77,19 @@ class Message < ApplicationRecord
     # Check if recipient is online before scheduling delivery
     recipient = get_recipient
     if recipient && is_recipient_online?(recipient)
-      # Recipient is online - mark as delivered immediately
-      # Rails.logger.info "Recipient is online, marking message #{id} as delivered immediately"
       mark_as_delivered!
     else
-      # Recipient is offline - schedule delivery for when they come online
-      # Rails.logger.info "Recipient is offline, scheduling delivery receipt for message #{id}"
       begin
         MessageDeliveryJob.perform_in(2.seconds, id)
       rescue NoMethodError => e
-        # Fallback: if Sidekiq is not available, mark as delivered immediately
-        # Rails.logger.warn "Sidekiq not available, marking message as delivered immediately: #{e.message}"
         mark_as_delivered!
       rescue => e
         Rails.logger.error "Failed to schedule delivery receipt: #{e.message}"
-        # Don't fail the message creation if delivery receipt scheduling fails
       end
     end
   end
 
   def broadcast_new_message
-    # Rails.logger.info "=== BROADCASTING NEW MESSAGE #{id} ==="
-    # Rails.logger.info "Conversation ID: #{conversation.id}"
-    # Rails.logger.info "Buyer ID: #{conversation.buyer_id}"
-    # Rails.logger.info "Seller ID: #{conversation.seller_id}"
-    
     message_data = {
       id: id,
       content: content,
@@ -135,29 +123,21 @@ class Message < ApplicationRecord
       message: message_data
     }
     
-    # Rails.logger.info "Broadcast payload: #{broadcast_payload.inspect}"
-
-    # Broadcast to buyer
     if conversation.buyer_id
-      # Rails.logger.info "Broadcasting message #{id} to buyer #{conversation.buyer_id}"
       ActionCable.server.broadcast(
         "conversations_buyer_#{conversation.buyer_id}",
         broadcast_payload
       )
     end
 
-    # Broadcast to seller
     if conversation.seller_id
-      # Rails.logger.info "Broadcasting message #{id} to seller #{conversation.seller_id}"
       ActionCable.server.broadcast(
         "conversations_seller_#{conversation.seller_id}",
         broadcast_payload
       )
     end
 
-    # Broadcast to inquirer seller (if different from main seller)
     if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
-      # Rails.logger.info "Broadcasting message #{id} to inquirer seller #{conversation.inquirer_seller_id}"
       ActionCable.server.broadcast(
         "conversations_seller_#{conversation.inquirer_seller_id}",
         broadcast_payload
@@ -242,24 +222,18 @@ class Message < ApplicationRecord
     recipient = get_recipient
     return unless recipient
     
-    # Don't send email if recipient is online (they'll see it in real-time)
     if is_recipient_online?(recipient)
-      # Rails.logger.info "Recipient #{recipient.class.name} #{recipient.id} is online, skipping email notification"
       return
     end
     
-    # Don't send email to the sender
     if sender == recipient
-      # Rails.logger.info "Sender and recipient are the same, skipping email notification"
       return
     end
     
     begin
       MessageNotificationMailer.new_message_notification(self, recipient).deliver_now
-      # Rails.logger.info "Email notification sent to #{recipient.class.name} #{recipient.id} for message #{id}"
     rescue => e
       Rails.logger.error "Failed to send email notification for message #{id}: #{e.message}"
-      # Don't fail message creation if email sending fails
     end
   end
 

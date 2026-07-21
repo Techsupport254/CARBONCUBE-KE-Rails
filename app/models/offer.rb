@@ -1,4 +1,6 @@
 class Offer < ApplicationRecord
+  self.primary_key = 'id'
+
   # Associations
   belongs_to :seller
   has_many :offer_ads, dependent: :destroy

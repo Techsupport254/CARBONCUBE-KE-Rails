@@ -25,12 +25,16 @@ gem "google-apis-content_v2_1"
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem "rack-cors"
 
+# HTML parsing for SEO analysis
+gem "nokogiri"
+
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
 
 # Redis for Action Cable in production
 gem 'redis', '~> 5.0'
 gem 'connection_pool', '~> 2.4'
+gem 'redis-actionpack', '~> 5.3'
 
 # AnyCable for high-performance WebSockets
 # gem 'anycable-rails', '~> 1.4'

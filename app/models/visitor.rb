@@ -1,4 +1,5 @@
 class Visitor < ApplicationRecord
+  self.primary_key = 'id'
   belongs_to :registered_user, polymorphic: true, optional: true
 
   validates :visitor_id, presence: true, uniqueness: true

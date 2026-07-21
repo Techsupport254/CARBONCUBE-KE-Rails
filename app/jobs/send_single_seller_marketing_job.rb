@@ -43,7 +43,7 @@ class SendSingleSellerMarketingJob < ApplicationJob
       conversation.update!(is_whatsapp: true)
       
       preview_text = if template_name.include?('easter')
-                      "🐣 Easter Campaign Sent: Hello, #{seller.fullname || seller.username}! We've reached out about the Easter shop update."
+                      "Easter Campaign Sent: Hello, #{seller.fullname || seller.username}! We've reached out about the Easter shop update."
                     else
                       "Broadcast Template: #{template_name} sent."
                     end
@@ -55,7 +55,7 @@ class SendSingleSellerMarketingJob < ApplicationJob
         status: Message::STATUS_SENT
       )
     else
-      Rails.logger.error "❌ Marketing Job Failed for Seller ##{seller.id}: #{result[:error]}"
+      Rails.logger.error "Marketing Job Failed for Seller ##{seller.id}: #{result[:error]}"
     end
   end
 end

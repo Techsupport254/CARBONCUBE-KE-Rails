@@ -3,7 +3,8 @@ class SellerSerializer < ActiveModel::Serializer
              :business_registration_number, :description, :username, :profile_picture,
              :age_group_id, :zipcode, :city, :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
-             :carbon_code, :created_at, :updated_at
+             :carbon_code, :created_at, :updated_at,
+             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website
 
   has_many :categories
   has_many :seller_documents, serializer: SellerDocumentSerializer

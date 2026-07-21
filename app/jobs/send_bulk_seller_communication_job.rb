@@ -1,67 +1,34 @@
 class SendBulkSellerCommunicationJob < ApplicationJob
-  queue_as :broadcast  # Bulk orchestrator — runs for a long time, must not block real-time queues
+  queue_as :broadcast
 
   retry_on StandardError, wait: 30.seconds, attempts: 2
 
   def perform(email_type = 'general_update', auto_confirm = false, channels = { email: true, whatsapp: false }, custom_subject = nil, custom_message = nil)
-    # Log to both Rails logger and Sidekiq logger for visibility
-    log_message = "=== BULK SELLER COMMUNICATION JOB START ==="
-    Rails.logger.info log_message
-
-    log_message = "Job ID: #{job_id} | Email Type: #{email_type} | Channels: #{channels.inspect}"
-    Rails.logger.info log_message
-
-    log_message = "Job Queue: #{queue_name} | Priority: #{priority}"
-    Rails.logger.info log_message
-    
-    # Find all active sellers (not deleted, not blocked)
     active_sellers = Seller.where(
       deleted: [false, nil],
       blocked: [false, nil]
     )
     
     total_sellers = active_sellers.count
-    log_message = "Found #{total_sellers} active sellers to send emails to"
-    Rails.logger.info log_message
     
     if total_sellers == 0
-      log_message = "No active sellers found. Job completed."
-      Rails.logger.info log_message
+      Rails.logger.info "No active sellers found. Job completed."
       return
     end
 
-    # Show the list of sellers
-    
-    active_sellers.order(:id).each do |seller|
-      name = seller.fullname.to_s[0..30].ljust(30) # Truncate and pad name
-    end
-    
-    
-    # In a Sidekiq job, STDIN is never available. auto_confirm must be passed as true
-    # when calling from a background context. If false, log a warning and proceed anyway.
     unless auto_confirm
       Rails.logger.warn "[SendBulkSellerCommunicationJob] auto_confirm is false in a background job context. Proceeding without interactive confirmation."
     end
-    
     
     sent_count = 0
     failed_count = 0
     failed_sellers = []
     
-    # Process sellers in batches to avoid memory issues
     active_sellers.find_in_batches(batch_size: 50) do |seller_batch|
       seller_batch.each do |seller|
         begin
-          log_message = "Processing seller: #{seller.id} | #{seller.fullname} | #{seller.email}"
-          Rails.logger.info log_message
-          
-          # Queue individual communication job for each seller
           SendSellerCommunicationJob.perform_later(seller.id, email_type, channels, custom_subject, custom_message)
           sent_count += 1
-          
-          log_message = "✅ Queued email for seller #{seller.id} (#{seller.email})"
-          Rails.logger.info log_message
-          
         rescue => e
           failed_count += 1
           failed_sellers << {
@@ -69,43 +36,15 @@ class SendBulkSellerCommunicationJob < ApplicationJob
             email: seller.email,
             error: e.message
           }
-          
-          log_message = "❌ Failed to queue email for seller #{seller.id}: #{e.message}"
-          Rails.logger.error log_message
+          Rails.logger.error "Failed to queue email for seller #{seller.id}: #{e.message}"
         end
       end
       
-      # Small delay between batches to prevent overwhelming the system
       sleep(1) if seller_batch.size == 50
     end
     
-    # Log final results
-    log_message = "=== BULK EMAIL JOB COMPLETED ==="
-    Rails.logger.info log_message
+    Rails.logger.info "Bulk job complete. Queued: #{sent_count}, Failed: #{failed_count}"
     
-    log_message = "Total sellers processed: #{total_sellers}"
-    Rails.logger.info log_message
-    
-    log_message = "Successfully queued emails: #{sent_count}"
-    Rails.logger.info log_message
-    
-    log_message = "Failed to queue emails: #{failed_count}"
-    Rails.logger.info log_message
-    
-    if failed_sellers.any?
-      log_message = "Failed sellers:"
-      Rails.logger.error log_message
-      
-      failed_sellers.each do |failed_seller|
-        log_message = "  - ID: #{failed_seller[:id]}, Email: #{failed_seller[:email]}, Error: #{failed_seller[:error]}"
-        Rails.logger.error log_message
-      end
-    end
-    
-    log_message = "=== BULK SELLER COMMUNICATION JOB END ==="
-    Rails.logger.info log_message
-    
-    # Return summary for monitoring
     {
       status: 'completed',
       total_sellers: total_sellers,

@@ -220,21 +220,27 @@ class Seller::ConversationsController < ApplicationController
       end
     end
 
+    # Batch fetch unread counts to avoid N+1 queries
+    regular_conv_ids = conversations.reject { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+    seller_to_seller_conv_ids = conversations.select { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+
+    unread_regular = regular_conv_ids.any? ?
+      Message.where(conversation_id: regular_conv_ids)
+             .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+             .where(read_at: nil)
+             .group(:conversation_id)
+             .count : {}
+    unread_seller_to_seller = seller_to_seller_conv_ids.any? ?
+      Message.where(conversation_id: seller_to_seller_conv_ids)
+             .where.not(sender_id: @current_seller.id)
+             .where(read_at: nil)
+             .group(:conversation_id)
+             .count : {}
+    unread_by_conv = unread_regular.merge(unread_seller_to_seller)
+
     unread_counts = grouped_conversations.values.map do |conversation_group|
       most_recent_conversation = conversation_group.max_by(&:updated_at)
-      unread_count = conversation_group.sum do |conversation|
-        if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-          conversation.messages
-                      .where.not(sender_id: @current_seller.id)
-                      .where(read_at: nil)
-                      .count
-        else
-          conversation.messages
-                      .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                      .where(read_at: nil)
-                      .count
-        end
-      end
+      unread_count = conversation_group.sum { |conversation| unread_by_conv[conversation.id] || 0 }
 
       {
         conversation_id: most_recent_conversation.id,
@@ -258,27 +264,25 @@ class Seller::ConversationsController < ApplicationController
       @current_seller.id, 
       @current_seller.id
     ).active_participants
-    
-    # Calculate total unread count handling seller-to-seller conversations
-    # This avoids duplicate counting issues with joins
+
+    # Batch fetch total unread count in 2 queries instead of N+1 per conversation
+    regular_conv_ids = conversations.reject { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+    seller_to_seller_conv_ids = conversations.select { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+
     total_unread = 0
-    conversations.each do |conversation|
-      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-        # Seller-to-seller conversation: count messages not sent by current user
-        unread_count = conversation.messages
-                                  .where.not(sender_id: @current_seller.id)
-                                  .where(read_at: nil)
-                                  .count
-      else
-        # Regular conversation: count messages from buyers, admins, and sales users
-        unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                                  .where(read_at: nil)
-                                  .count
-      end
-      total_unread += unread_count
+    if regular_conv_ids.any?
+      total_unread += Message.where(conversation_id: regular_conv_ids)
+                             .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                             .where(read_at: nil)
+                             .count
     end
-    
+    if seller_to_seller_conv_ids.any?
+      total_unread += Message.where(conversation_id: seller_to_seller_conv_ids)
+                             .where.not(sender_id: @current_seller.id)
+                             .where(read_at: nil)
+                             .count
+    end
+
     render json: { count: total_unread }
   end
 

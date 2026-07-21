@@ -138,7 +138,6 @@ class WelcomeImageGeneratorService
       File.delete(qr_code_path) if qr_code_path && File.exist?(qr_code_path)
       
       absolute_path = File.expand_path(image_path)
-      Rails.logger.info "✅ Welcome image generated: #{absolute_path}"
       absolute_path
     rescue => e
       Rails.logger.error "❌ Error generating welcome image: #{e.message}"

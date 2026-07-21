@@ -21,9 +21,9 @@ class SendWhatsappTemplateJob < ApplicationJob
     result = WhatsAppCloudService.send_template(user.phone_number, template_name, language_code, components)
 
     if result[:success]
-      Rails.logger.info "[SendWhatsappTemplateJob] ✅ Successfully sent template '#{template_name}' to #{user.phone_number}"
+      Rails.logger.info "[SendWhatsappTemplateJob] Successfully sent template '#{template_name}' to #{user.phone_number}"
     else
-      Rails.logger.error "[SendWhatsappTemplateJob] ❌ Failed to send template '#{template_name}' to #{user.phone_number}: #{result[:error]}"
+      Rails.logger.error "[SendWhatsappTemplateJob] Failed to send template '#{template_name}' to #{user.phone_number}: #{result[:error]}"
     end
   end
 end

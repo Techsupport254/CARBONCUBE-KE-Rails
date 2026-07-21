@@ -58,10 +58,8 @@ class Buyer::BuyersController < ApplicationController
         # Send welcome email
         begin
           WelcomeMailer.welcome_email(@buyer).deliver_now
-          puts "✅ Welcome email sent to: #{@buyer.email}"
         rescue => e
-          puts "❌ Failed to send welcome email: #{e.message}"
-          # Don't fail the registration if email fails
+          Rails.logger.error "Failed to send welcome email: #{e.message}"
         end
         
         

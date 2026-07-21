@@ -16,6 +16,8 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     'http://localhost:3001',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3001',
+    'http://[::1]:3000',
+    'http://[::1]:3001',
     'http://localhost:5173',
     'http://127.0.0.1:5173'
   ]
@@ -33,8 +35,8 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     resource '*',
       headers: :any,
       methods: [:get, :post, :put, :patch, :delete, :options, :head],
-      credentials: true,
-      expose: ['Authorization', 'X-Request-Id', 'X-Runtime', 'X-Page-Load-Time'],
+      credentials: true,  # Required for cookie-based authentication
+      expose: ['Authorization', 'X-Request-Id', 'X-Runtime', 'X-Page-Load-Time', 'Access-Token', 'Refresh-Token'],
       max_age: 86400
   end
 end

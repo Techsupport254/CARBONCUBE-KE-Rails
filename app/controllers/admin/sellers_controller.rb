@@ -4,10 +4,8 @@ class Admin::SellersController < ApplicationController
   before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
 
   def index
-    # Base query - show all sellers including deleted, flagged, and blocked
     sellers_query = Seller.unscoped
     
-    # Enhanced search functionality
     if params[:query].present?
       search_term = params[:query].strip
       sellers_query = sellers_query.where(
@@ -22,7 +20,6 @@ class Admin::SellersController < ApplicationController
       )
     end
     
-    # Filter by status
     if params[:status].present?
       case params[:status]
       when 'active'
@@ -34,33 +31,24 @@ class Admin::SellersController < ApplicationController
       when 'flagged'
         sellers_query = sellers_query.where(flagged: true)
       when 'all'
-        # Show all - no filter (already using unscoped)
       end
-    else
-      # Default: show all sellers when no filter is selected
-      # (already using unscoped, so this is fine)
     end
     
-    # Sorting - default to created_at desc to show newest sellers first
     sort_by = params[:sort_by] || 'created_at'
     sort_order = params[:sort_order] || 'desc'
     
-    # Validate sort parameters
     allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at]
     allowed_sort_orders = %w[asc desc]
     
     sort_by = 'created_at' unless allowed_sort_fields.include?(sort_by)
     sort_order = 'asc' unless allowed_sort_orders.include?(sort_order)
     
-    # Handle sorting - use last_active_at instead of last_activity
     sort_by = 'last_active_at' if sort_by == 'last_activity'
     sellers_query = sellers_query.order("#{sort_by} #{sort_order}")
     
-    # Pagination
     page = params[:page]&.to_i || 1
     per_page = params[:per_page]&.to_i || 20
     
-    # Validate pagination parameters
     page = 1 if page < 1
     per_page = [per_page, 100].min # Max 100 per page
     per_page = 20 if per_page < 1
@@ -70,10 +58,8 @@ class Admin::SellersController < ApplicationController
     
     @sellers = sellers_query.limit(per_page).offset(offset)
     
-    # Cutoff for onboarding classification (sellers before this had no Carbon code option)
     carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
 
-    # Prepare sellers data with last_active_at, carbon_code, and onboarding_type
     @sellers_data = @sellers.map do |seller|
       row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
       row['total_ads'] = seller.ads.count
@@ -87,7 +73,6 @@ class Admin::SellersController < ApplicationController
       row
     end
     
-    # Calculate pagination metadata
     total_pages = (total_count.to_f / per_page).ceil
     has_next_page = page < total_pages
     has_prev_page = page > 1
@@ -135,7 +120,6 @@ class Admin::SellersController < ApplicationController
   def create
     @seller = Seller.new(seller_params)
     if @seller.save
-      # Ensure every seller has a tier (admin-created sellers get Free by default)
       assign_default_tier_for_seller(@seller) if @seller.seller_tier.blank?
       render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :blocked]), status: :created
     else
@@ -239,7 +223,6 @@ class Admin::SellersController < ApplicationController
       return
     end
 
-    # Ensure seller_ids is an array and filter out any nil/empty values
     seller_ids = Array(seller_ids).compact.reject(&:blank?)
     
     if seller_ids.empty?
@@ -247,22 +230,14 @@ class Admin::SellersController < ApplicationController
       return
     end
 
-    # Normalize seller_ids to strings for UUID comparison
     seller_ids_normalized = seller_ids.map(&:to_s).reject(&:blank?)
     
-    # Find all sellers - use unscoped to include deleted/blocked sellers
     sellers = Seller.unscoped.where(id: seller_ids_normalized)
     found_ids = sellers.pluck(:id).map(&:to_s)
     missing_ids = seller_ids_normalized - found_ids
     
     updated_count = 0
     errors = []
-
-    # Log for debugging
-    Rails.logger.info "Bulk action '#{action}' - Requested IDs: #{seller_ids_normalized.inspect}"
-    Rails.logger.info "Bulk action '#{action}' - Found #{sellers.count} sellers"
-    Rails.logger.info "Bulk action '#{action}' - Found IDs: #{found_ids.inspect}"
-    Rails.logger.info "Bulk action '#{action}' - Missing IDs: #{missing_ids.inspect}" if missing_ids.any?
 
     if sellers.empty?
       errors << "No sellers found with the provided IDs"
@@ -277,21 +252,16 @@ class Admin::SellersController < ApplicationController
       return
     end
 
-    # Use update_all for better performance and reliability
     begin
       case action
       when 'flag'
         updated_count = sellers.update_all(flagged: true, updated_at: Time.current)
-        Rails.logger.info "Flagged #{updated_count} sellers"
       when 'unflag'
         updated_count = sellers.update_all(flagged: false, updated_at: Time.current)
-        Rails.logger.info "Unflagged #{updated_count} sellers"
       when 'block'
         updated_count = sellers.update_all(blocked: true, updated_at: Time.current)
-        Rails.logger.info "Blocked #{updated_count} sellers"
       when 'unblock'
         updated_count = sellers.update_all(blocked: false, updated_at: Time.current)
-        Rails.logger.info "Unblocked #{updated_count} sellers"
       else
         errors << "Unknown action: #{action}"
       end
@@ -301,7 +271,6 @@ class Admin::SellersController < ApplicationController
       Rails.logger.error e.backtrace.first(10).join("\n")
     end
 
-    # Add errors for missing sellers
     if missing_ids.any?
       errors << "Sellers not found: #{missing_ids.join(', ')}"
     end
@@ -322,7 +291,6 @@ class Admin::SellersController < ApplicationController
   end
 
   def orders
-    # Orders tracking not yet implemented
     render json: [], status: :ok
   end
 
@@ -332,7 +300,6 @@ class Admin::SellersController < ApplicationController
     free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
     return unless free_tier
     SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
-    Rails.logger.info "✅ Default (Free) tier assigned to admin-created seller #{seller.id}"
   end
 
   def set_seller
@@ -340,7 +307,7 @@ class Admin::SellersController < ApplicationController
   end
 
   def seller_params
-    params.require(:seller).permit(:fullname, :phone_number, :email, :enterprise_name, :location, :password, :business_registration_number, category_ids: [])
+    params.require(:seller).permit(:fullname, :phone_number, :email, :enterprise_name, :location, :password, :business_registration_number, category_ids: [], :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website)
   end
 
   def authenticate_admin_or_sales
@@ -391,7 +358,6 @@ class Admin::SellersController < ApplicationController
     seller_ads = seller.ads
     ad_ids = seller_ads.pluck(:id)
     
-    # Apply same filtering as SellerRankingService for consistency
     click_events = ClickEvent
       .excluding_internal_users
       .where(ad_id: ad_ids)
@@ -400,7 +366,6 @@ class Admin::SellersController < ApplicationController
       .left_joins(:buyer)
       .where("buyers.id IS NULL OR buyers.deleted = ?", false)
     
-    # Exclude seller own clicks using SQL (same as rankings service)
     click_events = click_events.where(
       "NOT (
         (metadata->>'user_role' = 'seller' OR metadata->>'user_role' = 'Seller')
@@ -410,7 +375,6 @@ class Admin::SellersController < ApplicationController
       )"
     )
     
-    # Aggregate contact interaction clicks by action type (same as rankings service)
     contact_interaction_events = click_events
       .where(event_type: 'Reveal-Seller-Details')
       .where("metadata->>'action' = ?", 'seller_contact_interaction')
@@ -423,12 +387,10 @@ class Admin::SellersController < ApplicationController
     
     click_event_counts = click_events.group(:event_type).count
   
-    # Seller Engagement & Visibility
     total_clicks = click_event_counts["Ad-Click"] || 0
     total_profile_views = click_event_counts["Reveal-Seller-Details"] || 0
     reveal_seller_details_clicks = click_event_counts["Reveal-Seller-Details"] || 0
     
-    # Contact interaction metrics (same as rankings service)
     copy_clicks = (contact_interaction_events['copy_phone'] || 0) + (contact_interaction_events['copy_email'] || 0)
     call_clicks = contact_interaction_events['call_phone'] || 0
     whatsapp_clicks = contact_interaction_events['whatsapp'] || 0
@@ -442,12 +404,10 @@ class Admin::SellersController < ApplicationController
 
     ad_performance_rank = ad_performance_rankings.index(seller.id)&.next || nil
     
-    # Seller Activity & Consistency
     last_activity = seller.ads.order(updated_at: :desc).limit(1).pluck(:updated_at).first
     total_ads_updated = seller_ads.where.not("updated_at = created_at").count
     ad_approval_rate = (seller_ads.where(approved: true).count.to_f / seller_ads.count * 100).round(2) rescue 0
   
-    # Competitor & Category Insights
     top_category = seller_ads.joins("JOIN categories_sellers ON ads.seller_id = categories_sellers.seller_id")
                       .joins("JOIN categories ON categories_sellers.category_id = categories.id")
                       .group("categories.name")
@@ -456,7 +416,6 @@ class Admin::SellersController < ApplicationController
                       .count
                       .keys.first rescue "Unknown"
 
-    # Handle sellers without categories
     if seller.category.present?
       category_comparison = Seller.joins(:ads)
                         .joins("JOIN categories_sellers ON sellers.id = categories_sellers.seller_id")
@@ -472,7 +431,6 @@ class Admin::SellersController < ApplicationController
       seller_category_rank = nil
     end
   
-    # Customer Interest & Conversion
     wishlist_to_click_ratio = (click_event_counts["Add-to-Wish-List"].to_f / total_clicks * 100).round(2) rescue 0
     wishlist_to_contact_ratio = (click_event_counts["Add-to-Wish-List"].to_f / reveal_seller_details_clicks * 100).round(2) rescue 0
     most_wishlisted_ad = WishList.where(ad_id: ad_ids)
@@ -484,7 +442,6 @@ class Admin::SellersController < ApplicationController
   
     most_wishlisted_ad_data = most_wishlisted_ad ? Ad.find(most_wishlisted_ad[0]).as_json(methods: [:first_media_url, :media_urls, :media], only: [:id, :title]) : nil
     
-    # Calculate total reviews for composite score
     total_reviews_count = seller.reviews_received.joins(:ad)
                                    .where(ads: { id: ad_ids })
                                    .group(:rating)
@@ -492,25 +449,18 @@ class Admin::SellersController < ApplicationController
                                    .values.sum
   
     {
-      # Ad Inventory
       total_ads: seller_ads.count,
-
-      # Ad Performance
       total_ads_wishlisted: WishList.where(ad_id: ad_ids).count,
-
-      # Rating
       mean_rating: seller.reviews_received.joins(:ad)
                                 .where(ads: { id: ad_ids })
                                 .average(:rating).to_f.round(2),
   
-      # Total Reviews
       total_reviews: seller.reviews_received.joins(:ad)
                                    .where(ads: { id: ad_ids })
                                    .group(:rating)
                                    .count
                                    .values.sum,
   
-      # Rating Breakdown
       rating_pie_chart: (1..5).map do |rating|
         {
           rating: rating,
@@ -521,41 +471,34 @@ class Admin::SellersController < ApplicationController
         }
       end,
   
-      # Reviews
       reviews: seller.reviews_received.joins(:ad, :buyer)
                       .where(ads: { id: ad_ids })
                       .select('reviews.*, buyers.fullname AS buyer_name')
                       .as_json(only: [:id, :rating, :review, :created_at],
                                 include: { buyer: { only: [:fullname] } }),
   
-      # Click Event Breakdown
       ad_clicks: total_clicks,
       add_to_wish_list: click_event_counts["Add-to-Wish-List"] || 0,
       reveal_seller_details: reveal_seller_details_clicks,
       total_click_events: click_events.count,
       
-      # Contact Interaction Metrics (same as rankings service)
       copy_clicks: copy_clicks,
       call_clicks: call_clicks,
       whatsapp_clicks: whatsapp_clicks,
       location_clicks: location_clicks,
       total_contact_interactions: total_contact_interactions,
   
-      # Engagement & Visibility Metrics
       total_profile_views: total_profile_views,
       ad_performance_rank: ad_performance_rank,
   
-      # Activity & Consistency
       last_activity: last_activity,
       total_ads_updated: total_ads_updated,
       ad_approval_rate: ad_approval_rate,
   
-      # Competitor & Category Insights
       seller_category: seller.category&.name || "No Category",
       top_performing_category: top_category,
       category_rank: seller_category_rank,
   
-      # Customer Interest & Conversion
       wishlist_to_click_ratio: wishlist_to_click_ratio,
       wishlist_to_contact_ratio: wishlist_to_contact_ratio,
       most_wishlisted_ad: most_wishlisted_ad_data,
@@ -564,7 +507,6 @@ class Admin::SellersController < ApplicationController
       last_ad_posted_at: seller_ads.order(created_at: :desc).limit(1).pluck(:created_at).first,
       account_age_days: (Time.current.to_date - seller.created_at.to_date).to_i,
       
-      # Composite Score (same calculation as rankings service)
       composite_score: (
         (total_clicks * 0.20) +
         (reveal_seller_details_clicks * 0.35) +

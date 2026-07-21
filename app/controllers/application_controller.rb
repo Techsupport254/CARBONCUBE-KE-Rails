@@ -30,6 +30,31 @@ class ApplicationController < ActionController::Base
     render json: { error: 'File not found' }, status: :not_found
   end
 
+  # Block known bots/crawlers from tracking endpoints
+  def block_bots
+    if bot_request?
+      render json: { error: 'Bot requests are not tracked' }, status: :forbidden
+    end
+  end
+
+  # Detect known bots and crawlers by user agent
+  def bot_request?
+    user_agent = request.user_agent.to_s.downcase
+    return false if user_agent.blank?
+
+    bot_patterns = [
+      'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider',
+      'yandexbot', 'sogou', 'exabot', 'facebot', 'facebookexternalhit',
+      'ia_archiver', 'twitterbot', 'linkedinbot', 'applebot',
+      'whatsapp', 'telegrambot', 'discordbot', 'skypeuripreview',
+      'semrush', 'ahrefsbot', 'mj12bot', 'dotbot', 'petalbot',
+      'headlesschrome', 'phantomjs', 'selenium', 'wget', 'curl',
+      'python-requests', 'scrapy', 'spider', 'crawl', 'bot/'
+    ]
+
+    bot_patterns.any? { |pattern| user_agent.include?(pattern) }
+  end
+
   private
 
   def log_all_requests

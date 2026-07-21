@@ -219,23 +219,27 @@ class Sales::ConversationsController < ApplicationController
     # Get all conversations for the current sales user with unread message counts
     conversations = Conversation.where(admin_id: @current_user.id)
                                 .active_participants
-    
+
+    # Batch fetch unread counts in a single query instead of N+1 per conversation
+    conv_ids = conversations.map(&:id)
+    unread_by_conv = conv_ids.any? ?
+      Message.where(conversation_id: conv_ids)
+             .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+             .where(read_at: nil)
+             .group(:conversation_id)
+             .count : {}
+
     unread_counts = conversations.map do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
-      
       {
         conversation_id: conversation.id,
-        unread_count: unread_count
+        unread_count: unread_by_conv[conversation.id] || 0
       }
     end
-    
+
     # Count conversations with unread messages
     conversations_with_unread = unread_counts.count { |item| item[:unread_count] > 0 }
-    
-    render json: { 
+
+    render json: {
       unread_counts: unread_counts,
       conversations_with_unread: conversations_with_unread
     }
@@ -246,19 +250,15 @@ class Sales::ConversationsController < ApplicationController
     # Get all conversations for the current sales user
     conversations = Conversation.where(admin_id: @current_user.id)
                                 .active_participants
-    
-    # Calculate total unread count by iterating through conversations
-    # This avoids duplicate counting issues with joins
-    total_unread = 0
-    conversations.each do |conversation|
-      # Count messages from sellers, buyers, and purchasers (not from sales users)
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
-      total_unread += unread_count
-    end
-    
+
+    # Batch fetch total unread count in a single query instead of N+1 per conversation
+    conv_ids = conversations.map(&:id)
+    total_unread = conv_ids.any? ?
+      Message.where(conversation_id: conv_ids)
+             .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+             .where(read_at: nil)
+             .count : 0
+
     render json: { count: total_unread }
   end
 

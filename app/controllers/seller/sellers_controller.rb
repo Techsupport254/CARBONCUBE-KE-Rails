@@ -36,50 +36,90 @@ class Seller::SellersController < ApplicationController
 
   # POST /seller/signup
   def create
-    seller_email = params[:seller][:email].downcase.strip
-    otp_code = params[:otp]
-    
-    # Rails.logger.info "🔍 Checking if buyer exists with email: #{seller_email}"
-
-    if Buyer.exists?(email: seller_email)
-      Rails.logger.error "Email already used by buyer: #{seller_email}"
-      return render json: { errors: ['Email is already in use by a buyer'] }, status: :unprocessable_entity
+    unless params[:seller].present? && params[:seller][:email].present?
+      return render json: { errors: ['Seller email is required'] }, status: :unprocessable_entity
     end
+    
+    seller_email = params[:seller][:email].to_s.downcase.strip
+    otp_code = params[:otp_code]
 
-    # Verify OTP if provided (but don't mark as verified yet)
-    otp_record = nil
-    if otp_code.present?
-      otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
-      
-      if otp_record.nil?
-        Rails.logger.error "Invalid OTP for email: #{seller_email}"
-        return render json: { errors: ['Invalid OTP'] }, status: :unauthorized
-      elsif otp_record.verified == true
-        Rails.logger.error "OTP already used for email: #{seller_email}"
-        return render json: { errors: ['OTP has already been used'] }, status: :unauthorized
-      elsif otp_record.expires_at.present? && otp_record.expires_at <= Time.now
-        Rails.logger.error "OTP expired for email: #{seller_email}"
-        return render json: { errors: ['OTP has expired'] }, status: :unauthorized
+    # If OTP is not provided, just validate and return success (don't create account or send OTP yet)
+    if otp_code.blank?
+      if Buyer.exists?(email: seller_email)
+        return render json: { errors: ['Email is already in use'] }, status: :unprocessable_entity
       end
-      # Don't mark as verified yet - wait until seller is successfully saved
+
+      if Seller.exists?(email: seller_email)
+        return render json: { errors: ['Email is already in use'] }, status: :unprocessable_entity
+      end
+
+      # Validate basic seller params
+      if params[:seller][:fullname].blank? || params[:seller][:email].blank? || params[:seller][:password].blank?
+        return render json: { errors: ['Fullname, email, and password are required'] }, status: :unprocessable_entity
+      end
+
+      return render json: {
+        success: true,
+        message: "Please request a verification code on the onboarding page to complete registration."
+      }, status: :ok
     end
 
-    @seller = Seller.new(seller_params)
-    
-    # Capture device hash if provided for guest click association
-    if params[:device_hash].present?
-      @seller.device_hash_for_association = params[:device_hash]
+    # OTP is provided - verify and create account
+    if Buyer.exists?(email: seller_email)
+      return render json: { errors: ['Email is already in use'] }, status: :unprocessable_entity
     end
-    
+
+    if Seller.exists?(email: seller_email)
+      return render json: { errors: ['Email is already in use'] }, status: :unprocessable_entity
+    end
+
+    # Verify OTP
+    otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
+
+    if otp_record.nil?
+      return render json: { errors: ['Invalid OTP'] }, status: :unauthorized
+    elsif otp_record.verified == true
+      return render json: { errors: ['OTP has already been used'] }, status: :unauthorized
+    elsif otp_record.expires_at.present? && otp_record.expires_at <= Time.now
+      return render json: { errors: ['OTP has expired'] }, status: :unauthorized
+    end
+
+    # Create buyer account with pending seller data
+    buyer = Buyer.new(
+      email: seller_email,
+      fullname: params[:seller][:fullname],
+      username: params[:seller][:username],
+      phone_number: params[:seller][:phone_number],
+      secondary_phone_number: params[:seller][:secondary_phone_number],
+      password: params[:seller][:password],
+      password_confirmation: params[:seller][:password_confirmation]
+    )
+
+    # Store pending seller profile data (only fields collected during signup)
+    buyer.pending_seller_fullname = params[:seller][:fullname]
+    buyer.pending_seller_phone_number = params[:seller][:phone_number]
+    buyer.pending_seller_secondary_phone_number = params[:seller][:secondary_phone_number]
+    # Location, enterprise_name, county_id, sub_county_id, and description are collected during onboarding
+
+    # Handle carbon code
+    carbon_code = nil
+    if params[:carbon_code].present?
+      carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", params[:carbon_code].to_s.strip.upcase)
+      if carbon_code.nil?
+        return render json: { errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
+      end
+      unless carbon_code.valid_for_use?
+        msg = carbon_code.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
+        return render json: { errors: { carbon_code: [msg] } }, status: :unprocessable_entity
+      end
+      buyer.pending_seller_carbon_code_id = carbon_code.id
+    end
+
+    # Handle document upload
     uploaded_document_url = nil
-    uploaded_profile_picture_url = nil
-
     if params[:seller][:document_url].present?
       doc = params[:seller][:document_url]
-      # Rails.logger.info "📤 Processing business document: #{doc.original_filename}"
-
       if doc.content_type == "application/pdf"
-        # Rails.logger.info "📄 PDF detected. Skipping image processing."
         uploaded_document_url = upload_file_only(doc)
       else
         uploaded_document_url = handle_upload(
@@ -92,17 +132,14 @@ class Seller::SellersController < ApplicationController
       end
 
       if uploaded_document_url.nil?
-        Rails.logger.error "Document upload failed"
         return render json: { error: "Failed to upload document" }, status: :unprocessable_entity
       end
-
-      # Rails.logger.info "Document uploaded successfully: #{uploaded_document_url}"
     end
 
+    # Handle profile picture upload
+    uploaded_profile_picture_url = nil
     if params[:seller][:profile_picture].present?
       pic = params[:seller][:profile_picture]
-      # Rails.logger.info "📸 Processing profile picture: #{pic.original_filename}"
-
       uploaded_profile_picture_url = handle_upload(
         file: pic,
         type: :profile_picture,
@@ -112,105 +149,53 @@ class Seller::SellersController < ApplicationController
       )
 
       if uploaded_profile_picture_url.nil?
-        Rails.logger.error "Profile picture upload failed"
         return render json: { error: "Failed to upload profile picture" }, status: :unprocessable_entity
       end
-
-      # Rails.logger.info "Profile picture uploaded successfully: #{uploaded_profile_picture_url}"
     end
 
-    @seller = Seller.new(seller_params)
-    
-    # Capture device hash if provided for guest click association (if not already set)
-    if params[:device_hash].present? && @seller.device_hash_for_association.blank?
-      @seller.device_hash_for_association = params[:device_hash]
-    end
-    
-    @seller.document_url = uploaded_document_url if uploaded_document_url
-    @seller.profile_picture = uploaded_profile_picture_url if uploaded_profile_picture_url
+    buyer.profile_picture = uploaded_profile_picture_url if uploaded_profile_picture_url
 
-    # Auto-generate username from fullname if not provided
-    if @seller.username.blank? && @seller.fullname.present?
-      base_username = @seller.fullname.strip.split(/\s+/).first.downcase.gsub(/[^a-z0-9]/, '')
+    # Auto-generate username if not provided
+    if buyer.username.blank? && buyer.fullname.present?
+      base_username = buyer.fullname.strip.split(/\s+/).first.downcase.gsub(/[^a-z0-9]/, '')
       unique_username = generate_unique_username(base_username)
-      @seller.username = unique_username
-      Rails.logger.info "🔧 Auto-generated username: #{unique_username}"
+      buyer.username = unique_username
     end
 
-    # Carbon code (optional): validate and assign if provided
-    carbon_code = nil
-    if params[:carbon_code].present?
-      carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", params[:carbon_code].to_s.strip.upcase)
-      if carbon_code.nil?
-        return render json: { errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
-      end
-      unless carbon_code.valid_for_use?
-        msg = carbon_code.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
-        return render json: { errors: { carbon_code: [msg] } }, status: :unprocessable_entity
-      end
-      @seller.carbon_code_id = carbon_code.id
+    # Capture device hash for guest click association
+    if params[:device_hash].present?
+      buyer.device_hash_for_association = params[:device_hash]
     end
 
-    # Wrap seller creation and tier assignment in a transaction
-    # If any step fails, rollback everything to ensure data consistency
-    success = false
-    ActiveRecord::Base.transaction do
-      # Step 1: Save seller
-      unless @seller.save
-        Rails.logger.error "Seller creation failed: #{@seller.errors.full_messages.inspect}"
-        raise ActiveRecord::Rollback
+    if buyer.save
+      # Mark OTP as verified if provided
+      if otp_code.present? && otp_record
+        otp_record.update!(verified: true)
       end
 
-      # Email verification is optional - users can verify their email later if they choose
-      # OTP is validated if provided but not automatically marked as verified
+      # Generate JWT token
+      token_payload = { user_id: buyer.id, email: buyer.email, role: 'buyer' }
+      token = JsonWebToken.encode(token_payload)
 
-      # Step 2: Assign premium tier for 6 months to all new sellers
-      expiry_date = 6.months.from_now
-
-      Rails.logger.info "New Seller Registration: Assigning Premium tier to seller #{@seller.id}, expires at #{expiry_date} (6 months)"
-      seller_tier = SellerTier.new(seller_id: @seller.id, tier_id: 4, duration_months: 6, expires_at: expiry_date)
-      unless seller_tier.save
-        Rails.logger.error "Failed to create SellerTier: #{seller_tier.errors.full_messages.inspect}"
-        raise ActiveRecord::Rollback
-      end
-
-      # Step 3: Increment Carbon code usage if one was used
-      if carbon_code.present?
-        carbon_code.increment!(:times_used)
-      end
-
-      # If we reach here, all steps succeeded
-      success = true
-    end
-
-    if success
-      # Mark OTP as verified so profile shows "Verified" when user completed signup with OTP
-      otp_record&.update!(verified: true)
-
-      # Send welcome email (outside transaction to avoid blocking)
-      begin
-        WelcomeMailer.welcome_email(@seller).deliver_now
-        puts "✅ Welcome email sent to: #{@seller.email}"
-        Rails.logger.info "✅ Welcome email sent to: #{@seller.email}"
-      rescue => e
-        puts "❌ Failed to send welcome email: #{e.message}"
-        Rails.logger.error "❌ Failed to send welcome email: #{e.message}"
-        # Don't fail the registration if email fails
-      end
-      
-      # New sellers get remember_me by default for better user experience
-      token = JsonWebToken.encode(seller_id: @seller.id, email: @seller.email, role: 'Seller', remember_me: true)
-      # Rails.logger.info "Seller created successfully: #{@seller.id}"
-      render json: { token: token, seller: @seller }, status: :created
+      render json: {
+        success: true,
+        message: "Account created successfully. Please add your first ad to complete seller registration.",
+        user: {
+          id: buyer.id,
+          email: buyer.email,
+          role: 'buyer',
+          fullname: buyer.fullname,
+          username: buyer.username,
+          phone_number: buyer.phone_number,
+          profile_picture: buyer.profile_picture
+        },
+        token: token
+      }, status: :created
     else
-      Rails.logger.error "Seller creation transaction failed: #{@seller.errors.full_messages.inspect}"
-      # Return field-keyed errors so frontend can show them under the right inputs
-      field_errors = {}
-      @seller.errors.attribute_names.each do |attr|
-        field_errors[attr] = @seller.errors.full_messages_for(attr)
-      end
-      render json: { errors: field_errors }, status: :unprocessable_entity
+      render json: { errors: buyer.errors.full_messages }, status: :unprocessable_entity
     end
+  rescue => e
+    render json: { errors: ["An error occurred during registration"] }, status: :internal_server_error
   end
 
 
@@ -227,6 +212,42 @@ class Seller::SellersController < ApplicationController
       :document_url, :document_type_id, :document_expiry_date, :document_verified,
       :county_id, :sub_county_id, :profile_picture, category_ids: []
     )
+  end
+
+  def process_and_upload_ad_images(images)
+    uploaded_urls = []
+
+    begin
+      Array(images).each do |image|
+        begin
+          # Check if tempfile exists and is readable
+          unless image.tempfile && File.exist?(image.tempfile.path)
+            next
+          end
+
+          # Check Cloudinary configuration
+          unless ENV['UPLOAD_PRESET'].present?
+            raise "UPLOAD_PRESET not configured"
+          end
+
+          # Upload original image directly to Cloudinary without any processing
+          uploaded_image = Cloudinary::Uploader.upload(
+            image.tempfile.path,
+            upload_preset: ENV['UPLOAD_PRESET'],
+            format: nil,               # Keep original format
+            background: "transparent"  # Ensure no colored background is added
+          )
+
+          uploaded_urls << uploaded_image["secure_url"]
+        rescue => e
+          # Don't fail completely, just skip this image
+        end
+      end
+    rescue => e
+      raise e # Re-raise to be caught by the calling method
+    end
+
+    uploaded_urls
   end
 
   def authenticate_seller
@@ -251,7 +272,6 @@ class Seller::SellersController < ApplicationController
     end
     send(processing_method, file)
   rescue => e
-    Rails.logger.error "Upload failed (#{type}): #{e.message}"
     nil
   end
 
@@ -268,7 +288,6 @@ class Seller::SellersController < ApplicationController
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error uploading permit: #{e.message}"
       nil
     end
   end
@@ -286,7 +305,6 @@ class Seller::SellersController < ApplicationController
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error uploading profile picture: #{e.message}"
       nil
     end
   end
