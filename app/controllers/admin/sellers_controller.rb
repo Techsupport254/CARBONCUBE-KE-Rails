@@ -307,7 +307,7 @@ class Admin::SellersController < ApplicationController
   end
 
   def seller_params
-    params.require(:seller).permit(:fullname, :phone_number, :email, :enterprise_name, :location, :password, :business_registration_number, category_ids: [], :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website)
+    params.require(:seller).permit(:fullname, :phone_number, :email, :enterprise_name, :location, :password, :business_registration_number, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, category_ids: [])
   end
 
   def authenticate_admin_or_sales
