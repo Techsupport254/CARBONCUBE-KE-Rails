@@ -19,8 +19,9 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     'http://[::1]:3000',
     'http://[::1]:3001',
     'http://localhost:5173',
-    'http://127.0.0.1:5173'
-  ]
+    'http://127.0.0.1:5173',
+    ENV.fetch('BACKEND_INTERNAL_URL', nil)
+  ].compact
 
   # Optional comma-separated custom origins for temporary web environments.
   # Example: CORS_ADDITIONAL_ORIGINS=https://staging.example.com,https://foo.example.com
