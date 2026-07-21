@@ -915,8 +915,19 @@ class AuthenticationController < ApplicationController
           user_cookie_options = cookie_options.merge(httponly: false)
           cookies[user_cookie_key] = { value: user_response.to_json, **user_cookie_options }
 
-          # Redirect to frontend with pending registration flag
-          redirect_url = "#{oauth_redirect_base}?pending_registration=true"
+          # Redirect to frontend with pending registration flag and token
+          # Include pending_token in URL as primary transmission method since
+          # cross-subdomain SameSite=None cookies may be blocked by browsers
+          redirect_params = {
+            pending_registration: 'true',
+            pending_token: pending_token,
+            name: result[:name] || '',
+            email: result[:email] || ''
+          }
+          if result[:phone_number].present?
+            redirect_params[:phone_number] = result[:phone_number]
+          end
+          redirect_url = "#{oauth_redirect_base}?#{redirect_params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')}"
         end
 
         # Include state parameter if it was provided for CSRF validation
