@@ -8,15 +8,12 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v2_#{device_hash}"
-    response_data = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+    cache_key = "sales_analytics_index_v3_#{device_hash}"
+    response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
                                                       .by_type('email_domain')
                                                       .pluck(:identifier_value)
-      
-      # OPTIMIZATION: Limit timestamp queries to last 2 years for performance
-      timestamp_limit_date = 2.years.ago
       
       # Get all data without time filtering for totals
       # Exclude sellers with excluded email domains
@@ -42,7 +39,6 @@ class Sales::AnalyticsController < ApplicationController
         .joins(:seller)
         .where(tier_id: 1, sellers: { deleted: false })
       
-      # OPTIMIZATION: Limit timestamp queries to recent data only (last 2 years)
       # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
       carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
       # Optimized: Fetch counts using conditional aggregation where possible
@@ -66,34 +62,27 @@ class Sales::AnalyticsController < ApplicationController
                                 "COUNT(CASE WHEN event_type = 'Callback-Request' THEN 1 END) as callback_requests"
                               ).to_a.first
 
-      # Fetch timestamps in bulk (last 6 months for performance, but keeping it 2 years if needed by frontend)
-      # Using pluck directly as Rails handles Time serialization
-      sellers_ts = all_sellers.where('sellers.created_at >= ?', timestamp_limit_date).pluck(:created_at, :carbon_code_id)
-      sellers_with_timestamps = sellers_ts.map(&:first)
-      sellers_added_by_sales_with_timestamps = sellers_ts.select { |s| s[1].present? }.map(&:first)
-      sellers_self_onboarded_with_timestamps = sellers_ts.select { |s| s[1].nil? && s[0] >= carbon_code_cutoff }.map(&:first)
-      sellers_legacy_with_timestamps = sellers_ts.select { |s| s[0] < carbon_code_cutoff }.map(&:first)
+      sellers_with_timestamps = compact_count_series(all_sellers, 'sellers.created_at')
+      sellers_added_by_sales_with_timestamps = compact_count_series(all_sellers.where.not(carbon_code_id: nil), 'sellers.created_at')
+      sellers_self_onboarded_with_timestamps = compact_count_series(all_sellers.where(carbon_code_id: nil).where('sellers.created_at >= ?', carbon_code_cutoff), 'sellers.created_at')
+      sellers_legacy_with_timestamps = compact_count_series(all_sellers.where('sellers.created_at < ?', carbon_code_cutoff), 'sellers.created_at')
+      buyers_with_timestamps = compact_count_series(all_buyers, 'buyers.created_at')
+      ads_with_timestamps = compact_count_series(all_ads, 'ads.created_at')
+      ads_data_with_timestamps = compact_sum_series(all_ads, 'ads.created_at', :price)
+      reviews_with_timestamps = compact_count_series(all_reviews, 'reviews.created_at')
+      wishlists_with_timestamps = compact_count_series(all_wishlists, 'wish_lists.created_at')
 
-      buyers_with_timestamps = all_buyers.where('buyers.created_at >= ?', timestamp_limit_date).pluck(:created_at)
-      ads_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at)
-      ads_data_with_timestamps = all_ads.where('ads.created_at >= ?', timestamp_limit_date).pluck(:created_at, :price)
-      reviews_with_timestamps = all_reviews.where('created_at >= ?', timestamp_limit_date).pluck(:created_at)
-      wishlists_with_timestamps = all_wishlists.where('wish_lists.created_at >= ?', timestamp_limit_date).pluck(:created_at)
-      
-      # Bulk fetch click timestamps to avoid multiple queries on ClickEvent
-      clicks_ts = ClickEvent.excluding_internal_users
-                            .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
-                            .left_joins(:buyer)
-                            .joins(:ad)
-                            .where("buyers.id IS NULL OR buyers.deleted = ?", false)
-                            .where(ads: { deleted: false })
-                            .where('click_events.created_at >= ?', timestamp_limit_date)
-                            .pluck(:created_at, :event_type, Arel.sql("metadata->>'action'"))
+      click_events = ClickEvent.excluding_internal_users
+                               .excluding_seller_own_clicks(device_hash: device_hash, seller_id: nil)
+                               .left_joins(:buyer)
+                               .joins(:ad)
+                               .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+                               .where(ads: { deleted: false })
 
-      ad_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Ad-Click' }.map(&:first)
-      reveal_clicks_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' }.map(&:first)
-      contact_interactions_with_timestamps = clicks_ts.select { |c| c[1] == 'Reveal-Seller-Details' && c[2] == 'seller_contact_interaction' }.map(&:first)
-      callback_requests_with_timestamps = clicks_ts.select { |c| c[1] == 'Callback-Request' }.map(&:first)
+      ad_clicks_with_timestamps = compact_count_series(click_events.where(event_type: 'Ad-Click'), 'click_events.created_at')
+      reveal_clicks_with_timestamps = compact_count_series(click_events.where(event_type: 'Reveal-Seller-Details'), 'click_events.created_at')
+      contact_interactions_with_timestamps = compact_count_series(click_events.where(event_type: 'Reveal-Seller-Details').where("metadata->>'action' = ?", 'seller_contact_interaction'), 'click_events.created_at')
+      callback_requests_with_timestamps = compact_count_series(click_events.where(event_type: 'Callback-Request'), 'click_events.created_at')
 
       # Quarterly targets
       sellers_target = QuarterlyTarget.current_target_for('total_sellers')
@@ -110,7 +99,7 @@ class Sales::AnalyticsController < ApplicationController
         ads_with_timestamps: ads_with_timestamps,
         reviews_with_timestamps: reviews_with_timestamps,
         wishlists_with_timestamps: wishlists_with_timestamps,
-        ads_data_with_timestamps: ads_data_with_timestamps.map { |ts, price| [ts.iso8601, price.to_f] },
+        ads_data_with_timestamps: ads_data_with_timestamps,
         ad_clicks_with_timestamps: ad_clicks_with_timestamps,
         buyer_ad_clicks_with_timestamps: ad_clicks_with_timestamps,
         buyer_reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
@@ -1064,6 +1053,27 @@ class Sales::AnalyticsController < ApplicationController
         device_type: device_type
       }
     end
+  end
+
+  def compact_count_series(scope, time_column)
+    compact_series(scope, time_column) { |relation| relation.count }
+  end
+
+  def compact_sum_series(scope, time_column, value_column)
+    compact_series(scope, time_column) { |relation| relation.sum(value_column) }
+  end
+
+  def compact_series(scope, time_column)
+    today_start = Time.zone.today.beginning_of_day
+    daily = yield(scope.where("#{time_column} < ?", today_start)
+                       .group(Arel.sql("DATE(#{time_column})"))
+                       .order(Arel.sql("DATE(#{time_column})")))
+    hourly = yield(scope.where("#{time_column} >= ?", today_start)
+                        .group(Arel.sql("DATE_TRUNC('hour', #{time_column})"))
+                        .order(Arel.sql("DATE_TRUNC('hour', #{time_column})")))
+
+    daily.map { |timestamp, value| [timestamp.to_date.iso8601, value.to_f] } +
+      hourly.map { |timestamp, value| [timestamp.iso8601, value.to_f] }
   end
 
   # Helper method to exclude emails by pattern (exact match or domain match)

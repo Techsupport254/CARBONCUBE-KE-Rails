@@ -276,7 +276,15 @@ class WhatsappProductCreationService
     response += "Current details:\n"
     response += "*Title:* #{product_data['title']}\n"
     response += "*Brand:* #{product_data['brand'] || 'Not set'}\n"
-    response += "*Condition:* #{product_data['condition']&.humanize || 'Not set'}\n"
+    condition_value = product_data['condition']
+    condition_display = if condition_value.is_a?(Array)
+                          condition_value.first&.to_s&.humanize
+                        elsif condition_value.is_a?(String)
+                          condition_value.humanize
+                        else
+                          condition_value&.to_s&.humanize
+                        end
+    response += "*Condition:* #{condition_display || 'Not set'}\n"
     
     category = Category.find_by(id: product_data['category_id'])
     response += "*Category:* #{category&.name || 'Not set'}\n"

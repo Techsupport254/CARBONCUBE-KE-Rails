@@ -1,8 +1,9 @@
 class Seller::AdsController < ApplicationController
   include ExceptionHandler
 
-  before_action :authenticate_seller, except: [:prefill, :conditions]
-  before_action :set_branch_context, except: [:prefill, :conditions]
+  before_action :authenticate_seller, except: [:prefill, :conditions, :create]
+  before_action :authenticate_for_create, only: [:create]
+  before_action :set_branch_context, except: [:prefill, :conditions, :create]
   before_action :set_ad, only: [:show, :update, :destroy]
   before_action :load_ad_with_offer, only: [:show]
 
@@ -173,6 +174,44 @@ class Seller::AdsController < ApplicationController
 
   def create
     begin
+      # Handle buyer to seller conversion on first ad creation
+      if current_seller.is_a?(Buyer)
+        Rails.logger.info "Converting buyer to seller during first ad creation"
+        
+        # Check if buyer has pending seller profile data
+        unless current_seller.pending_seller_fullname.present?
+          return render json: { error: "Please complete your seller profile first" }, status: :forbidden
+        end
+        
+        # Create seller from buyer with pending data
+        seller = Seller.new(
+          email: current_seller.email,
+          fullname: current_seller.pending_seller_fullname || current_seller.fullname,
+          username: current_seller.username,
+          phone_number: current_seller.pending_seller_phone_number || current_seller.phone_number,
+          secondary_phone_number: current_seller.pending_seller_secondary_phone_number || current_seller.secondary_phone_number,
+          location: current_seller.pending_seller_location || current_seller.location,
+          enterprise_name: current_seller.pending_seller_enterprise_name,
+          county_id: current_seller.pending_seller_county_id,
+          sub_county_id: current_seller.pending_seller_sub_county_id,
+          description: current_seller.pending_seller_description,
+          carbon_code_id: current_seller.pending_seller_carbon_code_id,
+          profile_picture: current_seller.profile_picture,
+          provider: current_seller.provider,
+          uid: current_seller.uid,
+          password_digest: current_seller.password_digest
+        )
+        
+        if seller.save
+          Rails.logger.info "Successfully converted buyer #{current_seller.id} to seller #{seller.id}"
+          # Delete the buyer record
+          current_seller.destroy
+          @current_seller = seller
+        else
+          Rails.logger.error "Seller creation failed: #{seller.errors.full_messages.join(', ')}"
+          return render json: { error: "Failed to create seller account: #{seller.errors.full_messages.join(', ')}" }, status: :unprocessable_entity
+        end
+      end
       
       seller_tier = current_seller.seller_tier
 
@@ -469,6 +508,14 @@ class Seller::AdsController < ApplicationController
   def authenticate_seller
     @current_user = SellerAuthorizeApiRequest.new(request.headers).result
     unless @current_user && @current_user.is_a?(Seller)
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
+  end
+
+  def authenticate_for_create
+    @current_user = SellerAuthorizeApiRequest.new(request.headers).result
+    # Allow both sellers and buyers (for buyer-to-seller conversion on first ad)
+    unless @current_user && (@current_user.is_a?(Seller) || @current_user.is_a?(Buyer))
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end

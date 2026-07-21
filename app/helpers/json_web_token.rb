@@ -9,6 +9,7 @@ class JsonWebToken
         # Default to 60 days for maximum session persistence
         exp ||= 60.days.from_now
         payload[:exp] = exp.to_i
+        payload[:jti] = SecureRandom.uuid unless payload[:jti]
         JWT.encode(payload, SECRET_KEY, ALGORITHM)
     end
 
@@ -23,7 +24,14 @@ class JsonWebToken
         end
         
         body = JWT.decode(token, SECRET_KEY, true, { algorithm: ALGORITHM })[0]
-        { success: true, payload: HashWithIndifferentAccess.new(body) }
+        payload = HashWithIndifferentAccess.new(body)
+        
+        # Check if token has been blacklisted (revoked via logout)
+        if payload[:jti].present? && RedisConnection.exists?("blacklisted_token:#{payload[:jti]}")
+            return { success: false, error: 'Token has been revoked' }
+        end
+        
+        { success: true, payload: payload }
     rescue JWT::ExpiredSignature => e
         Rails.logger.debug "JWT Decode Error: Token has expired - #{e.message}"
         { success: false, error: 'Token has expired', expired: true }

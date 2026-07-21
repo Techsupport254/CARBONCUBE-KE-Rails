@@ -77,12 +77,8 @@ class BuyerAuthorizeApiRequest
       # Rails.logger.debug "BuyerAuthorizeApiRequest: Attempting to decode token: #{token[0..20]}..."
       JsonWebToken.decode(token)
     rescue ExceptionHandler::MissingToken => e
-      # Missing token is normal for public endpoints, only log at debug level
-      Rails.logger.debug "BuyerAuthorizeApiRequest: #{e.message}"
       { success: false, error: 'No token provided', missing_token: true }
     rescue => e
-      # Only log as error if token was provided but invalid
-      Rails.logger.error "BuyerAuthorizeApiRequest: JWT Decode Error: #{e.message}"
       { success: false, error: 'Token validation failed' }
     end
   end
@@ -97,8 +93,21 @@ class BuyerAuthorizeApiRequest
         return auth_header
       end
     else
+      token = cookie_token
+      return token if token.present?
       # Don't log missing tokens - they're normal for public endpoints
       raise ExceptionHandler::MissingToken, 'Missing token'
+    end
+  end
+
+  def cookie_token
+    cookie_str = @headers['Cookie'] || @headers['HTTP_COOKIE']
+    return nil if cookie_str.blank?
+    
+    if cookie_str =~ /__Secure-auth_token=([^;]+)/ || cookie_str =~ /auth_token=([^;]+)/
+      CGI.unescape($1)
+    else
+      nil
     end
   end
 end

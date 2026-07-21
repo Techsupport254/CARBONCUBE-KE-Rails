@@ -1,5 +1,8 @@
 # Redis configuration for the application
+# DB 0: Cache store
+# DB 1: Session store
 REDIS_URL = ENV['REDIS_URL'] || 'redis://localhost:6379/0'
+REDIS_SESSION_URL = ENV['REDIS_SESSION_URL'] || 'redis://localhost:6379/1'
 
 # Configure Redis connection pool for better performance
 # Redis 5.x uses redis-client which has simpler configuration
@@ -59,7 +62,7 @@ end
 # uses Redis (Action Cable, Sidekiq, cache store, etc.).
 begin
   RedisConnection.ping
-  Rails.logger.info "✅ Redis is reachable at boot"
+  Rails.logger.info "Redis is reachable at boot"
 rescue => e
-  Rails.logger.warn "⚠️  Redis not reachable at boot (#{e.message}). Connection will be retried on first use."
+  Rails.logger.warn "Redis not reachable at boot (#{e.message}). Connection will be retried on first use."
 end

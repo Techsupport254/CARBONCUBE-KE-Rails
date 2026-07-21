@@ -84,7 +84,9 @@ Rails.application.routes.draw do
 
   # Email, username, phone, and business validation routes
   post 'email/exists', to: 'email#exists'
+  get 'email/exists', to: 'email#exists'
   post 'username/exists', to: 'email#username_exists'
+  get 'username/exists', to: 'email#username_exists'
   post 'phone/exists', to: 'email#phone_exists'
   post 'business_name/exists', to: 'email#business_name_exists'
   post 'business_number/exists', to: 'email#business_number_exists'
@@ -158,6 +160,8 @@ Rails.application.routes.draw do
   post 'auth/refresh', to: 'authentication#refresh_token'
   post 'auth/logout', to: 'authentication#logout'
   get 'auth/me', to: 'authentication#me'
+  post 'auth/send-reactivation-email', to: 'authentication#send_reactivation_email'
+  post 'auth/reactivate-account', to: 'authentication#reactivate_account'
   
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
@@ -509,6 +513,8 @@ Rails.application.routes.draw do
   #=================================================Seller namespace for seller-specific functionality===============================#
   namespace :seller do
     post 'signup', to: 'sellers#create'
+    get 'onboarding/pending', to: 'profiles#pending_registration'
+    post 'onboarding/complete', to: 'profiles#complete_onboarding'
     delete 'delete_account', to: 'sellers#destroy'
     
     # Consolidated dashboard endpoint
@@ -568,6 +574,8 @@ Rails.application.routes.draw do
       post 'request-verification', to: 'profiles#request_verification'
       post 'verify-email', to: 'profiles#verify_email'
     end
+
+    post 'seo_analysis', to: 'seo_analyses#create'
 
     resources :review_requests, only: [:index, :create]
 
@@ -655,6 +663,7 @@ Rails.application.routes.draw do
         post 'request-verification', to: 'profiles#request_verification'
         post 'verify-email', to: 'profiles#verify_email'
         post 'upgrade_to_seller', to: 'profiles#upgrade_to_seller'
+        post 'onboarding/complete', to: 'profiles#complete_onboarding'
       end
 
       resources :wish_lists, only: [:index, :create, :destroy] do
@@ -857,6 +866,7 @@ Rails.application.routes.draw do
       post 'request-verification', to: 'profiles#request_verification'
       post 'verify-email', to: 'profiles#verify_email'
       post 'upgrade_to_seller', to: 'profiles#upgrade_to_seller'
+      post 'onboarding/complete', to: 'profiles#complete_onboarding'
     end
 
     resources :wish_lists, only: [:index, :create, :destroy] do

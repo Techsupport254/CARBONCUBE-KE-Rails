@@ -38,7 +38,17 @@ class MarketingAuthorizeApiRequest
     if auth_header.present?
       auth_header.split(' ').last
     else
-      Rails.logger.warn('Missing Authorization header')
+      cookie_token
+    end
+  end
+
+  def cookie_token
+    cookie_str = @headers['Cookie'] || @headers['HTTP_COOKIE']
+    return nil if cookie_str.blank?
+    
+    if cookie_str =~ /__Secure-auth_token=([^;]+)/ || cookie_str =~ /auth_token=([^;]+)/
+      CGI.unescape($1)
+    else
       nil
     end
   end

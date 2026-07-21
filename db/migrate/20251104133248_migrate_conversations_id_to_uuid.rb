@@ -96,7 +96,7 @@ class MigrateConversationsIdToUuid < ActiveRecord::Migration[7.1]
       puts "conversations_id_seq sequence doesn't exist, skipping..."
     end
     
-    puts "✅ Migration completed: conversations.id is now UUID"
+    puts "Migration completed: conversations.id is now UUID"
   end
 
   def down

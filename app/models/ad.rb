@@ -1,4 +1,5 @@
 class Ad < ApplicationRecord
+  self.primary_key = 'id'
   include PgSearch::Model
 
   SALES_ADDED_GRACE_PERIOD = 1.day
@@ -163,6 +164,8 @@ class Ad < ApplicationRecord
          .gsub(/\s+/, "-")        # spaces to hyphen
          .gsub(/-+/, "-")         # collapse multiple hyphens
          .gsub(/^-+|-+$/, "")     # trim leading/trailing hyphens
+         .gsub(/\.+$/, "")        # trim trailing dots
+         .gsub(/^\.+/, "")        # trim leading dots
   end
 
   # Find an ad by numeric ID or by slugified title

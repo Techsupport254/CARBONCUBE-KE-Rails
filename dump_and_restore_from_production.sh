@@ -52,12 +52,19 @@ echo ""
 # --no-privileges: Don't dump access privileges
 # --clean: Include DROP commands before CREATE (for clean restore)
 # --if-exists: Use IF EXISTS in DROP commands
+# --exclude-schema: Exclude Supabase schemas (no longer used)
 pg_dump "$PRODUCTION_DB" \
   --format=custom \
   --no-owner \
   --no-privileges \
   --clean \
   --if-exists \
+  --exclude-schema='auth' \
+  --exclude-schema='storage' \
+  --exclude-schema='realtime' \
+  --exclude-schema='extensions' \
+  --exclude-schema='information_schema' \
+  --exclude-schema='pg_catalog' \
   --file="$DUMP_FILE" \
   2>&1 | sed 's/^/  /'
 
@@ -75,6 +82,8 @@ echo "Local database: carbon_development"
 echo ""
 
 # Drop and recreate the database for a clean restore
+echo "Terminating active connections to carbon_development..."
+psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'carbon_development' AND pid <> pg_backend_pid();" 2>/dev/null || true
 echo "Dropping existing database for clean restore..."
 psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
 echo "Creating fresh database..."

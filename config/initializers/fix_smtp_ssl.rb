@@ -18,7 +18,7 @@ if Rails.env.development?
       smtp_settings = ActionMailer::Base.smtp_settings || {}
       smtp_settings[:openssl_verify_mode] = OpenSSL::SSL::VERIFY_NONE
       ActionMailer::Base.smtp_settings = smtp_settings
-      Rails.logger.info "✅ SMTP SSL verification disabled for development"
+      Rails.logger.info "SMTP SSL verification disabled for development"
     end
   end
 end

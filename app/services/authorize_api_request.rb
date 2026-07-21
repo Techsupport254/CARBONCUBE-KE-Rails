@@ -26,13 +26,13 @@ class AuthorizeApiRequest
     # Try to find user by ID first
     if user_id
       user = find_user_by_id_and_role(user_id, role)
-      return user if user && (!user.respond_to?(:deleted?) || !user.deleted?)
+      return user if user && (!user.respond_to?(:deleted?) || !user.deleted?) && (!user.respond_to?(:blocked?) || !user.blocked?)
     end
 
     # Try to find user by email if ID didn't work
     if user_email
       user = find_user_by_email_and_role(user_email, role)
-      return user if user && (!user.respond_to?(:deleted?) || !user.deleted?)
+      return user if user && (!user.respond_to?(:deleted?) || !user.deleted?) && (!user.respond_to?(:blocked?) || !user.blocked?)
     end
 
     nil
@@ -97,6 +97,17 @@ class AuthorizeApiRequest
   def http_auth_header
     if @headers['Authorization'].present?
       @headers['Authorization'].split(' ').last
+    else
+      cookie_token
+    end
+  end
+
+  def cookie_token
+    cookie_str = @headers['Cookie'] || @headers['HTTP_COOKIE']
+    return nil if cookie_str.blank?
+    
+    if cookie_str =~ /__Secure-auth_token=([^;]+)/ || cookie_str =~ /auth_token=([^;]+)/
+      CGI.unescape($1)
     else
       nil
     end

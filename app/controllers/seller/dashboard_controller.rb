@@ -23,7 +23,14 @@ class Seller::DashboardController < ApplicationController
           profile_picture: get_profile_picture(seller),
           flagged: seller.flagged || false,
           seller_tier_name: get_tier_name(tier_id),
-          document_verified: seller.document_verified || false
+          document_verified: seller.document_verified || false,
+          facebook_url: seller.facebook_url,
+          instagram_url: seller.instagram_url,
+          whatsapp_url: seller.whatsapp_url,
+          tiktok_url: seller.tiktok_url,
+          twitter_url: seller.twitter_url,
+          linkedin_url: seller.linkedin_url,
+          website: seller.website
         },
         
         # Quick stats

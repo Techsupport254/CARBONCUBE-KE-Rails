@@ -1,6 +1,6 @@
 # app/services/oauth_account_linking_service.rb
 class OauthAccountLinkingService
-  def initialize(auth_hash, role = 'Buyer', user_ip = nil)
+  def initialize(auth_hash, role = 'Buyer', user_ip = nil, pending_mode = false)
     @auth_hash = auth_hash
     # Normalize role to handle both "Seller" and "seller" formats
     @role = role.to_s.strip
@@ -10,6 +10,7 @@ class OauthAccountLinkingService
     @name = auth_hash.dig(:info, :name)
     @picture = auth_hash.dig(:info, :image)
     @user_ip = user_ip
+    @pending_mode = pending_mode
   end
 
   def call
@@ -70,25 +71,25 @@ class OauthAccountLinkingService
       return { success: true, user: oauth_user, message: 'Welcome back!' }
     end
     
-    # Create new user based on role
-    # In login mode (role="buyer"), always create buyer account
-    # In registration mode, use the requested role
-    is_login_mode = normalized_requested_role == 'buyer'
-    if is_login_mode
-      # Login mode - always create buyer account for new users
+    # For sellers, always use pending mode - seller creation happens after onboarding + ad creation
+    if normalized_requested_role == 'seller'
+      return store_pending_registration()
+    end
+
+    # For buyers, auto-create account (they can update profile later)
+    if normalized_requested_role == 'buyer'
       new_user_result = create_buyer
-    else
-      # Registration mode - use requested role
-      new_user_result = create_new_oauth_user
+      if new_user_result.is_a?(Hash) && new_user_result[:success] == false
+        return new_user_result
+      elsif new_user_result && new_user_result.is_a?(ActiveRecord::Base)
+        return { success: true, user: new_user_result, message: 'Buyer account created successfully' }
+      else
+        return { success: false, error: 'Failed to create buyer account', error_type: 'creation_failed' }
+      end
     end
-    # Check if result is an error hash (from seller/buyer creation when validation fails)
-    if new_user_result.is_a?(Hash) && new_user_result[:success] == false
-      return new_user_result
-    elsif new_user_result && new_user_result.is_a?(ActiveRecord::Base)
-      { success: true, user: new_user_result, message: 'Account created successfully' }
-    else
-      { success: false, error: 'Failed to create account', error_type: 'creation_failed' }
-    end
+
+    # For other roles (admin, sales, marketing), use pending registration
+    return store_pending_registration()
   rescue => e
     Rails.logger.error "OAuth account linking error: #{e.message}"
     { success: false, error: 'Authentication failed', error_type: 'system_error' }
@@ -100,7 +101,6 @@ class OauthAccountLinkingService
     free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
     return unless free_tier
     SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
-    Rails.logger.info "✅ Free tier assigned to seller #{seller.id} (fallback)"
   end
 
   def find_user_by_email(email)
@@ -250,9 +250,11 @@ class OauthAccountLinkingService
       sub_county_id: location_data[:sub_county_id]
     }
     
-    # Phone number is optional for buyers, but always include if available
-    user_attributes[:phone_number] = phone_number if phone_number.present?
-    
+    # Phone number is optional for buyers, only include if available
+    if phone_number.present?
+      user_attributes[:phone_number] = phone_number
+    end
+
     buyer = Buyer.create!(user_attributes)
 
     # Auto-verify email for Google OAuth users (email is already verified by Google)
@@ -334,13 +336,9 @@ class OauthAccountLinkingService
         carbon_code = nil
       else
         user_attributes[:carbon_code_id] = carbon_code.id
-        Rails.logger.info "OAuth seller signup: applying carbon code #{carbon_code.code}"
       end
     end
     
-    Rails.logger.info "🔍 Creating seller with attributes: #{user_attributes.except(:oauth_token, :oauth_refresh_token).inspect}"
-    Rails.logger.info "📞 Phone number: #{phone_number}"
-
     seller = Seller.create!(user_attributes)
 
     # Increment carbon code usage after successful create
@@ -352,7 +350,7 @@ class OauthAccountLinkingService
     # Always assign premium tier for 6 months to new sellers
     expiry_date = 6.months.from_now
 
-    Rails.logger.info "OAuth Seller Registration: Assigning Premium tier to seller #{seller.id}, expires at #{expiry_date} (6 months)"
+    expiry_date = 6.months.from_now
     premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
     if premium_tier
       seller_tier = SellerTier.create!(
@@ -361,7 +359,6 @@ class OauthAccountLinkingService
         duration_months: 6,
         expires_at: expiry_date
       )
-      Rails.logger.info "✅ Premium tier assigned to seller via OAuth: #{premium_tier.name}"
     else
       Rails.logger.error "❌ Premium tier not found in database for OAuth seller creation - assigning Free tier"
       assign_free_tier_for_seller(seller)
@@ -369,8 +366,20 @@ class OauthAccountLinkingService
     # Ensure seller always has a tier (e.g. if Premium create raised)
     seller.reload
     assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
-    
-    
+
+    # Create main branch if seller has required fields, otherwise let onboarding handle it
+    if seller.enterprise_name.present? && seller.location.present?
+      branch = seller.branches.build(
+        name: seller.enterprise_name,
+        location: seller.location,
+        is_main_branch: true
+      )
+      
+      unless branch.save
+        Rails.logger.error "Failed to create main branch for OAuth seller: #{branch.errors.full_messages.inspect}"
+      end
+    end
+
     seller
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth seller: #{e.message}"
@@ -472,6 +481,52 @@ class OauthAccountLinkingService
     end
     
     username
+  end
+
+  def store_pending_registration
+    # Generate a unique pending registration token
+    pending_token = SecureRandom.hex(32)
+
+    # Store auth data in cache with 30 minute expiration
+    cache_key = "pending_google_registration_#{pending_token}"
+    pending_data = {
+      provider: @provider,
+      uid: @uid,
+      email: @email,
+      name: @name,
+      picture: @picture,
+      oauth_token: @auth_hash.dig(:credentials, :token),
+      oauth_refresh_token: @auth_hash.dig(:credentials, :refresh_token),
+      oauth_expires_at: @auth_hash.dig(:credentials, :expires_at),
+      role: @role,
+      user_ip: @user_ip,
+      created_at: Time.current.to_s,
+      # Additional seller-specific data from Google
+      phone_number: @auth_hash.dig(:info, :phone_number) || @auth_hash.dig(:extra, :raw_info, :phone_number),
+      given_name: @auth_hash.dig(:info, :first_name),
+      family_name: @auth_hash.dig(:info, :last_name),
+      # Store all phone numbers if available
+      phone_numbers: @auth_hash.dig(:extra, :raw_info, :phone_numbers)
+    }
+
+    Rails.cache.write(cache_key, pending_data, expires_in: 30.minutes)
+
+    {
+      success: true,
+      pending_registration: true,
+      pending_token: pending_token,
+      email: @email,
+      name: @name,
+      picture: @picture,
+      phone_number: pending_data[:phone_number],
+      given_name: pending_data[:given_name],
+      family_name: pending_data[:family_name],
+      role: @role,
+      message: 'Pending registration - user must complete onboarding'
+    }
+  rescue => e
+    Rails.logger.error "❌ [OauthAccountLinkingService] Failed to store pending registration: #{e.message}"
+    { success: false, error: 'Failed to initiate registration', error_type: 'cache_error' }
   end
 
 
@@ -622,18 +677,13 @@ class OauthAccountLinkingService
           location_data[:city] = city
           location_data[:location] = "#{city}, #{region_name}, #{country}"
           location_data[:zipcode] = ip_data['zip']
-          
-          Rails.logger.info "Parsed location data: city=#{city}, region=#{region}, regionName=#{region_name}, country=#{country}"
-          
+
           # Map to Kenyan counties and sub-counties using API data
           county_mapping = map_to_kenyan_county_from_api(ip_data)
           if county_mapping
             location_data[:county_id] = county_mapping[:county_id]
             location_data[:sub_county_id] = county_mapping[:sub_county_id]
-            Rails.logger.info "Mapped to Kenyan location: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
           end
-          
-          Rails.logger.info "User location detected: #{location_data[:location]}"
         end
       end
     rescue => e
@@ -655,9 +705,7 @@ class OauthAccountLinkingService
     region = ip_data['region'] # Region code
     region_name = ip_data['regionName'] # Full region name
     district = ip_data['district'] # District (if available)
-    
-    Rails.logger.info "Mapping from API data: city='#{city}', region='#{region}', regionName='#{region_name}', district='#{district}'"
-    
+
     # Get all counties from database for matching
     counties = County.all
     
@@ -678,7 +726,6 @@ class OauthAccountLinkingService
       
       if county
         sub_county = county.sub_counties.first
-        Rails.logger.info "Matched by regionName: #{county.name} (ID: #{county.id})"
         return {
           county_id: county.id,
           sub_county_id: sub_county&.id
@@ -701,14 +748,13 @@ class OauthAccountLinkingService
       
       if county
         sub_county = county.sub_counties.first
-        Rails.logger.info "Matched by city: #{county.name} (ID: #{county.id})"
         return {
           county_id: county.id,
           sub_county_id: sub_county&.id
         }
       end
     end
-    
+
     # Try to match by district if available
     if district.present?
       district_normalized = district.downcase.strip
@@ -720,17 +766,15 @@ class OauthAccountLinkingService
       
       if county
         sub_county = county.sub_counties.first
-        Rails.logger.info "Matched by district: #{county.name} (ID: #{county.id})"
         return {
           county_id: county.id,
           sub_county_id: sub_county&.id
         }
       end
     end
-    
+
     # Don't default to Nairobi - return nil if no mapping found
     # Users must provide location information explicitly
-    Rails.logger.info "No county mapping found from API data - location must be provided by user"
     
     nil
   end

@@ -11,6 +11,100 @@ class AuthenticationController < ApplicationController
     render json: { success: true, users: users }, status: :ok
   end
 
+  def send_reactivation_email
+    email = params[:email]
+    consent_given = params[:consent_given]
+
+    unless email.present?
+      render json: { error: 'Email is required' }, status: :bad_request
+      return
+    end
+
+    # GDPR: Require explicit consent
+    unless consent_given == true
+      render json: { error: 'Consent is required for data processing' }, status: :bad_request
+      return
+    end
+
+    # Find user by email (check both Buyer and Seller)
+    user = Buyer.find_by(email: email) || Seller.find_by(email: email)
+
+    unless user
+      render json: { error: 'No account found with this email' }, status: :not_found
+      return
+    end
+
+    # Check if user is deleted
+    unless user.deleted?
+      render json: { error: 'This account is not deleted' }, status: :bad_request
+      return
+    end
+
+    # Generate secure reactivation token
+    reactivation_token = SecureRandom.urlsafe_base64(32)
+    reactivation_token_digest = Digest::SHA256.hexdigest(reactivation_token)
+
+    # Store token in database (add to user model or create separate table)
+    # For now, we'll use Rails.cache with expiration
+    cache_key = "reactivation_#{user.id}_#{user.class.name}"
+    Rails.cache.write(cache_key, reactivation_token_digest, expires_in: 24.hours)
+
+    # Build reactivation URL
+    frontend_url = ENV['FRONTEND_URL'] || ENV['REACT_APP_FRONTEND_URL'] || (Rails.env.development? ? 'http://localhost:3000' : 'https://carboncube-ke.com')
+    reactivation_url = "#{frontend_url}/reactivate-account?token=#{reactivation_token}&user_id=#{user.id}&user_type=#{user.class.name}"
+
+    # Log consent for GDPR compliance
+    Rails.logger.info "[GDPR] Account reactivation consent logged - Email: #{email}, User ID: #{user.id}, User Type: #{user.class.name}, IP: #{request.remote_ip}, Timestamp: #{Time.current}"
+
+    # Send actual reactivation email
+    UserMailer.reactivation_email(user, reactivation_url).deliver_later
+
+    render json: { success: true, message: 'Reactivation email sent' }, status: :ok
+  end
+
+  def reactivate_account
+    token = params[:token]
+    user_id = params[:user_id]
+    user_type = params[:user_type]
+
+    unless token.present? && user_id.present? && user_type.present?
+      render json: { error: 'Invalid reactivation link' }, status: :bad_request
+      return
+    end
+
+    # Find user
+    user_class = user_type.constantize
+    user = user_class.find_by(id: user_id)
+
+    unless user
+      render json: { error: 'User not found' }, status: :not_found
+      return
+    end
+
+    # Verify token
+    cache_key = "reactivation_#{user_id}_#{user_type}"
+    stored_token_digest = Rails.cache.read(cache_key)
+
+    unless stored_token_digest
+      render json: { error: 'Reactivation link has expired or is invalid' }, status: :bad_request
+      return
+    end
+
+    token_digest = Digest::SHA256.hexdigest(token)
+    unless ActiveSupport::SecurityUtils.secure_compare(token_digest, stored_token_digest)
+      render json: { error: 'Invalid reactivation token' }, status: :bad_request
+      return
+    end
+
+    # Reactivate account
+    user.update(deleted_at: nil)
+
+    # Clear the token
+    Rails.cache.delete(cache_key)
+
+    render json: { success: true, message: 'Account reactivated successfully' }, status: :ok
+  end
+
 
   def login
     email = params[:email]
@@ -27,7 +121,7 @@ class AuthenticationController < ApplicationController
 
       # Block login if the user is soft-deleted
       if (@user.is_a?(Buyer) || @user.is_a?(Seller)) && @user.deleted?
-        render json: { errors: ['Your account has been deleted. Please contact support.'] }, status: :unauthorized
+        render json: { errors: ['Your account has been deleted. Please check your email for a reactivation link or request a new one.'], account_deleted: true }, status: :unauthorized
         return
       end
 
@@ -78,6 +172,16 @@ class AuthenticationController < ApplicationController
         user_response[:enterprise_name] = @user.enterprise_name
       end
 
+      # Include phone_number for buyers and sellers
+      if @user.respond_to?(:phone_number) && @user.phone_number.present?
+        user_response[:phone_number] = @user.phone_number
+      end
+
+      # Include secondary_phone_number for buyers and sellers
+      if @user.respond_to?(:secondary_phone_number) && @user.secondary_phone_number.present?
+        user_response[:secondary_phone_number] = @user.secondary_phone_number
+      end
+
       # Update last active timestamp for sellers and buyers
       if @user.respond_to?(:update_last_active!)
         @user.update_last_active!
@@ -99,9 +203,26 @@ class AuthenticationController < ApplicationController
       else
         { user_id: @user.id, email: @user.email, role: role, remember_me: remember_me }
       end
-      
+
       token = JsonWebToken.encode(token_payload)
-      render json: { token: token, user: user_response, remember_me: remember_me }, status: :ok
+
+      # Set secure HTTP-only cookies for token and user data
+      cookie_options = {
+        httponly: true,
+        secure: Rails.env.production?, # Secure in production
+        samesite: :lax,
+        expires: 60.days.from_now,
+        domain: Rails.env.development? ? nil : '.carboncube-ke.com' # No domain restriction in development
+      }
+
+      # Set auth token cookie
+      cookies[token_cookie_key] = { value: token, **cookie_options }
+
+      # Set user data cookie (non-httpOnly for client-side access)
+      user_cookie_options = cookie_options.merge(httponly: false)
+      cookies[user_cookie_key] = { value: user_response.to_json, **user_cookie_options }
+
+      render json: { success: true, token: token, user: user_response, remember_me: remember_me }, status: :ok
     else
       render json: { errors: ['Invalid login credentials'] }, status: :unauthorized
     end
@@ -156,8 +277,8 @@ class AuthenticationController < ApplicationController
 
     # Check if user is deleted
     if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
-      render json: { 
-        error: 'Account has been deleted',
+      render json: {
+        error: 'Your account has been deleted. Please check your email for a reactivation link or request a new one.',
         error_type: 'account_deleted'
       }, status: :unauthorized
       return
@@ -198,23 +319,37 @@ class AuthenticationController < ApplicationController
   end
 
   def logout
-    token = request.headers['Authorization']&.split(' ')&.last
+    # Clear cookies on logout
+    cookies.delete(token_cookie_key, domain: '.carboncube-ke.com')
+    cookies.delete(user_cookie_key, domain: '.carboncube-ke.com')
+    cookies.delete(token_cookie_key)
+    cookies.delete(user_cookie_key)
+
+    token = request.headers['Authorization']&.split(' ')&.last || cookies[token_cookie_key]
     
     if token
       # Extract user info before blacklisting
       begin
-        payload = JsonWebToken.decode(token)
-        user_id = payload[:user_id] || payload[:seller_id]
-        role = payload[:role]
-        
-        # Update last_active_at for sellers before logout
-        if role == 'Seller' && user_id
-          seller = Seller.find_by(id: user_id)
-          seller&.update_column(:last_active_at, Time.current)
+        decoded = JsonWebToken.decode(token)
+        if decoded[:success]
+          payload = decoded[:payload]
+          user_id = payload[:user_id] || payload[:seller_id]
+          role = payload[:role]
+          
+          # Update last_active_at for sellers before logout
+          if role == 'Seller' && user_id
+            seller = Seller.find_by(id: user_id)
+            seller&.update_column(:last_active_at, Time.current)
+          end
+          
+          # Blacklist the token using its jti if present, otherwise use a hash of the token
+          jti = payload[:jti] || Digest::MD5.hexdigest(token)
+          exp = payload[:exp]
+          ttl = exp.to_i - Time.current.to_i
+          if ttl > 0
+            RedisConnection.setex("blacklisted_token:#{jti}", ttl, 'true')
+          end
         end
-        
-        # Blacklist the token
-        JwtService.blacklist_token(token)
         
         render json: { message: 'Logged out successfully' }, status: :ok
       rescue StandardError => e
@@ -257,8 +392,8 @@ class AuthenticationController < ApplicationController
 
     # Check if user is deleted
     if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
-      render json: { 
-        error: 'Account has been deleted',
+      render json: {
+        error: 'Your account has been deleted. Please check your email for a reactivation link or request a new one.',
         error_type: 'account_deleted'
       }, status: :unauthorized
       return
@@ -305,37 +440,28 @@ class AuthenticationController < ApplicationController
       user_response[:profile_picture] = user.profile_picture
     end
 
+    # Include phone number for users that have this field (Buyer, Seller)
+    if user.respond_to?(:phone_number) && user.phone_number.present?
+      user_response[:phone_number] = user.phone_number
+    end
+
+    # Include secondary_phone_number for users that have this field (Buyer, Seller)
+    if user.respond_to?(:secondary_phone_number) && user.secondary_phone_number.present?
+      user_response[:secondary_phone_number] = user.secondary_phone_number
+    end
+
     render json: { user: user_response }, status: :ok
   end
 
   def google_oauth
-    Rails.logger.info "🌐 [GoogleOAuth] Google OAuth endpoint called"
-    Rails.logger.info "   Method: #{request.method}"
-    Rails.logger.info "   Params: #{params.except(:controller, :action).keys.join(', ')}"
-
     # If we have a code, process it (frontend sending authorization code from GSI popup)
     if params[:code].present?
-      Rails.logger.info "🔄 [GoogleOAuth] Authorization code detected - processing authentication"
       process_google_oauth_code
       return
     end
-    
+
     # Otherwise, generate OAuth URL (legacy flow or fallback)
-    Rails.logger.info "🔄 [GoogleOAuth] Generating OAuth URL (no code provided)"
-    
-    # Log all Google OAuth environment variables for debugging
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔍 Google OAuth Environment Variables Debug:"
-    Rails.logger.info "=" * 80
-    Rails.logger.info "   GOOGLE_OAUTH_CLIENT_ID: #{ENV['GOOGLE_OAUTH_CLIENT_ID'].inspect}"
-    Rails.logger.info "   GOOGLE_OAUTH_CLIENT_SECRET: #{ENV['GOOGLE_OAUTH_CLIENT_SECRET'] ? '***' + ENV['GOOGLE_OAUTH_CLIENT_SECRET'][-4..-1] : 'nil'}"
-    Rails.logger.info "   GOOGLE_REDIRECT_URI: #{ENV['GOOGLE_REDIRECT_URI'].inspect}"
-    Rails.logger.info "   REACT_APP_GOOGLE_CLIENT_ID: #{ENV['REACT_APP_GOOGLE_CLIENT_ID'].inspect}"
-    Rails.logger.info "   REACT_APP_GOOGLE_REDIRECT_URI: #{ENV['REACT_APP_GOOGLE_REDIRECT_URI'].inspect}"
-    Rails.logger.info "   RAILS_ENV: #{ENV['RAILS_ENV'].inspect}"
-    Rails.logger.info "   Request base_url: #{request.base_url}"
-    Rails.logger.info "=" * 80
-    
+
     # Check if Google OAuth is configured
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
     client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET']&.strip
@@ -371,16 +497,6 @@ class AuthenticationController < ApplicationController
       }, status: :service_unavailable
       return
     end
-    
-    # Log redirect URI for debugging
-    Rails.logger.info "🔍 Google OAuth Configuration:"
-    Rails.logger.info "   Client ID: #{client_id}"
-    Rails.logger.info "   Client ID (from ENV): #{ENV['GOOGLE_OAUTH_CLIENT_ID']}"
-    Rails.logger.info "   Redirect URI: #{redirect_uri}"
-    Rails.logger.info "   Redirect URI (from ENV): #{ENV['GOOGLE_REDIRECT_URI']}"
-    Rails.logger.info "   Request base_url: #{request.base_url}"
-    Rails.logger.info "   ⚠️  Make sure this EXACT redirect URI is in Google Cloud Console!"
-    Rails.logger.info "   ⚠️  Also verify the Client ID matches exactly!"
     
     # Get role from params (default to buyer)
     role = params[:role] || 'buyer'
@@ -424,15 +540,7 @@ class AuthenticationController < ApplicationController
     ).to_s
     
     # Log the exact redirect URI being sent
-    Rails.logger.info "🔍 OAuth Query Parameters:"
-    Rails.logger.info "   redirect_uri (raw): #{redirect_uri}"
-    Rails.logger.info "   Full auth URL: #{auth_url}"
-    
-    Rails.logger.info "Generated Google OAuth URL for role: #{role}"
-    Rails.logger.info "Full OAuth URL (first 200 chars): #{auth_url[0..200]}..."
-    Rails.logger.info "Full OAuth URL: #{auth_url}"
-    
-    
+
     render json: { 
       success: true, 
       auth_url: auth_url 
@@ -501,10 +609,6 @@ class AuthenticationController < ApplicationController
 
   # Process authorization code from frontend (GSI popup flow)
   def process_google_oauth_code
-    Rails.logger.info "🔄 [GoogleOAuth] Processing Google OAuth code request"
-    Rails.logger.info "   IP: #{request.remote_ip}"
-    Rails.logger.info "   User-Agent: #{request.user_agent}"
-
     code = params[:code]
     redirect_uri = params[:redirect_uri] || 'postmessage' # GSI uses 'postmessage'
     role = params[:role] || 'buyer'
@@ -512,20 +616,7 @@ class AuthenticationController < ApplicationController
     is_registration = params[:is_registration] == true || params[:is_registration] == 'true'
     user_ip = request.remote_ip
 
-    Rails.logger.info "🔍 [GoogleOAuth] Parameters received:"
-    Rails.logger.info "   code: #{code ? 'present (' + code[0..10] + '...)' : 'MISSING'}"
-    Rails.logger.info "   redirect_uri: #{redirect_uri}"
-    Rails.logger.info "   role: #{role}"
-    Rails.logger.info "   is_registration: #{is_registration}"
-    Rails.logger.info "   user_ip: #{user_ip}"
-    Rails.logger.info "   location_data: #{location_data ? 'present' : 'none'}"
-    
-    
     begin
-      Rails.logger.info "🔧 [GoogleOAuth] Initializing GoogleOauthService"
-      Rails.logger.info "   Role: #{role.capitalize}"
-      Rails.logger.info "   Registration mode: #{is_registration}"
-
       # Initialize GoogleOauthService
       oauth_service = GoogleOauthService.new(
         code,
@@ -536,15 +627,9 @@ class AuthenticationController < ApplicationController
         is_registration
       )
 
-      Rails.logger.info "✅ [GoogleOAuth] GoogleOauthService initialized successfully"
-
       # Authenticate user
-      Rails.logger.info "[GoogleOAuth] Calling authenticate method"
       result = oauth_service.authenticate
-      Rails.logger.info "📋 [GoogleOAuth] Authentication completed"
-      Rails.logger.info "   Result type: #{result.class}"
-      Rails.logger.info "   Success: #{result.is_a?(Hash) ? result[:success] : 'N/A'}"
-      
+
       # Ensure result is always a hash (safety check)
       unless result.is_a?(Hash)
         Rails.logger.error "❌ [GoogleOAuth] Result is not a hash: #{result.class}"
@@ -555,40 +640,33 @@ class AuthenticationController < ApplicationController
         }
       end
 
-      Rails.logger.info "📊 [GoogleOAuth] Processing authentication result"
-      Rails.logger.info "   Success: #{result[:success]}"
-      Rails.logger.info "   Error: #{result[:error]}" if result[:error]
-      Rails.logger.info "   User: #{result[:user] ? 'present' : 'none'}" if result[:user]
-      Rails.logger.info "   Token: #{result[:token] ? 'present' : 'none'}" if result[:token]
-      Rails.logger.info "   Existing user: #{result[:existing_user]}" if result.key?(:existing_user)
-      Rails.logger.info "   New user: #{result[:new_user]}" if result.key?(:new_user)
-      Rails.logger.info "   Missing fields: #{result[:missing_fields]}" if result[:missing_fields]
-      Rails.logger.info "   Account exists: #{result[:account_exists]}" if result.key?(:account_exists)
-
       if result[:success]
-        Rails.logger.info "✅ [GoogleOAuth] Authentication successful - rendering success response"
+
+        # Set secure HTTP-only cookies for token and user data (same as regular login)
+        cookie_options = {
+          httponly: true,
+          secure: Rails.env.production?, # Secure in production
+          samesite: :lax,
+          expires: 60.days.from_now,
+          domain: Rails.env.development? ? nil : '.carboncube-ke.com' # No domain restriction in development
+        }
+
+        # Set auth token cookie
+        cookies[token_cookie_key] = { value: result[:token], **cookie_options }
+
+        # Set user data cookie (non-httpOnly for client-side access)
+        user_cookie_options = cookie_options.merge(httponly: false)
+        cookies[user_cookie_key] = { value: result[:user].to_json, **user_cookie_options }
+
         render json: result, status: :ok
       else
-        Rails.logger.warn "⚠️ [GoogleOAuth] Authentication failed - rendering error response"
-        Rails.logger.warn "   Error: #{result[:error]}" if result[:error]
-
         # Ensure error field is present for better frontend error handling
         result[:error] ||= "Authentication failed. Please try again." unless result[:error]
         render json: result, status: :unprocessable_entity
       end
     rescue => e
-      Rails.logger.error "=" * 80
-      Rails.logger.error "❌ [GoogleOAuth] Exception processing OAuth code"
-      Rails.logger.error "   Error class: #{e.class}"
-      Rails.logger.error "   Error message: #{e.message}"
-      Rails.logger.error "   Parameters at time of error:"
-      Rails.logger.error "     code: #{code ? 'present' : 'MISSING'}"
-      Rails.logger.error "     redirect_uri: #{redirect_uri}"
-      Rails.logger.error "     role: #{role}"
-      Rails.logger.error "     is_registration: #{is_registration}"
-      Rails.logger.error "   Backtrace (first 15 lines):"
-      Rails.logger.error e.backtrace.first(15).join("\n")
-      Rails.logger.error "=" * 80
+      Rails.logger.error "❌ [GoogleOAuth] Exception: #{e.class} - #{e.message}"
+      Rails.logger.error e.backtrace.first(10).join("\n")
 
       error_response = {
         success: false,
@@ -604,21 +682,27 @@ class AuthenticationController < ApplicationController
   def google_oauth_callback
     # Prioritize FRONTEND_URL, then REACT_APP_FRONTEND_URL, then default to localhost for development
     frontend_url = ENV['FRONTEND_URL'] || ENV['REACT_APP_FRONTEND_URL'] || (Rails.env.development? ? 'http://localhost:3000' : 'https://carboncube-ke.com')
-    
+
     # OAuth callbacks from Google are always GET requests with query parameters
     if request.method == 'POST'
-      render json: { 
+      render json: {
         error: 'Invalid request method. Use GET /auth/google/retrieve endpoint instead.',
         correct_endpoint: '/auth/google/retrieve'
       }, status: :bad_request
       return
     end
-    
+
     # Check for errors from Google first
     if params[:error].present?
       error_msg = params[:error] == 'access_denied' ? 'Access denied by user' : params[:error]
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape(error_msg)}", allow_other_host: true, status: 302
       return
+    end
+
+    # Validate OAuth state for CSRF protection
+    if params[:state].present?
+      # In a production environment, you would validate the state against a stored value
+      # For now, we'll just log it and pass it through to the frontend
     end
     
     # If no code and no error, this might be a direct access or invalid request
@@ -766,6 +850,83 @@ class AuthenticationController < ApplicationController
       linking_service = OauthAccountLinkingService.new(auth_hash, role.capitalize, user_ip)
       result = linking_service.call
       
+      # Handle pending registration (new sellers must complete onboarding first)
+      if result[:pending_registration]
+        pending_token = result[:pending_token]
+
+        # Build user response for cookies
+        user_response = {
+          id: result[:user_id],
+          email: result[:email],
+          role: result[:role] || 'seller',
+          name: result[:name],
+          pending_token: pending_token,
+          phone_number: result[:phone_number],
+          given_name: result[:given_name],
+          family_name: result[:family_name],
+          picture: result[:picture]
+        }
+
+        # For development: use URL token transmission (cookies don't work across ports)
+        # For production: use secure server-side cookies with subdomain sharing
+        if Rails.env.development?
+          # Build redirect URL with all available seller data
+          redirect_params = {
+            pending_registration: 'true',
+            pending_token: pending_token,
+            email: result[:email] || '',
+            name: result[:name] || '',
+            picture: result[:picture] || ''
+          }
+
+          # Add phone number if available
+          if result[:phone_number].present?
+            redirect_params[:phone_number] = result[:phone_number]
+          end
+
+          # Add given name and family name if available
+          if result[:given_name].present?
+            redirect_params[:given_name] = result[:given_name]
+          end
+          if result[:family_name].present?
+            redirect_params[:family_name] = result[:family_name]
+          end
+
+          # Add role for proper routing
+          if result[:role].present?
+            redirect_params[:role] = result[:role]
+          end
+
+          redirect_url = "#{oauth_redirect_base}?#{redirect_params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')}"
+        else
+          # Production: use secure server-side cookies with subdomain sharing
+          cookie_options = {
+            httponly: true,
+            secure: true,
+            samesite: :none,  # Required for cross-subdomain requests
+            domain: '.carboncube-ke.com',  # Share across carboncube-ke.com and anko.carboncube-ke.com
+            expires: 60.days.from_now
+          }
+
+          # Set auth token cookie (use pending token for now)
+          cookies[token_cookie_key] = { value: pending_token, **cookie_options }
+
+          # Set user data cookie (non-httpOnly for client-side access)
+          user_cookie_options = cookie_options.merge(httponly: false)
+          cookies[user_cookie_key] = { value: user_response.to_json, **user_cookie_options }
+
+          # Redirect to frontend with pending registration flag
+          redirect_url = "#{oauth_redirect_base}?pending_registration=true"
+        end
+
+        # Include state parameter if it was provided for CSRF validation
+        if params[:state].present?
+          redirect_url += "&state=#{CGI.escape(params[:state])}"
+        end
+        redirect_to redirect_url, allow_other_host: true, status: 302
+        return
+      end
+      
       unless result[:success] && result[:user]
         redirect_to "#{oauth_redirect_base}?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
         return
@@ -776,7 +937,7 @@ class AuthenticationController < ApplicationController
       
       # Block login if the user is soft-deleted
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
-        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Your account has been deleted. Please contact support.')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Your account has been deleted. Please check your email for a reactivation link or request a new one.')}", allow_other_host: true, status: 302
         return
       end
 
@@ -816,6 +977,11 @@ class AuthenticationController < ApplicationController
         user_response[:profile_picture] = user.profile_picture
       end
       
+      # Include ads_count for sellers
+      if user.respond_to?(:ads_count)
+        user_response[:ads_count] = user.ads_count
+      end
+      
       # Update last active timestamp
       if user.respond_to?(:update_last_active!)
         user.update_last_active!
@@ -825,26 +991,53 @@ class AuthenticationController < ApplicationController
       missing_fields = []
       if user.is_a?(Seller)
         missing_fields = check_seller_missing_fields(user)
-        Rails.logger.info "🔍 Seller missing fields detected: #{missing_fields.join(', ')}" if missing_fields.any?
       end
       
-      # Encode token and user data as base64 JSON for URL fragment (no cache needed)
-      # URL fragments (#) are client-side only and not sent to server, making them more secure
-      auth_data = {
-        token: token,
-        user: user_response
-      }
-      
-      # Include missing fields if any (frontend will show modal)
-      if missing_fields.any?
-        auth_data[:missing_fields] = missing_fields
-      end
-      
-      # Base64 encode the JSON data for URL-safe transmission
-      # Base64 is part of Ruby standard library, no require needed
-      encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
+      # For development: use URL token transmission (cookies don't work across ports)
+      # For production: use secure server-side cookies with subdomain sharing
+      if Rails.env.development?
+        # Encode token and user data as base64 JSON for URL transmission
+        auth_data = {
+          token: token,
+          user: user_response
+        }
+        if missing_fields.any?
+          auth_data[:missing_fields] = missing_fields
+        end
+        encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
+        redirect_url = "#{oauth_redirect_base}?token=#{CGI.escape(encoded_data)}"
+      else
+        # Production: use secure server-side cookies with subdomain sharing
+        Rails.logger.info "🍪 [GoogleOAuth] Production mode - using secure cookies with subdomain sharing"
 
-      redirect_url = "#{oauth_redirect_base}?token=#{CGI.escape(encoded_data)}"
+        cookie_options = {
+          httponly: true,
+          secure: true,
+          samesite: :none,  # Required for cross-subdomain requests
+          domain: '.carboncube-ke.com',  # Share across carboncube-ke.com and anko.carboncube-ke.com
+          expires: 60.days.from_now
+        }
+
+        # Set auth token cookie
+        cookies[token_cookie_key] = { value: token, **cookie_options }
+
+        # Set user data cookie (non-httpOnly for client-side access)
+        user_cookie_options = cookie_options.merge(httponly: false)
+        cookies[user_cookie_key] = { value: user_response.to_json, **user_cookie_options }
+
+        # Include missing fields in user data if any (frontend will show modal)
+        if missing_fields.any?
+          user_response[:missing_fields] = missing_fields
+          cookies[user_cookie_key] = { value: user_response.to_json, **user_cookie_options }
+        end
+
+        redirect_url = "#{oauth_redirect_base}?success=true"
+      end
+
+      # Include state parameter if it was provided for CSRF validation
+      if params[:state].present?
+        redirect_url += "&state=#{CGI.escape(params[:state])}"
+      end
       redirect_to redirect_url, allow_other_host: true, status: 302
 
     rescue => e
@@ -859,69 +1052,25 @@ class AuthenticationController < ApplicationController
   def retrieve_oauth_data
     # Force JSON format for API responses
     request.format = :json if request.format == :html || request.format == Mime::Type.lookup('*/*')
-    
-    Rails.logger.info "=" * 80
-    Rails.logger.info "📥 [GoogleOAuth] retrieve_oauth_data called"
-    Rails.logger.info "   Request method: #{request.method}"
-    Rails.logger.info "   Request path: #{request.path}"
-    Rails.logger.info "   Request format: #{request.format}"
-    Rails.logger.info "   Accept header: #{request.headers['Accept']}"
-    Rails.logger.info "   Request IP: #{request.remote_ip}"
-    Rails.logger.info "   User-Agent: #{request.user_agent}"
-    Rails.logger.info "   All params: #{params.except(:controller, :action).inspect}"
-    Rails.logger.info "   Code present: #{params[:code].present?}"
-    Rails.logger.info "   Code length: #{params[:code]&.length || 0}"
-    Rails.logger.info "   Code (first 30 chars): #{params[:code] ? params[:code][0..30] + '...' : 'nil'}"
-    Rails.logger.info "   Code (last 10 chars): #{params[:code] && params[:code].length > 10 ? '...' + params[:code][-10..-1] : params[:code]}"
-    Rails.logger.info "=" * 80
-    
+
     code = params[:code]
     
     unless code.present?
-      Rails.logger.warn "⚠️ [GoogleOAuth] No code provided in retrieve_oauth_data"
-      Rails.logger.warn "   All params keys: #{params.keys.inspect}"
       render json: { success: false, error: 'Authorization code is required' }, status: :bad_request
       return
     end
-    
-    # Analyze code format
-    code_length = code.length
-    is_hex_format = code.match?(/\A[0-9a-f]+\z/i)
-    Rails.logger.info "🔍 [GoogleOAuth] Code analysis:"
-    Rails.logger.info "   Length: #{code_length}"
-    Rails.logger.info "   Format: #{is_hex_format ? 'hex (likely our auth_code)' : 'not hex (likely Google code)'}"
-    Rails.logger.info "   Expected auth_code length: 32 (SecureRandom.hex(16))"
-    
+
     # First, try to retrieve from cache (this is the auth_code from callback handler)
     cache_key = "oauth_auth_#{code}"
-    Rails.logger.info "🔍 [GoogleOAuth] Looking up cache key: #{cache_key}"
-    Rails.logger.info "   Cache key length: #{cache_key.length}"
     cached_data = Rails.cache.read(cache_key)
-    Rails.logger.info "   Cache read result: #{cached_data ? 'HIT (data present)' : 'MISS (no data)'}"
     
     if cached_data
-      Rails.logger.info "✅ [GoogleOAuth] Cache hit, retrieving auth data"
-      Rails.logger.info "   Cached data length: #{cached_data.length} characters"
-      Rails.logger.info "   Cached data (first 100 chars): #{cached_data[0..100]}..."
-      
       begin
         auth_data = JSON.parse(cached_data)
-        
-        Rails.logger.info "✅ [GoogleOAuth] Auth data parsed successfully"
-        Rails.logger.info "   Auth data keys: #{auth_data.keys.inspect}"
-        Rails.logger.info "   Has token: #{auth_data['token'].present?}"
-        Rails.logger.info "   Token length: #{auth_data['token']&.length || 0}"
-        Rails.logger.info "   Has user: #{auth_data['user'].present?}"
-        Rails.logger.info "   User keys: #{auth_data['user']&.keys&.inspect}"
-        Rails.logger.info "   User email: #{auth_data['user']&.dig('email')}"
-        Rails.logger.info "   User role: #{auth_data['user']&.dig('role')}"
-        Rails.logger.info "   User ID: #{auth_data['user']&.dig('id')}"
-        
+
         # Delete from cache after retrieval (one-time use)
         Rails.cache.delete(cache_key)
-        Rails.logger.info "🗑️ [GoogleOAuth] Deleted cache key (one-time use)"
-        
-        Rails.logger.info "✅ [GoogleOAuth] Returning success response"
+
         respond_to do |format|
           format.json {
             render json: {
@@ -948,7 +1097,6 @@ class AuthenticationController < ApplicationController
         return
       rescue JSON::ParserError => e
         Rails.logger.error "❌ Failed to parse cached auth data: #{e.message}"
-        Rails.logger.error "   Cached data: #{cached_data.inspect}"
         render json: { success: false, error: 'Invalid auth data format' }, status: :internal_server_error
         return
       end
@@ -958,55 +1106,23 @@ class AuthenticationController < ApplicationController
     # Our auth_codes are 32 hex characters (SecureRandom.hex(16))
     # Google authorization codes are typically longer and have a different format
     is_our_auth_code = code.length == 32 && code.match?(/\A[0-9a-f]+\z/i)
-    
-    Rails.logger.info "🔍 [GoogleOAuth] Cache miss analysis:"
-    Rails.logger.info "   Code length: #{code.length}"
-    Rails.logger.info "   Is hex format: #{code.match?(/\A[0-9a-f]+\z/i)}"
-    Rails.logger.info "   Is our auth_code format (32 hex chars): #{is_our_auth_code}"
-    
+
     if is_our_auth_code
-      # This is our auth_code format, but it's not in cache (expired or invalid)
-      Rails.logger.warn "⚠️ [GoogleOAuth] Auth code not found in cache (may have expired)"
-      Rails.logger.warn "   Code: #{code[0..10]}..."
-      Rails.logger.warn "   Cache key tried: #{cache_key}"
-      Rails.logger.warn "   Possible reasons:"
-      Rails.logger.warn "   1. Code expired (cache TTL: 5 minutes)"
-      Rails.logger.warn "   2. Code already used (one-time use)"
-      Rails.logger.warn "   3. Code never stored (callback handler didn't run)"
-      Rails.logger.warn "   4. Cache backend issue"
-      
-      # Check if there are any similar keys in cache (for debugging)
-      Rails.logger.info "🔍 [GoogleOAuth] Checking for similar cache keys..."
-      # Note: Rails.cache doesn't support listing keys, so we can't check this
-      
       render json: { success: false, error: 'Invalid or expired authorization code' }, status: :not_found
       return
     end
     
     # This appears to be a Google authorization code - check if already processed
     processed_cache_key = "oauth_code_#{Digest::MD5.hexdigest(code)}"
-    Rails.logger.info "🔍 [GoogleOAuth] Checking if code already processed"
-    Rails.logger.info "   Processed cache key: #{processed_cache_key}"
     already_processed = Rails.cache.exist?(processed_cache_key)
-    Rails.logger.info "   Already processed: #{already_processed}"
-    
+
     if already_processed
-      Rails.logger.warn "⚠️ [GoogleOAuth] Google code already processed"
-      Rails.logger.warn "   Code: #{code[0..20]}..."
-      Rails.logger.warn "   This code was already used to authenticate"
       render json: { success: false, error: 'This authorization code has already been used' }, status: :bad_request
       return
     end
     
     # Try to process it as a Google authorization code
     # This handles the case where the frontend receives the Google code directly
-    Rails.logger.info "=" * 80
-    Rails.logger.info "🔄 [GoogleOAuth] Cache miss - attempting to process as Google authorization code"
-    Rails.logger.info "   Code length: #{code.length}"
-    Rails.logger.info "   Code format: #{is_our_auth_code ? 'our_auth_code' : 'google_code'}"
-    Rails.logger.info "   Code (first 50 chars): #{code[0..50]}..."
-    Rails.logger.info "=" * 80
-    
     begin
       # Use the same processing logic as google_oauth_callback
       # But we need role and state - if not provided, default to buyer
@@ -1026,32 +1142,17 @@ class AuthenticationController < ApplicationController
       redirect_uris_to_try << (ENV['GOOGLE_REDIRECT_URI']&.strip) if ENV['GOOGLE_REDIRECT_URI'].present?
       redirect_uris_to_try << "#{request.base_url}/auth/google_oauth2/callback" # Default fallback
       redirect_uris_to_try.uniq!
-      
-      Rails.logger.info "🔄 [GoogleOAuth] Trying token exchange with redirect_uris: #{redirect_uris_to_try.inspect}"
-      
+
       redirect_uris_to_try.each do |uri|
-        Rails.logger.info "🔄 [GoogleOAuth] Attempting exchange with redirect_uri: #{uri}"
-        Rails.logger.info "   Code (first 20 chars): #{code[0..20]}..."
         token_response = exchange_code_for_tokens_with_redirect_uri(code, uri)
         if token_response && token_response['access_token']
-          Rails.logger.info "✅ [GoogleOAuth] Token exchange successful with redirect_uri: #{uri}"
           break
-        else
-          Rails.logger.warn "⚠️ [GoogleOAuth] Token exchange failed with redirect_uri: #{uri}"
         end
       end
       
       # Check if token exchange succeeded
       unless token_response && token_response['access_token']
         Rails.logger.error "❌ [GoogleOAuth] Failed to exchange code for tokens with any redirect_uri"
-        Rails.logger.error "   Code length: #{code.length}"
-        Rails.logger.error "   Code format: #{code.match?(/\A[0-9a-f]+\z/i) ? 'hex (likely our auth_code)' : 'not hex (likely Google code)'}"
-        Rails.logger.error "   Tried redirect_uris: #{redirect_uris_to_try.inspect}"
-        Rails.logger.error "   This usually means:"
-        Rails.logger.error "   1. The code has already been used (Google codes are single-use)"
-        Rails.logger.error "   2. The code has expired (Google codes expire quickly)"
-        Rails.logger.error "   3. The code doesn't match any configured redirect_uri"
-        Rails.logger.error "   4. The code is actually our auth_code but cache expired"
         render json: { 
           success: false, 
           error: 'Invalid or expired authorization code. Please try signing in again.' 
@@ -1092,12 +1193,32 @@ class AuthenticationController < ApplicationController
       
       # Use OauthAccountLinkingService to create or link account
       user_ip = request.remote_ip
-      linking_service = OauthAccountLinkingService.new(auth_hash, role.capitalize, user_ip)
+      
+      # Check if this is a new seller registration - use pending mode to delay DB creation
+      # pending_mode = true for new sellers, false for existing users or buyers
+      pending_mode = (role.capitalize == 'Seller' && !find_user_by_email(user_info['email']))
+      
+      linking_service = OauthAccountLinkingService.new(auth_hash, role.capitalize, user_ip, pending_mode)
       result = linking_service.call
       
-      unless result[:success] && result[:user]
+      unless result[:success]
         Rails.logger.error "❌ [GoogleOAuth] OAuth account linking failed: #{result[:error]}"
         render json: { success: false, error: result[:error] || 'Failed to create or link account' }, status: :unprocessable_entity
+        return
+      end
+      
+      # Handle pending registration (new sellers must complete onboarding first)
+      if result[:pending_registration]
+        pending_token = result[:pending_token]
+
+        render json: {
+          success: true,
+          pending_registration: true,
+          pending_token: pending_token,
+          email: result[:email],
+          name: result[:name],
+          picture: result[:picture]
+        }, status: :ok
         return
       end
       
@@ -1106,7 +1227,7 @@ class AuthenticationController < ApplicationController
       
       # Block login if the user is soft-deleted or blocked
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && (user.deleted? || user.blocked?)
-        error_msg = user.deleted? ? 'Your account has been deleted. Please contact support.' : 'Your account has been blocked. Please contact support.'
+        error_msg = user.deleted? ? 'Your account has been deleted. Please check your email for a reactivation link or request a new one.' : 'Your account has been blocked. Please contact support.'
         render json: { success: false, error: error_msg }, status: :forbidden
         return
       end
@@ -1141,6 +1262,11 @@ class AuthenticationController < ApplicationController
         user_response[:profile_picture] = user.profile_picture
       end
       
+      # Include ads_count for sellers
+      if user.respond_to?(:ads_count)
+        user_response[:ads_count] = user.ads_count
+      end
+      
       # Update last active timestamp
       if user.respond_to?(:update_last_active!)
         user.update_last_active!
@@ -1148,9 +1274,7 @@ class AuthenticationController < ApplicationController
       
       # Mark code as processed
       Rails.cache.write(processed_cache_key, true, expires_in: 5.minutes)
-      
-      Rails.logger.info "✅ [GoogleOAuth] Successfully processed Google authorization code"
-      
+
       render json: {
         success: true,
         token: token,
@@ -1167,16 +1291,11 @@ class AuthenticationController < ApplicationController
   # Complete registration with missing fields
   def complete_registration
     begin
-      Rails.logger.info "📝 Complete registration request received"
-      
       # Get the form data from the request
       form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id, :age_group_id, :birthday, :given_name, :family_name, :display_name, :provider, :uid, :user_type, :enterprise_name, :business_registration_number, :document_type_id, :description)
-      
-      Rails.logger.info "📝 Form data: #{form_data.inspect}"
-      
+
       # Determine user type (default to buyer if not specified)
       user_type = form_data[:user_type] || 'Buyer'
-      Rails.logger.info "📝 User type: #{user_type}"
       
       # Find the user by email (assuming email is provided)
       user = case user_type
@@ -1185,6 +1304,8 @@ class AuthenticationController < ApplicationController
              else
                Buyer.find_by(email: form_data[:email])
              end
+      
+      success = false
       
       if user.nil?
         
@@ -1281,49 +1402,54 @@ class AuthenticationController < ApplicationController
           user.device_hash_for_association = params[:device_hash]
         end
         
-        if user.save
-          
-          # Associate guest clicks after save (in case device_hash wasn't set before)
-          if (user.is_a?(Buyer) || user.is_a?(Seller)) && params[:device_hash].present?
-            begin
-              GuestClickAssociationService.associate_clicks_with_user(user, params[:device_hash])
-            rescue => e
-              Rails.logger.error "Failed to associate guest clicks after OAuth registration: #{e.message}" if defined?(Rails.logger)
+        ActiveRecord::Base.transaction do
+          if user.save
+            
+            # Associate guest clicks after save (in case device_hash wasn't set before)
+            if (user.is_a?(Buyer) || user.is_a?(Seller)) && params[:device_hash].present?
+              begin
+                GuestClickAssociationService.associate_clicks_with_user(user, params[:device_hash])
+              rescue => e
+                Rails.logger.error "Failed to associate guest clicks after OAuth registration: #{e.message}" if defined?(Rails.logger)
+              end
             end
-          end
-          
-          # Handle seller-specific setup
-          if user_type == 'seller'
-            # OAuth signups (Continue with Google, etc.) always get Premium for 6 months (same as GoogleOauthService and OauthAccountLinkingService)
-            if form_data[:provider].present?
-              expiry_date = 6.months.from_now
-              premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
-              if premium_tier
-                user.seller_tier = SellerTier.create!(
-                  seller: user,
-                  tier: premium_tier,
-                  duration_months: 6,
-                  expires_at: expiry_date
-                )
-                Rails.logger.info "✅ Premium tier assigned to OAuth seller (complete_registration): #{user.email}, expires #{expiry_date}"
+            
+            # Handle seller-specific setup
+            if user_type == 'seller'
+              # OAuth signups (Continue with Google, etc.) always get Premium for 6 months (same as GoogleOauthService and OauthAccountLinkingService)
+              if form_data[:provider].present?
+                expiry_date = 6.months.from_now
+                premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
+                if premium_tier
+                  user.seller_tier = SellerTier.create!(
+                    seller: user,
+                    tier: premium_tier,
+                    duration_months: 6,
+                    expires_at: expiry_date
+                  )
+                else
+                  Rails.logger.error "❌ Premium tier not found for OAuth seller"
+                  assign_free_tier(user)
+                end
+              elsif should_get_2026_premium?
+                create_2026_premium_tier(user)
               else
-                Rails.logger.error "❌ Premium tier not found for OAuth seller"
                 assign_free_tier(user)
               end
-            elsif should_get_2026_premium?
-              create_2026_premium_tier(user)
-            else
-              assign_free_tier(user)
+              # Ensure seller always has a tier (create_2026_premium_tier can return without creating if tier missing/error)
+              assign_free_tier(user) if user.seller_tier.blank?
+
+              # Create main branch for OAuth sellers
+              create_main_branch_for_seller(user)
+
+              # Create first ad (required)
+              create_first_ad_for_seller(user, params)
             end
-            # Ensure seller always has a tier (create_2026_premium_tier can return without creating if tier missing/error)
-            assign_free_tier(user) if user.seller_tier.blank?
+
+            success = true
+          else
+            raise ActiveRecord::Rollback
           end
-        else
-          render json: {
-            success: false,
-            error: "Failed to create user: #{user.errors.full_messages.join(', ')}"
-          }, status: :unprocessable_entity
-          return
         end
       else
         
@@ -1395,40 +1521,55 @@ class AuthenticationController < ApplicationController
         end
         
         # Update the user
-        if user.update(user_attributes)
-          
-          # Handle seller-specific setup: OAuth sellers get Premium if missing tier; else 2026 promo
-          if user_type == 'seller' && user.seller_tier.blank?
-            if form_data[:provider].present?
-              expiry_date = 6.months.from_now
-              premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
-              if premium_tier
-                user.seller_tier = SellerTier.create!(
-                  seller: user,
-                  tier: premium_tier,
-                  duration_months: 6,
-                  expires_at: expiry_date
-                )
-                Rails.logger.info "✅ Premium tier assigned to OAuth seller (existing user, complete_registration): #{user.email}"
+        ActiveRecord::Base.transaction do
+          if user.update(user_attributes)
+            
+            # Handle seller-specific setup: OAuth sellers get Premium if missing tier; else 2026 promo
+            if user_type == 'seller' && user.seller_tier.blank?
+              if form_data[:provider].present?
+                expiry_date = 6.months.from_now
+                premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
+                if premium_tier
+                  user.seller_tier = SellerTier.create!(
+                    seller: user,
+                    tier: premium_tier,
+                    duration_months: 6,
+                    expires_at: expiry_date
+                  )
+                end
+              elsif should_get_2026_premium?
+                create_2026_premium_tier(user)
               end
-            elsif should_get_2026_premium?
-              create_2026_premium_tier(user)
             end
+
+            if user_type == 'seller'
+              # Create main branch for OAuth sellers if missing
+              create_main_branch_for_seller(user)
+
+              # Create first ad (required)
+              create_first_ad_for_seller(user, params)
+            end
+
+            success = true
+          else
+            raise ActiveRecord::Rollback
           end
-        else
-          render json: {
-            success: false,
-            error: "Failed to complete registration: #{user.errors.full_messages.join(', ')}"
-          }, status: :unprocessable_entity
-          return
         end
+      end
+
+      unless success
+        render json: {
+          success: false,
+          error: "Failed to complete registration: #{user.errors.full_messages.join(', ')}"
+        }, status: :unprocessable_entity
+        return
       end
       
       # Check if user is deleted or blocked before generating token
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
         render json: {
           success: false,
-          error: 'Your account has been deleted. Please contact support.'
+          error: 'Your account has been deleted. Please check your email for a reactivation link or request a new one.'
         }, status: :unauthorized
         return
       end
@@ -1450,96 +1591,185 @@ class AuthenticationController < ApplicationController
       end
       
       # Generate JWT token using JsonWebToken service
-      token_payload = {
-        email: user.email,
-        role: user_type == 'seller' ? 'Seller' : 'Buyer',
-        remember_me: true
-      }
-      
-      # Add appropriate ID field based on user type
-      if user_type == 'seller'
-        token_payload[:seller_id] = user.id
+      token_payload = if user.is_a?(Seller)
+        { seller_id: user.id, email: user.email, role: 'Seller' }
       else
-        token_payload[:user_id] = user.id
+        { user_id: user.id, email: user.email, role: 'Buyer' }
       end
       
       token = JsonWebToken.encode(token_payload)
       
-      # Send welcome email
-      begin
-        WelcomeMailer.welcome_email(user).deliver_now
-      rescue => e
-        # Don't fail the registration if email fails
-      end
-      
-      # Reload user to get the latest phone_number after update
-      user.reload
-      
-      # Send welcome WhatsApp message only in these scenarios:
-      # 1. Google OAuth WITHOUT phone: phone_provided_by_oauth = false, phone was just added
-      # 2. Manual registration WITHOUT phone: phone_provided_by_oauth = false, phone was just added
-      # 
-      # Do NOT send if:
-      # - Google OAuth WITH phone: phone_provided_by_oauth = true (already sent during OAuth)
-      # - Manual registration WITH phone: phone already existed (already sent during registration)
-      # - Phone was not just added in this request
-      
-      should_send_welcome = false
-      
-      if user.phone_number.present? && !user.phone_provided_by_oauth
-        # Check if phone was just added in this request
-        # For new users created in complete_registration, phone is always "just added" if present
-        # For existing users, check if phone_being_added flag is set
-        phone_was_just_added = defined?(phone_being_added) ? phone_being_added : true
-        
-        if phone_was_just_added
-          should_send_welcome = true
-          Rails.logger.info "📱 Will send welcome message - phone was just added, phone_provided_by_oauth: false"
-        else
-          Rails.logger.info "📱 Skipping welcome message - phone already existed before this update"
-        end
-      else
-        if user.phone_provided_by_oauth
-          Rails.logger.info "📱 Skipping welcome message - phone was provided by OAuth (already sent during OAuth)"
-        elsif !user.phone_number.present?
-          Rails.logger.info "📱 Skipping welcome message - no phone number present"
-        end
-      end
-      
-      
-      # Prepare user response data (include phone_number so frontend updates UI instantly)
+      # Build user response
       user_response = {
         id: user.id,
         email: user.email,
-        fullname: user.fullname,
-        username: user.username,
-        role: user.user_type,
-        profile_picture: user.profile_picture,
-        phone_number: user.phone_number
+        role: user.is_a?(Seller) ? 'Seller' : 'Buyer'
       }
       
-      # Add seller-specific fields if applicable
-      if user_type == 'seller'
-        user_response[:enterprise_name] = user.enterprise_name if user.respond_to?(:enterprise_name)
-        user_response[:business_registration_number] = user.business_registration_number if user.respond_to?(:business_registration_number)
+      if user.respond_to?(:fullname) && user.fullname.present?
+        user_response[:name] = user.fullname
+      elsif user.respond_to?(:username) && user.username.present?
+        user_response[:name] = user.username
+      end
+      
+      if user.respond_to?(:username) && user.username.present?
+        user_response[:username] = user.username
+      end
+      
+      if user.respond_to?(:profile_picture) && user.profile_picture.present?
+        user_response[:profile_picture] = user.profile_picture
       end
       
       render json: {
         success: true,
-        message: "Registration completed successfully",
         token: token,
         user: user_response
+      }, status: :ok
+    rescue => e
+      Rails.logger.error "❌ Complete registration error: #{e.message}"
+      Rails.logger.error e.backtrace.first(5).join("\n")
+      render json: { success: false, error: 'Failed to complete registration' }, status: :internal_server_error
+    end
+  end
+
+  # Complete Google OAuth registration after first ad is created
+  def complete_google_registration
+    begin
+      # Get the pending token and form data
+      pending_token = params[:pending_token]
+      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :county_id, :sub_county_id, :enterprise_name, :description, :ad_title, :ad_price, :ad_description, :ad_category, :ad_subcategory, :ad_condition, :ad_brand, :ad_manufacturer, :ad_images)
+
+      unless pending_token.present?
+        render json: { success: false, error: 'Pending token is required' }, status: :bad_request
+        return
+      end
+      
+      # Retrieve pending registration data from cache
+      cache_key = "pending_google_registration_#{pending_token}"
+      cached_data = Rails.cache.read(cache_key)
+      
+      unless cached_data
+        Rails.logger.warn "⚠️ Pending registration not found or expired"
+        render json: { success: false, error: 'Invalid or expired pending token' }, status: :not_found
+        return
+      end
+
+      # Delete from cache (one-time use)
+      Rails.cache.delete(cache_key)
+      
+      # Check if user already exists (race condition check)
+      existing_user = Seller.find_by(email: cached_data['email'])
+      if existing_user
+        Rails.logger.warn "⚠️ User already exists: #{cached_data['email']}"
+        render json: { success: false, error: 'User already registered' }, status: :conflict
+        return
+      end
+      
+      # Validate required fields for branch creation
+      missing_fields = []
+      missing_fields << "Enterprise name" unless form_data[:enterprise_name].present?
+      missing_fields << "Location" unless form_data[:location].present?
+      
+      if missing_fields.any?
+        Rails.logger.error "Missing required fields for Google seller registration: #{missing_fields.join(', ')}"
+        render json: {
+          success: false,
+          error: "Missing required fields: #{missing_fields.join(', ')}"
+        }, status: :unprocessable_entity
+        return
+      end
+
+      # Build buyer attributes from cached OAuth data and form data (with pending seller data)
+      buyer_attributes = {
+        fullname: cached_data['name'] || form_data[:fullname],
+        email: cached_data['email'],
+        username: generate_unique_username(cached_data['name'] || cached_data['email'].split('@').first),
+        provider: cached_data['provider'],
+        uid: cached_data['uid'],
+        oauth_token: cached_data['oauth_token'],
+        oauth_refresh_token: cached_data['oauth_refresh_token'],
+        oauth_expires_at: cached_data['oauth_expires_at'],
+        # Form data
+        phone_number: form_data[:phone_number],
+        location: form_data[:location],
+        profile_picture: cached_data['picture']
       }
       
-    rescue => e
+      # Create buyer in transaction
+      ActiveRecord::Base.transaction do
+        buyer = Buyer.create!(buyer_attributes)
+        
+        # Store pending seller profile data
+        buyer.update(
+          pending_seller_fullname: cached_data['name'] || form_data[:fullname],
+          pending_seller_phone_number: form_data[:phone_number],
+          pending_seller_location: form_data[:location],
+          pending_seller_enterprise_name: form_data[:enterprise_name],
+          pending_seller_county_id: form_data[:county_id],
+          pending_seller_sub_county_id: form_data[:sub_county_id],
+          pending_seller_description: form_data[:description]
+        )
+        
+        # Auto-verify email for Google OAuth users
+        mark_email_as_verified(buyer.email)
+
+        # Generate JWT token
+        token = JsonWebToken.encode({ user_id: buyer.id, email: buyer.email, role: 'buyer' })
+        
+        # Build user response
+        user_response = {
+          id: buyer.id,
+          email: buyer.email,
+          role: 'buyer',
+          name: buyer.fullname,
+          username: buyer.username,
+          profile_picture: buyer.profile_picture
+        }
+
+        render json: {
+          success: true,
+          token: token,
+          user: user_response
+        }, status: :ok
+      end
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.error "❌ Failed to create Google seller: #{e.message}"
+      Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
       render json: {
         success: false,
-        error: "Failed to complete registration: #{e.message}"
-      }, status: :internal_server_error
+        error: "Failed to create seller account: #{e.record.errors.full_messages.join(', ')}"
+      }, status: :unprocessable_entity
+    rescue => e
+      Rails.logger.error "❌ Complete Google registration error: #{e.message}"
+      Rails.logger.error e.backtrace.first(5).join("\n")
+      render json: { success: false, error: 'Failed to complete registration' }, status: :internal_server_error
     end
   end
 
   private
+
+  def token_cookie_key
+    Rails.env.production? ? '__Secure-auth_token' : 'auth_token'
+  end
+
+  def user_cookie_key
+    Rails.env.production? ? '__Secure-auth_user' : 'auth_user'
+  end
+
+  def mark_email_as_verified(email)
+    return unless email.present?
+    
+    EmailOtp.where(email: email, verified: false).delete_all
+    
+    email_otp = EmailOtp.find_or_initialize_by(email: email)
+    email_otp.update!(
+      verified: true,
+      otp_code: nil,
+      expires_at: nil
+    )
+  rescue => e
+    Rails.logger.error "❌ Failed to mark email as verified: #{e.message}"
+  end
   
   def exchange_code_for_tokens(code, redirect_uri = nil)
     redirect_uri ||= (ENV['GOOGLE_REDIRECT_URI']&.strip) || "#{request.base_url}/auth/google_oauth2/callback"
@@ -1605,10 +1835,67 @@ class AuthenticationController < ApplicationController
 
   private
 
+  # Create first ad for a seller (required for all seller signups)
+  def create_first_ad_for_seller(seller, ad_params)
+    return unless seller.is_a?(Seller)
+
+    unless ad_params[:ad_title].present? && ad_params[:ad_price].present? && ad_params[:ad_category].present?
+      Rails.logger.error "First ad data is missing: ad_title, ad_price, and ad_category are required"
+      seller.errors.add(:base, "First ad data is required. Please fill in the ad details.")
+      raise ActiveRecord::Rollback
+    end
+
+    ad = seller.ads.build(
+      title: ad_params[:ad_title],
+      price: ad_params[:ad_price].to_s.gsub(/,/, '').to_f,
+      description: ad_params[:ad_description],
+      category_id: ad_params[:ad_category],
+      subcategory_id: ad_params[:ad_subcategory],
+      condition: ad_params[:ad_condition],
+      brand: ad_params[:ad_brand],
+      manufacturer: ad_params[:ad_manufacturer],
+      is_added_by_sales: false
+    )
+
+    # Process and upload ad images if present
+    if ad_params[:ad_images].present?
+      begin
+        uploaded_media = process_and_upload_ad_images(ad_params[:ad_images])
+        ad.media = uploaded_media
+      rescue => e
+        Rails.logger.error "❌ Error processing ad images: #{e.message}"
+      end
+    end
+
+    if ad.save
+    else
+      Rails.logger.error "Failed to create first ad for OAuth seller: #{ad.errors.full_messages.inspect}"
+      seller.errors.add(:base, "Failed to create first ad: #{ad.errors.full_messages.join(', ')}")
+      raise ActiveRecord::Rollback
+    end
+  end
+
+  # Create the main branch for a seller if they don't have one and have required fields
+  def create_main_branch_for_seller(seller)
+    return unless seller.is_a?(Seller)
+    return if seller.branches.exists?
+    return unless seller.enterprise_name.present? && seller.location.present?
+
+    branch = seller.branches.build(
+      name: seller.enterprise_name,
+      location: seller.location,
+      is_main_branch: true
+    )
+
+    if branch.save
+    else
+      Rails.logger.error "Failed to create main branch for seller: #{branch.errors.full_messages.inspect}"
+    end
+  end
+
   # Check if user should get premium status for 2025 registrations
   def should_get_2026_premium?
     current_year = Time.current.year
-    Rails.logger.info "🔍 Checking 2026 premium status: current_year=#{current_year}, is_2026=#{current_year == 2026}"
     current_year == 2026
   end
 
@@ -1619,10 +1906,7 @@ class AuthenticationController < ApplicationController
 
   # Create seller tier for 2026 premium users
   def create_2026_premium_tier(seller)
-    Rails.logger.info "🔍 create_2026_premium_tier called for seller: #{seller.email}"
-    
     unless should_get_2026_premium?
-      Rails.logger.info "❌ Not 2025, skipping premium tier assignment"
       return
     end
     
@@ -1632,9 +1916,6 @@ class AuthenticationController < ApplicationController
       return
     end
     
-    Rails.logger.info "✅ Premium tier found: #{premium_tier.name} (ID: #{premium_tier.id})"
-    
-    # Calculate expiry date (end of 2026) - expires at midnight on January 1, 2027
     expires_at = Time.new(2027, 1, 1, 0, 0, 0)
 
     # Calculate remaining months until end of 2026
@@ -1651,10 +1932,53 @@ class AuthenticationController < ApplicationController
       expires_at: expires_at
     )
     
-    Rails.logger.info "✅ Premium tier assigned to seller #{seller.email} until end of 2026 (#{remaining_days} days, ~#{duration_months} months, SellerTier ID: #{seller_tier.id})"
   rescue => e
     Rails.logger.error "❌ Error creating premium tier: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
+  end
+
+  def process_and_upload_ad_images(images)
+    uploaded_urls = []
+
+    begin
+      Array(images).each do |image|
+        begin
+          # Check if tempfile exists and is readable
+          unless image.tempfile && File.exist?(image.tempfile.path)
+            Rails.logger.error "❌ Tempfile not found for image: #{image.original_filename}"
+            next
+          end
+
+          # Check Cloudinary configuration
+          unless ENV['UPLOAD_PRESET'].present?
+            Rails.logger.error "❌ UPLOAD_PRESET environment variable is not set"
+            raise "UPLOAD_PRESET not configured"
+          end
+
+          # Upload original image directly to Cloudinary without any processing
+          uploaded_image = Cloudinary::Uploader.upload(
+            image.tempfile.path,
+            upload_preset: ENV['UPLOAD_PRESET'],
+            format: nil,
+            background: "transparent"
+          )
+
+          uploaded_urls << uploaded_image["secure_url"]
+        rescue => e
+          Rails.logger.error "❌ Error uploading image #{image.original_filename}: #{e.message}"
+          Rails.logger.error "❌ Error class: #{e.class}"
+          Rails.logger.error e.backtrace.join("\n")
+          # Don't fail completely, just skip this image
+        end
+      end
+    rescue => e
+      Rails.logger.error "❌ Error in process_and_upload_ad_images: #{e.message}"
+      Rails.logger.error "❌ Error class: #{e.class}"
+      Rails.logger.error e.backtrace.join("\n")
+      raise e # Re-raise to be caught by the calling method
+    end
+
+    uploaded_urls
   end
 
   def assign_free_tier(seller)
@@ -1665,18 +1989,19 @@ class AuthenticationController < ApplicationController
         tier: default_tier,
         duration_months: 0 # Free tier has no expiration
       )
-      Rails.logger.info "✅ Default tier assigned to seller: #{default_tier.name}"
     end
   end
 
   def find_user_by_email(email)
+    return nil if email.blank?
+    normalized_email = email.to_s.strip.downcase
     # Priority: Seller -> Buyer -> Admin -> others
     # Sellers take priority — upgraded buyers no longer have a buyer record (it was destroyed).
-    Seller.find_by(email: email) ||
-    Buyer.find_by(email: email) ||
-    Admin.find_by(email: email) ||
-    SalesUser.find_by(email: email) ||
-    MarketingUser.find_by(email: email)
+    Seller.find_by(email: normalized_email) ||
+    Buyer.find_by(email: normalized_email) ||
+    Admin.find_by(email: normalized_email) ||
+    SalesUser.find_by(email: normalized_email) ||
+    MarketingUser.find_by(email: normalized_email)
   end
 
 

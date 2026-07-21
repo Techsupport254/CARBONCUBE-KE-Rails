@@ -10,22 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_10_073114) do
-  create_schema "auth"
-  create_schema "extensions"
+ActiveRecord::Schema[7.1].define(version: 2026_07_21_105611) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
-  create_schema "realtime"
-  create_schema "storage"
   create_schema "vault"
 
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
-  enable_extension "pgcrypto"
   enable_extension "plpgsql"
-  enable_extension "uuid-ossp"
 
   create_table "abouts", force: :cascade do |t|
     t.text "description"
@@ -155,6 +148,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_10_073114) do
     t.boolean "is_main_branch", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "secondary_phone"
+    t.bigint "county_id"
+    t.bigint "sub_county_id"
+    t.string "profile_picture"
     t.index ["seller_id"], name: "index_branches_on_seller_id"
   end
 
@@ -829,12 +826,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_10_073114) do
     t.text "seller_reply"
     t.json "images", default: []
     t.uuid "buyer_id"
-    t.string "seller_id"
+    t.uuid "seller_id"
     t.index ["ad_id", "rating"], name: "index_reviews_on_ad_id_rating"
     t.index ["ad_id"], name: "index_reviews_on_ad_id"
     t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
     t.index ["seller_id"], name: "index_reviews_on_seller_id"
-    t.index ["seller_id"], name: "index_reviews_seller_id"
   end
 
   create_table "riders", force: :cascade do |t|
@@ -968,6 +964,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_10_073114) do
     t.boolean "phone_provided_by_oauth", default: false
     t.bigint "carbon_code_id"
     t.boolean "checkpoint_exported", default: false
+    t.string "facebook_url"
+    t.string "instagram_url"
+    t.string "whatsapp_url"
+    t.string "tiktok_url"
+    t.string "twitter_url"
+    t.string "linkedin_url"
+    t.string "website"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"

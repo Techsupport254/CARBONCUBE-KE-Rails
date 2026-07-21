@@ -109,4 +109,71 @@ namespace :email do
 
     puts "\nPreview generated successfully!"
   end
+
+  desc "Preview the accurate listings email template"
+  task preview_accurate_listings: :environment do
+    puts "Generating email preview for accurate listings..."
+    
+    # Try to find target test user first, or fall back to any seller
+    seller = Seller.find_by(email: 'kiruivictor097@gmail.com') || Seller.first
+    
+    if seller.nil?
+      puts "No sellers found in the database!"
+      exit 1
+    end
+    
+    puts "Previewing email with seller: #{seller.fullname || 'Unnamed'} (#{seller.email})"
+    
+    begin
+      # Generate the email content
+      mail = SellerCommunicationsMailer.with(seller: seller).accurate_listings
+      
+      puts "\nEmail Details:"
+      puts "   Subject: #{mail.subject}"
+      puts "   To: #{mail.to}"
+      puts "   From: #{mail.from}"
+      
+      # Save HTML preview to file
+      preview_file = Rails.root.join('tmp', 'email_preview_accurate_listings.html')
+      File.write(preview_file, mail.body.raw_source)
+      
+      puts "\nEmail preview saved to: #{preview_file}"
+      puts "Open this file in your browser to preview the email"
+      
+    rescue => e
+      puts "Error generating preview: #{e.message}"
+      puts "Full error: #{e.backtrace.first(5).join("\n")}"
+      exit 1
+    end
+
+    puts "\nPreview generated successfully!"
+  end
+
+  desc "Send test accurate listings email immediately (synchronous)"
+  task test_accurate_listings_now: :environment do
+    seller_email = 'kiruivictor097@gmail.com'
+    puts "Starting accurate listings email test for #{seller_email}..."
+    
+    seller = Seller.find_by(email: seller_email)
+    
+    if seller.nil?
+      puts "Seller with email #{seller_email} not found! Please register the seller first."
+      exit 1
+    end
+    
+    begin
+      # Send immediately for testing
+      SellerCommunicationsMailer.with(seller: seller).accurate_listings.deliver_now
+      
+      puts "Email sent immediately!"
+      puts "Check #{seller.email} for the email"
+      
+    rescue => e
+      puts "Error sending email: #{e.message}"
+      puts "Full error: #{e.backtrace.first(5).join("\n")}"
+      exit 1
+    end
+
+    puts "\nImmediate test completed!"
+  end
 end

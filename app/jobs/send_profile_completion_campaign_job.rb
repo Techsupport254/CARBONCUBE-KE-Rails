@@ -8,14 +8,12 @@ class SendProfileCompletionCampaignJob < ApplicationJob
   retry_on StandardError, wait: :exponentially_longer, attempts: 3
   discard_on ActiveJob::DeserializationError
 
-  # Profile fields that determine completeness (matching seller analytics logic)
   PROFILE_FIELDS = %w[enterprise_name description phone_number email profile_picture].freeze
 
   def perform(dry_run = true, test_email = nil)
     sellers = find_incomplete_sellers
 
     if test_email.present?
-      # Test mode: send only to the specified email, use first seller as sample data
       sample_seller = sellers.first || Seller.where(deleted: false).first
       if sample_seller.nil?
         Rails.logger.warn "[ProfileCompletionCampaign] No sellers found for sample data"
@@ -25,18 +23,13 @@ class SendProfileCompletionCampaignJob < ApplicationJob
       missing = missing_fields_for(sample_seller)
       completion = completion_percent_for(sample_seller)
 
-      Rails.logger.info "[ProfileCompletionCampaign] TEST MODE: Sending to #{test_email} using sample seller #{sample_seller.id} (#{sample_seller.fullname})"
-
       if dry_run
         Rails.logger.info "[ProfileCompletionCampaign] [DRY RUN] Would send to #{test_email}"
       else
         send_email(test_email, sample_seller, missing, completion)
-        Rails.logger.info "[ProfileCompletionCampaign] Test email sent to #{test_email}"
       end
       return
     end
-
-    Rails.logger.info "[ProfileCompletionCampaign] Found #{sellers.count} sellers with incomplete profiles"
 
     sent_count = 0
     skipped_count = 0
@@ -48,11 +41,9 @@ class SendProfileCompletionCampaignJob < ApplicationJob
         next
       end
 
-      # Redis dedup
       dedup_key = "campaign:profile_completion:sent_emails"
       already_sent = RedisConnection.with { |conn| conn.sismember(dedup_key, email) }
       if already_sent
-        Rails.logger.info "[ProfileCompletionCampaign] #{email} already sent. Skipping."
         skipped_count += 1
         next
       end
@@ -60,12 +51,9 @@ class SendProfileCompletionCampaignJob < ApplicationJob
       missing = missing_fields_for(seller)
       completion = completion_percent_for(seller)
 
-      if dry_run
-        Rails.logger.info "[ProfileCompletionCampaign] [DRY RUN] Would send to #{email} (#{seller.fullname}) - #{completion}% complete, missing: #{missing.join(', ')}"
-      else
+      unless dry_run
         send_email(email, seller, missing, completion)
         RedisConnection.with { |conn| conn.sadd(dedup_key, email) }
-        Rails.logger.info "[ProfileCompletionCampaign] Sent to #{email} (#{seller.fullname})"
       end
       sent_count += 1
     end
@@ -113,15 +101,13 @@ class SendProfileCompletionCampaignJob < ApplicationJob
   end
 
   def send_email(email, seller, missing_fields, completion_percent)
-    # Validate email before sending
     if email.blank?
-      Rails.logger.warn "[ProfileCompletionCampaign] Skipping send_email for seller #{seller.id} (#{seller.fullname}) - email is blank"
+      Rails.logger.warn "[ProfileCompletionCampaign] Skipping send_email for seller #{seller.id} - email is blank"
       return
     end
 
-    # Basic email format validation (must contain @ and have a domain)
     unless email.include?('@') && email.match?(/\A[^@\s]+@[^@\s]+\.[^@\s]+\z/)
-      Rails.logger.warn "[ProfileCompletionCampaign] Skipping send_email for seller #{seller.id} (#{seller.fullname}) - invalid email format: #{email}"
+      Rails.logger.warn "[ProfileCompletionCampaign] Skipping send_email for seller #{seller.id} - invalid email format: #{email}"
       return
     end
 

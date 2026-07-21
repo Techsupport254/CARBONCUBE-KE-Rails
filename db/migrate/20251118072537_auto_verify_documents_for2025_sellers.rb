@@ -11,7 +11,7 @@ class AutoVerifyDocumentsFor2025Sellers < ActiveRecord::Migration[7.1]
     SQL
     )
     
-    Rails.logger.info "✅ Updated #{sellers_updated.cmd_tuples} sellers with legacy document verification"
+    Rails.logger.info "Updated #{sellers_updated.cmd_tuples} sellers with legacy document verification"
     
     # Update seller_documents table for all documents belonging to 2025 sellers
     documents_updated = execute(<<-SQL.squish
@@ -24,7 +24,7 @@ class AutoVerifyDocumentsFor2025Sellers < ActiveRecord::Migration[7.1]
     SQL
     )
     
-    Rails.logger.info "✅ Updated #{documents_updated.cmd_tuples} seller documents with verification"
+    Rails.logger.info "Updated #{documents_updated.cmd_tuples} seller documents with verification"
   end
 
   def down

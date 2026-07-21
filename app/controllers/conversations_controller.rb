@@ -80,8 +80,6 @@ class ConversationsController < ApplicationController
     participant_ids = params[:participant_ids] || []
     online_status = {}
     
-    Rails.logger.info "Checking online status for participants: #{participant_ids}"
-    
     participant_ids.each do |participant_id|
       # Parse participant ID format: "buyer_123", "seller_456", "admin_789"
       parts = participant_id.split('_')
@@ -93,12 +91,9 @@ class ConversationsController < ApplicationController
       # Check if user is online using Rails cache
       cache_key = "online_user_#{user_type}_#{user_id}"
       is_online = Rails.cache.exist?(cache_key)
-      
-      Rails.logger.info "User #{participant_id}: cache_key=#{cache_key}, online=#{is_online}"
       online_status[participant_id] = is_online
     end
     
-    Rails.logger.info "Online status result: #{online_status}"
     render json: { online_status: online_status }, status: :ok
   end
 
@@ -313,8 +308,6 @@ class ConversationsController < ApplicationController
       }, status: :unprocessable_entity
     end
   rescue => e
-    Rails.logger.error "Error pinging seller: #{e.message}"
-    Rails.logger.error e.backtrace.join("\n")
     render json: { error: 'An error occurred while pinging the seller', details: e.message }, status: :internal_server_error
   end
 
@@ -346,7 +339,6 @@ class ConversationsController < ApplicationController
     token = request.headers['Authorization']&.split(' ')&.last
     
     unless token
-      Rails.logger.warn "ConversationsController: No token provided in Authorization header"
       render json: { error: 'Not Authorized - No token provided' }, status: :unauthorized
       return
     end
@@ -357,7 +349,6 @@ class ConversationsController < ApplicationController
       
       # Check if decoding was successful
       unless result[:success]
-        Rails.logger.warn "ConversationsController: Token decode failed - #{result[:error]}"
         render json: { error: result[:error] || 'Invalid token' }, status: :unauthorized
         return
       end
@@ -397,23 +388,17 @@ class ConversationsController < ApplicationController
         @current_user = MarketingUser.find_by(id: user_id) if user_id
         
       else
-        Rails.logger.warn "ConversationsController: Invalid user role: #{role}"
         render json: { error: "Invalid user role: #{role}" }, status: :unauthorized
         return
       end
       
       unless @current_user
-        Rails.logger.warn "ConversationsController: User not found for role: #{role}, id: #{user_id}"
-        Rails.logger.warn "ConversationsController: Decoded token keys: #{decoded.keys}"
         render json: { error: 'User not found' }, status: :unauthorized
       end
       
     rescue JWT::DecodeError => e
-      Rails.logger.warn "ConversationsController: JWT decode error - #{e.message}"
       render json: { error: 'Invalid token format' }, status: :unauthorized
     rescue => e
-      Rails.logger.error "ConversationsController: Authentication error: #{e.class.name} - #{e.message}"
-      Rails.logger.error e.backtrace.first(5).join("\n")
       render json: { error: 'Authentication failed' }, status: :unauthorized
     end
   end
@@ -521,7 +506,6 @@ class ConversationsController < ApplicationController
   end
 
   def create_buyer_conversation
-    Rails.logger.info "Current user: #{@current_user.class.name}, id: #{@current_user.id}, type: #{@current_user.id.class.name}"
     
     # Determine buyer_id and seller_id based on current user type
     buyer_id = @current_user.id
@@ -532,9 +516,7 @@ class ConversationsController < ApplicationController
       ad = Ad.find_by(id: params[:ad_id])
       if ad
         seller_id = ad.seller_id
-        Rails.logger.info "Got seller_id from ad: #{seller_id}, type: #{seller_id.class.name}"
       else
-        Rails.logger.error "Ad not found: #{params[:ad_id]}"
         render json: { error: 'Ad not found' }, status: :not_found
         return
       end
@@ -542,12 +524,9 @@ class ConversationsController < ApplicationController
 
     # Ensure seller_id is present
     unless seller_id.present?
-      Rails.logger.error "seller_id is missing"
       render json: { error: 'seller_id is required' }, status: :unprocessable_entity
       return
     end
-
-    Rails.logger.info "Looking for conversation with buyer_id: #{buyer_id} (#{buyer_id.class.name}), seller_id: #{seller_id} (#{seller_id.class.name}), ad_id: #{params[:ad_id]}"
 
     # Find existing conversation or create new one
     # Handle race conditions where multiple requests try to create the same conversation
@@ -560,24 +539,19 @@ class ConversationsController < ApplicationController
         inquirer_seller_id: nil,
         admin_id: params[:admin_id].presence
       )
-      Rails.logger.info "Found or created conversation: #{@conversation.id}"
     rescue => e
-      Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}"
-      Rails.logger.error e.backtrace.first(10).join("\n")
       render json: { error: "Failed to create conversation: #{e.message}" }, status: :unprocessable_entity
       return
     end
     
     # Check if conversation was actually created
     unless @conversation
-      Rails.logger.error "Conversation was nil after find_or_create_conversation!"
       render json: { error: 'Failed to create conversation due to race condition' }, status: :unprocessable_entity
       return
     end
 
     # Ensure the conversation is saved and valid
     unless @conversation.persisted?
-      Rails.logger.error "Conversation validation errors: #{@conversation.errors.full_messages}"
       render json: { error: 'Failed to create conversation', details: @conversation.errors.full_messages }, status: :unprocessable_entity
       return
     end
@@ -630,7 +604,6 @@ class ConversationsController < ApplicationController
     
     # Prevent sellers from messaging their own ads
     if params[:seller_id].present? && params[:seller_id] == @current_user.id.to_s && params[:buyer_id].blank?
-      Rails.logger.warn "Seller #{@current_user.id} trying to message their own ad"
       render json: { error: 'You cannot message your own ads' }, status: :unprocessable_entity
       return
     end
@@ -639,7 +612,6 @@ class ConversationsController < ApplicationController
     if params[:ad_id].present?
       ad = Ad.find_by(id: params[:ad_id])
       if ad && ad.seller_id == @current_user.id && (params[:seller_id].blank? || params[:seller_id] == @current_user.id.to_s)
-        Rails.logger.warn "Seller #{@current_user.id} trying to message themselves via ad_id"
         render json: { error: 'You cannot message yourself about your own ads' }, status: :unprocessable_entity
         return
       end
@@ -651,7 +623,6 @@ class ConversationsController < ApplicationController
       seller_id = @current_user.id
       buyer_id = params[:buyer_id]
       inquirer_seller_id = nil
-      Rails.logger.info "Seller-to-buyer conversation: seller_id=#{seller_id}, buyer_id=#{buyer_id}"
     else
       # Current seller is inquiring about someone else's ad
       seller_id = params[:seller_id]  # Ad owner
@@ -811,11 +782,13 @@ class ConversationsController < ApplicationController
       end
     end
 
+    all_conv_ids = conversations.map(&:id)
+    unread_by_conv = batch_unread_counts(all_conv_ids, ['Seller', 'Admin', 'SalesUser'])
+    last_msg_times = batch_last_message_times(all_conv_ids)
+
     unread_counts = grouped_conversations.values.map do |conversation_group|
-      representative = representative_conversation_for(conversation_group)
-      unread_count = conversation_group.sum do |conversation|
-        buyer_unread_count_for(conversation)
-      end
+      representative = representative_conversation_for_batched(conversation_group, last_msg_times)
+      unread_count = conversation_group.sum { |conversation| unread_by_conv[conversation.id] || 0 }
 
       {
         conversation_id: representative.id,
@@ -842,11 +815,20 @@ class ConversationsController < ApplicationController
       seller_group_key_for(conversation)
     end
 
+    all_conv_ids = conversations.map(&:id)
+    # For seller-to-seller conversations, we need different query logic
+    # Batch fetch: regular conversations (from Buyer/Admin/SalesUser) and seller-to-seller (not from current seller)
+    regular_conv_ids = conversations.reject { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+    seller_to_seller_conv_ids = conversations.select { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+
+    unread_regular = batch_unread_counts(regular_conv_ids, ['Buyer', 'Admin', 'SalesUser'])
+    unread_seller_to_seller = batch_unread_counts_excluding_sender(seller_to_seller_conv_ids, @current_user.id)
+    unread_by_conv = unread_regular.merge(unread_seller_to_seller)
+    last_msg_times = batch_last_message_times(all_conv_ids)
+
     unread_counts = grouped_conversations.values.map do |conversation_group|
-      representative = representative_conversation_for(conversation_group)
-      unread_count = conversation_group.sum do |conversation|
-        seller_unread_count_for(conversation)
-      end
+      representative = representative_conversation_for_batched(conversation_group, last_msg_times)
+      unread_count = conversation_group.sum { |conversation| unread_by_conv[conversation.id] || 0 }
 
       {
         conversation_id: representative.id,
@@ -876,14 +858,13 @@ class ConversationsController < ApplicationController
       admin_group_key_for(conversation)
     end
 
+    all_conv_ids = conversations.map(&:id)
+    unread_by_conv = batch_unread_counts(all_conv_ids, ['Seller', 'Buyer', 'Purchaser'])
+    last_msg_times = batch_last_message_times(all_conv_ids)
+
     unread_counts = grouped_conversations.values.map do |conversation_group|
-      representative = representative_conversation_for(conversation_group)
-      unread_count = conversation_group.sum do |conversation|
-        conversation.messages
-                    .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                    .where(read_at: nil)
-                    .count
-      end
+      representative = representative_conversation_for_batched(conversation_group, last_msg_times)
+      unread_count = conversation_group.sum { |conversation| unread_by_conv[conversation.id] || 0 }
 
       {
         conversation_id: representative.id,
@@ -902,18 +883,15 @@ class ConversationsController < ApplicationController
   def fetch_buyer_unread_count
     conversations = Conversation.where(buyer_id: @current_user.id)
                                 .active_participants
-    
-    # Calculate total unread count by iterating through conversations
-    # This avoids duplicate counting issues with joins
-    total_unread = 0
-    conversations.each do |conversation|
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
-                                .where(read_at: nil)
-                                .count
-      total_unread += unread_count
-    end
-    
+
+    # Batch fetch total unread count in a single query instead of N+1 per conversation
+    conv_ids = conversations.map(&:id)
+    total_unread = conv_ids.any? ?
+      Message.where(conversation_id: conv_ids)
+             .where(sender_type: ['Seller', 'Admin', 'SalesUser'])
+             .where(read_at: nil)
+             .count : 0
+
     render json: { count: total_unread }
   end
 
@@ -923,26 +901,25 @@ class ConversationsController < ApplicationController
       @current_user.id, 
       @current_user.id
     ).active_participants
-    
-    # Calculate total unread count handling seller-to-seller conversations
+
+    # Batch fetch total unread count in 2 queries instead of N+1 per conversation
+    regular_conv_ids = conversations.reject { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+    seller_to_seller_conv_ids = conversations.select { |c| c.seller_id.present? && c.inquirer_seller_id.present? }.map(&:id)
+
     total_unread = 0
-    conversations.each do |conversation|
-      if conversation.seller_id.present? && conversation.inquirer_seller_id.present?
-        # Seller-to-seller conversation: count messages not sent by current user
-        unread_count = conversation.messages
-                                  .where.not(sender_id: @current_user.id)
-                                  .where(read_at: nil)
-                                  .count
-      else
-        # Regular conversation: count messages from buyers, admins, and sales users
-        unread_count = conversation.messages
-                                  .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
-                                  .where(read_at: nil)
-                                  .count
-      end
-      total_unread += unread_count
+    if regular_conv_ids.any?
+      total_unread += Message.where(conversation_id: regular_conv_ids)
+                             .where(sender_type: ['Buyer', 'Admin', 'SalesUser'])
+                             .where(read_at: nil)
+                             .count
     end
-    
+    if seller_to_seller_conv_ids.any?
+      total_unread += Message.where(conversation_id: seller_to_seller_conv_ids)
+                             .where.not(sender_id: @current_user.id)
+                             .where(read_at: nil)
+                             .count
+    end
+
     render json: { count: total_unread }
   end
 
@@ -972,6 +949,37 @@ class ConversationsController < ApplicationController
       last_message_time = conversation.messages.maximum(:created_at)
       last_message_time || conversation.updated_at
     end
+  end
+
+  def representative_conversation_for_batched(conversations, last_msg_times)
+    conversations.max_by do |conversation|
+      last_msg_times[conversation.id] || conversation.updated_at
+    end
+  end
+
+  def batch_unread_counts(conversation_ids, sender_types)
+    return {} if conversation_ids.blank?
+    Message.where(conversation_id: conversation_ids)
+           .where(sender_type: sender_types)
+           .where(read_at: nil)
+           .group(:conversation_id)
+           .count
+  end
+
+  def batch_unread_counts_excluding_sender(conversation_ids, sender_id)
+    return {} if conversation_ids.blank?
+    Message.where(conversation_id: conversation_ids)
+           .where.not(sender_id: sender_id)
+           .where(read_at: nil)
+           .group(:conversation_id)
+           .count
+  end
+
+  def batch_last_message_times(conversation_ids)
+    return {} if conversation_ids.blank?
+    Message.where(conversation_id: conversation_ids)
+           .group(:conversation_id)
+           .maximum(:created_at)
   end
 
   def serialize_grouped_conversations(grouped_conversations)
@@ -1046,19 +1054,15 @@ class ConversationsController < ApplicationController
       conversations = Conversation.where(admin_id: @current_user.id)
                                   .active_participants
     end
-    
-    # Calculate total unread count by iterating through conversations
-    # This avoids duplicate counting issues with joins
-    total_unread = 0
-    conversations.each do |conversation|
-      # Count messages from sellers, buyers, and purchasers (not from admin/sales users)
-      unread_count = conversation.messages
-                                .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-                                .where(read_at: nil)
-                                .count
-      total_unread += unread_count
-    end
-    
+
+    # Batch fetch total unread count in a single query instead of N+1 per conversation
+    conv_ids = conversations.map(&:id)
+    total_unread = conv_ids.any? ?
+      Message.where(conversation_id: conv_ids)
+             .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+             .where(read_at: nil)
+             .count : 0
+
     render json: { count: total_unread }
   end
 end

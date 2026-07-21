@@ -1,4 +1,6 @@
 class Category < ApplicationRecord
+    self.primary_key = 'id'
+
     has_and_belongs_to_many :sellers
     has_many :subcategories, dependent: :destroy
     has_many :ads, dependent: :nullify

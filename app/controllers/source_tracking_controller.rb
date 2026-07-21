@@ -1,4 +1,5 @@
 class SourceTrackingController < ApplicationController
+  before_action :block_bots, only: [:track]
   skip_before_action :verify_authenticity_token, only: [:track]
   # Prevent Rails from wrapping JSON body under :source_tracking so utm_content/utm_term etc. are at params root
   wrap_parameters false

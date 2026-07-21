@@ -47,11 +47,8 @@ class Seller::ProfilesController < ApplicationController
         
         # Check if it's actually a file object
         unless pic.respond_to?(:original_filename)
-          Rails.logger.error "Profile picture is not a file object: #{pic.class}"
           return render json: { error: "Invalid file format" }, status: :unprocessable_entity
         end
-        
-        Rails.logger.info "📸 Processing profile picture: #{pic.original_filename}"
 
         uploaded_profile_picture_url = handle_upload(
           file: pic,
@@ -62,11 +59,8 @@ class Seller::ProfilesController < ApplicationController
         )
 
         if uploaded_profile_picture_url.nil?
-          Rails.logger.error "Profile picture upload failed"
           return render json: { error: "Failed to upload profile picture" }, status: :unprocessable_entity
         end
-
-        Rails.logger.info "Profile picture uploaded successfully: #{uploaded_profile_picture_url}"
       end
 
       # Handle document upload if present
@@ -75,11 +69,8 @@ class Seller::ProfilesController < ApplicationController
         
         # Check if it's actually a file object
         unless doc.respond_to?(:original_filename)
-          Rails.logger.error "Document is not a file object: #{doc.class}"
           return render json: { error: "Invalid document format" }, status: :unprocessable_entity
         end
-        
-        Rails.logger.info "📄 Processing document: #{doc.original_filename}"
 
         uploaded_document_url = handle_upload(
           file: doc,
@@ -90,11 +81,8 @@ class Seller::ProfilesController < ApplicationController
         )
 
         if uploaded_document_url.nil?
-          Rails.logger.error "Document upload failed"
           return render json: { error: "Failed to upload document" }, status: :unprocessable_entity
         end
-
-        Rails.logger.info "Document uploaded successfully: #{uploaded_document_url}"
       end
 
       # Only update fields that are provided and valid
@@ -143,12 +131,9 @@ class Seller::ProfilesController < ApplicationController
         seller_data[:has_password] = @seller.password_digest.present? && !@seller.password_digest.to_s.strip.empty?
         render json: seller_data
       else
-        Rails.logger.error "Seller update failed with errors: #{@seller.errors.full_messages.join(', ')}"
         render json: { errors: @seller.errors.full_messages }, status: :unprocessable_entity
       end
     rescue => e
-      Rails.logger.error "Profile update error: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
       render json: { error: "Failed to update profile: #{e.message}" }, status: :internal_server_error
     end
   end
@@ -221,9 +206,7 @@ class Seller::ProfilesController < ApplicationController
     # Send email
     begin
       OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_now
-      Rails.logger.info "✅ Seller verification OTP email sent successfully to #{email}"
     rescue => e
-      Rails.logger.error "❌ Failed to send seller verification OTP email: #{e.message}"
       # Don't fail the request if email fails
     end
 
@@ -264,7 +247,7 @@ class Seller::ProfilesController < ApplicationController
   end
 
   def seller_params
-    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code)
+    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website)
   end
 
   def authenticate_seller
@@ -278,6 +261,228 @@ class Seller::ProfilesController < ApplicationController
     @current_seller
   end
 
+  public
+
+  def pending_registration
+    pending_token = params[:pending_token].to_s
+    pending_data = Rails.cache.read("pending_google_registration_#{pending_token}") if pending_token.present?
+
+    unless pending_data.is_a?(Hash) && pending_data[:role].to_s.casecmp?("seller")
+      return render json: { error: "Pending registration not found or expired" }, status: :not_found
+    end
+
+    render json: {
+      name: pending_data[:name],
+      phone_number: pending_data[:phone_number],
+      email: pending_data[:email]
+    }, status: :ok
+  end
+
+  # POST /seller/onboarding/complete
+  def complete_onboarding
+    # This endpoint is for direct seller signup (seller already exists)
+    # For buyer-to-seller conversion, use /buyer/onboarding/complete
+    seller = current_seller
+
+    # Check if there is a pending registration token in the Authorization header
+    if seller.nil?
+      auth_header = request.headers['Authorization']
+      if auth_header.present? && auth_header.start_with?('Bearer ')
+        token_val = auth_header.split(' ').last
+        # A pending token is a 64-character hex string without dots (unlike JWT which has dots)
+        if token_val.present? && !token_val.include?('.')
+          cache_key = "pending_google_registration_#{token_val}"
+          cached_data = Rails.cache.read(cache_key)
+          
+          if cached_data.present? && cached_data.is_a?(Hash) && cached_data[:role].to_s.casecmp?("seller")
+            cached_data = cached_data.with_indifferent_access
+            
+            # Check if seller already exists by email
+            seller = Seller.find_by(email: cached_data[:email])
+            unless seller
+              # Create the seller using the cached registration details
+              base_name = cached_data[:name] || cached_data[:email].split('@').first
+              base_username = base_name.to_s.downcase.gsub(/[^a-z0-9]/, '').first(15)
+              username = base_username
+              counter = 1
+              while Seller.exists?(username: username) || Buyer.exists?(username: username)
+                username = "#{base_username}#{counter}"
+                counter += 1
+              end
+
+              seller = Seller.create!(
+                fullname: cached_data[:name],
+                email: cached_data[:email],
+                username: username,
+                provider: cached_data[:provider] || 'google',
+                uid: cached_data[:uid],
+                oauth_token: cached_data[:oauth_token],
+                oauth_refresh_token: cached_data[:oauth_refresh_token],
+                oauth_expires_at: cached_data[:oauth_expires_at],
+                profile_picture: cached_data[:picture],
+                phone_number: params[:profile][:phone_number]
+              )
+              
+              # Delete from cache since registration is completed
+              Rails.cache.delete(cache_key)
+            end
+          end
+        end
+      end
+    end
+    
+    unless seller
+      return render json: { error: 'Unauthorized' }, status: :unauthorized
+    end
+    
+    # Validate required profile fields
+    required_profile_params = [:fullname, :phone_number, :enterprise_name, :location, :county_id, :sub_county_id, :description]
+    missing_profile = required_profile_params.select { |p| params[:profile][p].blank? }
+    
+    if missing_profile.any?
+      return render json: { 
+        success: false, 
+        errors: { profile: missing_profile.each_with_object({}) { |p, h| h[p] = ["is required"] } }
+      }, status: :unprocessable_entity
+    end
+
+    # Validate required ad fields
+    required_ad_params = [:title, :price, :category_id, :condition_id]
+    missing_ad = required_ad_params.select { |p| params[:ad][p].blank? }
+    
+    if missing_ad.any?
+      return render json: { 
+        success: false, 
+        errors: { ad: missing_ad.each_with_object({}) { |p, h| h[p] = ["is required"] } }
+      }, status: :unprocessable_entity
+    end
+
+    @seller = nil
+    @ad = nil
+
+    ActiveRecord::Base.transaction do
+      @seller = seller
+      
+      # Update seller profile with onboarding data
+      @seller.update(
+        fullname: params[:profile][:fullname],
+        phone_number: params[:profile][:phone_number],
+        secondary_phone_number: params[:profile][:secondary_phone_number],
+        enterprise_name: params[:profile][:enterprise_name],
+        location: params[:profile][:location],
+        description: params[:profile][:description],
+        county_id: params[:profile][:county_id],
+        sub_county_id: params[:profile][:sub_county_id]
+      )
+      
+      @seller.carbon_code_id = params[:profile][:carbon_code_id] if params[:profile][:carbon_code_id].present?
+      
+      unless @seller.save
+        raise @seller.errors.full_messages.join(", ")
+      end
+      
+      # Ensure seller has a tier (assign Premium if not)
+      unless @seller.seller_tier
+        seller_tier = SellerTier.new(
+          seller_id: @seller.id,
+          tier_id: 4, # Premium
+          duration_months: 6,
+          expires_at: 6.months.from_now
+        )
+        unless seller_tier.save
+          raise "Failed to assign seller tier"
+        end
+      end
+
+      # Create a default main branch so the dashboard can load
+      unless @seller.branches.exists?
+        branch = @seller.branches.create(
+          name: @seller.enterprise_name || "Main Branch",
+          location: params[:profile][:location] || "Nairobi",
+          is_main_branch: true
+        )
+        unless branch.persisted?
+          raise "Failed to create default branch"
+        end
+      end
+      
+      # Process and upload images if present
+      uploaded_media = []
+      if params[:ad][:media].present?
+        uploaded_media = process_and_upload_ad_images(params[:ad][:media])
+      end
+
+      # Create the first ad
+      @ad = @seller.ads.build(
+        title: params[:ad][:title],
+        description: params[:ad][:description],
+        price: params[:ad][:price],
+        category_id: params[:ad][:category_id],
+        condition: params[:ad][:condition_id],
+        brand: params[:ad][:brand],
+        manufacturer: params[:ad][:manufacturer],
+        model: params[:ad][:model],
+        item_length: params[:ad][:item_length],
+        item_width: params[:ad][:item_width],
+        item_height: params[:ad][:item_height],
+        item_weight: params[:ad][:item_weight],
+        subcategory_id: params[:ad][:subcategory_id],
+        specifications: params[:ad][:specifications] || {},
+        is_added_by_sales: false,
+        media: uploaded_media
+      )
+      
+      unless @ad.save
+        raise @ad.errors.full_messages.join(", ")
+      end
+    end
+
+    # Verify the transaction actually persisted before issuing a token
+    unless Seller.exists?(@seller.id) && Ad.exists?(@ad.id)
+      return render json: { success: false, error: "Onboarding failed. Please try again." }, status: :internal_server_error
+    end
+
+    # Post-transaction: Send welcome email
+    begin
+      WelcomeMailer.welcome_email(@seller).deliver_now
+    rescue => e
+    end
+
+    # Generate seller token
+    token = JsonWebToken.encode(
+      seller_id: @seller.id,
+      email: @seller.email,
+      role: 'Seller',
+      remember_me: true
+    )
+
+    render json: { 
+      success: true, 
+      message: "Onboarding completed successfully!",
+      token: token,
+      user: {
+        id: @seller.id,
+        email: @seller.email,
+        role: 'Seller',
+        name: @seller.fullname,
+        username: @seller.username,
+        enterprise_name: @seller.enterprise_name,
+        profile_picture: @seller.profile_picture
+      },
+      ad: {
+        id: @ad.id,
+        title: @ad.title
+      }
+    }
+  rescue ActiveRecord::Rollback => e
+    render json: { success: false, error: e.message.presence || "Onboarding failed. Please try again." }, status: :unprocessable_entity
+  rescue => e
+    render json: { success: false, error: "Onboarding failed: #{e.message}" }, status: :internal_server_error
+  end
+
+
+  skip_before_action :authenticate_seller, only: [:pending_registration, :complete_onboarding]
+private
   # DRY Upload Handler
   def handle_upload(file:, type:, max_size:, accepted_types:, processing_method:)
     raise "#{type.to_s.humanize} is too large" if file.size > max_size
@@ -286,7 +491,6 @@ class Seller::ProfilesController < ApplicationController
     end
     send(processing_method, file)
   rescue => e
-    Rails.logger.error "Upload failed (#{type}): #{e.message}"
     nil
   end
 
@@ -320,8 +524,33 @@ class Seller::ProfilesController < ApplicationController
       )
       uploaded["secure_url"]
     rescue => e
-      Rails.logger.error "Error uploading document: #{e.message}"
       nil
     end
+  end
+
+  def process_and_upload_ad_images(images)
+    uploaded_urls = []
+    begin
+      Array(images).each do |image|
+        begin
+          unless image.tempfile && File.exist?(image.tempfile.path)
+            next
+          end
+          unless ENV['UPLOAD_PRESET'].present?
+            raise "UPLOAD_PRESET not configured"
+          end
+          uploaded_image = Cloudinary::Uploader.upload(
+            image.tempfile.path,
+            upload_preset: ENV['UPLOAD_PRESET'],
+            format: nil,
+            background: "transparent"
+          )
+          uploaded_urls << uploaded_image["secure_url"]
+        rescue => e
+        end
+      end
+    rescue => e
+    end
+    uploaded_urls
   end
 end

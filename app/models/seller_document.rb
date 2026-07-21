@@ -27,7 +27,7 @@ class SellerDocument < ApplicationRecord
     # Automatically verify documents for sellers registered in 2025
     if seller&.created_at&.year == 2025 && !document_verified?
       self.document_verified = true
-      Rails.logger.info "✅ Auto-verifying document for 2025 seller #{seller.id} (document_type_id: #{document_type_id})"
+      Rails.logger.info "Auto-verifying document for 2025 seller #{seller.id} (document_type_id: #{document_type_id})"
     end
   end
 end

@@ -1,4 +1,6 @@
 class Subcategory < ApplicationRecord
+  self.primary_key = 'id'
+
   belongs_to :category
   has_many :ads, dependent: :nullify # or :destroy
 

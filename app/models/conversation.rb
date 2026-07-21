@@ -16,14 +16,12 @@ class Conversation < ApplicationRecord
     # Try to find first
     conversation = find_by_conversation_attributes(attributes)
     if conversation
-      Rails.logger.info("Found existing conversation: #{conversation.id}") if defined?(Rails.logger)
       return conversation
     end
 
     # Try to create with ON CONFLICT handling
     begin
       conversation = create!(attributes)
-      Rails.logger.info("Created new conversation: #{conversation.id}") if defined?(Rails.logger)
       return conversation
     rescue ActiveRecord::RecordNotUnique => e
       # Check if it's a primary key violation (shouldn't happen with UUIDs, but handle it)
@@ -33,7 +31,6 @@ class Conversation < ApplicationRecord
         # Try creating again (UUID should be unique)
         begin
           conversation = create!(attributes)
-          Rails.logger.info("Created conversation after retry: #{conversation.id}") if defined?(Rails.logger)
           return conversation
         rescue => retry_e
           Rails.logger.error("Still getting primary key violation: #{retry_e.message}") if defined?(Rails.logger)
@@ -56,7 +53,6 @@ class Conversation < ApplicationRecord
           # Try AR query first
           conversation = find_by_conversation_attributes(attributes)
           if conversation
-            Rails.logger.info("Found conversation after #{retry_count} retries: #{conversation.id}") if defined?(Rails.logger)
             return conversation
           end
           
@@ -67,7 +63,6 @@ class Conversation < ApplicationRecord
           if result.any?
             conversation_id = result.first['id']
             conversation = find(conversation_id)
-            Rails.logger.info("Found conversation via SQL after #{retry_count} retries: #{conversation.id}") if defined?(Rails.logger)
             return conversation
           end
         end
@@ -90,14 +85,12 @@ class Conversation < ApplicationRecord
         if result.any?
           conversation_id = result.first['id']
           conversation = find(conversation_id)
-          Rails.logger.info("Found conversation in final SQL attempt: #{conversation.id}") if defined?(Rails.logger)
           return conversation
         end
         
         # Last resort: try to create again (maybe the other transaction rolled back)
         begin
           conversation = create!(attributes)
-          Rails.logger.info("Successfully created conversation on retry: #{conversation.id}") if defined?(Rails.logger)
           return conversation
         rescue ActiveRecord::RecordNotUnique => retry_e
           # Still can't create or find - this is a real problem

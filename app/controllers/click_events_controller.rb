@@ -1,4 +1,5 @@
 class ClickEventsController < ApplicationController
+  before_action :block_bots, only: [:create]
   before_action :authenticate_user, only: [:create]
 
   def create

@@ -3,9 +3,8 @@ require 'uri'
 require 'json'
 
 class SendUserBuyingSafetyCampaignJob < ApplicationJob
-  queue_as :broadcast  # Individual delivery worker for bulk campaign
+  queue_as :broadcast
 
-  # Retry with backoff: WhatsApp/email can have transient failures
   retry_on StandardError, wait: :exponentially_longer, attempts: 3
   discard_on ActiveJob::DeserializationError
 
@@ -26,42 +25,27 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
       return
     end
 
-    Rails.logger.info "[SendUserBuyingSafetyCampaignJob] Processing #{user_type} #{user_id} (Email: #{email}, Phone: #{phone})"
-
-    # Redis Deduplication keys
     email_dedup_key = "campaign:buying_safety:sent_emails"
     phone_dedup_key = "campaign:buying_safety:sent_phones"
 
-    # --- 1. EMAIL SENDING ---
     if channels[:email] && email.present?
       already_sent_email = RedisConnection.with { |conn| conn.sismember(email_dedup_key, email) }
 
-      if already_sent_email
-        Rails.logger.info "[SendUserBuyingSafetyCampaignJob] Email #{email} already received safety tips. Skipping email."
-      else
-        if dry_run
-          Rails.logger.info "[SendUserBuyingSafetyCampaignJob] [DRY RUN] Would send safety email to #{email}"
-        else
+      unless already_sent_email
+        unless dry_run
           send_email_via_nextjs(user, email, user_type)
           RedisConnection.with { |conn| conn.sadd(email_dedup_key, email) }
-          Rails.logger.info "[SendUserBuyingSafetyCampaignJob] Email successfully delivered and logged to Redis for #{email}."
         end
       end
     end
 
-    # --- 2. WHATSAPP SENDING ---
     if channels[:whatsapp] && phone.present?
       already_sent_phone = RedisConnection.with { |conn| conn.sismember(phone_dedup_key, phone) }
 
-      if already_sent_phone
-        Rails.logger.info "[SendUserBuyingSafetyCampaignJob] Phone #{phone} already received safety WhatsApp. Skipping WhatsApp."
-      else
-        if dry_run
-          Rails.logger.info "[SendUserBuyingSafetyCampaignJob] [DRY RUN] Would send safety WhatsApp template to #{phone}"
-        else
+      unless already_sent_phone
+        unless dry_run
           send_whatsapp_template(user, phone, user_type)
           RedisConnection.with { |conn| conn.sadd(phone_dedup_key, phone) }
-          Rails.logger.info "[SendUserBuyingSafetyCampaignJob] WhatsApp successfully delivered and logged to Redis for #{phone}."
         end
       end
     end
@@ -156,7 +140,7 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
     )
 
     if message.save
-      Rails.logger.info "[SendUserBuyingSafetyCampaignJob] Successfully logged WhatsApp template to DB: message_id=#{message.id}"
+      Rails.logger.info "[SendUserBuyingSafetyCampaignJob] WhatsApp template logged to DB: message_id=#{message.id}"
     else
       Rails.logger.error "[SendUserBuyingSafetyCampaignJob] Failed to log WhatsApp template to DB: #{message.errors.full_messages.join(', ')}"
     end

@@ -24,6 +24,17 @@ class Buyer < ApplicationRecord
   has_many :ad_searches, dependent: :destroy
   has_many :password_otps, as: :otpable, dependent: :destroy
 
+  # Store pending seller profile data for conversion when first ad is created
+  attribute :pending_seller_fullname, :string
+  attribute :pending_seller_phone_number, :string
+  attribute :pending_seller_secondary_phone_number, :string
+  attribute :pending_seller_location, :string
+  attribute :pending_seller_enterprise_name, :string
+  attribute :pending_seller_county_id, :integer
+  attribute :pending_seller_sub_county_id, :integer
+  attribute :pending_seller_description, :string
+  attribute :pending_seller_carbon_code_id, :integer
+
   belongs_to :sector, optional: true
   belongs_to :income, optional: true
   belongs_to :education, optional: true
@@ -98,31 +109,18 @@ class Buyer < ApplicationRecord
   end
 
   def profile_completion_percentage
-    # All fields (required + optional) for a more realistic completion percentage
-    all_fields = [
-      # Required fields
+    # Only required fields for profile completion
+    required_fields = [
       fullname.present?,
       username.present?,
       email.present?,
       phone_number.present?,
-      gender.present?,
-      age_group_id.present?,
-      # Optional fields
-      location.present?,
-      city.present?,
-      county_id.present?,
-      sub_county_id.present?,
-      zipcode.present?,
-      profile_picture.present?,
-      income_id.present?,
-      employment_id.present?,
-      education_id.present?,
-      sector_id.present?
+      gender.present?
     ]
 
-    # Calculate completion based on all fields
-    completed_fields = all_fields.count(true)
-    total_completion = (completed_fields.to_f / all_fields.length * 100).round
+    # Calculate completion based on required fields only
+    completed_fields = required_fields.count(true)
+    total_completion = (completed_fields.to_f / required_fields.length * 100).round
 
     total_completion
   end

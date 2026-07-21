@@ -1,4 +1,5 @@
 class DeviceFingerprintsController < ApplicationController
+  before_action :block_bots, only: [:store, :recover]
   skip_before_action :verify_authenticity_token, only: [:store, :recover]
   
   # POST /device_fingerprints/store
@@ -33,7 +34,21 @@ class DeviceFingerprintsController < ApplicationController
           errors: device_fingerprint.errors.full_messages 
         }, status: :unprocessable_entity
       end
+    rescue ActiveRecord::RecordNotUnique
+      # Race condition: another request created this device_id first.
+      # Retry by finding the existing record and updating it.
+      retry_count ||= 0
+      if retry_count < 1
+        retry_count += 1
+        retry
+      else
+        render json: { 
+          message: 'Device fingerprint stored successfully',
+          device_id: device_id 
+        }, status: :ok
+      end
     rescue => e
+      Rails.logger.error "DeviceFingerprintsController#store failed: #{e.class}: #{e.message}"
       render json: { error: 'Failed to store device fingerprint' }, status: :internal_server_error
     end
   end

@@ -427,4 +427,38 @@ class SellerCommunicationsMailer < ApplicationMailer
     end
   end
 
+  def accurate_listings
+    @user = params[:seller] || params[:user]
+    @fullname = @user.fullname
+
+    subject_text = "Build Trust through Accurate Listings"
+
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['Auto-Submitted'] = 'auto-generated'
+    headers['X-Auto-Response-Suppress'] = 'All'
+    headers['List-Id'] = "platform.carboncube-ke.com"
+
+    mail(to: @user.email, from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>", subject: subject_text) do |format|
+      template_path = Rails.root.join('app', 'views', 'seller_communications_mailer', 'accurate_listings.mjml')
+      mjml_source = File.read(template_path)
+      mjml_source.gsub!(/{{\s*full_name.*}}/, @fullname.to_s.presence || "Partner")
+
+      require 'open3'
+      node_bin = File.exist?("/Users/Quaint/.nvm/versions/node/v18.20.6/bin/node") ? "/Users/Quaint/.nvm/versions/node/v18.20.6/bin/node" : "node"
+      mjml_bin = Rails.root.join('node_modules', 'mjml', 'bin', 'mjml').to_s
+
+      stdout, stderr, status = Open3.capture3(node_bin, mjml_bin, '--stdin', stdin_data: mjml_source)
+
+      if status.success?
+        format.html { render html: stdout.html_safe }
+      else
+        Rails.logger.error "MJML compilation FAILED: #{stderr}"
+        format.html { render plain: "Error rendering email" }
+      end
+    end
+  end
+
 end
+

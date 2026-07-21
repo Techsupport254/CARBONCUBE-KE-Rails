@@ -2,7 +2,7 @@ class UpgradeAllSellersToPremium < ActiveRecord::Migration[7.1]
   def up
     premium_tier = Tier.find_by(name: 'Premium')
     unless premium_tier
-      puts "❌ Premium tier not found. Skipping data update."
+      puts "Premium tier not found. Skipping data update."
       return
     end
 
@@ -11,7 +11,7 @@ class UpgradeAllSellersToPremium < ActiveRecord::Migration[7.1]
     created = 0
     updated = 0
 
-    puts "🚀 Upgrading #{total_sellers} sellers to Premium..."
+    puts "Upgrading #{total_sellers} sellers to Premium..."
 
     Seller.find_each do |seller|
       seller_tier = SellerTier.find_or_initialize_by(seller_id: seller.id)
@@ -33,11 +33,11 @@ class UpgradeAllSellersToPremium < ActiveRecord::Migration[7.1]
       processed += 1
       
       if processed % 50 == 0
-        puts "  ⏳ Processed #{processed}/#{total_sellers} sellers..."
+        puts "  Processed #{processed}/#{total_sellers} sellers..."
       end
     end
 
-    puts "✅ Done! Created #{created} and updated #{updated} seller tiers to Premium."
+    puts "Done! Created #{created} and updated #{updated} seller tiers to Premium."
   end
 
   def down

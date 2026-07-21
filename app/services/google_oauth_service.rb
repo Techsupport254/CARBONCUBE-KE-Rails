@@ -1,4 +1,3 @@
-# app/services/google_oauth_service.rb
 require 'httparty'
 
 class GoogleOauthService
@@ -7,15 +6,6 @@ class GoogleOauthService
   GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
   
   def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil, is_registration = false, device_hash = nil)
-    Rails.logger.info "🔧 GoogleOauthService#initialize called with:"
-    Rails.logger.info "  - auth_code: #{auth_code ? auth_code[0..10] + '...' : 'nil'}"
-    Rails.logger.info "  - redirect_uri: #{redirect_uri}"
-    Rails.logger.info "  - user_ip: #{user_ip}"
-    Rails.logger.info "  - role: #{role.inspect} (#{role.class})"
-    Rails.logger.info "  - location_data: #{location_data.inspect}"
-    Rails.logger.info "  - is_registration: #{is_registration.inspect}"
-    Rails.logger.info "  - device_hash: #{device_hash ? device_hash[0..10] + '...' : 'nil'}"
-    
     @auth_code = auth_code
     @redirect_uri = redirect_uri
     @user_ip = user_ip
@@ -23,47 +13,27 @@ class GoogleOauthService
     @location_data = location_data
     @is_registration = is_registration
     @device_hash = device_hash
-    
-    Rails.logger.info "✅ GoogleOauthService initialized with @role = #{@role.inspect}, @is_registration = #{@is_registration.inspect}"
   end
 
   def authenticate
     begin
-      Rails.logger.info "🚀 [GoogleOauthService] Starting authentication process"
-      Rails.logger.info "   Role: #{@role}"
-      Rails.logger.info "   Registration: #{@is_registration}"
-      Rails.logger.info "   IP: #{@user_ip}"
-      Rails.logger.info "   Location data: #{@location_data ? 'present' : 'none'}"
-
       # Step 1: Exchange authorization code for access token
-      Rails.logger.info "🔑 [GoogleOauthService] Step 1: Exchanging code for access token"
       access_token = exchange_code_for_token
-      
+
       unless access_token
-        Rails.logger.error "❌ [GoogleOauthService] Failed to get access token"
-        Rails.logger.error "   This usually means the authorization code is invalid or expired"
+        Rails.logger.error "[GoogleOauthService] Failed to get access token"
         return { success: false, error: 'Failed to get access token' }
       end
 
-      Rails.logger.info "✅ [GoogleOauthService] Access token obtained successfully"
-
       # Step 2: Get comprehensive user info from Google
-      Rails.logger.info "👤 [GoogleOauthService] Step 2: Getting user info from Google"
       user_info = get_comprehensive_user_info(access_token)
-      
+
       unless user_info
-        Rails.logger.error "❌ [GoogleOauthService] Failed to get user info"
-        Rails.logger.error "   This could be due to invalid access token or Google API issues"
+        Rails.logger.error "[GoogleOauthService] Failed to get user info"
         return { success: false, error: 'Failed to get user info' }
       end
 
-      Rails.logger.info "✅ [GoogleOauthService] User info obtained successfully"
-      Rails.logger.info "   Email: #{user_info['email']}"
-      Rails.logger.info "   Name: #{user_info['name'] || 'not provided'}"
-      Rails.logger.info "   Has phone: #{user_info['phone_number'].present?}"
-      
       # Step 3: Process location data
-      Rails.logger.info "📍 [GoogleOauthService] Step 3: Processing location data"
 
       # Try to get location from multiple sources
       location_info = {}
@@ -101,30 +71,22 @@ class GoogleOauthService
       ]
       
       # Check for existing user
-      Rails.logger.info "🔍 [GoogleOauthService] Step 4: Checking for existing user"
-      Rails.logger.info "   Looking up user by email: #{user_info['email']}"
-
-      # Check if user exists in any model
       existing_user = find_existing_user(user_info['email'])
-      
+
       if existing_user
-        Rails.logger.info "✅ [GoogleOauthService] Existing #{existing_user.class.name} found: #{existing_user.email}"
-        Rails.logger.info "   User ID: #{existing_user.id}"
-        Rails.logger.info "   Blocked: #{existing_user.respond_to?(:blocked?) ? existing_user.blocked? : 'N/A'}"
-        Rails.logger.info "   Deleted: #{existing_user.respond_to?(:deleted?) ? existing_user.deleted? : 'N/A'}"
-        
         # Block login if the user is soft-deleted
         if (existing_user.is_a?(Buyer) || existing_user.is_a?(Seller)) && existing_user.deleted?
-          Rails.logger.warn "🚫 Login blocked: Account deleted for #{existing_user.email}"
+          Rails.logger.warn "Login blocked: Account deleted for #{existing_user.email}"
           return {
             success: false,
-            error: 'Your account has been deleted. Please contact support.'
+            error: 'Your account has been deleted. Please check your email for a reactivation link or request a new one.',
+            account_deleted: true
           }
         end
 
         # Block login if the user is blocked (both Buyer and Seller)
         if existing_user.is_a?(Buyer) && existing_user.blocked?
-          Rails.logger.warn "🚫 Login blocked: Account blocked for buyer #{existing_user.email}"
+          Rails.logger.warn "Login blocked: Account blocked for buyer #{existing_user.email}"
           return {
             success: false,
             error: 'Your account has been blocked. Please contact support.'
@@ -132,7 +94,7 @@ class GoogleOauthService
         end
 
         if existing_user.is_a?(Seller) && existing_user.blocked?
-          Rails.logger.warn "🚫 Login blocked: Account blocked for seller #{existing_user.email}"
+          Rails.logger.warn "Login blocked: Account blocked for seller #{existing_user.email}"
           return {
             success: false,
             error: 'Your account has been blocked. Please contact support.'
@@ -143,12 +105,9 @@ class GoogleOauthService
         if @is_registration
           requested_role = @role.to_s.downcase.strip
           existing_role = existing_user.is_a?(Seller) ? 'seller' : 'buyer'
-          
-          Rails.logger.info "Registration mode: existing #{existing_role} account found (requested: #{requested_role})"
-          
+
           # If roles match, sign them in directly
           if requested_role == existing_role
-            Rails.logger.info "Roles match - signing in existing #{existing_role} user"
             # Update existing user with fresh Google data
             link_oauth_to_existing_user(existing_user, 'google', user_info['id'], user_info)
             
@@ -177,8 +136,6 @@ class GoogleOauthService
         end
         
         # For existing users in login mode, or when role matches during registration, allow login
-        Rails.logger.info "Allowing login for existing user: #{existing_user.email}"
-
         # Update existing user with fresh Google data (profile picture, phone number, etc.)
         link_oauth_to_existing_user(existing_user, 'google', user_info['id'], user_info)
         
@@ -193,29 +150,18 @@ class GoogleOauthService
           location_data: location_info
         }
       else
-        Rails.logger.info "🆕 [GoogleOauthService] No existing user found - attempting to create new user"
-        Rails.logger.info "=" * 80
-
         # Try to create a new user - this will return missing fields if any are missing
-        Rails.logger.info "👥 [GoogleOauthService] Step 5: Creating new user"
-        
         # In login mode, always create a buyer account if user doesn't exist
         # In registration mode, use the requested role
         if @is_registration
           user_type = determine_user_type_from_context
-          Rails.logger.info "   Registration mode - Requested role: #{@role}"
-          Rails.logger.info "   Determined user type: #{user_type}"
         else
-          # Login mode - always create buyer account for new users
           user_type = 'buyer'
-          Rails.logger.info "   Login mode - Creating buyer account for new user"
         end
-        
+
         # Check for role mismatch during registration (user creation)
-        # This should only happen when creating new accounts, not during login
         requested_role = @role || 'Buyer'
-        Rails.logger.info "🔍 User creation attempt for role: #{user_type}"
-        
+
         if user_type == 'buyer'
           create_buyer_user(user_info, location_info, @device_hash)
         elsif user_type == 'seller'
@@ -330,36 +276,22 @@ class GoogleOauthService
     free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
     return unless free_tier
     SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
-    Rails.logger.info "✅ Free tier assigned to seller #{seller.id} (fallback)"
   end
 
   # Determine user type from OAuth context
   def determine_user_type_from_context
-    # Use the role parameter passed during initialization
-    # Default to 'buyer' only if role is nil or empty
-    Rails.logger.info "🔍 Determining user type - @role: #{@role.inspect}"
-    Rails.logger.info "🔍 @role.class: #{@role.class}"
-    Rails.logger.info "🔍 @role.nil?: #{@role.nil?}"
-    Rails.logger.info "🔍 @role.empty?: #{@role.empty? if @role.respond_to?(:empty?)}"
-    
-    # Convert to string and downcase for consistency
     role_string = @role.to_s.downcase
-    Rails.logger.info "🔍 Role string: #{role_string}"
-    
     return 'buyer' if role_string.nil? || role_string.empty?
-    Rails.logger.info "🔍 User type determined as: #{role_string}"
     role_string
   end
 
   # Create new seller user
   def create_seller_user(user_info, location_info, device_hash = nil)
-    Rails.logger.info "Creating seller with data"
-    
     # Check if user already exists as a different role (registration conflict)
     email = user_info['email']
     existing_buyer = Buyer.find_by(email: email)
     if existing_buyer
-      Rails.logger.error "❌ Registration conflict: User #{email} already exists as a Buyer"
+      Rails.logger.error "Registration conflict: User #{email} already exists as a Buyer"
       return {
         success: false,
         error: "This email is already registered as a Buyer. Please sign in with your existing account or use a different email address.",
@@ -435,8 +367,6 @@ class GoogleOauthService
     # seller_attributes[:county_id] = detected_county_id if detected_county_id.present?
     # seller_attributes[:sub_county_id] = detected_sub_county_id if detected_sub_county_id.present?
 
-    Rails.logger.info "Seller attributes: #{seller_attributes.inspect}"
-
     # Check for missing fields that need to be collected later
     missing_fields = []
     
@@ -486,7 +416,7 @@ class GoogleOauthService
     rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => e
       if e.message.include?('vendors_pkey') || e.message.include?('duplicate key value') ||
          (e.respond_to?(:cause) && e.cause.is_a?(PG::UniqueViolation) && e.cause.message.include?('vendors_pkey'))
-        Rails.logger.warn "⚠️ Sequence sync issue detected for sellers table, attempting to fix..."
+        Rails.logger.warn "Sequence sync issue detected for sellers table, attempting to fix..."
         
         # Fix the sequence
         ActiveRecord::Base.connection.execute(
@@ -495,11 +425,11 @@ class GoogleOauthService
         
         retry_count += 1
         if retry_count <= max_retries
-          Rails.logger.info "🔄 Retrying seller creation after sequence fix (attempt #{retry_count})"
+          Rails.logger.warn "Retrying seller creation after sequence fix (attempt #{retry_count})"
           seller = Seller.new(seller_attributes) # Create new instance
           retry
         else
-          Rails.logger.error "❌ Failed to create seller after #{max_retries} retries: #{e.message}"
+          Rails.logger.error "Failed to create seller after #{max_retries} retries: #{e.message}"
           raise
         end
       else
@@ -522,14 +452,28 @@ class GoogleOauthService
           duration_months: 6,
           expires_at: expiry_date
         )
-        Rails.logger.info "✅ Premium tier assigned to seller via Google OAuth: #{premium_tier.name}"
+        Rails.logger.info "Premium tier assigned to seller via Google OAuth: #{premium_tier.name}"
       else
-        Rails.logger.error "❌ Premium tier not found in database for Google OAuth seller creation - assigning Free tier"
+        Rails.logger.error "Premium tier not found in database for Google OAuth seller creation - assigning Free tier"
         assign_free_tier_for_seller(seller)
       end
       # Ensure seller always has a tier (e.g. if Premium create raised)
       seller.reload
       assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
+
+      # Create main branch if seller has required fields
+      if seller.enterprise_name.present? && seller.location.present?
+        branch = seller.branches.build(
+          name: seller.enterprise_name,
+          location: seller.location,
+          is_main_branch: true
+        )
+        if branch.save
+          Rails.logger.info "Main branch created for Google OAuth seller: #{seller.email}"
+        else
+          Rails.logger.error "Failed to create main branch for Google OAuth seller: #{branch.errors.full_messages.inspect}"
+        end
+      end
 
       # Profile picture already stored in DB as URL (no file cache)
       # Generate JWT token for new user
@@ -555,12 +499,6 @@ class GoogleOauthService
       response
     else
       Rails.logger.error "Seller creation failed: #{seller.errors.full_messages.join(', ')}"
-      
-      # Log detailed validation errors for debugging
-      Rails.logger.info "Detailed validation errors:"
-      seller.errors.each do |field, messages|
-        Rails.logger.info "  #{field}: #{messages.join(', ')}"
-      end
       
       # Determine missing fields from validation errors
       missing_fields = determine_missing_fields(seller.errors, user_info)
@@ -615,13 +553,11 @@ class GoogleOauthService
 
   # Create new buyer user
   def create_buyer_user(user_info, location_info, device_hash = nil)
-    Rails.logger.info "Creating buyer with data"
-    
     # Check if user already exists as a different role (registration conflict)
     email = user_info['email']
     existing_seller = Seller.find_by(email: email)
     if existing_seller
-      Rails.logger.error "❌ Registration conflict: User #{email} already exists as a Seller"
+      Rails.logger.error "Registration conflict: User #{email} already exists as a Seller"
       return {
         success: false,
         error: "This email is already registered as a Seller. Please sign in with your existing account or use a different email address.",
@@ -630,11 +566,7 @@ class GoogleOauthService
         requested_role: 'Buyer'
       }
     end
-    Rails.logger.info "🔍 Profile picture data in create_buyer_user:"
-    Rails.logger.info "   user_info['profile_picture']: #{user_info['profile_picture'].inspect}"
-    Rails.logger.info "   user_info[:profile_picture]: #{user_info[:profile_picture].inspect}"
-    Rails.logger.info "   user_info['picture']: #{user_info['picture'].inspect}"
-    
+        
     # Extract phone number (use the first available phone)
     phone_number = user_info['phone_number'] || user_info['phone_numbers']&.first&.dig('value')
     
@@ -688,8 +620,6 @@ class GoogleOauthService
       sub_county_id: location_info.dig('ip_location', 'sub_county_id')
     }
 
-    Rails.logger.info "Buyer attributes: #{buyer_attributes.inspect}"
-
     # Check for ALL required fields that would prevent user creation
     missing_fields = []
     
@@ -700,8 +630,6 @@ class GoogleOauthService
     
     # If we have missing required fields, return missing fields info for complete registration
     if missing_fields.any?
-      Rails.logger.info "Missing required fields detected: #{missing_fields.join(', ')}"
-      
       # Return proper hash format with missing fields info
       return {
         success: false,
@@ -722,8 +650,7 @@ class GoogleOauthService
     # Ensure UUID is set before saving (safety check in case callback doesn't fire)
     buyer.id ||= SecureRandom.uuid if buyer.id.blank?
     
-    Rails.logger.info "🔧 Buyer ID before save: #{buyer.id.inspect}"
-    
+        
     # Try to save, with retry logic for sequence sync issues
     save_success = false
     retry_count = 0
@@ -736,22 +663,22 @@ class GoogleOauthService
       # Handle duplicate key errors (which can happen with UUIDs too)
       if e.message.include?('duplicate key value') || 
          (e.respond_to?(:cause) && e.cause.is_a?(PG::UniqueViolation))
-        Rails.logger.warn "⚠️ Duplicate key violation detected for buyers table"
+        Rails.logger.warn "Duplicate key violation detected for buyers table"
         
         # Check if it's a unique constraint violation on email or other unique fields
         if e.message.include?('email') || e.message.include?('username') || e.message.include?('phone_number')
-          Rails.logger.error "❌ Unique constraint violation on email/username/phone: #{e.message}"
+          Rails.logger.error "Unique constraint violation on email/username/phone: #{e.message}"
           raise
         else
           # For other unique violations, try to find existing buyer
-          Rails.logger.warn "⚠️ Attempting to find existing buyer by email: #{buyer.email}"
+          Rails.logger.warn "Attempting to find existing buyer by email: #{buyer.email}"
           existing_buyer = Buyer.find_by(email: buyer.email)
           if existing_buyer
-            Rails.logger.info "✅ Found existing buyer: #{existing_buyer.id}"
+            Rails.logger.info "Found existing buyer: #{existing_buyer.id}"
             buyer = existing_buyer
             save_success = true
           else
-            Rails.logger.error "❌ Failed to create buyer: #{e.message}"
+            Rails.logger.error "Failed to create buyer: #{e.message}"
             raise
           end
         end
@@ -778,12 +705,6 @@ class GoogleOauthService
     else
       Rails.logger.error "Buyer creation failed: #{buyer.errors.full_messages.join(', ')}"
       
-      # Log detailed validation errors for debugging
-      Rails.logger.info "Detailed validation errors:"
-      buyer.errors.each do |field, messages|
-        Rails.logger.info "  #{field}: #{messages.join(', ')}"
-      end
-      
       # Determine missing fields from validation errors
       missing_fields = determine_missing_fields(buyer.errors, user_info)
       
@@ -799,8 +720,6 @@ class GoogleOauthService
 
   # Generate JWT token for user
   def generate_jwt_token(user)
-    Rails.logger.info "Generating JWT token for #{user.class.name}: #{user.email}"
-    
     # Create payload with remember_me for Google OAuth users (30 days)
     payload = {
       email: user.email,
@@ -822,10 +741,6 @@ class GoogleOauthService
     
     # Generate token using JsonWebToken.encode which respects remember_me flag
     token = JsonWebToken.encode(payload)
-    
-    Rails.logger.info "JWT token generated successfully with remember_me (30 days)"
-    
-    token
   end
 
   # Format user response for frontend
@@ -851,7 +766,7 @@ class GoogleOauthService
     # Check for missing name from Google data
     if user_info && extract_best_name(user_info).blank?
       missing_fields << 'fullname'
-      Rails.logger.warn "⚠️ Name missing from Google OAuth data, adding to missing fields"
+      Rails.logger.warn "Name missing from Google OAuth data, adding to missing fields"
     end
     
     # Check validation errors
@@ -885,8 +800,7 @@ class GoogleOauthService
     
     # If no name is available, return nil to indicate missing data
     # This will be handled by the frontend as missing data
-    Rails.logger.warn "⚠️ No name found in Google user info for email: #{user_info['email']}"
-    Rails.logger.warn "⚠️ Note: Google OAuth does not provide a separate username field"
+    Rails.logger.warn "No name found in Google user info for email: #{user_info['email']}"
     nil
   end
 
@@ -922,7 +836,7 @@ class GoogleOauthService
       
       # Only override if the detected city doesn't make sense for the county
       if should_override_city(city, county)
-        Rails.logger.info "🗺️ Overriding city '#{city}' with county capital '#{county_capital}' for #{county.name}"
+        Rails.logger.info "Overriding city '#{city}' with county capital '#{county_capital}' for #{county.name}"
         return county_capital
       end
       
@@ -980,7 +894,7 @@ class GoogleOauthService
         if county_mapping
           location_data['county_id'] = county_mapping[:county_id]
           location_data['sub_county_id'] = county_mapping[:sub_county_id]
-          Rails.logger.info "🗺️ Enhanced location with county mapping: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
+          Rails.logger.info "Enhanced location with county mapping: County ID #{county_mapping[:county_id]}, Sub-County ID #{county_mapping[:sub_county_id]}"
         end
       end
       
@@ -999,7 +913,7 @@ class GoogleOauthService
     city_normalized = city&.downcase&.strip
     region_normalized = region&.downcase&.strip
     
-    Rails.logger.info "🗺️ Mapping location: City='#{city}', Region='#{region}', Country='#{country}'"
+    Rails.logger.info "Mapping location: City='#{city}', Region='#{region}', Country='#{country}'"
     
     # Direct city to county mapping for major Kenyan cities
     city_county_mapping = {

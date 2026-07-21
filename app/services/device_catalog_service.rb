@@ -105,7 +105,6 @@ class DeviceCatalogService
       begin
         @cached_data[path] = JSON.parse(File.read(path))
         @last_mtimes[path] = current_mtime
-        Rails.logger.info "DeviceCatalogService: Loaded #{@cached_data[path].length} items from #{path}."
       rescue => e
         Rails.logger.error "DeviceCatalogService Error parsing #{path}: #{e.message}"
         @cached_data[path] = []
