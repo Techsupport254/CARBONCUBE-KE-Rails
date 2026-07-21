@@ -11,7 +11,7 @@ class GeocodeSellersJob < ApplicationJob
       .where(branches: { latitude: nil })
       .where.not(sellers: { location: nil })
       .distinct
-      .limit(100) # Process in batches of 100 to avoid overwhelming the API
+      .limit(700) # Process all sellers in one batch (rate limited at 1 req/s)
 
     Rails.logger.info "Starting geocoding for #{sellers_without_coords.count} sellers"
 
@@ -57,7 +57,7 @@ class GeocodeSellersJob < ApplicationJob
 
     query = query_parts.join(", ")
 
-    # Call OpenStreetMap Nominatim API
+    # Call OpenStreetMap Nominatim API with required User-Agent header
     uri = URI(NOMINATIM_API_URL)
     params = {
       q: query,
@@ -67,7 +67,14 @@ class GeocodeSellersJob < ApplicationJob
     }
     uri.query = URI.encode_www_form(params)
 
-    response = Net::HTTP.get_response(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.read_timeout = 10
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request['User-Agent'] = 'CarbonCube-Kenya/1.0 (contact: info@carboncube-ke.com)'
+    request['Accept'] = 'application/json'
+
+    response = http.request(request)
 
     if response.is_a?(Net::HTTPSuccess)
       data = JSON.parse(response.body)
