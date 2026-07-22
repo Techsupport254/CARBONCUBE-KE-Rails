@@ -7,6 +7,8 @@
       "dependencies": {
         "@react-email/components": "^0.0.36",
         "@react-email/render": "^2.0.0",
+        "@rollup/rollup-linux-arm64-gnu": "^4.62.2",
+        "@rollup/rollup-linux-x64-gnu": "^4.62.2",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
         "mjml": "^4.18.0",
