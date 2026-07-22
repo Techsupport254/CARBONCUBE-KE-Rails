@@ -63,3 +63,9 @@ config/ga4_credentials.json
 
 # Generated scraping output files
 /scripts/output/*
+
+# Node modules
+/node_modules
+
+# npm lockfile (we use bun, not npm)
+/package-lock.json
