@@ -1,7 +1,7 @@
 class ProcessReadReceiptJob < ApplicationJob
   queue_as :critical  # Real-time read receipts — must not be delayed
 
-  retry_on StandardError, wait: :exponentially_longer, attempts: 2
+  retry_on StandardError, wait: :polynomially_longer, attempts: 2
   discard_on ActiveRecord::RecordNotFound  # Message deleted before receipt processed
 
   def perform(message_id, reader_user_id)

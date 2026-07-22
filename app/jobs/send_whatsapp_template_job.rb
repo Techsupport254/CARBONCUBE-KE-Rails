@@ -1,7 +1,7 @@
 class SendWhatsappTemplateJob < ApplicationJob
   queue_as :broadcast
 
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
   discard_on ActiveJob::DeserializationError
 
   def perform(user_id, template_name, language_code = 'en', components = [], user_type = 'seller')

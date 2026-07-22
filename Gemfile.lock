@@ -335,6 +335,10 @@ GEM
     rake (13.4.2)
     rdoc (6.12.0)
       psych (>= 4.0.0)
+    react-email-rails (0.10.0)
+      actionmailer (>= 7.1, < 9.0)
+      activesupport (>= 7.1, < 9.0)
+      railties (>= 7.1, < 9.0)
     redcarpet (3.6.1)
     redis (5.4.0)
       redis-client (>= 0.22.0)
@@ -454,6 +458,7 @@ DEPENDENCIES
   puma (>= 5.0)
   rack-cors
   rails (~> 7.1.0)
+  react-email-rails (~> 0.8)
   redcarpet
   redis (~> 5.0)
   redis-actionpack (~> 5.3)

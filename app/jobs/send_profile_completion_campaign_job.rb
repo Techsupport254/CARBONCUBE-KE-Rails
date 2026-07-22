@@ -5,7 +5,7 @@ require 'json'
 class SendProfileCompletionCampaignJob < ApplicationJob
   queue_as :broadcast
 
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
   discard_on ActiveJob::DeserializationError
 
   PROFILE_FIELDS = %w[enterprise_name description phone_number email profile_picture].freeze

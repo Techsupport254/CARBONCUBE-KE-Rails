@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Preview - OTP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: #f8fafc;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px 0;
+    }
+
+    /* Container */
+    .email-container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Accent bar — signature element */
+    .accent-bar {
+      height: 3px;
+      background: #f59e0b;
+    }
+
+    /* Header */
+    .header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header img {
+      width: 20px;
+      height: 20px;
+    }
+    .header .brand {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      letter-spacing: -0.1px;
+    }
+
+    /* Content */
+    .content {
+      padding: 20px;
+    }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      color: #f59e0b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .heading {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 22px;
+      margin-bottom: 8px;
+    }
+    .body-text {
+      font-size: 14px;
+      color: #475569;
+      line-height: 21px;
+      margin-bottom: 6px;
+    }
+    .body-text strong {
+      color: #1e293b;
+      font-weight: 600;
+    }
+
+    /* Code block */
+    .code-section {
+      margin: 14px 0;
+      text-align: center;
+    }
+    .code-label {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .code-row {
+      display: inline-flex;
+      gap: 5px;
+    }
+    .code-cell {
+      width: 32px;
+      height: 40px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e293b;
+      font-family: 'Outfit', monospace;
+    }
+
+    /* Button */
+    .btn-wrap {
+      margin: 14px 0;
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #f59e0b;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Info card */
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .card-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    .card-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #475569;
+      padding: 2px 0;
+    }
+    .card-row .label { color: #94a3b8; }
+    .card-row .value { color: #1e293b; font-weight: 500; }
+
+    /* Divider */
+    .divider {
+      border: 0;
+      border-top: 1px solid #f1f5f9;
+      margin: 12px 0;
+    }
+
+    /* Caption */
+    .caption {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 17px;
+      margin-top: 10px;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 14px 20px;
+      border-top: 1px solid #f1f5f9;
+      background: #fafbfc;
+    }
+    .footer-contact {
+      margin-bottom: 8px;
+    }
+    .footer-contact-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+    .footer-contact-row svg {
+      width: 11px;
+      height: 11px;
+      flex-shrink: 0;
+    }
+    .footer-contact-row a, .footer-contact-row span {
+      font-size: 11px;
+      color: #94a3b8;
+      text-decoration: none;
+    }
+    .footer-social {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .footer-social a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      background: #f1f5f9;
+    }
+    .footer-social a svg {
+      width: 12px;
+      height: 12px;
+    }
+    .footer-copy {
+      font-size: 10px;
+      color: #cbd5e1;
+      line-height: 14px;
+    }
+    .footer-unsub {
+      font-size: 10px;
+      color: #94a3b8;
+      text-decoration: underline;
+      margin-top: 3px;
+      display: inline-block;
+    }
+
+    /* Responsive */
+    @media only screen and (max-width: 480px) {
+      body { padding: 0; }
+      .email-container { border-radius: 0; border: none; }
+      .content { padding: 16px; }
+      .heading { font-size: 16px; }
+      .body-text { font-size: 13px; line-height: 20px; }
+      .code-cell { width: 28px; height: 36px; font-size: 15px; }
+      .card { padding: 10px; }
+      .footer { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="accent-bar"></div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-inner">
+        <img src="https://carboncube-ke.com/logo.png" alt="Carbon Cube Kenya">
+        <span class="brand">Carbon Cube Kenya</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Hero image -->
+      <div style="margin: -20px -20px 14px; overflow: hidden;">
+        <img src="https://carboncube-ke.com/og-image.png" alt="Carbon Cube Kenya" style="width: 100%; height: auto; display: block;">
+      </div>
+
+      <div class="eyebrow">Email Verification</div>
+      <div class="heading">Verify your email address</div>
+      <div class="body-text">Hi Test User,</div>
+      <div class="body-text">Use the code below to verify your email address. This code expires shortly, so enter it soon.</div>
+
+      <!-- Code block -->
+      <div class="code-section">
+        <div class="code-label">Your verification code</div>
+        <div class="code-row">
+          <div class="code-cell">8</div>
+          <div class="code-cell">4</div>
+          <div class="code-cell">2</div>
+          <div class="code-cell">9</div>
+          <div class="code-cell">1</div>
+          <div class="code-cell">6</div>
+        </div>
+      </div>
+
+      <!-- Primary button -->
+      <div class="btn-wrap" style="text-align: center;">
+        <a href="https://carboncube-ke.com/verify?code=842916" class="btn">Verify email address</a>
+      </div>
+
+      <!-- Divider -->
+      <hr class="divider">
+
+      <!-- Info card -->
+      <div class="card">
+        <div class="card-label">Account details</div>
+        <div class="card-row">
+          <span class="label">Email</span>
+          <span class="value">testuser@example.com</span>
+        </div>
+        <div class="card-row">
+          <span class="label">Code expires in</span>
+          <span class="value">10 minutes</span>
+        </div>
+        <div class="card-row">
+          <span class="label">Sent to</span>
+          <span class="value">optisoftkenya@gmail.com</span>
+        </div>
+      </div>
+
+      <!-- Product listing with thumbnail image -->
+      <div style="display: flex; gap: 10px; align-items: center; margin: 10px 0; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 5px;">
+        <img src="https://carboncube-ke.com/og-image.png" alt="Bosch Power Drill" style="width: 44px; height: 44px; border-radius: 4px; object-fit: contain; flex-shrink: 0; background: #f8fafc;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">Bosch GSB 13 RE Impact Drill</div>
+          <div style="font-size: 11px; color: #94a3b8;">KSh 4,500 &middot; <a href="https://carboncube-ke.com/product/bosch-gsb-13-re" style="color: #f59e0b; text-decoration: none;">View listing</a></div>
+        </div>
+      </div>
+
+      <!-- Body text with inline link -->
+      <div class="body-text">
+        Having trouble? <a href="https://carboncube-ke.com/help/verification" style="color: #f59e0b; text-decoration: none; font-weight: 500;">Read our verification guide</a> or <a href="https://carboncube-ke.com/contact" style="color: #f59e0b; text-decoration: none; font-weight: 500;">contact support</a>.
+      </div>
+
+      <!-- Secondary button -->
+      <div class="btn-wrap" style="text-align: center;">
+        <a href="https://carboncube-ke.com/help/verification" class="btn btn-secondary">Need help?</a>
+      </div>
+
+      <div class="caption">If you did not request this verification, you can safely ignore this email. Someone may have entered your email address by mistake.</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <!-- Contact -->
+      <div class="footer-contact">
+        <div class="footer-contact-row">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          <a href="mailto:info@carboncube-ke.com">info@carboncube-ke.com</a>
+        </div>
+        <div class="footer-contact-row">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <a href="tel:+254712990524">+254 712 990 524</a>
+        </div>
+        <div class="footer-contact-row">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>9th Floor, CMS Africa, Kilimani, Nairobi</span>
+        </div>
+      </div>
+
+      <!-- Social -->
+      <div class="footer-social">
+        <!-- Facebook -->
+        <a href="https://www.facebook.com/profile.php?id=61574066312678">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#64748b"><path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z"/></svg>
+        </a>
+        <!-- Instagram -->
+        <a href="https://www.instagram.com/carboncube_kenya/">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        <!-- LinkedIn -->
+        <a href="https://www.linkedin.com/company/carbon-cube-kenya/">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#64748b"><path d="M20.5 2h-17A1.5 1.5 0 0 0 2 3.5v17A1.5 1.5 0 0 0 3.5 22h17a1.5 1.5 0 0 0 1.5-1.5v-17A1.5 1.5 0 0 0 20.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 1 1 8.3 6.5a1.78 1.78 0 0 1-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0 0 13 14.19a.66.66 0 0 0 0 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 0 1 2.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg>
+        </a>
+        <!-- X (Twitter) -->
+        <a href="https://x.com/carboncube_ke">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#64748b"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+      </div>
+
+      <div class="footer-copy">Carbon Cube Kenya Ltd. &middot; 9th Floor, CMS Africa, Kilimani, Nairobi &middot; P.O. Box 00100</div>
+      <a href="https://carboncube-ke.com/unsubscribe" class="footer-unsub">Unsubscribe</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -90,11 +90,25 @@ deploy_docker_services() {
     echo -e "${GREEN}✅ Docker services deployed${NC}"
 }
 
-echo -e "${YELLOW}Step 1: Deploying Docker Services (Backend + Frontend)...${NC}"
+echo -e "${YELLOW}Step 1: Building React Email templates...${NC}"
+cd "$BACKEND_DIR"
+if command_exists npm; then
+    echo "   Installing Node dependencies..."
+    npm install || { echo -e "${RED}❌ npm install failed${NC}"; exit 1; }
+    echo "   Building email templates..."
+    npx react-email-rails-build || { echo -e "${RED}❌ Email build failed${NC}"; exit 1; }
+    echo -e "${GREEN}✅ React Email templates built${NC}"
+else
+    echo -e "${RED}❌ npm not found — cannot build email templates${NC}"
+    exit 1
+fi
+echo ""
+
+echo -e "${YELLOW}Step 2: Deploying Docker Services (Backend + Frontend)...${NC}"
 deploy_docker_services
 echo ""
 
-echo -e "${YELLOW}Step 2: Running Database Migrations...${NC}"
+echo -e "${YELLOW}Step 3: Running Database Migrations...${NC}"
 # Run migrations inside the backend container
 cd "$PROJECT_ROOT"
 if command_exists docker-compose; then
@@ -111,7 +125,7 @@ fi
 echo -e "${GREEN}✅ Database migrations completed${NC}"
 echo ""
 
-echo -e "${YELLOW}Step 3: Deploying WhatsApp Service...${NC}"
+echo -e "${YELLOW}Step 4: Deploying WhatsApp Service...${NC}"
 if [ -d "$WHATSAPP_DIR" ]; then
     cd "$WHATSAPP_DIR"
     
@@ -137,7 +151,7 @@ else
 fi
 echo ""
 
-echo -e "${YELLOW}Step 4: Verifying Services...${NC}"
+echo -e "${YELLOW}Step 5: Verifying Services...${NC}"
 sleep 5
 
 # Check Docker services

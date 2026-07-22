@@ -749,6 +749,7 @@ Rails.application.routes.draw do
         get :chart_data
         get :history
         get :customers
+        get 'customers/:id', action: :customer
         get :queue
         get :queue_types
         get :logs

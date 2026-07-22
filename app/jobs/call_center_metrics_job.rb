@@ -4,7 +4,7 @@ class CallCenterMetricsJob < ApplicationJob
   queue_as :default
 
   # Idempotent: safely retried. Data will just be recomputed and overwritten.
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
   discard_on ActiveRecord::StatementInvalid  # Skip if DB statement times out
 
   def perform
@@ -39,7 +39,7 @@ class CallCenterMetricsJob < ApplicationJob
   end
 
   def compute_kpis(period)
-    queue_count = CallQueue.pending.distinct.count(:seller_id)
+    queue_count = CallQueue.pending.count
     call_queue_count = CallQueue.pending.count
 
     start_date = case period
@@ -111,66 +111,80 @@ class CallCenterMetricsJob < ApplicationJob
     case period
     when 'today'
       start_date = Time.zone.now.beginning_of_day
-      records = CallRecord.where('started_at >= ?', start_date)
+      records = CallRecord.where('started_at >= ?', start_date).to_a
       
-      handled_by_hour = records.where(status: :completed).group("EXTRACT(HOUR FROM started_at)").count
-      missed_by_hour = records.where(status: [:missed, :abandoned]).group("EXTRACT(HOUR FROM started_at)").count
+      handled_by_hour = records.select { |r| r.status == 'completed' }
+                               .group_by { |r| r.started_at.in_time_zone.hour }
+                               .transform_values(&:size)
+      missed_by_hour = records.select { |r| %w[missed abandoned].include?(r.status) }
+                              .group_by { |r| r.started_at.in_time_zone.hour }
+                              .transform_values(&:size)
       
       current_hour = Time.zone.now.hour
       (0..current_hour).map do |hour|
         {
           date: format('%02d:00', hour),
-          handled: handled_by_hour[hour.to_f] || 0,
-          missed: missed_by_hour[hour.to_f] || 0
+          handled: handled_by_hour[hour] || 0,
+          missed: missed_by_hour[hour] || 0
         }
       end
     when '1y'
       start_date = 11.months.ago.beginning_of_month
-      records = CallRecord.where('started_at >= ?', start_date)
+      records = CallRecord.where('started_at >= ?', start_date).to_a
       
-      handled_by_month = records.where(status: :completed).group("DATE_TRUNC('month', started_at)").count
-      missed_by_month = records.where(status: [:missed, :abandoned]).group("DATE_TRUNC('month', started_at)").count
+      handled_by_month = records.select { |r| r.status == 'completed' }
+                                .group_by { |r| [r.started_at.in_time_zone.year, r.started_at.in_time_zone.month] }
+                                .transform_values(&:size)
+      missed_by_month = records.select { |r| %w[missed abandoned].include?(r.status) }
+                               .group_by { |r| [r.started_at.in_time_zone.year, r.started_at.in_time_zone.month] }
+                               .transform_values(&:size)
       
       (0..11).map do |i|
         month_date = start_date + i.months
-        h_count = handled_by_month.find { |k, v| k.to_date.year == month_date.year && k.to_date.month == month_date.month }&.last || 0
-        m_count = missed_by_month.find { |k, v| k.to_date.year == month_date.year && k.to_date.month == month_date.month }&.last || 0
+        key = [month_date.year, month_date.month]
         
         {
           date: month_date.strftime('%Y-%m'),
-          handled: h_count,
-          missed: m_count
+          handled: handled_by_month[key] || 0,
+          missed: missed_by_month[key] || 0
         }
       end
     when 'all'
       first_record = CallRecord.order(started_at: :asc).first
       start_date = first_record ? first_record.started_at.beginning_of_month : Time.zone.now.beginning_of_month
-      records = CallRecord.all
+      records = CallRecord.all.to_a
       
-      handled_by_month = records.where(status: :completed).group("DATE_TRUNC('month', started_at)").count
-      missed_by_month = records.where(status: [:missed, :abandoned]).group("DATE_TRUNC('month', started_at)").count
+      handled_by_month = records.select { |r| r.status == 'completed' }
+                                .group_by { |r| [r.started_at.in_time_zone.year, r.started_at.in_time_zone.month] }
+                                .transform_values(&:size)
+      missed_by_month = records.select { |r| %w[missed abandoned].include?(r.status) }
+                               .group_by { |r| [r.started_at.in_time_zone.year, r.started_at.in_time_zone.month] }
+                               .transform_values(&:size)
       
       months_diff = (Time.zone.now.year * 12 + Time.zone.now.month) - (start_date.year * 12 + start_date.month)
       months_diff = [months_diff, 0].max
       
       (0..months_diff).map do |i|
         month_date = start_date + i.months
-        h_count = handled_by_month.find { |k, v| k.to_date.year == month_date.year && k.to_date.month == month_date.month }&.last || 0
-        m_count = missed_by_month.find { |k, v| k.to_date.year == month_date.year && k.to_date.month == month_date.month }&.last || 0
+        key = [month_date.year, month_date.month]
         
         {
           date: month_date.strftime('%Y-%m'),
-          handled: h_count,
-          missed: m_count
+          handled: handled_by_month[key] || 0,
+          missed: missed_by_month[key] || 0
         }
       end
     else # '7d' or '30d'
       days = period == '30d' ? 30 : 7
       start_date = days.days.ago.beginning_of_day
-      records = CallRecord.where('started_at >= ?', start_date)
+      records = CallRecord.where('started_at >= ?', start_date).to_a
 
-      handled_by_date = records.where(status: :completed).group('DATE(started_at)').count
-      missed_by_date = records.where(status: [:missed, :abandoned]).group('DATE(started_at)').count
+      handled_by_date = records.select { |r| r.status == 'completed' }
+                               .group_by { |r| r.started_at.in_time_zone.to_date }
+                               .transform_values(&:size)
+      missed_by_date = records.select { |r| %w[missed abandoned].include?(r.status) }
+                              .group_by { |r| r.started_at.in_time_zone.to_date }
+                              .transform_values(&:size)
 
       (0...days).map do |i|
         date = (start_date + i.days).to_date

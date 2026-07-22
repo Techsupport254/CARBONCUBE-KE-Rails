@@ -1,7 +1,7 @@
 class CallPersistJob < ApplicationJob
   queue_as :default  # Important: must run promptly but not critical-tier
 
-  retry_on StandardError, wait: :exponentially_longer, attempts: 5
+  retry_on StandardError, wait: :polynomially_longer, attempts: 5
   discard_on ActiveJob::DeserializationError
 
   def perform(call_sid)
@@ -89,8 +89,10 @@ class CallPersistJob < ApplicationJob
 
       Rails.logger.info "CallPersistJob: Created call_record id=#{call_record.id}, rating_token=#{call_record.rating_token}"
 
-      # Send email summary if customer email is provided
-      if log_data['customer_email'].present?
+      # Send email summary if customer email is provided and no follow-up is required
+      if log_data['follow_up_required'] == 'true'
+        Rails.logger.info "CallPersistJob: Follow-up required, skipping email"
+      elsif log_data['customer_email'].present?
         Rails.logger.info "CallPersistJob: Sending email to #{log_data['customer_email']}"
         send_call_summary_email(call_record, log_data)
       else
