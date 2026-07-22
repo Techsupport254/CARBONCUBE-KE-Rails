@@ -97,7 +97,7 @@ class AuthenticationController < ApplicationController
     end
 
     # Reactivate account
-    user.update(deleted_at: nil)
+    user.update(deleted: false)
 
     # Clear the token
     Rails.cache.delete(cache_key)

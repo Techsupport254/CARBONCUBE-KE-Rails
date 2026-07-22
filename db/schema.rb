@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_21_105611) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_22_110000) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -95,6 +95,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_21_105611) do
     t.index ["seller_id"], name: "index_ads_seller_id"
     t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
+    t.index ["subcategory_id"], name: "index_ads_balanced_subcategory", where: "((deleted = false) AND (flagged = false) AND (media IS NOT NULL) AND (media <> ''::text) AND (media <> '[]'::text))"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
   end
 
@@ -611,7 +612,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_21_105611) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", force: :cascade do |t|
+  create_table "monitoring_metrics", id: false, force: :cascade do |t|
+    t.bigserial "id", null: false
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"

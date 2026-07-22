@@ -4,12 +4,11 @@ class Sales::WishListsController < ApplicationController
 
   # GET /sales/wishlists
   def index
-    # Filter out wishlists from deleted/blocked buyers, blocked/deleted sellers, and deleted ads
-    @wishlists = WishList.joins(:buyer, ad: :seller)
-                         .where(buyers: { deleted: false })
-                         .where(sellers: { deleted: false, blocked: false, flagged: false })
+    # Filter out deleted ads and blocked/deleted ad sellers
+    @wishlists = WishList.joins(ad: :seller)
                          .where(ads: { deleted: false })
-                         .includes(:buyer, :ad)
+                         .where(sellers: { deleted: false, blocked: false, flagged: false })
+                         .includes(:buyer, :seller, ad: :seller)
                          .order('wish_lists.created_at DESC')
 
     # Get pagination parameters
@@ -26,7 +25,8 @@ class Sales::WishListsController < ApplicationController
     
     wishlists_data = @wishlists.map do |wishlist|
       ad_data = wishlist.ad
-      buyer_data = wishlist.buyer
+      bookmarker_data = wishlist.buyer || wishlist.seller
+      seller_data = ad_data&.seller
       
       # Calculate mean rating for the ad using preloaded data
       ad_rating = if ad_data && reviews_by_ad
@@ -44,10 +44,11 @@ class Sales::WishListsController < ApplicationController
         seller_id: wishlist.seller_id,
         ad_id: wishlist.ad_id,
         created_at: wishlist.created_at&.iso8601,
-        buyer: buyer_data ? {
-          id: buyer_data.id,
-          name: buyer_data.fullname || buyer_data.name || "Buyer ##{buyer_data.id}",
-          email: buyer_data.email
+        buyer: bookmarker_data ? {
+          id: bookmarker_data.id,
+          name: bookmarker_data.respond_to?(:enterprise_name) ? (bookmarker_data.enterprise_name || bookmarker_data.fullname || bookmarker_data.username || "Seller ##{bookmarker_data.id}") : (bookmarker_data.fullname || bookmarker_data.name || "Buyer ##{bookmarker_data.id}"),
+          email: bookmarker_data.email,
+          profile_picture: bookmarker_data.profile_picture
         } : nil,
         ad: ad_data ? {
           id: ad_data.id,
@@ -56,7 +57,13 @@ class Sales::WishListsController < ApplicationController
           category_name: ad_data.category_name,
           subcategory_name: ad_data.subcategory_name,
           first_media_url: ad_data.first_media_url,
-          rating: ad_rating && ad_rating > 0 ? ad_rating.round(1) : nil
+          rating: ad_rating && ad_rating > 0 ? ad_rating.round(1) : nil,
+          seller: seller_data ? {
+            id: seller_data.id,
+            shop_name: seller_data.enterprise_name,
+            name: seller_data.fullname || seller_data.username || "Seller ##{seller_data.id}",
+            profile_picture: seller_data.profile_picture
+          } : nil
         } : nil
       }
     end

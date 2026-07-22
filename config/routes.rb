@@ -718,7 +718,7 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :ads, only: [:index, :show] do
+      resources :ads, only: [:index, :show], constraints: { id: /[^\/]+/ } do
         collection do
           get 'search'
           get 'popular-searches', to: 'ads#popular_searches'
@@ -921,7 +921,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :ads, only: [:index, :show] do
+    resources :ads, only: [:index, :show], constraints: { id: /[^\/]+/ } do
       collection do
         get 'search'
         get 'popular-searches', to: 'ads#popular_searches'
