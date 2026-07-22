@@ -2,7 +2,7 @@
   "steps": {
     "build_emails": {
       "inputs": [{ "step": "build" }, { "step": "install:node" }],
-      "commands": ["bunx react-email-rails-build"],
+      "commands": ["./node_modules/.bin/react-email-rails-build"],
       "deployOutputs": [{ "include": ["tmp/react-email-rails"] }]
     }
   }
