@@ -5,14 +5,16 @@ class ProcessWebsocketMessageJob < ApplicationJob
   retry_on StandardError, wait: :exponentially_longer, attempts: 2
   discard_on ActiveJob::DeserializationError  # Discard if message data can't be deserialized
 
-  def perform(message_data)
+  def perform(raw_message_data)
+    message_data = raw_message_data.with_indifferent_access
+    
     # Extract data
-    conversation_id = message_data['conversation_id']
-    content = sanitize_content(message_data['content'])
-    sender_type = message_data['sender_type']
-    sender_id = message_data['sender_id']
-    sender_user = message_data['sender_user']
-    sender_session = message_data['sender_session']
+    conversation_id = message_data[:conversation_id]
+    content = sanitize_content(message_data[:content])
+    sender_type = message_data[:sender_type]
+    sender_id = message_data[:sender_id]
+    sender_user = message_data[:sender_user]
+    sender_session = message_data[:sender_session]
     
     # Find conversation and validate access
     conversation = find_and_validate_conversation(conversation_id, sender_user)
@@ -78,7 +80,7 @@ class ProcessWebsocketMessageJob < ApplicationJob
       conversation.buyer_id == user.id
     when 'seller'
       conversation.seller_id == user.id
-    when 'admin'
+    when 'admin', 'sales'
       true
     else
       false
