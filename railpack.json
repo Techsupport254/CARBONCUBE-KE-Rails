@@ -1,0 +1,13 @@
+{
+  "steps": {
+    "install_node_deps": {
+      "inputs": [{ "step": "install" }],
+      "commands": ["bun install"]
+    },
+    "build_emails": {
+      "inputs": [{ "step": "build" }, { "step": "install_node_deps" }],
+      "commands": ["bunx react-email-rails-build"],
+      "deployOutputs": ["tmp/react-email-rails"]
+    }
+  }
+}
