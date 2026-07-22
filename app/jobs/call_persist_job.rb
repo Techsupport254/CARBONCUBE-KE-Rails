@@ -111,9 +111,14 @@ class CallPersistJob < ApplicationJob
   private
 
   def send_call_summary_email(call_record, log_data)
-    # Generate rating link with UTMs
-    frontend_url = ENV['FRONTEND_URL'] || 'https://calls.carboncube-ke.com'
-    rating_link = "#{frontend_url}/rate-call/#{call_record.rating_token}?utm_source=email&utm_medium=call_summary&utm_campaign=call_rating"
+    # Generate rating link — use the first env var that is actually set
+    frontend_url = (
+      ENV['FRONTEND_URL'].presence ||
+      ENV['NEXT_PUBLIC_SITE_URL'].presence ||
+      ENV['REACT_APP_FRONTEND_URL'].presence ||
+      'https://calls.carboncube-ke.com'
+    ).chomp('/')
+    rating_link = "#{frontend_url}/rate-call/#{call_record.rating_token}"
 
     # Send email using nodemailer or your existing email system
     # This is a placeholder - implement based on your email system
