@@ -1,5 +1,8 @@
 {
   "steps": {
+    "prune:node": {
+      "commands": ["rm -rf node_modules && bun install --production"]
+    },
     "build_emails": {
       "inputs": [{ "step": "build" }, { "step": "install:node" }],
       "commands": ["./node_modules/.bin/react-email-rails-build"],
