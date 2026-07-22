@@ -2,7 +2,7 @@ class ProcessWebsocketMessageJob < ApplicationJob
   queue_as :critical  # Real-time user-facing — must not be blocked by slower jobs
 
   # Only retry twice: WebSocket context expires quickly, stale retries waste threads
-  retry_on StandardError, wait: :exponentially_longer, attempts: 2
+  retry_on StandardError, wait: :polynomially_longer, attempts: 2
   discard_on ActiveJob::DeserializationError  # Discard if message data can't be deserialized
 
   def perform(raw_message_data)

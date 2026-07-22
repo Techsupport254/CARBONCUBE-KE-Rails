@@ -102,6 +102,7 @@ group :development do
   # gem "spring"
 end
 gem "mjml-rails", "~> 4.16"
+gem "react-email-rails", "~> 0.8"
 
 gem "prawn", "~> 2.5"
 gem "prawn-table", "~> 0.2.2"

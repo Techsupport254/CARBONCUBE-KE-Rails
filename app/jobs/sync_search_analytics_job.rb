@@ -2,7 +2,7 @@
 class SyncSearchAnalyticsJob < ApplicationJob
   queue_as :low  # Nightly batch job — no latency requirements
 
-  retry_on StandardError, wait: :exponentially_longer, attempts: 3
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
   def perform
     Rails.logger.info "Starting search analytics sync from Redis to PostgreSQL"

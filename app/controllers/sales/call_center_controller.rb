@@ -51,12 +51,7 @@ module Sales
       per_page = (params[:per_page].presence || 50).to_i
       search = params[:search].to_s.downcase
       
-      total_count = RedisConnection.with { |conn| conn.llen('call_center:activity_logs') } || 0
-      
-      start_index = (page - 1) * per_page
-      end_index = start_index + per_page - 1
-      
-      raw_logs = RedisConnection.with { |conn| conn.lrange('call_center:activity_logs', start_index, end_index) } || []
+      raw_logs = RedisConnection.with { |conn| conn.lrange('call_center:activity_logs', 0, -1) } || []
       
       logs_data = raw_logs.filter_map do |log_json|
         begin
@@ -72,11 +67,13 @@ module Sales
           log['user'].to_s.downcase.include?(search) ||
           log['details'].to_s.downcase.include?(search)
         end
-        total_count = logs_data.length
       end
 
+      total_count = logs_data.length
+      paginated_logs = logs_data.slice((page - 1) * per_page, per_page) || []
+
       render json: {
-        logs: logs_data,
+        logs: paginated_logs,
         total_pages: [(total_count.to_f / per_page).ceil, 1].max,
         current_page: page,
         total_count: total_count
@@ -85,7 +82,6 @@ module Sales
 
     # POST /sales/call_center/log_call
     def log_call
-      Rails.logger.info "Sales::CallCenterController#log_call invoked with params: #{params.to_unsafe_h.except(:controller, :action).inspect}"
       customer_name = params[:customerName]
       customer_phone = params[:phoneNumber]
       customer_email = params[:customerEmail]
@@ -196,6 +192,9 @@ module Sales
       queue_type = params[:queue_type].presence
       priority = params[:priority].presence
       search = params[:search].presence
+
+      # Ensure queue is up-to-date with recent exclusions before returning
+      CallQueueService.populate_queue
 
       queue_data = CallQueueService.get_queue_data(page: page, per_page: per_page, queue_type: queue_type, priority: priority, search: search)
 
@@ -325,20 +324,21 @@ module Sales
         return
       end
 
-      # Find seller by email
-      seller = Seller.find_by(email: email)
+      # Find user by email (Seller or Buyer)
+      user = Seller.find_by(email: email) || Buyer.find_by(email: email)
       
-      if seller
+      if user
+        user_type = user.class.name.downcase
         # Send email using the custom communication mailer
         SellerCommunicationsMailer.custom_communication(
-          seller: seller,
+          user: user,
           subject: subject,
           message: message,
-          user_type: 'seller'
+          user_type: user_type
         ).deliver_later
       else
-        # For buyers or non-sellers, we could use a different mailer or skip
-        render json: { error: 'Seller not found with this email' }, status: :not_found
+        # For leads or non-registered users
+        render json: { error: 'Customer not found with this email' }, status: :not_found
         return
       end
 
@@ -382,15 +382,25 @@ module Sales
 
       rating = params[:rating].to_i
       feedback = params[:feedback]
+      issue_resolved = params[:issue_resolved]
+      would_recommend = params[:would_recommend]
+      additional_challenges = params[:additional_challenges]
 
       if rating < 1 || rating > 5
         render json: { error: 'Rating must be between 1 and 5' }, status: :bad_request
         return
       end
 
+      extended_feedback = [
+        feedback.present? ? feedback : nil,
+        issue_resolved.present? ? "Issue Resolved: #{issue_resolved}" : nil,
+        would_recommend.present? ? "Would Recommend: #{would_recommend}" : nil,
+        additional_challenges.present? ? "Additional Challenges: #{additional_challenges}" : nil,
+      ].compact.join("\n\n")
+
       call_record.update!(
         customer_rating: rating,
-        customer_feedback: feedback,
+        customer_feedback: extended_feedback.presence || feedback,
         rating_submitted_at: Time.current
       )
 
@@ -443,6 +453,12 @@ module Sales
                                    )
       end
       
+      if params[:follow_up] == 'true'
+        call_records = call_records.where(follow_up_required: true)
+      elsif params[:follow_up] == 'false'
+        call_records = call_records.where(follow_up_required: [false, nil])
+      end
+      
       # Order by most recent first
       call_records = call_records.order(created_at: :desc)
       
@@ -458,6 +474,7 @@ module Sales
           
           {
             id: record.id,
+            customer_id: record.customer_id || Digest::MD5.hexdigest(record.caller_phone.to_s),
             caller_name: record.caller_name.presence || record.customer.try(:fullname) || "Unknown",
             caller_phone: record.caller_phone.presence || record.customer.try(:phone_number) || record.customer.try(:phone) || "—",
             customer_email: record.customer_email.presence || record.customer.try(:email),
@@ -504,22 +521,18 @@ module Sales
 
       # Optimized SQL UNION to query all buyers, sellers, and external callers at once
       sql = <<-SQL
-        WITH seller_ads AS (
-          SELECT seller_id, COUNT(*) AS ad_count FROM ads WHERE deleted = false GROUP BY seller_id
-        ),
-        registered_phones AS (
+        WITH registered_phones AS (
           SELECT phone_number FROM buyers WHERE phone_number IS NOT NULL
           UNION
           SELECT phone_number FROM sellers WHERE phone_number IS NOT NULL
         ),
         unified_customers AS (
-          SELECT id::text, fullname AS name, email, phone_number AS phone, 'Buyer' AS role, created_at, profile_picture, NULL AS enterprise_name, 0 AS ad_count FROM buyers
+          SELECT id::text, fullname AS name, email, phone_number AS phone, 'Buyer' AS role, created_at, profile_picture, NULL AS enterprise_name, 0 AS ad_count, last_active_at, false AS verified FROM buyers
           UNION ALL
-          SELECT s.id::text, s.fullname AS name, s.email, s.phone_number AS phone, 'Seller' AS role, s.created_at, s.profile_picture, s.enterprise_name, COALESCE(a.ad_count, 0) AS ad_count
-          FROM sellers s
-          LEFT JOIN seller_ads a ON s.id = a.seller_id
+          SELECT id::text, fullname AS name, email, phone_number AS phone, 'Seller' AS role, created_at, profile_picture, enterprise_name, (SELECT COUNT(*) FROM ads WHERE ads.seller_id = sellers.id AND ads.deleted = false) AS ad_count, last_active_at, document_verified AS verified
+          FROM sellers
           UNION ALL
-          SELECT gen_random_uuid()::text AS id, caller_name AS name, NULL AS email, caller_phone AS phone, 'Lead' AS role, MIN(started_at) AS created_at, NULL AS profile_picture, NULL AS enterprise_name, 0 AS ad_count
+          SELECT MD5(caller_phone)::text AS id, caller_name AS name, NULL AS email, caller_phone AS phone, 'Lead' AS role, MIN(started_at) AS created_at, NULL AS profile_picture, NULL AS enterprise_name, 0 AS ad_count, MAX(started_at) AS last_active_at, false AS verified
           FROM call_records
           WHERE customer_id IS NULL
             AND (caller_name IS NOT NULL OR caller_phone IS NOT NULL)
@@ -560,7 +573,9 @@ module Sales
           joinedAt: r['created_at'],
           avatar: r['profile_picture'] && !r['profile_picture'].include?('googleusercontent.com') ? r['profile_picture'] : nil,
           shopName: r['enterprise_name'],
-          adCount: r['ad_count'].to_i
+          adCount: r['ad_count'].to_i,
+          lastActiveAt: r['last_active_at'],
+          verified: [true, 'true', 't', 1, '1'].include?(r['verified'])
         }
       end
 
@@ -570,6 +585,98 @@ module Sales
         current_page: page,
         total_count: total_count
       }
+    end
+
+    def customer
+      customer_id = params[:id]
+      
+      record = nil
+      customer_data = nil
+      is_uuid = customer_id.match?(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+      
+      if is_uuid
+        record = Seller.find_by(id: customer_id)
+        if record
+          customer_data = {
+            id: record.id,
+            name: record.fullname.presence || 'Unknown',
+            email: record.email.presence || 'N/A',
+            phone: record.phone_number.presence || 'N/A',
+            role: 'Seller',
+            joinedAt: record.created_at,
+            avatar: record.profile_picture && !record.profile_picture.include?('googleusercontent.com') ? record.profile_picture : nil,
+            shopName: record.enterprise_name,
+            adCount: record.ads_count,
+            location: record.location,
+            avgRating: record.calculate_mean_rating,
+            verified: record.document_verified,
+            lastActiveAt: record.last_active_at
+          }
+          
+          queue_item = CallQueue.pending.find_by(seller_id: record.id)
+          if queue_item
+            customer_data[:queueReasons] = queue_item.reasons.map { |r| CallQueue::QUEUE_TYPES[r] || r.humanize }
+            customer_data[:queueMetadata] = queue_item.metadata || {}
+          else
+            customer_data[:queueReasons] = []
+            customer_data[:queueMetadata] = {}
+          end
+        else
+          record = Buyer.find_by(id: customer_id)
+          if record
+            customer_data = {
+              id: record.id,
+              name: record.fullname.presence || 'Unknown',
+              email: record.email.presence || 'N/A',
+              phone: record.phone_number.presence || 'N/A',
+              role: 'Buyer',
+              joinedAt: record.created_at,
+              avatar: record.profile_picture && !record.profile_picture.include?('googleusercontent.com') ? record.profile_picture : nil,
+              location: record.location
+            }
+          end
+        end
+      end
+      
+      if !record
+        call_record = CallRecord.where("MD5(caller_phone)::text = ?", customer_id).first
+        if call_record
+          customer_data = {
+            id: customer_id,
+            name: call_record.caller_name.presence || 'Unknown',
+            email: 'N/A',
+            phone: call_record.caller_phone.presence || 'N/A',
+            role: 'Lead',
+            joinedAt: call_record.started_at,
+            avatar: nil
+          }
+        else
+          return render json: { error: 'Customer not found' }, status: :not_found
+        end
+      end
+
+      if customer_data[:role] == 'Lead'
+        history = CallRecord.where(caller_phone: customer_data[:phone]).order(started_at: :desc).limit(10)
+      else
+        history = CallRecord.where(customer_id: customer_id).order(started_at: :desc).limit(10)
+      end
+
+      customer_data[:history] = history.map do |h|
+        {
+          id: h.id,
+          call_type: h.call_type,
+          duration: h.duration_seconds,
+          started_at: h.started_at,
+          status: h.status,
+          call_reason: h.call_reason,
+          disposition: h.disposition,
+          agent_notes: h.agent_notes,
+          follow_up_required: h.follow_up_required,
+          follow_up_action: h.follow_up_action
+        }
+      end
+      
+      render json: { customer: customer_data }
     end
 
     private

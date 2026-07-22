@@ -3,31 +3,27 @@ class MessageNotificationMailer < ApplicationMailer
 
   # Send new message notification to recipient
   def new_message_notification(message, recipient)
-    @message = message
-    @recipient = recipient
-    @sender = message.sender
-    @conversation = message.conversation
-    
-    # Detect if this is a callback request to set appropriate UTM campaign
+    sender = message.sender
+    conversation = message.conversation
+
     campaign = message.content.to_s.start_with?("[Callback Request]") ? "callback_request" : "message"
-    
-    # Get conversation URL based on recipient type
-    @conversation_url = get_conversation_url(recipient, campaign: campaign)
-    
-    # Personalize greeting based on recipient type
-    @recipient_name = get_recipient_name(recipient)
-    @sender_name = get_sender_name(@sender)
-    
-    # Get product context if available
-    @product_context = message.product_context
-    @ad = message.ad
-    
-    @message_content = strip_markdown(message.content)
-    
+    conversation_url = get_conversation_url(recipient, conversation, campaign: campaign)
+    recipient_name = get_recipient_name(recipient)
+    sender_name = get_sender_name(sender)
+    message_content = strip_markdown(message.content)
+    product_context = message.product_context
+
     mail(
-      to: @recipient.email,
-      subject: "New message from #{@sender_name} on Carbon Cube Kenya",
-      reply_to: ENV['BREVO_EMAIL']
+      to: recipient.email,
+      subject: "New message from #{sender_name} on Carbon Cube Kenya",
+      reply_to: ENV['BREVO_EMAIL'],
+      react: {
+        recipient_name: recipient_name,
+        sender_name: sender_name,
+        message_content: message_content,
+        conversation_url: conversation_url,
+        product_context: product_context
+      }
     )
   end
 
@@ -47,23 +43,14 @@ class MessageNotificationMailer < ApplicationMailer
       .gsub(/^\s*[-*+]\s+/, '') # Remove list markers
   end
 
-  def get_conversation_url(recipient, campaign: "message")
-    base = case recipient.class.name
-    when 'Buyer'
-      "https://carboncube-ke.com/buyer/conversations/#{@conversation.id}"
-    when 'Seller'
-      "https://carboncube-ke.com/seller/conversations/#{@conversation.id}"
-    when 'Admin'
-      "https://carboncube-ke.com/admin/conversations/#{@conversation.id}"
-    else
-      "https://carboncube-ke.com/conversations/#{@conversation.id}"
-    end
+  def get_conversation_url(recipient, conversation, campaign: "message")
+    base = "https://carboncube-ke.com/messages?conversationId=#{conversation.id}"
     UtmUrlHelper.append_utm(
       base,
       source: 'email',
       medium: 'notification',
       campaign: campaign,
-      content: @conversation.id
+      content: conversation.id
     )
   end
 

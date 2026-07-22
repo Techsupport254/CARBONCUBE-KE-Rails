@@ -1,21 +1,50 @@
 # frozen_string_literal: true
 
 class CallQueueService
-  # Returns seller IDs that are currently in the queue (pending) or were resolved in the last 1 month
+  # Returns seller IDs that are currently in the queue (pending) or were resolved recently (duration depends on type)
   def self.excluded_seller_ids_for_type(queue_type)
-    CallQueue.where("reasons::jsonb @> ?", "[\"#{queue_type}\"]")
-      .where("status = ? OR (status = ? AND resolved_at > ?)",
-             CallQueue::STATUS_PENDING,
-             CallQueue::STATUS_RESOLVED,
-             1.month.ago)
-      .select(:seller_id)
+    # Determine exclusion period based on type
+    # This ensures sellers come back to the queue if they still don't meet criteria after a reasonable time
+    exclusion_period = case queue_type
+                       when CallQueue::UNREAD_MESSAGES
+                         24.hours.ago
+                       when CallQueue::NEW_SELLER_ONBOARDING, CallQueue::DOCUMENT_EXPIRY
+                         7.days.ago
+                       when CallQueue::NO_ADS_UPLOADED, CallQueue::INACTIVE_SELLER
+                         14.days.ago
+                       when CallQueue::PROACTIVE_OUTREACH
+                         30.days.ago
+                       else
+                         14.days.ago
+                       end
+
+    # If checking for Ads or Inactivity, exclude if they were resolved for EITHER reason
+    types_to_check = if [CallQueue::NO_ADS_UPLOADED, CallQueue::INACTIVE_SELLER].include?(queue_type)
+                       [CallQueue::NO_ADS_UPLOADED, CallQueue::INACTIVE_SELLER]
+                     else
+                       [queue_type]
+                     end
+
+    sql_conditions = types_to_check.map { |t| "reasons::text LIKE '%\"#{t}\"%'" }.join(" OR ")
+
+    # Get IDs of sellers who were explicitly resolved recently
+    # (Do NOT exclude STATUS_PENDING here, otherwise they get dropped from all_entries and deleted!)
+    queue_ids = CallQueue.where(sql_conditions)
+      .where(status: CallQueue::STATUS_RESOLVED)
+      .where("resolved_at > ?", exclusion_period)
+      .pluck(:seller_id)
+
+    # Also exclude sellers who were contacted in reality (via CallRecord) recently
+    contacted_ids = CallRecord.where(status: :completed)
+                              .where("started_at > ?", exclusion_period)
+                              .where(customer_type: 'Seller')
+                              .pluck(:customer_id)
+
+    (queue_ids + contacted_ids).compact.uniq
   end
 
   # Main method to populate the call queue based on metrics
   def self.populate_queue
-    # Clear existing pending entries to avoid duplicates
-    CallQueue.pending.delete_all
-
     # Collect all potential queue entries with their priorities
     all_entries = []
 
@@ -25,7 +54,10 @@ class CallQueueService
     all_entries.concat(collect_inactive_seller_queue)
     all_entries.concat(collect_new_seller_onboarding_queue)
     all_entries.concat(collect_document_expiry_queue)
-    all_entries.concat(collect_proactive_outreach_queue)
+
+    # Do not add sellers to Proactive Outreach if they are already in the queue for a real issue
+    already_collected_ids = all_entries.map { |e| e[:seller_id] }.uniq
+    all_entries.concat(collect_proactive_outreach_queue(already_collected_ids))
 
     # Group by seller and collect all reasons for each seller
     seller_entries = {}
@@ -42,6 +74,16 @@ class CallQueueService
       seller_entries[seller_id][:reasons] << entry[:queue_type]
       seller_entries[seller_id][:priorities] << entry[:priority]
       seller_entries[seller_id][:metadata] << entry[:metadata]
+    end
+
+    # Keep track of seller IDs that should be in the queue
+    active_seller_ids = seller_entries.keys
+
+    # Remove pending items for sellers no longer in the queue
+    if active_seller_ids.any?
+      CallQueue.pending.where.not(seller_id: active_seller_ids).delete_all
+    else
+      CallQueue.pending.delete_all
     end
 
     # Create the queue entries with reasons array
@@ -229,37 +271,58 @@ class CallQueueService
     entries
   end
 
-  # Metric 7: Proactive outreach - sellers doing well (active, have ads, recent activity)
-  def self.collect_proactive_outreach_queue
+  # Metric 7: Proactive outreach segments (High Potential, Slipping Away, General)
+  def self.collect_proactive_outreach_queue(already_collected_ids = [])
     entries = []
-    successful_sellers = Seller.active
-      .where('ads_count > 0')
+    excluded_ids = excluded_seller_ids_for_type(CallQueue::PROACTIVE_OUTREACH)
+    excluded_ids = (excluded_ids + already_collected_ids).uniq
+
+    # Segment 1: High Potential (Power users)
+    high_potential = Seller.active
+      .where('ads_count > 5')
+      .where('last_active_at > ?', 7.days.ago)
+      .where.not(id: excluded_ids)
+
+    high_potential.find_each do |seller|
+      entries << build_proactive_entry(seller, 'High Potential', CallQueue::PRIORITY_MEDIUM)
+    end
+
+    # Segment 2: Slipping Away (Pre-churn)
+    slipping_away = Seller.active
+      .where(last_active_at: 30.days.ago..14.days.ago)
+      .where.not(id: excluded_ids)
+
+    slipping_away.find_each do |seller|
+      entries << build_proactive_entry(seller, 'Slipping Away', CallQueue::PRIORITY_HIGH)
+    end
+
+    # Segment 3: General Outreach (Stable sellers, excluding high potential)
+    general_outreach = Seller.active
+      .where('ads_count > 0 AND ads_count <= 5')
       .where('last_active_at > ?', 7.days.ago)
       .where('created_at < ?', 30.days.ago)
-      .where.not(id: excluded_seller_ids_for_type(CallQueue::PROACTIVE_OUTREACH))
+      .where.not(id: excluded_ids)
 
-    Rails.logger.info "[ProactiveOutreach] Found #{successful_sellers.count} qualifying sellers"
-
-    successful_sellers.find_each do |seller|
-      total_ads = seller.ads_count
-      days_active = (Time.current - seller.created_at).to_i / 86400
-
-      Rails.logger.info "[ProactiveOutreach] Adding seller #{seller.fullname} (ID: #{seller.id}) to queue"
-
-      entries << {
-        seller_id: seller.id,
-        seller: seller,
-        queue_type: CallQueue::PROACTIVE_OUTREACH,
-        priority: CallQueue::PRIORITY_LOW,
-        metadata: {
-          total_ads: total_ads,
-          days_active: days_active,
-          last_active_at: seller.last_active_at.to_s
-        }
-      }
+    general_outreach.find_each do |seller|
+      entries << build_proactive_entry(seller, 'General Outreach', CallQueue::PRIORITY_LOW)
     end
-    Rails.logger.info "[ProactiveOutreach] Total entries collected: #{entries.count}"
+
     entries
+  end
+
+  def self.build_proactive_entry(seller, segment_name, priority)
+    {
+      seller_id: seller.id,
+      seller: seller,
+      queue_type: CallQueue::PROACTIVE_OUTREACH,
+      priority: priority,
+      metadata: {
+        outreach_segment: segment_name,
+        total_ads: seller.ads_count,
+        days_active: (Time.current - seller.created_at).to_i / 86400,
+        last_active_at: seller.last_active_at.to_s
+      }
+    }
   end
 
 
@@ -307,13 +370,15 @@ class CallQueueService
       end
     end
 
-    # Always use includes to avoid N+1 queries
-    query = query.includes(:seller)
-
+    # Sort and Paginate at database level
+    query = query.order(priority: :desc, created_at: :asc)
     total_count = query.count
 
+    # Always use includes to avoid N+1 queries
+    paginated_query = query.includes(:seller).offset((page - 1) * per_page).limit(per_page)
+
     # Map entries to API response format
-    entries = query.map do |queue|
+    paginated_entries = paginated_query.map do |queue|
       seller = queue.seller
       {
         id: queue.id,
@@ -333,12 +398,6 @@ class CallQueueService
         days_in_queue: ((Time.current - queue.created_at).to_i / 86400).to_i
       }
     end
-
-    # Sort by priority and created_at
-    sorted_entries = entries.sort_by { |e| [-e[:priority], e[:created_at]] }
-
-    # Apply pagination
-    paginated_entries = sorted_entries.slice((page - 1) * per_page, per_page) || []
 
     {
       queue: paginated_entries,

@@ -2,57 +2,66 @@ class IssueMailer < ApplicationMailer
   default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
 
   def issue_created
-    @issue = params[:issue]
-    @user_name = @issue.reporter_name
-    @issue_number = @issue.issue_number
-    @issue_title = @issue.title
-    @issue_description = @issue.description
-    @issue_category = @issue.category&.humanize || 'Other'
-    @issue_priority = @issue.priority&.humanize || 'Medium'
-    @issue_status = @issue.status&.humanize || 'Pending'
-    @submitted_at = @issue.created_at.strftime("%B %d, %Y at %I:%M %p")
-    @tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
-    
+    issue = params[:issue]
+    tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
+
     mail(
-      to: @issue.reporter_email,
-      subject: "Issue #{@issue_number} Submitted Successfully - Carbon Cube Kenya"
+      to: issue.reporter_email,
+      subject: "Issue #{issue.issue_number} Submitted Successfully - Carbon Cube Kenya",
+      react: {
+        user_name: issue.reporter_name,
+        issue_number: issue.issue_number,
+        issue_title: issue.title,
+        issue_description: issue.description,
+        issue_category: issue.category&.humanize || 'Other',
+        issue_priority: issue.priority&.humanize || 'Medium',
+        issue_status: issue.status&.humanize || 'Pending',
+        submitted_at: issue.created_at.strftime("%B %d, %Y at %I:%M %p"),
+        tracking_url: tracking_url
+      }
     )
   end
 
   def status_updated
-    @issue = params[:issue]
-    @user_name = @issue.reporter_name
-    @issue_number = @issue.issue_number
-    @issue_title = @issue.title
-    @old_status = @issue.previous_changes['status']&.first&.humanize || 'Unknown'
-    @new_status = @issue.status.humanize
-    @updated_at = @issue.updated_at.strftime("%B %d, %Y at %I:%M %p")
-    @tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
-    
-    # Get status-specific message
-    @status_message = get_status_message(@new_status)
-    
+    issue = params[:issue]
+    old_status = issue.previous_changes['status']&.first&.humanize || 'Unknown'
+    new_status = issue.status.humanize
+    tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
+
     mail(
-      to: @issue.reporter_email,
-      subject: "Issue #{@issue_number} Status Updated to #{@new_status} - Carbon Cube Kenya"
+      to: issue.reporter_email,
+      subject: "Issue #{issue.issue_number} Status Updated to #{new_status} - Carbon Cube Kenya",
+      react: {
+        user_name: issue.reporter_name,
+        issue_number: issue.issue_number,
+        issue_title: issue.title,
+        old_status: old_status,
+        new_status: new_status,
+        status_message: get_status_message(new_status),
+        updated_at: issue.updated_at.strftime("%B %d, %Y at %I:%M %p"),
+        tracking_url: tracking_url
+      }
     )
   end
 
   def comment_added
-    @comment = params[:comment]
-    @issue = @comment.issue
-    @user_name = @issue.reporter_name
-    @issue_number = @issue.issue_number
-    @issue_title = @issue.title
-    @comment_content = @comment.content
-    @commenter_name = @comment.author_name
-    @commenter_type = @comment.author_role
-    @commented_at = @comment.created_at.strftime("%B %d, %Y at %I:%M %p")
-    @tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
-    
+    comment = params[:comment]
+    issue = comment.issue
+    tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
+
     mail(
-      to: @issue.reporter_email,
-      subject: "New Comment Added to Issue #{@issue_number} - Carbon Cube Kenya"
+      to: issue.reporter_email,
+      subject: "New Comment Added to Issue #{issue.issue_number} - Carbon Cube Kenya",
+      react: {
+        user_name: issue.reporter_name,
+        issue_number: issue.issue_number,
+        issue_title: issue.title,
+        comment_content: comment.content,
+        commenter_name: comment.author_name,
+        commenter_type: comment.author_role,
+        commented_at: comment.created_at.strftime("%B %d, %Y at %I:%M %p"),
+        tracking_url: tracking_url
+      }
     )
   end
 
