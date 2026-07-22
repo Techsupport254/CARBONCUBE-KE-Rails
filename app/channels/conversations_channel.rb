@@ -171,6 +171,12 @@ class ConversationsChannel < ApplicationCable::Channel
     if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id && (!exclude_sender || conversation.inquirer_seller_id != current_user&.id)
       broadcast_with_retry("conversations_seller_#{conversation.inquirer_seller_id}", data)
     end
+    
+    # Broadcast to admin and sales user if assigned
+    if conversation.admin_id && (!exclude_sender || conversation.admin_id != current_user&.id)
+      broadcast_with_retry("conversations_admin_#{conversation.admin_id}", data)
+      broadcast_with_retry("conversations_sales_#{conversation.admin_id}", data)
+    end
   end
   
   def broadcast_with_retry(stream_name, data, max_retries: 2)

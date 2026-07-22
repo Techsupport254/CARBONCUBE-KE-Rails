@@ -144,6 +144,17 @@ class Message < ApplicationRecord
       )
     end
 
+    if conversation.admin_id
+      ActionCable.server.broadcast(
+        "conversations_admin_#{conversation.admin_id}",
+        broadcast_payload
+      )
+      ActionCable.server.broadcast(
+        "conversations_sales_#{conversation.admin_id}",
+        broadcast_payload
+      )
+    end
+
     # Update unread counts for all participants
     begin
       UpdateUnreadCountsJob.perform_now(conversation.id, id)
