@@ -15,9 +15,9 @@ class Buyer::AdsController < ApplicationController
     # Only use balanced distribution if explicitly requested AND no category filtering
     if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
       # Use shorter cache with randomization factor for home page balanced ads
-      cache_key = "balanced_ads_#{per_page}_#{Date.current.strftime('%Y%m%d%H%M')}"
+      cache_key = "balanced_ads_#{per_page}_#{Time.current.to_i / 900}"
       
-      result = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      result = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
         get_balanced_ads(per_page)
       end
       @ads = result[:ads]
@@ -54,13 +54,9 @@ class Buyer::AdsController < ApplicationController
       end
     end
 
-    # Calculate total count for pagination
+    # Calculate total count for pagination (skip for balanced mode — frontend doesn't use it)
     total_count = if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
-      # For balanced ads, we need to count all active ads
-      Ad.active.with_valid_images.joins(:seller)
-         .where(sellers: { blocked: false, deleted: false, flagged: false })
-         .where(flagged: false)
-         .count
+      nil
     else
       # For filtered ads, count with same filters
       ads_query = Ad.active.with_valid_images.joins(:seller)
@@ -2253,6 +2249,9 @@ class Buyer::AdsController < ApplicationController
     # Logging disabled to reduce console noise
     # Rails.logger.info "Fetching related ads for ad ID: #{ad.id}, category: #{ad.category_id}, subcategory: #{ad.subcategory_id}"
 
+    # Use the limit param from frontend, default to 10
+    limit_count = (params[:limit]&.to_i || 10).clamp(1, 20)
+
     # Fetch ads that share either the same category or subcategory
     # Apply the same filters as the main ads endpoint
     related_ads = Ad.active.with_valid_images
@@ -2272,8 +2271,7 @@ class Buyer::AdsController < ApplicationController
                     .includes(
                       :category,
                       :subcategory,
-                      :reviews,
-                      seller: { seller_tier: :tier }
+                      seller: { seller_tier: :tier, categories: [], seller_documents: :document_type }
                     )
                     .order(Arel.sql('CASE tiers.id
                               WHEN 4 THEN 1
@@ -2282,7 +2280,7 @@ class Buyer::AdsController < ApplicationController
                               WHEN 1 THEN 4
                               ELSE 5
                             END ASC, RANDOM()'))
-                    .limit(50) # Limit to 50 related ads for performance
+                    .limit(limit_count)
     
     # Final validation: ensure no related ad has the same ID as the current ad
     filtered_related_ads = related_ads.reject { |related_ad| related_ad.id == ad.id }
@@ -2398,7 +2396,7 @@ class Buyer::AdsController < ApplicationController
         seller_auth = SellerAuthorizeApiRequest.new(request.headers)
         @current_user = seller_auth.result
       rescue ExceptionHandler::InvalidToken => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Seller authentication failed: #{e.message}"
+        # silently fall through
       rescue => e
         Rails.logger.debug "Buyer::AdsController#alternatives: Seller auth error: #{e.class.name}: #{e.message}"
       end
@@ -2410,7 +2408,7 @@ class Buyer::AdsController < ApplicationController
         admin_auth = AdminAuthorizeApiRequest.new(request.headers)
         @current_user = admin_auth.result
       rescue ExceptionHandler::InvalidToken => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Admin authentication failed: #{e.message}"
+        # silently fall through
       rescue => e
         Rails.logger.debug "Buyer::AdsController#alternatives: Admin auth error: #{e.class.name}: #{e.message}"
       end
@@ -2424,7 +2422,7 @@ class Buyer::AdsController < ApplicationController
         sales_auth = SalesAuthorizeApiRequest.new(request.headers)
         @current_user = sales_auth.result
       rescue ExceptionHandler::InvalidToken => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Sales authentication failed: #{e.message}"
+        # silently fall through
       rescue => e
         Rails.logger.debug "Buyer::AdsController#alternatives: Sales auth error: #{e.class.name}: #{e.message}"
       end
@@ -2438,7 +2436,7 @@ class Buyer::AdsController < ApplicationController
         marketing_auth = MarketingAuthorizeApiRequest.new(request.headers)
         @current_user = marketing_auth.result
       rescue ExceptionHandler::InvalidToken => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Marketing authentication failed: #{e.message}"
+        # silently fall through
       rescue => e
         Rails.logger.debug "Buyer::AdsController#alternatives: Marketing auth error: #{e.class.name}: #{e.message}"
       end
@@ -2676,7 +2674,7 @@ class Buyer::AdsController < ApplicationController
   end
 
   def get_balanced_ads(per_page)
-    # OPTIMIZATION: Get subcategory counts first (this is relatively fast)
+    # Get subcategory counts first (fast grouped count)
     subcategory_counts = Ad.active
       .joins(:seller)
       .where(sellers: { blocked: false, deleted: false, flagged: false })
@@ -2684,29 +2682,45 @@ class Buyer::AdsController < ApplicationController
       .where("ads.media IS NOT NULL AND ads.media != '' AND ads.media::text != '[]' AND (ads.media::jsonb -> 0) IS NOT NULL")
       .group('ads.subcategory_id')
       .count('ads.id')
-    
+
     subcategory_ids = subcategory_counts.keys.compact
     return { ads: [], subcategory_counts: subcategory_counts } if subcategory_ids.empty?
-    
-    # OPTIMIZATION: Use a much simpler query without CTE/window functions
-    # Get ads grouped by subcategory and ordered by priority, then take top N per group
+
+    ads_per_subcategory = 6
+    subcategory_list = subcategory_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')
+
     sql = <<-SQL
-        SELECT 
+      WITH ranked_ads AS (
+        SELECT
           ads.id,
           ads.title,
           ads.price,
           ads.media,
+          ads.media::jsonb ->> 0 AS first_media_url,
           ads.created_at,
           ads.subcategory_id,
           ads.category_id,
           ads.seller_id,
-          sellers.fullname as seller_name,
-          categories.name as category_name,
-          subcategories.name as subcategory_name,
-          COALESCE(tiers.id, 1) as seller_tier_id,
-          COALESCE(tiers.name, 'Free') as seller_tier_name,
-          COALESCE(review_stats.reviews_count, 0) as reviews_count,
-        COALESCE(review_stats.average_rating, 0.0) as average_rating
+          sellers.fullname AS seller_name,
+          categories.name AS category_name,
+          subcategories.name AS subcategory_name,
+          COALESCE(tiers.id, 1) AS seller_tier_id,
+          COALESCE(tiers.name, 'Free') AS seller_tier_name,
+          COALESCE(review_stats.reviews_count, 0) AS reviews_count,
+          COALESCE(review_stats.average_rating, 0.0) AS average_rating,
+          ROW_NUMBER() OVER (
+            PARTITION BY ads.subcategory_id
+            ORDER BY
+              CASE COALESCE(tiers.id, 1)
+                WHEN 4 THEN 1
+                WHEN 3 THEN 2
+                WHEN 2 THEN 3
+                WHEN 1 THEN 4
+                ELSE 5
+              END,
+              RANDOM(),
+              ads.created_at DESC
+          ) AS rn
         FROM ads
         INNER JOIN sellers ON sellers.id = ads.seller_id
         INNER JOIN categories ON categories.id = ads.category_id
@@ -2714,10 +2728,10 @@ class Buyer::AdsController < ApplicationController
         LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
         LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
         LEFT JOIN (
-          SELECT 
+          SELECT
             ad_id,
-            COUNT(*) as reviews_count,
-            COALESCE(AVG(rating), 0.0) as average_rating
+            COUNT(*) AS reviews_count,
+            COALESCE(AVG(rating), 0.0) AS average_rating
           FROM reviews
           GROUP BY ad_id
         ) review_stats ON review_stats.ad_id = ads.id
@@ -2730,38 +2744,15 @@ class Buyer::AdsController < ApplicationController
           AND sellers.deleted = false
           AND sellers.flagged = false
           AND ads.flagged = false
-          AND ads.subcategory_id IN (#{subcategory_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')})
-      ORDER BY
-        ads.subcategory_id,
-        CASE COALESCE(tiers.id, 1)
-          WHEN 4 THEN 1
-          WHEN 3 THEN 2
-          WHEN 2 THEN 3
-          WHEN 1 THEN 4
-          ELSE 5
-        END,
-        RANDOM(), -- Add variety within tiers
-        ads.created_at DESC
+          AND ads.subcategory_id IN (#{subcategory_list})
+      )
+      SELECT * FROM ranked_ads WHERE rn <= #{ads_per_subcategory}
     SQL
 
     results = ActiveRecord::Base.connection.execute(sql)
 
-    # OPTIMIZATION: Process results more efficiently in Ruby
-    # Group by subcategory and take only top 6 per subcategory
-    ads_by_subcategory = {}
-    results.each do |row|
-      subcategory_id = row['subcategory_id']
-      ads_by_subcategory[subcategory_id] ||= []
-      # Only keep top 6 per subcategory
-      ads_by_subcategory[subcategory_id] << row if ads_by_subcategory[subcategory_id].size < 6
-    end
-
-    # Flatten back to single array
-    results = ads_by_subcategory.values.flatten
-    
-    # Get ad IDs for fetching offer info and processing media
     ad_ids = results.map { |row| row['id'] }
-    
+
     # Fetch offer info for all ads in one query
     offer_info_map = {}
     if ad_ids.any?
@@ -2771,12 +2762,11 @@ class Buyer::AdsController < ApplicationController
                              .where('offers.end_time >= ?', Time.current)
                              .includes(:offer)
                              .group_by(&:ad_id)
-      
+
       active_offers.each do |ad_id, offer_ads|
-        # Get the first active offer (ordered by start_time)
         offer_ad = offer_ads.min_by { |oa| oa.offer.start_time || Time.current }
         offer = offer_ad.offer
-        
+
         offer_info_map[ad_id] = {
           active: offer.status == 'active',
           scheduled: offer.status == 'scheduled',
@@ -2798,58 +2788,24 @@ class Buyer::AdsController < ApplicationController
         }
       end
     end
-    
-    # OPTIMIZATION: Process media URLs more efficiently
+
+    # Build response using SQL-extracted first_media_url — skip Ruby JSON parsing
     balanced_ads = results.map do |row|
       ad_id = row['id']
-      media_json = row['media']
-      
-      # OPTIMIZED: Extract first media URL directly from JSONB in database
-      # This avoids expensive JSON parsing in Ruby for most cases
+      first_media_url = row['first_media_url']
+
       media_urls = []
-      first_media_url = nil
-      
-      if media_json.present?
-        begin
-          # Quick check for array format and extract first valid URL
-          if media_json.is_a?(String)
-            # Handle empty arrays
-            if media_json.strip == '[]' || media_json.strip == 'null' || media_json.strip == ''
-              media_array = []
-            else
-              media_array = JSON.parse(media_json)
-            end
-          else
-            media_array = media_json
-          end
-          
-          if media_array.is_a?(Array) && media_array.any?
-            # OPTIMIZATION: Only process the first URL for performance
-            first_valid_url = media_array.find do |url|
-              url.present? && 
-              url.is_a?(String) && 
-              url.strip.length > 0 &&
-              (url.start_with?('http://') || url.start_with?('https://'))
-            end
-            first_media_url = first_valid_url
-            media_urls = first_valid_url ? [first_valid_url] : []
-          end
-        rescue JSON::ParserError
-          # Fallback for malformed JSON
-          if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
-            first_media_url = media_json
-            media_urls = [media_json]
-          end
-        end
+      if first_media_url.present? && (first_media_url.start_with?('http://') || first_media_url.start_with?('https://'))
+        media_urls = [first_media_url]
       end
-      
+
       {
         id: ad_id,
         title: row['title'],
         price: row['price']&.to_f,
-        media: media_json,
+        media: row['media'],
         media_urls: media_urls,
-        first_media_url: first_media_url,
+        first_media_url: (media_urls.any? ? first_media_url : nil),
         created_at: row['created_at']&.iso8601,
         subcategory_id: row['subcategory_id'],
         category_id: row['category_id'],
@@ -2861,12 +2817,12 @@ class Buyer::AdsController < ApplicationController
         seller_tier_name: row['seller_tier_name'],
         reviews_count: row['reviews_count']&.to_i || 0,
         average_rating: row['average_rating']&.to_f || 0.0,
-        rating: row['average_rating']&.to_f || 0.0, # Alias for AdCard compatibility
-        mean_rating: row['average_rating']&.to_f || 0.0, # Alias for AdCard compatibility
+        rating: row['average_rating']&.to_f || 0.0,
+        mean_rating: row['average_rating']&.to_f || 0.0,
         flash_sale_info: offer_info_map[ad_id]
       }
     end
-    
+
     {
       ads: balanced_ads,
       subcategory_counts: subcategory_counts

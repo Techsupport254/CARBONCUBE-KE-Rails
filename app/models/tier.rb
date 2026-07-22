@@ -1,4 +1,6 @@
 class Tier < ApplicationRecord
+  self.primary_key = 'id'
+  
   has_many :tier_features, dependent: :destroy
   has_many :tier_pricings, dependent: :destroy
   has_many :seller_tiers
