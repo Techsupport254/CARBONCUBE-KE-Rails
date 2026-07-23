@@ -7,7 +7,7 @@ require 'json'
 class WhatsAppCloudService
   GRAPH_URL = 'https://graph.facebook.com/v22.0'
 
-  def self.send_message(to, body)
+  def self.send_message(to, body, sender: nil, conversation: nil)
     phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
     access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
 
@@ -44,8 +44,25 @@ class WhatsAppCloudService
       result = JSON.parse(response.body)
 
       if response.code.to_i == 200
-        Rails.logger.info "[WhatsAppCloudService] Message sent to #{formatted_to}: #{result['messages']&.first&.[]('id')}"
-        { success: true, message_id: result['messages']&.first&.[]('id') }
+        message_id = result['messages']&.first&.[]('id')
+        Rails.logger.info "[WhatsAppCloudService] Message sent to #{formatted_to}: #{message_id}"
+        
+        # Store message in database if sender and conversation provided
+        if sender && conversation
+          begin
+            message = conversation.messages.create!(
+              content: body,
+              sender: sender,
+              whatsapp_message_id: message_id,
+              status: Message::STATUS_SENT
+            )
+            Rails.logger.info "[WhatsAppCloudService] Message stored in database: #{message.id}"
+          rescue => e
+            Rails.logger.error "[WhatsAppCloudService] Failed to store message in database: #{e.message}"
+          end
+        end
+        
+        { success: true, message_id: message_id }
       else
         { success: false, error: result['error']&.[]('message') || 'Unknown error' }
       end
