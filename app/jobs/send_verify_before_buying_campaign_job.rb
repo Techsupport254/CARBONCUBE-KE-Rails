@@ -39,7 +39,7 @@ class SendVerifyBeforeBuyingCampaignJob < ApplicationJob
       end
     end
 
-    unless dry_run
+    if channels[:in_app] && !dry_run
       send_in_app_message(user, user_type)
     end
   end
@@ -69,27 +69,27 @@ class SendVerifyBeforeBuyingCampaignJob < ApplicationJob
     return unless system_admin
 
     body_text = <<~TEXT
-      *Verify Before You Buy*
+      **Verify Before You Buy**
 
       Hello,
 
       Before purchasing a product, ask the seller any questions you may have. _Confirm the product details, price, and condition_ to help you make an informed decision.
 
-      ⚠️ *Important:* Avoid making full payment before receiving or inspecting the product unless you trust the seller.
+      ⚠️ **Important:** Avoid making full payment before receiving or inspecting the product unless you trust the seller.
 
-      *Shop smart and make informed decisions.*
+      **Shop smart and make informed decisions.**
 
       Regards,
-      *Carbon Cube Kenya*
+      **Carbon Cube Kenya**
     TEXT
 
     if template_name == 'verify_before_buying_sellers_v1'
-      body_text += "\n\n*Buttons:*\n"
-      body_text += "1. *Your Dashboard*: https://carboncube-ke.com/seller/dashboard?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=verify_before_buying&utm_content=seller_dashboard\n"
-      body_text += "2. *Manage Your Ads*: https://carboncube-ke.com/seller/ads?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=verify_before_buying&utm_content=seller_ads"
+      body_text += "\n\n**Quick Links:**\n"
+      body_text += "• [Your Dashboard](https://carboncube-ke.com/seller/dashboard?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=verify_before_buying&utm_content=seller_dashboard)\n"
+      body_text += "• [Manage Your Ads](https://carboncube-ke.com/seller/ads?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=verify_before_buying&utm_content=seller_ads)"
     else
-      body_text += "\n\n*Buttons:*\n"
-      body_text += "1. *Browse Products*: https://carboncube-ke.com/?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=verify_before_buying&utm_content=home"
+      body_text += "\n\n**Quick Links:**\n"
+      body_text += "• [Browse Products](https://carboncube-ke.com/?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=verify_before_buying&utm_content=home)"
     end
 
     message = conversation.messages.build(
