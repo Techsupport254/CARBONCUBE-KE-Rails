@@ -283,28 +283,27 @@ class WhatsAppCloudService
     # Extract content and media URLs
     content, media_urls = extract_message_content(msg_data)
     
-    # Check if this is a seller using product creation commands
-    if user.is_a?(Seller)
-      product_creation_result = WhatsappProductCreationService.process_message(
-        user,
-        local_number,
-        content,
-        media_urls
-      )
-      
-      if product_creation_result.is_a?(Hash) && product_creation_result[:should_respond]
-        send_message(from_number, product_creation_result[:response])
-        Rails.logger.info "[WhatsAppCloudService] Sent product creation response to seller #{user.id}"
-        
-        # Handle interactive category selection trigger
-        if product_creation_result[:trigger_category_selection]
-          category_result = WhatsappProductCreationService.send_category_selection(from_number)
-          Rails.logger.info "[WhatsAppCloudService] Category selection triggered: #{category_result}"
-        end
-        
-        return
-      end
-    end
+    # Product creation logic disabled - not complete yet
+    # # Check if this is a seller using product creation commands
+    # if user.is_a?(Seller)
+    #   product_creation_result = WhatsappProductCreationService.process_message(
+    #     user,
+    #     local_number,
+    #     content,
+    #     media_urls
+    #   )
+    #   
+    #   if product_creation_result.is_a?(Hash) && product_creation_result[:should_respond]
+    #     send_message(from_number, product_creation_result[:response])
+    #     Rails.logger.info "[WhatsAppCloudService] Sent product creation response to seller #{user.id}"
+    #     
+    #     # Handle interactive category selection trigger
+    #     if product_creation_result[:trigger_category_selection]
+    #       category_result = WhatsappProductCreationService.send_category_selection(from_number)
+    #       Rails.logger.info "[WhatsAppCloudService] Category selection triggered: #{category_result}"
+    #     end
+    #   end
+    # end
 
     # Find or create a conversation
     # For now, we'll try to find the most recent conversation for this user
