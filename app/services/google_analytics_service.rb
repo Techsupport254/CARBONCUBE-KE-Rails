@@ -7,6 +7,9 @@ class GoogleAnalyticsService
   def initialize
     @service = Google::Apis::AnalyticsdataV1beta::AnalyticsDataService.new
     @service.authorization = authorize
+    # Disable verbose Google API client logging
+    @service.logger.level = Logger::WARN if @service.logger
+    Google::Apis.logger.level = Logger::WARN if Google::Apis.logger
   end
 
   def sources_report(start_date: '2024-10-07', end_date: 'today')
