@@ -1,5 +1,5 @@
 class CallSummaryMailer < ApplicationMailer
-  default from: "Carbon Cube Support <#{ENV['BREVO_EMAIL']}>"
+  default from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>"
   layout false
 
   def call_summary_email

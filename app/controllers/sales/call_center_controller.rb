@@ -28,8 +28,8 @@ module Sales
     private :authenticate_user
 
     before_action :authenticate_user
-    skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue], raise: false
-    skip_before_action :authenticate_user, only: [:populate_queue]
+    skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue, :rating, :submit_rating, :generate_summary], raise: false
+    skip_before_action :authenticate_user, only: [:populate_queue, :rating, :submit_rating]
 
     # GET /sales/call_center/kpis
     def kpis

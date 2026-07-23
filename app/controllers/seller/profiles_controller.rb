@@ -2,6 +2,7 @@ require 'fileutils'
 
 class Seller::ProfilesController < ApplicationController
   before_action :authenticate_seller
+  skip_before_action :authenticate_seller, only: [:pending_registration, :complete_onboarding]
   before_action :set_seller, only: [:show, :update]
 
   # GET /seller/profile
@@ -282,17 +283,23 @@ class Seller::ProfilesController < ApplicationController
   def complete_onboarding
     # This endpoint is for direct seller signup (seller already exists)
     # For buyer-to-seller conversion, use /buyer/onboarding/complete
+    auth_header = request.headers['Authorization']
+    token_val = auth_header.split(' ').last if auth_header.present? && auth_header.start_with?('Bearer ')
+
+    if token_val.present? && token_val.include?('.')
+      # JWT token provided, manually authenticate seller
+      authenticate_seller
+      return if performed?
+    end
+
     seller = current_seller
 
     # Check if there is a pending registration token in the Authorization header
     if seller.nil?
-      auth_header = request.headers['Authorization']
-      if auth_header.present? && auth_header.start_with?('Bearer ')
-        token_val = auth_header.split(' ').last
+      if token_val.present? && !token_val.include?('.')
         # A pending token is a 64-character hex string without dots (unlike JWT which has dots)
-        if token_val.present? && !token_val.include?('.')
-          cache_key = "pending_google_registration_#{token_val}"
-          cached_data = Rails.cache.read(cache_key)
+        cache_key = "pending_google_registration_#{token_val}"
+        cached_data = Rails.cache.read(cache_key)
           
           if cached_data.present? && cached_data.is_a?(Hash) && cached_data[:role].to_s.casecmp?("seller")
             cached_data = cached_data.with_indifferent_access
@@ -329,7 +336,6 @@ class Seller::ProfilesController < ApplicationController
           end
         end
       end
-    end
     
     unless seller
       return render json: { error: 'Unauthorized' }, status: :unauthorized

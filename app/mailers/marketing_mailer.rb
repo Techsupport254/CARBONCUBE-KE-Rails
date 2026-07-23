@@ -37,7 +37,7 @@ class MarketingMailer < ApplicationMailer
     mail(
       to: seller.email,
       subject: "Your shop performance update",
-      from: "Carbon Cube Team <#{ENV['BREVO_EMAIL']}>",
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
       react: {
         fullname: fullname,
         enterprise_name: enterprise_name,

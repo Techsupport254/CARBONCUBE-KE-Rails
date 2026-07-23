@@ -39,6 +39,11 @@ class PresenceChannel < ApplicationCable::Channel
         user_type = @user_type || get_user_type_from_connection
         user_id = @user_id || connection.current_user.id
         
+        # Update the user's last_active_at timestamp before going offline
+        if connection.current_user.respond_to?(:last_active_at)
+          connection.current_user.update_column(:last_active_at, Time.current)
+        end
+
         # Track this user as offline
         track_user_online(false)
         
@@ -238,6 +243,7 @@ class PresenceChannel < ApplicationCable::Channel
           user_type: user_type,
           user_id: user_id,
           online: online,
+          last_seen_at: connection.current_user&.respond_to?(:last_active_at) ? connection.current_user.last_active_at : nil,
           timestamp: Time.current.iso8601
         }
       )
@@ -260,7 +266,8 @@ class PresenceChannel < ApplicationCable::Channel
         type: 'online_status',
         user_id: user_id,
         user_type: user_type,
-        online: online
+        online: online,
+        last_seen_at: connection.current_user&.respond_to?(:last_active_at) ? connection.current_user.last_active_at : nil
       })
     end
   end

@@ -32,8 +32,7 @@ class ProcessWebsocketMessageJob < ApplicationJob
     
     return unless message
     
-    # Broadcast to conversation participants
-    broadcast_message_to_participants(conversation, message, sender_session)
+    # Message broadcast is handled by Message#after_create :broadcast_new_message callback
     
     # Update conversation last activity
     update_conversation_activity(conversation)

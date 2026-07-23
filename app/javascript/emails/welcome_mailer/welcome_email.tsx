@@ -41,6 +41,20 @@ export default function WelcomeEmail({
           Your {isSeller ? "seller" : "buyer"} account is ready. You can now {isSeller ? "list products and start selling to buyers across Kenya" : "browse products and connect with sellers across Kenya"}.
         </Text>
 
+        {isSeller && (
+          <Section style={{ margin: "16px 0", padding: "16px", backgroundColor: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+            <Text style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 600, color: "#334155" }}>
+              Need Help Uploading Products?
+            </Text>
+            <Text style={{ margin: "0 0 12px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+              We understand you might be busy. You can easily send your product pictures, prices, and details to us via WhatsApp, and our dedicated support team will upload them for you!
+            </Text>
+            <Button href={`https://wa.me/254712990524`} style={{ backgroundColor: "#25D366", color: "#ffffff", padding: "10px 16px", borderRadius: "6px", fontSize: "14px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
+              Message Support on WhatsApp
+            </Button>
+          </Section>
+        )}
+
         <Section style={{ margin: "14px 0" }}>
           <Button href={dashboardUrl}>
             Go to Dashboard

@@ -182,6 +182,15 @@ class AuthenticationController < ApplicationController
         user_response[:secondary_phone_number] = @user.secondary_phone_number
       end
 
+      # Include onboarding fields for sellers so the frontend can check completion
+      if role == 'Seller'
+        user_response[:location] = @user.location if @user.respond_to?(:location)
+        user_response[:county_id] = @user.county_id if @user.respond_to?(:county_id)
+        user_response[:sub_county_id] = @user.sub_county_id if @user.respond_to?(:sub_county_id)
+        user_response[:description] = @user.description if @user.respond_to?(:description)
+        user_response[:ads_count] = @user.ads.count if @user.respond_to?(:ads)
+      end
+
       # Update last active timestamp for sellers and buyers
       if @user.respond_to?(:update_last_active!)
         @user.update_last_active!
@@ -864,7 +873,7 @@ class AuthenticationController < ApplicationController
           phone_number: result[:phone_number],
           given_name: result[:given_name],
           family_name: result[:family_name],
-          picture: result[:picture]
+          profile_picture: result[:picture]
         }
 
         # For development: use URL token transmission (cookies don't work across ports)
