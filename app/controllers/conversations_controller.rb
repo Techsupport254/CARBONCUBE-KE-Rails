@@ -91,7 +91,25 @@ class ConversationsController < ApplicationController
       # Check if user is online using Rails cache
       cache_key = "online_user_#{user_type}_#{user_id}"
       is_online = Rails.cache.exist?(cache_key)
-      online_status[participant_id] = is_online
+      
+      # Get last_seen_at if offline
+      last_seen_at = nil
+      unless is_online
+        user_model = case user_type
+        when 'buyer' then Buyer
+        when 'seller' then Seller
+        when 'admin' then Admin
+        when 'sales' then SalesUser
+        end
+        
+        user = user_model&.find_by(id: user_id)
+        last_seen_at = user.last_active_at if user&.respond_to?(:last_active_at)
+      end
+      
+      online_status[participant_id] = {
+        is_online: is_online,
+        last_seen_at: last_seen_at
+      }
     end
     
     render json: { online_status: online_status }, status: :ok

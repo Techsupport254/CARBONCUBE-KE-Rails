@@ -9,7 +9,10 @@ class ConversationsChannel < ApplicationCable::Channel
       
       # Broadcast offline status
       user = connection.current_user || find_user_from_params
-      broadcast_presence_update('offline', user) if user
+      if user
+        user.update_column(:last_active_at, Time.current) if user.respond_to?(:last_active_at)
+        broadcast_presence_update('offline', user)
+      end
       
       # Clean up connection tracking
       if user
@@ -208,6 +211,7 @@ class ConversationsChannel < ApplicationCable::Channel
           user_id: user.id,
           user_type: get_user_type(user),
           status: status,
+          last_seen_at: user.try(:last_active_at),
           timestamp: Time.current.iso8601
         },
         exclude_sender: true,

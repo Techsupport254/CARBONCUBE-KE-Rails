@@ -129,7 +129,7 @@ class SellerCommunicationsMailer < ApplicationMailer
 
     mail(
       to: seller.email,
-      from: "Victor from Carbon Cube <#{ENV['BREVO_EMAIL']}>",
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
       subject: subject_text,
       react: {
         fullname: fullname,

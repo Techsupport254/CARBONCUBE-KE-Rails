@@ -773,6 +773,9 @@ Rails.application.routes.draw do
     get 'call_center/rating/:token', to: 'call_center#rating'
     post 'call_center/rating/:token', to: 'call_center#submit_rating'
 
+    # Temporary test endpoint
+    get 'call_center/test_websockets', to: 'call_center#test_websockets'
+
     # AI summary generation
     post 'ai/generate_summary', to: 'call_center#generate_summary'
 
