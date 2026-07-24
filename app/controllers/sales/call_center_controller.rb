@@ -28,7 +28,7 @@ module Sales
     private :authenticate_user
 
     before_action :authenticate_user
-    skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue, :rating, :submit_rating, :generate_summary], raise: false
+    skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue, :rating, :submit_rating, :generate_summary, :update_log, :delete_log], raise: false
     skip_before_action :authenticate_user, only: [:populate_queue, :rating, :submit_rating]
 
     # GET /sales/call_center/kpis
@@ -140,7 +140,7 @@ module Sales
       render json: { error: e.message }, status: :internal_server_error
     end
 
-    # PUT /sales/call_center/:id/update_log
+    # PATCH /sales/call_center/:id/update_log
     def update_log
       return render json: { error: 'Unauthorized' }, status: :unauthorized unless current_user
 

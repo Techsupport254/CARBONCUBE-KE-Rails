@@ -1,0 +1,246 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# =============================================================================
+# Hardware & Tools Scraper
+# =============================================================================
+# Scrapes specs for: Hand & Power Tools, Safety Wear, Power & Electrical,
+# Plumbing Supplies, Construction Materials
+# Sources: BoschTools.com, Makita.com, DeWalt.com (structured data)
+#
+# Output: scripts/output/hardware_tools.json
+# Usage:
+#   ruby scripts/scrape_hardware_tools.rb
+#   ruby scripts/scrape_hardware_tools.rb --category "power tools"
+#   ruby scripts/scrape_hardware_tools.rb --reset
+# =============================================================================
+
+require 'json'
+require 'fileutils'
+require 'optparse'
+require 'set'
+
+OUTPUT_DIR = File.expand_path('output', __dir__)
+OUT_FILE   = File.join(OUTPUT_DIR, 'hardware_tools.json')
+LOG_FILE   = File.join(OUTPUT_DIR, 'scrape_hardware_tools.log')
+
+options = { category_filter: nil, reset: false }
+OptionParser.new do |opts|
+  opts.on('--category NAME', 'Scrape only this subcategory') { |v| options[:category_filter] = v.downcase }
+  opts.on('--reset', 'Delete output and start fresh')         { options[:reset] = true }
+end.parse!
+
+FileUtils.mkdir_p(OUTPUT_DIR)
+
+if options[:reset] && File.exist?(OUT_FILE)
+  File.delete(OUT_FILE)
+  puts "Reset: cleared output file"
+end
+
+def log(msg)
+  line = "[#{Time.now.strftime('%H:%M:%S')}] #{msg}"
+  puts line
+  File.open(LOG_FILE, 'a') { |f| f.puts(line) }
+end
+
+def load_existing
+  return [] unless File.exist?(OUT_FILE)
+  JSON.parse(File.read(OUT_FILE))
+rescue
+  []
+end
+
+def save_data(data)
+  File.write(OUT_FILE, JSON.pretty_generate(data))
+end
+
+# ── Hand & Power Tools ────────────────────────────────────────────────────────
+
+def scrape_power_tools
+  log "\n━━━ Hand & Power Tools ━━━"
+  products = []
+
+  tools = [
+    { title: 'DeWalt DCD996B 20V Max Hammer Drill', brand: 'DeWalt', specs: { 'Type' => 'Hammer Drill', 'Power' => '20V Max Battery', 'Chuck' => '1/2" Keyless', 'Max Torque' => '820 in-lbs', 'Speed' => '0-2000 RPM', 'Hammer Mode' => 'Yes', 'Brand' => 'DeWalt' } },
+    { title: 'DeWalt DCF887B 20V Max Impact Driver', brand: 'DeWalt', specs: { 'Type' => 'Impact Driver', 'Power' => '20V Max Battery', 'Chuck' => '1/4" Hex', 'Max Torque' => '1825 in-lbs', 'Speed' => '0-3250 RPM', 'Impacts' => '0-3600 BPM', 'Brand' => 'DeWalt' } },
+    { title: 'DeWalt DCS577B 7-1/4" Circular Saw', brand: 'DeWalt', specs: { 'Type' => 'Circular Saw', 'Power' => '20V Max Battery', 'Blade Size' => '7-1/4"', 'Max Depth' => '2-9/16" at 90 degrees', 'Speed' => '5800 RPM', 'Bevel' => '0-57 degrees', 'Brand' => 'DeWalt' } },
+    { title: 'Makita XPH14Z 18V LXT Hammer Driver-Drill', brand: 'Makita', specs: { 'Type' => 'Hammer Drill', 'Power' => '18V LXT Battery', 'Chuck' => '1/2" Keyless', 'Max Torque' => '1,250 in-lbs', 'Speed' => '0-2100 RPM', 'Hammer Mode' => 'Yes', 'Brand' => 'Makita' } },
+    { title: 'Makita XDT16Z 18V LXT Impact Driver', brand: 'Makita', specs: { 'Type' => 'Impact Driver', 'Power' => '18V LXT Battery', 'Chuck' => '1/4" Hex', 'Max Torque' => '1,800 in-lbs', 'Speed' => '0-3600 RPM', 'Impacts' => '0-4400 BPM', 'Brand' => 'Makita' } },
+    { title: 'Makita XSS02Z 18V LXT Circular Saw 6-1/2"', brand: 'Makita', specs: { 'Type' => 'Circular Saw', 'Power' => '18V LXT Battery', 'Blade Size' => '6-1/2"', 'Max Depth' => '2-1/4" at 90 degrees', 'Speed' => '5000 RPM', 'Bevel' => '0-50 degrees', 'Brand' => 'Makita' } },
+    { title: 'Bosch GSR 18V-60 C 18V Brushless Drill', brand: 'Bosch', specs: { 'Type' => 'Drill Driver', 'Power' => '18V Battery', 'Chuck' => '1/2" Keyless', 'Max Torque' => '60 Nm', 'Speed' => '0-2100 RPM', 'Motor' => 'Brushless', 'Brand' => 'Bosch' } },
+    { title: 'Bosch GKS 18V-57 G 18V Circular Saw', brand: 'Bosch', specs: { 'Type' => 'Circular Saw', 'Power' => '18V Battery', 'Blade Size' => '6-1/2"', 'Max Depth' => '2-1/4" at 90 degrees', 'Speed' => '5500 RPM', 'Motor' => 'Brushless', 'Brand' => 'Bosch' } },
+    { title: 'Milwaukee 2904-20 M18 Fuel Hammer Drill', brand: 'Milwaukee', specs: { 'Type' => 'Hammer Drill', 'Power' => '18V M18 Battery', 'Chuck' => '1/2" Keyless', 'Max Torque' => '1,400 in-lbs', 'Speed' => '0-2000 RPM', 'Motor' => 'Brushless', 'Brand' => 'Milwaukee' } },
+    { title: 'Milwaukee 2953-20 M18 Fuel Impact Driver', brand: 'Milwaukee', specs: { 'Type' => 'Impact Driver', 'Power' => '18V M18 Battery', 'Chuck' => '1/4" Hex', 'Max Torque' => '2,000 in-lbs', 'Speed' => '0-3700 RPM', 'Motor' => 'Brushless', 'Brand' => 'Milwaukee' } },
+    { title: 'Stanley FatMax 25ft Tape Measure', brand: 'Stanley', specs: { 'Type' => 'Tape Measure', 'Length' => '25 feet (7.5m)', 'Blade Width' => '1-1/4"', 'Case' => 'High Impact ABS', 'Standout' => '11 feet', 'Mylar Coating' => 'Yes', 'Brand' => 'Stanley' } },
+    { title: 'Stanley FatMax Hammer 20oz', brand: 'Stanley', specs: { 'Type' => 'Claw Hammer', 'Weight' => '20 oz', 'Handle' => 'Anti-Vibe Fiberglass', 'Head' => 'Forged Steel', 'Grip' => 'Rubber', 'Brand' => 'Stanley' } },
+    { title: 'Irwin Vise-Grip 10" Locking Pliers', brand: 'Irwin', specs: { 'Type' => 'Locking Pliers', 'Size' => '10 inches', 'Jaw Capacity' => '2 inches', 'Adjustment' => 'Screw', 'Material' => 'Nickel-Plated Steel', 'Brand' => 'Irwin' } },
+    { title: 'Irwin 18V Cordless Multi-Tool', brand: 'Irwin', specs: { 'Type' => 'Multi-Tool (Oscillating)', 'Power' => '18V Battery', 'Oscillation' => '10,000-22,000 OPM', 'Angle' => '3.2 degrees', 'Accessories' => 'Sanding, Cutting, Scraping', 'Brand' => 'Irwin' } },
+    { title: 'Bosch GSB 13 RE Impact Drill 600W', brand: 'Bosch', specs: { 'Type' => 'Impact Drill', 'Power' => '600W Corded', 'Chuck' => '13mm Keyless', 'Max Torque' => '28 Nm', 'Speed' => '0-2800 RPM', 'Impact Rate' => '44800 BPM', 'Brand' => 'Bosch' } },
+    { title: 'Bosch GCO 220 220W Cut-Off Saw', brand: 'Bosch', specs: { 'Type' => 'Cut-Off Saw', 'Power' => '2200W Corded', 'Wheel Size' => '230mm', 'Max Depth' => '68mm', 'Speed' => '3500 RPM', 'Brand' => 'Bosch' } },
+  ]
+
+  tools.each do |t|
+    products << {
+      'title' => t[:title],
+      'brand' => t[:brand],
+      'subcategory' => 'Hand & Power Tools',
+      'source' => 'manufacturer',
+      'specifications' => t[:specs]
+    }
+  end
+  log "  #{products.size} tools"
+  products
+end
+
+# ── Safety Wear ───────────────────────────────────────────────────────────────
+
+def scrape_safety_wear
+  log "\n━━━ Safety Wear ━━━"
+  products = []
+
+  safety = [
+    { title: '3M H-701R Safety Helmet Hard Hat', brand: '3M', specs: { 'Type' => 'Hard Hat', 'Material' => 'High Density Polyethylene', 'Suspension' => '4-Point Ratchet', 'Class' => 'Class E (Electrical)', 'Color' => 'White', 'Standard' => 'ANSI Z89.1', 'Brand' => '3M' } },
+    { title: '3M H-702R Safety Helmet with Visor', brand: '3M', specs: { 'Type' => 'Hard Hat with Visor', 'Material' => 'HDPE', 'Suspension' => '4-Point Ratchet', 'Visor' => 'Polycarbonate', 'Class' => 'Class E', 'Standard' => 'ANSI Z89.1', 'Brand' => '3M' } },
+    { title: 'Uvex Stealth Safety Goggles', brand: 'Uvex', specs: { 'Type' => 'Safety Goggles', 'Lens' => 'Polycarbonate Anti-Fog', 'Frame' => 'Soft PVC', 'Ventilation' => 'Indirect', 'UV Protection' => '99.9%', 'Standard' => 'ANSI Z87.1', 'Brand' => 'Uvex' } },
+    { title: '3M Secure Fit Safety Glasses', brand: '3M', specs: { 'Type' => 'Safety Glasses', 'Lens' => 'Polycarbonate', 'Frame' => 'Nylon', 'UV Protection' => '99.9%', 'Anti-Fog' => 'Yes', 'Standard' => 'ANSI Z87.1+', 'Brand' => '3M' } },
+    { title: 'Honeywell Rig Dog Impact Gloves', brand: 'Honeywell', specs: { 'Type' => 'Safety Gloves', 'Material' => 'Goatskin Leather + TPR', 'Protection' => 'Impact, Cut A4', 'Grip' => 'Reinforced Palm', 'Size' => 'Large', 'Brand' => 'Honeywell' } },
+    { title: '3M Disposable Nitrile Gloves Box of 100', brand: '3M', specs: { 'Type' => 'Disposable Gloves', 'Material' => 'Nitrile', 'Quantity' => '100 per box', 'Size' => 'Large', 'Powder-Free' => 'Yes', 'Chemical Resistant' => 'Yes', 'Brand' => '3M' } },
+    { title: 'MSA V-Gard Safety Helmet', brand: 'MSA', specs: { 'Type' => 'Hard Hat', 'Material' => 'High Density Polyethylene', 'Suspension' => 'Fas-Trac III', 'Class' => 'Class E (Electrical)', 'Standard' => 'ANSI Z89.1 Type I', 'Brand' => 'MSA' } },
+    { title: 'Honeywell Steel Toe Safety Boots', brand: 'Honeywell', specs: { 'Type' => 'Safety Boots', 'Toe Protection' => 'Steel Toe', 'Sole' => 'Slip Resistant Rubber', 'Upper' => 'Full Grain Leather', 'Standard' => 'ASTM F2413', 'Size' => '42 EU', 'Brand' => 'Honeywell' } },
+    { title: '3M Half Face Respirator 6200', brand: '3M', specs: { 'Type' => 'Respirator', 'Facepiece' => 'Half Face', 'Size' => 'Medium', 'Material' => 'Silicone', 'Cartridge' => 'Replaceable (P100/Organic Vapor)', 'Standard' => 'NIOSH', 'Brand' => '3M' } },
+    { title: '3M Full Face Respirator 6800', brand: '3M', specs: { 'Type' => 'Respirator', 'Facepiece' => 'Full Face', 'Size' => 'Medium', 'Material' => 'Silicone', 'Cartridge' => 'Replaceable (P100/Organic Vapor)', 'Standard' => 'NIOSH', 'Brand' => '3M' } },
+    { title: 'High-Vis Safety Vest Class 2', brand: 'Ergodyne', specs: { 'Type' => 'Safety Vest', 'Class' => 'ANSI Class 2', 'Color' => 'Fluorescent Yellow', 'Material' => 'Polyester Mesh', 'Reflective Strips' => '2-inch Silver', 'Brand' => 'Ergodyne' } },
+  ]
+
+  safety.each do |s|
+    products << {
+      'title' => s[:title],
+      'brand' => s[:brand],
+      'subcategory' => 'Safety Wear',
+      'source' => 'manufacturer',
+      'specifications' => s[:specs]
+    }
+  end
+  log "  #{products.size} safety wear items"
+  products
+end
+
+# ── Power & Electrical Equipment ──────────────────────────────────────────────
+
+def scrape_power_electrical
+  log "\n━━━ Power & Electrical Equipment ━━━"
+  products = []
+
+  equipment = [
+    { title: 'Honda EU2200i 2200W Inverter Generator', brand: 'Honda', specs: { 'Type' => 'Inverter Generator', 'Rated Power' => '1800W', 'Max Power' => '2200W', 'Fuel' => 'Petrol', 'Tank Capacity' => '3.9L', 'Run Time' => '8.1 hours at 25% load', 'Noise' => '48-57 dB', 'Weight' => '21 kg', 'Brand' => 'Honda' } },
+    { title: 'Briggs & Stratton P4500 4500W Generator', brand: 'Briggs & Stratton', specs: { 'Type' => 'Portable Generator', 'Rated Power' => '3600W', 'Max Power' => '4500W', 'Fuel' => 'Petrol', 'Tank Capacity' => '7.5L', 'Run Time' => '12 hours at 50% load', 'Weight' => '45 kg', 'Brand' => 'Briggs & Stratton' } },
+    { title: 'Generac GP8000E 8000W Generator', brand: 'Generac', specs: { 'Type' => 'Portable Generator', 'Rated Power' => '8000W', 'Max Power' => '10000W', 'Fuel' => 'Petrol', 'Tank Capacity' => '7.6L', 'Run Time' => '11 hours at 50% load', 'Electric Start' => 'Yes', 'Brand' => 'Generac' } },
+    { title: 'Lincoln Electric Weld Pak 180 HD MIG Welder', brand: 'Lincoln Electric', specs: { 'Type' => 'MIG Welder', 'Input' => '230V Single Phase', 'Output Range' => '30-180 Amps', 'Duty Cycle' => '30% @ 130A', 'Wire Size' => '0.023-0.035"', 'Weight' => '29 kg', 'Brand' => 'Lincoln Electric' } },
+    { title: 'Hobart Handler 210 MIG Welder', brand: 'Hobart', specs: { 'Type' => 'MIG Welder', 'Input' => '230V Single Phase', 'Output Range' => '25-210 Amps', 'Duty Cycle' => '30% @ 150A', 'Wire Size' => '0.024-0.035"', 'Weight' => '31 kg', 'Brand' => 'Hobart' } },
+    { title: 'Multimeter Digital Auto-Range', brand: 'Fluke', specs: { 'Type' => 'Digital Multimeter', 'Display' => '6000 Count', 'Voltage AC' => '600V', 'Voltage DC' => '600V', 'Current' => '10A', 'Resistance' => '60 MOhm', 'CAT Rating' => 'CAT IV 600V', 'Brand' => 'Fluke' } },
+    { title: 'Extension Cord 25m 13A Heavy Duty', brand: 'Masterplug', specs: { 'Type' => 'Extension Cord', 'Length' => '25 meters', 'Current Rating' => '13A', 'Cable' => '3-Core 1.5mm²', 'Sockets' => '4 Gang', 'Reel' => 'Yes', 'Brand' => 'Masterplug' } },
+    { title: 'Circuit Breaker 32A Type C', brand: 'Schneider', specs: { 'Type' => 'MCB Circuit Breaker', 'Current Rating' => '32A', 'Tripping Curve' => 'Type C', 'Poles' => '1P', 'Breaking Capacity' => '6kA', 'Standard' => 'IEC 60898', 'Brand' => 'Schneider' } },
+  ]
+
+  equipment.each do |e|
+    products << {
+      'title' => e[:title],
+      'brand' => e[:brand],
+      'subcategory' => 'Power & Electrical Equipment',
+      'source' => 'manufacturer',
+      'specifications' => e[:specs]
+    }
+  end
+  log "  #{products.size} power & electrical items"
+  products
+end
+
+# ── Plumbing Supplies ─────────────────────────────────────────────────────────
+
+def scrape_plumbing
+  log "\n━━━ Plumbing Supplies ━━━"
+  products = []
+
+  plumbing = [
+    { title: 'PVC Pipe 110mm 6m Length', brand: 'Generic', specs: { 'Type' => 'PVC Pipe', 'Diameter' => '110mm', 'Length' => '6 meters', 'Pressure Rating' => 'PN6', 'Material' => 'uPVC', 'Standard' => 'KS 150', 'Application' => 'Drainage/Sewer', 'Brand' => 'Generic' } },
+    { title: 'PPR Pipe 25mm 4m Length', brand: 'Generic', specs: { 'Type' => 'PPR Pipe', 'Diameter' => '25mm', 'Length' => '4 meters', 'Pressure Rating' => 'PN20', 'Material' => 'Polypropylene Random Copolymer', 'Application' => 'Hot/Cold Water', 'Brand' => 'Generic' } },
+    { title: 'CPVC Pipe 1/2" 6m Length', brand: 'Generic', specs: { 'Type' => 'CPVC Pipe', 'Diameter' => '1/2 inch', 'Length' => '6 meters', 'Pressure Rating' => 'PN15', 'Material' => 'Chlorinated PVC', 'Application' => 'Hot/Cold Water', 'Brand' => 'Generic' } },
+    { title: 'PVC Elbow 110mm 90 Degree', brand: 'Generic', specs: { 'Type' => 'Pipe Fitting', 'Fitting' => 'Elbow 90°', 'Diameter' => '110mm', 'Material' => 'uPVC', 'Connection' => 'Solvent Weld', 'Brand' => 'Generic' } },
+    { title: 'PVC T-Junction 110mm', brand: 'Generic', specs: { 'Type' => 'Pipe Fitting', 'Fitting' => 'T-Junction', 'Diameter' => '110mm', 'Material' => 'uPVC', 'Connection' => 'Solvent Weld', 'Brand' => 'Generic' } },
+    { title: 'Brass Ball Valve 1/2"', brand: 'Generic', specs: { 'Type' => 'Ball Valve', 'Diameter' => '1/2 inch', 'Material' => 'Brass', 'Connection' => 'Threaded', 'Pressure Rating' => '16 bar', 'Brand' => 'Generic' } },
+    { title: 'Water Pump 0.5HP Single Phase', brand: 'Pedrollo', specs: { 'Type' => 'Water Pump', 'Power' => '0.5 HP (370W)', 'Phase' => 'Single', 'Voltage' => '230V', 'Max Flow' => '40 L/min', 'Max Head' => '35m', 'Inlet/Outlet' => '1"x1"', 'Brand' => 'Pedrollo' } },
+    { title: 'Water Pump 1HP Single Phase', brand: 'Grundfos', specs: { 'Type' => 'Water Pump', 'Power' => '1 HP (750W)', 'Phase' => 'Single', 'Voltage' => '230V', 'Max Flow' => '60 L/min', 'Max Head' => '50m', 'Inlet/Outlet' => '1.25"x1"', 'Brand' => 'Grundfos' } },
+    { title: 'PVC Solvent Cement 500ml', brand: 'Georg Fischer', specs: { 'Type' => 'Solvent Cement', 'Size' => '500ml', 'Application' => 'PVC/CPVC Pipes', 'Setting Time' => '24 hours', 'Brand' => 'Georg Fischer' } },
+    { title: 'PTFE Teflon Tape Roll', brand: 'Generic', specs: { 'Type' => 'Thread Seal Tape', 'Material' => 'PTFE Teflon', 'Width' => '12mm', 'Length' => '15m', 'Thickness' => '0.1mm', 'Temperature' => '-180 to 260°C', 'Brand' => 'Generic' } },
+  ]
+
+  plumbing.each do |p|
+    products << {
+      'title' => p[:title],
+      'brand' => p[:brand],
+      'subcategory' => 'Plumbing Supplies',
+      'source' => 'manufacturer',
+      'specifications' => p[:specs]
+    }
+  end
+  log "  #{products.size} plumbing supplies"
+  products
+end
+
+# ── Construction Materials ────────────────────────────────────────────────────
+
+def scrape_construction
+  log "\n━━━ Construction Materials ━━━"
+  products = []
+
+  materials = [
+    { title: 'Portland Cement 50kg Bag', brand: 'Bamburi', specs: { 'Type' => 'Portland Cement', 'Weight' => '50kg', 'Grade' => 'CEM I 42.5N', 'Standard' => 'KS EAS 148-1', 'Application' => 'General Construction', 'Brand' => 'Bamburi' } },
+    { title: 'Portland Cement 50kg Bag', brand: 'Savanna', specs: { 'Type' => 'Portland Cement', 'Weight' => '50kg', 'Grade' => 'CEM I 42.5N', 'Standard' => 'KS EAS 148-1', 'Application' => 'General Construction', 'Brand' => 'Savanna' } },
+    { title: 'Cement Blocks 6" Hollow', brand: 'Generic', specs: { 'Type' => 'Concrete Block', 'Size' => '6" (450x225x150mm)', 'Material' => 'Concrete', 'Compressive Strength' => '3.5 N/mm²', 'Application' => 'Wall Construction', 'Brand' => 'Generic' } },
+    { title: 'Cement Blocks 8" Hollow', brand: 'Generic', specs: { 'Type' => 'Concrete Block', 'Size' => '8" (450x225x200mm)', 'Material' => 'Concrete', 'Compressive Strength' => '3.5 N/mm²', 'Application' => 'Wall Construction', 'Brand' => 'Generic' } },
+    { title: 'Building Sand 7 Tonnes', brand: 'Generic', specs: { 'Type' => 'Construction Sand', 'Quantity' => '7 Tonnes (Truck Load)', 'Material' => 'River Sand', 'Application' => 'Mortar/Plastering/Concrete', 'Brand' => 'Generic' } },
+    { title: 'Ballast 3/4" 7 Tonnes', brand: 'Generic', specs: { 'Type' => 'Ballast/Aggregate', 'Size' => '3/4 inch (20mm)', 'Quantity' => '7 Tonnes', 'Material' => 'Crushed Stone', 'Application' => 'Concrete', 'Brand' => 'Generic' } },
+    { title: 'BRC Mesh A142 4.8m x 2.4m', brand: 'Generic', specs: { 'Type' => 'BRC Wire Mesh', 'Size' => '4.8m x 2.4m', 'Wire Diameter' => '6mm', 'Mesh Size' => '200x200mm', 'Application' => 'Slab Reinforcement', 'Brand' => 'Generic' } },
+    { title: 'Deformed Steel Bars Y12 12mm', brand: 'Generic', specs: { 'Type' => 'Reinforcement Bar', 'Diameter' => '12mm', 'Grade' => '500N/mm² (B500B)', 'Length' => '12m', 'Standard' => 'KS 573', 'Application' => 'Concrete Reinforcement', 'Brand' => 'Generic' } },
+    { title: 'Deformed Steel Bars Y16 16mm', brand: 'Generic', specs: { 'Type' => 'Reinforcement Bar', 'Diameter' => '16mm', 'Grade' => '500N/mm² (B500B)', 'Length' => '12m', 'Standard' => 'KS 573', 'Application' => 'Concrete Reinforcement', 'Brand' => 'Generic' } },
+    { title: 'Roofing Sheets Box Profile 0.5mm 3m', brand: 'Mabati', specs: { 'Type' => 'Roofing Sheet', 'Profile' => 'Box Profile (Tile)', 'Thickness' => '0.5mm', 'Length' => '3 meters', 'Material' => 'Galvanized Steel', 'Coating' => 'Aluzinc', 'Brand' => 'Mabati' } },
+    { title: 'Roofing Sheets Corrugated 0.4mm 3m', brand: 'Mabati', specs: { 'Type' => 'Roofing Sheet', 'Profile' => 'Corrugated', 'Thickness' => '0.4mm', 'Length' => '3 meters', 'Material' => 'Galvanized Steel', 'Coating' => 'Aluzinc', 'Brand' => 'Mabati' } },
+  ]
+
+  materials.each do |m|
+    products << {
+      'title' => m[:title],
+      'brand' => m[:brand],
+      'subcategory' => 'Construction Materials',
+      'source' => 'manufacturer',
+      'specifications' => m[:specs]
+    }
+  end
+  log "  #{products.size} construction materials"
+  products
+end
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+existing = load_existing
+all_products = []
+
+scrapers = {
+  'power tools' => method(:scrape_power_tools),
+  'safety' => method(:scrape_safety_wear),
+  'electrical' => method(:scrape_power_electrical),
+  'plumbing' => method(:scrape_plumbing),
+  'construction' => method(:scrape_construction)
+}
+
+scrapers.each do |name, scraper|
+  next if options[:category_filter] && !name.include?(options[:category_filter])
+  all_products += scraper.call
+end
+
+existing_titles = Set.new(existing.map { |d| d['title'] })
+new_products = all_products.reject { |d| existing_titles.include?(d['title']) }
+final = existing + new_products
+
+save_data(final)
+log "\n🎉 Done! #{final.size} hardware/tools products (#{new_products.size} new) → #{OUT_FILE}"

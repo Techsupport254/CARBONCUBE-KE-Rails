@@ -123,19 +123,18 @@ class Seller::AdsController < ApplicationController
 
     # Fetch Specifications (Favoring local catalog for speed)
     gsm_specs = nil
-    if strategy == 'phones_computers' || (category&.name.to_s.downcase.include?('phone'))
-      matching_phones = DeviceCatalogService.search(model_query, subcategory&.name)
-      if matching_phones.any?
-        best = matching_phones.first
-        gsm_specs = {
-          title: best['title'],
-          brand: best['brand'],
-          specifications: best['specifications'] || {}
-        }
-      elsif subcategory&.name.to_s.downcase.match?(/phone|mobile|tablet|ipad/i)
-        # Fallback to external scraping if not found in local catalog, only for mobiles
-        gsm_specs = GsmArenaService.fetch_device_specs(model_query)
-      end
+    # Try DeviceCatalogService for all categories
+    matching_devices = DeviceCatalogService.search(model_query, subcategory&.name, category&.name)
+    if matching_devices.any?
+      best = matching_devices.first
+      gsm_specs = {
+        title: best['title'],
+        brand: best['brand'],
+        specifications: best['specifications'] || {}
+      }
+    elsif subcategory&.name.to_s.downcase.match?(/phone|mobile|tablet|ipad/i)
+      # Fallback to external scraping if not found in local catalog, only for mobiles
+      gsm_specs = GsmArenaService.fetch_device_specs(model_query)
     end
 
     ranked_candidates = rank_prefill_candidates(candidates, model_query)
@@ -166,7 +165,7 @@ class Seller::AdsController < ApplicationController
       options: {
         brands: brand_options,
         manufacturers: manufacturer_options,
-        catalog_suggestions: DeviceCatalogService.search(model_query, subcategory&.name).map { |p| { title: p['title'], slug: p['slug'], brand: p['brand'] } }
+        catalog_suggestions: DeviceCatalogService.search(model_query, subcategory&.name, category&.name).map { |p| { title: p['title'], slug: p['slug'], brand: p['brand'] } }
       },
       price_stats: price_stats
     }

@@ -8282,5 +8282,1853 @@
       "Terminal Type": "Recessed",
       "Size/Group Code": "DIN100"
     }
+  },
+  {
+    "title": "Shell Helix Ultra 5W-40",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-40",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Shell",
+      "API Rating": "SN/CF",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "PurePlus Technology"
+    }
+  },
+  {
+    "title": "Shell Helix Ultra 0W-20",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "0W-20",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Shell",
+      "API Rating": "SN",
+      "ACEA Rating": "C5",
+      "Capacity": "5L",
+      "Technology": "PurePlus Technology"
+    }
+  },
+  {
+    "title": "Shell Helix H7 10W-40",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "10W-40",
+      "Oil Type": "Semi-Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Shell",
+      "API Rating": "SN",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "Active Cleansing"
+    }
+  },
+  {
+    "title": "Shell Helix H5 15W-40",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Mineral",
+      "Application": "Passenger Car",
+      "Brand": "Shell",
+      "API Rating": "SL",
+      "ACEA Rating": "A3/B3",
+      "Capacity": "5L",
+      "Technology": "Standard"
+    }
+  },
+  {
+    "title": "Shell Advance Ultra 2 10W-40",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "10W-40",
+      "Oil Type": "Semi-Synthetic",
+      "Application": "Motorcycle",
+      "Brand": "Shell",
+      "API Rating": "SG",
+      "ACEA Rating": "N/A",
+      "Capacity": "5L",
+      "Technology": "Power Protection"
+    }
+  },
+  {
+    "title": "Shell Rimula R6 15W-40",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Heavy Duty Diesel",
+      "Brand": "Shell",
+      "API Rating": "CI-4",
+      "ACEA Rating": "E7",
+      "Capacity": "208L",
+      "Technology": "Fuel Economy"
+    }
+  },
+  {
+    "title": "Shell Tellus S2 68",
+    "brand": "Shell",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "ISO VG 68",
+      "Oil Type": "Hydraulic Oil",
+      "Application": "Hydraulic Systems",
+      "Brand": "Shell",
+      "API Rating": "N/A",
+      "ACEA Rating": "N/A",
+      "Capacity": "5L",
+      "Technology": "Anti-Wear"
+    }
+  },
+  {
+    "title": "Castrol EDGE 0W-20",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "0W-20",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Castrol",
+      "API Rating": "SN",
+      "ACEA Rating": "C5",
+      "Capacity": "5L",
+      "Technology": "TITANIUM FST"
+    }
+  },
+  {
+    "title": "Castrol EDGE 5W-30",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-30",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Castrol",
+      "API Rating": "SN",
+      "ACEA Rating": "A5/B5",
+      "Capacity": "5L",
+      "Technology": "TITANIUM FST"
+    }
+  },
+  {
+    "title": "Castrol EDGE 5W-40",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-40",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Castrol",
+      "API Rating": "SN",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "TITANIUM FST"
+    }
+  },
+  {
+    "title": "Castrol GTX 10W-40",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "10W-40",
+      "Oil Type": "Mineral",
+      "Application": "Passenger Car",
+      "Brand": "Castrol",
+      "API Rating": "SL",
+      "ACEA Rating": "A3/B3",
+      "Capacity": "5L",
+      "Technology": "Sludge Defense"
+    }
+  },
+  {
+    "title": "Castrol GTX 15W-40",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Mineral",
+      "Application": "Passenger Car",
+      "Brand": "Castrol",
+      "API Rating": "SL",
+      "ACEA Rating": "A3/B3",
+      "Capacity": "5L",
+      "Technology": "Sludge Defense"
+    }
+  },
+  {
+    "title": "Castrol Magnatec 5W-30",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-30",
+      "Oil Type": "Synthetic Blend",
+      "Application": "Passenger Car",
+      "Brand": "Castrol",
+      "API Rating": "SN",
+      "ACEA Rating": "A5/B5",
+      "Capacity": "5L",
+      "Technology": "Intelligent Molecules"
+    }
+  },
+  {
+    "title": "Castrol Power1 10W-40",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "10W-40",
+      "Oil Type": "Synthetic Blend",
+      "Application": "Motorcycle",
+      "Brand": "Castrol",
+      "API Rating": "SG",
+      "ACEA Rating": "JASO MA2",
+      "Capacity": "5L",
+      "Technology": "Power Release"
+    }
+  },
+  {
+    "title": "Castrol VECTON 15W-40",
+    "brand": "Castrol",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Semi-Synthetic",
+      "Application": "Heavy Duty Diesel",
+      "Brand": "Castrol",
+      "API Rating": "CI-4",
+      "ACEA Rating": "E7",
+      "Capacity": "208L",
+      "Technology": "System 5"
+    }
+  },
+  {
+    "title": "Mobil 1 0W-20",
+    "brand": "Mobil",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "0W-20",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Mobil",
+      "API Rating": "SN",
+      "ACEA Rating": "C5",
+      "Capacity": "5L",
+      "Technology": "Supersyn"
+    }
+  },
+  {
+    "title": "Mobil 1 5W-30",
+    "brand": "Mobil",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-30",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Mobil",
+      "API Rating": "SN",
+      "ACEA Rating": "A5/B5",
+      "Capacity": "5L",
+      "Technology": "Supersyn"
+    }
+  },
+  {
+    "title": "Mobil 1 10W-40",
+    "brand": "Mobil",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "10W-40",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "Mobil",
+      "API Rating": "SN",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "Supersyn"
+    }
+  },
+  {
+    "title": "Mobil Super 1000 15W-40",
+    "brand": "Mobil",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Mineral",
+      "Application": "Passenger Car",
+      "Brand": "Mobil",
+      "API Rating": "SL",
+      "ACEA Rating": "A3/B3",
+      "Capacity": "5L",
+      "Technology": "Standard"
+    }
+  },
+  {
+    "title": "Mobil Delvac 1300 15W-40",
+    "brand": "Mobil",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Semi-Synthetic",
+      "Application": "Heavy Duty Diesel",
+      "Brand": "Mobil",
+      "API Rating": "CI-4",
+      "ACEA Rating": "E7",
+      "Capacity": "208L",
+      "Technology": "Diesel Protection"
+    }
+  },
+  {
+    "title": "Total Quartz 9000 5W-40",
+    "brand": "TotalEnergies",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-40",
+      "Oil Type": "Fully Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "TotalEnergies",
+      "API Rating": "SN",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "Age Resistance"
+    }
+  },
+  {
+    "title": "Total Quartz 7000 10W-40",
+    "brand": "TotalEnergies",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "10W-40",
+      "Oil Type": "Semi-Synthetic",
+      "Application": "Passenger Car",
+      "Brand": "TotalEnergies",
+      "API Rating": "SM",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "Clean Drive"
+    }
+  },
+  {
+    "title": "Total Rubia 15W-40",
+    "brand": "TotalEnergies",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "15W-40",
+      "Oil Type": "Mineral",
+      "Application": "Heavy Duty Diesel",
+      "Brand": "TotalEnergies",
+      "API Rating": "CI-4",
+      "ACEA Rating": "E7",
+      "Capacity": "208L",
+      "Technology": "Diesel Protection"
+    }
+  },
+  {
+    "title": "Valvoline MaxLife 5W-30",
+    "brand": "Valvoline",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "5W-30",
+      "Oil Type": "Synthetic Blend",
+      "Application": "Passenger Car",
+      "Brand": "Valvoline",
+      "API Rating": "SN",
+      "ACEA Rating": "A5/B5",
+      "Capacity": "5L",
+      "Technology": "MaxLife Seal Conditioners"
+    }
+  },
+  {
+    "title": "Valvoline VR1 20W-50",
+    "brand": "Valvoline",
+    "subcategory": "Lubricants",
+    "source": "manufacturer",
+    "specifications": {
+      "Viscosity Grade": "20W-50",
+      "Oil Type": "Mineral",
+      "Application": "Passenger Car",
+      "Brand": "Valvoline",
+      "API Rating": "SM",
+      "ACEA Rating": "A3/B4",
+      "Capacity": "5L",
+      "Technology": "High Zinc"
+    }
+  },
+  {
+    "title": "BBS 14\" 6.5J 4x100 Matte Black",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "BBS 15\" 7J 5x114.3 Gloss Black",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "BBS 16\" 7.5J 5x120 Silver Machined",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "BBS 17\" 8J 4x100 Bronze",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "BBS 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "BBS 19\" 9J 5x120 Matte Black",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "BBS 20\" 6.5J 4x100 Gloss Black",
+    "brand": "BBS",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "BBS",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Enkei 14\" 6.5J 4x100 Matte Black",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Enkei 15\" 7J 5x114.3 Gloss Black",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Enkei 16\" 7.5J 5x120 Silver Machined",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Enkei 17\" 8J 4x100 Bronze",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Enkei 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Enkei 19\" 9J 5x120 Matte Black",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Enkei 20\" 6.5J 4x100 Gloss Black",
+    "brand": "Enkei",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Enkei",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 14\" 6.5J 4x100 Matte Black",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 15\" 7J 5x114.3 Gloss Black",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 16\" 7.5J 5x120 Silver Machined",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 17\" 8J 4x100 Bronze",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 19\" 9J 5x120 Matte Black",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "OZ Racing 20\" 6.5J 4x100 Gloss Black",
+    "brand": "OZ Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "OZ Racing",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Konig 14\" 6.5J 4x100 Matte Black",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Konig 15\" 7J 5x114.3 Gloss Black",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Konig 16\" 7.5J 5x120 Silver Machined",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Konig 17\" 8J 4x100 Bronze",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Konig 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Konig 19\" 9J 5x120 Matte Black",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Konig 20\" 6.5J 4x100 Gloss Black",
+    "brand": "Konig",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Konig",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 14\" 6.5J 4x100 Matte Black",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 15\" 7J 5x114.3 Gloss Black",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 16\" 7.5J 5x120 Silver Machined",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 17\" 8J 4x100 Bronze",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 19\" 9J 5x120 Matte Black",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Volk Racing 20\" 6.5J 4x100 Gloss Black",
+    "brand": "Volk Racing",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Volk Racing",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Borbet 14\" 6.5J 4x100 Matte Black",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Borbet 15\" 7J 5x114.3 Gloss Black",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Borbet 16\" 7.5J 5x120 Silver Machined",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Borbet 17\" 8J 4x100 Bronze",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Borbet 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Borbet 19\" 9J 5x120 Matte Black",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Borbet 20\" 6.5J 4x100 Gloss Black",
+    "brand": "Borbet",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Borbet",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "TSW 14\" 6.5J 4x100 Matte Black",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "TSW 15\" 7J 5x114.3 Gloss Black",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "TSW 16\" 7.5J 5x120 Silver Machined",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "TSW 17\" 8J 4x100 Bronze",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "TSW 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "TSW 19\" 9J 5x120 Matte Black",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "TSW 20\" 6.5J 4x100 Gloss Black",
+    "brand": "TSW",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "TSW",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Rota 14\" 6.5J 4x100 Matte Black",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "14 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "18mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Cast",
+      "Weight": "8.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Rota 15\" 7J 5x114.3 Gloss Black",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "15 inches",
+      "Width": "7J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "20mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Cast",
+      "Weight": "8.5 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Rota 16\" 7.5J 5x120 Silver Machined",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "16 inches",
+      "Width": "7.5J",
+      "Bolt Pattern": "5x120",
+      "Offset": "22mm",
+      "Finish": "Silver Machined",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Cast",
+      "Weight": "9.0 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Rota 17\" 8J 4x100 Bronze",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "17 inches",
+      "Width": "8J",
+      "Bolt Pattern": "4x100",
+      "Offset": "24mm",
+      "Finish": "Bronze",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Cast",
+      "Weight": "9.5 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Rota 18\" 8.5J 5x114.3 Gunmetal",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "18 inches",
+      "Width": "8.5J",
+      "Bolt Pattern": "5x114.3",
+      "Offset": "26mm",
+      "Finish": "Gunmetal",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Cast",
+      "Weight": "10.0 kg",
+      "Center Bore": "56.1mm"
+    }
+  },
+  {
+    "title": "Rota 19\" 9J 5x120 Matte Black",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "19 inches",
+      "Width": "9J",
+      "Bolt Pattern": "5x120",
+      "Offset": "28mm",
+      "Finish": "Matte Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Forged",
+      "Weight": "10.5 kg",
+      "Center Bore": "61.1mm"
+    }
+  },
+  {
+    "title": "Rota 20\" 6.5J 4x100 Gloss Black",
+    "brand": "Rota",
+    "subcategory": "Rims",
+    "source": "manufacturer",
+    "specifications": {
+      "Diameter": "20 inches",
+      "Width": "6.5J",
+      "Bolt Pattern": "4x100",
+      "Offset": "30mm",
+      "Finish": "Gloss Black",
+      "Material": "Aluminum Alloy",
+      "Brand": "Rota",
+      "Type": "Forged",
+      "Weight": "11.0 kg",
+      "Center Bore": "66.1mm"
+    }
+  },
+  {
+    "title": "Brake Pads Front Ceramic",
+    "brand": "Bosch",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Front",
+      "Material": "Ceramic",
+      "Wear Sensor": "Yes",
+      "Min Thickness": "3mm",
+      "Brand": "Bosch",
+      "Part Type": "Brake System"
+    }
+  },
+  {
+    "title": "Brake Pads Rear Semi-Metallic",
+    "brand": "Bosch",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Rear",
+      "Material": "Semi-Metallic",
+      "Wear Sensor": "No",
+      "Min Thickness": "3mm",
+      "Brand": "Bosch",
+      "Part Type": "Brake System"
+    }
+  },
+  {
+    "title": "Brake Disc Front Vented 280mm",
+    "brand": "Brembo",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Front",
+      "Diameter": "280mm",
+      "Type": "Vented",
+      "Material": "Cast Iron",
+      "Thickness": "22mm",
+      "Min Thickness": "19mm",
+      "Brand": "Brembo",
+      "Part Type": "Brake System"
+    }
+  },
+  {
+    "title": "Brake Disc Rear Solid 260mm",
+    "brand": "Brembo",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Rear",
+      "Diameter": "260mm",
+      "Type": "Solid",
+      "Material": "Cast Iron",
+      "Thickness": "10mm",
+      "Min Thickness": "8mm",
+      "Brand": "Brembo",
+      "Part Type": "Brake System"
+    }
+  },
+  {
+    "title": "Shock Absorber Front Gas",
+    "brand": "KYB",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Front",
+      "Type": "Gas",
+      "Stroke": "180mm",
+      "Piston Rod": "20mm",
+      "Damping": "Twin Tube",
+      "Brand": "KYB",
+      "Part Type": "Suspension"
+    }
+  },
+  {
+    "title": "Shock Absorber Rear Gas",
+    "brand": "KYB",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Rear",
+      "Type": "Gas",
+      "Stroke": "160mm",
+      "Piston Rod": "16mm",
+      "Damping": "Twin Tube",
+      "Brand": "KYB",
+      "Part Type": "Suspension"
+    }
+  },
+  {
+    "title": "Coil Spring Front",
+    "brand": "Eibach",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Front",
+      "Material": "Chrome Silicon Steel",
+      "Spring Rate": "120 N/mm",
+      "Free Length": "350mm",
+      "Wire Diameter": "12mm",
+      "Brand": "Eibach",
+      "Part Type": "Suspension"
+    }
+  },
+  {
+    "title": "Spark Plug Iridium",
+    "brand": "NGK",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Electrode Material": "Iridium",
+      "Gap": "0.8mm",
+      "Heat Range": "6",
+      "Thread Size": "M14",
+      "Reach": "19mm",
+      "Brand": "NGK",
+      "Part Type": "Ignition"
+    }
+  },
+  {
+    "title": "Spark Plug Platinum",
+    "brand": "Denso",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Electrode Material": "Platinum",
+      "Gap": "1.0mm",
+      "Heat Range": "7",
+      "Thread Size": "M14",
+      "Reach": "19mm",
+      "Brand": "Denso",
+      "Part Type": "Ignition"
+    }
+  },
+  {
+    "title": "Air Filter Panel Type",
+    "brand": "Mann-Filter",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Panel",
+      "Material": "Paper",
+      "Height": "30mm",
+      "Width": "200mm",
+      "Length": "250mm",
+      "Brand": "Mann-Filter",
+      "Part Type": "Engine"
+    }
+  },
+  {
+    "title": "Oil Filter Spin-On",
+    "brand": "Bosch",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "M20x1.5",
+      "Diameter": "76mm",
+      "Height": "65mm",
+      "Bypass Valve": "Yes",
+      "Brand": "Bosch",
+      "Part Type": "Engine"
+    }
+  },
+  {
+    "title": "Fuel Filter Inline",
+    "brand": "Mann-Filter",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Inline",
+      "Connection": "M10x1.0",
+      "Diameter": "55mm",
+      "Height": "100mm",
+      "Filter Media": "Paper",
+      "Brand": "Mann-Filter",
+      "Part Type": "Engine"
+    }
+  },
+  {
+    "title": "Alternator 120A",
+    "brand": "Bosch",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Output": "120A",
+      "Voltage": "14V",
+      "Type": "Internally Regulated",
+      "Pulley Type": "Multi-Rib",
+      "Rotation": "Clockwise",
+      "Brand": "Bosch",
+      "Part Type": "Electrical"
+    }
+  },
+  {
+    "title": "Starter Motor 1.4kW",
+    "brand": "Denso",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Power": "1.4kW",
+      "Voltage": "12V",
+      "Teeth": "9",
+      "Type": "Reduction Gear",
+      "Rotation": "Clockwise",
+      "Brand": "Denso",
+      "Part Type": "Electrical"
+    }
+  },
+  {
+    "title": "Radiator Copper-Brass",
+    "brand": "Nissan",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Material": "Copper-Brass",
+      "Core Size": "500x350x26mm",
+      "Inlet": "32mm",
+      "Outlet": "38mm",
+      "Cap Pressure": "0.9 bar",
+      "Brand": "Nissan",
+      "Part Type": "Cooling"
+    }
+  },
+  {
+    "title": "Water Pump",
+    "brand": "GMB",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mechanical",
+      "Material": "Cast Iron",
+      "Pulley Type": "V-Belt",
+      "Impeller": "Plastic",
+      "Bearing": "Sealed Ball",
+      "Brand": "GMB",
+      "Part Type": "Cooling"
+    }
+  },
+  {
+    "title": "Clutch Kit 3-Piece",
+    "brand": "Exedy",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "3-Piece Kit",
+      "Disc Diameter": "212mm",
+      "Pressure Plate": "Diaphragm",
+      "Release Bearing": "Included",
+      "Springs": "4",
+      "Brand": "Exedy",
+      "Part Type": "Transmission"
+    }
+  },
+  {
+    "title": "Timing Belt",
+    "brand": "Gates",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Timing Belt",
+      "Material": "HNBR Rubber",
+      "Teeth": "153",
+      "Width": "25mm",
+      "Tensile Member": "Fiberglass",
+      "Brand": "Gates",
+      "Part Type": "Engine"
+    }
+  },
+  {
+    "title": "Drive Belt V-Ribbed",
+    "brand": "Gates",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "V-Ribbed (Serpentine)",
+      "Ribs": "6",
+      "Length": "1800mm",
+      "Width": "21mm",
+      "Material": "EPDM",
+      "Brand": "Gates",
+      "Part Type": "Engine"
+    }
+  },
+  {
+    "title": "CV Joint Front Left",
+    "brand": "GKN",
+    "subcategory": "Spare Parts",
+    "source": "manufacturer",
+    "specifications": {
+      "Position": "Front Left",
+      "Type": "Constant Velocity",
+      "Spline Count": "26",
+      "ABS Ring": "Yes",
+      "Boot Material": "Neoprene",
+      "Brand": "GKN",
+      "Part Type": "Drivetrain"
+    }
+  },
+  {
+    "title": "Car Floor Mats Set of 4",
+    "brand": "WeatherTech",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Material": "Rubber",
+      "Quantity": "4 Pieces",
+      "Type": "All-Weather",
+      "Color": "Black",
+      "Anti-Slip": "Yes",
+      "Brand": "WeatherTech"
+    }
+  },
+  {
+    "title": "Car Seat Covers Leather",
+    "brand": "AutoX",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Material": "PU Leather",
+      "Quantity": "5 Seats",
+      "Type": "Universal Fit",
+      "Color": "Black/Red",
+      "Airbag Compatible": "Yes",
+      "Brand": "AutoX"
+    }
+  },
+  {
+    "title": "Car Phone Holder Magnetic",
+    "brand": "Baseus",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Magnetic",
+      "Mounting": "Dashboard/Vent",
+      "Compatibility": "All Phones",
+      "Material": "Aluminum",
+      "Rotation": "360 Degrees",
+      "Brand": "Baseus"
+    }
+  },
+  {
+    "title": "Car Charger Dual USB 3.1A",
+    "brand": "Anker",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Ports": "2",
+      "Output": "3.1A Total",
+      "Input": "12-24V",
+      "Technology": "PowerIQ",
+      "Cable Length": "N/A",
+      "Brand": "Anker"
+    }
+  },
+  {
+    "title": "Jump Starter 2000A",
+    "brand": "NOCO",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Peak Current": "2000A",
+      "Battery Capacity": "20000mAh",
+      "USB Output": "5V/2.1A",
+      "Type": "Lithium",
+      "Weight": "1.2 kg",
+      "Brand": "NOCO"
+    }
+  },
+  {
+    "title": "Car Air Freshener",
+    "brand": "Little Tree",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Hanging",
+      "Scent": "Black Ice",
+      "Duration": "30 Days",
+      "Material": "Cardboard",
+      "Quantity": "3 Pack",
+      "Brand": "Little Tree"
+    }
+  },
+  {
+    "title": "Steering Wheel Cover Leather",
+    "brand": "AutoX",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Material": "PU Leather",
+      "Size": "38cm",
+      "Type": "Universal",
+      "Color": "Black",
+      "Anti-Slip": "Yes",
+      "Brand": "AutoX"
+    }
+  },
+  {
+    "title": "Car First Aid Kit",
+    "brand": "St John",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Items": "50 Pieces",
+      "Type": "Compact",
+      "Case": "Hard Plastic",
+      "Size": "20x15x8cm",
+      "Standard": "BS 8599",
+      "Brand": "St John"
+    }
+  },
+  {
+    "title": "Car Jack Scissor 2 Ton",
+    "brand": "Torin",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Scissor",
+      "Capacity": "2 Ton",
+      "Lifting Range": "90-390mm",
+      "Material": "Steel",
+      "Weight": "3.5 kg",
+      "Brand": "Torin"
+    }
+  },
+  {
+    "title": "Tire Pressure Gauge Digital",
+    "brand": "Michelin",
+    "subcategory": "Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital",
+      "Range": "0-60 PSI",
+      "Accuracy": "+/- 1 PSI",
+      "Display": "LCD",
+      "Units": "PSI/bar/kPa",
+      "Brand": "Michelin"
+    }
   }
 ]

@@ -7,10 +7,11 @@ class Seller::CatalogsController < ApplicationController
   # GET /seller/catalog/search
   def search
     query = params[:query] || params[:q]
-    category = params[:subcategory] || params[:category] || 'phones'
+    subcategory = params[:subcategory] || params[:category] || 'phones'
+    category_name = params[:categoryName]
     return render json: { phones: [] } if query.blank?
 
-    devices = DeviceCatalogService.search(query, category)
+    devices = DeviceCatalogService.search(query, subcategory, category_name)
     
     render json: {
       phones: devices.map do |p|
@@ -26,17 +27,19 @@ class Seller::CatalogsController < ApplicationController
 
   # GET /seller/catalog/brands
   def brands
-    category = params[:subcategory] || params[:category] || 'phones'
-    render json: { brands: DeviceCatalogService.brands(category) }
+    subcategory = params[:subcategory] || params[:category] || 'phones'
+    category_name = params[:categoryName]
+    render json: { brands: DeviceCatalogService.brands(subcategory, category_name) }
   end
 
   # GET /seller/catalog/models
   def models
     brand = params[:brand]
-    category = params[:subcategory] || params[:category] || 'phones'
+    subcategory = params[:subcategory] || params[:category] || 'phones'
+    category_name = params[:categoryName]
     return render json: { models: [] } if brand.blank?
     
-    render json: { models: DeviceCatalogService.models_for_brand(brand, category) }
+    render json: { models: DeviceCatalogService.models_for_brand(brand, subcategory, category_name) }
   end
 
   # GET /seller/catalog/model/:slug
@@ -46,8 +49,9 @@ class Seller::CatalogsController < ApplicationController
       return
     end
 
-    category = params[:subcategory] || params[:category] || 'phones'
-    device = DeviceCatalogService.find_by_slug(params[:slug], category)
+    subcategory = params[:subcategory] || params[:category] || 'phones'
+    category_name = params[:categoryName]
+    device = DeviceCatalogService.find_by_slug(params[:slug], subcategory, category_name)
     if device
       render json: device
     else

@@ -16223,3 +16223,1749 @@
 [13:23:14]     ✅ [9512] Palm Treo 270 (16 specs)
 [13:23:16]     ✅ [9513] Palm Treo 180 (16 specs)
 [13:23:16]   ✅ Palm fully completed!
+[13:43:37] =================================================================
+[13:43:37] GSMArena Scraper — 2026-07-24 13:43:37
+[13:43:37] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[13:43:37] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[13:43:37] =================================================================
+[13:43:37] 🔄 Reset — starting fresh
+[13:43:37] Resuming: 0 phones saved, 0 slugs done
+[13:43:37] 
+[1/48] ━━━ Samsung ━━━ https://www.gsmarena.com/samsung-phones-9.php
+[13:43:40]   📄 Page 1 — https://www.gsmarena.com/samsung-phones-9.php
+[13:43:40]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:43:50]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:44:10]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:44:40]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:45:20]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/samsung-phones-9.php — Curl failed with status 7: 
+[13:45:20]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:45:20]   📱 0 total devices across 0 page(s)
+[13:45:20]   📱 0 total devices found for Samsung
+[13:45:20]   ⏭  0 already done — 0 to scrape
+[13:45:20]   ⚠️  Samsung has 0 pending or failed models. Leaving as pending.
+[13:45:20] 
+[2/48] ━━━ Apple ━━━ https://www.gsmarena.com/apple-phones-48.php
+[13:45:22]   📄 Page 1 — https://www.gsmarena.com/apple-phones-48.php
+[13:45:22]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:45:32]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:45:52]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:46:22]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:47:02]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/apple-phones-48.php — Curl failed with status 7: 
+[13:47:02]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:47:02]   📱 0 total devices across 0 page(s)
+[13:47:02]   📱 0 total devices found for Apple
+[13:47:02]   ⏭  0 already done — 0 to scrape
+[13:47:02]   ⚠️  Apple has 0 pending or failed models. Leaving as pending.
+[13:47:02] 
+[3/48] ━━━ Xiaomi ━━━ https://www.gsmarena.com/xiaomi-phones-80.php
+[13:47:04]   📄 Page 1 — https://www.gsmarena.com/xiaomi-phones-80.php
+[13:47:04]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:47:14]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:47:34]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:48:05]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:48:45]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/xiaomi-phones-80.php — Curl failed with status 7: 
+[13:48:45]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:48:45]   📱 0 total devices across 0 page(s)
+[13:48:45]   📱 0 total devices found for Xiaomi
+[13:48:45]   ⏭  0 already done — 0 to scrape
+[13:48:45]   ⚠️  Xiaomi has 0 pending or failed models. Leaving as pending.
+[13:48:45] 
+[4/48] ━━━ Tecno ━━━ https://www.gsmarena.com/tecno-phones-120.php
+[13:48:46]   📄 Page 1 — https://www.gsmarena.com/tecno-phones-120.php
+[13:48:46]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:48:56]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:49:16]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:49:46]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:50:26]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/tecno-phones-120.php — Curl failed with status 7: 
+[13:50:26]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:50:26]   📱 0 total devices across 0 page(s)
+[13:50:26]   📱 0 total devices found for Tecno
+[13:50:26]   ⏭  0 already done — 0 to scrape
+[13:50:26]   ⚠️  Tecno has 0 pending or failed models. Leaving as pending.
+[13:50:26] 
+[5/48] ━━━ Infinix ━━━ https://www.gsmarena.com/infinix-phones-119.php
+[13:50:28]   📄 Page 1 — https://www.gsmarena.com/infinix-phones-119.php
+[13:50:28]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:50:38]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:50:58]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:51:28]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:52:08]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/infinix-phones-119.php — Curl failed with status 7: 
+[13:52:08]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:52:08]   📱 0 total devices across 0 page(s)
+[13:52:08]   📱 0 total devices found for Infinix
+[13:52:08]   ⏭  0 already done — 0 to scrape
+[13:52:08]   ⚠️  Infinix has 0 pending or failed models. Leaving as pending.
+[13:52:08] 
+[6/48] ━━━ itel ━━━ https://www.gsmarena.com/itel-phones-131.php
+[13:52:11]   📄 Page 1 — https://www.gsmarena.com/itel-phones-131.php
+[13:52:11]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:52:21]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:52:41]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:53:11]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:53:51]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/itel-phones-131.php — Curl failed with status 7: 
+[13:53:51]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:53:51]   📱 0 total devices across 0 page(s)
+[13:53:51]   📱 0 total devices found for itel
+[13:53:51]   ⏭  0 already done — 0 to scrape
+[13:53:51]   ⚠️  itel has 0 pending or failed models. Leaving as pending.
+[13:53:51] 
+[7/48] ━━━ Oppo ━━━ https://www.gsmarena.com/oppo-phones-82.php
+[13:53:54]   📄 Page 1 — https://www.gsmarena.com/oppo-phones-82.php
+[13:53:54]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:54:04]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:54:24]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:54:54]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:55:34]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/oppo-phones-82.php — Curl failed with status 7: 
+[13:55:34]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:55:34]   📱 0 total devices across 0 page(s)
+[13:55:34]   📱 0 total devices found for Oppo
+[13:55:34]   ⏭  0 already done — 0 to scrape
+[13:55:34]   ⚠️  Oppo has 0 pending or failed models. Leaving as pending.
+[13:55:34] 
+[8/48] ━━━ Vivo ━━━ https://www.gsmarena.com/vivo-phones-98.php
+[13:55:37]   📄 Page 1 — https://www.gsmarena.com/vivo-phones-98.php
+[13:55:37]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:55:47]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:56:07]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:56:37]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:57:17]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/vivo-phones-98.php — Curl failed with status 7: 
+[13:57:17]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:57:17]   📱 0 total devices across 0 page(s)
+[13:57:17]   📱 0 total devices found for Vivo
+[13:57:17]   ⏭  0 already done — 0 to scrape
+[13:57:17]   ⚠️  Vivo has 0 pending or failed models. Leaving as pending.
+[13:57:17] 
+[9/48] ━━━ Realme ━━━ https://www.gsmarena.com/realme-phones-118.php
+[13:57:19]   📄 Page 1 — https://www.gsmarena.com/realme-phones-118.php
+[13:57:19]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:57:29]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:57:49]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[13:58:19]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[13:58:59]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/realme-phones-118.php — Curl failed with status 7: 
+[13:58:59]   ⚠️  Page 1 fetch failed — stopping pagination
+[13:58:59]   📱 0 total devices across 0 page(s)
+[13:58:59]   📱 0 total devices found for Realme
+[13:58:59]   ⏭  0 already done — 0 to scrape
+[13:58:59]   ⚠️  Realme has 0 pending or failed models. Leaving as pending.
+[13:58:59] 
+[10/48] ━━━ Huawei ━━━ https://www.gsmarena.com/huawei-phones-58.php
+[13:59:01]   📄 Page 1 — https://www.gsmarena.com/huawei-phones-58.php
+[13:59:01]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[13:59:11]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[13:59:31]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:00:01]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:00:42]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/huawei-phones-58.php — Curl failed with status 7: 
+[14:00:42]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:00:42]   📱 0 total devices across 0 page(s)
+[14:00:42]   📱 0 total devices found for Huawei
+[14:00:42]   ⏭  0 already done — 0 to scrape
+[14:00:42]   ⚠️  Huawei has 0 pending or failed models. Leaving as pending.
+[14:00:42] 
+[11/48] ━━━ OnePlus ━━━ https://www.gsmarena.com/oneplus-phones-95.php
+[14:00:44]   📄 Page 1 — https://www.gsmarena.com/oneplus-phones-95.php
+[14:00:44]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:00:54]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:01:14]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:01:44]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:02:24]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/oneplus-phones-95.php — Curl failed with status 7: 
+[14:02:24]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:02:24]   📱 0 total devices across 0 page(s)
+[14:02:24]   📱 0 total devices found for OnePlus
+[14:02:24]   ⏭  0 already done — 0 to scrape
+[14:02:24]   ⚠️  OnePlus has 0 pending or failed models. Leaving as pending.
+[14:02:24] 
+[12/48] ━━━ Nokia ━━━ https://www.gsmarena.com/nokia-phones-1.php
+[14:02:27]   📄 Page 1 — https://www.gsmarena.com/nokia-phones-1.php
+[14:02:27]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:02:37]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:02:57]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:03:27]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:04:07]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/nokia-phones-1.php — Curl failed with status 7: 
+[14:04:07]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:04:07]   📱 0 total devices across 0 page(s)
+[14:04:07]   📱 0 total devices found for Nokia
+[14:04:07]   ⏭  0 already done — 0 to scrape
+[14:04:07]   ⚠️  Nokia has 0 pending or failed models. Leaving as pending.
+[14:04:07] 
+[13/48] ━━━ HMD ━━━ https://www.gsmarena.com/hmd-phones-130.php
+[14:04:10]   📄 Page 1 — https://www.gsmarena.com/hmd-phones-130.php
+[14:04:10]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:04:20]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:04:40]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:05:10]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:05:50]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/hmd-phones-130.php — Curl failed with status 7: 
+[14:05:50]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:05:50]   📱 0 total devices across 0 page(s)
+[14:05:50]   📱 0 total devices found for HMD
+[14:05:50]   ⏭  0 already done — 0 to scrape
+[14:05:50]   ⚠️  HMD has 0 pending or failed models. Leaving as pending.
+[14:05:50] 
+[14/48] ━━━ Nothing ━━━ https://www.gsmarena.com/nothing-phones-128.php
+[14:05:51]   📄 Page 1 — https://www.gsmarena.com/nothing-phones-128.php
+[14:05:51]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:06:01]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:06:21]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:06:51]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:07:31]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/nothing-phones-128.php — Curl failed with status 7: 
+[14:07:31]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:07:31]   📱 0 total devices across 0 page(s)
+[14:07:31]   📱 0 total devices found for Nothing
+[14:07:31]   ⏭  0 already done — 0 to scrape
+[14:07:31]   ⚠️  Nothing has 0 pending or failed models. Leaving as pending.
+[14:07:31] 
+[15/48] ━━━ ZTE ━━━ https://www.gsmarena.com/zte-phones-62.php
+[14:07:33]   📄 Page 1 — https://www.gsmarena.com/zte-phones-62.php
+[14:07:33]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:07:43]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:08:03]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:08:33]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:09:13]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/zte-phones-62.php — Curl failed with status 7: 
+[14:09:13]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:09:13]   📱 0 total devices across 0 page(s)
+[14:09:13]   📱 0 total devices found for ZTE
+[14:09:13]   ⏭  0 already done — 0 to scrape
+[14:09:13]   ⚠️  ZTE has 0 pending or failed models. Leaving as pending.
+[14:09:13] 
+[16/48] ━━━ Motorola ━━━ https://www.gsmarena.com/motorola-phones-8.php
+[14:09:14]   📄 Page 1 — https://www.gsmarena.com/motorola-phones-8.php
+[14:09:14]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:09:24]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:09:44]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:10:14]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:10:54]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/motorola-phones-8.php — Curl failed with status 7: 
+[14:10:54]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:10:54]   📱 0 total devices across 0 page(s)
+[14:10:54]   📱 0 total devices found for Motorola
+[14:10:54]   ⏭  0 already done — 0 to scrape
+[14:10:54]   ⚠️  Motorola has 0 pending or failed models. Leaving as pending.
+[14:10:54] 
+[17/48] ━━━ TCL ━━━ https://www.gsmarena.com/tcl-phones-123.php
+[14:10:56]   📄 Page 1 — https://www.gsmarena.com/tcl-phones-123.php
+[14:10:56]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:11:06]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:11:26]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:11:56]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:12:36]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/tcl-phones-123.php — Curl failed with status 7: 
+[14:12:36]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:12:36]   📱 0 total devices across 0 page(s)
+[14:12:36]   📱 0 total devices found for TCL
+[14:12:36]   ⏭  0 already done — 0 to scrape
+[14:12:37]   ⚠️  TCL has 0 pending or failed models. Leaving as pending.
+[14:12:37] 
+[18/48] ━━━ Sony ━━━ https://www.gsmarena.com/sony-phones-7.php
+[14:12:38]   📄 Page 1 — https://www.gsmarena.com/sony-phones-7.php
+[14:12:39]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:12:49]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:13:09]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:13:39]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:14:19]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/sony-phones-7.php — Curl failed with status 7: 
+[14:14:19]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:14:19]   📱 0 total devices across 0 page(s)
+[14:14:19]   📱 0 total devices found for Sony
+[14:14:19]   ⏭  0 already done — 0 to scrape
+[14:14:19]   ⚠️  Sony has 0 pending or failed models. Leaving as pending.
+[14:14:19] 
+[19/48] ━━━ Google ━━━ https://www.gsmarena.com/google-phones-107.php
+[14:14:22]   📄 Page 1 — https://www.gsmarena.com/google-phones-107.php
+[14:14:22]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:14:32]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:14:52]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:15:22]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:16:02]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/google-phones-107.php — Curl failed with status 7: 
+[14:16:02]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:16:02]   📱 0 total devices across 0 page(s)
+[14:16:02]   📱 0 total devices found for Google
+[14:16:02]   ⏭  0 already done — 0 to scrape
+[14:16:02]   ⚠️  Google has 0 pending or failed models. Leaving as pending.
+[14:16:02] 
+[20/48] ━━━ Honor ━━━ https://www.gsmarena.com/honor-phones-121.php
+[14:16:04]   📄 Page 1 — https://www.gsmarena.com/honor-phones-121.php
+[14:16:04]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:16:14]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:16:34]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:17:04]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:17:44]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/honor-phones-121.php — Curl failed with status 7: 
+[14:17:44]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:17:44]   📱 0 total devices across 0 page(s)
+[14:17:44]   📱 0 total devices found for Honor
+[14:17:44]   ⏭  0 already done — 0 to scrape
+[14:17:44]   ⚠️  Honor has 0 pending or failed models. Leaving as pending.
+[14:17:44] 
+[21/48] ━━━ Asus ━━━ https://www.gsmarena.com/asus-phones-46.php
+[14:17:46]   📄 Page 1 — https://www.gsmarena.com/asus-phones-46.php
+[14:17:46]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:17:56]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:18:16]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:18:46]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:19:26]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/asus-phones-46.php — Curl failed with status 7: 
+[14:19:26]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:19:26]   📱 0 total devices across 0 page(s)
+[14:19:26]   📱 0 total devices found for Asus
+[14:19:26]   ⏭  0 already done — 0 to scrape
+[14:19:26]   ⚠️  Asus has 0 pending or failed models. Leaving as pending.
+[14:19:26] 
+[22/48] ━━━ Lenovo ━━━ https://www.gsmarena.com/lenovo-phones-73.php
+[14:19:29]   📄 Page 1 — https://www.gsmarena.com/lenovo-phones-73.php
+[14:19:29]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:19:39]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:19:59]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:20:29]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:21:09]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/lenovo-phones-73.php — Curl failed with status 7: 
+[14:21:09]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:21:09]   📱 0 total devices across 0 page(s)
+[14:21:09]   📱 0 total devices found for Lenovo
+[14:21:09]   ⏭  0 already done — 0 to scrape
+[14:21:09]   ⚠️  Lenovo has 0 pending or failed models. Leaving as pending.
+[14:21:09] 
+[23/48] ━━━ Blackview ━━━ https://www.gsmarena.com/blackview-phones-116.php
+[14:21:11]   📄 Page 1 — https://www.gsmarena.com/blackview-phones-116.php
+[14:21:11]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:21:21]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:21:41]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:22:11]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:22:51]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/blackview-phones-116.php — Curl failed with status 7: 
+[14:22:51]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:22:51]   📱 0 total devices across 0 page(s)
+[14:22:51]   📱 0 total devices found for Blackview
+[14:22:51]   ⏭  0 already done — 0 to scrape
+[14:22:51]   ⚠️  Blackview has 0 pending or failed models. Leaving as pending.
+[14:22:51] 
+[24/48] ━━━ Meizu ━━━ https://www.gsmarena.com/meizu-phones-74.php
+[14:22:53]   📄 Page 1 — https://www.gsmarena.com/meizu-phones-74.php
+[14:22:53]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:23:03]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:23:23]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:23:53]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:24:33]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/meizu-phones-74.php — Curl failed with status 7: 
+[14:24:33]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:24:33]   📱 0 total devices across 0 page(s)
+[14:24:33]   📱 0 total devices found for Meizu
+[14:24:33]   ⏭  0 already done — 0 to scrape
+[14:24:33]   ⚠️  Meizu has 0 pending or failed models. Leaving as pending.
+[14:24:33] 
+[25/48] ━━━ HTC ━━━ https://www.gsmarena.com/htc-phones-45.php
+[14:24:34]   📄 Page 1 — https://www.gsmarena.com/htc-phones-45.php
+[14:24:34]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:24:44]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:25:04]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:25:34]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:26:14]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/htc-phones-45.php — Curl failed with status 7: 
+[14:26:14]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:26:14]   📱 0 total devices across 0 page(s)
+[14:26:14]   📱 0 total devices found for HTC
+[14:26:14]   ⏭  0 already done — 0 to scrape
+[14:26:14]   ⚠️  HTC has 0 pending or failed models. Leaving as pending.
+[14:26:14] 
+[26/48] ━━━ LG ━━━ https://www.gsmarena.com/lg-phones-20.php
+[14:26:16]   📄 Page 1 — https://www.gsmarena.com/lg-phones-20.php
+[14:26:16]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:26:26]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:26:46]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:27:16]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:27:56]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/lg-phones-20.php — Curl failed with status 7: 
+[14:27:56]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:27:56]   📱 0 total devices across 0 page(s)
+[14:27:56]   📱 0 total devices found for LG
+[14:27:56]   ⏭  0 already done — 0 to scrape
+[14:27:56]   ⚠️  LG has 0 pending or failed models. Leaving as pending.
+[14:27:56] 
+[27/48] ━━━ BlackBerry ━━━ https://www.gsmarena.com/blackberry-phones-36.php
+[14:27:57]   📄 Page 1 — https://www.gsmarena.com/blackberry-phones-36.php
+[14:27:57]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:28:07]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:28:28]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:28:58]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:29:38]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/blackberry-phones-36.php — Curl failed with status 7: 
+[14:29:38]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:29:38]   📱 0 total devices across 0 page(s)
+[14:29:38]   📱 0 total devices found for BlackBerry
+[14:29:38]   ⏭  0 already done — 0 to scrape
+[14:29:38]   ⚠️  BlackBerry has 0 pending or failed models. Leaving as pending.
+[14:29:38] 
+[28/48] ━━━ Alcatel ━━━ https://www.gsmarena.com/alcatel-phones-5.php
+[14:29:40]   📄 Page 1 — https://www.gsmarena.com/alcatel-phones-5.php
+[14:29:40]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:29:51]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:30:11]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:30:41]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:31:21]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/alcatel-phones-5.php — Curl failed with status 7: 
+[14:31:21]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:31:21]   📱 0 total devices across 0 page(s)
+[14:31:21]   📱 0 total devices found for Alcatel
+[14:31:21]   ⏭  0 already done — 0 to scrape
+[14:31:21]   ⚠️  Alcatel has 0 pending or failed models. Leaving as pending.
+[14:31:21] 
+[29/48] ━━━ Energizer ━━━ https://www.gsmarena.com/energizer-phones-106.php
+[14:31:23]   📄 Page 1 — https://www.gsmarena.com/energizer-phones-106.php
+[14:31:23]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:31:33]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:31:53]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:32:23]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:33:03]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/energizer-phones-106.php — Curl failed with status 7: 
+[14:33:03]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:33:03]   📱 0 total devices across 0 page(s)
+[14:33:03]   📱 0 total devices found for Energizer
+[14:33:04]   ⏭  0 already done — 0 to scrape
+[14:33:04]   ⚠️  Energizer has 0 pending or failed models. Leaving as pending.
+[14:33:04] 
+[30/48] ━━━ Cat ━━━ https://www.gsmarena.com/cat-phones-89.php
+[14:33:05]   📄 Page 1 — https://www.gsmarena.com/cat-phones-89.php
+[14:33:05]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:33:15]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:33:35]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:34:05]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:34:45]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/cat-phones-89.php — Curl failed with status 7: 
+[14:34:45]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:34:45]   📱 0 total devices across 0 page(s)
+[14:34:45]   📱 0 total devices found for Cat
+[14:34:45]   ⏭  0 already done — 0 to scrape
+[14:34:45]   ⚠️  Cat has 0 pending or failed models. Leaving as pending.
+[14:34:45] 
+[31/48] ━━━ Microsoft ━━━ https://www.gsmarena.com/microsoft-phones-64.php
+[14:34:48]   📄 Page 1 — https://www.gsmarena.com/microsoft-phones-64.php
+[14:34:48]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:34:58]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:35:18]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:35:48]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:36:28]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/microsoft-phones-64.php — Curl failed with status 7: 
+[14:36:28]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:36:28]   📱 0 total devices across 0 page(s)
+[14:36:28]   📱 0 total devices found for Microsoft
+[14:36:28]   ⏭  0 already done — 0 to scrape
+[14:36:28]   ⚠️  Microsoft has 0 pending or failed models. Leaving as pending.
+[14:36:28] 
+[32/48] ━━━ Kyocera ━━━ https://www.gsmarena.com/kyocera-phones-17.php
+[14:36:31]   📄 Page 1 — https://www.gsmarena.com/kyocera-phones-17.php
+[14:36:31]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:36:41]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:37:01]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:37:31]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:38:11]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/kyocera-phones-17.php — Curl failed with status 7: 
+[14:38:11]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:38:11]   📱 0 total devices across 0 page(s)
+[14:38:11]   📱 0 total devices found for Kyocera
+[14:38:11]   ⏭  0 already done — 0 to scrape
+[14:38:11]   ⚠️  Kyocera has 0 pending or failed models. Leaving as pending.
+[14:38:11] 
+[33/48] ━━━ Panasonic ━━━ https://www.gsmarena.com/panasonic-phones-6.php
+[14:38:13]   📄 Page 1 — https://www.gsmarena.com/panasonic-phones-6.php
+[14:38:14]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:38:24]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:38:44]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:39:14]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:39:54]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/panasonic-phones-6.php — Curl failed with status 7: 
+[14:39:54]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:39:54]   📱 0 total devices across 0 page(s)
+[14:39:54]   📱 0 total devices found for Panasonic
+[14:39:54]   ⏭  0 already done — 0 to scrape
+[14:39:54]   ⚠️  Panasonic has 0 pending or failed models. Leaving as pending.
+[14:39:54] 
+[34/48] ━━━ BLU ━━━ https://www.gsmarena.com/blu-phones-67.php
+[14:39:56]   📄 Page 1 — https://www.gsmarena.com/blu-phones-67.php
+[14:39:56]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:40:06]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:40:26]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:40:56]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:41:36]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/blu-phones-67.php — Curl failed with status 7: 
+[14:41:36]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:41:36]   📱 0 total devices across 0 page(s)
+[14:41:36]   📱 0 total devices found for BLU
+[14:41:36]   ⏭  0 already done — 0 to scrape
+[14:41:36]   ⚠️  BLU has 0 pending or failed models. Leaving as pending.
+[14:41:36] 
+[35/48] ━━━ Nvidia ━━━ https://www.gsmarena.com/nvidia-phones-105.php
+[14:41:37]   📄 Page 1 — https://www.gsmarena.com/nvidia-phones-105.php
+[14:41:37]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:41:47]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:42:07]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:42:37]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:43:17]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/nvidia-phones-105.php — Curl failed with status 7: 
+[14:43:17]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:43:17]   📱 0 total devices across 0 page(s)
+[14:43:17]   📱 0 total devices found for Nvidia
+[14:43:17]   ⏭  0 already done — 0 to scrape
+[14:43:17]   ⚠️  Nvidia has 0 pending or failed models. Leaving as pending.
+[14:43:17] 
+[36/48] ━━━ Casio ━━━ https://www.gsmarena.com/casio-phones-12.php
+[14:43:20]   📄 Page 1 — https://www.gsmarena.com/casio-phones-12.php
+[14:43:20]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:43:30]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:43:50]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:44:20]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:45:01]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/casio-phones-12.php — Curl failed with status 7: 
+[14:45:01]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:45:01]   📱 0 total devices across 0 page(s)
+[14:45:01]   📱 0 total devices found for Casio
+[14:45:01]   ⏭  0 already done — 0 to scrape
+[14:45:01]   ⚠️  Casio has 0 pending or failed models. Leaving as pending.
+[14:45:01] 
+[37/48] ━━━ Icemobile ━━━ https://www.gsmarena.com/icemobile-phones-69.php
+[14:45:02]   📄 Page 1 — https://www.gsmarena.com/icemobile-phones-69.php
+[14:45:02]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:45:12]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:45:32]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:46:02]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:46:42]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/icemobile-phones-69.php — Curl failed with status 7: 
+[14:46:42]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:46:42]   📱 0 total devices across 0 page(s)
+[14:46:42]   📱 0 total devices found for Icemobile
+[14:46:42]   ⏭  0 already done — 0 to scrape
+[14:46:42]   ⚠️  Icemobile has 0 pending or failed models. Leaving as pending.
+[14:46:42] 
+[38/48] ━━━ Yezz ━━━ https://www.gsmarena.com/yezz-phones-78.php
+[14:46:43]   📄 Page 1 — https://www.gsmarena.com/yezz-phones-78.php
+[14:46:43]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:46:53]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:47:13]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:47:43]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:48:23]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/yezz-phones-78.php — Curl failed with status 7: 
+[14:48:23]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:48:23]   📱 0 total devices across 0 page(s)
+[14:48:23]   📱 0 total devices found for Yezz
+[14:48:23]   ⏭  0 already done — 0 to scrape
+[14:48:23]   ⚠️  Yezz has 0 pending or failed models. Leaving as pending.
+[14:48:23] 
+[39/48] ━━━ Lava ━━━ https://www.gsmarena.com/lava-phones-94.php
+[14:48:26]   📄 Page 1 — https://www.gsmarena.com/lava-phones-94.php
+[14:48:26]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:48:36]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:48:56]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:49:26]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:50:06]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/lava-phones-94.php — Curl failed with status 7: 
+[14:50:06]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:50:06]   📱 0 total devices across 0 page(s)
+[14:50:06]   📱 0 total devices found for Lava
+[14:50:06]   ⏭  0 already done — 0 to scrape
+[14:50:06]   ⚠️  Lava has 0 pending or failed models. Leaving as pending.
+[14:50:06] 
+[40/48] ━━━ Micromax ━━━ https://www.gsmarena.com/micromax-phones-66.php
+[14:50:09]   📄 Page 1 — https://www.gsmarena.com/micromax-phones-66.php
+[14:50:09]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:50:19]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:50:39]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:51:09]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:51:49]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/micromax-phones-66.php — Curl failed with status 7: 
+[14:51:49]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:51:49]   📱 0 total devices across 0 page(s)
+[14:51:49]   📱 0 total devices found for Micromax
+[14:51:49]   ⏭  0 already done — 0 to scrape
+[14:51:49]   ⚠️  Micromax has 0 pending or failed models. Leaving as pending.
+[14:51:49] 
+[41/48] ━━━ Intex ━━━ https://www.gsmarena.com/intex-phones-90.php
+[14:51:51]   📄 Page 1 — https://www.gsmarena.com/intex-phones-90.php
+[14:51:51]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:52:01]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:52:21]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:52:51]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:53:31]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/intex-phones-90.php — Curl failed with status 7: 
+[14:53:31]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:53:31]   📱 0 total devices across 0 page(s)
+[14:53:31]   📱 0 total devices found for Intex
+[14:53:31]   ⏭  0 already done — 0 to scrape
+[14:53:31]   ⚠️  Intex has 0 pending or failed models. Leaving as pending.
+[14:53:31] 
+[42/48] ━━━ Spice ━━━ https://www.gsmarena.com/spice-phones-68.php
+[14:53:34]   📄 Page 1 — https://www.gsmarena.com/spice-phones-68.php
+[14:53:34]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:53:44]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:54:04]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:54:34]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:55:14]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/spice-phones-68.php — Curl failed with status 7: 
+[14:55:14]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:55:14]   📱 0 total devices across 0 page(s)
+[14:55:14]   📱 0 total devices found for Spice
+[14:55:14]   ⏭  0 already done — 0 to scrape
+[14:55:14]   ⚠️  Spice has 0 pending or failed models. Leaving as pending.
+[14:55:14] 
+[43/48] ━━━ XOLO ━━━ https://www.gsmarena.com/xolo-phones-85.php
+[14:55:17]   📄 Page 1 — https://www.gsmarena.com/xolo-phones-85.php
+[14:55:17]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:55:27]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:55:47]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:56:17]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:56:57]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/xolo-phones-85.php — Curl failed with status 7: 
+[14:56:57]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:56:57]   📱 0 total devices across 0 page(s)
+[14:56:57]   📱 0 total devices found for XOLO
+[14:56:57]   ⏭  0 already done — 0 to scrape
+[14:56:57]   ⚠️  XOLO has 0 pending or failed models. Leaving as pending.
+[14:56:57] 
+[44/48] ━━━ Redmi ━━━ https://www.gsmarena.com/xiaomi-phones-80.php
+[14:57:00]   📄 Page 1 — https://www.gsmarena.com/xiaomi-phones-80.php
+[14:57:00]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:57:10]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:57:30]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:58:00]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[14:58:40]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/xiaomi-phones-80.php — Curl failed with status 7: 
+[14:58:40]   ⚠️  Page 1 fetch failed — stopping pagination
+[14:58:40]   📱 0 total devices across 0 page(s)
+[14:58:40]   📱 0 total devices found for Redmi
+[14:58:40]   ⏭  0 already done — 0 to scrape
+[14:58:40]   ⚠️  Redmi has 0 pending or failed models. Leaving as pending.
+[14:58:40] 
+[45/48] ━━━ Poco ━━━ https://www.gsmarena.com/poco-phones-133.php
+[14:58:41]   📄 Page 1 — https://www.gsmarena.com/poco-phones-133.php
+[14:58:41]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[14:58:51]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[14:59:11]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[14:59:41]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[15:00:21]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/poco-phones-133.php — Curl failed with status 7: 
+[15:00:21]   ⚠️  Page 1 fetch failed — stopping pagination
+[15:00:21]   📱 0 total devices across 0 page(s)
+[15:00:21]   📱 0 total devices found for Poco
+[15:00:21]   ⏭  0 already done — 0 to scrape
+[15:00:21]   ⚠️  Poco has 0 pending or failed models. Leaving as pending.
+[15:00:21] 
+[46/48] ━━━ O2 ━━━ https://www.gsmarena.com/o2-phones-30.php
+[15:00:23]   📄 Page 1 — https://www.gsmarena.com/o2-phones-30.php
+[15:00:23]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[15:00:33]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[15:00:53]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[15:01:23]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[15:02:03]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/o2-phones-30.php — Curl failed with status 7: 
+[15:02:03]   ⚠️  Page 1 fetch failed — stopping pagination
+[15:02:03]   📱 0 total devices across 0 page(s)
+[15:02:03]   📱 0 total devices found for O2
+[15:02:03]   ⏭  0 already done — 0 to scrape
+[15:02:03]   ⚠️  O2 has 0 pending or failed models. Leaving as pending.
+[15:02:03] 
+[47/48] ━━━ Virgin ━━━ https://www.gsmarena.com/virgin-phones-35.php
+[15:02:05]   📄 Page 1 — https://www.gsmarena.com/virgin-phones-35.php
+[15:02:05]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[15:02:15]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[15:02:35]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[15:03:05]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[15:03:45]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/virgin-phones-35.php — Curl failed with status 7: 
+[15:03:45]   ⚠️  Page 1 fetch failed — stopping pagination
+[15:03:45]   📱 0 total devices across 0 page(s)
+[15:03:45]   📱 0 total devices found for Virgin
+[15:03:45]   ⏭  0 already done — 0 to scrape
+[15:03:45]   ⚠️  Virgin has 0 pending or failed models. Leaving as pending.
+[15:03:45] 
+[48/48] ━━━ Palm ━━━ https://www.gsmarena.com/palm-phones-27.php
+[15:03:46]   📄 Page 1 — https://www.gsmarena.com/palm-phones-27.php
+[15:03:46]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[15:03:57]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[15:04:17]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[15:04:47]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[15:05:27]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/palm-phones-27.php — Curl failed with status 7: 
+[15:05:27]   ⚠️  Page 1 fetch failed — stopping pagination
+[15:05:27]   📱 0 total devices across 0 page(s)
+[15:05:27]   📱 0 total devices found for Palm
+[15:05:27]   ⏭  0 already done — 0 to scrape
+[15:05:27]   ⚠️  Palm has 0 pending or failed models. Leaving as pending.
+[15:44:18] =================================================================
+[15:44:18] GSMArena Scraper — 2026-07-24 15:44:18
+[15:44:18] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[15:44:18] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[15:44:18] =================================================================
+[15:44:19] Resuming: 10242 phones saved, 10192 slugs done
+[15:44:19] 
+[1/1] ━━━ Apple ━━━ https://www.gsmarena.com/apple-phones-48.php
+[15:44:26]   📄 Page 1 — https://www.gsmarena.com/apple-phones-48.php
+[15:44:27]   ⚠️  Curl failed with status 7:  — retry 1/5 in 10s
+[15:44:37]   ⚠️  Curl failed with status 7:  — retry 2/5 in 20s
+[15:44:57]   ⚠️  Curl failed with status 7:  — retry 3/5 in 30s
+[15:45:27]   ⚠️  Curl failed with status 7:  — retry 4/5 in 40s
+[15:46:07]   ❌ Critical Failure after 5 retries: https://www.gsmarena.com/apple-phones-48.php — Curl failed with status 7: 
+[15:46:07]   ⚠️  Page 1 fetch failed — stopping pagination
+[15:46:07]   📱 0 total devices across 0 page(s)
+[15:46:07]   📱 0 total devices found for Apple
+[15:46:07]   ⏭  0 already done — 0 to scrape
+[15:46:07]   ⚠️  Apple has 0 pending or failed models. Leaving as pending.
+[15:46:07] 
+🎉 All done! 10242 phones saved → /Users/user/Desktop/work/backend/scripts/output/phones.json
+[15:46:56] =================================================================
+[15:46:56] GSMArena Scraper — 2026-07-24 15:46:56
+[15:46:56] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[15:46:56] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[15:46:56] =================================================================
+[15:46:56] Resuming: 10242 phones saved, 10192 slugs done
+[15:46:56] 
+[1/1] ━━━ Apple ━━━ https://www.gsmarena.com/apple-phones-48.php
+[15:47:01]   📄 Page 1 — https://www.gsmarena.com/apple-phones-48.php
+[15:47:02]   → 50 devices
+[15:47:07]   📄 Page 2 — https://www.gsmarena.com/apple-phones-f-48-0-p2.php
+[15:47:08]   → 50 devices
+[15:47:13]   📄 Page 3 — https://www.gsmarena.com/apple-phones-f-48-0-p3.php
+[15:47:14]   → 46 devices
+[15:47:18]   📄 Page 4 — https://www.gsmarena.com/apple-phones-f-48-0-p4.php
+[15:47:18]   → 0 devices
+[15:47:18]   📱 146 total devices across 3 page(s)
+[15:47:18]   📱 146 total devices found for Apple
+[15:47:18]   ⏭  51 already done — 95 to scrape
+[15:47:21]     ✅ [10243] Apple iPad Air 13 (2026) (22 specs)
+[15:47:23]     ✅ [10244] Apple iPad Air 11 (2026) (22 specs)
+[15:47:26]     ✅ [10245] Apple iPad Pro 13 (2025) (22 specs)
+[15:47:29]     ✅ [10246] Apple iPad Pro 11 (2025) (22 specs)
+[15:47:31]     ✅ [10247] Apple Watch Ultra 3 (21 specs)
+[15:47:34]     ✅ [10248] Apple Watch Series 11 (20 specs)
+[15:47:37]     ✅ [10249] Apple Watch Series 11 Aluminum (20 specs)
+[15:47:41]     ✅ [10250] Apple Watch SE 3 (19 specs)
+[15:47:43]     ✅ [10251] Apple iPad Air 13 (2025) (22 specs)
+[15:47:46]     ✅ [10252] Apple iPad Air 11 (2025) (22 specs)
+[15:47:48]     ✅ [10253] Apple iPad (2025) (21 specs)
+[15:47:52]     ✅ [10254] Apple iPad mini (2024) (22 specs)
+[15:47:55]     ✅ [10255] Apple Watch Series 10 (21 specs)
+[15:47:59]     ✅ [10256] Apple Watch Series 10 Aluminum (21 specs)
+[15:48:01]     ✅ [10257] Apple iPad Pro 13 (2024) (22 specs)
+[15:48:05]     ✅ [10258] Apple iPad Pro 11 (2024) (22 specs)
+[15:48:07]     ✅ [10259] Apple iPad Air 13 (2024) (22 specs)
+[15:48:10]     ✅ [10260] Apple iPad Air 11 (2024) (22 specs)
+[15:48:13]     ✅ [10261] Apple Watch Ultra 2 (21 specs)
+[15:48:15]     ✅ [10262] Apple Watch Series 9 (21 specs)
+[15:48:18]     ✅ [10263] Apple Watch Series 9 Aluminum (21 specs)
+[15:48:20]     ✅ [10264] Apple iPad Pro 12.9 (2022) (23 specs)
+[15:48:23]     ✅ [10265] Apple iPad Pro 11 (2022) (23 specs)
+[15:48:26]     ✅ [10266] Apple iPad (2022) (23 specs)
+[15:48:28]     ✅ [10267] Apple Watch Ultra (21 specs)
+[15:48:31]     ✅ [10268] Apple Watch Series 8 (22 specs)
+[15:48:35]     ✅ [10269] Apple Watch Series 8 Aluminum (22 specs)
+[15:48:38]     ✅ [10270] Apple Watch SE 2 (21 specs)
+[15:48:42]     ✅ [10271] Apple iPhone SE (2022) (24 specs)
+[15:48:45]     ✅ [10272] Apple iPad Air (2022) (23 specs)
+[15:48:49]     ✅ [10273] Apple iPad mini (2021) (23 specs)
+[15:48:52]     ✅ [10274] Apple iPad 10.2 (2021) (23 specs)
+[15:48:56]     ✅ [10275] Apple Watch Edition Series 7 (22 specs)
+[15:48:58]     ✅ [10276] Apple Watch Series 7 (22 specs)
+[15:49:01]     ✅ [10277] Apple Watch Series 7 Aluminum (22 specs)
+[15:49:03]     ✅ [10278] Apple iPad Pro 12.9 (2021) (23 specs)
+[15:49:05]     ✅ [10279] Apple iPad Pro 11 (2021) (23 specs)
+[15:49:08]     ✅ [10280] Apple iPad Air (2020) (23 specs)
+[15:49:11]     ✅ [10281] Apple iPad 10.2 (2020) (23 specs)
+[15:49:13]     ✅ [10282] Apple Watch SE (20 specs)
+[15:49:17]     ✅ [10283] Apple Watch Series 6 Aluminum (21 specs)
+[15:49:19]     ✅ [10284] Apple Watch Series 6 (21 specs)
+[15:49:21]     ✅ [10285] Apple Watch Edition Series 6 (21 specs)
+[15:49:24]     ✅ [10286] Apple iPhone SE (2020) (24 specs)
+[15:49:27]     ✅ [10287] Apple iPad Pro 12.9 (2020) (23 specs)
+[15:49:31]     ✅ [10288] Apple iPad Pro 11 (2020) (23 specs)
+[15:49:33]     ✅ [10289] Apple iPad 10.2 (2019) (23 specs)
+[15:49:36]     ✅ [10290] Apple Watch Edition Series 5 (21 specs)
+[15:49:39]     ✅ [10291] Apple Watch Series 5 (21 specs)
+[15:49:41]     ✅ [10292] Apple Watch Series 5 Aluminum (21 specs)
+[15:49:45]     ✅ [10293] Apple iPad Air (2019) (23 specs)
+[15:49:48]     ✅ [10294] Apple iPad mini (2019) (23 specs)
+[15:49:52]     ✅ [10295] Apple iPad Pro 12.9 (2018) (23 specs)
+[15:49:54]     ✅ [10296] Apple iPad Pro 11 (2018) (23 specs)
+[15:49:56]     ✅ [10297] Apple Watch Series 4 (21 specs)
+[15:49:59]     ✅ [10298] Apple Watch Series 4 Aluminum (21 specs)
+[15:50:01]     ✅ [10299] Apple iPad 9.7 (2018) (23 specs)
+[15:50:04]     ✅ [10300] Apple Watch Edition Series 3 (21 specs)
+[15:50:08]     ✅ [10301] Apple Watch Series 3 (21 specs)
+[15:50:10]     ✅ [10302] Apple Watch Series 3 Aluminum (21 specs)
+[15:50:13]     ✅ [10303] Apple iPad Pro 12.9 (2017) (23 specs)
+[15:50:17]     ✅ [10304] Apple iPad Pro 10.5 (2017) (23 specs)
+[15:50:20]     ✅ [10305] Apple iPad 9.7 (2017) (23 specs)
+[15:50:23]     ✅ [10306] Apple Watch Edition Series 2 42mm (22 specs)
+[15:50:25]     ✅ [10307] Apple Watch Edition Series 2 38mm (22 specs)
+[15:50:28]     ✅ [10308] Apple Watch Series 2 42mm (22 specs)
+[15:50:31]     ✅ [10309] Apple Watch Series 2 38mm (22 specs)
+[15:50:34]     ✅ [10310] Apple Watch Series 2 Aluminum 42mm (22 specs)
+[15:50:36]     ✅ [10311] Apple Watch Series 1 Aluminum 42mm (22 specs)
+[15:50:40]     ✅ [10312] Apple Watch Series 2 Aluminum 38mm (22 specs)
+[15:50:42]     ✅ [10313] Apple Watch Series 1 Aluminum 38mm (22 specs)
+[15:50:44]     ✅ [10314] Apple iPad Pro 9.7 (2016) (23 specs)
+[15:50:47]     ✅ [10315] Apple iPad Pro 12.9 (2015) (23 specs)
+[15:50:49]     ✅ [10316] Apple iPad mini 4 (2015) (23 specs)
+[15:50:52]     ✅ [10317] Apple Watch Edition 42mm (1st gen) (22 specs)
+[15:50:56]     ✅ [10318] Apple Watch Edition 38mm (1st gen) (22 specs)
+[15:50:58]     ✅ [10319] Apple Watch 42mm (1st gen) (22 specs)
+[15:51:01]     ✅ [10320] Apple Watch 38mm (1st gen) (22 specs)
+[15:51:04]     ✅ [10321] Apple Watch Sport 42mm (1st gen) (22 specs)
+[15:51:07]     ✅ [10322] Apple Watch Sport 38mm (1st gen) (22 specs)
+[15:51:09]     ✅ [10323] Apple iPad Air 2 (23 specs)
+[15:51:12]     ✅ [10324] Apple iPad mini 3 (23 specs)
+[15:51:16]     ✅ [10325] Apple iPad Air (23 specs)
+[15:51:18]     ✅ [10326] Apple iPad mini 2 (23 specs)
+[15:51:22]     ✅ [10327] Apple iPad mini Wi-Fi (23 specs)
+[15:51:25]     ✅ [10328] Apple iPad mini Wi-Fi + Cellular (23 specs)
+[15:51:27]     ✅ [10329] Apple iPad 4 Wi-Fi (23 specs)
+[15:51:31]     ✅ [10330] Apple iPad 4 Wi-Fi + Cellular (23 specs)
+[15:51:34]     ✅ [10331] Apple iPad 3 Wi-Fi + Cellular (22 specs)
+[15:51:36]     ✅ [10332] Apple iPad 3 Wi-Fi (22 specs)
+[15:51:39]     ✅ [10333] Apple iPad 2 Wi-Fi + 3G (22 specs)
+[15:51:41]     ✅ [10334] Apple iPad 2 Wi-Fi (22 specs)
+[15:51:43]   🛑  HTTP 429 Rate Limit detected at 15:51:43
+[15:51:43]   💤  Waiting 30s to retry https://www.gsmarena.com/apple_ipad_2_cdma-3849.php...
+[15:52:14]   🛑  HTTP 429 Rate Limit detected at 15:52:14
+[15:52:14]   💤  Waiting 30s to retry https://www.gsmarena.com/apple_ipad_2_cdma-3849.php...
+[15:52:44]   🛑  HTTP 429 Rate Limit detected at 15:52:44
+[15:52:44]   💤  Waiting 30s to retry https://www.gsmarena.com/apple_ipad_2_cdma-3849.php...
+[15:53:15]   🛑  HTTP 429 Rate Limit detected at 15:53:15
+[15:53:15]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[16:36:32]     ✅ [10335] Apple iPad 2 CDMA (22 specs)
+[16:36:35]     ✅ [10336] Apple iPad Wi-Fi + 3G (21 specs)
+[16:36:38]     ✅ [10337] Apple iPad Wi-Fi (21 specs)
+[16:36:38]   ✅ Apple fully completed!
+[16:36:38] 
+🎉 All done! 10337 phones saved → /Users/user/Desktop/work/backend/scripts/output/phones.json
+[16:36:55] =================================================================
+[16:36:55] GSMArena Scraper — 2026-07-24 16:36:55
+[16:36:55] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[16:36:55] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[16:36:55] =================================================================
+[16:36:55] Resuming: 10337 phones saved, 10287 slugs done
+[16:36:55] 
+[1/1] ━━━ Samsung ━━━ https://www.gsmarena.com/samsung-phones-9.php
+[16:37:00]   📄 Page 1 — https://www.gsmarena.com/samsung-phones-9.php
+[16:37:01]   → 50 devices
+[16:37:05]   📄 Page 2 — https://www.gsmarena.com/samsung-phones-f-9-0-p2.php
+[16:37:06]   → 50 devices
+[16:37:10]   📄 Page 3 — https://www.gsmarena.com/samsung-phones-f-9-0-p3.php
+[16:37:11]   → 50 devices
+[16:37:17]   📄 Page 4 — https://www.gsmarena.com/samsung-phones-f-9-0-p4.php
+[16:37:19]   → 50 devices
+[16:37:24]   📄 Page 5 — https://www.gsmarena.com/samsung-phones-f-9-0-p5.php
+[16:37:37]   ⚠️  Curl failed with status 35:  — retry 1/5 in 10s
+[16:37:48]   → 50 devices
+[16:37:54]   📄 Page 6 — https://www.gsmarena.com/samsung-phones-f-9-0-p6.php
+[16:37:54]   → 50 devices
+[16:37:58]   📄 Page 7 — https://www.gsmarena.com/samsung-phones-f-9-0-p7.php
+[16:37:59]   → 50 devices
+[16:38:03]   📄 Page 8 — https://www.gsmarena.com/samsung-phones-f-9-0-p8.php
+[16:38:12]   → 50 devices
+[16:38:16]   📄 Page 9 — https://www.gsmarena.com/samsung-phones-f-9-0-p9.php
+[16:38:17]   → 50 devices
+[16:38:20]   📄 Page 10 — https://www.gsmarena.com/samsung-phones-f-9-0-p10.php
+[16:38:21]   → 50 devices
+[16:38:25]   📄 Page 11 — https://www.gsmarena.com/samsung-phones-f-9-0-p11.php
+[16:38:26]   → 50 devices
+[16:38:30]   📄 Page 12 — https://www.gsmarena.com/samsung-phones-f-9-0-p12.php
+[16:38:31]   → 50 devices
+[16:38:35]   📄 Page 13 — https://www.gsmarena.com/samsung-phones-f-9-0-p13.php
+[16:38:36]   → 50 devices
+[16:38:41]   📄 Page 14 — https://www.gsmarena.com/samsung-phones-f-9-0-p14.php
+[16:38:42]   → 50 devices
+[16:38:46]   📄 Page 15 — https://www.gsmarena.com/samsung-phones-f-9-0-p15.php
+[16:38:47]   → 50 devices
+[16:38:52]   📄 Page 16 — https://www.gsmarena.com/samsung-phones-f-9-0-p16.php
+[16:38:52]   → 50 devices
+[16:38:57]   📄 Page 17 — https://www.gsmarena.com/samsung-phones-f-9-0-p17.php
+[16:38:58]   → 50 devices
+[16:39:02]   📄 Page 18 — https://www.gsmarena.com/samsung-phones-f-9-0-p18.php
+[16:39:03]   → 50 devices
+[16:39:08]   📄 Page 19 — https://www.gsmarena.com/samsung-phones-f-9-0-p19.php
+[16:39:09]   → 50 devices
+[16:39:12]   📄 Page 20 — https://www.gsmarena.com/samsung-phones-f-9-0-p20.php
+[16:39:13]   → 50 devices
+[16:39:17]   📄 Page 21 — https://www.gsmarena.com/samsung-phones-f-9-0-p21.php
+[16:39:18]   → 50 devices
+[16:39:22]   📄 Page 22 — https://www.gsmarena.com/samsung-phones-f-9-0-p22.php
+[16:39:23]   → 50 devices
+[16:39:26]   📄 Page 23 — https://www.gsmarena.com/samsung-phones-f-9-0-p23.php
+[16:39:27]   → 50 devices
+[16:39:33]   📄 Page 24 — https://www.gsmarena.com/samsung-phones-f-9-0-p24.php
+[16:39:34]   → 50 devices
+[16:39:38]   📄 Page 25 — https://www.gsmarena.com/samsung-phones-f-9-0-p25.php
+[16:39:39]   → 50 devices
+[16:39:45]   📄 Page 26 — https://www.gsmarena.com/samsung-phones-f-9-0-p26.php
+[16:39:46]   → 50 devices
+[16:39:49]   📄 Page 27 — https://www.gsmarena.com/samsung-phones-f-9-0-p27.php
+[16:39:50]   → 50 devices
+[16:39:54]   📄 Page 28 — https://www.gsmarena.com/samsung-phones-f-9-0-p28.php
+[16:39:55]   → 50 devices
+[16:40:01]   📄 Page 29 — https://www.gsmarena.com/samsung-phones-f-9-0-p29.php
+[16:40:01]   → 50 devices
+[16:40:06]   📄 Page 30 — https://www.gsmarena.com/samsung-phones-f-9-0-p30.php
+[16:40:07]   → 10 devices
+[16:40:10]   📄 Page 31 — https://www.gsmarena.com/samsung-phones-f-9-0-p31.php
+[16:40:12]   → 0 devices
+[16:40:12]   📱 1460 total devices across 30 page(s)
+[16:40:12]   📱 1460 total devices found for Samsung
+[16:40:12]   ⏭  1246 already done — 214 to scrape
+[16:40:15]     ✅ [10338] Samsung Galaxy Z Fold8 Ultra (23 specs)
+[16:40:17]     ✅ [10339] Samsung Galaxy Z Fold8 (23 specs)
+[16:40:20]     ✅ [10340] Samsung Galaxy Z Flip8 (23 specs)
+[16:40:22]     ✅ [10341] Samsung Galaxy Watch Ultra2 (21 specs)
+[16:40:26]     ✅ [10342] Samsung Galaxy Watch9 (20 specs)
+[16:40:29]     ✅ [10343] Samsung Galaxy M47 (24 specs)
+[16:40:32]     ✅ [10344] Samsung Galaxy A27 (24 specs)
+[16:40:35]     ✅ [10345] Samsung Galaxy A57 (24 specs)
+[16:40:38]     ✅ [10346] Samsung Galaxy A37 (24 specs)
+[16:40:40]     ✅ [10347] Samsung Galaxy M17e (23 specs)
+[16:40:42]     ✅ [10348] Samsung Galaxy Tab A11+ (23 specs)
+[16:40:45]     ✅ [10349] Samsung Galaxy Tab A11 (23 specs)
+[16:40:48]     ✅ [10350] Samsung Galaxy Tab S11 Ultra (24 specs)
+[16:40:50]     ✅ [10351] Samsung Galaxy Tab S11 (24 specs)
+[16:40:54]     ✅ [10352] Samsung Galaxy Tab S10 Lite (23 specs)
+[16:40:56]     ✅ [10353] Samsung Galaxy Watch8 Classic (21 specs)
+[16:40:59]     ✅ [10354] Samsung Galaxy Watch8 (21 specs)
+[16:41:02]     ✅ [10355] Samsung Galaxy Tab Active5 Pro (23 specs)
+[16:41:05]     ✅ [10356] Samsung Galaxy Tab S10 FE+ (23 specs)
+[16:41:08]     ✅ [10357] Samsung Galaxy Tab S10 FE (23 specs)
+[16:41:11]     ✅ [10358] Samsung Galaxy Tab S10 Ultra (24 specs)
+[16:41:13]     ✅ [10359] Samsung Galaxy Tab S10+ (24 specs)
+[16:41:17]     ✅ [10360] Samsung Galaxy Watch Ultra (22 specs)
+[16:41:22]     ✅ [10361] Samsung Galaxy Watch7 (21 specs)
+[16:41:25]     ✅ [10362] Samsung Galaxy Watch FE (21 specs)
+[16:41:29]     ✅ [10363] Samsung Galaxy Tab S6 Lite (2024) (22 specs)
+[16:41:43]   ⚠️  Curl failed with status 52:  — retry 1/5 in 10s
+[16:42:00]     ✅ [10364] Samsung Galaxy Tab Active5 (23 specs)
+[16:42:07]     ✅ [10365] Samsung Galaxy Tab A9+ (22 specs)
+[16:42:10]     ✅ [10366] Samsung Galaxy Tab A9 (22 specs)
+[16:42:15]     ✅ [10367] Samsung Galaxy Tab S9 FE+ (22 specs)
+[16:42:18]     ✅ [10368] Samsung Galaxy Tab S9 FE (22 specs)
+[16:42:21]     ✅ [10369] Samsung Galaxy Tab S9 Ultra (24 specs)
+[16:42:24]     ✅ [10370] Samsung Galaxy Tab S9+ (24 specs)
+[16:42:27]     ✅ [10371] Samsung Galaxy Tab S9 (24 specs)
+[16:42:31]     ✅ [10372] Samsung Galaxy Watch6 Classic (21 specs)
+[16:42:34]     ✅ [10373] Samsung Galaxy Watch6 (21 specs)
+[16:42:37]     ✅ [10374] Samsung Galaxy Tab A7 10.4 (2022) (22 specs)
+[16:42:41]     ✅ [10375] Samsung Galaxy Tab Active4 Pro (23 specs)
+[16:42:44]     ✅ [10376] Samsung Galaxy Watch5 Pro (21 specs)
+[16:42:47]     ✅ [10377] Samsung Galaxy Watch5 (21 specs)
+[16:42:49]     ✅ [10378] Samsung Galaxy M13 (India) (23 specs)
+[16:42:53]     ✅ [10379] Samsung Galaxy A13 (SM-A137) (23 specs)
+[16:42:56]     ✅ [10380] Samsung Galaxy Tab S6 Lite (2022) (22 specs)
+[16:43:00]     ✅ [10381] Samsung Galaxy Tab S8 Ultra (23 specs)
+[16:43:02]     ✅ [10382] Samsung Galaxy Tab S8+ (23 specs)
+[16:43:05]     ✅ [10383] Samsung Galaxy Tab S8 (23 specs)
+[16:43:08]     ✅ [10384] Samsung Galaxy Tab A8 10.5 (2021) (22 specs)
+[16:43:12]     ✅ [10385] Samsung Galaxy Watch4 Classic (21 specs)
+[16:43:15]     ✅ [10386] Samsung Galaxy Watch4 (21 specs)
+[16:43:18]     ✅ [10387] Samsung Galaxy A12 (India) (22 specs)
+[16:43:21]     ✅ [10388] Samsung Galaxy Tab A7 Lite (22 specs)
+[16:43:25]     ✅ [10389] Samsung Galaxy Tab S7 FE (22 specs)
+[16:43:28]     ✅ [10390] Samsung Galaxy M12 (India) (22 specs)
+[16:43:32]     ✅ [10391] Samsung Galaxy Tab Active3 (22 specs)
+[16:43:36]     ✅ [10392] Samsung Galaxy Tab A7 10.4 (2020) (22 specs)
+[16:43:41]     ✅ [10393] Samsung Galaxy Watch3 (21 specs)
+[16:43:43]     ✅ [10394] Samsung Galaxy Tab S7+ (22 specs)
+[16:43:46]     ✅ [10395] Samsung Galaxy Tab S7 (22 specs)
+[16:43:48]     ✅ [10396] Samsung Galaxy J2 Core (2020) (22 specs)
+[16:43:52]     ✅ [10397] Samsung Galaxy Tab A 8.4 (2020) (22 specs)
+[16:43:56]     ✅ [10398] Samsung Galaxy Tab S6 Lite (2020) (22 specs)
+[16:43:58]     ✅ [10399] Samsung Galaxy Tab S6 5G (22 specs)
+[16:44:02]     ✅ [10400] Samsung Galaxy Tab Active Pro (22 specs)
+[16:44:05]     ✅ [10401] Samsung Galaxy Watch Active2 (21 specs)
+[16:44:08]     ✅ [10402] Samsung Galaxy Watch Active2 Aluminum (23 specs)
+[16:44:12]     ✅ [10403] Samsung Galaxy Tab S6 (22 specs)
+[16:44:15]     ✅ [10404] Samsung Galaxy Tab A 8.0 (2019) (22 specs)
+[16:44:19]     ✅ [10405] Samsung Galaxy Watch Active (23 specs)
+[16:44:23]     ✅ [10406] Samsung Galaxy View2 (22 specs)
+[16:44:26]     ✅ [10407] Samsung Galaxy Tab S5e (22 specs)
+[16:44:30]     ✅ [10408] Samsung Galaxy Tab A 10.1 (2019) (22 specs)
+[16:44:34]     ✅ [10409] Samsung Galaxy Tab A 8.0 & S Pen (2019) (22 specs)
+[16:44:36]     ✅ [10410] Samsung Galaxy Tab Advanced2 (22 specs)
+[16:44:40]     ✅ [10411] Samsung Galaxy Tab A 8.0 (2018) (22 specs)
+[16:44:43]     ✅ [10412] Samsung Galaxy Tab S4 10.5 (22 specs)
+[16:44:46]     ✅ [10413] Samsung Galaxy Tab A 10.5 (22 specs)
+[16:44:49]     ✅ [10414] Samsung Galaxy A9 (2018) (23 specs)
+[16:44:53]     ✅ [10415] Samsung Galaxy A7 (2018) (23 specs)
+[16:44:56]     ✅ [10416] Samsung Galaxy Watch (21 specs)
+[16:44:59]     ✅ [10417] Samsung Galaxy J7 (2018) (23 specs)
+[16:45:03]     ✅ [10418] Samsung Galaxy J3 (2018) (22 specs)
+[16:45:07]     ✅ [10419] Samsung Galaxy A8 Star (A9 Star) (23 specs)
+[16:45:10]     ✅ [10420] Samsung Galaxy A6+ (2018) (22 specs)
+[16:45:13]     ✅ [10421] Samsung Galaxy A6 (2018) (22 specs)
+[16:45:16]     ✅ [10422] Samsung Galaxy J2 Pro (2018) (23 specs)
+[16:45:20]     ✅ [10423] Samsung Galaxy A8+ (2018) (24 specs)
+[16:45:22]     ✅ [10424] Samsung Galaxy A8 (2018) (24 specs)
+[16:45:25]     ✅ [10425] Samsung Galaxy J2 (2017) (22 specs)
+[16:45:29]     ✅ [10426] Samsung Galaxy Tab Active2 (22 specs)
+[16:45:33]     ✅ [10427] Samsung Galaxy Tab A 8.0 (2017) (22 specs)
+[16:45:38]     ✅ [10428] Samsung Galaxy C7 (2017) (20 specs)
+[16:45:41]     ✅ [10429] Samsung Galaxy J7 (2017) (22 specs)
+[16:45:44]     ✅ [10430] Samsung Galaxy J5 (2017) (22 specs)
+[16:45:49]     ✅ [10431] Samsung Galaxy J3 (2017) (22 specs)
+[16:45:52]     ✅ [10432] Samsung Galaxy Tab S3 9.7 (22 specs)
+[16:45:55]     ✅ [10433] Samsung Galaxy A7 (2017) (24 specs)
+[16:45:58]     ✅ [10434] Samsung Galaxy A5 (2017) (24 specs)
+[16:46:01]     ✅ [10435] Samsung Galaxy A3 (2017) (24 specs)
+[16:46:05]     ✅ [10436] Samsung Galaxy A8 (2016) (22 specs)
+[16:46:07]     ✅ [10437] Samsung Galaxy On7 (2016) (22 specs)
+[16:46:10]     ✅ [10438] Samsung Galaxy Note7 (USA) (24 specs)
+[16:46:13]     ✅ [10439] Samsung Galaxy Tab J (22 specs)
+[16:46:16]     ✅ [10440] Samsung Galaxy J2 Pro (2016) (22 specs)
+[16:46:20]     ✅ [10441] Samsung Galaxy J2 (2016) (22 specs)
+[16:46:23]     ✅ [10442] Samsung Galaxy A9 Pro (2016) (23 specs)
+[16:46:26]     ✅ [10443] Samsung Galaxy J7 (2016) (22 specs)
+[16:46:29]     ✅ [10444] Samsung Galaxy J5 (2016) (22 specs)
+[16:46:32]     ✅ [10445] Samsung Galaxy Tab A 10.1 (2016) (22 specs)
+[16:46:35]     ✅ [10446] Samsung Galaxy Tab A 7.0 (2016) (22 specs)
+[16:46:37]     ✅ [10447] Samsung Galaxy S7 edge (USA) (24 specs)
+[16:46:40]     ✅ [10448] Samsung Galaxy S7 (USA) (24 specs)
+[16:46:43]     ✅ [10449] Samsung Galaxy Tab E 8.0 (22 specs)
+[16:46:47]     ✅ [10450] Samsung Galaxy J1 (2016) (22 specs)
+[16:46:51]     ✅ [10451] Samsung Galaxy A9 (2016) (23 specs)
+[16:46:53]     ✅ [10452] Samsung Galaxy A7 (2016) (23 specs)
+[16:46:57]     ✅ [10453] Samsung Galaxy A5 (2016) (23 specs)
+[16:47:01]     ✅ [10454] Samsung Galaxy A3 (2016) (23 specs)
+[16:47:05]     ✅ [10455] Samsung Galaxy J3 (2016) (23 specs)
+[16:47:08]     ✅ [10456] Samsung Galaxy Note5 (USA) (23 specs)
+[16:47:10]     ✅ [10457] Samsung Galaxy S6 edge+ (USA) (23 specs)
+[16:47:17]     ✅ [10458] Samsung Galaxy Tab S2 9.7 (22 specs)
+[16:47:19]     ✅ [10459] Samsung Galaxy Tab S2 8.0 (22 specs)
+[16:47:22]     ✅ [10460] Samsung Galaxy Tab 4 10.1 (2015) (22 specs)
+[16:47:24]     ✅ [10461] Samsung Galaxy Tab E 9.6 (20 specs)
+[16:47:27]     ✅ [10462] Samsung Galaxy Tab 3 V (20 specs)
+[16:47:30]     ✅ [10463] Samsung Galaxy Tab A 9.7 & S Pen (20 specs)
+[16:47:34]     ✅ [10464] Samsung Galaxy Tab A 9.7 (20 specs)
+[16:47:36]     ✅ [10465] Samsung Galaxy Tab A 8.0 & S Pen (2015) (20 specs)
+[16:47:39]     ✅ [10466] Samsung Galaxy Tab A 8.0 (2015) (20 specs)
+[16:47:43]     ✅ [10467] Samsung Galaxy S6 edge (USA) (23 specs)
+[16:47:46]     ✅ [10468] Samsung Galaxy S6 (USA) (23 specs)
+[16:47:49]     ✅ [10469] Samsung Galaxy Tab 3 Lite 7.0 VE (22 specs)
+[16:47:52]     ✅ [10470] Samsung Galaxy Note 4 (USA) (23 specs)
+[16:47:55]     ✅ [10471] Samsung Galaxy Tab Active LTE (23 specs)
+[16:47:58]     ✅ [10472] Samsung Galaxy Tab Active (23 specs)
+[16:48:01]     ✅ [10473] Samsung Galaxy Alpha (S801) (23 specs)
+[16:48:04]     ✅ [10474] Samsung Galaxy Tab 4 8.0 (2015) (22 specs)
+[16:48:07]     ✅ [10475] Samsung Galaxy Tab S 8.4 LTE (22 specs)
+[16:48:11]     ✅ [10476] Samsung Galaxy Tab S 8.4 (22 specs)
+[16:48:14]     ✅ [10477] Samsung Galaxy Tab S 10.5 LTE (22 specs)
+[16:48:18]     ✅ [10478] Samsung Galaxy Tab S 10.5 (22 specs)
+[16:48:22]     ✅ [10479] Samsung Galaxy Tab 4 7.0 (21 specs)
+[16:48:26]     ✅ [10480] Samsung Galaxy Tab 4 7.0 3G (22 specs)
+[16:48:28]     ✅ [10481] Samsung Galaxy Tab 4 7.0 LTE (22 specs)
+[16:48:31]     ✅ [10482] Samsung Galaxy Tab 4 8.0 (22 specs)
+[16:48:34]     ✅ [10483] Samsung Galaxy Tab 4 8.0 3G (20 specs)
+[16:48:37]     ✅ [10484] Samsung Galaxy Tab 4 8.0 LTE (20 specs)
+[16:48:40]     ✅ [10485] Samsung Galaxy Tab 4 10.1 (22 specs)
+[16:48:44]     ✅ [10486] Samsung Galaxy Tab 4 10.1 3G (20 specs)
+[16:48:47]     ✅ [10487] Samsung Galaxy Tab 4 10.1 LTE (20 specs)
+[16:48:51]     ✅ [10488] Samsung Galaxy S5 (octa-core) (24 specs)
+[16:48:54]     ✅ [10489] Samsung Galaxy S5 (USA) (24 specs)
+[16:48:58]     ✅ [10490] Samsung Galaxy Tab 3 Lite 7.0 3G (22 specs)
+[16:49:02]     ✅ [10491] Samsung Galaxy Tab 3 Lite 7.0 (22 specs)
+[16:49:06]     ✅ [10492] Samsung Galaxy Tab Pro 12.2 LTE (22 specs)
+[16:49:11]     ✅ [10493] Samsung Galaxy Tab Pro 12.2 3G (22 specs)
+[16:49:13]     ✅ [10494] Samsung Galaxy Tab Pro 12.2 (22 specs)
+[16:49:17]     ✅ [10495] Samsung Galaxy Tab Pro 10.1 LTE (22 specs)
+[16:49:19]     ✅ [10496] Samsung Galaxy Tab Pro 10.1 (22 specs)
+[16:49:22]     ✅ [10497] Samsung Galaxy Tab Pro 8.4 3G/LTE (22 specs)
+[16:49:25]     ✅ [10498] Samsung Galaxy Tab Pro 8.4 (22 specs)
+[16:49:27]     ✅ [10499] Samsung Galaxy Note 10.1 (2014) (22 specs)
+[16:49:30]     ✅ [10500] Samsung Ch@t 333 (18 specs)
+[16:49:34]     ✅ [10501] Samsung Galaxy Tab 3 8.0 (22 specs)
+[16:49:37]     ✅ [10502] Samsung Galaxy Tab 3 10.1 P5220 (22 specs)
+[16:49:41]     ✅ [10503] Samsung Galaxy Tab 3 10.1 P5200 (22 specs)
+[16:49:45]     ✅ [10504] Samsung Galaxy Tab 3 10.1 P5210 (23 specs)
+[16:49:48]     ✅ [10505] Samsung Galaxy Tab 3 7.0 WiFi (22 specs)
+[16:49:50]     ✅ [10506] Samsung Galaxy Tab 3 7.0 (22 specs)
+[16:49:54]     ✅ [10507] Samsung Ativ Tab P8510 (22 specs)
+[16:49:56]     ✅ [10508] Samsung Ch@t 357 (17 specs)
+[16:49:58]     ✅ [10509] Samsung Galaxy Tab 2 7.0 I705 (21 specs)
+[16:50:01]     ✅ [10510] Samsung Galaxy Tab 8.9 4G P7320T (21 specs)
+[16:50:04]     ✅ [10511] Samsung Galaxy Tab 2 10.1 CDMA (22 specs)
+[16:50:09]     ✅ [10512] Samsung Galaxy Tab 2 10.1 P5110 (22 specs)
+[16:50:13]     ✅ [10513] Samsung Galaxy Tab 2 10.1 P5100 (22 specs)
+[16:50:16]     ✅ [10514] Samsung Galaxy Tab 2 7.0 P3110 (21 specs)
+[16:50:18]     ✅ [10515] Samsung Galaxy Tab 2 7.0 P3100 (21 specs)
+[16:50:23]     ✅ [10516] Samsung Galaxy Tab 7.7 LTE I815 (22 specs)
+[16:50:25]     ✅ [10517] Samsung P6210 Galaxy Tab 7.0 Plus (21 specs)
+[16:50:29]     ✅ [10518] Samsung P6200 Galaxy Tab 7.0 Plus (21 specs)
+[16:50:32]     ✅ [10519] Samsung Ch@t 527 (17 specs)
+[16:50:36]     ✅ [10520] Samsung P6810 Galaxy Tab 7.7 (20 specs)
+[16:50:39]     ✅ [10521] Samsung P6800 Galaxy Tab 7.7 (21 specs)
+[16:50:43]     ✅ [10522] Samsung Galaxy Tab 8.9 LTE I957 (19 specs)
+[16:50:46]     ✅ [10523] Samsung Ch@t 222 (16 specs)
+[16:50:49]     ✅ [10524] Samsung Ch@t 220 (16 specs)
+[16:50:53]     ✅ [10525] Samsung P1010 Galaxy Tab Wi-Fi (22 specs)
+[16:50:56]     ✅ [10526] Samsung P7500 Galaxy Tab 10.1 3G (22 specs)
+[16:50:59]     ✅ [10527] Samsung Galaxy Tab 10.1 LTE I905 (22 specs)
+[16:51:03]     ✅ [10528] Samsung Galaxy Tab 10.1 P7510 (22 specs)
+[16:51:05]     ✅ [10529] Samsung Galaxy Tab 8.9 P7300 (21 specs)
+[16:51:13]     ✅ [10530] Samsung Galaxy Tab 8.9 P7310 (21 specs)
+[16:51:18]     ✅ [10531] Samsung P7100 Galaxy Tab 10.1v (20 specs)
+[16:51:21]     ✅ [10532] Samsung Ch@t 350 (16 specs)
+[16:51:24]     ✅ [10533] Samsung Galaxy Fit S5670 (19 specs)
+[16:51:28]     ✅ [10534] Samsung Ch@t 335 (15 specs)
+[16:51:30]     ✅ [10535] Samsung Ch@t 322 Wi-Fi (16 specs)
+[16:51:34]     ✅ [10536] Samsung Ch@t 322 (16 specs)
+[16:51:37]     ✅ [10537] Samsung W169 Duos (16 specs)
+[16:51:40]     ✅ [10538] Samsung Galaxy Tab T-Mobile T849 (22 specs)
+[16:51:45]     ✅ [10539] Samsung P1000 Galaxy Tab (22 specs)
+[16:51:47]     ✅ [10540] Samsung Galaxy Tab CDMA P100 (21 specs)
+[16:51:51]     ✅ [10541] Samsung Galaxy Tab 4G LTE (21 specs)
+[16:51:53]     ✅ [10542] Samsung :) Smiley (17 specs)
+[16:51:56]     ✅ [10543] Samsung B3410W Ch@t (17 specs)
+[16:51:58]     ✅ [10544] Samsung M715 T*OMNIA II (17 specs)
+[16:52:02]     ✅ [10545] Samsung W259 Duos (16 specs)
+[16:52:05]     ✅ [10546] Samsung W299 Duos (16 specs)
+[16:52:07]     ✅ [10547] Samsung Watch Phone (13 specs)
+[16:52:10]     ✅ [10548] Samsung N100 (14 specs)
+[16:52:13]     ✅ [10549] Samsung Galaxy On5 (2016) (20 specs)
+[16:52:16]     ✅ [10550] Samsung Galaxy J5 Prime (2017) (23 specs)
+[16:52:19]     ✅ [10551] Samsung Galaxy Tab 3 Plus 10.1 P8220 (20 specs)
+[16:52:19]   ✅ Samsung fully completed!
+[16:52:19] 
+🎉 All done! 10551 phones saved → /Users/user/Desktop/work/backend/scripts/output/phones.json
+[16:52:28] =================================================================
+[16:52:28] GSMArena Scraper — 2026-07-24 16:52:28
+[16:52:28] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[16:52:28] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[16:52:28] =================================================================
+[16:52:28] Resuming: 10551 phones saved, 10501 slugs done
+[16:52:28] 
+[1/1] ━━━ Xiaomi ━━━ https://www.gsmarena.com/xiaomi-phones-80.php
+[16:52:32]   📄 Page 1 — https://www.gsmarena.com/xiaomi-phones-80.php
+[16:52:33]   → 50 devices
+[16:52:37]   📄 Page 2 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p2.php
+[16:52:39]   → 50 devices
+[16:52:43]   📄 Page 3 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p3.php
+[16:52:44]   → 50 devices
+[16:52:47]   📄 Page 4 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p4.php
+[16:52:48]   → 50 devices
+[16:52:53]   📄 Page 5 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p5.php
+[16:52:54]   → 50 devices
+[16:52:57]   📄 Page 6 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p6.php
+[16:52:58]   → 50 devices
+[16:53:03]   📄 Page 7 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p7.php
+[16:53:04]   → 50 devices
+[16:53:07]   📄 Page 8 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p8.php
+[16:53:08]   → 50 devices
+[16:53:13]   📄 Page 9 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p9.php
+[16:53:14]   → 50 devices
+[16:53:18]   📄 Page 10 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p10.php
+[16:53:19]   → 50 devices
+[16:53:22]   📄 Page 11 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p11.php
+[16:53:23]   → 28 devices
+[16:53:28]   📄 Page 12 — https://www.gsmarena.com/xiaomi-phones-f-80-0-p12.php
+[16:53:28]   → 0 devices
+[16:53:28]   📱 528 total devices across 11 page(s)
+[16:53:28]   📱 528 total devices found for Xiaomi
+[16:53:28]   ⏭  396 already done — 132 to scrape
+[16:53:31]     ✅ [10552] Xiaomi Redmi Note 17 Pro (China) (24 specs)
+[16:53:34]     ✅ [10553] Xiaomi Redmi Note 17 (China) (24 specs)
+[16:53:38]     ✅ [10554] Xiaomi Redmi K90 Ultra (23 specs)
+[16:53:41]     ✅ [10555] Xiaomi Redmi 17C (22 specs)
+[16:53:44]     ✅ [10556] Xiaomi 17T Pro (24 specs)
+[16:53:46]     ✅ [10557] Xiaomi 17T (24 specs)
+[16:53:49]     ✅ [10558] Xiaomi Watch S5 46mm (17 specs)
+[16:53:53]     ✅ [10559] Xiaomi 17 Max (23 specs)
+[16:53:56]     ✅ [10560] Xiaomi Poco Pad C1 (22 specs)
+[16:53:58]     ✅ [10561] Xiaomi Black Shark Pad SE (22 specs)
+[16:54:01]     ✅ [10562] Xiaomi Poco C81 Pro (22 specs)
+[16:54:03]     ✅ [10563] Xiaomi Poco C81 (22 specs)
+[16:54:07]     ✅ [10564] Xiaomi Poco C81x (22 specs)
+[16:54:10]     ✅ [10565] Xiaomi Redmi K90 Max (24 specs)
+[16:54:14]     ✅ [10566] Xiaomi Redmi K Pad 2 (23 specs)
+[16:54:17]     ✅ [10567] Xiaomi Redmi Pad 2 9.7 (22 specs)
+[16:54:20]     ✅ [10568] Xiaomi Redmi A7 Pro (22 specs)
+[16:54:23]     ✅ [10569] Xiaomi Redmi A7 (22 specs)
+[16:54:25]     ✅ [10570] Xiaomi Poco M8s (23 specs)
+[16:54:29]     ✅ [10571] Xiaomi Redmi R70m (22 specs)
+[16:54:32]     ✅ [10572] Xiaomi Redmi R70 (22 specs)
+[16:54:35]     ✅ [10573] Xiaomi Redmi Note 15 Special (22 specs)
+[16:54:39]     ✅ [10574] Xiaomi Redmi A7 Pro 4G (22 specs)
+[16:54:42]     ✅ [10575] Xiaomi Redmi 15a (22 specs)
+[16:54:45]     ✅ [10576] Xiaomi Poco X8 Pro Max (24 specs)
+[16:54:47]     ✅ [10577] Xiaomi Poco X8 Pro (24 specs)
+[16:54:51]     ✅ [10578] Xiaomi Poco C85x (22 specs)
+[16:54:53]     ✅ [10579] Xiaomi Pad 8 Pro (22 specs)
+[16:54:57]     ✅ [10580] Xiaomi Watch 5 (20 specs)
+[16:55:02]     ✅ [10581] Xiaomi Black Shark Gaming Tablet (22 specs)
+[16:55:06]     ✅ [10582] Xiaomi 17 Ultra (China) (23 specs)
+[16:55:10]     ✅ [10583] Xiaomi Redmi Note 15 Pro+ (24 specs)
+[16:55:16]     ✅ [10584] Xiaomi Redmi Note 15 Pro (24 specs)
+[16:55:20]     ✅ [10585] Xiaomi Redmi Note 15 (24 specs)
+[16:55:24]     ✅ [10586] Xiaomi Redmi Note 15 Pro 4G (24 specs)
+[16:55:27]     ✅ [10587] Xiaomi Poco Pad X1 (22 specs)
+[16:55:32]     ✅ [10588] Xiaomi Poco Pad M1 (23 specs)
+[16:55:36]     ✅ [10589] Xiaomi Redmi Watch 6 (16 specs)
+[16:55:40]     ✅ [10590] Xiaomi Black Shark Pad 7 Pro (22 specs)
+[16:55:43]     ✅ [10591] Xiaomi Black Shark Pad 7 (22 specs)
+[16:55:47]     ✅ [10592] Xiaomi Pad 8 (22 specs)
+[16:55:50]     ✅ [10593] Xiaomi Redmi Pad 2 Pro (23 specs)
+[16:55:53]     ✅ [10594] Xiaomi Pad Mini (22 specs)
+[16:55:56]     ✅ [10595] Xiaomi Redmi Note 15 Pro+ (China) (24 specs)
+[16:56:00]     ✅ [10596] Xiaomi Redmi Note 15 Pro (China) (24 specs)
+[16:56:03]     ✅ [10597] Xiaomi Redmi Note 15 (China) (24 specs)
+[16:56:07]     ✅ [10598] Xiaomi Watch S4 41mm (18 specs)
+[16:56:10]     ✅ [10599] Xiaomi Pad 7S Pro 12.5 (23 specs)
+[16:56:13]     ✅ [10600] Xiaomi Redmi K Pad (22 specs)
+[16:56:16]     ✅ [10601] Xiaomi Redmi Pad 2 (23 specs)
+[16:56:19]     ✅ [10602] Xiaomi Pad 7 Ultra (23 specs)
+[16:56:22]     ✅ [10603] Xiaomi Redmi Watch Move (18 specs)
+[16:56:25]     ✅ [10604] Xiaomi Black Shark Pad 6 (22 specs)
+[16:56:29]     ✅ [10605] Xiaomi Redmi Note 14 Pro+ 5G (24 specs)
+[16:56:33]     ✅ [10606] Xiaomi Redmi Note 14 Pro 5G (24 specs)
+[16:56:37]     ✅ [10607] Xiaomi Redmi Note 14 Pro 4G (24 specs)
+[16:56:39]     ✅ [10608] Xiaomi Redmi Note 14 5G (24 specs)
+[16:56:43]     ✅ [10609] Xiaomi Redmi Note 14 4G (24 specs)
+[16:56:45]     ✅ [10610] Xiaomi Redmi 14C (China) (22 specs)
+[16:56:48]     ✅ [10611] Xiaomi Pad 7 Pro (22 specs)
+[16:56:50]     ✅ [10612] Xiaomi Pad 7 (23 specs)
+[16:56:53]     ✅ [10613] Xiaomi Redmi Watch 5 (16 specs)
+[16:56:55]     ✅ [10614] Xiaomi Watch S4 (17 specs)
+[16:57:00]     ✅ [10615] Xiaomi Redmi Note 14 5G (China) (24 specs)
+[16:57:03]     ✅ [10616] Xiaomi Redmi Watch 5 Lite (17 specs)
+[16:57:07]     ✅ [10617] Xiaomi Redmi Watch 5 Active (17 specs)
+[16:57:10]     ✅ [10618] Xiaomi Poco Pad 5G (23 specs)
+[16:57:13]     ✅ [10619] Xiaomi Redmi Pad SE 8.7 (24 specs)
+[16:57:17]     ✅ [10620] Xiaomi Watch S4 Sport (17 specs)
+[16:57:22]     ✅ [10621] Xiaomi Redmi Pad Pro 5G (23 specs)
+[16:57:25]     ✅ [10622] Xiaomi Poco Pad (23 specs)
+[16:57:29]     ✅ [10623] Xiaomi Redmi Pad Pro (23 specs)
+[16:57:31]     ✅ [10624] Xiaomi Pad 6S Pro 12.4 (23 specs)
+[16:57:34]     ✅ [10625] Xiaomi Watch 2 (19 specs)
+[16:57:36]     ✅ [10626] Xiaomi Watch S3 (17 specs)
+[16:57:38]     ✅ [10627] Xiaomi Redmi Watch 4 (17 specs)
+[16:57:41]     ✅ [10628] Xiaomi Watch 2 Pro (18 specs)
+[16:57:43]     ✅ [10629] Xiaomi Redmi Note 13 (China) (24 specs)
+[16:57:47]     ✅ [10630] Xiaomi Redmi Pad SE (22 specs)
+[16:57:49]     ✅ [10631] Xiaomi Pad 6 Max 14 (22 specs)
+[16:57:52]     ✅ [10632] Xiaomi Redmi Watch 3 Active (17 specs)
+[16:57:55]     ✅ [10633] Xiaomi Pad 6 Pro (23 specs)
+[16:57:59]     ✅ [10634] Xiaomi Pad 6 (23 specs)
+[16:58:02]     ✅ [10635] Xiaomi Redmi Watch 3 (17 specs)
+[16:58:06]     ✅ [10636] Xiaomi Watch S2 (17 specs)
+[16:58:09]     ✅ [10637] Xiaomi Redmi Note 12 (China) (23 specs)
+[16:58:11]     ✅ [10638] Xiaomi Redmi Pad (22 specs)
+[16:58:14]     ✅ [10639] Xiaomi Poco M5 (India) (23 specs)
+[16:58:16]     ✅ [10640] Xiaomi Redmi Note 11 SE (India) (24 specs)
+[16:58:18]     ✅ [10641] Xiaomi Watch S1 Pro (17 specs)
+[16:58:22]     ✅ [10642] Xiaomi Pad 5 Pro 12.4 (23 specs)
+[16:58:25]     ✅ [10643] Xiaomi 12 Pro (Dimensity) (23 specs)
+[16:58:28]     ✅ [10644] Xiaomi Poco M4 5G (India) (23 specs)
+[16:58:30]     ✅ [10645] Xiaomi Poco Watch (17 specs)
+[16:58:34]     ✅ [10646] Xiaomi Watch S1 Active (17 specs)
+[16:58:36]     ✅ [10647] Xiaomi Redmi 10 (India) (23 specs)
+[16:58:40]     ✅ [10648] Xiaomi Redmi Note 11 Pro+ 5G (India) (24 specs)
+[16:58:42]     ✅ [10649] Xiaomi Watch S1 (17 specs)
+[16:58:44]     ✅ [10650] Xiaomi Redmi Note 11 Pro (China) (23 specs)
+[16:58:47]     ✅ [10651] Xiaomi Redmi Note 11 (China) (23 specs)
+[16:58:50]     ✅ [10652] Xiaomi Redmi Watch 2 Lite (17 specs)
+[16:58:54]     ✅ [10653] Xiaomi Redmi Watch 2 (17 specs)
+[16:58:56]     ✅ [10654] Xiaomi Watch Color 2 (17 specs)
+[16:58:59]     ✅ [10655] Xiaomi Pad 5 Pro (22 specs)
+[16:59:03]     ✅ [10656] Xiaomi Pad 5 (22 specs)
+[16:59:07]     ✅ [10657] Xiaomi Mi Watch Revolve Active (17 specs)
+[16:59:10]     ✅ [10658] Xiaomi Redmi Note 10 Pro (China) (24 specs)
+[16:59:13]     ✅ [10659] Xiaomi Redmi Note 10 Pro (India) (23 specs)
+[16:59:16]     ✅ [10660] Xiaomi Mi Watch Lite (17 specs)
+[16:59:19]     ✅ [10661] Xiaomi Redmi Watch (17 specs)
+[16:59:23]     ✅ [10662] Xiaomi Mi Watch Color Sports (17 specs)
+[16:59:25]     ✅ [10663] Xiaomi Mi Watch (17 specs)
+[16:59:28]     ✅ [10664] Xiaomi Mi Watch Revolve (18 specs)
+[16:59:30]     ✅ [10665] Xiaomi Redmi 9 (India) (22 specs)
+[16:59:33]     ✅ [10666] Xiaomi Redmi Note 9 Pro (India) (23 specs)
+[16:59:37]     ✅ [10667] Xiaomi Watch Color (17 specs)
+[16:59:41]     ✅ [10668] Xiaomi Mi Watch (China) (21 specs)
+[16:59:44]     ✅ [10669] Xiaomi Mi A2 (Mi 6X) (22 specs)
+[16:59:46]     ✅ [10670] Xiaomi Mi A2 Lite (Redmi 6 Pro) (22 specs)
+[16:59:50]     ✅ [10671] Xiaomi Mi Pad 4 Plus (22 specs)
+[16:59:53]     ✅ [10672] Xiaomi Mi Pad 4 (22 specs)
+[16:59:56]     ✅ [10673] Xiaomi Redmi S2 (Redmi Y2) (22 specs)
+[17:00:01]     ✅ [10674] Xiaomi Redmi 5 Plus (Redmi Note 5) (22 specs)
+[17:00:05]     ✅ [10675] Xiaomi Redmi Y1 (Note 5A) (23 specs)
+[17:00:08]     ✅ [10676] Xiaomi Mi A1 (Mi 5X) (23 specs)
+[17:00:11]     ✅ [10677] Xiaomi Redmi 4 (4X) (23 specs)
+[17:00:14]     ✅ [10678] Xiaomi Mi Pad 3 (22 specs)
+[17:00:17]     ✅ [10679] Xiaomi Redmi 4 (China) (22 specs)
+[17:00:20]     ✅ [10680] Xiaomi Redmi Note 4 (MediaTek) (22 specs)
+[17:00:23]     ✅ [10681] Xiaomi Mi Pad 2 (22 specs)
+[17:00:26]     ✅ [10682] Xiaomi Redmi Note 3 (MediaTek) (22 specs)
+[17:00:29]     ✅ [10683] Xiaomi Mi Pad 7.9 (23 specs)
+[17:00:29]   ✅ Xiaomi fully completed!
+[17:00:29] 
+🎉 All done! 10683 phones saved → /Users/user/Desktop/work/backend/scripts/output/phones.json
+[17:00:40] =================================================================
+[17:00:40] GSMArena Scraper — 2026-07-24 17:00:40
+[17:00:40] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[17:00:40] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[17:00:40] =================================================================
+[17:00:40] Resuming: 10683 phones saved, 10633 slugs done
+[17:00:40] 
+[1/1] ━━━ Google ━━━ https://www.gsmarena.com/google-phones-107.php
+[17:00:43]   📄 Page 1 — https://www.gsmarena.com/google-phones-107.php
+[17:00:48]   → 40 devices
+[17:00:51]   📄 Page 2 — https://www.gsmarena.com/google-phones-f-107-0-p2.php
+[17:00:52]   → 0 devices
+[17:00:52]   📱 40 total devices across 1 page(s)
+[17:00:52]   📱 40 total devices found for Google
+[17:00:52]   ⏭  35 already done — 5 to scrape
+[17:00:54]     ✅ [10684] Google Pixel Watch 4 (22 specs)
+[17:00:57]     ✅ [10685] Google Pixel Watch 3 (20 specs)
+[17:01:00]     ✅ [10686] Google Pixel Watch 2 (20 specs)
+[17:01:03]     ✅ [10687] Google Pixel Tablet (22 specs)
+[17:01:06]     ✅ [10688] Google Pixel Watch (22 specs)
+[17:01:06]   ✅ Google fully completed!
+[17:01:06] 
+🎉 All done! 10688 phones saved → /Users/user/Desktop/work/backend/scripts/output/phones.json
+[17:01:12] =================================================================
+[17:01:12] GSMArena Scraper — 2026-07-24 17:01:12
+[17:01:12] Brands : Samsung, Apple, Xiaomi, Tecno, Infinix, itel, Oppo, Vivo, Realme, Huawei, OnePlus, Nokia, HMD, Nothing, ZTE, Motorola, TCL, Sony, Google, Honor, Asus, Lenovo, Blackview, Meizu, HTC, LG, BlackBerry, Alcatel, Energizer, Cat, Microsoft, Kyocera, Panasonic, BLU, Nvidia, Casio, Icemobile, Yezz, Lava, Micromax, Intex, Spice, XOLO, Redmi, Poco, O2, Virgin, Palm
+[17:01:12] Output : /Users/user/Desktop/work/backend/scripts/output/phones.json
+[17:01:12] =================================================================
+[17:01:12] Resuming: 10688 phones saved, 10638 slugs done
+[17:01:12] 
+[4/48] ━━━ Tecno ━━━ https://www.gsmarena.com/tecno-phones-120.php
+[17:01:18]   📄 Page 1 — https://www.gsmarena.com/tecno-phones-120.php
+[17:01:18]   → 50 devices
+[17:01:21]   📄 Page 2 — https://www.gsmarena.com/tecno-phones-f-120-0-p2.php
+[17:01:22]   → 50 devices
+[17:01:26]   📄 Page 3 — https://www.gsmarena.com/tecno-phones-f-120-0-p3.php
+[17:01:26]   → 50 devices
+[17:01:30]   📄 Page 4 — https://www.gsmarena.com/tecno-phones-f-120-0-p4.php
+[17:01:31]   → 41 devices
+[17:01:35]   📄 Page 5 — https://www.gsmarena.com/tecno-phones-f-120-0-p5.php
+[17:01:36]   → 0 devices
+[17:01:36]   📱 191 total devices across 4 page(s)
+[17:01:36]   📱 191 total devices found for Tecno
+[17:01:36]   ⏭  177 already done — 14 to scrape
+[17:01:38]     ✅ [10689] Tecno Camon Slim (22 specs)
+[17:01:40]     ✅ [10690] Tecno Spark 50 Pro (23 specs)
+[17:01:43]     ✅ [10691] Tecno Pova 8 (23 specs)
+[17:01:45]     ✅ [10692] Tecno Pop X (23 specs)
+[17:01:50]     ✅ [10693] Tecno Pop X 4G (23 specs)
+[17:01:54]     ✅ [10694] Tecno Spark 50 4G (23 specs)
+[17:01:58]     ✅ [10695] Tecno Spark 50 (23 specs)
+[17:02:02]     ✅ [10696] Tecno Camon 50 Pro (23 specs)
+[17:02:04]     ✅ [10697] Tecno Megapad SE (22 specs)
+[17:02:08]     ✅ [10698] Tecno Megapad Pro (18 specs)
+[17:02:10]     ✅ [10699] Tecno Spark 40 (23 specs)
+[17:02:14]     ✅ [10700] Tecno Megapad 11 (22 specs)
+[17:02:17]     ✅ [10701] Tecno Megapad (22 specs)
+[17:02:20]     ✅ [10702] Tecno Spark 9T (India) (22 specs)
+[17:02:20]   ✅ Tecno fully completed!
+[17:02:20] 
+[5/48] ━━━ Infinix ━━━ https://www.gsmarena.com/infinix-phones-119.php
+[17:02:26]   📄 Page 1 — https://www.gsmarena.com/infinix-phones-119.php
+[17:02:27]   → 50 devices
+[17:02:32]   📄 Page 2 — https://www.gsmarena.com/infinix-phones-f-119-0-p2.php
+[17:02:32]   → 50 devices
+[17:02:37]   📄 Page 3 — https://www.gsmarena.com/infinix-phones-f-119-0-p3.php
+[17:02:38]   → 50 devices
+[17:02:42]   📄 Page 4 — https://www.gsmarena.com/infinix-phones-f-119-0-p4.php
+[17:02:43]   → 21 devices
+[17:02:48]   📄 Page 5 — https://www.gsmarena.com/infinix-phones-f-119-0-p5.php
+[17:02:48]   → 0 devices
+[17:02:48]   📱 171 total devices across 4 page(s)
+[17:02:48]   📱 171 total devices found for Infinix
+[17:02:48]   ⏭  154 already done — 17 to scrape
+[17:02:53]     ✅ [10703] Infinix Hot 70 Pro (23 specs)
+[17:02:56]     ✅ [10704] Infinix Hot 70 (23 specs)
+[17:03:00]     ✅ [10705] Infinix GT 50 Pro (24 specs)
+[17:03:03]     ✅ [10706] Infinix Note 60 Ultra (24 specs)
+[17:03:08]     ✅ [10707] Infinix Smart 20 (23 specs)
+[17:03:10]     ✅ [10708] Infinix Xpad 20 Pro (22 specs)
+[17:03:18]     ✅ [10709] Infinix Xpad 20 (22 specs)
+[17:03:20]     ✅ [10710] Infinix Xpad GT (23 specs)
+[17:03:23]     ✅ [10711] Infinix Xpad (22 specs)
+[17:03:25]     ✅ [10712] Infinix Smart 8 (India) (22 specs)
+[17:03:29]     ✅ [10713] Infinix Hot 30i (50 MP) (23 specs)
+[17:03:32]     ✅ [10714] Infinix Smart 7 (India) (22 specs)
+[17:03:35]     ✅ [10715] Infinix Note 12 (2023) (22 specs)
+[17:03:38]     ✅ [10716] Infinix Smart 6 Plus (India) (23 specs)
+[17:03:41]     ✅ [10717] Infinix Smart 5 (India) (22 specs)
+[17:03:46]     ✅ [10718] Infinix S5 Pro (16+32) (22 specs)
+[17:03:49]     ✅ [10719] Infinix S5 Pro (48+40) (22 specs)
+[17:03:49]   ✅ Infinix fully completed!
+[17:03:49] 
+[6/48] ━━━ itel ━━━ https://www.gsmarena.com/itel-phones-131.php
+[17:03:53]   📄 Page 1 — https://www.gsmarena.com/itel-phones-131.php
+[17:03:54]   → 50 devices
+[17:03:58]   📄 Page 2 — https://www.gsmarena.com/itel-phones-f-131-0-p2.php
+[17:03:59]   → 15 devices
+[17:04:03]   📄 Page 3 — https://www.gsmarena.com/itel-phones-f-131-0-p3.php
+[17:04:04]   → 0 devices
+[17:04:04]   📱 65 total devices across 2 page(s)
+[17:04:04]   📱 65 total devices found for itel
+[17:04:04]   ⏭  50 already done — 15 to scrape
+[17:04:08]     ✅ [10720] itel A100Cs (22 specs)
+[17:04:12]     ✅ [10721] itel City 200s (23 specs)
+[17:04:14]     ✅ [10722] itel Power 80 (23 specs)
+[17:04:17]     ✅ [10723] itel A100 Pro (22 specs)
+[17:04:20]     ✅ [10724] itel Zeno 100 (22 specs)
+[17:04:23]     ✅ [10725] itel VistaTab 10 mini (20 specs)
+[17:04:26]     ✅ [10726] itel VistaTab 30GT (22 specs)
+[17:04:28]     ✅ [10727] itel VistaTab 30 Pro (22 specs)
+[17:04:31]     ✅ [10728] itel VistaTab 30 (22 specs)
+[17:04:35]     ✅ [10729] itel Pad One (22 specs)
+[17:04:38]     ✅ [10730] itel Smartwatch 2ES (18 specs)
+[17:04:46]     ✅ [10731] itel Smart Watch 2 (18 specs)
+[17:04:49]     ✅ [10732] itel Smartwatch 1GS (18 specs)
+[17:04:54]     ✅ [10733] itel Smartwatch 1ES (18 specs)
+[17:04:57]     ✅ [10734] itel Smart Watch 1 (18 specs)
+[17:04:57]   ✅ itel fully completed!
+[17:04:57] 
+[7/48] ━━━ Oppo ━━━ https://www.gsmarena.com/oppo-phones-82.php
+[17:05:00]   📄 Page 1 — https://www.gsmarena.com/oppo-phones-82.php
+[17:05:01]   → 50 devices
+[17:05:07]   📄 Page 2 — https://www.gsmarena.com/oppo-phones-f-82-0-p2.php
+[17:05:08]   → 50 devices
+[17:05:13]   📄 Page 3 — https://www.gsmarena.com/oppo-phones-f-82-0-p3.php
+[17:05:14]   → 50 devices
+[17:05:19]   📄 Page 4 — https://www.gsmarena.com/oppo-phones-f-82-0-p4.php
+[17:05:21]   → 50 devices
+[17:05:27]   📄 Page 5 — https://www.gsmarena.com/oppo-phones-f-82-0-p5.php
+[17:05:28]   → 50 devices
+[17:05:32]   📄 Page 6 — https://www.gsmarena.com/oppo-phones-f-82-0-p6.php
+[17:05:34]   → 50 devices
+[17:05:37]   📄 Page 7 — https://www.gsmarena.com/oppo-phones-f-82-0-p7.php
+[17:05:38]   → 50 devices
+[17:05:41]   📄 Page 8 — https://www.gsmarena.com/oppo-phones-f-82-0-p8.php
+[17:05:42]   → 50 devices
+[17:05:48]   📄 Page 9 — https://www.gsmarena.com/oppo-phones-f-82-0-p9.php
+[17:05:49]   → 21 devices
+[17:05:55]   📄 Page 10 — https://www.gsmarena.com/oppo-phones-f-82-0-p10.php
+[17:05:55]   → 0 devices
+[17:05:55]   📱 421 total devices across 9 page(s)
+[17:05:55]   📱 421 total devices found for Oppo
+[17:05:55]   ⏭  328 already done — 93 to scrape
+[17:05:59]     ✅ [10735] Oppo K15 (22 specs)
+[17:06:02]     ✅ [10736] Oppo Reno16c (24 specs)
+[17:06:06]     ✅ [10737] Oppo Reno16 Pro (24 specs)
+[17:06:10]     ✅ [10738] Oppo Reno16 (24 specs)
+[17:06:13]     ✅ [10739] Oppo Reno16 FS (24 specs)
+[17:06:17]     ✅ [10740] Oppo Reno16 F (24 specs)
+[17:06:19]     ✅ [10741] Oppo Reno16 Pro (China) (23 specs)
+[17:06:22]     ✅ [10742] Oppo Reno16 (China) (23 specs)
+[17:06:25]     ✅ [10743] Oppo Pad 6 (22 specs)
+[17:06:29]     ✅ [10744] Oppo Find X9 Ultra (24 specs)
+[17:06:33]     ✅ [10745] Oppo Find X9s Pro (23 specs)
+[17:06:36]     ✅ [10746] Oppo Find X9s (24 specs)
+[17:06:39]     ✅ [10747] Oppo Pad 5 Pro (22 specs)
+[17:06:48]     ✅ [10748] Oppo Pad Mini (22 specs)
+[17:06:52]     ✅ [10749] Oppo Watch X3 Mini (19 specs)
+[17:06:55]     ✅ [10750] Oppo F33 Pro (24 specs)
+[17:06:58]     ✅ [10751] Oppo F33 (24 specs)
+[17:07:02]     ✅ [10752] Oppo A6s Pro (China) (23 specs)
+[17:07:05]     ✅ [10753] Oppo A6k (23 specs)
+[17:07:09]     ✅ [10754] Oppo K15 Pro+ (23 specs)
+[17:07:12]     ✅ [10755] Oppo K15 Pro (23 specs)
+[17:07:15]     ✅ [10756] Oppo Find N6 (23 specs)
+[17:07:17]     ✅ [10757] Oppo K14 (23 specs)
+[17:07:20]     ✅ [10758] Oppo Watch X3 (20 specs)
+[17:07:22]     ✅ [10759] Oppo A6s (India) (23 specs)
+[17:07:26]     ✅ [10760] Oppo Reno15c (India) (24 specs)
+[17:07:28]     ✅ [10761] Oppo A6c (China) (23 specs)
+[17:07:32]     ✅ [10762] Oppo A6x (23 specs)
+[17:07:36]     ✅ [10763] Oppo Reno15 Pro (India) (24 specs)
+[17:07:39]     ✅ [10764] Oppo A6 Pro (India) (23 specs)
+[17:07:43]     ✅ [10765] Oppo Reno15 Pro (24 specs)
+[17:07:48]     ✅ [10766] Oppo Reno15 (24 specs)
+[17:07:52]     ✅ [10767] Oppo Pad 5 Matte Display (23 specs)
+[17:07:56]     ✅ [10768] Oppo Pad 5 (China) (22 specs)
+[17:07:58]     ✅ [10769] Oppo Watch S (19 specs)
+[17:08:02]     ✅ [10770] Oppo A6 Pro (China) (24 specs)
+[17:08:04]     ✅ [10771] Oppo Pad SE (22 specs)
+[17:08:08]     ✅ [10772] Oppo Pad 4 Pro (22 specs)
+[17:08:10]     ✅ [10773] Oppo Watch X2 Mini (19 specs)
+[17:08:12]   🛑  HTTP 429 Rate Limit detected at 17:08:12
+[17:08:12]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_(china)-13736.php...
+[17:08:43]   🛑  HTTP 429 Rate Limit detected at 17:08:43
+[17:08:43]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_(china)-13736.php...
+[17:09:14]   🛑  HTTP 429 Rate Limit detected at 17:09:14
+[17:09:14]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_(china)-13736.php...
+[17:09:44]   🛑  HTTP 429 Rate Limit detected at 17:09:44
+[17:09:44]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[17:19:45]   🛑  HTTP 429 Rate Limit detected at 17:19:45
+[17:19:45]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_(china)-13736.php...
+[17:20:16]   🛑  HTTP 429 Rate Limit detected at 17:20:16
+[17:20:16]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_(china)-13736.php...
+[17:20:46]   🛑  HTTP 429 Rate Limit detected at 17:20:46
+[17:20:46]   ❌ Giving up on https://www.gsmarena.com/oppo_a5_(china)-13736.php after multiple rotations and long cooling.
+[17:20:46]     ⚠️  [40/93] Skip (fetch failed): oppo_a5_(china)-13736.php
+[17:20:50]   🛑  HTTP 429 Rate Limit detected at 17:20:50
+[17:20:50]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x2-13671.php...
+[17:21:21]   🛑  HTTP 429 Rate Limit detected at 17:21:21
+[17:21:21]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x2-13671.php...
+[17:21:51]   🛑  HTTP 429 Rate Limit detected at 17:21:51
+[17:21:51]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x2-13671.php...
+[17:22:22]   🛑  HTTP 429 Rate Limit detected at 17:22:22
+[17:22:22]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[17:32:23]   🛑  HTTP 429 Rate Limit detected at 17:32:23
+[17:32:23]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x2-13671.php...
+[17:32:54]   🛑  HTTP 429 Rate Limit detected at 17:32:54
+[17:32:54]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x2-13671.php...
+[17:33:24]   🛑  HTTP 429 Rate Limit detected at 17:33:24
+[17:33:24]   ❌ Giving up on https://www.gsmarena.com/oppo_watch_x2-13671.php after multiple rotations and long cooling.
+[17:33:24]     ⚠️  [41/93] Skip (fetch failed): oppo_watch_x2-13671.php
+[17:33:27]   🛑  HTTP 429 Rate Limit detected at 17:33:27
+[17:33:27]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_pro_(china)-13491.php...
+[17:33:58]   🛑  HTTP 429 Rate Limit detected at 17:33:58
+[17:33:58]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_pro_(china)-13491.php...
+[17:34:28]   🛑  HTTP 429 Rate Limit detected at 17:34:28
+[17:34:28]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_pro_(china)-13491.php...
+[17:34:59]   🛑  HTTP 429 Rate Limit detected at 17:34:59
+[17:34:59]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[17:44:59]   🛑  HTTP 429 Rate Limit detected at 17:44:59
+[17:44:59]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_pro_(china)-13491.php...
+[17:45:30]   🛑  HTTP 429 Rate Limit detected at 17:45:30
+[17:45:30]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a5_pro_(china)-13491.php...
+[17:46:00]   🛑  HTTP 429 Rate Limit detected at 17:46:00
+[17:46:00]   ❌ Giving up on https://www.gsmarena.com/oppo_a5_pro_(china)-13491.php after multiple rotations and long cooling.
+[17:46:00]     ⚠️  [42/93] Skip (fetch failed): oppo_a5_pro_(china)-13491.php
+[17:46:03]   🛑  HTTP 429 Rate Limit detected at 17:46:03
+[17:46:03]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3-13516.php...
+[17:46:33]   🛑  HTTP 429 Rate Limit detected at 17:46:33
+[17:46:33]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3-13516.php...
+[17:47:04]   🛑  HTTP 429 Rate Limit detected at 17:47:04
+[17:47:04]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3-13516.php...
+[17:47:34]   🛑  HTTP 429 Rate Limit detected at 17:47:34
+[17:47:34]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[17:57:35]   🛑  HTTP 429 Rate Limit detected at 17:57:35
+[17:57:35]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3-13516.php...
+[17:58:05]   🛑  HTTP 429 Rate Limit detected at 17:58:05
+[17:58:05]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3-13516.php...
+[17:58:36]   🛑  HTTP 429 Rate Limit detected at 17:58:36
+[17:58:36]   ❌ Giving up on https://www.gsmarena.com/oppo_pad_3-13516.php after multiple rotations and long cooling.
+[17:58:36]     ⚠️  [43/93] Skip (fetch failed): oppo_pad_3-13516.php
+[17:58:39]   🛑  HTTP 429 Rate Limit detected at 17:58:39
+[17:58:39]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3_pro-13085.php...
+[17:59:09]   🛑  HTTP 429 Rate Limit detected at 17:59:09
+[17:59:09]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3_pro-13085.php...
+[17:59:40]   🛑  HTTP 429 Rate Limit detected at 17:59:40
+[17:59:40]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3_pro-13085.php...
+[18:00:11]   🛑  HTTP 429 Rate Limit detected at 18:00:11
+[18:00:11]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[18:10:11]   🛑  HTTP 429 Rate Limit detected at 18:10:11
+[18:10:11]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3_pro-13085.php...
+[18:10:42]   🛑  HTTP 429 Rate Limit detected at 18:10:42
+[18:10:42]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_3_pro-13085.php...
+[18:11:13]   🛑  HTTP 429 Rate Limit detected at 18:11:13
+[18:11:13]   ❌ Giving up on https://www.gsmarena.com/oppo_pad_3_pro-13085.php after multiple rotations and long cooling.
+[18:11:13]     ⚠️  [44/93] Skip (fetch failed): oppo_pad_3_pro-13085.php
+[18:11:15]   🛑  HTTP 429 Rate Limit detected at 18:11:15
+[18:11:15]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3x_(china)-13233.php...
+[18:11:45]   🛑  HTTP 429 Rate Limit detected at 18:11:45
+[18:11:45]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3x_(china)-13233.php...
+[18:12:16]   🛑  HTTP 429 Rate Limit detected at 18:12:16
+[18:12:16]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3x_(china)-13233.php...
+[18:12:46]   🛑  HTTP 429 Rate Limit detected at 18:12:46
+[18:12:46]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[18:22:48]   🛑  HTTP 429 Rate Limit detected at 18:22:48
+[18:22:48]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3x_(china)-13233.php...
+[18:23:19]   🛑  HTTP 429 Rate Limit detected at 18:23:19
+[18:23:19]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3x_(china)-13233.php...
+[18:23:49]   🛑  HTTP 429 Rate Limit detected at 18:23:49
+[18:23:49]   ❌ Giving up on https://www.gsmarena.com/oppo_a3x_(china)-13233.php after multiple rotations and long cooling.
+[18:23:49]     ⚠️  [45/93] Skip (fetch failed): oppo_a3x_(china)-13233.php
+[18:23:51]   🛑  HTTP 429 Rate Limit detected at 18:23:51
+[18:23:51]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_(china)-13163.php...
+[18:24:22]   🛑  HTTP 429 Rate Limit detected at 18:24:22
+[18:24:22]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_(china)-13163.php...
+[18:24:52]   🛑  HTTP 429 Rate Limit detected at 18:24:52
+[18:24:52]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_(china)-13163.php...
+[18:25:30]   🛑  HTTP 429 Rate Limit detected at 18:25:30
+[18:25:30]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[18:35:30]   🛑  HTTP 429 Rate Limit detected at 18:35:30
+[18:35:30]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_(china)-13163.php...
+[18:36:01]   🛑  HTTP 429 Rate Limit detected at 18:36:01
+[18:36:01]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_(china)-13163.php...
+[18:36:31]   🛑  HTTP 429 Rate Limit detected at 18:36:31
+[18:36:31]   ❌ Giving up on https://www.gsmarena.com/oppo_a3_(china)-13163.php after multiple rotations and long cooling.
+[18:36:31]     ⚠️  [46/93] Skip (fetch failed): oppo_a3_(china)-13163.php
+[18:36:34]   🛑  HTTP 429 Rate Limit detected at 18:36:34
+[18:36:34]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_pro_(china)-13045.php...
+[18:37:05]   🛑  HTTP 429 Rate Limit detected at 18:37:05
+[18:37:05]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_pro_(china)-13045.php...
+[18:37:35]   🛑  HTTP 429 Rate Limit detected at 18:37:35
+[18:37:35]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_pro_(china)-13045.php...
+[18:38:06]   🛑  HTTP 429 Rate Limit detected at 18:38:06
+[18:38:06]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[18:48:07]   🛑  HTTP 429 Rate Limit detected at 18:48:07
+[18:48:07]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_pro_(china)-13045.php...
+[18:48:37]   🛑  HTTP 429 Rate Limit detected at 18:48:37
+[18:48:37]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_pro_(china)-13045.php...
+[18:49:08]   🛑  HTTP 429 Rate Limit detected at 18:49:08
+[18:49:08]   ❌ Giving up on https://www.gsmarena.com/oppo_reno12_pro_(china)-13045.php after multiple rotations and long cooling.
+[18:49:08]     ⚠️  [47/93] Skip (fetch failed): oppo_reno12_pro_(china)-13045.php
+[18:49:11]   🛑  HTTP 429 Rate Limit detected at 18:49:11
+[18:49:11]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_(china)-13046.php...
+[18:49:42]   🛑  HTTP 429 Rate Limit detected at 18:49:42
+[18:49:42]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_(china)-13046.php...
+[18:50:27]   ⚠️  Curl failed with status 28:  — retry 1/5 in 10s
+[18:50:37]   🛑  HTTP 429 Rate Limit detected at 18:50:37
+[18:50:37]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_(china)-13046.php...
+[18:51:08]   🛑  HTTP 429 Rate Limit detected at 18:51:08
+[18:51:08]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[19:01:08]   🛑  HTTP 429 Rate Limit detected at 19:01:08
+[19:01:08]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_(china)-13046.php...
+[19:01:39]   🛑  HTTP 429 Rate Limit detected at 19:01:39
+[19:01:39]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno12_(china)-13046.php...
+[19:02:09]   🛑  HTTP 429 Rate Limit detected at 19:02:09
+[19:02:09]   ❌ Giving up on https://www.gsmarena.com/oppo_reno12_(china)-13046.php after multiple rotations and long cooling.
+[19:02:09]     ⚠️  [48/93] Skip (fetch failed): oppo_reno12_(china)-13046.php
+[19:02:13]   🛑  HTTP 429 Rate Limit detected at 19:02:13
+[19:02:13]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_k12x_(china)-13001.php...
+[19:02:43]   🛑  HTTP 429 Rate Limit detected at 19:02:43
+[19:02:43]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_k12x_(china)-13001.php...
+[19:03:14]   🛑  HTTP 429 Rate Limit detected at 19:03:14
+[19:03:14]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_k12x_(china)-13001.php...
+[19:03:44]   🛑  HTTP 429 Rate Limit detected at 19:03:44
+[19:03:44]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[19:13:45]   🛑  HTTP 429 Rate Limit detected at 19:13:45
+[19:13:45]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_k12x_(china)-13001.php...
+[19:14:19]   🛑  HTTP 429 Rate Limit detected at 19:14:19
+[19:14:19]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_k12x_(china)-13001.php...
+[19:14:49]   🛑  HTTP 429 Rate Limit detected at 19:14:49
+[19:14:49]   ❌ Giving up on https://www.gsmarena.com/oppo_k12x_(china)-13001.php after multiple rotations and long cooling.
+[19:14:49]     ⚠️  [49/93] Skip (fetch failed): oppo_k12x_(china)-13001.php
+[19:14:51]   🛑  HTTP 429 Rate Limit detected at 19:14:51
+[19:14:51]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_pro_(china)-12932.php...
+[19:15:22]   🛑  HTTP 429 Rate Limit detected at 19:15:22
+[19:15:22]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_pro_(china)-12932.php...
+[19:15:53]   🛑  HTTP 429 Rate Limit detected at 19:15:53
+[19:15:53]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_pro_(china)-12932.php...
+[19:16:23]   🛑  HTTP 429 Rate Limit detected at 19:16:23
+[19:16:23]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[19:47:40]   🛑  HTTP 429 Rate Limit detected at 19:47:40
+[19:47:40]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_pro_(china)-12932.php...
+[19:48:10]   🛑  HTTP 429 Rate Limit detected at 19:48:10
+[19:48:10]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a3_pro_(china)-12932.php...
+[19:48:41]   🛑  HTTP 429 Rate Limit detected at 19:48:41
+[19:48:41]   ❌ Giving up on https://www.gsmarena.com/oppo_a3_pro_(china)-12932.php after multiple rotations and long cooling.
+[19:48:41]     ⚠️  [50/93] Skip (fetch failed): oppo_a3_pro_(china)-12932.php
+[19:48:44]   🛑  HTTP 429 Rate Limit detected at 19:48:44
+[19:48:44]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x-12855.php...
+[19:49:14]   🛑  HTTP 429 Rate Limit detected at 19:49:14
+[19:49:14]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x-12855.php...
+[19:49:45]   🛑  HTTP 429 Rate Limit detected at 19:49:45
+[19:49:45]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x-12855.php...
+[19:50:16]   🛑  HTTP 429 Rate Limit detected at 19:50:16
+[19:50:16]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[20:13:36]   🛑  HTTP 429 Rate Limit detected at 20:13:36
+[20:13:36]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x-12855.php...
+[20:14:07]   🛑  HTTP 429 Rate Limit detected at 20:14:07
+[20:14:07]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_x-12855.php...
+[20:14:37]   🛑  HTTP 429 Rate Limit detected at 20:14:37
+[20:14:37]   ❌ Giving up on https://www.gsmarena.com/oppo_watch_x-12855.php after multiple rotations and long cooling.
+[20:14:37]     ⚠️  [51/93] Skip (fetch failed): oppo_watch_x-12855.php
+[20:14:42]   🛑  HTTP 429 Rate Limit detected at 20:14:42
+[20:14:42]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_neo-12796.php...
+[20:15:12]   🛑  HTTP 429 Rate Limit detected at 20:15:12
+[20:15:12]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_neo-12796.php...
+[20:15:43]   🛑  HTTP 429 Rate Limit detected at 20:15:43
+[20:15:43]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_neo-12796.php...
+[20:16:13]   🛑  HTTP 429 Rate Limit detected at 20:16:13
+[20:16:13]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[20:26:14]   🛑  HTTP 429 Rate Limit detected at 20:26:14
+[20:26:14]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_neo-12796.php...
+[20:26:47]   🛑  HTTP 429 Rate Limit detected at 20:26:47
+[20:26:47]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_neo-12796.php...
+[20:27:17]   🛑  HTTP 429 Rate Limit detected at 20:27:17
+[20:27:17]   ❌ Giving up on https://www.gsmarena.com/oppo_pad_neo-12796.php after multiple rotations and long cooling.
+[20:27:17]     ⚠️  [52/93] Skip (fetch failed): oppo_pad_neo-12796.php
+[20:27:19]   🛑  HTTP 429 Rate Limit detected at 20:27:19
+[20:27:19]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_pro_(china)-12706.php...
+[20:27:50]   🛑  HTTP 429 Rate Limit detected at 20:27:50
+[20:27:50]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_pro_(china)-12706.php...
+[20:28:21]   🛑  HTTP 429 Rate Limit detected at 20:28:21
+[20:28:21]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_pro_(china)-12706.php...
+[20:28:51]   🛑  HTTP 429 Rate Limit detected at 20:28:51
+[20:28:51]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[20:38:52]   🛑  HTTP 429 Rate Limit detected at 20:38:52
+[20:38:52]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_pro_(china)-12706.php...
+[20:39:23]   🛑  HTTP 429 Rate Limit detected at 20:39:23
+[20:39:23]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_pro_(china)-12706.php...
+[20:39:54]   🛑  HTTP 429 Rate Limit detected at 20:39:54
+[20:39:54]   ❌ Giving up on https://www.gsmarena.com/oppo_reno11_pro_(china)-12706.php after multiple rotations and long cooling.
+[20:39:54]     ⚠️  [53/93] Skip (fetch failed): oppo_reno11_pro_(china)-12706.php
+[20:39:57]   🛑  HTTP 429 Rate Limit detected at 20:39:57
+[20:39:57]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_(china)-12707.php...
+[20:40:28]   🛑  HTTP 429 Rate Limit detected at 20:40:28
+[20:40:28]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_(china)-12707.php...
+[20:40:58]   🛑  HTTP 429 Rate Limit detected at 20:40:58
+[20:40:58]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_(china)-12707.php...
+[20:41:29]   🛑  HTTP 429 Rate Limit detected at 20:41:29
+[20:41:29]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[20:51:30]   🛑  HTTP 429 Rate Limit detected at 20:51:30
+[20:51:30]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_(china)-12707.php...
+[20:52:01]   🛑  HTTP 429 Rate Limit detected at 20:52:01
+[20:52:01]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno11_(china)-12707.php...
+[20:52:31]   🛑  HTTP 429 Rate Limit detected at 20:52:31
+[20:52:31]   ❌ Giving up on https://www.gsmarena.com/oppo_reno11_(china)-12707.php after multiple rotations and long cooling.
+[20:52:31]     ⚠️  [54/93] Skip (fetch failed): oppo_reno11_(china)-12707.php
+[20:52:33]   🛑  HTTP 429 Rate Limit detected at 20:52:33
+[20:52:33]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_air2-12698.php...
+[20:53:04]   🛑  HTTP 429 Rate Limit detected at 20:53:04
+[20:53:04]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_air2-12698.php...
+[20:53:35]   🛑  HTTP 429 Rate Limit detected at 20:53:35
+[20:53:35]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_air2-12698.php...
+[20:54:06]   🛑  HTTP 429 Rate Limit detected at 20:54:06
+[20:54:06]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[21:04:07]   🛑  HTTP 429 Rate Limit detected at 21:04:07
+[21:04:07]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_air2-12698.php...
+[21:04:38]   🛑  HTTP 429 Rate Limit detected at 21:04:38
+[21:04:38]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_air2-12698.php...
+[21:05:10]   🛑  HTTP 429 Rate Limit detected at 21:05:10
+[21:05:10]   ❌ Giving up on https://www.gsmarena.com/oppo_pad_air2-12698.php after multiple rotations and long cooling.
+[21:05:10]     ⚠️  [55/93] Skip (fetch failed): oppo_pad_air2-12698.php
+[21:05:17]   🛑  HTTP 429 Rate Limit detected at 21:05:17
+[21:05:17]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_se-12533.php...
+[21:05:49]   🛑  HTTP 429 Rate Limit detected at 21:05:49
+[21:05:49]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_se-12533.php...
+[21:06:20]   🛑  HTTP 429 Rate Limit detected at 21:06:20
+[21:06:20]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_se-12533.php...
+[21:06:51]   🛑  HTTP 429 Rate Limit detected at 21:06:51
+[21:06:51]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[21:16:51]   🛑  HTTP 429 Rate Limit detected at 21:16:51
+[21:16:51]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_se-12533.php...
+[21:17:22]   🛑  HTTP 429 Rate Limit detected at 21:17:22
+[21:17:22]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_se-12533.php...
+[21:17:53]   🛑  HTTP 429 Rate Limit detected at 21:17:53
+[21:17:53]   ❌ Giving up on https://www.gsmarena.com/oppo_watch_se-12533.php after multiple rotations and long cooling.
+[21:17:53]     ⚠️  [56/93] Skip (fetch failed): oppo_watch_se-12533.php
+[21:17:55]   🛑  HTTP 429 Rate Limit detected at 21:17:55
+[21:17:55]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_4_pro-12532.php...
+[21:18:26]   🛑  HTTP 429 Rate Limit detected at 21:18:26
+[21:18:26]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_4_pro-12532.php...
+[21:18:56]   🛑  HTTP 429 Rate Limit detected at 21:18:56
+[21:18:56]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_4_pro-12532.php...
+[21:19:27]   🛑  HTTP 429 Rate Limit detected at 21:19:27
+[21:19:27]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[21:29:28]   🛑  HTTP 429 Rate Limit detected at 21:29:28
+[21:29:28]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_4_pro-12532.php...
+[21:30:00]   🛑  HTTP 429 Rate Limit detected at 21:30:00
+[21:30:00]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_watch_4_pro-12532.php...
+[21:30:31]   🛑  HTTP 429 Rate Limit detected at 21:30:31
+[21:30:31]   ❌ Giving up on https://www.gsmarena.com/oppo_watch_4_pro-12532.php after multiple rotations and long cooling.
+[21:30:31]     ⚠️  [57/93] Skip (fetch failed): oppo_watch_4_pro-12532.php
+[21:30:34]   🛑  HTTP 429 Rate Limit detected at 21:30:34
+[21:30:34]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_pro_(china)-12276.php...
+[21:31:05]   🛑  HTTP 429 Rate Limit detected at 21:31:05
+[21:31:05]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_pro_(china)-12276.php...
+[21:31:37]   🛑  HTTP 429 Rate Limit detected at 21:31:37
+[21:31:37]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_pro_(china)-12276.php...
+[21:32:07]   🛑  HTTP 429 Rate Limit detected at 21:32:07
+[21:32:07]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[21:42:09]   🛑  HTTP 429 Rate Limit detected at 21:42:09
+[21:42:09]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_pro_(china)-12276.php...
+[21:42:39]   🛑  HTTP 429 Rate Limit detected at 21:42:39
+[21:42:39]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_pro_(china)-12276.php...
+[21:43:10]   🛑  HTTP 429 Rate Limit detected at 21:43:10
+[21:43:10]   ❌ Giving up on https://www.gsmarena.com/oppo_reno10_pro_(china)-12276.php after multiple rotations and long cooling.
+[21:43:10]     ⚠️  [58/93] Skip (fetch failed): oppo_reno10_pro_(china)-12276.php
+[21:43:12]   🛑  HTTP 429 Rate Limit detected at 21:43:12
+[21:43:12]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_(china)-12277.php...
+[21:43:43]   🛑  HTTP 429 Rate Limit detected at 21:43:43
+[21:43:43]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_(china)-12277.php...
+[21:44:14]   🛑  HTTP 429 Rate Limit detected at 21:44:14
+[21:44:14]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_(china)-12277.php...
+[21:44:44]   🛑  HTTP 429 Rate Limit detected at 21:44:44
+[21:44:44]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[21:54:46]   🛑  HTTP 429 Rate Limit detected at 21:54:46
+[21:54:46]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_(china)-12277.php...
+[21:55:17]   🛑  HTTP 429 Rate Limit detected at 21:55:17
+[21:55:17]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_reno10_(china)-12277.php...
+[21:55:48]   🛑  HTTP 429 Rate Limit detected at 21:55:48
+[21:55:48]   ❌ Giving up on https://www.gsmarena.com/oppo_reno10_(china)-12277.php after multiple rotations and long cooling.
+[21:55:48]     ⚠️  [59/93] Skip (fetch failed): oppo_reno10_(china)-12277.php
+[21:55:50]   🛑  HTTP 429 Rate Limit detected at 21:55:50
+[21:55:50]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_2-12177.php...
+[21:56:21]   🛑  HTTP 429 Rate Limit detected at 21:56:21
+[21:56:21]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_2-12177.php...
+[21:56:52]   🛑  HTTP 429 Rate Limit detected at 21:56:52
+[21:56:52]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_2-12177.php...
+[21:57:23]   🛑  HTTP 429 Rate Limit detected at 21:57:23
+[21:57:23]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...
+[22:07:24]   🛑  HTTP 429 Rate Limit detected at 22:07:24
+[22:07:24]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_2-12177.php...
+[22:07:55]   🛑  HTTP 429 Rate Limit detected at 22:07:55
+[22:07:55]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_pad_2-12177.php...
+[22:08:27]   🛑  HTTP 429 Rate Limit detected at 22:08:27
+[22:08:27]   ❌ Giving up on https://www.gsmarena.com/oppo_pad_2-12177.php after multiple rotations and long cooling.
+[22:08:27]     ⚠️  [60/93] Skip (fetch failed): oppo_pad_2-12177.php
+[22:08:30]   🛑  HTTP 429 Rate Limit detected at 22:08:30
+[22:08:30]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a58_(china)-11967.php...
+[22:09:01]   🛑  HTTP 429 Rate Limit detected at 22:09:01
+[22:09:01]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a58_(china)-11967.php...
+[22:09:33]   🛑  HTTP 429 Rate Limit detected at 22:09:33
+[22:09:33]   💤  Waiting 30s to retry https://www.gsmarena.com/oppo_a58_(china)-11967.php...
+[22:10:03]   🛑  HTTP 429 Rate Limit detected at 22:10:03
+[22:10:03]   ⚠️  Rotation limit (3) reached for this URL. Long cooling for 10 mins...

@@ -9,7 +9,8 @@ class ClickEventsController < ApplicationController
     # This ensures metadata preparation and record creation are atomic
     ActiveRecord::Base.transaction do
       # Prepare metadata with device fingerprinting information
-      metadata = click_event_params[:metadata] || {}
+      metadata_source = click_event_params[:metadata] || {}
+      metadata = metadata_source.respond_to?(:to_h) ? metadata_source.to_h : metadata_source
       
       # Add device fingerprinting data to metadata if provided
       if params[:device_hash].present?
@@ -150,8 +151,15 @@ class ClickEventsController < ApplicationController
   end
 
   def click_event_params
-    # Only permit the fields that actually exist in the ClickEvent model
-    params.permit(:event_type, :ad_id, :device_hash, :user_agent, metadata: {}, click_event: {})
+    # We permit the top level fields, and for metadata we explicitly permit all keys
+    # to prevent stripping of nested hashes like device_fingerprint.
+    permitted = params.permit(:event_type, :ad_id, :device_hash, :user_agent, click_event: {})
+    if params[:metadata].present? && params[:metadata].is_a?(ActionController::Parameters)
+      permitted[:metadata] = params.require(:metadata).permit!
+    elsif params[:metadata].is_a?(Hash)
+      permitted[:metadata] = params[:metadata]
+    end
+    permitted
   end
 
   def normalize_ad_id(raw_ad_id)

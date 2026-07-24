@@ -81,7 +81,14 @@ class ImageAnalysisService
     
     # Try Groq AI with title context (primary vision AI service)
     if GroqAiService.available?
-      groq_result = GroqAiService.analyze_images([image_url], title)
+      category_result = suggest_category([], title)
+      brand_result = suggest_brand([], title)
+      context = {
+        category: category_result[:category_name],
+        brand: brand_result[:brand]
+      }.compact
+
+      groq_result = GroqAiService.analyze_images([image_url], title, context)
       if groq_result[:success]
         Rails.logger.info "ImageAnalysisService: Successfully analyzed image with title using Groq AI"
         
@@ -116,10 +123,11 @@ class ImageAnalysisService
       category_result = suggest_category(cloudinary_result[:detected_objects], title)
       brand_result = suggest_brand(cloudinary_result[:detected_objects], title)
       
-      # Try to get device specifications if it's a phone/tablet
+      # Try to get device specifications from DeviceCatalogService for any category
       device_specs = nil
-      if category_result[:category_name] && category_result[:category_name].downcase.include?('computer')
-        device_specs = DeviceCatalogService.search(title, 'phones').first
+      if category_result[:category_name]
+        subcat_name = category_result[:subcategory_name] || category_result[:category_name]
+        device_specs = DeviceCatalogService.search(title, subcat_name, category_result[:category_name]).first
         if device_specs && device_specs['specifications']
           Rails.logger.info "ImageAnalysisService: Found device specs from DeviceCatalogService"
         end
