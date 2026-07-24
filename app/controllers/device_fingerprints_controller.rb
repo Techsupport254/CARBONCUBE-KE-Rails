@@ -1,5 +1,4 @@
 class DeviceFingerprintsController < ApplicationController
-  before_action :block_bots, only: [:store, :recover]
   skip_before_action :verify_authenticity_token, only: [:store, :recover]
   
   # POST /device_fingerprints/store
