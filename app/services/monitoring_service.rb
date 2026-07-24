@@ -35,7 +35,7 @@ class MonitoringService
 
       # Only log to stdout in production — in development, metrics are
       # stored in MonitoringMetrics and the log line adds noise.
-      Rails.logger.info("MONITORING_METRIC: #{name}=#{value} #{tags.to_json}") unless Rails.env.development?
+      # (Redundant log line removed per user request)
     end
 
     def track_performance(controller, action, duration)

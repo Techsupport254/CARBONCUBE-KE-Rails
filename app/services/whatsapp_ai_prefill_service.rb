@@ -10,8 +10,8 @@ class WhatsappAiPrefillService
     
     # Try to find matching device in catalog
     device_match = nil
-    if category_name
-      device_match = DeviceCatalogService.search(normalized_title, category_name).first
+    if category
+      device_match = DeviceCatalogService.search(normalized_title, category.subcategories&.first&.name, category_name).first
     end
     
     # Fallback to phones if no category specified
@@ -47,12 +47,14 @@ class WhatsappAiPrefillService
     
     # Category keywords mapping
     category_keywords = {
-      'Computers, Phones and Accessories' => %w[phone mobile laptop tablet computer ipad iphone samsung galaxy macbook dell hp lenovo android ios],
-      'Automotive Parts & Accessories' => %w[car tyre tire battery oil engine wheel brake motor vehicle toyota honda bmw],
-      'Filtration' => %w[filter water air oil fuel],
-      'Hardware' => %w[tool drill hammer screw wrench saw hardware electrical plumbing],
-      'Services' => %w[service repair maintenance installation cleaning],
-      'TVs & Home Entertainment' => %w[tv television monitor display sound audio speaker]
+      'Computers, Phones and Accessories' => %w[phone mobile laptop tablet computer ipad iphone samsung galaxy macbook dell hp lenovo android ios smartphone smartwatch watch keyboard mouse monitor webcam router modem networking storage hard drive ssd ram processor graphics card motherboard peripheral cooling],
+      'Automotive Parts & Accessories' => %w[car tyre tire battery oil engine wheel brake motor vehicle toyota honda bmw mercedes nissan mazda subaru isuzu rims alloy steel lubricant gear synthetic spare parts accessories shocks suspension spark plug],
+      'Filtration' => %w[filter water air oil fuel filtration hvac engine diesel hydraulic industrial purifier],
+      'Hardware' => %w[tool drill hammer screw wrench saw hardware electrical plumbing generator welding cable pipe fitting cement sand construction building safety boots helmet gloves protective],
+      'Services' => %w[service repair maintenance installation cleaning electrician plumber plumbing welder welding mason masonry painter painting carpenter carpentry appliance electronics specialist borehole drilling mechanic mechanics equipment leasing rental hire technician emergency],
+      'TVs & Home Entertainment' => %w[tv television monitor display sound audio speaker smart android google led lcd oled qled 4k uhd hd samsung lg hisense tcl skyworth vitron sony soundbar home theater surround streaming fire stick chromecast apple decoder dstv gotv zuku startimes projector screen mount stand hdmi antenna satellite remote accessories],
+      'Electronics and Accessories' => %w[printer copier scanner pos shredder projector office machine hp canon epson brother kyocera laser inkjet thermal barcode receipt cash register terminal toner cartridge document photocopy],
+      'Agriculture' => %w[farm tractor irrigation tiller harvester plough seeder hoe panga slasher sprinkler machete fork shovel water pump pipe tank drip agriculture agricultural machinery equipment implement parts accessories]
     }
     
     best_match = nil
@@ -119,7 +121,7 @@ class WhatsappAiPrefillService
     { min: nil, max: nil, median: nil, recommended: nil, count: 0 }
   end
   
-  # Fetch specifications for phones/tablets
+  # Fetch specifications for any product category
   def self.fetch_specifications(title, category_id = nil)
     return {} if title.blank?
     
@@ -127,25 +129,24 @@ class WhatsappAiPrefillService
     category_name = category&.name
     subcategory = category&.subcategories&.first
     
-    # Check if this is a phone/tablet category
+    # Try DeviceCatalogService for all categories (it maps subcategories to catalog files)
+    device_specs = DeviceCatalogService.search(title, subcategory&.name, category&.name).first
+    if device_specs && device_specs['specifications']
+      return device_specs['specifications']
+    end
+    
+    # Fallback to GSM Arena only for phone/tablet-like devices
     is_phone_device = category_name&.downcase&.include?('phone') || 
                      category_name&.downcase&.include?('computer') ||
                      subcategory&.name&.downcase&.include?('phone') ||
                      subcategory&.name&.downcase&.include?('tablet') ||
                      subcategory&.name&.downcase&.include?('ipad')
     
-    return {} unless is_phone_device
-    
-    # Try DeviceCatalogService first
-    device_specs = DeviceCatalogService.search(title, subcategory&.name).first
-    if device_specs && device_specs['specifications']
-      return device_specs['specifications']
-    end
-    
-    # Fallback to GSM Arena
-    gsm_specs = GsmArenaService.fetch_device_specs(title)
-    if gsm_specs && gsm_specs[:specifications]
-      return gsm_specs[:specifications]
+    if is_phone_device
+      gsm_specs = GsmArenaService.fetch_device_specs(title)
+      if gsm_specs && gsm_specs[:specifications]
+        return gsm_specs[:specifications]
+      end
     end
     
     {}
@@ -154,25 +155,43 @@ class WhatsappAiPrefillService
     {}
   end
   
-  # Generate intelligent description
+  # Generate an SEO-friendly product/service description
   def self.generate_description(title, category, specifications = {})
     return "Please provide a description for this product." if title.blank?
     
     category_name = category&.name || 'Product'
     subcategory_name = category&.subcategories&.first&.name || 'General'
     
-    # Build description with specifications if available
+    # Extract pricing/negotiable hints if present
+    pricing_model = specifications['Pricing Model']
+    pricing_unit  = specifications['Pricing Unit']
+    max_price     = specifications['Max Price']
+    negotiable    = specifications['Negotiable'] || specifications['negotiable']
+    
+    seo_keywords = [title, category_name, subcategory_name, 'Kenya'].compact.join(', ')
+    
     if specifications && specifications.any?
-      spec_lines = specifications.map { |key, value| "- #{key}: #{value}" }.join("\n")
-      "### #{title}\n\nQuality #{subcategory_name.downcase} from #{category_name.downcase}.\n\n**Specifications:**\n#{spec_lines}\n\n- Well-maintained and in excellent condition\n- Suitable for buyers seeking value and reliability\n- Contact seller for availability and delivery options"
+      spec_lines = specifications.reject { |k, _| %w[Pricing Model Pricing Unit Max Price Negotiable negotiable].include?(k) }
+                                 .map { |key, value| "- #{key}: #{value}" }
+                                 .join("\n")
+      
+      price_line = ""
+      if pricing_model.present?
+        price_line += "\n**Pricing:** #{pricing_model}"
+        price_line += " #{pricing_unit}" if pricing_unit.present?
+        price_line += " (max Ksh #{max_price})" if max_price.present?
+        price_line += "."
+      end
+      price_line += "\n**Negotiable:** #{negotiable.to_s.downcase == 'yes' ? 'Yes' : 'Inquire with seller'}" if negotiable.present?
+      
+      "### #{title}\n\nBuy #{title} in Kenya. Quality #{subcategory_name.downcase} under #{category_name.downcase} category.#{price_line}\n\n**Specifications:**\n#{spec_lines}\n\n- #{category_name} #{subcategory_name} in excellent condition\n- Great value, reliable performance, and verified seller support\n- Contact seller for availability, delivery options, and the best price\n\n**Search keywords:** #{seo_keywords}"
     else
-      # Use category-aware template
       strategy = determine_strategy(category_name, subcategory_name)
       build_template_description(title, category_name, subcategory_name, strategy)
     end
   rescue => e
     Rails.logger.error "WhatsappAiPrefillService: Error generating description - #{e.message}"
-    "Quality product available. Contact seller for more details."
+    "#{title} available in Kenya. Contact seller for more details and pricing."
   end
   
   private
@@ -208,6 +227,7 @@ class WhatsappAiPrefillService
     return 'filtration' if text.match?(/filter|filtration/i)
     return 'hardware_tools' if text.match?(/hardware|tool|electrical|plumbing|safety/i)
     return 'equipment_leasing' if text.match?(/equipment|leasing|earth moving|drilling|lifting|concrete|compacting/i)
+    return 'services' if text.match?(/service|repair|mechanic|electrician|plumber|welder|mason|painter|carpenter|specialist/i)
     'general'
   end
   
@@ -225,9 +245,11 @@ class WhatsappAiPrefillService
     when 'hardware_tools'
       "### #{title} - #{subcategory_label}\n\nDurable #{subcategory_label.downcase} suitable for workshop, site, and professional use."
     when 'equipment_leasing'
-      "### #{title} - #{subcategory_label}\n\nWell-maintained #{subcategory_label.downcase} available for project-based and long-term operational needs."
+      "### #{title} - #{subcategory_label}\n\nWell-maintained #{subcategory_label.downcase} available for project-based and long-term operational needs in Kenya."
+    when 'services'
+      "### #{title} - #{subcategory_label}\n\nProfessional #{subcategory_label.downcase} services in Kenya. Flexible pricing, reliable support, and quality workmanship for your needs."
     else
-      "### #{title} - #{subcategory_label}\n\nQuality #{subcategory_label.downcase} in the #{category_label.downcase} segment."
+      "### #{title} - #{subcategory_label}\n\nQuality #{subcategory_label.downcase} in the #{category_label.downcase} segment, available in Kenya."
     end
     
     "#{opening}\n\n- Key features and condition details available on request.\n- Suitable for buyers seeking value, reliability, and verified seller support.\n- Contact seller for delivery options, warranty terms, and availability."

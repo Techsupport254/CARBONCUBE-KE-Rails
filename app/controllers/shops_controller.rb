@@ -447,11 +447,8 @@ class ShopsController < ApplicationController
            Strategy2.call(slug, normalized_slug_name) ||
            Strategy3.call(slug, normalized_enterprise_name) ||
            Strategy4.call(slug, normalized_slug_name) ||
+           Strategy6.call(slug) ||
            Strategy5.call(slug)
-
-    unless shop
-      Rails.logger.warn "ShopsController#find_shop_by_slug: Shop not found for slug '#{slug}' (normalized: '#{normalized_slug_name}')"
-    end
 
     shop
   end
@@ -504,6 +501,15 @@ class ShopsController < ApplicationController
       rescue ActiveRecord::RecordNotFound
         nil
       end
+    end
+  end
+
+  class Strategy6
+    def self.call(slug)
+      Seller.includes(:seller_tier, :tier)
+            .where(deleted: false)
+            .where('LOWER(TRIM(username)) = ?', slug.downcase.strip)
+            .first
     end
   end
   

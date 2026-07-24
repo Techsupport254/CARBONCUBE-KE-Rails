@@ -427,6 +427,20 @@ class Buyer::ProfilesController < ApplicationController
     is_direct_seller = seller.present?
     @seller = nil
 
+    # Process carbon_code string to carbon_code_id if provided
+    carbon_code_param = params[:profile][:carbon_code]
+    if carbon_code_param.present?
+      carbon_code_record = CarbonCode.find_by("UPPER(TRIM(code)) = ?", carbon_code_param.to_s.strip.upcase)
+      if carbon_code_record.nil?
+        return render json: { success: false, errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
+      end
+      unless carbon_code_record.valid_for_use?
+        msg = carbon_code_record.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
+        return render json: { success: false, errors: { carbon_code: [msg] } }, status: :unprocessable_entity
+      end
+      params[:profile][:carbon_code_id] = carbon_code_record.id
+    end
+
     # 3. Run the entire upgrade inside a transaction so it's atomic.
     #    If ANY step fails, the whole thing rolls back cleanly.
     ActiveRecord::Base.transaction do
@@ -483,6 +497,11 @@ class Buyer::ProfilesController < ApplicationController
       unless @seller.save
         Rails.logger.error "Seller creation during onboarding failed: #{@seller.errors.full_messages.inspect}"
         raise @seller.errors.full_messages.join(", ")
+      end
+
+      # After successful save, if carbon code was assigned and changed, increment usage
+      if @seller.saved_change_to_carbon_code_id? && @seller.carbon_code_id.present?
+        CarbonCode.find_by(id: @seller.carbon_code_id)&.increment!(:times_used)
       end
 
       # Overwrite temp password with the buyer's real password_digest

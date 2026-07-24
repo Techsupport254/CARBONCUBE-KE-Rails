@@ -363,6 +363,20 @@ class Seller::ProfilesController < ApplicationController
       }, status: :unprocessable_entity
     end
 
+    # Process carbon_code string to carbon_code_id if provided
+    carbon_code_param = params[:profile][:carbon_code]
+    if carbon_code_param.present?
+      carbon_code_record = CarbonCode.find_by("UPPER(TRIM(code)) = ?", carbon_code_param.to_s.strip.upcase)
+      if carbon_code_record.nil?
+        return render json: { success: false, errors: { carbon_code: ["Carbon code is invalid."] } }, status: :unprocessable_entity
+      end
+      unless carbon_code_record.valid_for_use?
+        msg = carbon_code_record.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
+        return render json: { success: false, errors: { carbon_code: [msg] } }, status: :unprocessable_entity
+      end
+      params[:profile][:carbon_code_id] = carbon_code_record.id
+    end
+
     @seller = nil
     @ad = nil
 
@@ -370,7 +384,7 @@ class Seller::ProfilesController < ApplicationController
       @seller = seller
       
       # Update seller profile with onboarding data
-      @seller.update(
+      @seller.assign_attributes(
         fullname: params[:profile][:fullname],
         phone_number: params[:profile][:phone_number],
         secondary_phone_number: params[:profile][:secondary_phone_number],
@@ -385,6 +399,11 @@ class Seller::ProfilesController < ApplicationController
       
       unless @seller.save
         raise @seller.errors.full_messages.join(", ")
+      end
+
+      # After successful save, if carbon code was assigned and changed, increment usage
+      if @seller.saved_change_to_carbon_code_id? && @seller.carbon_code_id.present?
+        CarbonCode.find_by(id: @seller.carbon_code_id)&.increment!(:times_used)
       end
       
       # Ensure seller has a tier (assign Premium if not)

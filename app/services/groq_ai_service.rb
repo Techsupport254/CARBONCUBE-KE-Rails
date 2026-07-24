@@ -9,7 +9,7 @@ class GroqAiService
   BASE_URL = 'https://api.groq.com/openai/v1/chat/completions'
   MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
 
-  def self.analyze_images(image_urls, title = nil)
+  def self.analyze_images(image_urls, title = nil, context = {})
     return { success: false, error: "Groq API key not configured" } unless GROQ_API_KEY
     return { success: false, error: "No image URLs provided" } if image_urls.blank?
 
@@ -23,19 +23,29 @@ class GroqAiService
       end
 
       # Build the prompt for product analysis
+      context_lines = []
+      context_lines << "Product title: '#{title}'" if title.present?
+      context_lines << "Category: '#{context[:category]}'" if context[:category].present?
+      context_lines << "Subcategory: '#{context[:subcategory]}'" if context[:subcategory].present?
+      context_lines << "Brand: '#{context[:brand]}'" if context[:brand].present?
+      context_lines << "Condition: '#{context[:condition]}'" if context[:condition].present?
+      context_lines << "Price: '#{context[:price]}'" if context[:price].present?
+      context_lines << "Key specifications: #{context[:specifications].to_json}" if context[:specifications].present?
+      context_text = context_lines.any? ? "\nAdditional context:\n" + context_lines.map { |l| "- #{l}" }.join("\n") : ''
+
       prompt = "Analyze these product image(s) and extract the following information in JSON format:
 {
   \"detected_objects\": [list of main objects detected],
   \"category\": [suggested product category],
+  \"subcategory\": [suggested product subcategory if inferable],
   \"brand\": [brand name if detectable],
   \"condition\": [estimated condition: brand_new, second_hand, refurbished],
   \"confidence\": [overall confidence score 0-1],
-  \"description\": [brief product description]
+  \"description\": [SEO-optimized product description for Kenyan e-commerce]
 }
+#{context_text}
 
-#{title ? "Additional context: Product title is '#{title}'" : ''}
-
-Focus on accuracy for e-commerce product classification."
+The description should be concise (1-2 sentences), natural, and SEO-friendly: include the product name/title, category, brand if known, key selling point or use case, and a subtle call to action for Kenyan buyers. Use relevant keywords naturally without stuffing. Use the provided context when available, but infer from the image if any value is missing. Focus on accuracy for e-commerce product classification."
 
       # Build the messages array
       messages = [

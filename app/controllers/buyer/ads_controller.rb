@@ -141,7 +141,8 @@ class Buyer::AdsController < ApplicationController
         seller_tier_name: ad.seller&.seller_tier&.tier&.name || "Free",
         seller_name: ad.seller&.fullname,
         category_name: ad.category&.name,
-        subcategory_name: ad.subcategory&.name
+        subcategory_name: ad.subcategory&.name,
+        specifications: ad.specifications
       }
       end
     end
@@ -2197,6 +2198,7 @@ class Buyer::AdsController < ApplicationController
         category_name: ad.category&.name,
         subcategory_id: ad.subcategory_id,
         subcategory_name: ad.subcategory&.name,
+        specifications: ad.specifications,
         seller_tier: seller_tier_id || 1,
         seller_tier_name: (ad.seller&.seller_tier&.tier&.name || ad.seller_tier_name || 'Free'),
         tier_priority: (ad.seller&.seller_tier&.tier_id ? (5 - [ad.seller.seller_tier.tier_id, 4].min) : 5),
@@ -2701,6 +2703,7 @@ class Buyer::AdsController < ApplicationController
           ads.subcategory_id,
           ads.category_id,
           ads.seller_id,
+          ads.specifications,
           sellers.fullname AS seller_name,
           categories.name AS category_name,
           subcategories.name AS subcategory_name,
@@ -2813,6 +2816,7 @@ class Buyer::AdsController < ApplicationController
         seller_name: row['seller_name'],
         category_name: row['category_name'],
         subcategory_name: row['subcategory_name'],
+        specifications: row['specifications'],
         seller_tier: row['seller_tier_id'],
         seller_tier_name: row['seller_tier_name'],
         reviews_count: row['reviews_count']&.to_i || 0,
@@ -2935,6 +2939,7 @@ class Buyer::AdsController < ApplicationController
             ads.category_id,
             ads.subcategory_id,
             ads.seller_id,
+            ads.specifications,
                        sellers.fullname as seller_name,
                        categories.name as category_name,
                        subcategories.name as subcategory_name,
@@ -3075,6 +3080,7 @@ class Buyer::AdsController < ApplicationController
           seller_id: row['seller_id'],
           category_name: row['category_name'],
           subcategory_name: row['subcategory_name'],
+          specifications: row['specifications'],
           seller_tier: row['seller_tier_id'],
           seller_tier_name: row['seller_tier_name'],
         metrics: {

@@ -35,6 +35,10 @@ class WebhooksController < ApplicationController
     raw_body = request.raw_post.to_s
     signature = request.headers['X-Hub-Signature-256']
 
+    Rails.logger.info "[Webhooks#whatsapp] ====== INCOMING WEBHOOK ======"
+    Rails.logger.info "[Webhooks#whatsapp] Signature present: #{signature.present?}"
+    Rails.logger.info "[Webhooks#whatsapp] Raw body: #{raw_body}"
+
     # Skip signature verification in development mode for testing
     unless Rails.env.development?
       unless verify_signature(raw_body, signature)
@@ -45,16 +49,68 @@ class WebhooksController < ApplicationController
     end
 
     payload = JSON.parse(raw_body)
-    
+
+    # Log structured payload details
+    log_whatsapp_payload(payload)
+
     # Process the payload via WhatsAppCloudService
     WhatsAppCloudService.handle_webhook_payload(payload)
-    
+
     # Log for debugging
     Rails.logger.info "[Webhooks#whatsapp] Received and processed payload"
     head :ok
   rescue JSON::ParserError => e
     Rails.logger.warn "[Webhooks#whatsapp] Invalid JSON: #{e.message}"
     head :bad_request
+  end
+
+  def log_whatsapp_payload(payload)
+    payload['entry']&.each do |entry|
+      entry['changes']&.each do |change|
+        next unless change['field'] == 'messages'
+
+        value = change['value']
+        next unless value
+
+        if value['messages']
+          value['messages'].each do |msg|
+            Rails.logger.info "[Webhooks#whatsapp] --- Incoming Message ---"
+            Rails.logger.info "[Webhooks#whatsapp]   Message ID: #{msg['id']}"
+            Rails.logger.info "[Webhooks#whatsapp]   From: #{msg['from']}"
+            Rails.logger.info "[Webhooks#whatsapp]   Type: #{msg['type']}"
+            Rails.logger.info "[Webhooks#whatsapp]   Timestamp: #{msg['timestamp']}"
+
+            case msg['type']
+            when 'text'
+              Rails.logger.info "[Webhooks#whatsapp]   Text: #{msg.dig('text', 'body')}"
+            when 'image', 'video', 'audio', 'document', 'sticker'
+              media = msg[msg['type']]
+              Rails.logger.info "[Webhooks#whatsapp]   Media ID: #{media&.dig('id')}"
+              Rails.logger.info "[Webhooks#whatsapp]   Caption: #{media&.dig('caption')}"
+              Rails.logger.info "[Webhooks#whatsapp]   MIME: #{media&.dig('mime_type')}"
+            when 'interactive'
+              Rails.logger.info "[Webhooks#whatsapp]   Interactive type: #{msg.dig('interactive', 'type')}"
+            when 'reaction'
+              Rails.logger.info "[Webhooks#whatsapp]   Reaction: #{msg.dig('reaction', 'emoji')}"
+            else
+              Rails.logger.info "[Webhooks#whatsapp]   Unhandled type: #{msg['type']}"
+            end
+
+            Rails.logger.info "[Webhooks#whatsapp]   Full message: #{msg.inspect}"
+          end
+        end
+
+        if value['statuses']
+          value['statuses'].each do |status|
+            Rails.logger.info "[Webhooks#whatsapp] --- Status Update ---"
+            Rails.logger.info "[Webhooks#whatsapp]   Message ID: #{status['id']}"
+            Rails.logger.info "[Webhooks#whatsapp]   Status: #{status['status']}"
+            Rails.logger.info "[Webhooks#whatsapp]   Recipient: #{status['recipient_id']}"
+            Rails.logger.info "[Webhooks#whatsapp]   Timestamp: #{status['timestamp']}"
+          end
+        end
+      end
+    end
   end
 
   def verify_signature(raw_body, signature_header)

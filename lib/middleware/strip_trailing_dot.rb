@@ -6,8 +6,8 @@ module Middleware
 
     def call(env)
       path = env['PATH_INFO']
-      if path && path.end_with?('.')
-        env['PATH_INFO'] = path.sub(/\.$/, '')
+      if path
+        env['PATH_INFO'] = path.gsub(/\.\//, '/').sub(/\.$/, '')
       end
       @app.call(env)
     end

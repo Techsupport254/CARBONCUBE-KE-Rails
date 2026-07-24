@@ -761,7 +761,7 @@ Rails.application.routes.draw do
         post :resolve
         post :start
         post :send_email
-        put :update_log
+        patch :update_log
         delete :delete_log
       end
     end

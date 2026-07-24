@@ -82,8 +82,8 @@ CKP_FILE   = File.join(OUTPUT_DIR, 'checkpoint.json')
 LOG_FILE   = File.join(OUTPUT_DIR, 'scrape.log')
 
 # Delays for normal operation
-MIN_DELAY  = 1.0
-MAX_DELAY  = 3.0
+MIN_DELAY  = 3.0
+MAX_DELAY  = 6.0
 
 USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -487,7 +487,7 @@ brands_to_run.each_with_index do |brand, bi|
     spec_url  = "#{BASE_URL}/#{device['slug']}"
     
     # Random polite sleep between individual phone fetches
-    sleep(0.5 + rand(1.0))
+    sleep(1.5 + rand(2.0))
     
     spec_html = fetch_html(spec_url)
     unless spec_html
@@ -543,4 +543,4 @@ brands_to_run.each_with_index do |brand, bi|
   end
 end
 
-log "\n🎉 All done! #{total_scraped} phones saved → #{OUT_FILE}"
+log "\n🎉 All done! #{total_saved} phones saved → #{OUT_FILE}"

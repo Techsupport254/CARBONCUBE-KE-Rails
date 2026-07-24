@@ -674,34 +674,38 @@ class WhatsappProductCreationService
       }
     end
     
-    # Set default values for optional fields
-    brand = product_data['brand'] || 'Unknown'
-    manufacturer = product_data['brand'] || 'Unknown' # Use brand as manufacturer if not specified
-    condition = product_data['condition'] || 'second_hand'
-    description = product_data['description'] || product_data['ai_description'] || "Quality product available. Contact seller for more details."
+    # Determine if this is a service category
+    category = Category.find_by(id: product_data['category_id'])
+    is_service = category && Ad::SERVICE_CATEGORY_NAMES.any? { |name| category.name.to_s.downcase.include?(name.downcase) }
+
+    # Set default values for optional fields (skip product-only fields for services)
+    description = product_data['description'] || product_data['ai_description'] || (is_service ? "Quality service available. Contact provider for more details." : "Quality product available. Contact seller for more details.")
     media = product_data['media'] || []
     subcategory_id = product_data['subcategory_id']
-    
+
     # If no subcategory is selected, try to find a default one for the category
     unless subcategory_id.present?
-      category = Category.find_by(id: product_data['category_id'])
       if category && category.subcategories.any?
         subcategory_id = category.subcategories.first.id
       end
     end
-    
+
     # Create the ad with subcategory support
     ad_params = {
       title: product_data['title'],
       description: description,
       price: product_data['price'],
       category_id: product_data['category_id'],
-      brand: brand,
-      manufacturer: manufacturer,
-      condition: condition,
       media: media,
       is_added_by_sales: false
     }
+
+    # Add product-only fields for non-service listings
+    unless is_service
+      ad_params[:brand] = product_data['brand'] || 'Unknown'
+      ad_params[:manufacturer] = product_data['brand'] || 'Unknown'
+      ad_params[:condition] = product_data['condition'] || 'second_hand'
+    end
     
     # Add subcategory if available
     ad_params[:subcategory_id] = subcategory_id if subcategory_id.present?
@@ -732,19 +736,22 @@ class WhatsappProductCreationService
   def self.product_summary(session)
     data = session.product_data
     
-    summary = "📦 *Product Summary*\n\n"
+    category = Category.find_by(id: data['category_id'])
+    is_service = category && Ad::SERVICE_CATEGORY_NAMES.any? { |name| category.name.to_s.downcase.include?(name.downcase) }
+    
+    summary = is_service ? "�️ *Service Summary*\n\n" : "�📦 *Product Summary*\n\n"
     summary += "*Title:* #{data['title']}\n"
     summary += "*Price:* #{data['price']} KES\n"
-    summary += "*Brand:* #{data['brand']}\n"
     
-    # Handle condition being either string or array
-    condition_value = data['condition']
-    if condition_value.is_a?(Array)
-      condition_value = condition_value.first
+    unless is_service
+      summary += "*Brand:* #{data['brand']}\n"
+      condition_value = data['condition']
+      if condition_value.is_a?(Array)
+        condition_value = condition_value.first
+      end
+      summary += "*Condition:* #{condition_value&.humanize}\n"
     end
-    summary += "*Condition:* #{condition_value&.humanize}\n"
     
-    category = Category.find_by(id: data['category_id'])
     summary += "*Category:* #{category&.name || 'N/A'}\n"
     
     if data['subcategory_id']

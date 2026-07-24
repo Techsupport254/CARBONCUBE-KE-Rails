@@ -93,13 +93,25 @@ class Ad < ApplicationRecord
   accepts_nested_attributes_for :category
   accepts_nested_attributes_for :reviews
 
-  validates :title, :description, :price, :brand, :manufacturer, presence: true
+  validates :title, :description, :price, presence: true
+  validates :brand, :manufacturer, presence: true, unless: :service_category?
   validates :price, numericality: true
   validates :item_length, :item_width, :item_height, numericality: true, allow_nil: true
   validates :item_weight, numericality: { greater_than: 0 }, allow_nil: true
 
 
   validates :weight_unit, inclusion: { in: ['Grams', 'Kilograms'] }
+
+  SERVICE_CATEGORY_NAMES = ['Services', 'Service', 'services', 'Professional Services', 'Equipment Leasing'].freeze
+
+  def service_category?
+    return false unless category
+    SERVICE_CATEGORY_NAMES.any? { |name| category.name.to_s.downcase.include?(name.downcase) }
+  end
+
+  def listing_type
+    service_category? ? 'service' : 'product'
+  end
 
   # Ensure media can accept a string or array of strings
   serialize :media, coder: JSON

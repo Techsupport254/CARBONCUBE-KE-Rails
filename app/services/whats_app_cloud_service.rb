@@ -288,17 +288,23 @@ class WhatsAppCloudService
     # official WhatsApp numbers come with country code, e.g., 254716404137
     # Our DB stores them as 0716404137 (10 digits)
     local_number = from_number.start_with?('254') ? "0#{from_number[3..]}" : from_number
-    
+
+    Rails.logger.info "[WhatsAppCloudService] Incoming message from: #{from_number} (local: #{local_number}), type: #{msg_data['type']}"
+
     # Try to find a user
     user = Buyer.find_by(phone_number: local_number) || Seller.find_by(phone_number: local_number)
-    
+
     unless user
-      Rails.logger.warn "[WhatsAppCloudService] Received message from unknown number: #{from_number}"
+      Rails.logger.warn "[WhatsAppCloudService] Received message from unknown number: #{from_number} (local: #{local_number})"
       return
     end
 
+    Rails.logger.info "[WhatsAppCloudService] Resolved user: #{user.class.name} #{user.id} (#{user.respond_to?(:email) ? user.email : 'no email'})"
+
     # Extract content and media URLs
     content, media_urls = extract_message_content(msg_data)
+
+    Rails.logger.info "[WhatsAppCloudService] Extracted content: #{content&.truncate(200)} (media_urls: #{media_urls&.length})"
     
     # Product creation logic disabled - not complete yet
     # # Check if this is a seller using product creation commands
@@ -326,8 +332,13 @@ class WhatsAppCloudService
     # For now, we'll try to find the most recent conversation for this user
     # or create a new one with a default admin/support if it's a general inquiry
     conversation = find_or_create_incoming_conversation(user)
-    
-    return unless conversation
+
+    unless conversation
+      Rails.logger.warn "[WhatsAppCloudService] No conversation found/created for #{user.class.name} #{user.id}"
+      return
+    end
+
+    Rails.logger.info "[WhatsAppCloudService] Conversation: #{conversation.id} (buyer: #{conversation.buyer_id}, seller: #{conversation.seller_id})"
 
     # Create the message
     # We skip callbacks that might trigger an infinite loop (sending back a notification)
@@ -337,9 +348,9 @@ class WhatsAppCloudService
       whatsapp_message_id: msg_data['id'],
       status: Message::STATUS_SENT # Meta already sent it to us
     )
-    
+
     if message.save
-      Rails.logger.info "[WhatsAppCloudService] Saved incoming message from #{user.class.name} #{user.id}"
+      Rails.logger.info "[WhatsAppCloudService] Saved incoming message ID=#{message.id} from #{user.class.name} #{user.id} in conversation #{conversation.id}"
     else
       Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
     end
@@ -478,6 +489,13 @@ class WhatsAppCloudService
                    { seller_id: user.id }
                  end
                  
+    # We want a support-like conversation (no other partner). 
+    partner_condition = if user.is_a?(Buyer)
+                          { seller_id: nil }
+                        else
+                          { buyer_id: nil }
+                        end
+                 
     # 1. Prefer existing conversation with an admin (Support/Marketing)
     # This ensures replies to broadcasts stay in the support thread
     existing_support = Conversation.where(conv_attrs).where.not(admin_id: nil).order(updated_at: :desc).first
@@ -487,18 +505,26 @@ class WhatsAppCloudService
     end
 
     # 2. Prefer existing conversation marked as WhatsApp (even if no admin yet)
-    existing_whatsapp = Conversation.where(conv_attrs).where(is_whatsapp: true, buyer_id: nil).order(updated_at: :desc).first
+    existing_whatsapp = Conversation.where(conv_attrs).where(is_whatsapp: true).where(partner_condition).order(updated_at: :desc).first
     return existing_whatsapp if existing_whatsapp
 
-    # 3. Last resort: ANY conversation that looks like support (no buyer partner)
-    existing_any_support = Conversation.where(conv_attrs).where(buyer_id: nil).order(updated_at: :desc).first
+    # 3. Last resort: ANY conversation that looks like support (no partner)
+    existing_any_support = Conversation.where(conv_attrs).where(partner_condition).order(updated_at: :desc).first
     if existing_any_support
       existing_any_support.update(is_whatsapp: true)
       return existing_any_support
     end
 
     # 4. Create a new conversation marked as WhatsApp
-    Conversation.create(conv_attrs.merge(is_whatsapp: true))
+    # Assign a default admin_id if possible so it shows up in the Sales dashboard
+    system_admin = Rails.cache.fetch("system_admin_user", expires_in: 1.hour) do
+      Admin.find_by(email: 'support@carboncube-ke.com') || Admin.find_by(username: 'admin') || Admin.first
+    end
+    
+    Conversation.create(conv_attrs.merge(
+      is_whatsapp: true,
+      admin_id: system_admin&.id
+    ))
   end
 
   def self.process_status_update(status_data)

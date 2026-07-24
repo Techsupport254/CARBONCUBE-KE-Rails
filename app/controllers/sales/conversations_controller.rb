@@ -8,8 +8,15 @@ class Sales::ConversationsController < ApplicationController
                                   .includes(:admin, :seller, :buyer, :inquirer_seller, :ad, :messages, ad: [:category, :subcategory])
                                   .order(updated_at: :desc)
     else
-      # Fetch conversations where current sales user is involved
-      @conversations = Conversation.where(admin_id: @current_user.id)
+      # Fetch conversations where current sales user is involved, OR WhatsApp conversations
+      # that are unassigned or assigned to a general admin, so sales users can handle them
+      admin_ids_to_include = [@current_user.id]
+      # Include system admin IDs if this is a sales user
+      system_admins = Admin.where(email: 'support@carboncube-ke.com').or(Admin.where(username: 'admin')).pluck(:id)
+      system_admins << Admin.first&.id
+      admin_ids_to_include.concat(system_admins.compact.uniq)
+
+      @conversations = Conversation.where("admin_id IN (:ids) OR (is_whatsapp = true)", ids: admin_ids_to_include)
                                   .active_participants
                                   .includes(:admin, :seller, :buyer, :inquirer_seller, :ad, :messages, ad: [:category, :subcategory])
                                   .order(updated_at: :desc)
@@ -79,7 +86,12 @@ class Sales::ConversationsController < ApplicationController
     if @current_user.nil?
       @conversation = Conversation.active_participants.find_by(id: params[:id])
     else
-      @conversation = Conversation.active_participants.find_by(id: params[:id], admin_id: @current_user.id)
+      admin_ids_to_include = [@current_user.id]
+      system_admins = Admin.where(email: 'support@carboncube-ke.com').or(Admin.where(username: 'admin')).pluck(:id)
+      system_admins << Admin.first&.id
+      admin_ids_to_include.concat(system_admins.compact.uniq)
+
+      @conversation = Conversation.active_participants.where("admin_id IN (:ids) OR (is_whatsapp = true)", ids: admin_ids_to_include).find_by(id: params[:id])
     end
     
     if @conversation
@@ -189,11 +201,22 @@ class Sales::ConversationsController < ApplicationController
   end
 
   def update
-    @conversation = Conversation.find_by(id: params[:id], admin_id: @current_user.id)
+    admin_ids_to_include = [@current_user.id]
+    system_admins = Admin.where(email: 'support@carboncube-ke.com').or(Admin.where(username: 'admin')).pluck(:id)
+    system_admins << Admin.first&.id
+    admin_ids_to_include.concat(system_admins.compact.uniq)
+
+    @conversation = Conversation.where("admin_id IN (:ids) OR (is_whatsapp = true)", ids: admin_ids_to_include).find_by(id: params[:id])
     
     unless @conversation
       render json: { error: 'Conversation not found' }, status: :not_found
       return
+    end
+
+    # If this was assigned to a system admin or unassigned, and a sales user is replying,
+    # assign the conversation to this sales user so they own it going forward.
+    if @conversation.admin_id.nil? || system_admins.compact.include?(@conversation.admin_id)
+      @conversation.update(admin_id: @current_user.id)
     end
 
     # Add a new message to the conversation
@@ -217,7 +240,12 @@ class Sales::ConversationsController < ApplicationController
   # GET /sales/conversations/unread_counts
   def unread_counts
     # Get all conversations for the current sales user with unread message counts
-    conversations = Conversation.where(admin_id: @current_user.id)
+    admin_ids_to_include = [@current_user.id]
+    system_admins = Admin.where(email: 'support@carboncube-ke.com').or(Admin.where(username: 'admin')).pluck(:id)
+    system_admins << Admin.first&.id
+    admin_ids_to_include.concat(system_admins.compact.uniq)
+
+    conversations = Conversation.where("admin_id IN (:ids) OR (is_whatsapp = true)", ids: admin_ids_to_include)
                                 .active_participants
 
     # Batch fetch unread counts in a single query instead of N+1 per conversation
@@ -248,7 +276,12 @@ class Sales::ConversationsController < ApplicationController
   # GET /sales/conversations/unread_count
   def unread_count
     # Get all conversations for the current sales user
-    conversations = Conversation.where(admin_id: @current_user.id)
+    admin_ids_to_include = [@current_user.id]
+    system_admins = Admin.where(email: 'support@carboncube-ke.com').or(Admin.where(username: 'admin')).pluck(:id)
+    system_admins << Admin.first&.id
+    admin_ids_to_include.concat(system_admins.compact.uniq)
+
+    conversations = Conversation.where("admin_id IN (:ids) OR (is_whatsapp = true)", ids: admin_ids_to_include)
                                 .active_participants
 
     # Batch fetch total unread count in a single query instead of N+1 per conversation

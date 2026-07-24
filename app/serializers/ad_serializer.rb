@@ -4,7 +4,7 @@ class AdSerializer < ActiveModel::Serializer
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name, 
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
              :seller_is_verified, :seller_document_verified, :is_added_by_sales,
-             :flash_sale_info
+             :flash_sale_info, :listing_type
 
   has_one :seller, serializer: SellerSerializer
   has_many :reviews, if: :include_reviews?
@@ -214,6 +214,22 @@ class AdSerializer < ActiveModel::Serializer
 
   def is_added_by_sales
     object.effective_is_added_by_sales
+  end
+
+  def listing_type
+    object.listing_type
+  end
+
+  def brand
+    object.service_category? ? nil : object.brand
+  end
+
+  def manufacturer
+    object.service_category? ? nil : object.manufacturer
+  end
+
+  def condition
+    object.service_category? ? nil : object.condition
   end
 
   private

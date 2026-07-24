@@ -2294,5 +2294,72 @@
       "Form Factor": "Gaming Tower",
       "GPU": "Nvidia RTX 4060 / 4060 Ti"
     }
+  },
+  {
+    "title": "Mac Mini (Apple M4 chip 10-core) / 16GB",
+    "brand": "Apple",
+    "subcategory": "computers",
+    "specifications": {
+      "Chip": "Apple M4 chip 10-core CPU with 4 performance cores and 6 efficiency cores 10-core GPU Hardware-accelerated ray tracing 16-core Neural Engine 120GB/s memory bandwidth Media Engine Hardware-accelerated H.264, HEVC, ProRes, and ProRes RAW Video decode engine Video encode engine ProRes encode and decode engine AV1 decode —Not configurable",
+      "Memory": "16GB 16GB unified memory Configurable to: 24GB",
+      "Display Support": "M4 Simultaneously supports up to three displays: Up to three displays: Two displays with up to 6K resolution at 60Hz over Thunderbolt and one display with up to 5K resolution at 60Hz over Thunderbolt or 4K resolution at 60Hz over HDMI Up to two displays: One display with up to 5K resolution at 60Hz over Thunderbolt and one display with up to 8K resolution at 60Hz or 4K resolution at 240Hz over Thunderbolt or HDMI Thunderbolt 4 digital video output Support for native DisplayPort 1.4 output over USB-C M4 Pro Simultaneously supports up to three displays: Up to three displays: Three displays with up to 6K resolution at 60Hz over Thunderbolt or HDMI Up to two displays: One display with up to 6K resolution at 60Hz over Thunderbolt and one display with up to 8K resolution at 60Hz or 4K resolution at 240Hz over Thunderbolt or HDMI Thunderbolt 5 digital video output Support for native DisplayPort 2.1 output over USB‑C HDMI display video output Support for one display with up to 8K resolution at 60Hz or 4K resolution at 240Hz (M4 and M4 Pro)",
+      "Video Playback": "Supported formats include HEVC, H.264, AV1, and ProRes HDR with Dolby Vision, HDR10+/HDR10, and HLG",
+      "Audio": "Built-in speaker 3.5 mm headphone jack with advanced support for high-impedance headphones HDMI port supports multichannel audio output",
+      "Connections and Expansion": "On front: Two USB-C ports with support for USB 3 (up to 10Gb/s) 3.5 mm headphone jack USB-C 3.5 mm headphone jack On back (M4): Gigabit Ethernet port (configurable to 10Gb Ethernet) HDMI port Three Thunderbolt 4 (USB-C) ports with support for: Thunderbolt 4 (up to 40Gb/s) USB 4 (up to 40Gb/s) DisplayPort Ethernet HDMI Thunderbolt 4 On back (M4 Pro): Gigabit Ethernet port (configurable to 10Gb Ethernet) HDMI port Three Thunderbolt 5 (USB-C) ports with support for: Thunderbolt 5 (up to 120Gb/s) USB 4 (up to 120Gb/s) DisplayPort Ethernet HDMI Thunderbolt 5",
+      "Communications": "Wi-Fi Wi-Fi 6E (802.11ax)3 Bluetooth Bluetooth 5.3 Ethernet 10/100/1000BASE-T Gigabit Ethernet (RJ-45 connector) Configurable to 10Gb Ethernet (Nbase-T Ethernet with support for 1Gb, 2.5Gb, 5Gb, and 10Gb Ethernet using RJ-45 connector)",
+      "Size and Weight": "Height: 2.0 inches (5.0 cm) Width: 5.0 inches (12.7 cm) Depth: 5.0 inches (12.7 cm) Weight (M4): 1.5 pounds (0.67 kg)4 Weight (M4 Pro): 1.6 pounds (0.73 kg)4 5.0 inches (12.7 cm) 5.0 inches (12.7 cm) 2.0 inches (5.0 cm)",
+      "Operating System": "macOS macOS is the most advanced desktop operating system in the world. It helps you stay productive and creative with help from Apple Intelligence, iPhone Mirroring,6 window tiling, major updates to Safari, and more.",
+      "In the Box": "Mac mini Power cord (1.8 m)",
+      "Finish": "Silver"
+    },
+    "source": "apple.com"
+  },
+  {
+    "title": "Mac Mini (Apple M4 chip 10-core) / 24GB",
+    "brand": "Apple",
+    "subcategory": "computers",
+    "specifications": {
+      "Chip": "Apple M4 chip 10-core CPU with 4 performance cores and 6 efficiency cores 10-core GPU Hardware-accelerated ray tracing 16-core Neural Engine 120GB/s memory bandwidth Media Engine Hardware-accelerated H.264, HEVC, ProRes, and ProRes RAW Video decode engine Video encode engine ProRes encode and decode engine AV1 decode —Not configurable",
+      "Memory": "24GB 24GB unified memory"
+    },
+    "source": "apple.com"
+  },
+  {
+    "title": "Mac Mini (Apple M4 Pro chip 12-core) / 24GB",
+    "brand": "Apple",
+    "subcategory": "computers",
+    "specifications": {
+      "Chip": "Apple M4 Pro chip 12-core CPU with 8 performance cores and 4 efficiency cores 16-core GPU Hardware-accelerated ray tracing 16-core Neural Engine 273GB/s memory bandwidth Media Engine Hardware-accelerated H.264, HEVC, ProRes, and ProRes RAW Video decode engine Video encode engine ProRes encode and decode engine AV1 decode Configurable to: M4 Pro with 14‑core CPU and 20‑core GPU",
+      "Memory": "24GB 24GB unified memory Configurable to: 48GB"
+    },
+    "source": "apple.com"
+  },
+  {
+    "title": "Mac Studio (Apple M4 Max chip) / 36GB",
+    "brand": "Apple",
+    "subcategory": "computers",
+    "specifications": {
+      "Chip": "Apple M4 Max chip 14-core CPU with 10 performance cores and 4 efficiency cores 32-core GPU Hardware-accelerated ray tracing 16-core Neural Engine 410GB/s memory bandwidth Media Engine Hardware-accelerated H.264, HEVC, ProRes, and ProRes RAW Video decode engine Two video encode engines Two ProRes encode and decode engines AV1 decode Configurable to: M4 Max with 16‑core CPU, 40‑core GPU, and 16‑core Neural Engine (546GB/s memory bandwidth)",
+      "Memory": "36GB 36GB unified memory Configurable to: 64GB (M4 Max with 16-core CPU and 40‑core GPU)",
+      "Display Support": "M4 Max Simultaneous support for up to five displays: Up to four displays with 6K resolution at 60Hz over Thunderbolt and one display with 4K resolution at 144Hz over HDMI Up to two displays with 6K resolution at 60Hz over Thunderbolt and one display with 8K resolution at 60Hz or 4K resolution at up to 240Hz over HDMI M3 Ultra Simultaneous support for up to eight displays: Eight displays with up to 6K resolution at 60Hz or 4K resolution at up to 144Hz Four displays with up to 8K resolution at 60Hz or 4K resolution at up to 240Hz Thunderbolt 5 digital video output Support for native DisplayPort 2.1 output over USB‑C HDMI display video output Support for one display with up to 8K resolution at 60Hz or 4K resolution at 240Hz Support for variable refresh rate (VRR), HDR, and multichannel audio",
+      "Audio": "Built-in speaker 3.5 mm headphone jack with advanced support for high-impedance headphones HDMI port supports multichannel audio output",
+      "Connections and Expansion": "Thunderbolt 5 10Gb Ethernet USB-A HDMI 2.1 3.5 mm headphone jack Four Thunderbolt 5 (USB‑C) ports with support for: Thunderbolt 5 (up to 120Gb/s) USB 4 (up to 120Gb/s) USB 3 (up to 10Gb/s) DisplayPort 2.1 Two USB 3 (USB‑A) ports (up to 5Gb/s) HDMI 2.1 port 10Gb Ethernet 3.5 mm headphone jack On front (M4 Max): Two USB‑C ports (up to 10Gb/s) SDXC card slot (UHS-II) On front (M3 Ultra): Two Thunderbolt 5 ports (up to 120Gb/s) SDXC card slot (UHS-II)",
+      "Communications": "Wi-Fi Wi-Fi 6E (802.11ax)3 Bluetooth Bluetooth 5.3 Ethernet 10Gb Ethernet (Nbase-T Ethernet with support for 1Gb, 2.5Gb, 5Gb, and 10Gb Ethernet using RJ-45 connector)",
+      "Size and Weight": "Height: 3.7 inches (9.5 cm) Width: 7.7 inches (19.7 cm) Depth: 7.7 inches (19.7 cm) Weight (M4 Max): 6.1 pounds (2.74 kg)4 Weight (M3 Ultra): 8.0 pounds (3.64 kg)4 Width: 7.7 inches (19.7 cm) Depth: 7.7 inches (19.7 cm) Height: 3.7 inches (9.5 cm)",
+      "Operating System": "macOS macOS is the most advanced desktop operating system in the world. It helps you stay productive and creative with help from Apple Intelligence, iPhone Mirroring,5 window tiling, major updates to Safari, and more.",
+      "In the Box": "Mac Studio Power cord",
+      "Finish": "Silver"
+    },
+    "source": "apple.com"
+  },
+  {
+    "title": "Mac Studio (Apple M3 Ultra chip) / 96GB",
+    "brand": "Apple",
+    "subcategory": "computers",
+    "specifications": {
+      "Chip": "Apple M3 Ultra chip 28-core CPU with 20 performance cores and 8 efficiency cores 60-core GPU Hardware-accelerated ray tracing 32-core Neural Engine 819GB/s memory bandwidth Media Engine Hardware-accelerated H.264, HEVC, ProRes, and ProRes RAW Two video decode engines Four video encode engines Four ProRes encode and decode engines AV1 decode Configurable to: M3 Ultra with 32‑core CPU, 80‑core GPU, and 32‑core Neural Engine (819GB/s memory bandwidth)",
+      "Memory": "96GB 96GB unified memory"
+    },
+    "source": "apple.com"
   }
 ]
