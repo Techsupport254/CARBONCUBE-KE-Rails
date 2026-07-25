@@ -1,0 +1,916 @@
+[
+  {
+    "title": "Razer DeathAdder V3 Pro Wireless Mouse",
+    "brand": "Razer",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mouse",
+      "Connectivity": "Wireless",
+      "Sensor": "Focus Pro 30K Optical",
+      "DPI": "30000",
+      "Buttons": "5",
+      "Weight": "63g",
+      "Brand": "Razer"
+    }
+  },
+  {
+    "title": "Razer BlackWidow V4 Pro Keyboard",
+    "brand": "Razer",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Keyboard",
+      "Connectivity": "Wired",
+      "Switch Type": "Green Mechanical",
+      "Backlight": "RGB",
+      "Key Rollover": "N-Key",
+      "Brand": "Razer"
+    }
+  },
+  {
+    "title": "Corsair K70 RGB Pro Keyboard",
+    "brand": "Corsair",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Keyboard",
+      "Connectivity": "Wired",
+      "Switch Type": "Cherry MX Red",
+      "Backlight": "RGB",
+      "Key Rollover": "N-Key",
+      "Brand": "Corsair"
+    }
+  },
+  {
+    "title": "Corsair M65 RGB Ultra Mouse",
+    "brand": "Corsair",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mouse",
+      "Connectivity": "Wired",
+      "Sensor": "18,000 DPI Optical",
+      "DPI": "18000",
+      "Buttons": "8",
+      "Weight": "97g",
+      "Brand": "Corsair"
+    }
+  },
+  {
+    "title": "SteelSeries Apex Pro Keyboard",
+    "brand": "SteelSeries",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Keyboard",
+      "Connectivity": "Wired",
+      "Switch Type": "OmniPoint Adjustable",
+      "Backlight": "RGB",
+      "Key Rollover": "N-Key",
+      "Brand": "SteelSeries"
+    }
+  },
+  {
+    "title": "SteelSeries Arctis Nova Pro Wireless Headset",
+    "brand": "SteelSeries",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Headset",
+      "Connectivity": "Wireless",
+      "Driver": "40mm",
+      "Frequency Response": "10-40,000 Hz",
+      "Microphone": "ClearCast Gen2",
+      "Brand": "SteelSeries"
+    }
+  },
+  {
+    "title": "Microsoft Surface Mouse",
+    "brand": "Microsoft",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mouse",
+      "Connectivity": "Wireless",
+      "Sensor": "BlueTrack",
+      "DPI": "1000",
+      "Buttons": "3",
+      "Brand": "Microsoft"
+    }
+  },
+  {
+    "title": "Microsoft Modern Webcam",
+    "brand": "Microsoft",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Webcam",
+      "Resolution": "1080p",
+      "Frame Rate": "30fps",
+      "Field of View": "78 degrees",
+      "Microphone": "Built-in",
+      "Brand": "Microsoft"
+    }
+  },
+  {
+    "title": "Dell UltraSharp U2723QE Monitor 27\"",
+    "brand": "Dell",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "27 inches",
+      "Resolution": "3840x2160 (4K)",
+      "Panel Type": "IPS Black",
+      "Refresh Rate": "60Hz",
+      "Ports": "USB-C 90W, HDMI, DisplayPort",
+      "Brand": "Dell"
+    }
+  },
+  {
+    "title": "Samsung Odyssey G7 32\" Curved Monitor",
+    "brand": "Samsung",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "32 inches",
+      "Resolution": "2560x1440",
+      "Panel Type": "VA Curved",
+      "Refresh Rate": "240Hz",
+      "Response Time": "1ms",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "LG UltraFine 5K 27\" Monitor",
+    "brand": "LG",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "27 inches",
+      "Resolution": "5120x2880 (5K)",
+      "Panel Type": "IPS",
+      "Refresh Rate": "60Hz",
+      "Ports": "Thunderbolt 3",
+      "Brand": "LG"
+    }
+  },
+  {
+    "title": "ASUS ProArt PA278CV 27\" Monitor",
+    "brand": "Asus",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "27 inches",
+      "Resolution": "2560x1440",
+      "Panel Type": "IPS",
+      "Refresh Rate": "75Hz",
+      "Ports": "DisplayPort, HDMI, USB-C",
+      "Brand": "Asus"
+    }
+  },
+  {
+    "title": "Samsung 990 Pro 2TB NVMe SSD",
+    "brand": "Samsung",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NVMe SSD",
+      "Capacity": "2TB",
+      "Form Factor": "M.2 2280",
+      "Interface": "PCIe 4.0 x4",
+      "Read Speed": "7450 MB/s",
+      "Write Speed": "6900 MB/s",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "Samsung 990 Pro 1TB NVMe SSD",
+    "brand": "Samsung",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NVMe SSD",
+      "Capacity": "1TB",
+      "Form Factor": "M.2 2280",
+      "Interface": "PCIe 4.0 x4",
+      "Read Speed": "7450 MB/s",
+      "Write Speed": "6900 MB/s",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "Samsung 870 EVO 1TB SATA SSD",
+    "brand": "Samsung",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "SATA SSD",
+      "Capacity": "1TB",
+      "Form Factor": "2.5\"",
+      "Interface": "SATA III",
+      "Read Speed": "560 MB/s",
+      "Write Speed": "530 MB/s",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "WD Black SN850X 2TB NVMe SSD",
+    "brand": "Western Digital",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NVMe SSD",
+      "Capacity": "2TB",
+      "Form Factor": "M.2 2280",
+      "Interface": "PCIe 4.0 x4",
+      "Read Speed": "7300 MB/s",
+      "Write Speed": "6600 MB/s",
+      "Brand": "Western Digital"
+    }
+  },
+  {
+    "title": "WD Blue 1TB SATA SSD",
+    "brand": "Western Digital",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "SATA SSD",
+      "Capacity": "1TB",
+      "Form Factor": "2.5\"",
+      "Interface": "SATA III",
+      "Read Speed": "560 MB/s",
+      "Write Speed": "530 MB/s",
+      "Brand": "Western Digital"
+    }
+  },
+  {
+    "title": "Crucial MX500 1TB SATA SSD",
+    "brand": "Crucial",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "SATA SSD",
+      "Capacity": "1TB",
+      "Form Factor": "2.5\"",
+      "Interface": "SATA III",
+      "Read Speed": "560 MB/s",
+      "Write Speed": "510 MB/s",
+      "Brand": "Crucial"
+    }
+  },
+  {
+    "title": "Crucial P3 Plus 2TB NVMe SSD",
+    "brand": "Crucial",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NVMe SSD",
+      "Capacity": "2TB",
+      "Form Factor": "M.2 2280",
+      "Interface": "PCIe 4.0 x4",
+      "Read Speed": "5000 MB/s",
+      "Write Speed": "4200 MB/s",
+      "Brand": "Crucial"
+    }
+  },
+  {
+    "title": "Seagate IronWolf 4TB NAS HDD",
+    "brand": "Seagate",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NAS HDD",
+      "Capacity": "4TB",
+      "Form Factor": "3.5\"",
+      "Interface": "SATA III",
+      "RPM": "7200",
+      "Cache": "256MB",
+      "Brand": "Seagate",
+      "Workload": "NAS"
+    }
+  },
+  {
+    "title": "Seagate Barracuda 2TB HDD",
+    "brand": "Seagate",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop HDD",
+      "Capacity": "2TB",
+      "Form Factor": "3.5\"",
+      "Interface": "SATA III",
+      "RPM": "7200",
+      "Cache": "256MB",
+      "Brand": "Seagate"
+    }
+  },
+  {
+    "title": "WD Red Plus 4TB NAS HDD",
+    "brand": "Western Digital",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NAS HDD",
+      "Capacity": "4TB",
+      "Form Factor": "3.5\"",
+      "Interface": "SATA III",
+      "RPM": "5400",
+      "Cache": "256MB",
+      "Brand": "Western Digital",
+      "Workload": "NAS"
+    }
+  },
+  {
+    "title": "Toshiba N300 8TB NAS HDD",
+    "brand": "Toshiba",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "NAS HDD",
+      "Capacity": "8TB",
+      "Form Factor": "3.5\"",
+      "Interface": "SATA III",
+      "RPM": "7200",
+      "Cache": "256MB",
+      "Brand": "Toshiba",
+      "Workload": "NAS"
+    }
+  },
+  {
+    "title": "LaCie Rugged Mini 2TB External HDD",
+    "brand": "LaCie",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "External HDD",
+      "Capacity": "2TB",
+      "Form Factor": "2.5\" Portable",
+      "Interface": "USB 3.0",
+      "RPM": "5400",
+      "Brand": "LaCie",
+      "Feature": "Rugged/Drop Resistant"
+    }
+  },
+  {
+    "title": "Samsung T7 Portable 1TB External SSD",
+    "brand": "Samsung",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "External SSD",
+      "Capacity": "1TB",
+      "Form Factor": "Portable",
+      "Interface": "USB 3.2 Gen2",
+      "Read Speed": "1050 MB/s",
+      "Write Speed": "1000 MB/s",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "SanDisk Extreme Portable 2TB SSD",
+    "brand": "SanDisk",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "External SSD",
+      "Capacity": "2TB",
+      "Form Factor": "Portable",
+      "Interface": "USB 3.2 Gen2",
+      "Read Speed": "1050 MB/s",
+      "Write Speed": "1000 MB/s",
+      "Brand": "SanDisk",
+      "Feature": "IP65 Water/Dust Resistant"
+    }
+  },
+  {
+    "title": "TP-Link Archer AX73 Wi-Fi 6 Router",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Router",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX5400",
+      "Bands": "Dual Band",
+      "Ports": "5x Gigabit",
+      "Antennas": "6 High Gain",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link Archer AX55 Wi-Fi 6 Router",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Router",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX3000",
+      "Bands": "Dual Band",
+      "Ports": "4x Gigabit",
+      "Antennas": "4 High Gain",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "ASUS RT-AX86U Wi-Fi 6 Router",
+    "brand": "Asus",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Router",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX5700",
+      "Bands": "Dual Band",
+      "Ports": "4x Gigabit + 1x 2.5G",
+      "Antennas": "3 External",
+      "Brand": "Asus"
+    }
+  },
+  {
+    "title": "Netgear Nighthawk RAX120 Wi-Fi 6 Router",
+    "brand": "Netgear",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Router",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX6000",
+      "Bands": "Dual Band",
+      "Ports": "4x Gigabit + 1x 5G",
+      "Antennas": "8 Internal",
+      "Brand": "Netgear"
+    }
+  },
+  {
+    "title": "TP-Link Deco X60 Mesh Wi-Fi 6 System",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mesh System",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX3000",
+      "Coverage": "5000 sq ft (3-pack)",
+      "Bands": "Dual Band",
+      "Ports": "2x Gigabit per node",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "Netgear Orbi RBK852 Mesh Wi-Fi 6 System",
+    "brand": "Netgear",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mesh System",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX6000",
+      "Coverage": "5000 sq ft (2-pack)",
+      "Bands": "Tri-Band",
+      "Ports": "4x Gigabit per node",
+      "Brand": "Netgear"
+    }
+  },
+  {
+    "title": "TP-Link TL-SG1008D 8-Port Gigabit Switch",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Switch",
+      "Ports": "8x Gigabit",
+      "Switching Capacity": "16 Gbps",
+      "Form Factor": "Desktop",
+      "Power": "External 5V",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link TL-SG1024D 24-Port Gigabit Switch",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Switch",
+      "Ports": "24x Gigabit",
+      "Switching Capacity": "48 Gbps",
+      "Form Factor": "Rack Mount 1U",
+      "Power": "Internal 100-240V",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "Cisco SG250-24 Smart Switch",
+    "brand": "Cisco",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Smart Switch",
+      "Ports": "24x Gigabit + 2x SFP",
+      "Switching Capacity": "52 Gbps",
+      "Management": "Web-based",
+      "VLAN Support": "Yes",
+      "Brand": "Cisco"
+    }
+  },
+  {
+    "title": "Ubiquiti UniFi Dream Machine Pro",
+    "brand": "Ubiquiti",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Gateway/Router",
+      "Ports": "8x Gigabit + 1x 10G SFP+",
+      "Throughput": "3.5 Gbps",
+      "Wi-Fi": "No (Router only)",
+      "Management": "UniFi Network Controller",
+      "Brand": "Ubiquiti"
+    }
+  },
+  {
+    "title": "TP-Link RE700X Wi-Fi 6 Range Extender",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Range Extender",
+      "Wi-Fi Standard": "Wi-Fi 6 (802.11ax)",
+      "Speed": "AX3000",
+      "Bands": "Dual Band",
+      "Ports": "1x Gigabit",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "Netgear GS108 8-Port Gigabit Switch",
+    "brand": "Netgear",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Switch",
+      "Ports": "8x Gigabit",
+      "Switching Capacity": "16 Gbps",
+      "Form Factor": "Desktop",
+      "Power": "External 12V",
+      "Brand": "Netgear"
+    }
+  },
+  {
+    "title": "Noctua NH-D15 CPU Cooler",
+    "brand": "Noctua",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Air Cooler",
+      "Fan Size": "2x 140mm",
+      "Height": "165mm",
+      "TDP": "220W",
+      "Noise Level": "24.6 dB(A)",
+      "Socket Compatibility": "LGA1700, AM5, AM4",
+      "Brand": "Noctua"
+    }
+  },
+  {
+    "title": "Cooler Master Hyper 212 Black Edition",
+    "brand": "Cooler Master",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Air Cooler",
+      "Fan Size": "1x 120mm",
+      "Height": "159mm",
+      "TDP": "150W",
+      "Noise Level": "26 dB(A)",
+      "Socket Compatibility": "LGA1700, AM5, AM4",
+      "Brand": "Cooler Master"
+    }
+  },
+  {
+    "title": "Corsair iCUE H150i Elite Capellix AIO",
+    "brand": "Corsair",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Liquid Cooler (AIO)",
+      "Radiator Size": "360mm",
+      "Fans": "3x 120mm",
+      "TDP": "250W",
+      "Noise Level": "36 dB(A)",
+      "Socket Compatibility": "LGA1700, AM5, AM4",
+      "Brand": "Corsair"
+    }
+  },
+  {
+    "title": "NZXT Kraken Z73 360mm AIO Cooler",
+    "brand": "NZXT",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Liquid Cooler (AIO)",
+      "Radiator Size": "360mm",
+      "Fans": "3x 120mm",
+      "TDP": "250W",
+      "Display": "2.36\" LCD",
+      "Socket Compatibility": "LGA1700, AM5, AM4",
+      "Brand": "NZXT"
+    }
+  },
+  {
+    "title": "Arctic Liquid Freezer II 280",
+    "brand": "Arctic",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Liquid Cooler (AIO)",
+      "Radiator Size": "280mm",
+      "Fans": "2x 140mm",
+      "TDP": "250W",
+      "Noise Level": "22.5 dB(A)",
+      "Socket Compatibility": "LGA1700, AM5, AM4",
+      "Brand": "Arctic"
+    }
+  },
+  {
+    "title": "Thermalright Peerless Assassin 120 SE",
+    "brand": "Thermalright",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Air Cooler",
+      "Fan Size": "2x 120mm",
+      "Height": "155mm",
+      "TDP": "200W",
+      "Noise Level": "25.6 dB(A)",
+      "Socket Compatibility": "LGA1700, AM5, AM4",
+      "Brand": "Thermalright"
+    }
+  },
+  {
+    "title": "Arctic P12 PWM PST Fan 120mm",
+    "brand": "Arctic",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Case Fan",
+      "Size": "120mm",
+      "Speed": "200-1800 RPM",
+      "Airflow": "56.3 CFM",
+      "Noise Level": "22.5 dB(A)",
+      "Bearing": "Fluid Dynamic",
+      "Brand": "Arctic"
+    }
+  },
+  {
+    "title": "Noctua NF-A14 PWM Fan 140mm",
+    "brand": "Noctua",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Case Fan",
+      "Size": "140mm",
+      "Speed": "300-1500 RPM",
+      "Airflow": "82.5 CFM",
+      "Noise Level": "24.6 dB(A)",
+      "Bearing": "SSO2",
+      "Brand": "Noctua"
+    }
+  },
+  {
+    "title": "Thermal Grizzly Kryonaut Thermal Paste",
+    "brand": "Thermal Grizzly",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Paste",
+      "Thermal Conductivity": "12.5 W/mK",
+      "Net Weight": "1g",
+      "Temperature Range": "-200 to 350C",
+      "Brand": "Thermal Grizzly"
+    }
+  },
+  {
+    "title": "Arctic MX-6 Thermal Paste",
+    "brand": "Arctic",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Paste",
+      "Thermal Conductivity": "8.5 W/mK",
+      "Net Weight": "4g",
+      "Temperature Range": "-50 to 150C",
+      "Brand": "Arctic"
+    }
+  },
+  {
+    "title": "Intel Core i9-14900K Processor",
+    "brand": "Intel",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "CPU",
+      "Cores": "24 (8P+16E)",
+      "Threads": "32",
+      "Base Clock": "3.2 GHz",
+      "Boost Clock": "6.0 GHz",
+      "Cache": "36MB L3",
+      "Socket": "LGA1700",
+      "TDP": "125W",
+      "Brand": "Intel"
+    }
+  },
+  {
+    "title": "Intel Core i7-14700K Processor",
+    "brand": "Intel",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "CPU",
+      "Cores": "20 (8P+12E)",
+      "Threads": "28",
+      "Base Clock": "3.4 GHz",
+      "Boost Clock": "5.6 GHz",
+      "Cache": "33MB L3",
+      "Socket": "LGA1700",
+      "TDP": "125W",
+      "Brand": "Intel"
+    }
+  },
+  {
+    "title": "AMD Ryzen 9 9950X Processor",
+    "brand": "AMD",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "CPU",
+      "Cores": "16",
+      "Threads": "32",
+      "Base Clock": "4.3 GHz",
+      "Boost Clock": "5.7 GHz",
+      "Cache": "64MB L3",
+      "Socket": "AM5",
+      "TDP": "170W",
+      "Brand": "AMD"
+    }
+  },
+  {
+    "title": "AMD Ryzen 7 9700X Processor",
+    "brand": "AMD",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "CPU",
+      "Cores": "8",
+      "Threads": "16",
+      "Base Clock": "3.8 GHz",
+      "Boost Clock": "5.5 GHz",
+      "Cache": "32MB L3",
+      "Socket": "AM5",
+      "TDP": "105W",
+      "Brand": "AMD"
+    }
+  },
+  {
+    "title": "NVIDIA GeForce RTX 4090 24GB",
+    "brand": "NVIDIA",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "GPU",
+      "Memory": "24GB GDDR6X",
+      "CUDA Cores": "16384",
+      "Boost Clock": "2520 MHz",
+      "Memory Bus": "384-bit",
+      "TDP": "450W",
+      "Interface": "PCIe 4.0 x16",
+      "Brand": "NVIDIA"
+    }
+  },
+  {
+    "title": "NVIDIA GeForce RTX 4080 Super 16GB",
+    "brand": "NVIDIA",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "GPU",
+      "Memory": "16GB GDDR6X",
+      "CUDA Cores": "10240",
+      "Boost Clock": "2550 MHz",
+      "Memory Bus": "256-bit",
+      "TDP": "320W",
+      "Interface": "PCIe 4.0 x16",
+      "Brand": "NVIDIA"
+    }
+  },
+  {
+    "title": "AMD Radeon RX 7900 XTX 24GB",
+    "brand": "AMD",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "GPU",
+      "Memory": "24GB GDDR6",
+      "Stream Processors": "12288",
+      "Boost Clock": "2500 MHz",
+      "Memory Bus": "384-bit",
+      "TDP": "355W",
+      "Interface": "PCIe 4.0 x16",
+      "Brand": "AMD"
+    }
+  },
+  {
+    "title": "Corsair Vengeance 32GB DDR5-6000",
+    "brand": "Corsair",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "DDR5",
+      "Capacity": "32GB (2x16GB)",
+      "Speed": "6000 MHz",
+      "Latency": "CL30",
+      "Voltage": "1.35V",
+      "Brand": "Corsair"
+    }
+  },
+  {
+    "title": "G.Skill Trident Z5 64GB DDR5-6400",
+    "brand": "G.Skill",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "DDR5",
+      "Capacity": "64GB (2x32GB)",
+      "Speed": "6400 MHz",
+      "Latency": "CL32",
+      "Voltage": "1.40V",
+      "Brand": "G.Skill"
+    }
+  },
+  {
+    "title": "ASUS ROG Strix Z790-E Motherboard",
+    "brand": "Asus",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Motherboard",
+      "Chipset": "Z790",
+      "Socket": "LGA1700",
+      "Form Factor": "ATX",
+      "RAM Slots": "4x DDR5",
+      "M.2 Slots": "5",
+      "PCIe": "PCIe 5.0 x16",
+      "Brand": "Asus"
+    }
+  },
+  {
+    "title": "MSI MAG B650 Tomahawk Motherboard",
+    "brand": "MSI",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Motherboard",
+      "Chipset": "B650",
+      "Socket": "AM5",
+      "Form Factor": "ATX",
+      "RAM Slots": "4x DDR5",
+      "M.2 Slots": "3",
+      "PCIe": "PCIe 5.0 x16",
+      "Brand": "MSI"
+    }
+  },
+  {
+    "title": "Corsair RM850e 850W 80+ Gold PSU",
+    "brand": "Corsair",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Power Supply",
+      "Wattage": "850W",
+      "Efficiency": "80+ Gold",
+      "Modular": "Fully Modular",
+      "Fan Size": "120mm",
+      "ATX Standard": "ATX 3.0",
+      "Brand": "Corsair"
+    }
+  },
+  {
+    "title": "Seasonic PRIME TX-1000 1000W 80+ Titanium",
+    "brand": "Seasonic",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Power Supply",
+      "Wattage": "1000W",
+      "Efficiency": "80+ Titanium",
+      "Modular": "Fully Modular",
+      "Fan Size": "135mm",
+      "ATX Standard": "ATX 3.0",
+      "Brand": "Seasonic"
+    }
+  }
+]
