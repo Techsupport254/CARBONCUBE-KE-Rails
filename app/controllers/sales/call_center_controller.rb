@@ -672,6 +672,7 @@ module Sales
           disposition: h.disposition,
           agent_notes: h.agent_notes,
           follow_up_required: h.follow_up_required,
+          follow_up_date: h.follow_up_date,
           follow_up_action: h.follow_up_action
         }
       end
