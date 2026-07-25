@@ -858,6 +858,13 @@ Rails.application.routes.draw do
       get :unread_counts, on: :collection
     end
     resources :wishlists, only: [:index], path: 'wishlists', controller: 'wish_lists'
+
+    # Catalog routes (same as seller namespace)
+    get 'catalog/search', to: 'catalogs#search'
+    get 'catalog/brands', to: 'catalogs#brands'
+    get 'catalog/models', to: 'catalogs#models'
+    get 'catalog/model/:slug', to: 'catalogs#show', constraints: { slug: /[^\/]+/ }, format: false
+    get 'catalog', to: 'catalogs#show'
   end
 
   # Original routes without /api prefix for backward compatibility
