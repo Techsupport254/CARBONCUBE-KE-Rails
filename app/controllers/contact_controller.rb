@@ -4,14 +4,14 @@ class ContactController < ApplicationController
   
   # POST /contact/submit
   def submit
-    contact_params = params.permit(:name, :email, :phone, :subject, :message)
-    
+    contact_params = params.permit(:name, :email, :phone, :subject, :message, :platform)
+
     # Validate required fields
-    if contact_params[:name].blank? || contact_params[:email].blank? || 
+    if contact_params[:name].blank? || contact_params[:email].blank? ||
        contact_params[:subject].blank? || contact_params[:message].blank?
-      return render json: { 
-        success: false, 
-        error: 'All fields are required' 
+      return render json: {
+        success: false,
+        error: 'All fields are required'
       }, status: :bad_request
     end
     
@@ -30,7 +30,8 @@ class ContactController < ApplicationController
         email: contact_params[:email],
         phone: contact_params[:phone],
         subject: contact_params[:subject],
-        message: contact_params[:message]
+        message: contact_params[:message],
+        platform: contact_params[:platform]
       ).contact_form.deliver_now
       
       # Send auto-reply to user

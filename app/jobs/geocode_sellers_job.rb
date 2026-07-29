@@ -4,14 +4,14 @@ class GeocodeSellersJob < ApplicationJob
   NOMINATIM_API_URL = "https://nominatim.openstreetmap.org/search"
   RATE_LIMIT_DELAY = 1 # seconds between requests (OSM requires max 1 request per second)
 
-  def perform
+  def perform(seller_id = nil)
     # Find sellers without coordinates in their branches
     sellers_without_coords = Seller
       .joins(:branches)
       .where(branches: { latitude: nil })
       .where.not(sellers: { location: nil })
-      .distinct
-      .limit(700) # Process all sellers in one batch (rate limited at 1 req/s)
+    sellers_without_coords = sellers_without_coords.where(id: seller_id) if seller_id.present?
+    sellers_without_coords = sellers_without_coords.distinct.limit(700) # Process all sellers in one batch (rate limited at 1 req/s)
 
     Rails.logger.info "Starting geocoding for #{sellers_without_coords.count} sellers"
 

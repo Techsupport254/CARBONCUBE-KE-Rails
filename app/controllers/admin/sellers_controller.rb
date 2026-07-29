@@ -121,6 +121,7 @@ class Admin::SellersController < ApplicationController
     @seller = Seller.new(seller_params)
     if @seller.save
       assign_default_tier_for_seller(@seller) if @seller.seller_tier.blank?
+      create_default_branch_for_seller(@seller) if @seller.branches.empty?
       render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :blocked]), status: :created
     else
       render json: @seller.errors, status: :unprocessable_entity
@@ -300,6 +301,19 @@ class Admin::SellersController < ApplicationController
     free_tier = Tier.find_by(name: 'Free') || Tier.find_by(id: 1) || Tier.first
     return unless free_tier
     SellerTier.create!(seller: seller, tier: free_tier, duration_months: 0)
+  end
+
+  def create_default_branch_for_seller(seller)
+    return unless seller.location.present?
+    return if seller.branches.exists?
+
+    seller.branches.create!(
+      name: seller.enterprise_name || seller.fullname || "Main Branch",
+      location: seller.location,
+      is_main_branch: true,
+      county_id: seller.county_id,
+      sub_county_id: seller.sub_county_id
+    )
   end
 
   def set_seller

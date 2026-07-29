@@ -10,6 +10,8 @@ class Branch < ApplicationRecord
 
   before_validation :set_first_branch_as_main
 
+  after_create_commit :queue_geocoding, if: -> { latitude.blank? || longitude.blank? }
+
   private
 
   def only_one_main_branch
@@ -22,5 +24,9 @@ class Branch < ApplicationRecord
     if seller.branches.count == 0 && !is_main_branch?
       self.is_main_branch = true
     end
+  end
+
+  def queue_geocoding
+    GeocodeSellersJob.perform_later(seller_id.to_s)
   end
 end
