@@ -462,6 +462,29 @@ class AuthenticationController < ApplicationController
     render json: { user: user_response }, status: :ok
   end
 
+  def apple_oauth
+    identity_token = params[:identity_token]
+
+    unless identity_token.present?
+      render json: { error: 'Apple identity token is required' }, status: :bad_request
+      return
+    end
+
+    service = AppleAuthService.new(
+      identity_token,
+      params[:full_name],
+      params[:role] || 'buyer'
+    )
+
+    result = service.authenticate
+
+    if result[:success]
+      render json: { user: result[:user], token: result[:token] }, status: :ok
+    else
+      render json: { error: result[:error] }, status: :unauthorized
+    end
+  end
+
   def google_oauth
     # If we have a code, process it (frontend sending authorization code from GSI popup)
     if params[:code].present?

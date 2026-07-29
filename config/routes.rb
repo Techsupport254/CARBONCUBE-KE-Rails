@@ -163,6 +163,9 @@ Rails.application.routes.draw do
   post 'auth/send-reactivation-email', to: 'authentication#send_reactivation_email'
   post 'auth/reactivate-account', to: 'authentication#reactivate_account'
   
+  # Apple OAuth routes
+  post 'auth/apple', to: 'authentication#apple_oauth'
+
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
   get 'auth/google_oauth2/initiate', to: 'authentication#google_oauth_initiate' # For redirect flow with signed state

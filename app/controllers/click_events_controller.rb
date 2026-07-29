@@ -22,6 +22,13 @@ class ClickEventsController < ApplicationController
         metadata[:user_agent_details] = parse_user_agent(params[:user_agent])
       end
 
+      # Preserve the explicit mobile platform (ios/android) sent by the app
+      if metadata[:platform].present? || metadata['platform'].present?
+        metadata[:user_agent_details] ||= {}
+        metadata[:user_agent_details][:platform] = metadata[:platform] || metadata['platform']
+        metadata[:user_agent_details][:source] = 'mobile_app' if metadata[:source] == 'mobile_app' || metadata['source'] == 'mobile_app'
+      end
+
       # Extract user information from metadata if available (for non-buyer users or when auth fails)
       user_id_from_metadata = metadata[:user_id] || metadata['user_id']
       user_role_from_metadata = metadata[:user_role] || metadata['user_role']

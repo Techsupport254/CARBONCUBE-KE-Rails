@@ -1118,10 +1118,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
   end
 
   add_foreign_key "ad_searches", "buyers", on_delete: :cascade
-  add_foreign_key "ad_searches", "buyers", on_delete: :cascade
   add_foreign_key "ads", "branches"
   add_foreign_key "ads", "categories"
-  add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "subcategories"
   add_foreign_key "branches", "sellers"
@@ -1137,45 +1135,33 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
   add_foreign_key "call_records", "sales_users"
   add_foreign_key "cart_items", "ads"
   add_foreign_key "cart_items", "buyers", on_delete: :cascade
-  add_foreign_key "cart_items", "buyers", on_delete: :cascade
   add_foreign_key "click_events", "ads"
   add_foreign_key "click_events", "buyers", on_delete: :cascade
-  add_foreign_key "click_events", "buyers", on_delete: :cascade
-  add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers", on_delete: :cascade
-  add_foreign_key "conversations", "buyers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
-  add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
-  add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "email_communication_logs", "sellers"
   add_foreign_key "issue_attachments", "issues"
   add_foreign_key "issue_comments", "issues"
-  add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
   add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations", on_delete: :cascade
   add_foreign_key "offer_ads", "ads"
   add_foreign_key "offer_ads", "offers"
   add_foreign_key "offers", "sellers", on_delete: :cascade
-  add_foreign_key "offers", "sellers", on_delete: :cascade
-  add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"
   add_foreign_key "review_requests", "sellers"
   add_foreign_key "reviews", "ads"
   add_foreign_key "reviews", "buyers", on_delete: :cascade
-  add_foreign_key "reviews", "buyers", on_delete: :cascade
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
   add_foreign_key "riders", "sub_counties"
   add_foreign_key "seller_documents", "document_types"
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade
-  add_foreign_key "seller_documents", "sellers", on_delete: :cascade
-  add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "tiers"
   add_foreign_key "sellers", "age_groups"
@@ -1190,7 +1176,5 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
   add_foreign_key "whatsapp_product_sessions", "sellers"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade
-  add_foreign_key "wish_lists", "buyers", on_delete: :cascade
-  add_foreign_key "wish_lists", "sellers", on_delete: :cascade
   add_foreign_key "wish_lists", "sellers", on_delete: :cascade
 end

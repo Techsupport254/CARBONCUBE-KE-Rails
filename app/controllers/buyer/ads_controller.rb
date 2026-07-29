@@ -2878,30 +2878,18 @@ class Buyer::AdsController < ApplicationController
     end
   end
 
-  # Filter by location (prioritize exact location, then county, then city)
+  # Filter by location (matches county name, sub-county name, city, or location address)
   def filter_by_location(ads_query)
-    location_param = params[:location]
+    location_param = params[:location].to_s.strip
     return ads_query if location_param.blank? || location_param == 'All'
-    
-    # Priority 1: Try exact location match in seller.location field first
-    # This handles specific addresses like "Imenti House, Tom Mboya Street"
-    exact_match = ads_query.where('sellers.location ILIKE ?', "%#{location_param}%")
-    
-    # If we get results from exact match, use those
-    if exact_match.exists?
-      return exact_match
-    end
-    
-    # Priority 2: Try to find county by name
-    county = County.find_by('name ILIKE ?', location_param)
-    
-    if county
-      # Filter by seller's county
-      ads_query.where(sellers: { county_id: county.id })
-    else
-      # Priority 3: Fallback to city matching
-      ads_query.where('sellers.city ILIKE ?', "%#{location_param}%")
-    end
+
+    term = "%#{location_param}%"
+
+    ads_query.left_joins(seller: [:county, :sub_county])
+             .where(
+               'counties.name ILIKE ? OR sub_counties.name ILIKE ? OR sellers.city ILIKE ? OR sellers.location ILIKE ?',
+               term, term, term, term
+             )
   end
 
   # Filter by search term (within category context)
