@@ -263,6 +263,7 @@ class Seller < ApplicationRecord
     Rails.cache.delete_matched("search_*")
     Rails.cache.delete_matched("balanced_ads_*")
     Rails.cache.delete_matched("related_ads_*")
+    Rails.cache.delete_matched("admin_sellers/index*")
     
     # Invalidate category and subcategory caches
           Rails.cache.delete('buyer_categories_with_ads_count')

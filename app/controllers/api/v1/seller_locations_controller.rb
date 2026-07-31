@@ -48,6 +48,7 @@ class Api::V1::SellerLocationsController < ApplicationController
         longitude: branch&.longitude,
         phone_number: seller.phone_number,
         email: seller.email,
+        profile_picture: seller.profile_picture,
         ads_count: seller.ads_count
       }
     end

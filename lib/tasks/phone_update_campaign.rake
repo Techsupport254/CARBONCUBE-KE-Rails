@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 namespace :campaign do
-  desc "Execute phone number request campaign for sellers (Usage: rake campaign:request_phone_numbers[dry_run,week_number])"
+  desc "Execute phone/county completion campaign for sellers (Usage: rake campaign:request_phone_numbers[dry_run,week_number])"
   task :request_phone_numbers, [:dry_run, :week_number] => :environment do |_t, args|
     dry_run = args[:dry_run].nil? ? true : ActiveModel::Type::Boolean.new.cast(args[:dry_run])
     week_number = args[:week_number].present? ? args[:week_number].to_i : 1
@@ -19,7 +19,7 @@ namespace :campaign do
     puts "----------------------------------------------------------"
     puts "  • Dry Run Mode:                  #{result[:dry_run]}"
     puts "  • Week Iteration:                Week #{result[:week_number]} / #{result[:max_weeks]}"
-    puts "  • Sellers Missing Phone Number:  #{result[:total_sellers_missing_phone]}"
+    puts "  • Sellers Missing Phone/County:  #{result[:total_eligible_sellers]}"
     puts "  • Skipped (Already Sent):        #{result[:already_sent_skipped]}"
     puts "  • Successfully Processed:        #{result[:successfully_processed]}"
     puts "  • Failed:                        #{result[:failed_count]}"

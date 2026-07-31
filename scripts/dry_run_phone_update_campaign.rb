@@ -2,7 +2,7 @@
 
 puts "=========================================================="
 puts "  DRY RUN: SendPhoneUpdateReminderJob"
-puts "  Campaign: Request Phone Numbers for Sellers Missing Phone"
+puts "  Campaign: Request Phone/County Details for Sellers Missing Contact Info"
 puts "  Frequency: 1x / Week for 4 Weeks (Dynamic Exclusion Active)"
 puts "=========================================================="
 puts "Executing dry-run check across 4-week iteration plan (NO emails will be sent)..."
@@ -14,7 +14,7 @@ puts "Executing dry-run check across 4-week iteration plan (NO emails will be se
   puts "----------------------------------------------------------"
   puts "  • Dry Run Mode:                  #{result[:dry_run]}"
   puts "  • Iteration Week:                Week #{result[:week_number]} / #{result[:max_weeks]}"
-  puts "  • Sellers Missing Phone Number:  #{result[:total_sellers_missing_phone]}"
+  puts "  • Sellers Missing Phone/County:  #{result[:total_eligible_sellers]}"
   puts "  • Skipped (Already Sent):        #{result[:already_sent_skipped]}"
   puts "  • Would Receive Email:           #{result[:successfully_processed]}"
   puts "  • Failed / Invalid:              #{result[:failed_count]}"

@@ -19,7 +19,8 @@ class DeviceCatalogService
       'cooling & maintenance' => 'computer_accessories_filtered.json',
       'internal components' => 'computer_accessories_filtered.json',
       'accessories' => 'computer_accessories_filtered.json',
-      'computer accessories' => 'computer_accessories_filtered.json'
+      'computer accessories' => 'computer_accessories_filtered.json',
+      'computer spare parts' => 'computer_accessories_filtered.json'
     },
     'tvsandhomeentertainment' => {
       'smart tvs' => 'tvs_filtered.json',
@@ -46,7 +47,9 @@ class DeviceCatalogService
       'irrigation' => 'agriculture_filtered.json',
       'farm machinery' => 'agriculture_filtered.json',
       'spare parts' => 'agriculture_filtered.json',
-      'accessories' => 'agriculture_filtered.json'
+      'agriculture spare parts' => 'agriculture_filtered.json',
+      'accessories' => 'agriculture_filtered.json',
+      'agriculture accessories' => 'agriculture_filtered.json'
     },
     'automotivepartsaccessories' => {
       'tyres' => 'automotive_filtered.json',
@@ -54,7 +57,9 @@ class DeviceCatalogService
       'lubricants' => 'automotive_filtered.json',
       'rims' => 'automotive_filtered.json',
       'spare parts' => 'automotive_filtered.json',
-      'accessories' => 'automotive_filtered.json'
+      'automotive spare parts' => 'automotive_filtered.json',
+      'accessories' => 'automotive_filtered.json',
+      'automotive accessories' => 'automotive_filtered.json'
     },
     'filtration' => {
       'air filters' => 'filtration_filtered.json',

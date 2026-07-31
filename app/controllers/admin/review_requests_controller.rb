@@ -94,10 +94,13 @@ class Admin::ReviewRequestsController < ApplicationController
         reviewed_by: current_admin,
         review_notes: params[:review_notes]
       )
+
+      # Notify seller of approval
+      SellerMailer.review_request_approved(seller, review_request).deliver_now
     end
 
     render json: {
-      message: 'Review request approved and seller unflagged',
+      message: 'Review request approved, seller unflagged, and approval email sent',
       review_request: {
         id: review_request.id,
         status: review_request.status,
@@ -109,21 +112,30 @@ class Admin::ReviewRequestsController < ApplicationController
   # PATCH /admin/review_requests/:id/reject
   def reject
     review_request = ReviewRequest.find(params[:id])
+    seller = review_request.seller
     
     if review_request.status != 'pending'
       render json: { error: 'Review request is not pending' }, status: :unprocessable_entity
       return
     end
 
-    review_request.update(
-      status: 'rejected',
-      reviewed_at: Time.current,
-      reviewed_by: current_admin,
-      review_notes: params[:review_notes]
-    )
+    ActiveRecord::Base.transaction do
+      # Reflag the seller since the review was rejected
+      seller.update(flagged: true)
+
+      review_request.update(
+        status: 'rejected',
+        reviewed_at: Time.current,
+        reviewed_by: current_admin,
+        review_notes: params[:review_notes]
+      )
+
+      # Notify seller of rejection
+      SellerMailer.review_request_rejected(seller, review_request).deliver_now
+    end
 
     render json: {
-      message: 'Review request rejected',
+      message: 'Review request rejected, seller reflagged, and rejection email sent',
       review_request: {
         id: review_request.id,
         status: review_request.status,
