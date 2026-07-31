@@ -11,8 +11,21 @@ class Branch < ApplicationRecord
   before_validation :set_first_branch_as_main
 
   after_create_commit :queue_geocoding, if: -> { latitude.blank? || longitude.blank? }
+  before_create :geocode_coordinates, if: -> { latitude.blank? || longitude.blank? }
 
   private
+
+  def geocode_coordinates
+    return unless seller
+
+    result = GeocodeSellersJob.new.send(:geocode_location, seller, sync: true)
+    if result
+      self.latitude = result[:lat]
+      self.longitude = result[:lon]
+    end
+  rescue => e
+    Rails.logger.warn "Branch geocoding skipped for seller #{seller&.id}: #{e.message}"
+  end
 
   def only_one_main_branch
     if is_main_branch? && seller.branches.where.not(id: id).where(is_main_branch: true).exists?

@@ -1,10 +1,11 @@
 class AdSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :price, :brand, :condition, :manufacturer, :model, :specifications,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
-             :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name, 
+             :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name,
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
              :seller_is_verified, :seller_document_verified, :is_added_by_sales,
-             :flash_sale_info, :listing_type
+             :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
+             :minimum_order_quantity, :display_price?
 
   has_one :seller, serializer: SellerSerializer
   has_many :reviews, if: :include_reviews?
@@ -62,6 +63,7 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def price
+    return nil unless object.display_price?
     object.respond_to?(:effective_price) ? object.effective_price : object.price
   end
 
@@ -230,6 +232,34 @@ class AdSerializer < ActiveModel::Serializer
 
   def condition
     object.service_category? ? nil : object.condition
+  end
+
+  def pricing_unit
+    object.pricing_unit
+  end
+
+  def price_tiers
+    object.price_tiers
+  end
+
+  def price_display_mode
+    object.price_display_mode || 'public'
+  end
+
+  def price_range_max
+    object.price_range_max
+  end
+
+  def unit_label
+    object.unit_label
+  end
+
+  def minimum_order_quantity
+    object.minimum_order_quantity
+  end
+
+  def display_price?
+    object.display_price?
   end
 
   private

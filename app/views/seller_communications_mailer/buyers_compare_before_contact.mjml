@@ -1,0 +1,181 @@
+<mjml>
+  <mj-head>
+    <mj-title>Help Buyers Make Faster Decisions | Carbon Cube Kenya</mj-title>
+    <mj-font name="Outfit" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" />
+    <mj-attributes>
+      <mj-all
+        font-family="Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        color="#334155"
+        padding="0px"
+      />
+      <mj-text font-size="15px" line-height="24px" color="#334155" padding="0px" />
+      <mj-section padding="0px" />
+      <mj-column padding="0px" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .email-shell {
+        background-color: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+      }
+      .badge-label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #d97706;
+        background-color: #fef3c7;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+      }
+      .action-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+      .tip-box {
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        border-radius: 0px 8px 8px 0px;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f1f5f9" width="600px">
+    <mj-space height="24px" />
+
+    <mj-wrapper css-class="email-shell" padding="0px">
+      <!-- Header -->
+      <mj-section background-color="#0b1324" border-radius="16px 16px 0 0" padding="24px 32px">
+        <mj-column width="100%">
+          <mj-table>
+            <tr>
+              <td style="vertical-align: middle; width: 40px;">
+                <img src="https://carboncube-ke.com/logo.png" width="36" height="36" alt="Carbon Cube Kenya" style="display: block; border: 0;" />
+              </td>
+              <td style="vertical-align: middle; padding-left: 12px;">
+                <span style="font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">CARBON CUBE</span>
+                <span style="font-size: 11px; font-weight: 600; color: #94a3b8; display: block; letter-spacing: 0.5px;">KENYA SELLER GUIDANCE</span>
+              </td>
+            </tr>
+          </mj-table>
+        </mj-column>
+      </mj-section>
+
+      <!-- Main Body -->
+      <mj-section background-color="#ffffff" padding="36px 32px 24px">
+        <mj-column width="100%">
+          <mj-text padding-bottom="12px">
+            <span class="badge-label">Seller Guide</span>
+          </mj-text>
+
+          <mj-text padding-bottom="16px" font-weight="800" font-size="24px" line-height="32px" color="#0f172a">
+            Help Buyers Make Faster Decisions
+          </mj-text>
+
+          <mj-text padding-bottom="16px" font-size="16px" color="#1e293b" font-weight="600">
+            Dear <%= @first_name || 'Seller' %>,
+          </mj-text>
+
+          <mj-text padding-bottom="24px" font-size="15px" line-height="25px" color="#475569">
+            Many buyers compare several products before deciding who to contact. The more complete and consistent your product information is across your listings, the easier it is for buyers to choose your business.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Checklist Card -->
+      <mj-section background-color="#ffffff" padding="0px 32px 28px">
+        <mj-column width="100%" css-class="action-card" padding="20px 24px">
+          <mj-text padding-bottom="16px" font-size="14px" font-weight="800" color="#0f172a" text-transform="uppercase" letter-spacing="0.5px">
+            This week, take a few minutes to:
+          </mj-text>
+
+          <!-- Item 1 -->
+          <mj-table padding-bottom="12px">
+            <tr>
+              <td style="vertical-align: top; width: 28px;">
+                <div style="background-color: #dbeafe; color: #1d4ed8; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px; font-weight: 800;">1</div>
+              </td>
+              <td style="vertical-align: top; padding-left: 8px; font-size: 14px; line-height: 22px; color: #334155;">
+                <strong style="color: #0f172a;">Review product information for consistency.</strong>
+              </td>
+            </tr>
+          </mj-table>
+
+          <!-- Item 2 -->
+          <mj-table padding-bottom="12px">
+            <tr>
+              <td style="vertical-align: top; width: 28px;">
+                <div style="background-color: #dbeafe; color: #1d4ed8; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px; font-weight: 800;">2</div>
+              </td>
+              <td style="vertical-align: top; padding-left: 8px; font-size: 14px; line-height: 22px; color: #334155;">
+                <strong style="color: #0f172a;">Check that prices match your current selling prices.</strong>
+              </td>
+            </tr>
+          </mj-table>
+
+          <!-- Item 3 -->
+          <mj-table>
+            <tr>
+              <td style="vertical-align: top; width: 28px;">
+                <div style="background-color: #dbeafe; color: #1d4ed8; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 12px; font-weight: 800;">3</div>
+              </td>
+              <td style="vertical-align: top; padding-left: 8px; font-size: 14px; line-height: 22px; color: #334155;">
+                <strong style="color: #0f172a;">Remove products you no longer offer.</strong>
+              </td>
+            </tr>
+          </mj-table>
+        </mj-column>
+      </mj-section>
+
+      <!-- Tip Callout -->
+      <mj-section background-color="#ffffff" padding="0px 32px 28px">
+        <mj-column width="100%" css-class="tip-box" padding="16px 20px">
+          <mj-text font-size="14px" line-height="22px" color="#78350f">
+            Small improvements can make your shop easier to navigate and more appealing to buyers.
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Action Button -->
+      <mj-section background-color="#ffffff" padding="0px 32px 36px">
+        <mj-column width="100%">
+          <mj-button
+            background-color="#f59e0b"
+            color="#0f172a"
+            font-family="Outfit, sans-serif"
+            font-size="16px"
+            font-weight="800"
+            href="https://carboncube-ke.com/seller/dashboard"
+            align="left"
+            border-radius="10px"
+            inner-padding="14px 28px"
+          >
+            Visit Seller Dashboard
+          </mj-button>
+        </mj-column>
+      </mj-section>
+
+      <!-- Sign Off -->
+      <mj-section background-color="#ffffff" padding="0px 32px 36px">
+        <mj-column width="100%">
+          <mj-text font-size="15px" color="#475569" line-height="24px">
+            Regards,<br/>
+            <strong style="color: #0f172a; font-size: 16px;">Carbon Cube Kenya</strong>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Footer -->
+      <mj-section background-color="#f8fafc" border-radius="0 0 16px 16px" border-top="1px solid #e2e8f0" padding="24px 32px">
+        <mj-column width="100%">
+          <mj-text align="center" font-size="12px" color="#94a3b8" line-height="20px">
+            <strong>Carbon Cube Kenya</strong> • 9th Floor, CMS Africa, Nairobi, Kenya<br/>
+            Questions? Contact support at <a href="https://carboncube-ke.com/contact" style="color: #f59e0b; text-decoration: none; font-weight: 600;">carboncube-ke.com/contact</a>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+    <mj-space height="32px" />
+  </mj-body>
+</mjml>

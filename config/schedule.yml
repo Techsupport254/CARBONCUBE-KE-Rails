@@ -28,3 +28,14 @@ sync_search_analytics:
   class: "SyncSearchAnalyticsJob"
   queue: low
   description: "Persist daily search analytics from Redis to PostgreSQL"
+
+# --- PHONE UPDATE CAMPAIGN ---
+# Request phone numbers from sellers missing a phone number weekly on Mondays at 9:00 AM EAT (06:00 UTC).
+# Automatically excludes sellers who have added their phone numbers.
+request_phone_number_campaign:
+  cron: "0 6 * * 1"
+  class: "SendPhoneUpdateReminderJob"
+  args: [false, 1]
+  queue: broadcast
+  description: "Weekly campaign requesting phone numbers for active sellers missing a contact phone number"
+

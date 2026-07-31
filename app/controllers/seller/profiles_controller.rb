@@ -96,6 +96,11 @@ class Seller::ProfilesController < ApplicationController
       # Additional filtering for empty strings and null values
       update_params = update_params.reject { |k, v| v.nil? || v.to_s.strip.empty? }
 
+      # Handle explicit phone number removal
+      if params[:clear_phone_number] == true || params[:clear_phone_number] == 'true' || params[:phone_number] == 'REMOVE' || params[:phone_number] == 'DELETE'
+        update_params[:phone_number] = nil
+      end
+
       # Add the uploaded URLs if available
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
       update_params[:document_url] = uploaded_document_url if uploaded_document_url

@@ -9,6 +9,7 @@ class ClickEvent < ApplicationRecord
     Add-to-Cart
     Add-to-Wish-List
     Callback-Request
+    Quote-Request
     Make-Offer
     Share-Ad
     View-Shop

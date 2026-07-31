@@ -1504,7 +1504,9 @@ class AuthenticationController < ApplicationController
                                      else
                                        Buyer.find_by(phone_number: form_data[:phone_number])
                                      end
-          if existing_user_with_phone && existing_user_with_phone.id != user.id
+          if existing_user_with_phone &&
+             existing_user_with_phone.id != user.id &&
+             existing_user_with_phone.email.to_s.downcase.strip != user.email.to_s.downcase.strip
             render json: {
               success: false,
               error: "Phone number #{form_data[:phone_number]} is already registered to another account. Please use a different phone number."

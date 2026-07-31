@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_29_185833) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -913,6 +913,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
     t.index ["seller_id"], name: "index_seller_documents_on_seller_id"
   end
 
+  create_table "seller_pricing_templates", force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.bigint "category_id"
+    t.bigint "subcategory_id"
+    t.string "pricing_unit", default: "piece", null: false
+    t.string "price_display_mode", default: "public", null: false
+    t.jsonb "price_tiers", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id", "subcategory_id"], name: "idx_spt_category_subcategory"
+    t.index ["category_id"], name: "index_seller_pricing_templates_on_category_id"
+    t.index ["seller_id"], name: "index_seller_pricing_templates_on_seller_id"
+    t.index ["subcategory_id"], name: "index_seller_pricing_templates_on_subcategory_id"
+  end
+
   create_table "seller_tiers", force: :cascade do |t|
     t.bigint "tier_id", null: false
     t.integer "duration_months", null: false
@@ -1118,8 +1133,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
   end
 
   add_foreign_key "ad_searches", "buyers", on_delete: :cascade
+  add_foreign_key "ad_searches", "buyers", on_delete: :cascade
   add_foreign_key "ads", "branches"
   add_foreign_key "ads", "categories"
+  add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "subcategories"
   add_foreign_key "branches", "sellers"
@@ -1135,33 +1152,48 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
   add_foreign_key "call_records", "sales_users"
   add_foreign_key "cart_items", "ads"
   add_foreign_key "cart_items", "buyers", on_delete: :cascade
+  add_foreign_key "cart_items", "buyers", on_delete: :cascade
   add_foreign_key "click_events", "ads"
   add_foreign_key "click_events", "buyers", on_delete: :cascade
+  add_foreign_key "click_events", "buyers", on_delete: :cascade
+  add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers", on_delete: :cascade
+  add_foreign_key "conversations", "buyers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
+  add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
+  add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "email_communication_logs", "sellers"
   add_foreign_key "issue_attachments", "issues"
   add_foreign_key "issue_comments", "issues"
+  add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
   add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations", on_delete: :cascade
   add_foreign_key "offer_ads", "ads"
   add_foreign_key "offer_ads", "offers"
   add_foreign_key "offers", "sellers", on_delete: :cascade
+  add_foreign_key "offers", "sellers", on_delete: :cascade
+  add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"
   add_foreign_key "review_requests", "sellers"
   add_foreign_key "reviews", "ads"
   add_foreign_key "reviews", "buyers", on_delete: :cascade
+  add_foreign_key "reviews", "buyers", on_delete: :cascade
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
   add_foreign_key "riders", "sub_counties"
   add_foreign_key "seller_documents", "document_types"
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade
+  add_foreign_key "seller_documents", "sellers", on_delete: :cascade
+  add_foreign_key "seller_pricing_templates", "categories"
+  add_foreign_key "seller_pricing_templates", "sellers"
+  add_foreign_key "seller_pricing_templates", "subcategories"
+  add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "tiers"
   add_foreign_key "sellers", "age_groups"
@@ -1176,5 +1208,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_090200) do
   add_foreign_key "whatsapp_product_sessions", "sellers"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade
+  add_foreign_key "wish_lists", "buyers", on_delete: :cascade
+  add_foreign_key "wish_lists", "sellers", on_delete: :cascade
   add_foreign_key "wish_lists", "sellers", on_delete: :cascade
 end

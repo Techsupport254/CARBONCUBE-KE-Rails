@@ -255,5 +255,62 @@ class SellerCommunicationsMailer < ApplicationMailer
       }
     )
   end
+
+  def buyers_compare_before_contact
+    user = params[:seller] || params[:user]
+
+    fullname = user.respond_to?(:fullname) && user.fullname.present? ? user.fullname : (user.respond_to?(:enterprise_name) && user.enterprise_name.present? ? user.enterprise_name : 'Seller')
+    first_name = fullname.to_s.split(' ').first.presence || "Partner"
+    dashboard_url = UtmUrlHelper.append_utm(
+      "https://carboncube-ke.com/seller/ads",
+      source: "seller_communication",
+      medium: "email",
+      campaign: "buyers_compare_before_contact",
+      content: "review_ads_button"
+    )
+
+    subject_text = "Seller Account Update: Listing recommendations for Carbon Cube Kenya"
+
+    mail(
+      to: user.email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        dashboard_url: dashboard_url,
+        banner_url: "https://res.cloudinary.com/dwrjceslk/image/upload/v1785482749/emails/ghybhzdpzvpw4ekmi3ct.png"
+      }
+    )
+  end
+
+  def request_phone_number
+    user = params[:seller] || params[:user]
+
+    fullname = user.respond_to?(:fullname) && user.fullname.present? ? user.fullname : (user.respond_to?(:enterprise_name) && user.enterprise_name.present? ? user.enterprise_name : 'Seller')
+    first_name = fullname.to_s.split(' ').first.presence || "Partner"
+
+    update_phone_url = UtmUrlHelper.append_utm(
+      "https://carboncube-ke.com/seller/update-phone",
+      source: "seller_communication",
+      medium: "email",
+      campaign: "request_phone_number",
+      content: "add_phone_cta"
+    )
+
+    subject_text = "Action Required: Add your contact phone number on Carbon Cube Kenya"
+
+    mail(
+      to: user.email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        update_phone_url: update_phone_url,
+        banner_url: "https://res.cloudinary.com/dwrjceslk/image/upload/v1785482749/emails/ghybhzdpzvpw4ekmi3ct.png"
+      }
+    )
+  end
 end
 

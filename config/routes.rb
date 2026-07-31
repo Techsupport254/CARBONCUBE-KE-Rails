@@ -601,6 +601,14 @@ Rails.application.routes.draw do
       patch 'update_tier', on: :collection
     end
 
+    resources :pricing_templates, only: [:index, :create, :update, :destroy] do
+      collection do
+        get :default
+        get :product_categories
+        post :create_defaults
+      end
+    end
+
   end
 
 

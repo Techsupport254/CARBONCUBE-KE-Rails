@@ -203,6 +203,35 @@ class Seller::AdsController < ApplicationController
         
         if seller.save
           Rails.logger.info "Successfully converted buyer #{current_seller.id} to seller #{seller.id}"
+
+          # Geocode the seller location before branch creation
+          coordinates = begin
+            GeocodeSellersJob.new.send(:geocode_location, seller, sync: true)
+          rescue => e
+            Rails.logger.warn "Failed to geocode converted seller #{seller.id}: #{e.message}"
+            nil
+          end
+
+          # Build branch attributes with coordinates when available
+          branch_attrs = {
+            name: seller.enterprise_name || "Main Branch",
+            location: seller.location,
+            is_main_branch: true,
+            county_id: seller.county_id,
+            sub_county_id: seller.sub_county_id
+          }
+          if coordinates
+            branch_attrs[:latitude] = coordinates[:lat]
+            branch_attrs[:longitude] = coordinates[:lon]
+          end
+
+          # Create default main branch for converted seller
+          branch = seller.branches.create(branch_attrs)
+          if branch.persisted?
+            @current_branch = branch
+          else
+            Rails.logger.error "Failed to create default branch during buyer conversion: #{branch.errors.full_messages.inspect}"
+          end
           # Delete the buyer record
           current_seller.destroy
           @current_seller = seller
@@ -676,12 +705,35 @@ class Seller::AdsController < ApplicationController
   end
 
   def ad_params
+    raw_specifications = params.dig(:ad, :specifications)
+    specifications_value = nil
+
+    if raw_specifications.is_a?(String)
+      begin
+        parsed = JSON.parse(raw_specifications)
+        if parsed.is_a?(Hash)
+          specifications_value = ActionController::Parameters.new(parsed).permit(
+            :pricing_unit, :price_display_mode, :price_range_max,
+            price_tiers: [:min_quantity, :max_quantity, :unit_price, :label]
+          )
+        end
+      rescue JSON::ParserError => e
+        Rails.logger.error "Invalid ad[specifications] JSON: #{e.message}"
+      end
+    elsif raw_specifications.respond_to?(:permit)
+      specifications_value = raw_specifications.permit(
+        :pricing_unit, :price_display_mode, :price_range_max,
+        price_tiers: [:min_quantity, :max_quantity, :unit_price, :label]
+      )
+    end
+
     permitted = params.require(:ad).permit(
-      :title, :description, :category_id, :subcategory_id, :price, 
-      :brand, :manufacturer, :model, :specifications, :item_length, :item_width, 
+      :title, :description, :category_id, :subcategory_id, :price,
+      :brand, :manufacturer, :model, :item_length, :item_width,
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
-    media: [], existing_media: []
-  )
+      media: [], existing_media: []
+    )
+    permitted[:specifications] = specifications_value if specifications_value
 
   # Convert empty strings to nil for optional numeric fields (only for fields that are present in params)
     %i[item_length item_width item_height item_weight].each do |field|
