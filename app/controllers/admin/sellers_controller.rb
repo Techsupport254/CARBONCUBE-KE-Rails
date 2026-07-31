@@ -4,6 +4,8 @@ class Admin::SellersController < ApplicationController
   before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews]
 
   def index
+    cache_key = "admin_sellers/index_v2/#{Digest::SHA1.hexdigest(params.to_unsafe_h.slice('query', 'status', 'sort_by', 'sort_order', 'page', 'per_page').compact.to_json)}"
+    sellers_response = Rails.cache.fetch(cache_key, expires_in: 5.minutes, race_condition_ttl: 10.seconds) do
     sellers_query = Seller.unscoped
     
     if params[:query].present?
@@ -14,7 +16,7 @@ class Admin::SellersController < ApplicationController
          email ILIKE :search OR 
          enterprise_name ILIKE :search OR 
          location ILIKE :search OR 
-         id::text = :exact_search",
+         sellers.id::text = :exact_search",
         search: "%#{search_term}%",
         exact_search: search_term
       )
@@ -30,6 +32,8 @@ class Admin::SellersController < ApplicationController
         sellers_query = sellers_query.where(deleted: true)
       when 'flagged'
         sellers_query = sellers_query.where(flagged: true)
+      when 'call_queue'
+        sellers_query = sellers_query.where(id: CallQueue.pending.select(:seller_id))
       when 'all'
       end
     end
@@ -37,32 +41,49 @@ class Admin::SellersController < ApplicationController
     sort_by = params[:sort_by] || 'created_at'
     sort_order = params[:sort_order] || 'desc'
     
-    allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at]
+    allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at total_ads]
     allowed_sort_orders = %w[asc desc]
-    
+
     sort_by = 'created_at' unless allowed_sort_fields.include?(sort_by)
     sort_order = 'asc' unless allowed_sort_orders.include?(sort_order)
-    
+
     sort_by = 'last_active_at' if sort_by == 'last_activity'
-    sellers_query = sellers_query.order("#{sort_by} #{sort_order}")
-    
+    filtered_query = sellers_query
+    sellers_query = filtered_query
+      .left_outer_joins(:ads)
+      .where("ads.deleted = ? OR ads.id IS NULL", false)
+      .group('sellers.id')
+      .select('sellers.*, COUNT(ads.id) AS total_ads_count')
+    sellers_query = if sort_by == 'total_ads'
+      sellers_query.order("total_ads_count #{sort_order}")
+    else
+      sellers_query.order("sellers.#{sort_by} #{sort_order}")
+    end
+
     page = params[:page]&.to_i || 1
     per_page = params[:per_page]&.to_i || 20
-    
+
     page = 1 if page < 1
     per_page = [per_page, 100].min # Max 100 per page
     per_page = 20 if per_page < 1
-    
-    total_count = sellers_query.count
+
+    total_count = filtered_query.count
     offset = (page - 1) * per_page
     
     @sellers = sellers_query.limit(per_page).offset(offset)
-    
+
+    in_call_queue_entries = CallQueue.pending.where(seller_id: @sellers.map(&:id)).select(:seller_id, :reasons)
+    in_call_queue_ids = in_call_queue_entries.map(&:seller_id).to_set
+    in_call_queue_reasons = in_call_queue_entries.index_by(&:seller_id).transform_values { |q| q.reasons || [] }
+
     carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
 
     @sellers_data = @sellers.map do |seller|
       row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
-      row['total_ads'] = seller.ads.count
+      row['total_ads'] = seller[:total_ads_count] || 0
+      row['in_call_queue'] = in_call_queue_ids.include?(seller.id)
+      row['call_queue_reasons'] = in_call_queue_reasons[seller.id] || []
+      row['call_queue_reasons_display'] = (in_call_queue_reasons[seller.id] || []).map { |r| CallQueue::QUEUE_TYPES[r] || r.humanize }
       row['onboarding_type'] = if seller.carbon_code_id.present?
         'added_by_sales'
       elsif seller.created_at && seller.created_at >= carbon_code_cutoff
@@ -77,7 +98,7 @@ class Admin::SellersController < ApplicationController
     has_next_page = page < total_pages
     has_prev_page = page > 1
     
-    render json: {
+    {
       sellers: @sellers_data,
       pagination: {
         current_page: page,
@@ -90,6 +111,9 @@ class Admin::SellersController < ApplicationController
         prev_page: has_prev_page ? page - 1 : nil
       }
     }
+  end
+
+  render json: sellers_response
   end
   
 

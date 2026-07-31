@@ -57,12 +57,19 @@ class Seller::ReviewRequestsController < ApplicationController
     if review_request.save
       # Log the review request
       Rails.logger.info "Review request created for seller #{seller.id} (ID: #{review_request.id}): #{params[:reason]}"
+
+      # Temporarily unflag the seller while the review is in progress
+      # so they can continue using the platform without interruption
+      seller.update!(flagged: false)
+
+      # Notify the seller that their review request was received
+      SellerMailer.review_request_confirmation(seller).deliver_now
       
       # TODO: Send notification to admin team
       # NotificationService.notify_admins_of_review_request(review_request)
 
       render json: { 
-        message: 'Review request submitted successfully. Our team will review your account shortly.',
+        message: 'Review request submitted successfully. Your account has been unflagged while our team reviews it.',
         review_request: {
           id: review_request.id,
           status: review_request.status,

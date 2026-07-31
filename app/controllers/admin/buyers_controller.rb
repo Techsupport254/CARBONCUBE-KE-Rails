@@ -15,7 +15,7 @@ class Admin::BuyersController < ApplicationController
          email ILIKE :search OR 
          username ILIKE :search OR 
          location ILIKE :search OR 
-         id::text = :exact_search",
+         buyers.id::text = :exact_search",
         search: "%#{search_term}%",
         exact_search: search_term
       )

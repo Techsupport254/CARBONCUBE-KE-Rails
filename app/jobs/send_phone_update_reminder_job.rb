@@ -23,9 +23,9 @@ class SendPhoneUpdateReminderJob < ApplicationJob
 
     Rails.logger.info "[SendPhoneUpdateReminderJob] Starting campaign run (dry_run: #{dry_run}, week: #{week_number}/4, target_email: #{target_email.inspect})..."
 
-    # DYNAMIC EXCLUSION: Query active sellers who STILL have a missing or empty phone number
+    # DYNAMIC EXCLUSION: Query active sellers who STILL have a missing or empty phone number OR county
     sellers_missing_phone = Seller.where(deleted: [false, nil], blocked: [false, nil])
-                                  .where("phone_number IS NULL OR phone_number = '' OR length(trim(phone_number)) = 0")
+                                  .where("phone_number IS NULL OR phone_number = '' OR length(trim(phone_number)) = 0 OR county_id IS NULL")
                                   .where.not(email: [nil, ''])
 
     if target_email.present?
@@ -34,7 +34,7 @@ class SendPhoneUpdateReminderJob < ApplicationJob
 
     total_eligible = sellers_missing_phone.count
     if total_eligible.zero?
-      Rails.logger.info "[SendPhoneUpdateReminderJob] No eligible active sellers with missing phone numbers found."
+      Rails.logger.info "[SendPhoneUpdateReminderJob] No eligible active sellers with missing phone numbers or counties found."
       return summary_hash(dry_run, week_number, 0, 0, 0, 0, [])
     end
 
@@ -99,7 +99,7 @@ class SendPhoneUpdateReminderJob < ApplicationJob
       dry_run: dry_run,
       week_number: week,
       max_weeks: 4,
-      total_sellers_missing_phone: total,
+      total_eligible_sellers: total,
       already_sent_skipped: skipped,
       successfully_processed: successful,
       failed_count: failed,

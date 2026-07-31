@@ -291,14 +291,14 @@ class SellerCommunicationsMailer < ApplicationMailer
     first_name = fullname.to_s.split(' ').first.presence || "Partner"
 
     update_phone_url = UtmUrlHelper.append_utm(
-      "https://carboncube-ke.com/seller/update-phone",
+      "https://carboncube-ke.com/seller/profile",
       source: "seller_communication",
       medium: "email",
       campaign: "request_phone_number",
-      content: "add_phone_cta"
+      content: "complete_profile_cta"
     )
 
-    subject_text = "Action Required: Add your contact phone number on Carbon Cube Kenya"
+    subject_text = "Action Required: Complete your seller profile on Carbon Cube Kenya"
 
     mail(
       to: user.email,
@@ -309,6 +309,59 @@ class SellerCommunicationsMailer < ApplicationMailer
         first_name: first_name,
         update_phone_url: update_phone_url,
         banner_url: "https://res.cloudinary.com/dwrjceslk/image/upload/v1785482749/emails/ghybhzdpzvpw4ekmi3ct.png"
+      }
+    )
+  end
+
+  def ad_visibility_reminder
+    user = params[:seller] || params[:user]
+    to_email = params[:to_email]
+
+    fullname = user.respond_to?(:fullname) && user.fullname.present? ? user.fullname : (user.respond_to?(:enterprise_name) && user.enterprise_name.present? ? user.enterprise_name : 'Seller')
+    first_name = fullname.to_s.split(' ').first.presence || "Partner"
+    enterprise_name = user.respond_to?(:enterprise_name) ? user.enterprise_name : nil
+    ads_count = params[:ads_count] || (user.respond_to?(:ads) ? user.ads.count : nil)
+    last_active_at = user.respond_to?(:last_active_at) ? user.last_active_at : nil
+    last_active = last_active_at&.strftime('%B %d, %Y')
+
+    ads_data = if params[:ads].present?
+      params[:ads]
+    elsif user.respond_to?(:ads)
+      user.ads.where(deleted: false).order(updated_at: :desc).limit(3).map do |ad|
+        {
+          title: ad.title,
+          image: ad.respond_to?(:first_valid_media_url) ? ad.first_valid_media_url : nil,
+          price: ad.respond_to?(:price) ? ad.price : nil,
+          url: ad.respond_to?(:product_url) ? ad.product_url : "https://carboncube-ke.com/ads/#{ad.id}"
+        }
+      end
+    else
+      []
+    end
+
+    dashboard_url = UtmUrlHelper.append_utm(
+      "https://carboncube-ke.com/seller/ads",
+      source: "seller_communication",
+      medium: "email",
+      campaign: "ad_visibility_reminder",
+      content: "add_ads_cta"
+    )
+
+    subject_text = "Boost your Carbon Cube Kenya shop visibility"
+
+    mail(
+      to: to_email || user.email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        firstName: first_name,
+        enterpriseName: enterprise_name,
+        adsCount: ads_count,
+        lastActive: last_active,
+        ads: ads_data,
+        dashboardUrl: dashboard_url,
+        supportEmail: ENV['BREVO_EMAIL']
       }
     )
   end

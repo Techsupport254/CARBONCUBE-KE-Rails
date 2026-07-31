@@ -20,12 +20,12 @@ export default function RequestPhoneNumber({
   const greetingName = firstName || fullname || "Seller"
 
   return (
-    <EmailLayout preview="Action Required: Add your phone number to receive direct buyer inquiries">
+    <EmailLayout preview="Action Required: Complete your seller profile to receive direct buyer inquiries">
       <Section className="rsp-section" style={{ padding: "24px 20px" }}>
         <Img
           src={bannerUrl}
           width="100%"
-          alt="Carbon Cube Kenya Phone Verification"
+          alt="Carbon Cube Kenya Profile Completion"
           style={{
             display: "block",
             width: "100%",
@@ -59,7 +59,7 @@ export default function RequestPhoneNumber({
             lineHeight: "24px",
           }}
         >
-          Add Your Contact Phone Number
+          Complete Your Seller Profile
         </Text>
 
         <Text
@@ -84,7 +84,7 @@ export default function RequestPhoneNumber({
             lineHeight: "22px",
           }}
         >
-          We noticed that your Carbon Cube Kenya seller account currently does not have an active phone number attached. When prospective buyers browse and compare product listings, they prefer reaching out directly via phone or WhatsApp.
+          We noticed that your Carbon Cube Kenya seller account is missing some important details (phone number, county, location, and/or business name). When prospective buyers browse and compare product listings, they prefer reaching out directly via phone or WhatsApp.
         </Text>
 
         <Section
@@ -106,7 +106,7 @@ export default function RequestPhoneNumber({
               letterSpacing: "0.6px",
             }}
           >
-            Why adding your phone number is essential:
+            Why completing your profile is essential:
           </Text>
 
           <table role="presentation" width="100%" cellPadding="0" cellSpacing="0" border={0}>
@@ -148,11 +148,11 @@ export default function RequestPhoneNumber({
             lineHeight: "20px",
           }}
         >
-          Please take less than a minute to add your phone number so buyers can connect with your business without delay.
+          Please take less than a minute to complete your seller profile so buyers can connect with your business without delay.
         </Text>
 
         <Section style={{ margin: "20px 0 16px" }}>
-          <Button href={updatePhoneUrl}>Add Phone Number</Button>
+          <Button href={updatePhoneUrl}>Complete Profile</Button>
         </Section>
 
         <Divider color="#e2e8f0" />

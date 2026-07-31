@@ -52,6 +52,9 @@ class CallQueue < ApplicationRecord
   # Ensure unique seller per queue (only for pending entries)
   validates :seller_id, uniqueness: { scope: :status }, if: -> { status == STATUS_PENDING }
 
+  after_save :invalidate_sellers_cache
+  after_destroy :invalidate_sellers_cache
+
   # Mark as resolved
   def resolve!(user_id)
     update!(status: STATUS_RESOLVED, resolved_at: Time.current, resolved_by_id: user_id)
@@ -65,6 +68,10 @@ class CallQueue < ApplicationRecord
   # Check if queue entry is stale (older than 7 days and still pending)
   def stale?
     status == STATUS_PENDING && created_at < 7.days.ago
+  end
+
+  def invalidate_sellers_cache
+    Rails.cache.delete_matched("admin_sellers/index*")
   end
 
   # Convert to API response format
