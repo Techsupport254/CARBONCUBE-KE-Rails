@@ -17,9 +17,6 @@ class GeocodeSellersJob < ApplicationJob
 
     sellers_without_coords.each_with_index do |seller, index|
       begin
-        # Rate limiting
-        sleep(RATE_LIMIT_DELAY) if index > 0
-
         # Geocode the seller's location
         coordinates = geocode_location(seller)
 
@@ -46,30 +43,66 @@ class GeocodeSellersJob < ApplicationJob
 
   private
 
-  def geocode_location(seller)
-    # Build the query string from available location data
-    query_parts = []
-    
-    query_parts << seller.location if seller.location.present?
-    query_parts << seller.city if seller.city.present?
-    query_parts << seller.county&.name if seller.county.present?
-    query_parts << "Kenya" # Add country for better accuracy
+  def geocode_location(seller, sync: false)
+    loc = seller.location.to_s.strip.squeeze(' ')
+    city = seller.city.to_s.strip
+    sub_county = seller.sub_county&.name
+    county = seller.county&.name
 
-    query = query_parts.join(", ")
+    queries = []
 
-    # Call OpenStreetMap Nominatim API with required User-Agent header
+    if loc.present?
+      parts = [loc]
+      has_context = loc.downcase.include?(sub_county.to_s.downcase) || loc.downcase.include?(county.to_s.downcase)
+
+      if !has_context && city.present? && !loc.downcase.include?(city.downcase)
+        parts << city
+      end
+
+      if sub_county.present? && !loc.downcase.include?(sub_county.downcase)
+        parts << sub_county
+      end
+
+      if county.present? && !loc.downcase.include?(county.downcase)
+        parts << county
+      end
+
+      parts << 'Kenya' unless loc.split(',').last.to_s.strip.downcase == 'kenya'
+      queries << parts.uniq.join(', ')
+    end
+
+    queries << "#{sub_county}, #{county}, Kenya" if sub_county.present? && county.present? && (city.blank? || city == county)
+    queries << "#{city}, #{county}, Kenya" if city.present? && county.present? && city != county
+    queries << "#{sub_county}, #{county}, Kenya" if sub_county.present? && county.present? && city.present? && city != county
+    queries << "#{county}, Kenya" if county.present?
+    queries << 'Kenya' if queries.empty?
+
+    queries.uniq!
+
+    queries.each do |query|
+      sleep(sync ? 0 : RATE_LIMIT_DELAY)
+
+      result = nominatim_search(query, county, sync)
+      return result if result
+    end
+
+    nil
+  end
+
+  def nominatim_search(query, seller_county_name, sync = false)
     uri = URI(NOMINATIM_API_URL)
     params = {
       q: query,
       format: 'json',
       limit: 1,
-      addressdetails: 1
+      addressdetails: 1,
+      countrycodes: 'ke'
     }
     uri.query = URI.encode_www_form(params)
 
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
-    http.read_timeout = 10
+    http.read_timeout = sync ? 5 : 10
     request = Net::HTTP::Get.new(uri.request_uri)
     request['User-Agent'] = 'CarbonCube-Kenya/1.0 (contact: info@carboncube-ke.com)'
     request['Accept'] = 'application/json'
@@ -78,12 +111,27 @@ class GeocodeSellersJob < ApplicationJob
 
     if response.is_a?(Net::HTTPSuccess)
       data = JSON.parse(response.body)
-      
+
       if data.any?
-        return {
-          lat: data.first['lat'].to_f,
-          lon: data.first['lon'].to_f
-        }
+        first = data.first
+        address = first['address'] || {}
+        matched_state = address['state'] || address['county']
+        county_name = seller_county_name.to_s.downcase
+
+        valid = if county_name.present? && matched_state.present?
+                  matched_state.to_s.downcase.include?(county_name) || county_name.include?(matched_state.to_s.downcase)
+                else
+                  true
+                end
+
+        if valid
+          return {
+            lat: first['lat'].to_f,
+            lon: first['lon'].to_f,
+            display_name: first['display_name'],
+            query: query
+          }
+        end
       end
     end
 

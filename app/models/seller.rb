@@ -26,6 +26,7 @@ class Seller < ApplicationRecord
   has_many :offers, dependent: :destroy
   has_many :review_requests, dependent: :destroy
   has_many :branches, dependent: :destroy
+  has_many :seller_pricing_templates, dependent: :destroy
   has_one :categories_seller
   has_one :category, through: :categories_seller
   has_one :seller_tier

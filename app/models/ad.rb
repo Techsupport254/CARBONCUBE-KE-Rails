@@ -93,16 +93,23 @@ class Ad < ApplicationRecord
   accepts_nested_attributes_for :category
   accepts_nested_attributes_for :reviews
 
-  validates :title, :description, :price, presence: true
+  validates :title, :description, presence: true
   validates :brand, :manufacturer, presence: true, unless: :service_category?
-  validates :price, numericality: true
+  validates :price, presence: true, numericality: { greater_than: 0 }, if: :price_required?
   validates :item_length, :item_width, :item_height, numericality: true, allow_nil: true
   validates :item_weight, numericality: { greater_than: 0 }, allow_nil: true
 
-
   validates :weight_unit, inclusion: { in: ['Grams', 'Kilograms'] }
+  validates :pricing_unit, inclusion: { in: ->(ad) { ad.allowed_pricing_units } }, if: -> { pricing_unit.present? }
+  validates :price_display_mode, inclusion: { in: %w[public tiered price_range request_quote] }, if: -> { price_display_mode.present? }
+
+  validate :price_tiers_shape, if: -> { price_tiers.present? }
+  validate :price_tiers_ascending, if: -> { price_tiers.present? }
 
   SERVICE_CATEGORY_NAMES = ['Services', 'Service', 'services', 'Professional Services', 'Equipment Leasing'].freeze
+
+  PRODUCT_PRICING_UNITS = %w[pair piece set dozen kg meter carton].freeze
+  SERVICE_PRICING_UNITS = %w[hour day project session visit month].freeze
 
   def service_category?
     return false unless category
@@ -111,6 +118,47 @@ class Ad < ApplicationRecord
 
   def listing_type
     service_category? ? 'service' : 'product'
+  end
+
+  def allowed_pricing_units
+    service_category? ? SERVICE_PRICING_UNITS : PRODUCT_PRICING_UNITS
+  end
+
+  def price_required?
+    price_display_mode != 'request_quote'
+  end
+
+  def display_price?
+    price_display_mode != 'request_quote'
+  end
+
+  def pricing_unit
+    specifications&.[]('pricing_unit')
+  end
+
+  def price_tiers
+    Array(specifications&.[]('price_tiers'))
+  end
+
+  def price_display_mode
+    specifications&.[]('price_display_mode')
+  end
+
+  def price_range_max
+    specifications&.[]('price_range_max')
+  end
+
+  def unit_label
+    pricing_unit.present? ? "per #{pricing_unit}" : nil
+  end
+
+  def minimum_order_quantity
+    price_tiers.first&.[]('min_quantity')&.to_i || 1
+  end
+
+  def price_for_quantity(qty)
+    return nil if price_tiers.empty?
+    price_tiers.reverse_each.find { |t| qty >= t['min_quantity'].to_i }&.[]('unit_price')&.to_f
   end
 
   # Ensure media can accept a string or array of strings
@@ -352,8 +400,11 @@ class Ad < ApplicationRecord
                             .where(offers: { status: ['active', 'scheduled'] })
                             .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
                             .first
-    
-    active_offer&.discounted_price || price
+
+    discounted = active_offer&.discounted_price
+    return price if discounted.nil? || discounted <= 0 || discounted >= price
+
+    discounted
   end
 
   # Returns true if the product currently has an active discount
@@ -474,6 +525,43 @@ class Ad < ApplicationRecord
   end
 
   private
+
+  def price_tiers_shape
+    price_tiers.each_with_index do |tier, index|
+      unless tier.is_a?(Hash)
+        errors.add(:price_tiers, "tier #{index + 1} must be an object")
+        next
+      end
+
+      min = tier['min_quantity']
+      unit = tier['unit_price']
+
+      unless min.is_a?(Numeric) && min.to_i > 0
+        errors.add(:price_tiers, "tier #{index + 1} min_quantity must be a positive number")
+      end
+
+      unless unit.is_a?(Numeric) && unit.to_f > 0
+        errors.add(:price_tiers, "tier #{index + 1} unit_price must be a positive number")
+      end
+
+      if tier['max_quantity'].present?
+        max = tier['max_quantity']
+        unless max.is_a?(Numeric) && max.to_i >= min.to_i
+          errors.add(:price_tiers, "tier #{index + 1} max_quantity must be >= min_quantity")
+        end
+      end
+    end
+  end
+
+  def price_tiers_ascending
+    min_quantities = price_tiers.map { |t| t['min_quantity'].to_i }
+    (1...min_quantities.length).each do |i|
+      if min_quantities[i] <= min_quantities[i - 1]
+        errors.add(:price_tiers, "min_quantity must increase with each tier")
+        break
+      end
+    end
+  end
 
   def create_slug(title)
     return "product-#{Time.current.to_i}" if title.blank?
