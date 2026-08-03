@@ -118,8 +118,10 @@ class Admin::AdsController < ApplicationController
   # Update flagged status
   def flag
     @ad = Ad.find(params[:id])
-    @ad.update(flagged: true)  # Set flagged to true
-    head :no_content
+    flag_notes = params[:notes] || params[:flag_notes]
+    @ad.update(flagged: true, flag_notes: flag_notes)
+    SellerMailer.ad_flagged(@ad.seller, @ad, flag_notes).deliver_now if @ad.seller
+    render json: @ad.as_json(only: [:id, :title, :flagged, :flag_notes]), status: :ok
   end
 
   # Update flagged status

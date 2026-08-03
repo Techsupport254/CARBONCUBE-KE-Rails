@@ -242,11 +242,16 @@ class Ad < ApplicationRecord
     # Also consider a space-separated version for titles stored with spaces
     spacey = normalized_slug.tr("-", " ")
 
-    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(title, '[^a-z0-9.]+', '-', 'g'), '-+', '-', 'g'), '-'))"
+    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(title), '[^a-z0-9.]+', '-', 'g'), '-+', '-', 'g'), '-'))"
+
+    # The product URL generator (Ad#product_url / Ad#create_slug) strips non-alphanumeric
+    # characters without inserting separators, so "9/41" becomes "941". Match that style too
+    # so product links do not 404 when titles contain punctuation.
+    url_slug_sql = "LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(title), '[^a-z0-9\\s.]+', '', 'g'), '\\s+', '-', 'g')))"
 
     # Match against multiple representations of the title
     where(
-      "#{sanitized_sql} = :slug OR LOWER(title) = :spacey OR LOWER(REPLACE(title, '-', ' ')) = :spacey",
+      "#{sanitized_sql} = :slug OR #{url_slug_sql} = :slug OR LOWER(title) = :spacey OR LOWER(REPLACE(title, '-', ' ')) = :spacey",
       slug: normalized_slug,
       spacey: spacey
     ).first

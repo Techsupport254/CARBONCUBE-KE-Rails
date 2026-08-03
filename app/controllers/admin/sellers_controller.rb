@@ -217,8 +217,10 @@ class Admin::SellersController < ApplicationController
 
   def flag
     if @seller
-      if @seller.update(flagged: true)
-        render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :flagged]), status: :ok
+      flag_notes = params[:notes] || params[:flag_notes]
+      if @seller.update(flagged: true, flag_notes: flag_notes)
+        SellerMailer.account_flagged(@seller, flag_notes).deliver_now
+        render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :flagged, :flag_notes]), status: :ok
       else
         render json: @seller.errors, status: :unprocessable_entity
       end

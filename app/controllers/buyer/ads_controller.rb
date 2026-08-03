@@ -2273,6 +2273,8 @@ class Buyer::AdsController < ApplicationController
                     .includes(
                       :category,
                       :subcategory,
+                      :reviews,
+                      offer_ads: :offer,
                       seller: { seller_tier: :tier, categories: [], seller_documents: :document_type }
                     )
                     .order(Arel.sql('CASE tiers.id
