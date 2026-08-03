@@ -34,6 +34,8 @@ class Visitor < ApplicationRecord
       Visitor.create_or_find_by!(visitor_id: visitor_id) do |visitor|
         visitor.assign_attributes(attributes.except(:visitor_id))
       end
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+      find_by(visitor_id: visitor_id)
     rescue StandardError => e
       Rails.logger.error "Failed to find/create visitor #{visitor_id}: #{e.message}"
       nil

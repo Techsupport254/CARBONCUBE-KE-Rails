@@ -1,5 +1,5 @@
 class Seller::PricingTemplatesController < ApplicationController
-  before_action :authenticate_seller
+  before_action :authenticate_seller_or_sales
   before_action :set_template, only: [:update, :destroy]
 
   def index
@@ -108,8 +108,17 @@ class Seller::PricingTemplatesController < ApplicationController
 
   private
 
-  def authenticate_seller
-    @current_seller = SellerAuthorizeApiRequest.new(request.headers).result
+  def authenticate_seller_or_sales
+    user = AuthorizeApiRequest.new(request.headers).result
+
+    @current_seller = case user
+                      when Seller
+                        user
+                      when SalesUser
+                        branch_id = request.headers['X-Branch-Id']
+                        Branch.find_by(id: branch_id)&.seller
+                      end
+
     unless @current_seller && @current_seller.is_a?(Seller)
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
