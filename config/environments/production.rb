@@ -67,6 +67,10 @@ Rails.application.configure do
     .tap  { |logger| logger.formatter = ::Logger::Formatter.new }
     .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
 
+  # Quiet down routine, high-volume endpoints. They still log warnings/errors.
+  require_relative "../../app/middleware/noise_silencer"
+  config.middleware.insert_before Rails::Rack::Logger, NoiseSilencer
+
   # Prepend all log lines with the following tags.
   config.log_tags = [ :request_id ]
 
