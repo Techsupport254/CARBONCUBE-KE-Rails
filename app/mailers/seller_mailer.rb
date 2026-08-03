@@ -85,6 +85,47 @@ class SellerMailer < ApplicationMailer
     )
   end
 
+  def account_flagged(seller, flag_notes = nil, to_email = nil)
+    fullname = seller.fullname.presence || seller.enterprise_name.presence || "Seller"
+    first_name = fullname.to_s.split(" ").first.presence || "Partner"
+    review_request_url = "https://carboncube-ke.com/seller/review-request"
+
+    mail(
+      to: to_email || seller.email,
+      subject: "Your Carbon Cube Kenya account has been flagged",
+      react: {
+        fullname: fullname,
+        firstName: first_name,
+        enterpriseName: seller.enterprise_name,
+        flagNotes: flag_notes,
+        reviewRequestUrl: review_request_url,
+        supportEmail: ENV["BREVO_EMAIL"]
+      }
+    )
+  end
+
+  def ad_flagged(seller, ad, flag_notes = nil, to_email = nil)
+    fullname = seller.fullname.presence || seller.enterprise_name.presence || "Seller"
+    first_name = fullname.to_s.split(" ").first.presence || "Partner"
+    ad_url = ad.respond_to?(:product_url) && ad.product_url ? ad.product_url : "https://carboncube-ke.com/seller/ads"
+    dashboard_url = "https://carboncube-ke.com/seller/ads"
+
+    mail(
+      to: to_email || seller.email,
+      subject: "Your ad has been flagged on Carbon Cube Kenya",
+      react: {
+        fullname: fullname,
+        firstName: first_name,
+        enterpriseName: seller.enterprise_name,
+        adTitle: ad.title,
+        adUrl: ad_url,
+        flagNotes: flag_notes,
+        dashboardUrl: dashboard_url,
+        supportEmail: ENV["BREVO_EMAIL"]
+      }
+    )
+  end
+
   def review_request_rejected(seller, review_request, to_email = nil)
     fullname = seller.fullname.presence || seller.enterprise_name.presence || "Seller"
     first_name = fullname.to_s.split(" ").first.presence || "Partner"

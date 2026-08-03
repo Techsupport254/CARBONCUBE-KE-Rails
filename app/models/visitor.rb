@@ -28,12 +28,12 @@ class Visitor < ApplicationRecord
     def find_or_create_visitor(visitor_id, attributes = {})
       return nil unless visitor_id.present?
 
-      visitor = find_by(visitor_id: visitor_id)
-      return visitor if visitor
-
-      create_visitor(attributes.merge(visitor_id: visitor_id))
-    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
-      find_by(visitor_id: visitor_id)
+      # create_or_find_by! performs an atomic INSERT, and falls back to a
+      # SELECT if a duplicate visitor_id already exists, preventing the
+      # PG::UniqueViolation / "Visitor has already been taken" noise.
+      Visitor.create_or_find_by!(visitor_id: visitor_id) do |visitor|
+        visitor.assign_attributes(attributes.except(:visitor_id))
+      end
     rescue StandardError => e
       Rails.logger.error "Failed to find/create visitor #{visitor_id}: #{e.message}"
       nil

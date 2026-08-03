@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_31_163124) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_31_181327) do
   create_schema "auth"
   create_schema "extensions"
   create_schema "graphql"
@@ -87,6 +87,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_163124) do
     t.string "model"
     t.jsonb "specifications"
     t.uuid "branch_id"
+    t.text "flag_notes"
     t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
@@ -994,6 +995,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_163124) do
     t.string "twitter_url"
     t.string "linkedin_url"
     t.string "website"
+    t.text "flag_notes"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
