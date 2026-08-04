@@ -290,129 +290,24 @@ class Buyer::ProfilesController < ApplicationController
       }, status: :unprocessable_entity
     end
 
-    @seller = nil
-
-    ActiveRecord::Base.transaction do
-      temp_password = SecureRandom.hex(32)
-      
-      @seller = Seller.new(
-        fullname: buyer.fullname,
-        email: buyer.email.downcase.strip,
-        phone_number: buyer.phone_number.presence || params[:phone_number].presence || "0700000000",
-        secondary_phone_number: buyer.secondary_phone_number,
-        username: buyer.username,
-        password: temp_password,
-        password_confirmation: temp_password,
-        provider: buyer.respond_to?(:provider) ? buyer.provider : nil,
-        uid: buyer.respond_to?(:uid) ? buyer.uid : nil,
-        oauth_token: buyer.respond_to?(:oauth_token) ? buyer.oauth_token : nil,
-        oauth_refresh_token: buyer.respond_to?(:oauth_refresh_token) ? buyer.oauth_refresh_token : nil,
-        oauth_expires_at: buyer.respond_to?(:oauth_expires_at) ? buyer.oauth_expires_at : nil,
-        phone_provided_by_oauth: buyer.respond_to?(:phone_provided_by_oauth) ? buyer.phone_provided_by_oauth : nil,
-        enterprise_name: params[:enterprise_name],
-        location: params[:location],
-        description: params[:description],
-        county_id: params[:county_id],
-        sub_county_id: params[:sub_county_id],
-        profile_picture: buyer.profile_picture,
-        age_group_id: buyer.age_group_id,
-        gender: buyer.gender,
-        city: buyer.city,
-        zipcode: buyer.zipcode
-      )
-
-      @seller.carbon_code_id = params[:carbon_code_id] if params[:carbon_code_id].present?
-
-      unless @seller.save
-        Rails.logger.error "Seller creation during upgrade failed: #{@seller.errors.full_messages.inspect}"
-        raise @seller.errors.full_messages.join(", ")
-      end
-
-      # Overwrite temp password with the buyer's real password_digest
-      if buyer.password_digest.present?
-        @seller.update_column(:password_digest, buyer.password_digest)
-      end
-
-      # Assign Premium tier (6 months)
-      seller_tier = SellerTier.new(
-        seller_id: @seller.id,
-        tier_id: 4, # Premium
-        duration_months: 6,
-        expires_at: 6.months.from_now
-      )
-      unless seller_tier.save
-        Rails.logger.error "Failed to create SellerTier during upgrade: #{seller_tier.errors.full_messages.inspect}"
-        raise "Failed to assign seller tier"
-      end
-
-      # Create default main branch
-      unless @seller.branches.exists?
-        branch = @seller.branches.create(
-          name: @seller.enterprise_name || "Main Branch",
-          location: params[:location] || "Nairobi",
-          is_main_branch: true
-        )
-        unless branch.persisted?
-          Rails.logger.error "Failed to create default branch during upgrade: #{branch.errors.full_messages.inspect}"
-          raise "Failed to create default branch"
-        end
-      end
-
-      # Migrate buyer-linked records to the new seller
-      conn = ActiveRecord::Base.connection
-
-      # Conversations: Move buyer to inquirer_seller_id
-      conn.execute("UPDATE conversations SET inquirer_seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
-      # Wish Lists: Move to seller_id
-      conn.execute("UPDATE wish_lists SET seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
-      # Click Events: Move to seller_id
-      conn.execute("UPDATE click_events SET seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
-      # Reviews: Move to seller_id
-      conn.execute("UPDATE reviews SET seller_id = '#{@seller.id}', buyer_id = NULL WHERE buyer_id = '#{buyer.id}'")
-      # Messages: Update sender
-      conn.execute("UPDATE messages SET sender_id = '#{@seller.id}', sender_type = 'Seller' WHERE sender_id = '#{buyer.id}' AND sender_type = 'Buyer'")
-      # Password OTPs: Update recipient
-      conn.execute("UPDATE password_otps SET otpable_id = '#{@seller.id}', otpable_type = 'Seller' WHERE otpable_id = '#{buyer.id}' AND otpable_type = 'Buyer'")
-      # Device Tokens: Update owner
-      begin
-        conn.execute("UPDATE device_tokens SET user_id = '#{@seller.id}', user_type = 'Seller' WHERE user_id = '#{buyer.id}' AND user_type = 'Buyer'")
-      rescue => e
-        Rails.logger.warn "⚠️ device_tokens migration skipped: #{e.message}"
-      end
-
-      # Destroy the buyer record
-      buyer.destroy!
-    end
-
-    # Post-transaction: Send welcome email
-    begin
-      WelcomeMailer.welcome_email(@seller).deliver_now
-    rescue => e
-      Rails.logger.error "Failed to send welcome email during upgrade: #{e.message}"
-    end
-
-    # Generate seller token
-    token = JsonWebToken.encode(
-      seller_id: @seller.id,
-      email: @seller.email,
-      role: 'Seller',
-      remember_me: true
+    # Store pending seller data on the buyer. Seller record is created when the first ad is posted.
+    buyer.update!(
+      pending_seller_fullname: buyer.fullname,
+      pending_seller_phone_number: params[:phone_number].presence || buyer.phone_number,
+      pending_seller_secondary_phone_number: buyer.secondary_phone_number,
+      pending_seller_location: params[:location],
+      pending_seller_enterprise_name: params[:enterprise_name],
+      pending_seller_county_id: params[:county_id],
+      pending_seller_sub_county_id: params[:sub_county_id],
+      pending_seller_description: params[:description],
+      pending_seller_carbon_code_id: params[:carbon_code_id]
     )
 
     render json: { 
       success: true, 
-      message: "Upgrade completed successfully!",
-      token: token,
-      user: {
-        id: @seller.id,
-        email: @seller.email,
-        role: 'Seller',
-        name: @seller.fullname,
-        username: @seller.username,
-        enterprise_name: @seller.enterprise_name,
-        profile_picture: @seller.profile_picture
-      }
-    }, status: :created
+      pending: true,
+      message: "Seller profile saved. Post your first ad to become a seller."
+    }, status: :ok
   rescue => e
     Rails.logger.error "Unexpected error during upgrade: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
     render json: { success: false, error: "Upgrade failed: #{e.message}" }, status: :internal_server_error

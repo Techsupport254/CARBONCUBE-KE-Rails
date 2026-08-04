@@ -335,11 +335,12 @@ class OauthAccountLinkingService
         Rails.logger.warn "OAuth seller signup: carbon code invalid (expired or limit reached) - skipping"
         carbon_code = nil
       else
-        user_attributes[:carbon_code_id] = carbon_code.id
+        user_attributes[:pending_seller_carbon_code_id] = carbon_code.id
       end
     end
     
-    seller = Seller.create!(user_attributes)
+    # All new accounts start as buyers; sellers are created on first ad
+    buyer = Buyer.create!(user_attributes)
 
     # Increment carbon code usage after successful create
     carbon_code.increment!(:times_used) if carbon_code.present?
@@ -347,47 +348,14 @@ class OauthAccountLinkingService
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
     
-    # Always assign premium tier for 6 months to new sellers
-    expiry_date = 6.months.from_now
-
-    expiry_date = 6.months.from_now
-    premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
-    if premium_tier
-      seller_tier = SellerTier.create!(
-        seller: seller,
-        tier: premium_tier,
-        duration_months: 6,
-        expires_at: expiry_date
-      )
-    else
-      Rails.logger.error "❌ Premium tier not found in database for OAuth seller creation - assigning Free tier"
-      assign_free_tier_for_seller(seller)
-    end
-    # Ensure seller always has a tier (e.g. if Premium create raised)
-    seller.reload
-    assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
-
-    # Create main branch if seller has required fields, otherwise let onboarding handle it
-    if seller.enterprise_name.present? && seller.location.present?
-      branch = seller.branches.build(
-        name: seller.enterprise_name,
-        location: seller.location,
-        is_main_branch: true
-      )
-      
-      unless branch.save
-        Rails.logger.error "Failed to create main branch for OAuth seller: #{branch.errors.full_messages.inspect}"
-      end
-    end
-
-    seller
+    buyer
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "Failed to create OAuth seller: #{e.message}"
     Rails.logger.error "Validation errors: #{e.record.errors.full_messages}"
     # Return error hash instead of nil so the caller can see the actual error
     {
       success: false,
-      error: "Failed to create seller account: #{e.record.errors.full_messages.join(', ')}",
+      error: "Failed to create account: #{e.record.errors.full_messages.join(', ')}",
       error_type: 'validation_error',
       validation_errors: e.record.errors.full_messages
     }
@@ -800,7 +768,11 @@ class OauthAccountLinkingService
     # Don't fail the entire process if email verification marking fails
   end
 
-  # Check if URL is from an OAuth provider (Google, Cloudinary, or cached)
+  # Check if the current profile picture URL came from the OAuth provider itself
+  # (as opposed to being a picture the user deliberately uploaded to Cloudinary).
+  # Only provider URLs are safe to silently refresh on login - Cloudinary hosts
+  # both provider-synced pictures (historically) and user-uploaded pictures, so
+  # treating it as a "provider" domain would clobber a user's custom upload.
   def is_provider_url?(url)
     return false if url.blank?
 
@@ -814,20 +786,7 @@ class OauthAccountLinkingService
       'ggpht.com'
     ]
 
-    # Check for Cloudinary domains
-    cloudinary_domains = [
-      'cloudinary.com',
-      'res.cloudinary.com'
-    ]
-
-    # Check for our cached profile pictures path
-    is_cached_local = url.include?('/cached_profile_pictures/')
-
-    # Check if URL contains Google or Cloudinary domains
-    contains_google = google_domains.any? { |domain| url.include?(domain) }
-    contains_cloudinary = cloudinary_domains.any? { |domain| url.include?(domain) }
-
-    contains_google || contains_cloudinary || is_cached_local
+    google_domains.any? { |domain| url.include?(domain) }
   end
 
   # Normalize profile picture URL from OAuth provider (store in DB directly, no file cache)

@@ -112,12 +112,14 @@ class AppleAuthService
     name = full_name.presence || email.to_s.split('@').first.presence || 'Apple User'
 
     if @role == 'seller'
-      Seller.new(
+      # All new accounts start as buyers; sellers are created on first ad
+      Buyer.new(
         fullname: name,
         email: email,
         provider: 'apple',
         uid: apple_uid,
-        password: SecureRandom.hex(32)
+        password: SecureRandom.hex(32),
+        pending_seller_fullname: name
       )
     else
       Buyer.new(
