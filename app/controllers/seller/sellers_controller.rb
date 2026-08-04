@@ -29,7 +29,7 @@ class Seller::SellersController < ApplicationController
 
     AppleAuthService.revoke_tokens_for(current_seller) if current_seller.provider == 'apple'
 
-    if current_seller.update(deleted: true)
+    if current_seller.destroy
       head :no_content
     else
       render json: { error: 'Failed to delete account' }, status: :unprocessable_entity

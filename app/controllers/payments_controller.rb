@@ -4,6 +4,13 @@ class PaymentsController < ApplicationController
 
   # Initiate STK Push payment for tier upgrade
   def initiate_payment
+    if ios_client?
+      return render json: {
+        success: false,
+        error: "iOS tier upgrades must use Apple In-App Purchase"
+      }, status: :forbidden
+    end
+
     begin
       # Validate required parameters
       tier_id = params[:tier_id]
@@ -625,6 +632,10 @@ class PaymentsController < ApplicationController
   end
 
   private
+
+  def ios_client?
+    request.user_agent.to_s.match?(/iPhone|iPad|iPod/i)
+  end
 
   def authenticate_seller
     @current_seller = SellerAuthorizeApiRequest.new(request.headers).result

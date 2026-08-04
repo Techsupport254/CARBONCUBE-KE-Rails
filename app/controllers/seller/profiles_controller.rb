@@ -457,7 +457,7 @@ class Seller::ProfilesController < ApplicationController
         item_height: params[:ad][:item_height],
         item_weight: params[:ad][:item_weight],
         subcategory_id: params[:ad][:subcategory_id],
-        specifications: params[:ad][:specifications] || {},
+        specifications: onboarding_ad_specifications,
         is_added_by_sales: false,
         media: uploaded_media
       )
