@@ -298,51 +298,26 @@ class Seller::ProfilesController < ApplicationController
     end
 
     seller = current_seller
+    cache_key = nil
+    cached_data = nil
 
     # Check if there is a pending registration token in the Authorization header
     if seller.nil?
       if token_val.present? && !token_val.include?('.')
         # A pending token is a 64-character hex string without dots (unlike JWT which has dots)
         cache_key = "pending_google_registration_#{token_val}"
-        cached_data = Rails.cache.read(cache_key)
-          
-          if cached_data.present? && cached_data.is_a?(Hash) && cached_data[:role].to_s.casecmp?("seller")
-            cached_data = cached_data.with_indifferent_access
-            
-            # Check if seller already exists by email
-            seller = Seller.find_by(email: cached_data[:email])
-            unless seller
-              # Create the seller using the cached registration details
-              base_name = cached_data[:name] || cached_data[:email].split('@').first
-              base_username = base_name.to_s.downcase.gsub(/[^a-z0-9]/, '').first(15)
-              username = base_username
-              counter = 1
-              while Seller.exists?(username: username) || Buyer.exists?(username: username)
-                username = "#{base_username}#{counter}"
-                counter += 1
-              end
+        pending_data = Rails.cache.read(cache_key)
 
-              seller = Seller.create!(
-                fullname: cached_data[:name],
-                email: cached_data[:email],
-                username: username,
-                provider: cached_data[:provider] || 'google',
-                uid: cached_data[:uid],
-                oauth_token: cached_data[:oauth_token],
-                oauth_refresh_token: cached_data[:oauth_refresh_token],
-                oauth_expires_at: cached_data[:oauth_expires_at],
-                profile_picture: cached_data[:picture],
-                phone_number: params[:profile][:phone_number]
-              )
-              
-              # Delete from cache since registration is completed
-              Rails.cache.delete(cache_key)
-            end
-          end
+        if pending_data.present? && pending_data.is_a?(Hash) && pending_data[:role].to_s.casecmp?("seller")
+          cached_data = pending_data.with_indifferent_access
+
+          # Check if seller already exists by email
+          seller = Seller.find_by(email: cached_data[:email])
         end
       end
-    
-    unless seller
+    end
+
+    unless seller || cached_data
       return render json: { error: 'Unauthorized' }, status: :unauthorized
     end
     
@@ -357,8 +332,19 @@ class Seller::ProfilesController < ApplicationController
       }, status: :unprocessable_entity
     end
 
-    # Validate required ad fields
-    required_ad_params = [:title, :price, :category_id, :condition_id]
+    # Validate required ad fields (condition doesn't apply to service listings)
+    category_name = Category.find_by(id: params[:ad][:category_id])&.name
+    subcategory_name = Subcategory.find_by(id: params[:ad][:subcategory_id])&.name
+    is_service_ad = [category_name, subcategory_name].any? do |name|
+      Ad::SERVICE_CATEGORY_NAMES.any? { |service_name| name.to_s.downcase.include?(service_name.downcase) }
+    end
+
+    # Price is optional for "request a quote" listings, matching the frontend's pricing form
+    price_display_mode = params[:ad][:specifications]&.[](:price_display_mode)
+
+    required_ad_params = [:title, :category_id, :subcategory_id]
+    required_ad_params << :price unless price_display_mode == 'request_quote'
+    required_ad_params << :condition_id unless is_service_ad
     missing_ad = required_ad_params.select { |p| params[:ad][p].blank? }
     
     if missing_ad.any?
@@ -386,6 +372,34 @@ class Seller::ProfilesController < ApplicationController
     @ad = nil
 
     ActiveRecord::Base.transaction do
+      if seller.nil? && cached_data.present?
+        # Create the seller using the cached registration details.
+        # This happens inside the transaction so a failure later on (e.g. ad
+        # creation) rolls the seller creation back too, instead of leaving an
+        # orphaned/incomplete seller record and burning the pending token.
+        base_name = cached_data[:name] || cached_data[:email].split('@').first
+        base_username = base_name.to_s.downcase.gsub(/[^a-z0-9]/, '').first(15)
+        username = base_username
+        counter = 1
+        while Seller.exists?(username: username) || Buyer.exists?(username: username)
+          username = "#{base_username}#{counter}"
+          counter += 1
+        end
+
+        seller = Seller.create!(
+          fullname: cached_data[:name],
+          email: cached_data[:email],
+          username: username,
+          provider: cached_data[:provider] || 'google',
+          uid: cached_data[:uid],
+          oauth_token: cached_data[:oauth_token],
+          oauth_refresh_token: cached_data[:oauth_refresh_token],
+          oauth_expires_at: cached_data[:oauth_expires_at],
+          profile_picture: cached_data[:picture],
+          phone_number: params[:profile][:phone_number]
+        )
+      end
+
       @seller = seller
       
       # Update seller profile with onboarding data
@@ -448,7 +462,7 @@ class Seller::ProfilesController < ApplicationController
         description: params[:ad][:description],
         price: params[:ad][:price],
         category_id: params[:ad][:category_id],
-        condition: params[:ad][:condition_id],
+        condition: params[:ad][:condition_id].presence || 'brand_new',
         brand: params[:ad][:brand],
         manufacturer: params[:ad][:manufacturer],
         model: params[:ad][:model],
@@ -471,6 +485,9 @@ class Seller::ProfilesController < ApplicationController
     unless Seller.exists?(@seller.id) && Ad.exists?(@ad.id)
       return render json: { success: false, error: "Onboarding failed. Please try again." }, status: :internal_server_error
     end
+
+    # Onboarding fully succeeded - safe to invalidate the pending registration token now
+    Rails.cache.delete(cache_key) if cache_key.present?
 
     # Post-transaction: Send welcome email
     begin

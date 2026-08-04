@@ -602,12 +602,12 @@ class GoogleMerchantService
   
   # Delete product from Google Merchant Center
   def self.delete_product(ad)
-    return false unless ad.google_merchant_product_id.present?
+    return true unless ad.google_merchant_product_id.present?
     
-    return mock_response if Rails.env.development? && !Rails.application.config.google_merchant_sync[:enabled]
+    return true if Rails.env.development? && !Rails.application.config.google_merchant_sync[:enabled]
     
     account_id = Rails.application.config.google_merchant_account_id
-    return mock_response unless account_id.present?
+    return true unless account_id.present?
     
     begin
       content_service.authorization = get_authorization

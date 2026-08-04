@@ -1349,12 +1349,7 @@ class AuthenticationController < ApplicationController
       user_type = form_data[:user_type] || 'Buyer'
       
       # Find the user by email (assuming email is provided)
-      user = case user_type
-             when 'seller'
-               Seller.find_by(email: form_data[:email])
-             else
-               Buyer.find_by(email: form_data[:email])
-             end
+      user = Seller.find_by(email: form_data[:email]) || Buyer.find_by(email: form_data[:email])
       
       success = false
       
@@ -1440,16 +1435,27 @@ class AuthenticationController < ApplicationController
         # So phone_provided_by_oauth should always be false for users created via complete_registration
         user_attributes[:phone_provided_by_oauth] = false
         
-        # Create the appropriate user type
-        user = case user_type
-               when 'seller'
-                 Seller.new(user_attributes)
-               else
-                 Buyer.new(user_attributes)
-               end
+        # Convert "seller" intent into a buyer with pending seller data.
+        # A real Seller record is only created when the first ad is posted.
+        if user_type == 'seller'
+          user_attributes.delete(:enterprise_name)
+          user_attributes.delete(:business_registration_number)
+          user_attributes.delete(:document_type_id)
+          user_attributes.delete(:description)
+          user_attributes[:pending_seller_fullname] = form_data[:fullname] if form_data[:fullname].present?
+          user_attributes[:pending_seller_phone_number] = form_data[:phone_number] if form_data[:phone_number].present?
+          user_attributes[:pending_seller_location] = form_data[:location] if form_data[:location].present?
+          user_attributes[:pending_seller_enterprise_name] = form_data[:enterprise_name] if form_data[:enterprise_name].present?
+          user_attributes[:pending_seller_county_id] = form_data[:county_id] if form_data[:county_id].present?
+          user_attributes[:pending_seller_sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
+          user_attributes[:pending_seller_description] = form_data[:description] if form_data[:description].present?
+        end
+
+        # All new accounts start as buyers; sellers are created on first ad
+        user = Buyer.new(user_attributes)
         
         # Capture device hash if provided for guest click association
-        if params[:device_hash].present? && (user.is_a?(Buyer) || user.is_a?(Seller))
+        if params[:device_hash].present?
           user.device_hash_for_association = params[:device_hash]
         end
         
@@ -1457,44 +1463,12 @@ class AuthenticationController < ApplicationController
           if user.save
             
             # Associate guest clicks after save (in case device_hash wasn't set before)
-            if (user.is_a?(Buyer) || user.is_a?(Seller)) && params[:device_hash].present?
+            if params[:device_hash].present?
               begin
                 GuestClickAssociationService.associate_clicks_with_user(user, params[:device_hash])
               rescue => e
                 Rails.logger.error "Failed to associate guest clicks after OAuth registration: #{e.message}" if defined?(Rails.logger)
               end
-            end
-            
-            # Handle seller-specific setup
-            if user_type == 'seller'
-              # OAuth signups (Continue with Google, etc.) always get Premium for 6 months (same as GoogleOauthService and OauthAccountLinkingService)
-              if form_data[:provider].present?
-                expiry_date = 6.months.from_now
-                premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
-                if premium_tier
-                  user.seller_tier = SellerTier.create!(
-                    seller: user,
-                    tier: premium_tier,
-                    duration_months: 6,
-                    expires_at: expiry_date
-                  )
-                else
-                  Rails.logger.error "❌ Premium tier not found for OAuth seller"
-                  assign_free_tier(user)
-                end
-              elsif should_get_2026_premium?
-                create_2026_premium_tier(user)
-              else
-                assign_free_tier(user)
-              end
-              # Ensure seller always has a tier (create_2026_premium_tier can return without creating if tier missing/error)
-              assign_free_tier(user) if user.seller_tier.blank?
-
-              # Create main branch for OAuth sellers
-              create_main_branch_for_seller(user)
-
-              # Create first ad (required)
-              create_first_ad_for_seller(user, params)
             end
 
             success = true
@@ -1558,11 +1532,20 @@ class AuthenticationController < ApplicationController
         user_attributes[:sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
         
         # Seller-specific attributes
-        if user_type == 'seller'
+        if user_type == 'seller' && user.is_a?(Seller)
           user_attributes[:enterprise_name] = form_data[:enterprise_name] if form_data[:enterprise_name].present?
           user_attributes[:business_registration_number] = form_data[:business_registration_number] if form_data[:business_registration_number].present?
           user_attributes[:document_type_id] = form_data[:document_type_id] if form_data[:document_type_id].present?
           user_attributes[:description] = form_data[:description] if form_data[:description].present?
+        elsif user_type == 'seller' && user.is_a?(Buyer)
+          # Store seller intent as pending data; Seller record is created on first ad
+          user_attributes[:pending_seller_fullname] = form_data[:fullname] if form_data[:fullname].present?
+          user_attributes[:pending_seller_phone_number] = form_data[:phone_number] if form_data[:phone_number].present?
+          user_attributes[:pending_seller_location] = form_data[:location] if form_data[:location].present?
+          user_attributes[:pending_seller_enterprise_name] = form_data[:enterprise_name] if form_data[:enterprise_name].present?
+          user_attributes[:pending_seller_county_id] = form_data[:county_id] if form_data[:county_id].present?
+          user_attributes[:pending_seller_sub_county_id] = form_data[:sub_county_id] if form_data[:sub_county_id].present?
+          user_attributes[:pending_seller_description] = form_data[:description] if form_data[:description].present?
         end
         
         # Handle age group
@@ -1578,7 +1561,7 @@ class AuthenticationController < ApplicationController
           if user.update(user_attributes)
             
             # Handle seller-specific setup: OAuth sellers get Premium if missing tier; else 2026 promo
-            if user_type == 'seller' && user.seller_tier.blank?
+            if user.is_a?(Seller) && user.seller_tier.blank?
               if form_data[:provider].present?
                 expiry_date = 6.months.from_now
                 premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
@@ -1595,7 +1578,7 @@ class AuthenticationController < ApplicationController
               end
             end
 
-            if user_type == 'seller'
+            if user.is_a?(Seller)
               # Create main branch for OAuth sellers if missing
               create_main_branch_for_seller(user)
 

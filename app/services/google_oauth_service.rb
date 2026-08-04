@@ -340,7 +340,7 @@ class GoogleOauthService
     # base_enterprise_name = user_info['name'] || user_info['display_name'] || 'Business'
     # enterprise_name = generate_unique_enterprise_name(base_enterprise_name)
 
-    # Create seller attributes
+    # Create buyer with pending seller data; a real Seller is created on first ad
     seller_attributes = {
       fullname: user_info['name'] || user_info['display_name'],
       email: user_info['email'],
@@ -353,7 +353,8 @@ class GoogleOauthService
       uid: user_info['id'],
       # Don't auto-set enterprise_name - let user set it themselves
       # enterprise_name: enterprise_name,
-      age_group_id: calculate_age_group(user_info)
+      age_group_id: calculate_age_group(user_info),
+      pending_seller_fullname: user_info['name'] || user_info['display_name']
     }
     
     # Don't auto-set location fields - let user set them themselves
@@ -398,8 +399,8 @@ class GoogleOauthService
       end
     end
 
-    # Create the seller
-    seller = Seller.new(seller_attributes)
+    # Create the buyer (new seller intent is stored as pending data)
+    seller = Buyer.new(seller_attributes)
     
     # Capture device hash if provided for guest click association
     if device_hash.present?
@@ -426,7 +427,7 @@ class GoogleOauthService
         retry_count += 1
         if retry_count <= max_retries
           Rails.logger.warn "Retrying seller creation after sequence fix (attempt #{retry_count})"
-          seller = Seller.new(seller_attributes) # Create new instance
+          seller = Buyer.new(seller_attributes) # Create new instance
           retry
         else
           Rails.logger.error "Failed to create seller after #{max_retries} retries: #{e.message}"
@@ -438,42 +439,7 @@ class GoogleOauthService
     end
     
     if save_success
-      Rails.logger.info "Seller created successfully: #{seller.email}"
-      
-      # Handle seller tier assignment - always assign premium tier for 6 months
-      expiry_date = 6.months.from_now
-
-      Rails.logger.info "Google OAuth Seller Registration: Assigning Premium tier to seller #{seller.id}, expires at #{expiry_date} (6 months)"
-      premium_tier = Tier.find_by(name: 'Premium') || Tier.find_by(id: 4)
-      if premium_tier
-        seller_tier = SellerTier.create!(
-          seller: seller,
-          tier: premium_tier,
-          duration_months: 6,
-          expires_at: expiry_date
-        )
-        Rails.logger.info "Premium tier assigned to seller via Google OAuth: #{premium_tier.name}"
-      else
-        Rails.logger.error "Premium tier not found in database for Google OAuth seller creation - assigning Free tier"
-        assign_free_tier_for_seller(seller)
-      end
-      # Ensure seller always has a tier (e.g. if Premium create raised)
-      seller.reload
-      assign_free_tier_for_seller(seller) if seller.seller_tier.blank?
-
-      # Create main branch if seller has required fields
-      if seller.enterprise_name.present? && seller.location.present?
-        branch = seller.branches.build(
-          name: seller.enterprise_name,
-          location: seller.location,
-          is_main_branch: true
-        )
-        if branch.save
-          Rails.logger.info "Main branch created for Google OAuth seller: #{seller.email}"
-        else
-          Rails.logger.error "Failed to create main branch for Google OAuth seller: #{branch.errors.full_messages.inspect}"
-        end
-      end
+      Rails.logger.info "Buyer created successfully (pending seller): #{seller.email}"
 
       # Profile picture already stored in DB as URL (no file cache)
       # Generate JWT token for new user
