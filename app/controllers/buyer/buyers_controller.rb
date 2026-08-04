@@ -90,6 +90,8 @@ class Buyer::BuyersController < ApplicationController
       return
     end
 
+    AppleAuthService.revoke_tokens_for(current_buyer) if current_buyer.provider == 'apple'
+
     if current_buyer.update(deleted: true)
       head :no_content
     else

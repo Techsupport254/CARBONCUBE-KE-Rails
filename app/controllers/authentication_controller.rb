@@ -473,7 +473,8 @@ class AuthenticationController < ApplicationController
     service = AppleAuthService.new(
       identity_token,
       params[:full_name],
-      params[:role] || 'buyer'
+      params[:role] || 'buyer',
+      params[:authorization_code]
     )
 
     result = service.authenticate
@@ -1075,6 +1076,13 @@ class AuthenticationController < ApplicationController
         end
 
         redirect_url = "#{oauth_redirect_base}?success=true"
+      end
+
+      # Store auth data in cache for the mobile two-step flow (state is the lookup key)
+      if params[:state].present?
+        auth_data_for_cache = { token: token, user: user_response }
+        auth_data_for_cache[:missing_fields] = missing_fields if missing_fields.any?
+        Rails.cache.write("oauth_auth_#{params[:state]}", auth_data_for_cache.to_json, expires_in: 5.minutes)
       end
 
       # Include state parameter if it was provided for CSRF validation
