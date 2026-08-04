@@ -120,6 +120,41 @@ class ApplicationController < ActionController::Base
     })
   end
 
+  def onboarding_ad_specifications
+    raw = params.dig(:ad, :specifications) || {}
+
+    specs =
+      if raw.is_a?(String)
+        begin
+          parsed = JSON.parse(raw)
+          parsed.is_a?(Hash) ? parsed : {}
+        rescue JSON::ParserError
+          {}
+        end
+      elsif raw.respond_to?(:permit)
+        raw.permit(
+          :pricing_unit, :price_display_mode, :price_range_max,
+          price_tiers: [:min_quantity, :max_quantity, :unit_price, :label]
+        ).to_unsafe_h
+      elsif raw.is_a?(Hash)
+        raw
+      else
+        {}
+      end
+
+    category = Category.find_by(id: params.dig(:ad, :category_id))
+    is_service = category && Ad::SERVICE_CATEGORY_NAMES.any? { |name| category.name.to_s.downcase.include?(name.downcase) }
+    allowed_units = is_service ? Ad::SERVICE_PRICING_UNITS : Ad::PRODUCT_PRICING_UNITS
+
+    specs = specs.stringify_keys
+    specs['pricing_unit'] = allowed_units.first unless allowed_units.include?(specs['pricing_unit'])
+    unless %w[public tiered price_range request_quote].include?(specs['price_display_mode'])
+      specs['price_display_mode'] = is_service ? 'price_range' : 'public'
+    end
+    specs['price_tiers'] = [] unless specs['price_tiers'].is_a?(Array)
+    specs
+  end
+
   private
 
   def sanitize_params(params)
