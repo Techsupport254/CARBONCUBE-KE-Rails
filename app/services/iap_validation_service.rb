@@ -8,35 +8,23 @@ class IapValidationService
 
   def self.validate(platform, receipt, product_id, seller_id = nil)
     return { success: false, error: 'Only iOS IAP is supported' } unless platform.to_s == 'ios'
-    return { success: false, error: 'Missing Apple shared secret' } if ENV['APPLE_IAP_SHARED_SECRET'].blank?
 
-    result = verify_apple_receipt(receipt, ENV['APPLE_IAP_SHARED_SECRET'])
+    result = verify_apple_receipt(receipt)
     return { success: false, error: result[:error] } unless result[:success]
 
     in_app = result.dig(:response, 'receipt', 'in_app') || []
     matching = in_app.find { |tx| tx['product_id'] == product_id }
     return { success: false, error: 'Product not found in receipt' } if matching.blank?
 
-    # Upsell seller to premium (tier_id 4) for one month
-    if seller_id.present?
-      SellerTier.upsert({
-        seller_id: seller_id,
-        tier_id: 4,
-        duration_months: 1,
-        expires_at: 1.month.from_now,
-        created_at: Time.current,
-        updated_at: Time.current
-      })
-    end
+    # TODO: create PaymentTransaction + SellerTier once products and pricing are configured
 
-    { success: true }
+    { success: true, transaction_id: matching['transaction_id'] }
   end
 
-  def self.verify_apple_receipt(receipt, shared_secret, sandbox = false)
+  def self.verify_apple_receipt(receipt, sandbox = false)
     url = sandbox ? SANDBOX_VERIFY_URL : PRODUCTION_VERIFY_URL
     body = {
       'receipt-data' => receipt,
-      'password' => shared_secret,
       'exclude-old-transactions' => false
     }.to_json
 
@@ -54,7 +42,7 @@ class IapValidationService
       { success: true, response: parsed }
     elsif status == 21_007 && !sandbox
       # Sandbox receipt sent to production; retry with sandbox
-      verify_apple_receipt(receipt, shared_secret, true)
+      verify_apple_receipt(receipt, true)
     else
       { success: false, error: "Apple receipt validation failed: #{status}" }
     end
