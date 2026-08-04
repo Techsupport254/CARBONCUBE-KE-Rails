@@ -245,6 +245,7 @@ Rails.application.routes.draw do
   get "payments/status/:payment_id", to: "payments#check_payment_status"
   post "payments/stk_callback", to: "payments#stk_callback"
   get "payments/history", to: "payments#payment_history"
+  post "payments/iap/validate", to: "payments#validate_iap"
   delete "payments/cancel/:payment_id", to: "payments#cancel_payment"
   
   # Manual payment verification routes

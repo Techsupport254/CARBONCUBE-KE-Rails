@@ -6,10 +6,11 @@ class AppleAuthService
   APPLE_JWKS_URL = 'https://appleid.apple.com/auth/keys'.freeze
   APPLE_ISSUER = 'https://appleid.apple.com'.freeze
 
-  def initialize(identity_token, full_name = nil, role = 'buyer')
+  def initialize(identity_token, full_name = nil, role = 'buyer', authorization_code = nil)
     @identity_token = identity_token
     @full_name = full_name
     @role = role.to_s.downcase.strip
+    @authorization_code = authorization_code
   end
 
   def authenticate
@@ -39,6 +40,8 @@ class AppleAuthService
       user = create_apple_user(email, apple_uid, @full_name)
       return { success: false, error: user.errors.full_messages.join(', ') } unless user.persisted?
     end
+
+    store_refresh_token(user)
 
     token = generate_jwt_token(user)
     user_response = format_user_response(user)
@@ -142,6 +145,92 @@ class AppleAuthService
 
   def determine_role(user)
     user.is_a?(Seller) ? 'Seller' : 'Buyer'
+  end
+
+  def store_refresh_token(user)
+    return if @authorization_code.blank?
+
+    refresh_token = exchange_authorization_code(@authorization_code)
+    return if refresh_token.blank?
+
+    user.update(oauth_refresh_token: refresh_token)
+  rescue => e
+    Rails.logger.warn "[AppleAuthService] Failed to store refresh token: #{e.message}"
+  end
+
+  def client_secret
+    return nil unless apple_signing_key_available?
+
+    now = Time.now.to_i
+    payload = {
+      iss: ENV['APPLE_TEAM_ID'],
+      iat: now,
+      exp: now + 86400,
+      aud: 'https://appleid.apple.com',
+      sub: ENV['APPLE_BUNDLE_ID']
+    }
+
+    key = OpenSSL::PKey::EC.new(ENV['APPLE_PRIVATE_KEY'].to_s.gsub('\\n', "\n"))
+    JWT.encode(payload, key, 'ES256', { kid: ENV['APPLE_KEY_ID'] })
+  rescue => e
+    Rails.logger.error "[AppleAuthService] Failed to generate client secret: #{e.message}"
+    nil
+  end
+
+  def apple_signing_key_available?
+    ENV['APPLE_TEAM_ID'].present? && ENV['APPLE_BUNDLE_ID'].present? && ENV['APPLE_KEY_ID'].present? && ENV['APPLE_PRIVATE_KEY'].present?
+  end
+
+  def exchange_authorization_code(code)
+    return nil unless apple_signing_key_available?
+
+    secret = client_secret
+    return nil if secret.blank?
+
+    uri = URI('https://appleid.apple.com/auth/token')
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+
+    request = Net::HTTP::Post.new(uri)
+    request.set_form_data(
+      'client_id' => ENV['APPLE_BUNDLE_ID'],
+      'client_secret' => secret,
+      'code' => code,
+      'grant_type' => 'authorization_code'
+    )
+
+    response = http.request(request)
+    return nil unless response.is_a?(Net::HTTPSuccess)
+
+    JSON.parse(response.body)['refresh_token']
+  rescue => e
+    Rails.logger.error "[AppleAuthService] Failed to exchange authorization code: #{e.message}"
+    nil
+  end
+
+  def self.revoke_tokens_for(user)
+    return unless user&.provider == 'apple'
+    return if user.oauth_refresh_token.blank?
+
+    secret = new(nil, nil, 'buyer').client_secret
+    return if secret.blank?
+
+    uri = URI('https://appleid.apple.com/auth/revoke')
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+
+    request = Net::HTTP::Post.new(uri)
+    request.set_form_data(
+      'client_id' => ENV['APPLE_BUNDLE_ID'],
+      'client_secret' => secret,
+      'token' => user.oauth_refresh_token,
+      'token_type_hint' => 'refresh_token'
+    )
+
+    response = http.request(request)
+    Rails.logger.info "[AppleAuthService] Revoke response: #{response.code}"
+  rescue => e
+    Rails.logger.error "[AppleAuthService] Failed to revoke Apple tokens: #{e.message}"
   end
 
   def format_user_response(user)

@@ -1,5 +1,5 @@
 class PaymentsController < ApplicationController
-  before_action :authenticate_seller, only: [:initiate_payment, :check_payment_status, :manual_payment_instructions, :verify_manual_payment, :confirm_manual_payment, :payment_history, :cancel_payment]
+  before_action :authenticate_seller, only: [:initiate_payment, :check_payment_status, :manual_payment_instructions, :verify_manual_payment, :confirm_manual_payment, :payment_history, :cancel_payment, :validate_iap]
   skip_before_action :verify_authenticity_token, only: [:stk_callback]
 
   # Initiate STK Push payment for tier upgrade
@@ -603,6 +603,25 @@ class PaymentsController < ApplicationController
       success: false, 
       error: "An error occurred while cancelling the payment" 
     }, status: :internal_server_error
+  end
+
+  # Validate Apple In-App Purchase transaction
+  def validate_iap
+    platform = params[:platform]
+    receipt = params[:receipt]
+    product_id = params[:product_id]
+
+    if platform.blank? || receipt.blank? || product_id.blank?
+      return render json: { success: false, error: 'platform, receipt and product_id are required' }, status: :bad_request
+    end
+
+    result = IapValidationService.validate(platform, receipt, product_id, current_seller&.id)
+
+    if result[:success]
+      render json: { success: true, message: 'IAP purchase validated' }, status: :ok
+    else
+      render json: { success: false, error: result[:error] }, status: :unprocessable_entity
+    end
   end
 
   private

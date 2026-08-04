@@ -691,12 +691,35 @@ class Sales::AdsController < ApplicationController
   end
 
   def ad_params
+    raw_specifications = params.dig(:ad, :specifications)
+    specifications_value = nil
+
+    if raw_specifications.is_a?(String)
+      begin
+        parsed = JSON.parse(raw_specifications)
+        if parsed.is_a?(Hash)
+          specifications_value = ActionController::Parameters.new(parsed).permit(
+            :pricing_unit, :price_display_mode, :price_range_max,
+            price_tiers: [:min_quantity, :max_quantity, :unit_price, :label]
+          )
+        end
+      rescue JSON::ParserError => e
+        Rails.logger.error "Invalid ad[specifications] JSON: #{e.message}"
+      end
+    elsif raw_specifications.respond_to?(:permit)
+      specifications_value = raw_specifications.permit(
+        :pricing_unit, :price_display_mode, :price_range_max,
+        price_tiers: [:min_quantity, :max_quantity, :unit_price, :label]
+      )
+    end
+
     permitted = params.require(:ad).permit(
-      :title, :description, :category_id, :subcategory_id, :price, 
-      :brand, :manufacturer, :item_length, :item_width, :model, :specifications,
+      :title, :description, :category_id, :subcategory_id, :price,
+      :brand, :manufacturer, :item_length, :item_width, :model,
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
       media: [], existing_media: []
     )
+    permitted[:specifications] = specifications_value if specifications_value
 
     %i[item_length item_width item_height item_weight].each do |field|
       permitted[field] = nil if params[:ad].key?(field) && permitted[field].blank?

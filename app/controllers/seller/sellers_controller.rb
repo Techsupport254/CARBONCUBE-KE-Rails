@@ -27,6 +27,8 @@ class Seller::SellersController < ApplicationController
       return
     end
 
+    AppleAuthService.revoke_tokens_for(current_seller) if current_seller.provider == 'apple'
+
     if current_seller.update(deleted: true)
       head :no_content
     else
