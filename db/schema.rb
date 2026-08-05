@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_31_181327) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_05_000001) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"

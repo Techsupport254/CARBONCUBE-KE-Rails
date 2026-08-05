@@ -171,25 +171,33 @@ end
 case target
 when '--buyers'
   puts "🚀 Processing all Buyers from database..."
-  buyers = Buyer.where.not(phone_number: [nil, ''])
-  puts "Found #{buyers.count} buyers with phone numbers."
+  buyers = Buyer.all
+  target_buyers = buyers.select { |b| b.phone_number.present? || (b.respond_to?(:secondary_phone_number) && b.secondary_phone_number.present?) }
+  puts "Found #{buyers.count} total buyers in DB | #{target_buyers.size} have phone numbers."
 
-  buyers.each_with_index do |b, idx|
+  target_buyers.each_with_index do |b, idx|
+    phone = b.phone_number.presence || (b.respond_to?(:secondary_phone_number) ? b.secondary_phone_number : nil)
+    next if phone.blank?
+
     s_name, e_name = extract_params(b, true)
-    puts "[#{idx + 1}/#{buyers.count}] Processing Buyer: #{s_name} (Username: #{e_name})..."
-    send_whatsapp_marketing_campaign(b.phone_number, s_name, e_name, $template_media_id, phone_number_id, access_token)
+    puts "[#{idx + 1}/#{target_buyers.size}] Processing Buyer: #{s_name} (#{phone})..."
+    send_whatsapp_marketing_campaign(phone, s_name, e_name, $template_media_id, phone_number_id, access_token)
     sleep 0.15
   end
 
 when '--sellers'
   puts "🚀 Processing all Sellers from database..."
-  sellers = Seller.where.not(phone_number: [nil, ''])
-  puts "Found #{sellers.count} sellers with phone numbers."
+  sellers = Seller.all
+  target_sellers = sellers.select { |s| s.phone_number.present? || (s.respond_to?(:secondary_phone_number) && s.secondary_phone_number.present?) }
+  puts "Found #{sellers.count} total sellers in DB | #{target_sellers.size} have phone numbers."
 
-  sellers.each_with_index do |s, idx|
+  target_sellers.each_with_index do |s, idx|
+    phone = s.phone_number.presence || (s.respond_to?(:secondary_phone_number) ? s.secondary_phone_number : nil)
+    next if phone.blank?
+
     s_name, e_name = extract_params(s, false)
-    puts "[#{idx + 1}/#{sellers.count}] Processing Seller: #{s_name} (Enterprise: #{e_name})..."
-    send_whatsapp_marketing_campaign(s.phone_number, s_name, e_name, $template_media_id, phone_number_id, access_token)
+    puts "[#{idx + 1}/#{target_sellers.size}] Processing Seller: #{s_name} (#{phone})..."
+    send_whatsapp_marketing_campaign(phone, s_name, e_name, $template_media_id, phone_number_id, access_token)
     sleep 0.15
   end
 
@@ -227,7 +235,7 @@ else
   end
 
   type_label = is_buyer ? 'Buyer' : 'Seller'
-  phone = user.phone_number
+  phone = user.phone_number.presence || (user.respond_to?(:secondary_phone_number) ? user.secondary_phone_number : nil)
   s_name, e_name = extract_params(user, is_buyer)
 
   puts "Found #{type_label}: #{s_name} | Phone: #{phone} | Parameter 1 (Name): #{s_name} | Parameter 2: #{e_name}"
