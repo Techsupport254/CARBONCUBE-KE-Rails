@@ -383,7 +383,7 @@ class SellerCommunicationsMailer < ApplicationMailer
     banner_url = "https://res.cloudinary.com/dwrjceslk/image/upload/c_scale,f_png,q_auto,w_1200/v1/emails/new_features_banner?_a=BACMTiAE"
     support_url = "mailto:support@carboncube-ke.com"
 
-    subject_text = "New Features Available for Sellers"
+    subject_text = "Your seller profile update"
 
     mail(
       to: to_email || user.email,

@@ -39,7 +39,18 @@ class SendNewFeaturesCampaignJob < ApplicationJob
         elsif WhatsappMessageLog.already_sent?(seller, 'new_features')
           Rails.logger.info "[SendNewFeaturesCampaignJob] new_features WhatsApp already sent to seller #{seller.id}"
         else
-          result = WhatsAppCloudService.send_template(seller.phone_number, 'new_features', 'en')
+          banner_url = "https://res.cloudinary.com/dwrjceslk/image/upload/c_scale,f_png,q_auto,w_1200/v1/emails/new_features_banner?_a=BACMTiAE"
+
+          components = [
+            {
+              type: 'header',
+              parameters: [
+                { type: 'image', image: { link: banner_url } }
+              ]
+            }
+          ]
+
+          result = WhatsAppCloudService.send_template(seller.phone_number, 'new_features', 'en', components)
 
           if result.is_a?(Hash) && result[:success]
             sent_channels << "whatsapp"
