@@ -224,11 +224,16 @@ class Buyer < ApplicationRecord
   end
 
   def normalize_phone(phone)
+    return "" if phone.blank?
     digits = phone.to_s.gsub(/[^0-9]/, "")
     if digits.start_with?("254") && digits.length == 12
       "0#{digits[3..]}"
-    elsif digits.length > 10
-      digits.last(10)
+    elsif digits.start_with?("00254") && digits.length == 14
+      "0#{digits[5..]}"
+    elsif digits.length == 9 && (digits.start_with?("7") || digits.start_with?("1"))
+      "0#{digits}"
+    elsif digits.length > 10 && digits.start_with?("0")
+      digits[0..9]
     else
       digits
     end

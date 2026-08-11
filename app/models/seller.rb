@@ -277,24 +277,24 @@ class Seller < ApplicationRecord
   end
 
   def normalize_phone(phone)
+    return "" if phone.blank?
     digits = phone.to_s.gsub(/[^0-9]/, "")
     if digits.start_with?("254") && digits.length == 12
       "0#{digits[3..]}"
-    elsif digits.length > 10
-      digits.last(10)
+    elsif digits.start_with?("00254") && digits.length == 14
+      "0#{digits[5..]}"
+    elsif digits.length == 9 && (digits.start_with?("7") || digits.start_with?("1"))
+      "0#{digits}"
+    elsif digits.length > 10 && digits.start_with?("0")
+      digits[0..9]
     else
       digits
     end
   end
 
   KENYAN_MOBILE_PREFIXES = %w[
-    070 071 072 0740 0741 0742 0743 0745 0746 0748 0757 0758 0759 0768 0769 079
-    0110 0111 0112 0113 0114 0115
-    0730 0731 0732 0733 0734 0735 0736 0737 0738 0739 0750 0751 0752 0753 0754 0755 0756
-    0780 0781 0782 0783 0784 0785 0786 0787 0788 0789 0100 0101 0102 0103 0104 0105 0106 0107 0108
-    0770 0771 0772 0773 0774 0775 0776 0777 0778 0779
-    0763 0764 0765 0766
-    0747
+    070 071 072 073 074 075 076 077 078 079
+    010 011 012 013 014 015 016 017 018 019
   ].freeze
 
   def valid_kenyan_prefix?(number)
@@ -312,6 +312,7 @@ class Seller < ApplicationRecord
   end
 
   def secondary_phone_number_must_have_valid_kenyan_prefix
+    return if secondary_phone_number.blank?
     unless valid_kenyan_prefix?(secondary_phone_number)
       errors.add(:secondary_phone_number, "is not a valid Kenyan mobile number (invalid prefix)")
     end

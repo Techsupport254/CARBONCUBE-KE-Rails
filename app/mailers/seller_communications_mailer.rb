@@ -365,5 +365,38 @@ class SellerCommunicationsMailer < ApplicationMailer
       }
     )
   end
+
+  def new_features
+    user = params[:seller] || params[:user]
+    to_email = params[:to_email]
+
+    fullname = if user.respond_to?(:fullname) && user.fullname.present?
+      user.fullname
+    elsif user.respond_to?(:enterprise_name) && user.enterprise_name.present?
+      user.enterprise_name
+    else
+      'Seller'
+    end
+    first_name = fullname.to_s.split(' ').first.presence || "Partner"
+
+    profile_url = "https://carboncube-ke.com/profile?edit=true&tab=business&utm_source=seller_communication&utm_medium=email&utm_campaign=new_features&utm_content=update_profile_cta"
+    banner_url = "https://res.cloudinary.com/dwrjceslk/image/upload/c_scale,f_png,q_auto,w_1200/v1/emails/new_features_banner?_a=BACMTiAE"
+    support_url = "mailto:support@carboncube-ke.com"
+
+    subject_text = "New Features Available for Sellers"
+
+    mail(
+      to: to_email || user.email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        profile_url: profile_url,
+        banner_url: banner_url,
+        support_url: support_url
+      }
+    )
+  end
 end
 

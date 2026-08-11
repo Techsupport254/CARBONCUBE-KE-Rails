@@ -1049,4 +1049,7 @@ Rails.application.routes.draw do
         []
       ]
     }
+
+    # Fallback 404 handler for all unmatched routes to prevent ActionController::RoutingError log noise
+    match '*path', via: :all, to: proc { [404, { 'Content-Type' => 'application/json' }, [{ error: 'Route not found' }.to_json]] }
 end
