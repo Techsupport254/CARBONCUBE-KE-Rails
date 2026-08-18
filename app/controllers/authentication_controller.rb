@@ -588,6 +588,15 @@ class AuthenticationController < ApplicationController
     callback_scheme = params[:callback_scheme]&.strip.presence
     carbon_code = params[:carbon_code]&.to_s&.strip.presence
 
+    # Clear any stale auth cookies before starting a fresh OAuth flow.
+    # If the cross-domain redirect later fails to set the new cookie, this
+    # prevents the browser from sending an old, expired token and causing
+    # "Token has expired" errors.
+    cookies.delete(token_cookie_key, domain: '.carboncube-ke.com') unless Rails.env.development?
+    cookies.delete(user_cookie_key, domain: '.carboncube-ke.com') unless Rails.env.development?
+    cookies.delete(token_cookie_key)
+    cookies.delete(user_cookie_key)
+
     # Check if Google OAuth is configured
     client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']&.strip
     client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET']&.strip

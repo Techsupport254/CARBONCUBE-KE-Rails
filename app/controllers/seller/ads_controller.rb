@@ -276,6 +276,12 @@ class Seller::AdsController < ApplicationController
       if @ad.save
         # Update seller's last active timestamp when creating an ad
         current_seller.update_last_active!
+        
+        # Record telemetry if passed in request
+        if params[:telemetry].present?
+          record_telemetry_data(params[:telemetry])
+        end
+
         render json: @ad.as_json(include: [:category, :reviews], methods: [:mean_rating]), status: :created
       else
         Rails.logger.error "❌ Ad save failed: #{@ad.errors.full_messages.join(', ')}"
@@ -286,6 +292,72 @@ class Seller::AdsController < ApplicationController
       Rails.logger.error "❌ Error creating ad: #{e.message}"
       Rails.logger.error "❌ Backtrace: #{e.backtrace.join("\n")}"
       render json: { error: "Failed to create ad. Please try again." }, status: :internal_server_error
+    end
+  end
+
+  # POST /seller/ads/batch_create
+  def batch_create
+    ads_params = params[:ads] || []
+    return render json: { error: 'No ads payload provided' }, status: :unprocessable_entity if ads_params.blank?
+
+    created_ads = []
+    failed_ads = []
+
+    ActiveRecord::Base.transaction do
+      ads_params.each_with_index do |ad_data, idx|
+        begin
+          ad_attr = ad_data.permit(:title, :description, :price, :brand, :manufacturer, :condition, :category_id, :subcategory_id, :model, :pricing_unit, :price_display_mode, :price_range_max, media: [], specifications: {})
+          
+          media_urls = Array(ad_data[:media]).map do |m|
+            if m.is_a?(String) && m.start_with?('http')
+              m
+            elsif m.respond_to?(:read)
+              process_and_upload_images([m]).first
+            else
+              nil
+            end
+          end.compact
+
+          ad = current_seller.ads.build(ad_attr.except(:media))
+          ad.media = media_urls if media_urls.any?
+          ad.is_added_by_sales = false
+          ad.branch_id = @current_branch&.id if @current_branch
+
+          if ad.save
+            created_ads << ad.as_json(include: [:category, :subcategory])
+          else
+            failed_ads << { index: idx, title: ad_data[:title], errors: ad.errors.full_messages }
+          end
+        rescue => e
+          Rails.logger.error "Error in batch_create for item #{idx}: #{e.message}"
+          failed_ads << { index: idx, title: ad_data[:title], error: e.message }
+        end
+      end
+
+      if params[:telemetry].present?
+        record_telemetry_data(params[:telemetry], is_batch: true, batch_size: ads_params.length)
+      end
+    end
+
+    current_seller.update_last_active! if created_ads.any?
+
+    render json: {
+      success: true,
+      created_count: created_ads.length,
+      failed_count: failed_ads.length,
+      created_ads: created_ads,
+      failed_ads: failed_ads
+    }, status: created_ads.any? ? :created : :unprocessable_entity
+  end
+
+  # POST /seller/ads/telemetry
+  def telemetry
+    if params[:telemetry].present?
+      t_record = record_telemetry_data(params[:telemetry])
+      telemetry_id = t_record.is_a?(Hash) ? t_record[:id] : t_record&.id
+      render json: { success: true, telemetry_id: telemetry_id }, status: :created
+    else
+      render json: { error: 'Missing telemetry payload' }, status: :unprocessable_entity
     end
   end
 
@@ -878,5 +950,15 @@ class Seller::AdsController < ApplicationController
     uploaded_urls
   end
 
+  def record_telemetry_data(t_data, is_batch: false, batch_size: 1)
+    return nil if current_seller.blank?
 
+    UploadTelemetryRedisService.record(
+      seller_id: current_seller.id,
+      session_id: t_data[:session_id],
+      data: t_data,
+      is_batch: is_batch,
+      batch_size: batch_size
+    )
+  end
 end

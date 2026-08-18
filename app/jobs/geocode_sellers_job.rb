@@ -43,41 +43,69 @@ class GeocodeSellersJob < ApplicationJob
 
   private
 
+  def sanitize_location(loc)
+    return "" if loc.blank?
+
+    cleaned = loc.to_s.dup
+    # Remove PO Box details
+    cleaned.gsub!(/P\.?\s*O\.?\s*BOX\s*\d+[a-z]?/i, '')
+    # Remove phone number patterns (e.g. 0712345678, +254...)
+    cleaned.gsub!(/(?:\+?254|0)\s*\d{3}\s*\d{3}\s*\d{3}/, '')
+    cleaned.gsub!(/tel:\s*[\d\s\-]+/i, '')
+    # Remove extra punctuation and space
+    cleaned.tr!(';', ',')
+    cleaned.squeeze!(' ')
+    cleaned.strip!
+    cleaned.sub(/\A,+,?\s*/, '').sub(/\s*,+,\z/, '').strip
+  end
+
   def geocode_location(seller, sync: false)
-    loc = seller.location.to_s.strip.squeeze(' ')
+    raw_loc = seller.location.to_s.strip
+    loc = sanitize_location(raw_loc)
     city = seller.city.to_s.strip
-    sub_county = seller.sub_county&.name
-    county = seller.county&.name
+    sub_county = seller.sub_county&.name.to_s.strip
+    county = seller.county&.name.to_s.strip
 
     queries = []
 
     if loc.present?
-      parts = [loc]
-      has_context = loc.downcase.include?(sub_county.to_s.downcase) || loc.downcase.include?(county.to_s.downcase)
+      # Candidate 1: full location + city + sub_county + county
+      c1 = [loc]
+      c1 << city if city.present? && !loc.downcase.include?(city.downcase)
+      c1 << sub_county if sub_county.present? && !loc.downcase.include?(sub_county.downcase)
+      c1 << county if county.present? && !loc.downcase.include?(county.downcase)
+      c1 << 'Kenya'
+      queries << c1.uniq.join(', ')
 
-      if !has_context && city.present? && !loc.downcase.include?(city.downcase)
-        parts << city
-      end
+      # Candidate 2: location + sub_county + county
+      c2 = [loc]
+      c2 << sub_county if sub_county.present? && !loc.downcase.include?(sub_county.downcase)
+      c2 << county if county.present? && !loc.downcase.include?(county.downcase)
+      c2 << 'Kenya'
+      queries << c2.uniq.join(', ')
 
-      if sub_county.present? && !loc.downcase.include?(sub_county.downcase)
-        parts << sub_county
-      end
+      # Candidate 3: location + city + county
+      c3 = [loc]
+      c3 << city if city.present? && !loc.downcase.include?(city.downcase)
+      c3 << county if county.present? && !loc.downcase.include?(county.downcase)
+      c3 << 'Kenya'
+      queries << c3.uniq.join(', ')
 
-      if county.present? && !loc.downcase.include?(county.downcase)
-        parts << county
-      end
-
-      parts << 'Kenya' unless loc.split(',').last.to_s.strip.downcase == 'kenya'
-      queries << parts.uniq.join(', ')
+      # Candidate 4: location + county
+      c4 = [loc]
+      c4 << county if county.present? && !loc.downcase.include?(county.downcase)
+      c4 << 'Kenya'
+      queries << c4.uniq.join(', ')
     end
 
-    queries << "#{sub_county}, #{county}, Kenya" if sub_county.present? && county.present? && (city.blank? || city == county)
-    queries << "#{city}, #{county}, Kenya" if city.present? && county.present? && city != county
-    queries << "#{sub_county}, #{county}, Kenya" if sub_county.present? && county.present? && city.present? && city != county
+    # Fallback regional queries
+    queries << "#{sub_county}, #{city}, #{county}, Kenya" if sub_county.present? && city.present? && county.present?
+    queries << "#{sub_county}, #{county}, Kenya" if sub_county.present? && county.present?
+    queries << "#{city}, #{county}, Kenya" if city.present? && county.present? && city.downcase != county.downcase
     queries << "#{county}, Kenya" if county.present?
     queries << 'Kenya' if queries.empty?
 
-    queries.uniq!
+    queries.map!(&:strip).uniq!
 
     queries.each do |query|
       sleep(sync ? 0 : RATE_LIMIT_DELAY)
@@ -94,7 +122,7 @@ class GeocodeSellersJob < ApplicationJob
     params = {
       q: query,
       format: 'json',
-      limit: 1,
+      limit: 5,
       addressdetails: 1,
       countrycodes: 'ke'
     }
@@ -113,22 +141,26 @@ class GeocodeSellersJob < ApplicationJob
       data = JSON.parse(response.body)
 
       if data.any?
-        first = data.first
-        address = first['address'] || {}
-        matched_state = address['state'] || address['county']
-        county_name = seller_county_name.to_s.downcase
+        county_name = seller_county_name.to_s.downcase.strip
 
-        valid = if county_name.present? && matched_state.present?
-                  matched_state.to_s.downcase.include?(county_name) || county_name.include?(matched_state.to_s.downcase)
-                else
-                  true
-                end
+        # Match against county/state/region or fallback to first result if seller county is unspecified
+        result = data.find do |r|
+          address = r['address'] || {}
+          fields = [
+            address['state'], address['county'], address['region'],
+            address['state_district'], address['city'], address['town']
+          ].compact.map(&:to_s).map(&:downcase)
 
-        if valid
+          county_name.blank? || fields.any? { |f| f.include?(county_name) || county_name.include?(f) }
+        end
+
+        result ||= data.first if county_name.blank?
+
+        if result
           return {
-            lat: first['lat'].to_f,
-            lon: first['lon'].to_f,
-            display_name: first['display_name'],
+            lat: result['lat'].to_f,
+            lon: result['lon'].to_f,
+            display_name: result['display_name'],
             query: query
           }
         end
@@ -136,5 +168,9 @@ class GeocodeSellersJob < ApplicationJob
     end
 
     nil
+  rescue => e
+    Rails.logger.warn "Nominatim search error for query '#{query}': #{e.message}"
+    nil
   end
 end
+

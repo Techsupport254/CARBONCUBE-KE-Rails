@@ -17,6 +17,6 @@ class CreateCallQueues < ActiveRecord::Migration[7.1]
     add_index :call_queues, :status
     add_index :call_queues, :priority
     add_index :call_queues, [:status, :priority]
-    add_foreign_key :call_queues, :sellers
+    add_foreign_key :call_queues, :sellers, on_delete: :cascade
   end
 end

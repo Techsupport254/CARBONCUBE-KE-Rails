@@ -613,7 +613,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_05_000001) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", force: :cascade do |t|
+  create_table "monitoring_metrics", id: false, force: :cascade do |t|
+    t.bigserial "id", null: false
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"
@@ -1150,7 +1151,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_05_000001) do
   add_foreign_key "buyers", "sectors"
   add_foreign_key "buyers", "sub_counties"
   add_foreign_key "call_queues", "sales_users", column: "resolved_by_id"
-  add_foreign_key "call_queues", "sellers"
+  add_foreign_key "call_queues", "sellers", on_delete: :cascade
   add_foreign_key "call_records", "sales_users"
   add_foreign_key "cart_items", "ads"
   add_foreign_key "cart_items", "buyers", on_delete: :cascade

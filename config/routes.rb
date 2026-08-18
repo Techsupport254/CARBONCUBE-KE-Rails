@@ -533,6 +533,8 @@ Rails.application.routes.draw do
       collection do
         get :conditions
         get :prefill
+        post :batch_create
+        post :telemetry
       end
       member do
         put 'restore'

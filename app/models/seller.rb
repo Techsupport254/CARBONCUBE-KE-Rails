@@ -19,17 +19,26 @@ class Seller < ApplicationRecord
   has_many :reviews_written, class_name: 'Review', foreign_key: 'seller_id', dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad
-  has_many :sent_messages, as: :sender, class_name: 'Message'
+  has_many :sent_messages, as: :sender, class_name: 'Message', dependent: :destroy
   has_many :conversations, dependent: :destroy
+  has_many :inquirer_conversations, class_name: 'Conversation', foreign_key: 'inquirer_seller_id', dependent: :destroy
   has_many :password_otps, as: :otpable, dependent: :destroy
+  has_many :device_tokens, as: :user, dependent: :destroy
   has_many :seller_documents, dependent: :destroy
   has_many :offers, dependent: :destroy
+  has_many :payment_transactions, dependent: :destroy
   has_many :review_requests, dependent: :destroy
+  has_many :call_queues, dependent: :destroy
   has_many :branches, dependent: :destroy
   has_many :seller_pricing_templates, dependent: :destroy
+  has_many :whatsapp_message_logs, dependent: :destroy
+  has_many :email_communication_logs, dependent: :destroy
+  has_many :whatsapp_product_sessions, dependent: :destroy
+  has_many :click_events, dependent: :nullify
+  has_many :categories_seller_records, class_name: 'CategoriesSeller', dependent: :delete_all
   has_one :categories_seller
   has_one :category, through: :categories_seller
-  has_one :seller_tier
+  has_one :seller_tier, dependent: :destroy
   has_one :tier, through: :seller_tier
   
   belongs_to :county, optional: true

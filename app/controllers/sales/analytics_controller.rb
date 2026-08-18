@@ -90,6 +90,10 @@ class Sales::AnalyticsController < ApplicationController
       ads_target = QuarterlyTarget.current_target_for('total_ads')
       reveal_clicks_target = QuarterlyTarget.current_target_for('total_reveal_clicks')
 
+      # Upload Telemetry stats from Redis
+      upload_telemetry_stats = UploadTelemetryRedisService.summary_stats
+      recent_upload_logs = UploadTelemetryRedisService.recent_logs(10)
+
       {
         sellers_with_timestamps: sellers_with_timestamps,
         sellers_added_by_sales_with_timestamps: sellers_added_by_sales_with_timestamps,
@@ -106,6 +110,8 @@ class Sales::AnalyticsController < ApplicationController
         reveal_clicks_with_timestamps: reveal_clicks_with_timestamps,
         contact_interactions_with_timestamps: contact_interactions_with_timestamps,
         callback_requests_with_timestamps: callback_requests_with_timestamps,
+        upload_telemetry: upload_telemetry_stats,
+        recent_upload_logs: recent_upload_logs,
         
         targets: {
           total_sellers: sellers_target&.as_json(only: [:id, :target_value, :year, :quarter, :status, :notes]),

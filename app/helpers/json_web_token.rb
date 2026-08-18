@@ -23,17 +23,23 @@ class JsonWebToken
             return { success: false, error: 'Invalid token format' }
         end
         
-        body = JWT.decode(token, SECRET_KEY, true, { algorithm: ALGORITHM })[0]
+        body = JWT.decode(token, SECRET_KEY, true, { algorithm: ALGORITHM, exp_leeway: 60, leeway: 60 })[0]
         payload = HashWithIndifferentAccess.new(body)
-        
+
         # Check if token has been blacklisted (revoked via logout)
         if payload[:jti].present? && RedisConnection.exists?("blacklisted_token:#{payload[:jti]}")
             return { success: false, error: 'Token has been revoked' }
         end
-        
+
         { success: true, payload: payload }
     rescue JWT::ExpiredSignature => e
-        Rails.logger.debug "JWT Decode Error: Token has expired - #{e.message}"
+        begin
+            expired_payload = JWT.decode(token, nil, false)[0]
+            exp = expired_payload['exp']
+            Rails.logger.error "JWT Decode Error: Token has expired - exp: #{exp}, now: #{Time.now.to_i}, diff: #{Time.now.to_i - exp.to_i}s, jti: #{expired_payload['jti']}"
+        rescue => diagnostic_err
+            Rails.logger.debug "JWT Decode Error: Token has expired - #{e.message}"
+        end
         { success: false, error: 'Token has expired', expired: true }
     rescue JWT::DecodeError => e
         # Only log decode errors at debug level - they might be expected (malformed tokens from clients)
