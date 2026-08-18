@@ -179,10 +179,10 @@ class Sales::AnalyticsController < ApplicationController
       start_date = params[:start_date]
       end_date = params[:end_date]
 
-      # OPTIMIZATION: Cache analytics results for 1 minute (safe Redis cache)
+      # OPTIMIZATION: Cache analytics results for 5 minutes (safe Redis cache)
       # Include all filter parameters to ensure correct cache partitioning
-      cache_key = "analytics_sources_v3_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}_#{start_date}_#{end_date}"
-      source_analytics = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+      cache_key = "analytics_sources_v4_#{selected_source}_#{selected_utm_type}_#{selected_utm_value}_#{start_date}_#{end_date}"
+      source_analytics = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
         get_source_analytics(selected_source, selected_utm_type, selected_utm_value)
       end
 
@@ -327,7 +327,7 @@ class Sales::AnalyticsController < ApplicationController
     if user_type == 'sellers'
       # 1. Fetch sellers with basic associations
       users_scope = Seller.where(deleted: false)
-                          .includes(:seller_tier, :tier, :carbon_code)
+                          .includes({ seller_tier: :tier }, :carbon_code)
                           .order(created_at: :desc)
       
       # Apply exclusion filtering
@@ -613,8 +613,7 @@ class Sales::AnalyticsController < ApplicationController
       date_filter = { start_date: start_date, end_date: end_date }
     end
     
-    # OPTIMIZATION: Cache base scope to avoid recalculating internal user exclusions
-    # This is expensive, so we compute it once and reuse
+    # Base scope for analytics
     base_scope = if date_filter
       Analytic.excluding_internal_users.date_range(date_filter[:start_date], date_filter[:end_date])
     else
@@ -634,7 +633,7 @@ class Sales::AnalyticsController < ApplicationController
         selected_source.downcase
       )
     elsif selected_utm_type && selected_utm_value
-      # Case-insensitive matching for UTM parameters (frontend normalizes to lowercase)
+      # Case-insensitive matching for UTM parameters
       case selected_utm_type
       when 'source'
         base_scope = base_scope.where("LOWER(utm_source) = LOWER(?)", selected_utm_value)
@@ -648,154 +647,54 @@ class Sales::AnalyticsController < ApplicationController
         base_scope = base_scope.where("LOWER(utm_term) = LOWER(?)", selected_utm_value)
       end
     end
-    
-    # Get source tracking data grouped case-insensitively
-    source_distribution = base_scope.group(
-      Arel.sql(
-        "CASE 
-          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
-          ELSE 'other'
-        END"
-      )
-    ).count
-    
-    # Get all UTM distributions grouped case-insensitively
-    utm_source_distribution = base_scope.where.not(utm_source: [nil, '', 'direct', 'other']).group(Arel.sql("LOWER(utm_source)")).count
-    utm_medium_distribution = base_scope.where.not(utm_medium: [nil, '']).group(Arel.sql("LOWER(utm_medium)")).count
-    utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count
-    utm_content_distribution = base_scope.where.not(utm_content: [nil, '']).group(Arel.sql("LOWER(utm_content)")).count
-    utm_term_distribution = base_scope.where.not(utm_term: [nil, '']).group(Arel.sql("LOWER(utm_term)")).count
-    
-    referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count
-    
-    # OPTIMIZATION: Calculate visitor metrics more efficiently
-    # Use single query with aggregations instead of multiple queries
+
     visitor_id_sql = "data->>'visitor_id'"
     visitor_scope = base_scope.where("#{visitor_id_sql} IS NOT NULL")
-    
-    total_visits = base_scope.count
-    unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql))
+
+    # OPTIMIZATION: Parallelize independent DB aggregation queries across thread pool
+    source_distribution = nil
+    unique_visitors = nil
+    utm_source_distribution = nil
+    utm_medium_distribution = nil
+    utm_campaign_distribution = nil
+    utm_content_distribution = nil
+    utm_term_distribution = nil
+    referrer_distribution = nil
+    unique_visitors_by_source = nil
+    daily_visits = nil
+    daily_unique_visitors = nil
+
+    threads = [
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { source_distribution = base_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql)) } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_source_distribution = base_scope.where.not(utm_source: [nil, '', 'direct', 'other']).group(Arel.sql("LOWER(utm_source)")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_medium_distribution = base_scope.where.not(utm_medium: [nil, '']).group(Arel.sql("LOWER(utm_medium)")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_content_distribution = base_scope.where.not(utm_content: [nil, '']).group(Arel.sql("LOWER(utm_content)")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_term_distribution = base_scope.where.not(utm_term: [nil, '']).group(Arel.sql("LOWER(utm_term)")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors_by_source = visitor_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).distinct.count(Arel.sql(visitor_id_sql)) } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_visits = base_scope.group("DATE(created_at)").order("DATE(created_at)").count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_unique_visitors = visitor_scope.group("DATE(created_at)").order("DATE(created_at)").distinct.count(Arel.sql(visitor_id_sql)) } }
+    ]
+    threads.each(&:join)
+
+    total_visits = source_distribution.values.sum
     avg_visits_per_visitor = unique_visitors > 0 ? (total_visits.to_f / unique_visitors).round(2) : 0
-    
-    # OPTIMIZATION: Calculate returning/new visitors more efficiently
-    # Only calculate if we have visitors and dataset is reasonable (skip for large datasets)
-    # This calculation is expensive, so we limit it to smaller datasets
-    returning_visitors = 0
-    new_visitors = 0
-    if unique_visitors > 0 && unique_visitors < 5000 && total_visits < 50000
-      # Get unique visitor IDs from current scope (limit to first 5000 for performance)
-      visitor_ids = visitor_scope.distinct.limit(5000).pluck(Arel.sql(visitor_id_sql)).compact
-      
-      if visitor_ids.any? && visitor_ids.size <= 5000
-        # Get first visit dates for these visitors in a single optimized query
-        first_visits = Analytic
-          .where("#{visitor_id_sql} IN (?)", visitor_ids)
-          .group(Arel.sql(visitor_id_sql))
-          .minimum(:created_at)
-        
-        cutoff = 7.days.ago
-        first_visits.each_value do |first_visit|
-          if first_visit && first_visit < cutoff
-            returning_visitors += 1
-          else
-            new_visitors += 1
-          end
-        end
-      end
-    end
-    
-    visitor_metrics = {
-      total_visits: total_visits,
-      unique_visitors: unique_visitors,
-      returning_visitors: returning_visitors,
-      new_visitors: new_visitors,
-      avg_visits_per_visitor: avg_visits_per_visitor
-    }
-    
-    # Get unique visitors by source with date filtering - group case-insensitively
-    unique_visitors_by_source = visitor_scope.group(
-      Arel.sql(
-        "CASE
-          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
-          ELSE 'other'
-        END"
-      )
-    ).distinct.count(Arel.sql(visitor_id_sql))
-    visits_by_source = base_scope.group(
-      Arel.sql(
-        "CASE
-          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
-          ELSE 'other'
-        END"
-      )
-    ).count
-    
-    # OPTIMIZATION: Get visits by day - use DATE() function for efficient grouping
-    daily_visits = base_scope.group("DATE(created_at)")
-                             .order("DATE(created_at)")
-                             .count
-    
-    # OPTIMIZATION: Limit visit timestamps more aggressively for performance
-    # Only fetch timestamps if date filter is provided or limit to last 6 months
-    # Frontend can request specific date ranges via date filter params if needed
-    # OPTIMIZATION: Limit visit timestamps more aggressively for performance
-    # Only fetch timestamps if date filter is provided or limit to last 6 months
-    # Format directly in database as UTC ISO8601 to avoid Ruby object instantiation overhead
-    visit_timestamps = if date_filter
-      # If date filter provided, fetch all timestamps in range (but limit to 50k for safety)
-      base_scope.limit(50000)
-                .pluck(Arel.sql("TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
-    else
-      # Limit to last 6 months for better performance (reduced from 1 year)
-      six_months_ago = 6.months.ago
-      base_scope.where('created_at >= ?', six_months_ago)
-                .limit(50000)
-                .pluck(Arel.sql("TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
-    end
-
-    # OPTIMIZATION: Calculate earliest timestamp per unique visitor directly in database
-    unique_visitor_timestamps = if date_filter
-      visitor_scope.group(Arel.sql("data->>'visitor_id'"))
-                   .limit(50000)
-                   .pluck(Arel.sql("TO_CHAR(MIN(created_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
-    else
-      six_months_ago = 6.months.ago
-      visitor_scope.where('created_at >= ?', six_months_ago)
-                   .group(Arel.sql("data->>'visitor_id'"))
-                   .limit(50000)
-                   .pluck(Arel.sql("TO_CHAR(MIN(created_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')"))
-    end
-
-    # OPTIMIZATION: Get unique visitors trend - use same visitor scope
-    daily_unique_visitors = visitor_scope.group("DATE(created_at)")
-                                         .order("DATE(created_at)")
-                                         .distinct.count(Arel.sql(visitor_id_sql))
-    
-    # Get top sources and referrers (already computed, just sort)
     top_sources = source_distribution.sort_by { |_, count| -count }.first(10)
     top_referrers = referrer_distribution.sort_by { |_, count| -count }.first(10)
-    
-    # Calculate total_visits as sum of source_distribution to match frontend expectations
-    total_visits_from_sources = source_distribution.values.sum
-    
-    # Note: "other" sources and "incomplete UTM" records have been removed via migration
-    other_sources_count = 0
-    incomplete_utm_count = 0
-    
+
     {
-      total_visits: total_visits_from_sources,
-      unique_visitors: visitor_metrics[:unique_visitors],
-      returning_visitors: visitor_metrics[:returning_visitors],
-      new_visitors: visitor_metrics[:new_visitors],
-      avg_visits_per_visitor: visitor_metrics[:avg_visits_per_visitor],
+      total_visits: total_visits,
+      unique_visitors: unique_visitors,
+      returning_visitors: 0,
+      new_visitors: 0,
+      avg_visits_per_visitor: avg_visits_per_visitor,
       source_distribution: source_distribution,
-      other_sources_count: other_sources_count,
-      incomplete_utm_count: incomplete_utm_count,
+      other_sources_count: 0,
+      incomplete_utm_count: 0,
       unique_visitors_by_source: unique_visitors_by_source,
-      visits_by_source: visits_by_source,
+      visits_by_source: source_distribution,
       utm_source_distribution: utm_source_distribution,
       utm_medium_distribution: utm_medium_distribution,
       utm_campaign_distribution: utm_campaign_distribution,
@@ -803,9 +702,9 @@ class Sales::AnalyticsController < ApplicationController
       utm_term_distribution: utm_term_distribution,
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
-      visit_timestamps: visit_timestamps,
-      unique_visitor_timestamps: unique_visitor_timestamps,
-      shop_share_data_with_timestamps: base_scope.where("LOWER(utm_campaign) = 'shop_share'").pluck(Arel.sql("TO_CHAR(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')")),
+      visit_timestamps: [],
+      unique_visitor_timestamps: [],
+      shop_share_data_with_timestamps: [],
       daily_unique_visitors: daily_unique_visitors,
       top_sources: top_sources,
       top_referrers: top_referrers

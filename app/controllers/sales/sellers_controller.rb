@@ -21,7 +21,7 @@ class Sales::SellersController < ApplicationController
     end
     
     total_count = sellers_query.count
-    @sellers = sellers_query.order(created_at: :desc).limit(per_page).offset((page - 1) * per_page)
+    @sellers = sellers_query.includes(:tier, :carbon_code).order(created_at: :desc).limit(per_page).offset((page - 1) * per_page)
     
     render json: {
       sellers: @sellers,

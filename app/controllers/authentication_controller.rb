@@ -1084,7 +1084,15 @@ class AuthenticationController < ApplicationController
           cookies[user_cookie_key] = { value: user_response.to_json, **user_cookie_options }
         end
 
-        redirect_url = "#{oauth_redirect_base}?success=true"
+        # Encode token and user data for URL transmission fallback in production
+        auth_data = {
+          token: token,
+          user: user_response
+        }
+        auth_data[:missing_fields] = missing_fields if missing_fields.any?
+        encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
+
+        redirect_url = "#{oauth_redirect_base}?success=true&token=#{CGI.escape(encoded_data)}"
       end
 
       # Store auth data in cache for the mobile two-step flow (state is the lookup key)
