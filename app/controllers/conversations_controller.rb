@@ -509,10 +509,12 @@ class ConversationsController < ApplicationController
                                 .order("conversations.updated_at DESC")
 
     grouped_conversations = conversations.group_by do |conversation|
-      if conversation.admin_id.present? && conversation.seller_id.blank?
+      if conversation.admin_id.present?
         "admin_#{conversation.admin_id}"
+      elsif conversation.seller_id.present?
+        "seller_#{conversation.seller_id}"
       else
-        "seller_#{conversation.seller_id || 'unknown'}"
+        "conversation_#{conversation.id}"
       end
     end
 
@@ -574,23 +576,27 @@ class ConversationsController < ApplicationController
       return
     end
 
-    # Create the message
-    message = @conversation.messages.create!(
-      content: params[:content],
-      sender: @current_user,
-      ad_id: @conversation.ad_id
-    )
+    # Create the message if content is present
+    message = nil
+    if params[:content].present?
+      message = @conversation.messages.create!(
+        content: params[:content],
+        sender: @current_user,
+        ad_id: @conversation.ad_id
+      )
+    end
 
-    # Return the conversation with the new message
+    # Return the conversation with optional new message
     render json: {
       conversation_id: @conversation.id,
-      message: {
+      conversation: @conversation.as_json(include: [:ad, :seller, :buyer]),
+      message: message ? {
         id: message.id,
         content: message.content,
         created_at: message.created_at,
         sender_type: message.sender.class.name,
         sender_id: message.sender.id
-      }
+      } : nil
     }, status: :created
   end
 

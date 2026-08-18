@@ -22,6 +22,7 @@ class Branch < ApplicationRecord
     if result
       self.latitude = result[:lat]
       self.longitude = result[:lon]
+      self.location_precision = result[:precision] || 'approximate'
     end
   rescue => e
     Rails.logger.warn "Branch geocoding skipped for seller #{seller&.id}: #{e.message}"

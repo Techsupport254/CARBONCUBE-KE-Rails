@@ -8,22 +8,19 @@ class MessageNotificationMailer < ApplicationMailer
 
     campaign = message.content.to_s.start_with?("[Callback Request]") ? "callback_request" : "message"
     conversation_url = get_conversation_url(recipient, conversation, campaign: campaign)
-    recipient_name = get_recipient_name(recipient)
-    sender_name = get_sender_name(sender)
-    message_content = strip_markdown(message.content)
-    product_context = message.product_context
+
+    @recipient_name  = get_recipient_name(recipient)
+    @sender_name     = get_sender_name(sender)
+    @message_content = strip_markdown(message.content)
+    @conversation_url = conversation_url
+    @message         = message
+    @ad              = message.ad_id.present? ? Ad.find_by(id: message.ad_id) : nil
+    @product_context = message.product_context
 
     mail(
       to: recipient.email,
-      subject: "New message from #{sender_name} on Carbon Cube Kenya",
-      reply_to: ENV['BREVO_EMAIL'],
-      react: {
-        recipient_name: recipient_name,
-        sender_name: sender_name,
-        message_content: message_content,
-        conversation_url: conversation_url,
-        product_context: product_context
-      }
+      subject: "New message from #{@sender_name} on Carbon Cube Kenya",
+      reply_to: ENV['BREVO_EMAIL']
     )
   end
 

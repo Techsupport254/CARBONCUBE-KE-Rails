@@ -4,32 +4,38 @@ class GeocodeSellersJob < ApplicationJob
   NOMINATIM_API_URL = "https://nominatim.openstreetmap.org/search"
   RATE_LIMIT_DELAY = 1 # seconds between requests (OSM requires max 1 request per second)
 
-  def perform(seller_id = nil)
-    # Find sellers without coordinates in their branches
-    sellers_without_coords = Seller
+  def perform(seller_id = nil, force: false)
+    sellers_to_process = Seller
       .joins(:branches)
-      .where(branches: { latitude: nil })
       .where.not(sellers: { location: nil })
-    sellers_without_coords = sellers_without_coords.where(id: seller_id) if seller_id.present?
-    sellers_without_coords = sellers_without_coords.distinct.limit(700) # Process all sellers in one batch (rate limited at 1 req/s)
 
-    Rails.logger.info "Starting geocoding for #{sellers_without_coords.count} sellers"
+    unless force
+      sellers_to_process = sellers_to_process.where(
+        "branches.latitude IS NULL OR branches.location_precision IN ('sub_county', 'county', 'approximate') OR branches.location_precision IS NULL"
+      )
+    end
 
-    sellers_without_coords.each_with_index do |seller, index|
+    sellers_to_process = sellers_to_process.where(id: seller_id) if seller_id.present?
+    sellers_to_process = sellers_to_process.distinct.limit(1000)
+
+    Rails.logger.info "Starting geocoding for #{sellers_to_process.count} sellers (force: #{force})"
+
+    sellers_to_process.each_with_index do |seller, index|
       begin
         # Geocode the seller's location
         coordinates = geocode_location(seller)
 
         if coordinates
-          # Update the seller's branch with coordinates
+          # Update the seller's branch with coordinates and precision level
           seller.branches.each do |branch|
             branch.update(
               latitude: coordinates[:lat],
-              longitude: coordinates[:lon]
+              longitude: coordinates[:lon],
+              location_precision: coordinates[:precision] || 'approximate'
             )
           end
           
-          Rails.logger.info "Successfully geocoded seller: #{seller.enterprise_name} (#{seller.location})"
+          Rails.logger.info "Successfully geocoded seller: #{seller.enterprise_name} (#{seller.location}) [precision: #{coordinates[:precision]}]"
         else
           Rails.logger.warn "Failed to geocode seller: #{seller.enterprise_name} (#{seller.location})"
         end
@@ -75,49 +81,58 @@ class GeocodeSellersJob < ApplicationJob
       c1 << sub_county if sub_county.present? && !loc.downcase.include?(sub_county.downcase)
       c1 << county if county.present? && !loc.downcase.include?(county.downcase)
       c1 << 'Kenya'
-      queries << c1.uniq.join(', ')
+      queries << { query: c1.uniq.join(', '), type: :specific }
 
       # Candidate 2: location + sub_county + county
       c2 = [loc]
       c2 << sub_county if sub_county.present? && !loc.downcase.include?(sub_county.downcase)
       c2 << county if county.present? && !loc.downcase.include?(county.downcase)
       c2 << 'Kenya'
-      queries << c2.uniq.join(', ')
+      queries << { query: c2.uniq.join(', '), type: :specific }
 
       # Candidate 3: location + city + county
       c3 = [loc]
       c3 << city if city.present? && !loc.downcase.include?(city.downcase)
       c3 << county if county.present? && !loc.downcase.include?(county.downcase)
       c3 << 'Kenya'
-      queries << c3.uniq.join(', ')
+      queries << { query: c3.uniq.join(', '), type: :specific }
 
       # Candidate 4: location + county
       c4 = [loc]
       c4 << county if county.present? && !loc.downcase.include?(county.downcase)
       c4 << 'Kenya'
-      queries << c4.uniq.join(', ')
+      queries << { query: c4.uniq.join(', '), type: :specific }
     end
 
     # Fallback regional queries
-    queries << "#{sub_county}, #{city}, #{county}, Kenya" if sub_county.present? && city.present? && county.present?
-    queries << "#{sub_county}, #{county}, Kenya" if sub_county.present? && county.present?
-    queries << "#{city}, #{county}, Kenya" if city.present? && county.present? && city.downcase != county.downcase
-    queries << "#{county}, Kenya" if county.present?
-    queries << 'Kenya' if queries.empty?
+    queries << { query: "#{sub_county}, #{city}, #{county}, Kenya", type: :sub_county } if sub_county.present? && city.present? && county.present?
+    queries << { query: "#{sub_county}, #{county}, Kenya", type: :sub_county } if sub_county.present? && county.present?
+    queries << { query: "#{city}, #{county}, Kenya", type: :sub_county } if city.present? && county.present? && city.downcase != county.downcase
+    queries << { query: "#{county}, Kenya", type: :county } if county.present?
+    queries << { query: 'Kenya', type: :county } if queries.empty?
 
-    queries.map!(&:strip).uniq!
+    # Deduplicate queries keeping highest specificity
+    unique_queries = []
+    seen = Set.new
+    queries.each do |q_item|
+      str = q_item[:query].strip
+      next if seen.include?(str)
 
-    queries.each do |query|
+      seen.add(str)
+      unique_queries << q_item
+    end
+
+    unique_queries.each do |q_item|
       sleep(sync ? 0 : RATE_LIMIT_DELAY)
 
-      result = nominatim_search(query, county, sync)
+      result = nominatim_search(q_item[:query], q_item[:type], county, sync)
       return result if result
     end
 
     nil
   end
 
-  def nominatim_search(query, seller_county_name, sync = false)
+  def nominatim_search(query, query_type, seller_county_name, sync = false)
     uri = URI(NOMINATIM_API_URL)
     params = {
       q: query,
@@ -157,11 +172,28 @@ class GeocodeSellersJob < ApplicationJob
         result ||= data.first if county_name.blank?
 
         if result
+          osm_type = result['type'].to_s.downcase
+          osm_class = result['class'].to_s.downcase
+          coarse_types = %w[administrative suburb district county state region boundary administrative_boundary]
+
+          is_coarse = coarse_types.include?(osm_type) || coarse_types.include?(osm_class)
+
+          precision = if query_type == :specific && !is_coarse
+                        'exact'
+                      elsif query_type == :sub_county || (query_type == :specific && is_coarse)
+                        'sub_county'
+                      elsif query_type == :county
+                        'county'
+                      else
+                        'approximate'
+                      end
+
           return {
             lat: result['lat'].to_f,
             lon: result['lon'].to_f,
             display_name: result['display_name'],
-            query: query
+            query: query,
+            precision: precision
           }
         end
       end

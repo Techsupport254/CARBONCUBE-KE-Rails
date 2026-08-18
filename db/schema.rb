@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_18_083400) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -154,6 +154,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_083400) do
     t.bigint "county_id"
     t.bigint "sub_county_id"
     t.string "profile_picture"
+    t.string "location_precision", default: "approximate"
+    t.index ["location_precision"], name: "index_branches_on_location_precision"
     t.index ["seller_id"], name: "index_branches_on_seller_id"
   end
 

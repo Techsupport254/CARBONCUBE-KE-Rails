@@ -22,30 +22,35 @@ class Api::V1::SellerLocationsController < ApplicationController
     branch_coords = Branch
       .where(seller_id: sellers.map(&:id))
       .where.not(latitude: nil)
-      .select('DISTINCT ON (seller_id) seller_id, latitude, longitude')
+      .select('DISTINCT ON (seller_id) seller_id, latitude, longitude, location_precision, name, location')
       .order('seller_id, id')
       .index_by(&:seller_id)
 
     # Fall back to any branch (even without coords) if no geocoded one
     first_branches = Branch
       .where(seller_id: sellers.map(&:id))
-      .select('DISTINCT ON (seller_id) seller_id, latitude, longitude')
+      .select('DISTINCT ON (seller_id) seller_id, latitude, longitude, location_precision, name, location')
       .order('seller_id, id')
       .index_by(&:seller_id)
 
     # Format the response
     sellers_data = sellers.map do |seller|
       branch = branch_coords[seller.id] || first_branches[seller.id]
+      full_location = [branch&.location, seller.location].compact.map(&:strip).reject(&:blank?).uniq.join(', ')
+      full_location = seller.location if full_location.blank?
+
       {
         id: seller.id,
         fullname: seller.fullname,
         enterprise_name: seller.enterprise_name,
-        location: seller.location,
+        location: full_location,
+        branch_name: branch&.name,
         city: seller.city,
         county_name: seller.county&.name || 'Unknown',
         sub_county_name: seller.sub_county&.name || 'Unknown',
         latitude: branch&.latitude,
         longitude: branch&.longitude,
+        location_precision: branch&.location_precision || 'approximate',
         phone_number: seller.phone_number,
         email: seller.email,
         profile_picture: seller.profile_picture,
@@ -64,8 +69,9 @@ class Api::V1::SellerLocationsController < ApplicationController
   end
 
   def geocode_batch
-    # Start a background job to geocode sellers without coordinates
-    GeocodeSellersJob.perform_later
+    force = params[:force].to_s == 'true'
+    # Start a background job to geocode sellers without coordinates or needing precision correction
+    GeocodeSellersJob.perform_later(nil, force: force)
     
     render json: { 
       message: 'Geocoding batch job started',

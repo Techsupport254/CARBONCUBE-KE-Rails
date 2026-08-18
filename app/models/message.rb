@@ -281,13 +281,19 @@ class Message < ApplicationRecord
         update_column(:status, STATUS_DELIVERED)
       end
     else
-      # Regular conversation - send a template notification to ping the seller
-      # We use the new professional Utility template we just created
+      # Regular in-app conversation — throttle to one WA ping per conversation per hour
+      # so the seller isn't spammed every time the buyer types a message.
+      throttle_key = "wa_ping_conv_#{conversation.id}"
+      return if Rails.cache.exist?(throttle_key)
+
+      # Mark as notified for the next hour
+      Rails.cache.write(throttle_key, true, expires_in: 1.hour)
+
       unread_count = conversation.messages.unread.where.not(sender: recipient).count
       last_message = conversation.messages.where.not(sender: recipient).order(created_at: :desc).first
       message_preview = last_message&.content&.truncate(100) || "New message"
       
-      sender_display_name = @current_user.is_a?(Admin) ? 'Carbon Cube Support' : 'Carbon Cube Team'
+      sender_display_name = sender.is_a?(Admin) ? 'Carbon Cube Support' : 'Carbon Cube Team'
 
       WhatsAppCloudService.send_template(
         recipient.phone_number,
