@@ -203,6 +203,7 @@ Rails.application.routes.draw do
       get :statistics
     end
   end
+  post '/comments/:id/vote', to: 'issues#vote_comment'
   get 'sitemap/categories', to: 'sitemap#categories'
   get 'sitemap/subcategories', to: 'sitemap#subcategories'
   get 'sitemap/stats', to: 'sitemap#stats'
@@ -812,6 +813,7 @@ Rails.application.routes.draw do
         get :devices
         get :sources
         get :categories
+        get :category_sellers
         get :searches
       end
     end

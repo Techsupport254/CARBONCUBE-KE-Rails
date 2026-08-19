@@ -223,7 +223,7 @@ class Sales::AnalyticsController < ApplicationController
       # Get device_hash from params or headers if available for excluding seller own clicks
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
       
-      cache_key = "sales_analytics_categories_v2_#{device_hash}"
+      cache_key = "sales_analytics_categories_v3_#{device_hash}"
       response_data = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
         # Use unified service for category click events
         click_events_service = ClickEventsAnalyticsService.new(
@@ -232,7 +232,9 @@ class Sales::AnalyticsController < ApplicationController
         )
         {
           category_click_events: click_events_service.category_click_events,
-          subcategory_click_events: click_events_service.subcategory_click_events
+          subcategory_click_events: click_events_service.subcategory_click_events,
+          category_seller_counts: category_seller_counts,
+          subcategory_seller_counts: subcategory_seller_counts
         }
       end
 
@@ -242,9 +244,64 @@ class Sales::AnalyticsController < ApplicationController
       Rails.logger.error e.backtrace.join("\n")
       render json: {
         category_click_events: [],
-        subcategory_click_events: []
+        subcategory_click_events: [],
+        category_seller_counts: {},
+        subcategory_seller_counts: {}
       }
     end
+  end
+
+  # GET /sales/analytics/category_sellers
+  # List the sellers placed in a given category (and optionally subcategory),
+  # along with how many active ads each has there - powers the sellers sheet
+  # on the sales categories page.
+  def category_sellers
+    category_id = params[:category_id]
+
+    if category_id.blank?
+      render json: { error: 'category_id is required' }, status: :unprocessable_entity
+      return
+    end
+
+    subcategory_id = params[:subcategory_id].presence
+
+    membership_scope = CategoriesSeller.where(category_id: category_id)
+    membership_scope = membership_scope.where(subcategory_id: subcategory_id) if subcategory_id
+
+    seller_ids = membership_scope.distinct.pluck(:seller_id)
+
+    ads_scope = Ad.where(deleted: false, category_id: category_id, seller_id: seller_ids)
+    ads_scope = ads_scope.where(subcategory_id: subcategory_id) if subcategory_id
+    ads_counts_by_seller = ads_scope.group(:seller_id).count
+
+    sellers = Seller.where(id: seller_ids)
+                     .left_joins(:tier)
+                     .select('sellers.*, tiers.name AS tier_name')
+                     .map do |seller|
+      {
+        id: seller.id,
+        fullname: seller.fullname,
+        enterprise_name: seller.enterprise_name,
+        email: seller.email,
+        phone_number: seller.phone_number,
+        location: seller.location,
+        blocked: seller.blocked,
+        deleted: seller.deleted,
+        tier_name: seller.tier_name || 'Free',
+        profile_picture: seller.profile_picture,
+        ads_count: ads_counts_by_seller[seller.id] || 0,
+        created_at: seller.created_at&.iso8601
+      }
+    end
+
+    # Highest ad count first, so the most active sellers surface at the top
+    sellers.sort_by! { |seller| [-seller[:ads_count], seller[:enterprise_name].to_s.downcase] }
+
+    render json: { sellers: sellers }
+  rescue => e
+    Rails.logger.error "Error getting category sellers: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    render json: { sellers: [] }
   end
 
   def searches
@@ -548,6 +605,22 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   private
+
+  # Number of sellers placed in each category (based on categories_sellers),
+  # keyed by category name to match the click-event aggregates above.
+  def category_seller_counts
+    CategoriesSeller.joins(:category)
+                     .group('categories.name')
+                     .count('DISTINCT categories_sellers.seller_id')
+  end
+
+  # Number of sellers placed in each subcategory (based on categories_sellers),
+  # keyed by subcategory name to match the click-event aggregates above.
+  def subcategory_seller_counts
+    CategoriesSeller.joins(:subcategory)
+                     .group('subcategories.name')
+                     .count('DISTINCT categories_sellers.seller_id')
+  end
 
   def normalize_search_history(searches)
     return searches if searches.empty?

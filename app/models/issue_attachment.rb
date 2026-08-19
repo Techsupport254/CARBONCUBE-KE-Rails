@@ -1,14 +1,15 @@
 class IssueAttachment < ApplicationRecord
+  include ActionView::Helpers::DateHelper
+
   # Associations
   belongs_to :issue
-  belongs_to :uploaded_by, polymorphic: true
+  # Optional so anonymous (not-logged-in) reporters can attach screenshots too
+  belongs_to :uploaded_by, polymorphic: true, optional: true
   
   # Validations
   validates :file_name, presence: true
   validates :file_size, presence: true, numericality: { greater_than: 0 }
   validates :file_type, presence: true
-  validates :uploaded_by_type, presence: true
-  validates :uploaded_by_id, presence: true
   
   # Scopes
   scope :recent, -> { order(created_at: :desc) }

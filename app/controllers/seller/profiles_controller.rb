@@ -489,10 +489,11 @@ class Seller::ProfilesController < ApplicationController
     # Onboarding fully succeeded - safe to invalidate the pending registration token now
     Rails.cache.delete(cache_key) if cache_key.present?
 
-    # Post-transaction: Send welcome email
+    # Post-transaction: Send unified welcome email (includes storefront link & attached QR Standee)
     begin
       WelcomeMailer.welcome_email(@seller).deliver_now
     rescue => e
+      Rails.logger.warn "Failed to deliver welcome email: #{e.message}"
     end
 
     # Generate seller token

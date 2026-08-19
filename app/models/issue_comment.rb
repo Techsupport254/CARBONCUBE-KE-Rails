@@ -3,12 +3,15 @@ class IssueComment < ApplicationRecord
   
   # Associations
   belongs_to :issue
-  belongs_to :author, polymorphic: true
-  
+  belongs_to :author, polymorphic: true, optional: true
+  belongs_to :parent, class_name: 'IssueComment', optional: true, inverse_of: :replies
+  has_many :replies, class_name: 'IssueComment', foreign_key: 'parent_id', dependent: :destroy, inverse_of: :parent
+  has_many :comment_votes, dependent: :destroy, inverse_of: :comment
+
   # Validations
   validates :content, presence: true, length: { minimum: 1, maximum: 1000 }
-  validates :author_type, presence: true
-  validates :author_id, presence: true
+
+  before_validation :set_anonymous_author, on: :create
   
   # Scopes
   scope :recent, -> { order(created_at: :asc) }
@@ -20,24 +23,24 @@ class IssueComment < ApplicationRecord
   # Methods
   def author_name
     case author_type
-    when 'Admin'
-      author.fullname || author.email
-    when 'User'
-      author.fullname || author.email
+    when 'Admin', 'Buyer', 'Seller', 'SalesUser', 'MarketingUser'
+      resolved_display_name
+    when 'Anonymous'
+      'Anonymous'
     else
       'Anonymous'
     end
   end
-  
+
   def author_role
-    case author_type
-    when 'Admin'
-      'Admin'
-    when 'User'
-      'User'
-    else
-      'Anonymous'
-    end
+    {
+      'Admin' => 'Admin',
+      'Buyer' => 'Buyer',
+      'Seller' => 'Seller',
+      'SalesUser' => 'Sales',
+      'MarketingUser' => 'Marketing',
+      'Anonymous' => 'Anonymous'
+    }[author_type] || 'Anonymous'
   end
   
   def is_internal?
@@ -49,8 +52,25 @@ class IssueComment < ApplicationRecord
   end
   
   private
-  
+
+  def resolved_display_name
+    return 'Anonymous' if author.blank?
+
+    name = author.fullname.presence ||
+           (author.respond_to?(:enterprise_name) ? author.enterprise_name.presence : nil) ||
+           author.email.presence
+
+    name || author_type
+  end
+
+  def set_anonymous_author
+    if author_id.blank? && author_type.blank?
+      self.author_type = nil
+      self.author_id = nil
+    end
+  end
+
   def send_comment_notification
-    IssueMailer.comment_added(self).deliver_now
+    IssueMailer.with(comment: self).comment_added.deliver_later
   end
 end

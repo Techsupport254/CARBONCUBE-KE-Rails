@@ -151,4 +151,55 @@ class SellerMailer < ApplicationMailer
       }
     )
   end
+
+  def storefront_qr_welcome(seller, to_email = nil)
+    fullname = seller.fullname.presence || seller.enterprise_name.presence || "Merchant"
+    first_name = fullname.to_s.split(" ").first.presence || "Partner"
+    enterprise_name = seller.enterprise_name.presence || fullname
+    shop_slug = (seller.enterprise_name || seller.username || seller.id.to_s).parameterize
+
+    base_frontend = if Rails.env.development?
+      ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+    else
+      ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
+    end
+
+    storefront_url = UtmUrlHelper.append_utm(
+      "#{base_frontend}/shop/#{shop_slug}",
+      source: "email",
+      medium: "welcome_qr",
+      campaign: "seller_onboarding",
+      content: "storefront_link"
+    )
+
+    qr_studio_url = UtmUrlHelper.append_utm(
+      "#{base_frontend}/seller/qr",
+      source: "email",
+      medium: "welcome_qr",
+      campaign: "seller_onboarding",
+      content: "qr_studio"
+    )
+
+    # Generate and attach high-res standee image
+    image_path = SellerQrStandeeGeneratorService.generate(seller)
+    if image_path && File.exist?(image_path)
+      attachments["#{shop_slug}-qr-standee.png"] = File.binread(image_path)
+    end
+
+    mail(
+      to: to_email || seller.email,
+      subject: "Your Official Storefront QR Standee & Shop Link - Carbon Cube Kenya",
+      react: {
+        fullname: fullname,
+        firstName: first_name,
+        enterpriseName: enterprise_name,
+        storefrontUrl: storefront_url,
+        qrStudioUrl: qr_studio_url,
+        supportEmail: ENV["BREVO_EMAIL"] || "support@carboncube.co.ke",
+        supportPhone: "+254 712 990 524"
+      }
+    )
+  ensure
+    File.delete(image_path) if image_path && File.exist?(image_path)
+  end
 end

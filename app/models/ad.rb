@@ -172,6 +172,10 @@ class Ad < ApplicationRecord
   after_save :schedule_google_merchant_sync, if: :should_sync_to_google_merchant?
   after_destroy :schedule_google_merchant_delete
 
+  # Keep the seller's category/subcategory placement in sync with where they have the most ads
+  after_commit :schedule_seller_category_placement_sync, on: [:create, :destroy]
+  after_commit :schedule_seller_category_placement_sync, on: :update, if: :should_sync_seller_category_placement?
+
   # Soft delete
   def flag
     update(flagged: true)
@@ -585,6 +589,14 @@ class Ad < ApplicationRecord
   def schedule_google_merchant_delete
     # Schedule delete job immediately
     GoogleMerchantSyncJob.perform_later(id, 'delete')
+  end
+
+  def should_sync_seller_category_placement?
+    saved_change_to_category_id? || saved_change_to_subcategory_id? || saved_change_to_deleted?
+  end
+
+  def schedule_seller_category_placement_sync
+    SyncSellerCategoryPlacementJob.perform_later(seller_id)
   end
 
   def should_sync_to_google_merchant?

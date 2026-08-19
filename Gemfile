@@ -106,6 +106,12 @@ group :development do
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
+
+  # Static code analysis / style linting
+  gem "rubocop", require: false
+  gem "rubocop-rails", require: false
+  gem "rubocop-performance", require: false
+  gem "rubocop-rspec", require: false
 end
 gem "mjml-rails", "~> 4.16"
 gem "react-email-rails", "~> 0.8"

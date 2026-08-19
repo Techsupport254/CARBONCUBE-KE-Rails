@@ -111,20 +111,47 @@ class Seller::AdsController < ApplicationController
       strategy: strategy
     )
 
-    if candidates.empty? && subcategory.present?
-      # Fallback from subcategory to category scope to avoid empty responses.
+    if candidates.empty?
+      # Fallback to searching platform-wide active ads without category restriction
       candidates = prefill_candidates_for(
         query: model_query,
-        category_id: category&.id,
+        category_id: nil,
         subcategory_id: nil,
         strategy: strategy
       )
     end
 
-    # Fetch Specifications (Favoring local catalog for speed)
+    ranked_candidates = rank_prefill_candidates(candidates, model_query)
+    best_match = ranked_candidates.first
+
+    # Infer Category & Subcategory from matching uploaded ads if not already provided
+    inferred_category_id = category&.id || best_match&.category_id || ranked_candidates.map(&:category_id).compact.first
+    inferred_subcategory_id = subcategory&.id || best_match&.subcategory_id || ranked_candidates.map(&:subcategory_id).compact.first
+
+    inferred_category = category || (inferred_category_id ? Category.find_by(id: inferred_category_id) : nil)
+    inferred_subcategory = subcategory || (inferred_subcategory_id ? Subcategory.find_by(id: inferred_subcategory_id) : nil)
+
+    # Extract Specifications from active uploaded ads
+    ad_specs = {}
+    ranked_candidates.each do |ad|
+      next unless ad.respond_to?(:specifications) && ad.specifications.present?
+      parsed = if ad.specifications.is_a?(Hash)
+                 ad.specifications
+               elsif ad.specifications.is_a?(String)
+                 begin JSON.parse(ad.specifications) rescue {} end
+               else
+                 {}
+               end
+      if parsed.is_a?(Hash)
+        parsed.each do |k, v|
+          ad_specs[k] = v if k.present? && v.present? && !ad_specs.key?(k)
+        end
+      end
+    end
+
+    # Fetch Specifications from DeviceCatalogService & GSM
     gsm_specs = nil
-    # Try DeviceCatalogService for all categories
-    matching_devices = DeviceCatalogService.search(model_query, subcategory&.name, category&.name)
+    matching_devices = DeviceCatalogService.search(model_query, inferred_subcategory&.name, inferred_category&.name)
     if matching_devices.any?
       best = matching_devices.first
       gsm_specs = {
@@ -132,40 +159,48 @@ class Seller::AdsController < ApplicationController
         brand: best['brand'],
         specifications: best['specifications'] || {}
       }
-    elsif subcategory&.name.to_s.downcase.match?(/phone|mobile|tablet|ipad/i)
-      # Fallback to external scraping if not found in local catalog, only for mobiles
+    elsif inferred_subcategory&.name.to_s.downcase.match?(/phone|mobile|tablet|ipad/i) || model_query.to_s.downcase.match?(/iphone|galaxy|pixel|phone|tab/i)
       gsm_specs = GsmArenaService.fetch_device_specs(model_query)
     end
 
-    ranked_candidates = rank_prefill_candidates(candidates, model_query)
-    best_match = ranked_candidates.first
+    # Merge Catalog Specs with Specifications from actual uploaded Ads
+    catalog_specs = gsm_specs&.dig(:specifications) || {}
+    combined_specs = catalog_specs.merge(ad_specs)
 
     brand_options = top_prefill_values(ranked_candidates.map(&:brand))
     manufacturer_options = top_prefill_values(ranked_candidates.map(&:manufacturer))
     price_stats = build_price_stats(ranked_candidates)
 
+    inferred_condition = best_match&.condition.presence || 'brand_new'
+
     render json: {
       strategy: strategy,
       confidence: prefill_confidence(best_match, ranked_candidates.length),
       total_matches: ranked_candidates.length,
+      category_id: inferred_category_id,
+      subcategory_id: inferred_subcategory_id,
       suggestions: {
-        title: gsm_specs&.dig(:title) || best_match&.title,
+        title: gsm_specs&.dig(:title) || best_match&.title || model_query.titleize,
         brand: gsm_specs&.dig(:brand) || best_match&.brand.presence || brand_options.first,
-        manufacturer: best_match&.manufacturer.presence || manufacturer_options.first,
-        description: build_prefill_description(
+        manufacturer: best_match&.manufacturer.presence || manufacturer_options.first || gsm_specs&.dig(:brand),
+        model: best_match&.model.presence || gsm_specs&.dig(:title) || best_match&.title,
+        condition: inferred_condition,
+        category_id: inferred_category_id,
+        subcategory_id: inferred_subcategory_id,
+        description: best_match&.description.presence || build_prefill_description(
           model_query: model_query,
-          category_name: category&.name,
-          subcategory_name: subcategory&.name,
+          category_name: inferred_category&.name,
+          subcategory_name: inferred_subcategory&.name,
           strategy: strategy,
           best_match: best_match
         ),
         price: price_stats[:median],
-        specifications: gsm_specs&.dig(:specifications) || {}
+        specifications: combined_specs
       },
       options: {
         brands: brand_options,
         manufacturers: manufacturer_options,
-        catalog_suggestions: DeviceCatalogService.search(model_query, subcategory&.name, category&.name).map { |p| { title: p['title'], slug: p['slug'], brand: p['brand'] } }
+        catalog_suggestions: DeviceCatalogService.search(model_query, inferred_subcategory&.name, inferred_category&.name).map { |p| { title: p['title'], slug: p['slug'], brand: p['brand'] } }
       },
       price_stats: price_stats
     }
@@ -651,7 +686,7 @@ class Seller::AdsController < ApplicationController
               .from_active_sellers
               .where(ads: { flagged: false })
               .where.not(title: [nil, ''])
-              .select(:title, :brand, :manufacturer, :description, :price, :category_id, :subcategory_id)
+              .select(:id, :title, :brand, :manufacturer, :model, :condition, :description, :price, :category_id, :subcategory_id, :specifications)
 
     scope = scope.where(category_id: category_id) if category_id.present?
     scope = scope.where(subcategory_id: subcategory_id) if subcategory_id.present?

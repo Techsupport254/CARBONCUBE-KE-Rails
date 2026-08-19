@@ -103,6 +103,31 @@ class SearchRedisService
       end
     end
 
+    def search_term_timestamps
+      RedisConnection.with do |redis|
+        all_keys = redis.keys("searches:search:*")
+        timestamps = {}
+        all_keys.each do |key|
+          data = redis.hgetall(key)
+          next if data.empty?
+          next if ['admin', 'sales'].include?(data['role'].to_s.downcase)
+
+          term = data['search_term'].to_s.downcase.strip
+          next if term.blank?
+
+          ts_int = data['timestamp'].to_i
+          ts = ts_int.positive? ? Time.at(ts_int).iso8601 : nil
+          next unless ts
+
+          timestamps[term] = ts if timestamps[term].nil? || ts > timestamps[term]
+        end
+        timestamps
+      end
+    rescue => e
+      Rails.logger.warn "search_term_timestamps error: #{e.message}"
+      {}
+    end
+
     def analytics
       RedisConnection.with do |redis|
         all_keys = redis.keys("searches:search:*")

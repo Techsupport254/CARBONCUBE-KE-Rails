@@ -3,4 +3,5 @@ class CategoriesSeller < ApplicationRecord
   self.primary_key = [:category_id, :seller_id]
   belongs_to :seller
   belongs_to :category
+  belongs_to :subcategory, optional: true
 end

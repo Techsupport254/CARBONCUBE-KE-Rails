@@ -35,9 +35,7 @@ class Admin::ReviewsController < ApplicationController
     end
 
     # DELETE /reviews/1
-    def destroy
-        @review.destroy
-    end
+    delegate :destroy, to: :@review
 
     private
     # Use callbacks to share common setup or constraints between actions.

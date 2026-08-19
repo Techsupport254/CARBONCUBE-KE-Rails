@@ -38,6 +38,7 @@ class Seller < ApplicationRecord
   has_many :categories_seller_records, class_name: 'CategoriesSeller', dependent: :delete_all
   has_one :categories_seller
   has_one :category, through: :categories_seller
+  has_one :subcategory, through: :categories_seller
   has_one :seller_tier, dependent: :destroy
   has_one :tier, through: :seller_tier
   

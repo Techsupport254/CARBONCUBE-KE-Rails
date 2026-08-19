@@ -2044,11 +2044,19 @@ class Seller::AnalyticsController < ApplicationController
       reveals_count = reveals.count
       
       ctr = clicks_count > 0 ? (reveals_count.to_f / clicks_count * 100).round(2) : 0
-      
+
+      parsed_media = begin
+        ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || [])
+      rescue
+        []
+      end
+
       {
         ad_id: ad.id,
         ad_title: ad.title,
         price: ad.price.to_f,
+        ad_media: parsed_media,
+        media: parsed_media,
         clicks: clicks_count,
         reveals: reveals_count,
         ctr: ctr
@@ -2319,6 +2327,7 @@ class Seller::AnalyticsController < ApplicationController
 
     # Popular searches filtered to only terms related to seller's categories (same keyword logic as category_insights)
     popular_all_related = filter_popular_searches_by_seller_categories(seller_categories, popular_all)
+    popular_monthly_related = filter_popular_searches_by_seller_categories(seller_categories, popular_monthly)
     popular_weekly_related = filter_popular_searches_by_seller_categories(seller_categories, popular_weekly)
     popular_daily_related = filter_popular_searches_by_seller_categories(seller_categories, popular_daily)
 
@@ -2335,20 +2344,22 @@ class Seller::AnalyticsController < ApplicationController
       popular_searches_weekly: normalize.call(popular_weekly),
       popular_searches_monthly: normalize.call(popular_monthly),
 
-      # Seller-scoped: only searches related to seller's product categories
-      popular_searches_all_time_related: normalize.call(popular_all_related),
-      popular_searches_weekly_related: normalize.call(popular_weekly_related),
-      popular_searches_daily_related: normalize.call(popular_daily_related),
+      # Seller-scoped: searches related to seller's product categories
+      popular_searches_all_time_related: normalize.call(popular_all_related.presence || popular_all),
+      popular_searches_monthly_related: normalize.call(popular_monthly_related.presence || popular_monthly),
+      popular_searches_weekly_related: normalize.call(popular_weekly_related.presence || popular_weekly),
+      popular_searches_daily_related: normalize.call(popular_daily_related.presence || popular_daily),
 
       search_trends: normalize.call(popular_weekly.first(10)),
       category_insights: category_insights,
+      term_last_searched_at: SearchRedisService.search_term_timestamps,
 
       last_updated: latest_analytics&.updated_at&.iso8601 || Time.current.iso8601,
       seller_categories: category_names
     }
   end
 
-  # Filter Redis popular searches to only terms matching any of the seller's category keywords.
+  # Filter Redis popular searches to only terms matching any of the seller's category keywords or catalog items.
   # Returns [term, count] array sorted by count desc, deduped by term (case-insensitive).
   def filter_popular_searches_by_seller_categories(seller_category_ids, popular_list)
     return [] if seller_category_ids.blank? || popular_list.blank?
@@ -2356,20 +2367,28 @@ class Seller::AnalyticsController < ApplicationController
     category_keywords = seller_category_ids.flat_map do |category_id|
       category = Category.find_by(id: category_id)
       next [] unless category
-      # Clean up category name: remove punctuation, remove stop words, split into keywords
+
       clean_name = category.name.downcase.gsub(/[,\.]/, '').gsub(/\band\b/, '').strip
-      [clean_name, clean_name.split].flatten.uniq.reject(&:empty?)
+      sub_names = category.subcategories.pluck(:name).map { |s| s.downcase.gsub(/[,\.]/, '').gsub(/\band\b/, '').strip }
+      [clean_name, clean_name.split, sub_names, sub_names.map(&:split)].flatten.uniq.reject(&:empty?)
     end.uniq
 
-    return [] if category_keywords.empty?
+    # Also include seller's ad titles / brand / model tokens for strong domain relevance (e.g. "iphone", "samsung", "toyota")
+    seller_ad_tokens = current_seller.ads.active.pluck(:title, :brand, :model).flatten.compact.flat_map do |text|
+      text.to_s.downcase.gsub(/[,\.]/, '').split
+    end.uniq.select { |w| w.length >= 3 }
+
+    all_keywords = (category_keywords + seller_ad_tokens).uniq
+    return popular_list if all_keywords.empty?
 
     related = popular_list.select do |term, _|
       term_str = term.to_s
       next false if term_str.blank?
       term_lower = term_str.downcase
-      # Match if search term includes keyword OR keyword includes search term (for partial matches)
-      category_keywords.any? { |kw| term_lower.include?(kw) || kw.include?(term_lower) }
+      all_keywords.any? { |kw| term_lower.include?(kw) || kw.include?(term_lower) }
     end
+
+    return popular_list if related.empty?
 
     by_term = related.group_by { |t, _| t.to_s.downcase }.transform_values { |pairs| pairs.max_by { |_, c| c } }
     by_term.values.sort_by { |_, c| -c }

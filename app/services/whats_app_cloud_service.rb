@@ -395,6 +395,8 @@ class WhatsAppCloudService
                 "[Audio Message]"
               when 'sticker'
                 "![Sticker](#{download_and_upload_media(msg_data['sticker']['id'], 'image')})"
+              when 'system'
+                msg_data.dig('system', 'body') || '[System message]'
               else
                 "[Unsupported Message: #{msg_data['type']}]"
               end

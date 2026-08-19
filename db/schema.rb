@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -290,8 +290,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
   create_table "categories_sellers", id: false, force: :cascade do |t|
     t.bigint "category_id", null: false
     t.uuid "seller_id", null: false
+    t.bigint "subcategory_id"
     t.index ["category_id", "seller_id"], name: "index_categories_sellers_on_category_id_and_seller_id"
+    t.index ["category_id", "subcategory_id"], name: "idx_categories_sellers_on_category_and_subcategory"
     t.index ["seller_id"], name: "index_categories_sellers_on_seller_id"
+    t.index ["subcategory_id"], name: "index_categories_sellers_on_subcategory_id"
   end
 
   create_table "click_events", force: :cascade do |t|
@@ -318,6 +321,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
     t.text "content"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "comment_votes", force: :cascade do |t|
+    t.bigint "comment_id", null: false
+    t.string "author_type"
+    t.uuid "author_id"
+    t.integer "value", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_type", "author_id"], name: "index_comment_votes_on_author_type_and_author_id"
+    t.index ["comment_id", "author_type", "author_id"], name: "index_comment_votes_on_comment_and_author", unique: true, where: "(author_id IS NOT NULL)"
+    t.index ["comment_id"], name: "index_comment_votes_on_comment_id"
   end
 
   create_table "conversations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -496,7 +511,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
     t.integer "file_size", null: false
     t.string "file_type", null: false
     t.string "file_url", null: false
-    t.string "uploaded_by_type", null: false
+    t.string "uploaded_by_type"
     t.uuid "uploaded_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -510,16 +525,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
   create_table "issue_comments", force: :cascade do |t|
     t.bigint "issue_id", null: false
     t.text "content", null: false
-    t.string "author_type", null: false
+    t.string "author_type"
     t.uuid "author_id"
     t.boolean "is_internal", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "parent_id"
     t.index ["author_type", "author_id"], name: "index_issue_comments_on_author"
     t.index ["author_type", "author_id"], name: "index_issue_comments_on_author_type_and_author_id"
     t.index ["created_at"], name: "index_issue_comments_on_created_at"
     t.index ["is_internal"], name: "index_issue_comments_on_is_internal"
     t.index ["issue_id"], name: "index_issue_comments_on_issue_id"
+    t.index ["parent_id"], name: "index_issue_comments_on_parent_id"
   end
 
   create_table "issues", force: :cascade do |t|
@@ -615,7 +632,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", force: :cascade do |t|
+  create_table "monitoring_metrics", id: false, force: :cascade do |t|
+    t.bigserial "id", null: false
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"
@@ -1157,9 +1175,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
   add_foreign_key "cart_items", "ads"
   add_foreign_key "cart_items", "buyers", on_delete: :cascade
   add_foreign_key "cart_items", "buyers", on_delete: :cascade
+  add_foreign_key "categories_sellers", "subcategories"
   add_foreign_key "click_events", "ads"
   add_foreign_key "click_events", "buyers", on_delete: :cascade
   add_foreign_key "click_events", "buyers", on_delete: :cascade
+  add_foreign_key "comment_votes", "issue_comments", column: "comment_id"
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "ads"
@@ -1171,6 +1191,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_18_150000) do
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "email_communication_logs", "sellers"
   add_foreign_key "issue_attachments", "issues"
+  add_foreign_key "issue_comments", "issue_comments", column: "parent_id"
   add_foreign_key "issue_comments", "issues"
   add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
   add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade

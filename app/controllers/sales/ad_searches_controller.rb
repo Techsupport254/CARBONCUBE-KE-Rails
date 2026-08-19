@@ -11,6 +11,11 @@ class Sales::AdSearchesController < ApplicationController
     filters = {}
     filters[:search_term] = params[:search_term] if params[:search_term].present?
     filters[:buyer_id] = params[:buyer_id] if params[:buyer_id].present?
+    if params[:seller_id].present? || params[:id].present?
+      seller_param = (params[:seller_id] || params[:id]).to_s.strip
+      seller = Seller.find_by(id: seller_param) || Seller.find_by(branch_id: seller_param)
+      filters[:seller_id] = seller ? seller.id : seller_param
+    end
     filters[:start_date] = params[:start_date] if params[:start_date].present?
     filters[:exclude_roles] = ['admin', 'sales']
     
@@ -51,18 +56,6 @@ class Sales::AdSearchesController < ApplicationController
       else
         { avatar: nil, display_name: nil }
       end
-    end
-
-    # Exclude specific individual search records (display_name + search_term combos)
-    excluded_records = [
-      ['pantech kenya limited', 'oppo a57'],
-      ['carbon mobile', 'samsung'],
-      ['sales at carbon', 'top zone'],
-    ].freeze
-    formatted_searches.reject! do |search|
-      name = search[:user_profile]&.dig(:display_name).to_s.strip.downcase
-      term = search[:search_term].to_s.strip.downcase
-      excluded_records.include?([name, term])
     end
 
     render json: {
