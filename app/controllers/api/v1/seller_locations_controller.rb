@@ -49,16 +49,20 @@ class Api::V1::SellerLocationsController < ApplicationController
           branch = branch_coords[seller.id] || first_branches[seller.id]
           full_location = [branch&.location, seller.location].compact.map(&:strip).reject(&:blank?).uniq.join(', ')
           full_location = seller.location if full_location.blank?
+          display_name = seller.enterprise_name.presence || seller.fullname.presence || 'Merchant'
+          resolved_county = seller.county&.name.presence || 'Not Available'
+          resolved_sub_county = seller.sub_county&.name.presence || 'Not Available'
+          display_location = full_location.presence || seller.city.presence || 'Not Available'
 
           {
             id: seller.id,
             fullname: seller.fullname,
-            enterprise_name: seller.enterprise_name,
-            location: full_location,
+            enterprise_name: display_name,
+            location: display_location,
             branch_name: branch&.name,
             city: seller.city,
-            county_name: seller.county&.name || 'Unknown',
-            sub_county_name: seller.sub_county&.name || 'Unknown',
+            county_name: resolved_county,
+            sub_county_name: resolved_sub_county,
             latitude: branch&.latitude,
             longitude: branch&.longitude,
             location_precision: branch&.location_precision || 'approximate',
