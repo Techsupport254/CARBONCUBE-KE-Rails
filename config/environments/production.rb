@@ -102,12 +102,14 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  config.hosts = nil # Allow all hosts internally
-
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # Allow requests from frontend container and external domains
-  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Allow all hosts (internal Docker network, reverse proxies, and public domains)
+  config.hosts = [
+    ".carboncube-ke.com",
+    "carboncube-ke.com",
+    "localhost",
+    "127.0.0.1",
+    /.*/
+  ]
 
   # Use a different cache store in production.
   # Use file store if Redis is not available, otherwise use Redis
