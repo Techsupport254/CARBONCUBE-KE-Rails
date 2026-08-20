@@ -8,7 +8,6 @@
     "**/test",
     "**/spec",
     "**/coverage",
-    ".env*",
     "config/master.key"
   ],
   "steps": {
