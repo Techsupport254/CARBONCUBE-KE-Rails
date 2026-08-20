@@ -1,4 +1,16 @@
 {
+  "exclude": [
+    "**/node_modules",
+    "**/.git",
+    "**/log",
+    "**/scratch",
+    "**/vendor/bundle",
+    "**/test",
+    "**/spec",
+    "**/coverage",
+    ".env*",
+    "config/master.key"
+  ],
   "steps": {
     "prune:node": {
       "commands": ["rm -rf node_modules && bun install --production"]
