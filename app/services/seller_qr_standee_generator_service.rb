@@ -100,8 +100,8 @@ class SellerQrStandeeGeneratorService
       center_logo_cy = qr_y + qr_view_size / 2
       center_logo_r = 24
 
-      name_approx_len = [shop_name.length * 12, 280].min
-      badge_offset_x = (name_approx_len / 2) + 14
+      name_approx_len = [shop_name.length * 15, 320].min
+      badge_offset_x = (name_approx_len / 2.0) + 20
 
       # Avatar SVG snippet
       top_avatar_content = if seller_avatar_b64

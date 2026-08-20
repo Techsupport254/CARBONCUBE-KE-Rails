@@ -3,6 +3,8 @@ class SellerTier < ApplicationRecord
   belongs_to :tier
   belongs_to :payment_transaction, optional: true
 
+  delegate :name, to: :tier, allow_nil: true
+
   validates :duration_months, presence: true, numericality: { greater_than_or_equal_to: 0 }
 
   def subscription_countdown

@@ -312,9 +312,9 @@ class Seller::SellersController < ApplicationController
   end
 
 
-  # Upload raw PDF file
+  # Upload PDF file as an image resource so Cloudinary can extract pages for previews.
   def upload_file_only(file)
-    uploaded = Cloudinary::Uploader.upload(file.tempfile.path, resource_type: "raw", upload_preset: ENV['UPLOAD_PRESET'], folder: "business_permits")
+    uploaded = Cloudinary::Uploader.upload(file.tempfile.path, resource_type: "image", upload_preset: ENV['UPLOAD_PRESET'], folder: "business_permits")
     uploaded["secure_url"]
   end
 

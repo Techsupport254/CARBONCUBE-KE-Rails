@@ -562,13 +562,13 @@ private
   end
 
   # Document Upload (direct upload, no processing)
+  # Upload as an "image" resource so Cloudinary can extract PDF pages for previews.
   def process_and_upload_document(document)
     begin
-      # Upload directly to Cloudinary without any processing
       uploaded = Cloudinary::Uploader.upload(document.tempfile.path,
         upload_preset: ENV['UPLOAD_PRESET'],
         folder: "seller_documents",
-        resource_type: "raw"
+        resource_type: "image"
       )
       uploaded["secure_url"]
     rescue => e

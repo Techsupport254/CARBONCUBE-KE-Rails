@@ -176,6 +176,9 @@ class Ad < ApplicationRecord
   after_commit :schedule_seller_category_placement_sync, on: [:create, :destroy]
   after_commit :schedule_seller_category_placement_sync, on: :update, if: :should_sync_seller_category_placement?
 
+  # Auto-enrich low-quality titles, specifications, and descriptions on upload
+  after_commit :schedule_auto_quality_enrichment, on: :create
+
   # Soft delete
   def flag
     update(flagged: true)
@@ -597,6 +600,10 @@ class Ad < ApplicationRecord
 
   def schedule_seller_category_placement_sync
     SyncSellerCategoryPlacementJob.perform_later(seller_id)
+  end
+
+  def schedule_auto_quality_enrichment
+    AutoEnrichAdQualityJob.perform_later(id)
   end
 
   def should_sync_to_google_merchant?

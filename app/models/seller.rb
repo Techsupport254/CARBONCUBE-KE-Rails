@@ -95,6 +95,11 @@ class Seller < ApplicationRecord
     end
   end
 
+  # Alias for compatibility with areas expecting name
+  def name
+    fullname.presence || enterprise_name
+  end
+
   # Alias for compatibility with areas expecting average_rating
   def average_rating
     calculate_mean_rating

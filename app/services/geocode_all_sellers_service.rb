@@ -71,6 +71,17 @@ class GeocodeAllSellersService
   def geocode_seller(seller)
     raw_loc = seller.location.to_s.strip
     cleaned_loc = sanitize_location(raw_loc)
+
+    # 1. Try High-Precision Kenya Gazetteer first
+    gazetteer_match = KenyaGazetteerService.resolve(cleaned_loc, seller)
+    if gazetteer_match && %w[exact street estate].include?(gazetteer_match[:precision])
+      return {
+        lat: gazetteer_match[:lat],
+        lon: gazetteer_match[:lon],
+        precision: gazetteer_match[:precision]
+      }
+    end
+
     city = seller.city.to_s.strip
     sub_county = seller.sub_county&.name.to_s.strip
     county = seller.county&.name.to_s.strip
