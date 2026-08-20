@@ -1,0 +1,26 @@
+# Git
+.git/
+.gitignore
+
+# Environment / secrets
+.env*
+!.env.example
+config/master.key
+
+# Rails logs & temp files
+log/
+tmp/
+
+# One-off scratch scripts (large sync files, etc.)
+scratch/
+
+# Node packages are installed in the image build
+node_modules/
+
+# Ruby bundle caches
+vendor/bundle
+
+# Test directories
+test/
+spec/
+coverage/
