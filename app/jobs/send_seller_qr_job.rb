@@ -27,7 +27,13 @@ class SendSellerQrJob < ApplicationJob
     rescue => e
       Rails.logger.error "SendSellerQrJob: Failed for seller #{seller_id}: #{e.message}"
       Rails.logger.error e.backtrace.first(10).join("\n")
-      raise e
+
+      begin
+        Rails.logger.info "SendSellerQrJob: Falling back to welcome email for seller #{seller_id}"
+        WelcomeMailer.welcome_email(seller, to_email).deliver_now
+      rescue => welcome_error
+        Rails.logger.error "SendSellerQrJob: Welcome email fallback also failed for seller #{seller_id}: #{welcome_error.message}"
+      end
     end
   end
 end

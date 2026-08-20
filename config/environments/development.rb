@@ -12,7 +12,7 @@ class DualLogger < ActiveSupport::Logger
     /ActiveModelSerializers/i,
     /ActiveModel::Serializer/i,
     /Serializer.*Adapter/i,
-    /^\s*(Rendering|Rendered)\s+\S+_mailer\//i,
+    /^\s*(Rendering|Rendered)\s+/i,
     # Suppress per-request MONITORING_METRIC lines — metrics are stored in DB already
     /^MONITORING_METRIC:/,
     # Suppress verbose Sentry/Skylight startup banners
@@ -110,6 +110,12 @@ Rails.application.configure do
     if defined?(ActionController::LogSubscriber)
       ActiveSupport::Notifications.unsubscribe ActionController::LogSubscriber
       ActionController::LogSubscriber.logger = Logger.new(File::NULL)
+    end
+
+    # Suppress ActionView::LogSubscriber which logs "Rendering text template", "Rendered ..." messages
+    if defined?(ActionView::LogSubscriber)
+      ActiveSupport::Notifications.unsubscribe ActionView::LogSubscriber
+      ActionView::LogSubscriber.logger = Logger.new(File::NULL)
     end
     
     # Suppress ActiveModel::Serializers logging
