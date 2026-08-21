@@ -24,7 +24,7 @@ class IssueMailer < ApplicationMailer
 
   def status_updated
     issue = params[:issue]
-    old_status = issue.previous_changes['status']&.first&.humanize || 'Unknown'
+    old_status = params[:old_status] || issue.previous_changes['status']&.first&.humanize || 'Unknown'
     new_status = issue.status.humanize
     tracking_url = "#{ENV['REACT_APP_SITE_URL']}/issues"
 

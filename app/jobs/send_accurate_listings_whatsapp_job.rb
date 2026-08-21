@@ -2,13 +2,8 @@ class SendAccurateListingsWhatsappJob < ApplicationJob
   queue_as :default
 
   def perform(seller_email)
-    unless seller_email == 'kiruivictor097@gmail.com'
-      Rails.logger.warn "TEST MODE: Skipping seller #{seller_email} - only kiruivictor097@gmail.com allowed"
-      return
-    end
-
     seller = Seller.find_by(email: seller_email)
-    
+
     if seller.nil?
       Rails.logger.error "SendAccurateListingsWhatsappJob: Seller with email #{seller_email} not found"
       return

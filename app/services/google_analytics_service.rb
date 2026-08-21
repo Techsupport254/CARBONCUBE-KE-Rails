@@ -70,7 +70,7 @@ class GoogleAnalyticsService
           desc: true
         )
       ],
-      limit: 20
+      limit: 250
     )
 
     response = @service.run_property_report(property, request)

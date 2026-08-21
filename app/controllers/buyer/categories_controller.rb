@@ -1,14 +1,24 @@
 # app/controllers/buyer/categories_controller.rb
 class Buyer::CategoriesController < ApplicationController
   def index
-    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v2', expires_in: 24.hours) do
-      # Get categories with subcategories and ads count
-      Category.includes(:subcategories, :ads).all.map do |category|
+    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v4', expires_in: 5.minutes) do
+      # Precompute active ads count per category and subcategory using the single source of truth:
+      # active undeleted ads belonging to undeleted, unblocked sellers
+      active_ads = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false })
+      active_ads_by_category = active_ads.group(:category_id).count
+      active_ads_by_subcategory = active_ads.where.not(subcategory_id: nil).group(:subcategory_id).count
+
+      Category.includes(:subcategories).all.map do |category|
         category_data = category.as_json(
           include: :subcategories,
           only: [:id, :name, :description, :created_at, :updated_at, :image_url]
         )
-        category_data['ads_count'] = category.ads.where(deleted: false).count
+        category_data['ads_count'] = active_ads_by_category[category.id] || 0
+        if category_data['subcategories'].is_a?(Array)
+          category_data['subcategories'].each do |sub|
+            sub['ads_count'] = active_ads_by_subcategory[sub['id']] || 0
+          end
+        end
         category_data
       end
     end
@@ -21,14 +31,14 @@ class Buyer::CategoriesController < ApplicationController
       include: :subcategories,
       only: [:id, :name, :description, :created_at, :updated_at, :image_url]
     )
-    category_data['ads_count'] = @category.ads.where(deleted: false).count
+    category_data['ads_count'] = @category.ads.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false }).count
     render json: category_data
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Category not found' }, status: :not_found
   end
 
   def analytics
-    @category_analytics = Rails.cache.fetch('buyer_category_analytics', expires_in: 24.hours) do
+    @category_analytics = Rails.cache.fetch('buyer_category_analytics', expires_in: 5.minutes) do
       # Click-event based metrics (ad clicks, wishlist clicks, reveal clicks)
       click_rows = Category.joins(ads: :click_events)
                            .where(ads: { deleted: false })

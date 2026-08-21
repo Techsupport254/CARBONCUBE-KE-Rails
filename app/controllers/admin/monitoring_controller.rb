@@ -84,7 +84,7 @@ class Admin::MonitoringController < ApplicationController
   # GET /admin/monitoring/uptime_data
   def uptime_data
     require 'net/http'
-    base_url = ENV['NEXT_PUBLIC_UPTIME_KUMA_URL'] || 'http://victor-uptimekuma-1ee082-49-12-235-140.traefik.me'
+    base_url = ENV['NEXT_PUBLIC_UPTIME_KUMA_URL'] || 'http://centimarket-uptimekuma-8a0b11-204-168-216-76.sslip.io'
     slug     = 'carboncube-status'
 
     # Fetch heartbeat data and status page config in parallel

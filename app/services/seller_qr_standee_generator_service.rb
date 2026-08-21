@@ -15,7 +15,7 @@ class SellerQrStandeeGeneratorService
     return nil unless seller.present?
 
     temp_dir = Rails.root.join('tmp', 'qr_standees')
-    FileUtils.mkdir_p(temp_dir) unless Dir.exist?(temp_dir)
+    FileUtils.mkdir_p(temp_dir)
 
     slug = (seller.enterprise_name || seller.username || seller.id.to_s).parameterize
     output_png = temp_dir.join("standee_#{seller.id}_#{Time.current.to_i}.png").to_s
@@ -57,7 +57,7 @@ class SellerQrStandeeGeneratorService
             avatar_url = seller.profile_picture
             avatar_url = "https:#{avatar_url}" if avatar_url.start_with?('//')
             if avatar_url.start_with?('http://', 'https://')
-              URI.open(avatar_url, 'rb', read_timeout: 3) do |f|
+              URI.parse(avatar_url).open('rb', read_timeout: 3) do |f|
                 seller_avatar_b64 = Base64.strict_encode64(f.read)
               end
             end
@@ -195,7 +195,7 @@ class SellerQrStandeeGeneratorService
       
       success = system(cmd)
 
-      File.delete(temp_svg) if File.exist?(temp_svg)
+      FileUtils.rm_f(temp_svg)
 
       if success && File.exist?(output_png)
         output_png
@@ -206,7 +206,7 @@ class SellerQrStandeeGeneratorService
     rescue => e
       Rails.logger.error "❌ SellerQrStandeeGeneratorService error: #{e.message}"
       Rails.logger.error e.backtrace.first(10).join("\n")
-      File.delete(temp_svg) if File.exist?(temp_svg)
+      FileUtils.rm_f(temp_svg)
       nil
     end
   end

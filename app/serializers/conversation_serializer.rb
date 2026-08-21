@@ -77,7 +77,14 @@ class ConversationSerializer < ActiveModel::Serializer
       title: object.ad.title,
       price: object.ad.price,
       description: object.ad.description,
-      media: object.ad.media
+      image: object.ad.first_media_url,
+      first_media_url: object.ad.first_media_url,
+      media_urls: object.ad.media_urls,
+      media: object.ad.media,
+      category: object.ad.category&.name,
+      location: object.ad.try(:seller)&.try(:location),
+      condition: object.ad.try(:condition),
+      brand: object.ad.try(:brand)
     }
   end
 

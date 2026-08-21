@@ -4,19 +4,19 @@ require 'json'
 
 class AdQualityEnricherService
   class << self
-    def enrich!(ad)
-      new(ad).process!
+    def enrich!(ad_record)
+      new(ad_record).process!
     end
 
     def enrich_by_id(ad_id)
-      ad = Ad.find_by(id: ad_id)
-      return nil unless ad
-      enrich!(ad)
+      ad_record = Ad.find_by(id: ad_id)
+      return nil unless ad_record
+      enrich!(ad_record)
     end
   end
 
-  def initialize(ad)
-    @ad = ad
+  def initialize(ad_record)
+    @ad = ad_record
   end
 
   def process!
@@ -179,7 +179,7 @@ class AdQualityEnricherService
     end
 
     # 7. Generic 3.5mm Earphones (fallback for raw "earphones" / "wired earphones")
-    if (title_text.downcase == 'wired earphones' || title_text.downcase == 'earphones' || title_text.downcase == 'wired earphone') && @ad.category_id == 2
+    if ['wired earphones', 'earphones', 'wired earphone'].include?(title_text.downcase) && @ad.category_id == 2
       detected_brand = brand_text.present? && !['none', 'others', 'china'].include?(brand_text.downcase) ? brand_text : 'Universal'
       return {
         title: "#{detected_brand} 3.5mm In-Ear Wired Stereo Earphones with Microphone",

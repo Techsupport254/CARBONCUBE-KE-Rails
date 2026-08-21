@@ -5,7 +5,11 @@ class AdSerializer < ActiveModel::Serializer
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
              :seller_is_verified, :seller_document_verified, :is_added_by_sales,
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
-             :minimum_order_quantity, :display_price?
+             :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged
+
+  def is_flagged
+    object.flagged?
+  end
 
   has_one :seller, serializer: SellerSerializer
   has_many :reviews, if: :include_reviews?

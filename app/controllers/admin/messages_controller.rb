@@ -4,23 +4,29 @@ class Admin::MessagesController < ApplicationController
 
   # GET /admin/conversations/:conversation_id/messages
   def index
-    # Get all related conversation IDs for this participant set
-    # This ensures marketing broadcasts (admin-seller) show up in specific marketplace threads
+    is_buyer_seller = @conversation.buyer_id.present? && @conversation.seller_id.present?
+    is_seller_to_seller = @conversation.seller_id.present? && @conversation.inquirer_seller_id.present?
+    is_support_thread = @conversation.buyer_id.nil? && (@conversation.admin_id.present? || @conversation.is_whatsapp?)
+    is_buyer_support = @conversation.seller_id.nil? && @conversation.buyer_id.present? && @conversation.admin_id.present?
+
     related_conv_ids = [@conversation.id]
-    
-    if @conversation.seller_id.present?
-      # Find all Admin-Seller support conversations (no buyer) for this seller
-      admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id)
-                                      .where(buyer_id: nil)
-                                      .where.not(admin_id: nil)
+
+    if is_buyer_seller
+      buyer_seller_convs = Conversation.where(buyer_id: @conversation.buyer_id, seller_id: @conversation.seller_id).pluck(:id)
+      related_conv_ids.concat(buyer_seller_convs)
+    elsif is_seller_to_seller
+      s2s_convs = Conversation.where(
+        "(seller_id = ? AND inquirer_seller_id = ?) OR (seller_id = ? AND inquirer_seller_id = ?)",
+        @conversation.seller_id, @conversation.inquirer_seller_id, @conversation.inquirer_seller_id, @conversation.seller_id
+      ).pluck(:id)
+      related_conv_ids.concat(s2s_convs)
+    elsif is_support_thread
+      admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id, buyer_id: nil)
+                                      .where("admin_id IS NOT NULL OR is_whatsapp = true")
                                       .pluck(:id)
       related_conv_ids.concat(admin_seller_convs)
-    end
-    
-    if @conversation.buyer_id.present?
-      # Find all Admin-Buyer support conversations (no seller) for this buyer
-      admin_buyer_convs = Conversation.where(buyer_id: @conversation.buyer_id)
-                                     .where(seller_id: nil)
+    elsif is_buyer_support
+      admin_buyer_convs = Conversation.where(buyer_id: @conversation.buyer_id, seller_id: nil)
                                      .where.not(admin_id: nil)
                                      .pluck(:id)
       related_conv_ids.concat(admin_buyer_convs)

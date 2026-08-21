@@ -343,11 +343,6 @@ class PresenceChannel < ApplicationCable::Channel
     begin
       conversation = Conversation.find_by(id: conversation_id)
       return unless conversation
-      
-      # For staff roles, only mark as read if they are the assigned admin/salesperson
-      if staff_user?(connection.current_user)
-        return unless conversation.admin_id == connection.current_user.id
-      end
 
       # Mark all unread messages in this conversation as read
       unread_messages = conversation.messages.unread.where.not(sender: connection.current_user)
@@ -369,11 +364,6 @@ class PresenceChannel < ApplicationCable::Channel
       
       # Don't mark your own messages as read
       return if message.sender == connection.current_user
-
-      # For staff roles, only mark as read if they are the assigned admin/salesperson
-      if staff_user?(connection.current_user)
-        return unless message.conversation.admin_id == connection.current_user.id
-      end
       
       # Update message read status
       message.mark_as_read!
@@ -393,11 +383,6 @@ class PresenceChannel < ApplicationCable::Channel
       
       # Don't mark your own messages as delivered
       return if message.sender == connection.current_user
-
-      # For staff roles, only mark as delivered if they are the assigned admin/salesperson
-      if staff_user?(connection.current_user)
-        return unless message.conversation.admin_id == connection.current_user.id
-      end
       
       # Update message delivered status
       message.mark_as_delivered!

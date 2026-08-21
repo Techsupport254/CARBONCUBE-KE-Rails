@@ -1,13 +1,15 @@
 import { Section, Text } from "@react-email/components"
+import { Markdown } from "@react-email/markdown"
 import { EmailLayout } from "../_components/email_layout"
 import { Button } from "../_components/button"
 
 type DocumentExpiryReminderProps = {
   sellerName: string
   updateUrl: string
+  customMessage?: string
 }
 
-export default function DocumentExpiryReminder({ sellerName, updateUrl }: DocumentExpiryReminderProps) {
+export default function DocumentExpiryReminder({ sellerName, updateUrl, customMessage }: DocumentExpiryReminderProps) {
   return (
     <EmailLayout preview="Your verification documents are expiring soon">
       <Section className="rsp-section" style={{ padding: "20px" }}>
@@ -16,16 +18,24 @@ export default function DocumentExpiryReminder({ sellerName, updateUrl }: Docume
         </Text>
 
         <Text className="rsp-h1" style={{ margin: "0 0 8px", fontSize: "17px", fontWeight: 700, color: "#0f172a", lineHeight: "22px" }}>
-          Your documents expire soon
+          {customMessage ? "Action Required" : "Your documents expire soon"}
         </Text>
 
-        <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
-          Hi {sellerName},
-        </Text>
+        {customMessage ? (
+          <Markdown>
+            {customMessage.replace(/\*(.*?)\*/g, '**$1**').replace(/(https?:\/\/[^\s]+)/g, '[$1]($1)')}
+          </Markdown>
+        ) : (
+          <>
+            <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+              Hi {sellerName},
+            </Text>
 
-        <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
-          Your verification documents on Carbon Cube Kenya are set to expire in about one month. To keep your seller account active and maintain buyer trust, please upload updated documents.
-        </Text>
+            <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+              Your verification documents on Carbon Cube Kenya are set to expire in about one month. To keep your seller account active and maintain buyer trust, please upload updated documents.
+            </Text>
+          </>
+        )}
 
         <Section style={{ margin: "14px 0" }}>
           <Button href={updateUrl}>

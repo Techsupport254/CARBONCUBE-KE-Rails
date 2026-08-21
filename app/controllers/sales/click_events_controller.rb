@@ -30,13 +30,16 @@ class Sales::ClickEventsController < ApplicationController
       # Check if timestamps are needed (they can be expensive for large datasets)
       include_timestamps = params[:include_timestamps] != 'false'
       
-      # Get analytics data from service with optimized options
+      # Get analytics data from service with optimized options (cached to prevent re-aggregating on every pagination request)
       analytics_options = {
         include_timestamps: include_timestamps,
         include_breakdowns: true,
         include_top_ads: false  # Top ads are now in dedicated /best_ads endpoint
       }
-      analytics_data = service.analytics(options: analytics_options)
+      cache_key = "sales_click_events_summary_v1_#{filters.to_param}_#{device_hash}_#{include_timestamps}"
+      analytics_data = Rails.cache.fetch(cache_key, expires_in: 2.minutes) do
+        service.analytics(options: analytics_options)
+      end
       
       # Get recent events without user agent parsing for better performance
       # User agent parsing is expensive and can be done client-side if needed
@@ -107,9 +110,12 @@ class Sales::ClickEventsController < ApplicationController
         device_hash: device_hash
       )
       
-      # Get top ads only (no other data needed)
-      top_ads = service.top_ads_by_reveals(limit: limit)
-      
+      # Get top ads with caching
+      cache_key = "sales_best_ads_#{filters.to_param}_#{limit}_#{device_hash}"
+      top_ads = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+        service.top_ads_by_reveals(limit: limit)
+      end
+
       render json: {
         ads: top_ads,
         total: top_ads.count,

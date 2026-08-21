@@ -3,31 +3,59 @@ class SellerCommunicationsMailer < ApplicationMailer
 
   skip_before_action :add_deliverability_headers, only: [:seller_growth_initiative, :app_promo, :listing_reminder]
 
-  def custom_communication
-    user = params[:user] || params[:seller]
-    user_type = params[:user_type] || 'seller'
-    custom_subject = params[:subject]
-    custom_message = params[:message]
+  def compliance_reminder
+    @user = params[:seller] || params[:user]
+    @user_type = 'seller'
+    @custom_subject = params[:subject] || "Action Required: Document Compliance — #{@user&.enterprise_name || @user&.fullname}"
+    @custom_message = params[:message]
+    @recipient_name = @user&.enterprise_name.presence || @user&.fullname.presence || 'Partner'
+    @doc_url = params[:doc_url] || build_document_compliance_url(@recipient_name)
+    to_email = params[:to_email].presence || @user&.email
 
-    fullname = if user_type == 'seller'
-      user.fullname.presence || user.enterprise_name.presence || 'Seller'
+    timestamp = Time.current.strftime('%Y%m%d%H%M')
+    unique_subject = "#{@custom_subject} - #{timestamp}"
+
+    mail_message = mail(
+      to: to_email,
+      subject: unique_subject
+    )
+
+    mail_message['In-Reply-To'] = nil
+    mail_message['References'] = nil
+    mail_message['Thread-Topic'] = nil
+    mail_message['Thread-Index'] = nil
+    mail_message['X-Threading'] = 'false'
+    mail_message['X-Conversation-ID'] = SecureRandom.uuid
+
+    mail_message
+  end
+
+  def custom_communication
+    @user = params[:user] || params[:seller]
+    @user_type = params[:user_type] || 'seller'
+    @custom_subject = params[:subject]
+    @custom_message = params[:message]
+    to_email = params[:to_email].presence || @user&.email
+
+    fullname = if @user_type == 'seller'
+      @user&.fullname.presence || @user&.enterprise_name.presence || 'Seller'
     else
-      user.fullname.presence || user.username.presence || 'Buyer'
+      @user&.fullname.presence || @user&.username.presence || 'Buyer'
     end
     first_name = fullname.to_s.split(' ').first.presence || "Partner"
 
     timestamp = Time.current.strftime('%Y%m%d%H%M')
-    unique_subject = "#{custom_subject} - #{timestamp}"
+    unique_subject = "#{@custom_subject} - #{timestamp}"
 
     mail_message = mail(
-      to: user.email,
+      to: to_email,
       subject: unique_subject,
       react: {
         fullname: fullname,
         first_name: first_name,
-        subject: custom_subject,
-        message: custom_message,
-        user_type: user_type
+        subject: @custom_subject,
+        message: @custom_message,
+        user_type: @user_type
       }
     )
 
@@ -40,6 +68,7 @@ class SellerCommunicationsMailer < ApplicationMailer
 
     mail_message
   end
+
 
   def general_update
     user = params[:seller] || params[:user]
@@ -397,6 +426,13 @@ class SellerCommunicationsMailer < ApplicationMailer
         support_url: support_url
       }
     )
+  end
+
+  private
+
+  def build_document_compliance_url(name)
+    enterprise_param = CGI.escape(name.to_s.downcase.strip.gsub(/[^a-z0-9]+/, '-').gsub(/\A-+|-+\z/, ''))
+    "https://carboncube-ke.com/profile?edit=true&tab=documents&utm_source=compliance&utm_medium=email&utm_campaign=document_verification&enterprise=#{enterprise_param}"
   end
 end
 

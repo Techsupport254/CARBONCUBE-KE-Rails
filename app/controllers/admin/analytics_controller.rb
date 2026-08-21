@@ -9,20 +9,18 @@ class Admin::AnalyticsController < ApplicationController
     @total_reviews = Review.count
 
     # Top 6 Most Wish-Listed Ads Overall
-    top_wishlisted_ads = Ad.joins(:wish_lists)
-                        .select('ads.id AS ad_id, ads.title AS ad_title, ads.price AS ad_price, COUNT(wish_lists.id) AS wishlist_count, ads.media AS media')
-                        .group('ads.id')
-                        .order('wishlist_count DESC')
-                        .limit(6)
-                        .map { |record| 
-                          {
-                            ad_id: record.ad_id,
-                            ad_title: record.ad_title,
-                            ad_price: record.ad_price,
-                            wishlist_count: record.wishlist_count,
-                            media: record.media
-                          }
-                        }
+    wishlist_counts = WishList.group(:ad_id).count
+    top_wishlisted_ad_ids = wishlist_counts.sort_by { |_, c| -c }.first(24).map(&:first)
+    top_wishlisted_ads = Ad.where(id: top_wishlisted_ad_ids).map do |ad|
+      {
+        ad_id: ad.id,
+        ad_title: ad.title,
+        ad_price: ad.price,
+        wishlist_count: wishlist_counts[ad.id] || 0,
+        media: ad.media
+      }
+    end
+    top_wishlisted_ads = top_wishlisted_ads.sort_by { |ad| -ad[:wishlist_count] }
 
     # Total Ads Wish-Listed
     total_ads_wish_listed = WishList.count
@@ -34,14 +32,14 @@ class Admin::AnalyticsController < ApplicationController
 
     # Calculate buyer total wishlists
     buyers_by_wishlists = Buyer.joins(:wish_lists)
-                              .select('buyers.id AS buyer_id, buyers.fullname, COUNT(wish_lists.id) AS total_wishlists')
-                              .group('buyers.id')
+                              .select('buyers.id AS buyer_id, buyers.fullname, buyers.email, buyers.profile_picture, COUNT(wish_lists.id) AS total_wishlists')
+                              .group('buyers.id, buyers.profile_picture')
                               .order('total_wishlists DESC')
 
     # Calculate buyer total click events (sum of all click types)
     buyers_by_clicks = Buyer.joins(:click_events)
-                              .select('buyers.id AS buyer_id, buyers.fullname, COUNT(click_events.id) AS total_clicks')
-                              .group('buyers.id')
+                              .select('buyers.id AS buyer_id, buyers.fullname, buyers.email, buyers.profile_picture, COUNT(click_events.id) AS total_clicks')
+                              .group('buyers.id, buyers.profile_picture')
                               .order('total_clicks DESC')
 
     # Dynamically select the buyers' insights based on the metric
@@ -58,28 +56,28 @@ class Admin::AnalyticsController < ApplicationController
 
     # Calculate seller mean rating
     sellers_by_rating = Seller.joins(ads: :reviews)
-                        .select('sellers.id, sellers.fullname, COALESCE(AVG(reviews.rating), 0) AS mean_rating')
-                        .group('sellers.id')
+                        .select('sellers.id, sellers.fullname, sellers.email, sellers.enterprise_name, sellers.profile_picture, COALESCE(AVG(reviews.rating), 0) AS mean_rating')
+                        .group('sellers.id, sellers.profile_picture')
                         .order('mean_rating DESC')
 
     # Calculate seller total ads
     sellers_by_ads = Seller.joins(:ads)
-                        .select('sellers.id, sellers.fullname, COUNT(ads.id) AS total_ads')
-                        .group('sellers.id')
+                        .select('sellers.id, sellers.fullname, sellers.email, sellers.enterprise_name, sellers.profile_picture, COUNT(ads.id) AS total_ads')
+                        .group('sellers.id, sellers.profile_picture')
                         .order('total_ads DESC')
 
     # Calculate seller total reveal clicks
     sellers_by_reveal_clicks = Seller.joins(ads: :click_events)
                         .where(click_events: { event_type: 'Reveal-Seller-Details' })
-                        .select('sellers.id, sellers.fullname, COUNT(click_events.id) AS reveal_clicks')
-                        .group('sellers.id')
+                        .select('sellers.id, sellers.fullname, sellers.email, sellers.enterprise_name, sellers.profile_picture, COUNT(click_events.id) AS reveal_clicks')
+                        .group('sellers.id, sellers.profile_picture')
                         .order('reveal_clicks DESC')
 
     # Calculate seller total ad clicks
     sellers_by_ad_clicks = Seller.joins(ads: :click_events)
                         .where(click_events: { event_type: 'Ad-Click' })
-                        .select('sellers.id, sellers.fullname, COUNT(click_events.id) AS total_ad_clicks')
-                        .group('sellers.id')
+                        .select('sellers.id, sellers.fullname, sellers.email, sellers.enterprise_name, sellers.profile_picture, COUNT(click_events.id) AS total_ad_clicks')
+                        .group('sellers.id, sellers.profile_picture')
                         .order('total_ad_clicks DESC')
 
     # Dynamically select the sellers' insights based on the metric
@@ -107,13 +105,11 @@ class Admin::AnalyticsController < ApplicationController
 
 #===============================================================CATEGORY ANALYTICS===============================================================#
 
-    # Count the number of ads for each category
-    ads_per_category = Category.joins(:ads)
-                      .select('categories.name AS category_name, COUNT(ads.id) AS total_ads')
+    # Count the number of ads for each category (all categories, including 0 ads)
+    all_category_ads = Category.left_joins(:ads)
+                      .select('categories.id, categories.name AS category_name, COUNT(ads.id) AS total_ads')
                       .group('categories.id')
                       .order('total_ads DESC')
-                      .limit(4)
-                      .map { |record| { category_name: record.category_name, total_ads: record.total_ads } }
 
     #Count of Click Events for each category
     category_click_events = Category.joins(ads: :click_events)
@@ -153,6 +149,68 @@ class Admin::AnalyticsController < ApplicationController
         category_name: category.name,
         total_wishlists: category.total_wishlists,
         wishlist_percentage: total_wishlists.zero? ? 0 : ((category.total_wishlists.to_f / total_wishlists) * 100).round(2)
+      }
+    end
+
+    # Seller counts per category
+    category_sellers = Category.joins(ads: :seller)
+                        .where(ads: { deleted: false })
+                        .select('categories.name AS category_name, COUNT(DISTINCT sellers.id) AS total_sellers')
+                        .group('categories.id')
+                        .map { |record| { category_name: record.category_name, total_sellers: record.total_sellers } }
+
+    # Build full category breakdown with ads, clicks, reveals, wishlists and sellers
+    ads_per_category = all_category_ads.map do |record|
+      clicks = category_click_events.find { |c| c[:category_name] == record.category_name } || {}
+      wishlists = category_wishlist_data.find { |c| c[:category_name] == record.category_name } || {}
+      sellers = category_sellers.find { |c| c[:category_name] == record.category_name } || {}
+      {
+        category_name: record.category_name,
+        total_sellers: sellers[:total_sellers].to_i,
+        total_ads: record.total_ads.to_i,
+        ad_clicks: clicks[:ad_clicks].to_i,
+        wish_list_clicks: clicks[:wish_list_clicks].to_i,
+        reveal_clicks: clicks[:reveal_clicks].to_i,
+        total_wishlists: wishlists[:total_wishlists].to_i,
+        wishlist_percentage: wishlists[:wishlist_percentage].to_f
+      }
+    end
+
+    # Subcategory breakdowns (ads, clicks, reveals, wishlists)
+    all_subcategory_ads = Subcategory.joins(:category)
+                          .left_joins(:ads)
+                          .select('subcategories.id, subcategories.name AS subcategory_name, subcategories.category_id, categories.name AS category_name, COUNT(ads.id) AS ads_count')
+                          .group('subcategories.id, categories.name')
+                          .order('ads_count DESC')
+
+    subcategory_click_events = Subcategory.joins(:category, ads: :click_events)
+                              .where(ads: { deleted: false })
+                              .select('subcategories.id, subcategories.name AS subcategory_name, categories.name AS category_name,
+                                      SUM(CASE WHEN click_events.event_type = \'Ad-Click\' THEN 1 ELSE 0 END) AS ad_clicks,
+                                      SUM(CASE WHEN click_events.event_type = \'Add-to-Wish-List\' THEN 1 ELSE 0 END) AS wish_list_clicks,
+                                      SUM(CASE WHEN click_events.event_type = \'Reveal-Seller-Details\' THEN 1 ELSE 0 END) AS reveal_clicks')
+                              .group('subcategories.id, categories.name, subcategories.name')
+                              .order('subcategory_name')
+
+    subcategory_wishlists = Subcategory.joins(:category, ads: :wish_lists)
+                            .where(ads: { deleted: false })
+                            .select('subcategories.id, subcategories.name AS subcategory_name, categories.name AS category_name, COUNT(wish_lists.id) AS total_wishlists')
+                            .group('subcategories.id, categories.name, subcategories.name')
+                            .order('total_wishlists DESC')
+
+    subcategory_breakdowns = all_subcategory_ads.map do |record|
+      clicks = subcategory_click_events.find { |c| c[:subcategory_name] == record.subcategory_name && c[:category_name] == record.category_name } || {}
+      wish = subcategory_wishlists.find { |c| c[:subcategory_name] == record.subcategory_name && c[:category_name] == record.category_name } || {}
+      {
+        subcategory_id: record.id,
+        subcategory_name: record.subcategory_name,
+        category_id: record.category_id,
+        category_name: record.category_name,
+        ads_count: record.ads_count.to_i,
+        ad_clicks: clicks[:ad_clicks].to_i,
+        wish_list_clicks: clicks[:wish_list_clicks].to_i,
+        reveal_clicks: clicks[:reveal_clicks].to_i,
+        total_wishlists: wish[:total_wishlists].to_i
       }
     end
 
@@ -267,6 +325,7 @@ class Admin::AnalyticsController < ApplicationController
       sellers_insights: sellers_insights,
       sales_performance: sales_performance,
       ads_per_category: ads_per_category,
+      subcategory_breakdowns: subcategory_breakdowns,
       category_click_events: category_click_events,
       category_wishlist_data: category_wishlist_data,
       buyer_age_groups: buyer_age_groups,

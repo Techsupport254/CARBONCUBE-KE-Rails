@@ -69,16 +69,6 @@ class GeocodeSellersJob < ApplicationJob
     raw_loc = seller.location.to_s.strip
     loc = sanitize_location(raw_loc)
 
-    # 1. Try High-Precision Kenya Gazetteer first
-    gazetteer_match = KenyaGazetteerService.resolve(loc, seller)
-    if gazetteer_match && %w[exact street estate].include?(gazetteer_match[:precision])
-      return {
-        lat: gazetteer_match[:lat],
-        lon: gazetteer_match[:lon],
-        precision: gazetteer_match[:precision]
-      }
-    end
-
     city = seller.city.to_s.strip
     sub_county = seller.sub_county&.name.to_s.strip
     county = seller.county&.name.to_s.strip
@@ -113,6 +103,16 @@ class GeocodeSellersJob < ApplicationJob
       c4 << county if county.present? && !loc.downcase.include?(county.downcase)
       c4 << 'Kenya'
       queries << { query: c4.uniq.join(', '), type: :specific }
+
+      # Candidate 5: first specific segment (e.g. road/building) + correct sub_county/county
+      first_segment = loc.split(',').first.to_s.strip
+      if first_segment.present? && first_segment.length < loc.length
+        c5 = [first_segment]
+        c5 << sub_county if sub_county.present? && !first_segment.downcase.include?(sub_county.downcase)
+        c5 << county if county.present? && !first_segment.downcase.include?(county.downcase)
+        c5 << 'Kenya'
+        queries << { query: c5.uniq.join(', '), type: :specific }
+      end
     end
 
     # Fallback regional queries
@@ -138,6 +138,27 @@ class GeocodeSellersJob < ApplicationJob
 
       result = nominatim_search(q_item[:query], q_item[:type], county, sync)
       return result if result
+    end
+
+    # Last resort: use the Kenya Gazetteer for coarse local points, but do not
+    # treat its hardcoded points as high-precision "exact" coordinates.
+    gazetteer_match = KenyaGazetteerService.resolve(loc, seller)
+    if gazetteer_match
+      gazetteer_precision = case gazetteer_match[:precision]
+                            when 'exact'
+                              'estate'
+                            when 'street'
+                              'street'
+                            when 'estate'
+                              'estate'
+                            else
+                              gazetteer_match[:precision]
+                            end
+      return {
+        lat: gazetteer_match[:lat],
+        lon: gazetteer_match[:lon],
+        precision: gazetteer_precision
+      }
     end
 
     nil
@@ -170,7 +191,7 @@ class GeocodeSellersJob < ApplicationJob
         county_name = seller_county_name.to_s.downcase.strip
 
         # Match against county/state/region or fallback to first result if seller county is unspecified
-        result = data.find do |r|
+        filtered = data.select do |r|
           address = r['address'] || {}
           fields = [
             address['state'], address['county'], address['region'],
@@ -180,7 +201,14 @@ class GeocodeSellersJob < ApplicationJob
           county_name.blank? || fields.any? { |f| f.include?(county_name) || county_name.include?(f) }
         end
 
-        result ||= data.first if county_name.blank?
+        filtered = data if filtered.empty?
+
+        # For specific address queries, prefer the most detailed (highest place_rank) result
+        result = if query_type == :specific && filtered.size > 1
+          filtered.max_by { |r| r['place_rank'].to_i }
+        else
+          filtered.first
+        end
 
         if result
           osm_type = result['type'].to_s.downcase

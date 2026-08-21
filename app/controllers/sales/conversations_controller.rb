@@ -95,14 +95,23 @@ class Sales::ConversationsController < ApplicationController
     end
     
     if @conversation
-      # Get all conversations with the same seller
+      is_buyer_seller = @conversation.buyer_id.present? && @conversation.seller_id.present?
+      is_seller_to_seller = @conversation.seller_id.present? && @conversation.inquirer_seller_id.present?
+      is_support_thread = @conversation.buyer_id.nil? && (@conversation.admin_id.present? || @conversation.is_whatsapp?)
+
       related_conv_ids = [@conversation.id]
-      
-      if @conversation.seller_id.present?
-        # Find all Admin-Seller support conversations (no buyer) for this seller
-        admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id)
-                                        .where(buyer_id: nil)
-                                        .pluck(:id)
+
+      if is_buyer_seller
+        buyer_seller_convs = Conversation.where(buyer_id: @conversation.buyer_id, seller_id: @conversation.seller_id).pluck(:id)
+        related_conv_ids.concat(buyer_seller_convs)
+      elsif is_seller_to_seller
+        s2s_convs = Conversation.where(
+          "(seller_id = ? AND inquirer_seller_id = ?) OR (seller_id = ? AND inquirer_seller_id = ?)",
+          @conversation.seller_id, @conversation.inquirer_seller_id, @conversation.inquirer_seller_id, @conversation.seller_id
+        ).pluck(:id)
+        related_conv_ids.concat(s2s_convs)
+      elsif is_support_thread
+        admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id, buyer_id: nil).pluck(:id)
         related_conv_ids.concat(admin_seller_convs)
       end
       

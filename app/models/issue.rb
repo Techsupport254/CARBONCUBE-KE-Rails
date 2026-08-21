@@ -121,13 +121,30 @@ class Issue < ApplicationRecord
   end
   
   def time_since_created
-    time_ago_in_words(created_at)
+    time_in_days(created_at)
   end
-  
+
   def time_since_updated
-    time_ago_in_words(updated_at)
+    time_in_days(updated_at)
   end
-  
+
+  def time_in_days(time)
+    return "just now" if time.nil?
+
+    days = (Date.current - time.to_date).to_i
+    if days < 1
+      "less than a day"
+    elsif days == 1
+      "1 day"
+    elsif days < 365
+      "#{days} days"
+    else
+      years = (days / 365).floor
+      "about #{years} #{'year'.pluralize(years)}"
+    end
+  end
+  private :time_in_days
+
   # Helper methods for user tracking
   def internal_user?
     user_id.present?
@@ -135,6 +152,12 @@ class Issue < ApplicationRecord
 
   def external_user?
     user_id.nil?
+  end
+
+  def staff_email?
+    return false if reporter_email.blank?
+
+    [Admin, SalesUser, MarketingUser].any? { |klass| klass.exists?(email: reporter_email) }
   end
 
   def user_role
@@ -162,10 +185,10 @@ class Issue < ApplicationRecord
   end
   
   def send_confirmation_email
-    IssueMailer.with(issue: self).issue_created.deliver_now
+    IssueMailer.with(issue: self).issue_created.deliver_later
   end
 
   def send_status_update_email
-    IssueMailer.with(issue: self).status_updated.deliver_now
+    IssueMailer.with(issue: self, old_status: status_before_last_save).status_updated.deliver_later
   end
 end

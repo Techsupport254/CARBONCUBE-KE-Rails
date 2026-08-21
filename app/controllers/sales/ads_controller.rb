@@ -12,8 +12,8 @@ class Sales::AdsController < ApplicationController
     page = params[:page]&.to_i || 1
     
     # Build base query without select for counting
-    base_query = Ad.joins(seller: :seller_tier)
-         .joins(:category, :subcategory)
+    base_query = Ad.joins(:seller)
+         .left_joins(:category, :subcategory, seller: :seller_tier)
          .where(sellers: { blocked: false, deleted: false }) # Only active sellers
 
     # Handle status filtering
@@ -132,7 +132,11 @@ class Sales::AdsController < ApplicationController
     onboarding_type = carbon_code.present? ? "Agent Onboarded" : "Self Onboarded"
     onboarded_by_name = if carbon_code&.associable
                           associable = carbon_code.associable
-                          associable.respond_to?(:fullname) ? associable.fullname : (associable.respond_to?(:name) ? associable.name : associable.email)
+                          if associable.respond_to?(:fullname)
+associable.fullname
+else
+(associable.respond_to?(:name) ? associable.name : associable.email)
+end
                         elsif carbon_code.present?
                           "Agent Code (#{carbon_code.code})"
                         else
@@ -712,8 +716,8 @@ class Sales::AdsController < ApplicationController
             suggested_specs = parsed['specifications'] if parsed['specifications'].is_a?(Hash) && parsed['specifications'].any?
             suggested_description = parsed['description'].to_s.strip if parsed['description'].present?
           end
-        rescue StandardError => groq_err
-          Rails.logger.warn "Groq Vision AI fallback triggered: #{groq_err.message}"
+        rescue StandardError => e
+          Rails.logger.warn "Groq Vision AI fallback triggered: #{e.message}"
         end
       end
 

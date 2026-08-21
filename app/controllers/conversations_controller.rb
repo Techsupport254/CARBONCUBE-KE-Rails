@@ -82,15 +82,19 @@ class ConversationsController < ApplicationController
     
     participant_ids.each do |participant_id|
       # Parse participant ID format: "buyer_123", "seller_456", "admin_789"
-      parts = participant_id.split('_')
-      next if parts.length != 2
+      parts = participant_id.to_s.split('_')
+      next if parts.length < 2
       
-      user_type = parts[0]
+      user_type = parts[0].downcase
       user_id = parts[1]
       
-      # Check if user is online using Rails cache
+      # Check if user is online using Redis or Rails cache
       cache_key = "online_user_#{user_type}_#{user_id}"
-      is_online = Rails.cache.exist?(cache_key)
+      is_online = begin
+        RedisConnection.exists?(cache_key) || Rails.cache.exist?(cache_key)
+      rescue
+        false
+      end
       
       # Get last_seen_at if offline
       last_seen_at = nil
@@ -100,6 +104,7 @@ class ConversationsController < ApplicationController
         when 'seller' then Seller
         when 'admin' then Admin
         when 'sales' then SalesUser
+        when 'marketing' then MarketingUser
         end
         
         user = user_model&.find_by(id: user_id)
@@ -131,21 +136,13 @@ class ConversationsController < ApplicationController
     end
 
     unread_messages = related_conversations_for_mark_read.flat_map do |conversation|
-      # For staff roles, only mark as read if they are the assigned admin/salesperson
-      is_staff = ['Admin', 'SalesUser', 'MarketingUser'].include?(@current_user.class.name)
-      if is_staff && conversation.admin_id != @current_user.id
-        next []
-      end
-
       conversation.messages.unread.where.not(sender: @current_user).to_a
     end
     
     processed_count = 0
+    now = Time.current
     unread_messages.each do |message|
       message.mark_as_read!
-      # We could broadcast here, but mark_as_read! might already do it or we can do it manually
-      # messages_controller.rb has broadcast_read_receipt(message)
-      # But since we're in ConversationsController, we'll just mark them.
       processed_count += 1
     end
 
@@ -970,7 +967,11 @@ class ConversationsController < ApplicationController
 
   def representative_conversation_for(conversations)
     conversations.max_by do |conversation|
-      last_message_time = conversation.messages.maximum(:created_at)
+      last_message_time = if conversation.messages.loaded?
+        conversation.messages.map(&:created_at).compact.max
+      else
+        conversation.messages.maximum(:created_at)
+      end
       last_message_time || conversation.updated_at
     end
   end

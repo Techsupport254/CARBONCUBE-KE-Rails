@@ -13,12 +13,14 @@ class Sales::SellerRankingsController < ApplicationController
       limit = params[:limit].to_i
       limit = 100 if limit < 1 || limit > 500
 
-      service = SellerRankingService.new(filters: filters)
-      ranked_sellers = service.ranked_sellers(limit: limit)
-
-      # Assign ranks
-      ranked_sellers.each_with_index do |seller_data, index|
-        seller_data[:rank] = index + 1
+      cache_key = "sales_seller_rankings_index_v1_#{filters.to_param}_#{limit}"
+      ranked_sellers = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+        service = SellerRankingService.new(filters: filters)
+        sellers = service.ranked_sellers(limit: limit)
+        sellers.each_with_index do |seller_data, index|
+          seller_data[:rank] = index + 1
+        end
+        sellers
       end
 
       render json: {
@@ -53,12 +55,14 @@ class Sales::SellerRankingsController < ApplicationController
       limit = params[:limit].to_i
       limit = 100 if limit < 1 || limit > 500
 
-      service = SellerRankingService.new(filters: filters)
-      
-      if metric_type == 'composite_score'
-        ranked_sellers = service.ranked_sellers(limit: limit)
-      else
-        ranked_sellers = service.rankings_by_metric(metric_type, limit: limit)
+      cache_key = "sales_seller_rankings_metric_v1_#{metric_type}_#{filters.to_param}_#{limit}"
+      ranked_sellers = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+        service = SellerRankingService.new(filters: filters)
+        if metric_type == 'composite_score'
+          service.ranked_sellers(limit: limit)
+        else
+          service.rankings_by_metric(metric_type, limit: limit)
+        end
       end
 
       render json: {

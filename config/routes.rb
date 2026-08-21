@@ -410,7 +410,9 @@ Rails.application.routes.draw do
         get 'analytics'
         get 'ads'
         get 'reviews'
+        get 'updates'
         post :verify_document
+        post :send_reminder
       end
       collection do
         post 'bulk_actions'

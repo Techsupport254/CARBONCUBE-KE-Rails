@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -155,7 +155,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.bigint "sub_county_id"
     t.string "profile_picture"
     t.string "location_precision", default: "approximate"
+    t.index ["latitude", "longitude"], name: "index_branches_on_coordinates", where: "((latitude IS NOT NULL) AND (longitude IS NOT NULL))"
+    t.index ["latitude", "longitude"], name: "index_branches_on_latitude_and_longitude"
     t.index ["location_precision"], name: "index_branches_on_location_precision"
+    t.index ["seller_id", "latitude"], name: "index_branches_on_seller_id_and_latitude", where: "(latitude IS NOT NULL)"
     t.index ["seller_id"], name: "index_branches_on_seller_id"
   end
 
@@ -307,6 +310,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.datetime "review_request_sent_at"
     t.uuid "seller_id"
     t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
+    t.index ["ad_id", "event_type", "created_at"], name: "index_click_events_on_ad_event_created"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"
     t.index ["ad_id"], name: "index_click_events_on_ad_id"
     t.index ["buyer_id", "created_at"], name: "index_click_events_on_buyer_id_created_at"
@@ -314,6 +318,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.index ["created_at", "event_type"], name: "index_click_events_on_created_at_event_type"
     t.index ["event_type", "created_at"], name: "index_click_events_on_event_type_created_at"
     t.index ["metadata"], name: "index_click_events_on_metadata", using: :gin
+    t.index ["seller_id", "event_type"], name: "index_click_events_on_seller_id_and_event_type"
+    t.index ["seller_id"], name: "index_click_events_on_seller_id"
   end
 
   create_table "cms_pages", force: :cascade do |t|
@@ -349,11 +355,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.index ["admin_id", "seller_id"], name: "index_conversations_admin_seller"
     t.index ["admin_id"], name: "index_conversations_on_admin_id"
     t.index ["buyer_id", "seller_id"], name: "index_conversations_buyer_seller"
+    t.index ["buyer_id", "updated_at"], name: "index_conversations_on_buyer_and_updated_at"
     t.index ["buyer_id"], name: "index_conversations_on_buyer_id"
     t.index ["inquirer_seller_id"], name: "index_conversations_on_inquirer_seller_id"
     t.index ["is_whatsapp"], name: "index_conversations_on_is_whatsapp"
     t.index ["seller_id", "inquirer_seller_id"], name: "index_conversations_seller_inquirer"
+    t.index ["seller_id", "updated_at"], name: "index_conversations_on_seller_and_updated_at"
     t.index ["seller_id"], name: "index_conversations_on_seller_id"
+    t.index ["updated_at"], name: "index_conversations_on_updated_at"
   end
 
   create_table "counties", force: :cascade do |t|
@@ -598,7 +607,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.datetime "delivered_at"
     t.string "whatsapp_message_id"
     t.index ["ad_id"], name: "index_messages_on_ad_id"
+    t.index ["conversation_id", "created_at"], name: "index_messages_on_conv_and_created_at"
     t.index ["conversation_id", "read_at"], name: "index_messages_conversation_read"
+    t.index ["conversation_id", "sender_id", "created_at"], name: "index_messages_on_conv_sender_created_at"
     t.index ["conversation_id", "sender_id", "read_at"], name: "index_messages_conversation_senderid_read"
     t.index ["conversation_id", "sender_type", "read_at"], name: "index_messages_conversation_sender_read"
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
@@ -850,8 +861,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.uuid "buyer_id"
     t.uuid "seller_id"
     t.index ["ad_id", "rating"], name: "index_reviews_on_ad_id_rating"
+    t.index ["ad_id", "rating"], name: "index_reviews_on_ad_rating"
     t.index ["ad_id"], name: "index_reviews_on_ad_id"
     t.index ["buyer_id"], name: "index_reviews_on_buyer_id"
+    t.index ["seller_id", "rating"], name: "index_reviews_on_seller_rating"
     t.index ["seller_id"], name: "index_reviews_on_seller_id"
   end
 
@@ -959,6 +972,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.uuid "seller_id", null: false
     t.index ["expires_at"], name: "index_seller_tiers_on_expires_at"
     t.index ["payment_transaction_id"], name: "index_seller_tiers_on_payment_transaction_id"
+    t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_and_tier"
+    t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_id_and_tier_id"
     t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_id_tier_id"
     t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
@@ -1015,8 +1030,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.index ["age_group_id"], name: "index_sellers_on_age_group_id"
     t.index ["blocked"], name: "index_sellers_on_blocked"
     t.index ["business_registration_number"], name: "index_sellers_on_business_registration_number", unique: true, where: "((business_registration_number IS NOT NULL) AND ((business_registration_number)::text <> ''::text))"
+    t.index ["carbon_code_id", "created_at"], name: "index_sellers_on_carbon_code_created_at"
     t.index ["carbon_code_id"], name: "index_sellers_on_carbon_code_id"
     t.index ["county_id"], name: "index_sellers_on_county_id"
+    t.index ["created_at"], name: "index_sellers_on_created_at"
+    t.index ["deleted", "ads_count"], name: "index_sellers_on_deleted_and_ads_count", order: { ads_count: :desc }
+    t.index ["deleted", "blocked", "created_at"], name: "index_sellers_on_status_created_at"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true
     t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
@@ -1149,6 +1168,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_111847) do
     t.datetime "updated_at", null: false
     t.uuid "seller_id"
     t.uuid "buyer_id"
+    t.index ["ad_id", "created_at"], name: "index_wish_lists_on_ad_created_at"
     t.index ["ad_id"], name: "index_wish_lists_on_ad_id"
     t.index ["buyer_id"], name: "index_wish_lists_on_buyer_id"
     t.index ["seller_id"], name: "index_wish_lists_on_seller_id"

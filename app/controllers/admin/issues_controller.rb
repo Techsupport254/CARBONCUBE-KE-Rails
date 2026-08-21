@@ -4,7 +4,7 @@ class Admin::IssuesController < ApplicationController
 
   # GET /admin/issues
   def admin_index
-    @issues = Issue.includes(:user, :assigned_to, :issue_comments, :issue_attachments)
+    @issues = Issue.includes(:user, :assigned_to, :issue_attachments)
                    .order(created_at: :desc)
     
     # Apply filters
@@ -31,7 +31,7 @@ class Admin::IssuesController < ApplicationController
     total_pages = (total_count.to_f / per_page).ceil
 
     render json: {
-      issues: @issues.map { |issue| issue_json(issue, include_comments: true, include_attachments: true) },
+      issues: @issues.map { |issue| issue_json(issue, include_attachments: true) },
       meta: {
         current_page: page,
         total_pages: total_pages,
@@ -48,14 +48,9 @@ class Admin::IssuesController < ApplicationController
 
   # PATCH/PUT /admin/issues/:id
   def update
-    old_status = @issue.status
     if @issue.update(issue_params)
-      # Send email notification if status changed
-      if old_status != @issue.status && @issue.reporter_email.present?
-        IssueMailer.with(issue: @issue).status_updated.deliver_now
-      end
-      
-      render json: issue_json(@issue, include_comments: true, include_attachments: true)
+      # Status update emails are handled by the Issue model callback asynchronously
+      render json: issue_json(@issue)
     else
       render json: { errors: @issue.errors.full_messages }, status: :unprocessable_entity
     end
@@ -149,7 +144,8 @@ class Admin::IssuesController < ApplicationController
       security_issues: Issue.where(category: 'security').count,
       recent_issues: Issue.where('created_at >= ?', 7.days.ago).count,
       assigned_issues: Issue.where.not(assigned_to_id: nil).count,
-      unassigned_issues: Issue.where(assigned_to_id: nil).count
+      unassigned_issues: Issue.where(assigned_to_id: nil).count,
+      unresolved_issues: Issue.where(resolved_at: nil).count
     }
 
     render json: stats

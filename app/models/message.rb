@@ -3,6 +3,9 @@ class Message < ApplicationRecord
   belongs_to :sender, polymorphic: true
   belongs_to :ad, optional: true
 
+  # Encrypt message content at rest
+  encrypts :content
+
   validates :content, presence: true
 
   # Callbacks
@@ -19,37 +22,38 @@ class Message < ApplicationRecord
   STATUS_READ = 'read'
 
   # Scopes
-  scope :unread, -> { where(status: [nil, STATUS_SENT]) }
-  scope :delivered, -> { where(status: STATUS_DELIVERED) }
-  scope :read, -> { where(status: STATUS_READ) }
+  scope :unread, -> { where(read_at: nil) }
+  scope :delivered, -> { where.not(delivered_at: nil).where(read_at: nil) }
+  scope :read, -> { where.not(read_at: nil) }
 
   # Status methods
   def sent?
-    status == STATUS_SENT || status.nil?
+    read_at.nil? && delivered_at.nil?
   end
 
   def delivered?
-    status == STATUS_DELIVERED
+    delivered_at.present? && read_at.nil?
   end
 
   def read?
-    status == STATUS_READ
+    read_at.present?
   end
 
   def mark_as_delivered!
-    update!(status: STATUS_DELIVERED, delivered_at: Time.current)
+    return if read? # Already read, no need to downgrade
+    update_columns(status: STATUS_DELIVERED, delivered_at: delivered_at || Time.current)
   end
 
   def mark_as_read!
-    update!(status: STATUS_READ, read_at: Time.current)
+    now = Time.current
+    update_columns(status: STATUS_READ, read_at: read_at || now, delivered_at: delivered_at || now)
   end
 
   # Get status display text
   def status_text
-    case status
-    when STATUS_READ
+    if read_at.present?
       'read'
-    when STATUS_DELIVERED
+    elsif delivered_at.present?
       'delivered'
     else
       'sent'

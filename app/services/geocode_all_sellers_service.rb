@@ -72,24 +72,26 @@ class GeocodeAllSellersService
     raw_loc = seller.location.to_s.strip
     cleaned_loc = sanitize_location(raw_loc)
 
-    # 1. Try High-Precision Kenya Gazetteer first
-    gazetteer_match = KenyaGazetteerService.resolve(cleaned_loc, seller)
-    if gazetteer_match && %w[exact street estate].include?(gazetteer_match[:precision])
-      return {
-        lat: gazetteer_match[:lat],
-        lon: gazetteer_match[:lon],
-        precision: gazetteer_match[:precision]
-      }
-    end
-
     city = seller.city.to_s.strip
     sub_county = seller.sub_county&.name.to_s.strip
     county = seller.county&.name.to_s.strip
+    enterprise_name = seller.enterprise_name.to_s.strip
 
     # Candidate address strings ordered by specificity
     candidates = []
 
+    if enterprise_name.present?
+      # Business-name first: with a Google Maps API key this resolves named places
+      # like "Pantech Kenya Limited" to a ROOFTOP pin. Without Google, these are
+      # tried before the address-only Nominatim fallback.
+      candidates << { address: [enterprise_name, cleaned_loc, city, sub_county, county, 'Kenya'].compact.uniq.join(', '), type: :specific } if cleaned_loc.present?
+      candidates << { address: [enterprise_name, city, sub_county, county, 'Kenya'].compact.uniq.join(', '), type: :specific } if city.present?
+      candidates << { address: [enterprise_name, sub_county, county, 'Kenya'].compact.uniq.join(', '), type: :specific } if sub_county.present? && county.present?
+      candidates << { address: [enterprise_name, county, 'Kenya'].compact.uniq.join(', '), type: :specific } if county.present?
+    end
+
     if cleaned_loc.present?
+      # Address/road candidates for Nominatim and for Google when the name is unknown
       c1 = [cleaned_loc]
       c1 << city if city.present? && !cleaned_loc.downcase.include?(city.downcase)
       c1 << sub_county if sub_county.present? && !cleaned_loc.downcase.include?(sub_county.downcase)
@@ -99,6 +101,16 @@ class GeocodeAllSellersService
 
       c2 = [cleaned_loc, county, 'Kenya']
       candidates << { address: c2.uniq.join(', '), type: :specific }
+
+      # First specific segment (e.g. road/building) + correct sub_county/county
+      first_segment = cleaned_loc.split(',').first.to_s.strip
+      if first_segment.present? && first_segment.length < cleaned_loc.length
+        c3 = [first_segment]
+        c3 << sub_county if sub_county.present? && !first_segment.downcase.include?(sub_county.downcase)
+        c3 << county if county.present? && !first_segment.downcase.include?(county.downcase)
+        c3 << 'Kenya'
+        candidates << { address: c3.uniq.join(', '), type: :specific }
+      end
     end
 
     candidates << { address: "#{sub_county}, #{county}, Kenya", type: :sub_county } if sub_county.present? && county.present?
@@ -110,6 +122,7 @@ class GeocodeAllSellersService
     # Try Google Maps Geocoding API first if available
     if ENV['GOOGLE_MAPS_API_KEY'].present?
       candidates.each do |cand|
+        sleep(0.05) # stay under Google Geocoding QPS limits
         res = google_geocode(cand[:address], cand[:type])
         return res if res
       end
@@ -120,6 +133,27 @@ class GeocodeAllSellersService
       sleep(RATE_LIMIT_DELAY) if ENV['GOOGLE_MAPS_API_KEY'].blank?
       res = nominatim_geocode(cand[:address], cand[:type], county)
       return res if res
+    end
+
+    # Last resort: use the Kenya Gazetteer for coarse local points, but do not
+    # treat its hardcoded points as high-precision "exact" coordinates.
+    gazetteer_match = KenyaGazetteerService.resolve(cleaned_loc, seller)
+    if gazetteer_match
+      gazetteer_precision = case gazetteer_match[:precision]
+                            when 'exact'
+                              'estate'
+                            when 'street'
+                              'street'
+                            when 'estate'
+                              'estate'
+                            else
+                              gazetteer_match[:precision]
+                            end
+      return {
+        lat: gazetteer_match[:lat],
+        lon: gazetteer_match[:lon],
+        precision: gazetteer_precision
+      }
     end
 
     nil
@@ -163,9 +197,9 @@ class GeocodeAllSellersService
         lat = top.dig('geometry', 'location', 'lat')
         lng = top.dig('geometry', 'location', 'lng')
 
-        precision = if query_type == :specific && %w[ROOFTOP RANGE_INTERPOLATED].include?(loc_type)
+        precision = if query_type == :specific && %w[ROOFTOP RANGE_INTERPOLATED GEOMETRIC_CENTER].include?(loc_type)
                       'exact'
-                    elsif query_type == :sub_county || %w[GEOMETRIC_CENTER APPROXIMATE].include?(loc_type)
+                    elsif query_type == :sub_county || %w[APPROXIMATE].include?(loc_type)
                       'sub_county'
                     elsif query_type == :county
                       'county'
@@ -209,13 +243,20 @@ class GeocodeAllSellersService
       if data.any?
         county_name = seller_county_name.to_s.downcase.strip
 
-        result = data.find do |r|
+        filtered = data.select do |r|
           addr = r['address'] || {}
           fields = [addr['state'], addr['county'], addr['region'], addr['state_district'], addr['city'], addr['town']].compact.map(&:to_s).map(&:downcase)
           county_name.blank? || fields.any? { |f| f.include?(county_name) || county_name.include?(f) }
         end
 
-        result ||= data.first
+        filtered = data if filtered.empty?
+
+        # For specific address queries, prefer the most detailed (highest place_rank) result
+        result = if query_type == :specific && filtered.size > 1
+          filtered.max_by { |r| r['place_rank'].to_i }
+        else
+          filtered.first
+        end
 
         if result
           osm_type = result['type'].to_s.downcase

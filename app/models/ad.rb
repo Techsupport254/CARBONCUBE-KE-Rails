@@ -179,6 +179,10 @@ class Ad < ApplicationRecord
   # Auto-enrich low-quality titles, specifications, and descriptions on upload
   after_commit :schedule_auto_quality_enrichment, on: :create
 
+  # Multi-signal content and vision safety moderation on create and updates
+  after_commit :schedule_content_moderation, on: :create
+  after_commit :schedule_content_moderation, on: :update, if: :should_recheck_content_moderation?
+
   # Soft delete
   def flag
     update(flagged: true)
@@ -604,6 +608,14 @@ class Ad < ApplicationRecord
 
   def schedule_auto_quality_enrichment
     AutoEnrichAdQualityJob.perform_later(id)
+  end
+
+  def schedule_content_moderation
+    ModerateAdJob.perform_later(id, mode: :active_mode)
+  end
+
+  def should_recheck_content_moderation?
+    saved_change_to_title? || saved_change_to_description? || saved_change_to_price? || saved_change_to_media?
   end
 
   def should_sync_to_google_merchant?

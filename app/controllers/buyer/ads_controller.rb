@@ -179,6 +179,26 @@ class Buyer::AdsController < ApplicationController
       return
     end
 
+    if @ad.flagged
+      cat_slug = @ad.category ? Ad.slugify(@ad.category.name) : nil
+      subcat_slug = @ad.subcategory ? Ad.slugify(@ad.subcategory.name) : nil
+      render json: {
+        error: 'Listing under review',
+        is_flagged: true,
+        flagged: true,
+        id: @ad.id,
+        title: @ad.title,
+        name: @ad.title,
+        flag_notes: @ad.flag_notes,
+        seller_id: @ad.seller_id,
+        category_name: @ad.category&.name,
+        category_slug: cat_slug,
+        subcategory_name: @ad.subcategory&.name,
+        subcategory_slug: subcat_slug
+      }, status: :ok
+      return
+    end
+
     render json: @ad, serializer: AdSerializer, include_reviews: true
   end
   

@@ -1,13 +1,15 @@
 import { Section, Text } from "@react-email/components"
+import { Markdown } from "@react-email/markdown"
 import { EmailLayout } from "../_components/email_layout"
 import { Button } from "../_components/button"
 
 type DocumentUpdateReminderProps = {
   sellerName: string
   updateUrl: string
+  customMessage?: string
 }
 
-export default function DocumentUpdateReminder({ sellerName, updateUrl }: DocumentUpdateReminderProps) {
+export default function DocumentUpdateReminder({ sellerName, updateUrl, customMessage }: DocumentUpdateReminderProps) {
   return (
     <EmailLayout preview="Please update your expired documents">
       <Section className="rsp-section" style={{ padding: "20px" }}>
@@ -16,16 +18,24 @@ export default function DocumentUpdateReminder({ sellerName, updateUrl }: Docume
         </Text>
 
         <Text className="rsp-h1" style={{ margin: "0 0 8px", fontSize: "17px", fontWeight: 700, color: "#0f172a", lineHeight: "22px" }}>
-          Your documents have expired
+          {customMessage ? "Action Required" : "Your documents have expired"}
         </Text>
 
-        <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
-          Hi {sellerName},
-        </Text>
+        {customMessage ? (
+          <Markdown>
+            {customMessage.replace(/\*(.*?)\*/g, '**$1**').replace(/(https?:\/\/[^\s]+)/g, '[$1]($1)')}
+          </Markdown>
+        ) : (
+          <>
+            <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+              Hi {sellerName},
+            </Text>
 
-        <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
-          Your verification documents expired over three months ago. Please upload current documents to restore full access to your seller account.
-        </Text>
+            <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+              Your verification documents expired over three months ago. Please upload current documents to restore full access to your seller account.
+            </Text>
+          </>
+        )}
 
         <Section style={{ margin: "14px 0" }}>
           <Button href={updateUrl}>

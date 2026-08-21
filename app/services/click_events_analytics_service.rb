@@ -350,8 +350,28 @@ class ClickEventsAnalyticsService
       .limit(per_page)
       .includes(:buyer, :seller, ad: [:category, :subcategory, :seller])
     
-    # Map events with optional user agent parsing
-    events = events_query.map { |event| format_click_event(event, parse_user_agent: parse_user_agent) }
+    events_records = events_query.to_a
+    
+    # Preload sellers and buyers for metadata user_ids in batch to avoid N+1 queries
+    metadata_user_ids = events_records.map do |event|
+      m = event.metadata
+      if m.is_a?(Hash)
+        m['user_id'] || m[:user_id]
+      end
+    end.compact.uniq
+
+    preloaded_sellers = metadata_user_ids.any? ? Seller.where(id: metadata_user_ids).index_by { |s| s.id.to_s } : {}
+    preloaded_buyers = metadata_user_ids.any? ? Buyer.where(id: metadata_user_ids).index_by { |b| b.id.to_s } : {}
+
+    # Map events with optional user agent parsing and preloaded user records
+    events = events_records.map do |event|
+      format_click_event(
+        event,
+        parse_user_agent: parse_user_agent,
+        preloaded_sellers: preloaded_sellers,
+        preloaded_buyers: preloaded_buyers
+      )
+    end
     
     {
       events: events,
@@ -803,7 +823,7 @@ class ClickEventsAnalyticsService
     }
   end
 
-  def format_click_event(event, parse_user_agent: false)
+  def format_click_event(event, parse_user_agent: false, preloaded_sellers: {}, preloaded_buyers: {})
     metadata = event.metadata || {}
     device_fingerprint = metadata['device_fingerprint'] || metadata[:device_fingerprint] || {}
     
@@ -836,9 +856,9 @@ class ClickEventsAnalyticsService
       is_generic_name = ['guest', 'anonymous', 'unknown', ''].include?(user_info[:username].to_s.downcase.strip)
       
       if is_generic_name || user_info[:email].blank? || user_info[:role].blank? || user_info[:profile_picture].blank?
-        # Try finding as seller first
+        # Try finding as seller first (using preloaded cache when available)
         if user_role&.downcase == 'seller' || user_role.blank?
-          db_seller = event.seller || (event.ad&.seller if user_id.to_s == event.ad&.seller_id.to_s) || Seller.find_by(id: user_id)
+          db_seller = event.seller || (event.ad&.seller if user_id.to_s == event.ad&.seller_id.to_s) || preloaded_sellers[user_id.to_s] || Seller.find_by(id: user_id)
           if db_seller
             seller_username = db_seller.enterprise_name.presence || db_seller.fullname.presence || db_seller.username.presence
             user_info[:username] = seller_username if is_generic_name || user_info[:username].blank?
@@ -851,7 +871,7 @@ class ClickEventsAnalyticsService
         # Try finding as buyer if still missing details or still generic
         is_generic_name = ['guest', 'anonymous', 'unknown', ''].include?(user_info[:username].to_s.downcase.strip)
         if (is_generic_name && (user_role&.downcase == 'buyer' || user_role.blank?))
-          db_buyer = event.buyer || Buyer.find_by(id: user_id)
+          db_buyer = event.buyer || preloaded_buyers[user_id.to_s] || Buyer.find_by(id: user_id)
           if db_buyer
             buyer_username = db_buyer.fullname.presence || db_buyer.username.presence
             user_info[:username] = buyer_username if is_generic_name || user_info[:username].blank?

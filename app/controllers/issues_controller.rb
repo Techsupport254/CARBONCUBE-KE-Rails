@@ -9,11 +9,16 @@ class IssuesController < ApplicationController
   
   # Public endpoints
   def index
-    @issues = Issue.public_visible.recent.includes(:assigned_to)
+    staff_emails = (Admin.pluck(:email) + SalesUser.pluck(:email) + MarketingUser.pluck(:email))
+                   .map(&:downcase).compact.uniq
+    august_first = Date.new(Date.current.year, 8, 1)
+    @issues = Issue.public_visible.external.recent.includes(:assigned_to)
+                   .where("issues.created_at >= ?", august_first)
+    @issues = @issues.where.not("LOWER(reporter_email) IN (?)", staff_emails) if staff_emails.any?
     @issues = @issues.by_status(params[:status]) if params[:status].present?
     @issues = @issues.by_category(params[:category]) if params[:category].present?
     @issues = @issues.by_priority(params[:priority]) if params[:priority].present?
-    
+
     render json: {
       issues: @issues.map { |issue| issue_json(issue) },
       meta: {
@@ -26,7 +31,7 @@ class IssuesController < ApplicationController
   end
   
   def show
-    if @issue.public_visible? || (current_user&.is_a?(Admin))
+    if (@issue.public_visible? && @issue.external_user? && !@issue.staff_email?) || current_user&.is_a?(Admin)
       render json: {
         issue: issue_json(@issue, include_comments: true, include_attachments: true)
       }

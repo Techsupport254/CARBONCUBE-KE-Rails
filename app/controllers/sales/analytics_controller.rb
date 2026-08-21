@@ -8,7 +8,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v3_#{device_hash}"
+    cache_key = "sales_analytics_index_v6_#{device_hash}"
     response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
@@ -38,6 +38,12 @@ class Sales::AnalyticsController < ApplicationController
       all_unpaid_seller_tiers = SellerTier
         .joins(:seller)
         .where(tier_id: 1, sellers: { deleted: false })
+
+      seller_tier_distribution = SellerTier
+        .joins(:tier, :seller)
+        .where(sellers: { deleted: false })
+        .group('tiers.name')
+        .count
       
       # Convert timestamps to ISO 8601 format for proper JavaScript Date parsing
       carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
@@ -58,7 +64,11 @@ class Sales::AnalyticsController < ApplicationController
                               .select(
                                 "COUNT(CASE WHEN event_type = 'Ad-Click' THEN 1 END) as ad_clicks",
                                 "COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' THEN 1 END) as reveal_clicks",
-                                 Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' THEN 1 END) as contact_interactions"),
+                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' THEN 1 END) as contact_interactions"),
+                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' = 'whatsapp' THEN 1 END) as whatsapp_clicks"),
+                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' = 'call_phone' THEN 1 END) as call_clicks"),
+                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' IN ('copy_phone', 'copy_email') THEN 1 END) as copy_clicks"),
+                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' = 'view_location' THEN 1 END) as location_clicks"),
                                 "COUNT(CASE WHEN event_type = 'Callback-Request' THEN 1 END) as callback_requests"
                               ).to_a.first
 
@@ -132,11 +142,17 @@ class Sales::AnalyticsController < ApplicationController
         total_ads_wish_listed: all_wishlists.count,
         subscription_countdowns: all_paid_seller_tiers.count,
         without_subscription: all_unpaid_seller_tiers.count,
+        seller_tier_distribution: seller_tier_distribution,
         total_ads_clicks: click_counts&.ad_clicks || 0,
         buyer_ad_clicks: click_counts&.ad_clicks || 0,
         buyer_reveal_clicks: click_counts&.reveal_clicks || 0,
         total_reveal_clicks: click_counts&.reveal_clicks || 0,
         total_contact_interactions: click_counts&.contact_interactions || 0,
+        whatsapp_clicks: click_counts&.whatsapp_clicks || 0,
+        call_clicks: click_counts&.call_clicks || 0,
+        copy_clicks: click_counts&.copy_clicks || 0,
+        location_clicks: click_counts&.location_clicks || 0,
+        verified_sellers: all_sellers.where(document_verified: true).count,
         total_callback_requests: click_counts&.callback_requests || 0
       }
     end
@@ -218,23 +234,38 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def categories
-    # Get category click events only - optimized endpoint for categories page
+    # Get category click events only - highly optimized with multi-threading and Redis caching
     begin
       # Get device_hash from params or headers if available for excluding seller own clicks
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
       
-      cache_key = "sales_analytics_categories_v3_#{device_hash}"
-      response_data = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
+      cache_key = "sales_analytics_categories_v5_#{device_hash.presence || 'all'}"
+      response_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
         # Use unified service for category click events
         click_events_service = ClickEventsAnalyticsService.new(
           filters: {},
           device_hash: device_hash
         )
+
+        cat_events = nil
+        subcat_events = nil
+        cat_sellers = nil
+        subcat_sellers = nil
+
+        # Parallelize independent heavy queries across connection pool
+        threads = [
+          Thread.new { ActiveRecord::Base.connection_pool.with_connection { cat_events = click_events_service.category_click_events } },
+          Thread.new { ActiveRecord::Base.connection_pool.with_connection { subcat_events = click_events_service.subcategory_click_events } },
+          Thread.new { ActiveRecord::Base.connection_pool.with_connection { cat_sellers = category_seller_counts } },
+          Thread.new { ActiveRecord::Base.connection_pool.with_connection { subcat_sellers = subcategory_seller_counts } }
+        ]
+        threads.each(&:join)
+
         {
-          category_click_events: click_events_service.category_click_events,
-          subcategory_click_events: click_events_service.subcategory_click_events,
-          category_seller_counts: category_seller_counts,
-          subcategory_seller_counts: subcategory_seller_counts
+          category_click_events: cat_events || [],
+          subcategory_click_events: subcat_events || [],
+          category_seller_counts: cat_sellers || {},
+          subcategory_seller_counts: subcat_sellers || {}
         }
       end
 
@@ -252,9 +283,10 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   # GET /sales/analytics/category_sellers
-  # List the sellers placed in a given category (and optionally subcategory),
+  # List the sellers with active ads in a given category (and optionally subcategory),
   # along with how many active ads each has there - powers the sellers sheet
   # on the sales categories page.
+  # Uses active ads as the source of truth with 5-minute Redis caching.
   def category_sellers
     category_id = params[:category_id]
 
@@ -264,38 +296,43 @@ class Sales::AnalyticsController < ApplicationController
     end
 
     subcategory_id = params[:subcategory_id].presence
+    cache_key = "sales_cat_sellers_v3_#{category_id}_#{subcategory_id.presence || 'all'}"
 
-    membership_scope = CategoriesSeller.where(category_id: category_id)
-    membership_scope = membership_scope.where(subcategory_id: subcategory_id) if subcategory_id
+    sellers = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      # Source seller IDs from active ads, not the sparse CategoriesSeller table
+      ads_scope = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false }, category_id: category_id)
+      ads_scope = ads_scope.where(subcategory_id: subcategory_id) if subcategory_id
 
-    seller_ids = membership_scope.distinct.pluck(:seller_id)
+      ads_counts_by_seller = ads_scope.group(:seller_id).count
+      seller_ids = ads_counts_by_seller.keys
 
-    ads_scope = Ad.where(deleted: false, category_id: category_id, seller_id: seller_ids)
-    ads_scope = ads_scope.where(subcategory_id: subcategory_id) if subcategory_id
-    ads_counts_by_seller = ads_scope.group(:seller_id).count
+      if seller_ids.empty?
+        []
+      else
+        sellers_records = Seller.where(id: seller_ids, deleted: false, blocked: false)
+                                .left_joins(:tier)
+                                .select('sellers.*, tiers.name AS tier_name')
 
-    sellers = Seller.where(id: seller_ids)
-                     .left_joins(:tier)
-                     .select('sellers.*, tiers.name AS tier_name')
-                     .map do |seller|
-      {
-        id: seller.id,
-        fullname: seller.fullname,
-        enterprise_name: seller.enterprise_name,
-        email: seller.email,
-        phone_number: seller.phone_number,
-        location: seller.location,
-        blocked: seller.blocked,
-        deleted: seller.deleted,
-        tier_name: seller.tier_name || 'Free',
-        profile_picture: seller.profile_picture,
-        ads_count: ads_counts_by_seller[seller.id] || 0,
-        created_at: seller.created_at&.iso8601
-      }
+        sellers_list = sellers_records.map do |seller|
+          {
+            id: seller.id,
+            fullname: seller.fullname,
+            enterprise_name: seller.enterprise_name,
+            email: seller.email,
+            phone_number: seller.phone_number,
+            location: seller.location,
+            blocked: seller.blocked,
+            deleted: seller.deleted,
+            tier_name: seller.tier_name || 'Free',
+            profile_picture: seller.profile_picture,
+            ads_count: ads_counts_by_seller[seller.id] || 0,
+            created_at: seller.created_at&.iso8601
+          }
+        end
+        # Highest ad count first, so the most active sellers surface at the top
+        sellers_list.sort_by { |s| [-s[:ads_count], s[:enterprise_name].to_s.downcase] }
+      end
     end
-
-    # Highest ad count first, so the most active sellers surface at the top
-    sellers.sort_by! { |seller| [-seller[:ads_count], seller[:enterprise_name].to_s.downcase] }
 
     render json: { sellers: sellers }
   rescue => e
@@ -606,20 +643,25 @@ class Sales::AnalyticsController < ApplicationController
 
   private
 
-  # Number of sellers placed in each category (based on categories_sellers),
+  # Number of distinct sellers with active ads in each category,
   # keyed by category name to match the click-event aggregates above.
+  # Uses ads as the source of truth — categories_sellers is a sparse
+  # manually-managed table that only covers ~24% of actual sellers.
   def category_seller_counts
-    CategoriesSeller.joins(:category)
-                     .group('categories.name')
-                     .count('DISTINCT categories_sellers.seller_id')
+    Ad.joins(:category, :seller)
+      .where(deleted: false, sellers: { deleted: false, blocked: false })
+      .group('categories.name')
+      .count('DISTINCT ads.seller_id')
   end
 
-  # Number of sellers placed in each subcategory (based on categories_sellers),
+  # Number of distinct sellers with active ads in each subcategory,
   # keyed by subcategory name to match the click-event aggregates above.
   def subcategory_seller_counts
-    CategoriesSeller.joins(:subcategory)
-                     .group('subcategories.name')
-                     .count('DISTINCT categories_sellers.seller_id')
+    Ad.joins(:subcategory, :seller)
+      .where(deleted: false, sellers: { deleted: false, blocked: false })
+      .where.not(subcategory_id: nil)
+      .group('subcategories.name')
+      .count('DISTINCT ads.seller_id')
   end
 
   def normalize_search_history(searches)

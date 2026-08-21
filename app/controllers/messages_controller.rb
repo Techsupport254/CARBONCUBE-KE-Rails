@@ -24,18 +24,6 @@ class MessagesController < ApplicationController
       message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
-        # For staff roles, only mark as read if they are the assigned admin/salesperson
-        is_staff = ['Admin', 'SalesUser', 'MarketingUser'].include?(@current_user.class.name)
-        if is_staff && @conversation.admin_id != @current_user.id
-          render json: { 
-            success: true, 
-            message: 'Viewer not assigned to conversation, skipping read receipt',
-            status: message.status_text,
-            read_at: message.read_at 
-          }
-          return
-        end
-
         message.mark_as_read!
         
         # Broadcast read receipt via WebSocket
@@ -71,26 +59,11 @@ class MessagesController < ApplicationController
   end
 
   def mark_as_delivered
-    # Sales users can now mark messages as delivered even if they are just viewing as support
-    # (Previously restricted to direct participants)
-    
     begin
       message_id = params[:id] || params[:message_id]
       message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
-        # For staff roles, only mark as delivered if they are the assigned admin/salesperson
-        is_staff = ['Admin', 'SalesUser', 'MarketingUser'].include?(@current_user.class.name)
-        if is_staff && @conversation.admin_id != @current_user.id
-          render json: { 
-            success: true, 
-            message: 'Viewer not assigned to conversation, skipping delivery receipt',
-            status: message.status_text,
-            delivered_at: message.delivered_at 
-          }
-          return
-        end
-
         message.mark_as_delivered!
         
         # Broadcast delivery receipt via WebSocket
@@ -357,8 +330,10 @@ class MessagesController < ApplicationController
       recipient_conv_ids.concat(seller_conv_ids)
     end
     
-    # Get all messages from related conversations
-    all_messages = Message.where(conversation_id: recipient_conv_ids.uniq).order(created_at: :asc)
+    # Get all messages from related conversations with preloaded ads
+    all_messages = Message.where(conversation_id: recipient_conv_ids.uniq)
+                          .includes(ad: [:category, :subcategory])
+                          .order(created_at: :asc)
     
     # Include ad information for each message
     messages_with_ads = all_messages.map do |message|
@@ -401,8 +376,10 @@ class MessagesController < ApplicationController
       recipient_conv_ids.concat(s2s_conv_ids)
     end
     
-    # Get all messages from related conversations
-    all_messages = Message.where(conversation_id: recipient_conv_ids.uniq).order(created_at: :asc)
+    # Get all messages from related conversations with preloaded ads
+    all_messages = Message.where(conversation_id: recipient_conv_ids.uniq)
+                          .includes(ad: [:category, :subcategory])
+                          .order(created_at: :asc)
     
     # Include ad information for each message
     messages_with_ads = all_messages.map do |message|
@@ -418,30 +395,51 @@ class MessagesController < ApplicationController
   end
 
   def fetch_admin_messages
-    # Get all conversations with the exact same participant set OR related support threads
-    # This ensures marketing broadcasts (admin-seller) show up in reply threads
+    is_buyer_seller = @conversation.buyer_id.present? && @conversation.seller_id.present?
+    is_seller_to_seller = @conversation.seller_id.present? && @conversation.inquirer_seller_id.present?
+    is_support_thread = @conversation.buyer_id.nil? && (@conversation.admin_id.present? || @conversation.is_whatsapp?)
+    is_buyer_support = @conversation.seller_id.nil? && @conversation.buyer_id.present? && @conversation.admin_id.present?
+
     related_conv_ids = [@conversation.id]
-    
-    if @conversation.seller_id.present?
-      # Find any Admin-Seller conversation for this seller that doesn't have a buyer
-      admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id)
-                                      .where(buyer_id: nil)
-                                      .where.not(admin_id: nil)
+
+    if is_buyer_seller
+      # Strictly marketplace conversations between this exact buyer and seller
+      buyer_seller_convs = Conversation.where(buyer_id: @conversation.buyer_id, seller_id: @conversation.seller_id).pluck(:id)
+      related_conv_ids.concat(buyer_seller_convs)
+    elsif is_seller_to_seller
+      # Strictly conversations between these two sellers
+      s2s_convs = Conversation.where(
+        "(seller_id = ? AND inquirer_seller_id = ?) OR (seller_id = ? AND inquirer_seller_id = ?)",
+        @conversation.seller_id, @conversation.inquirer_seller_id, @conversation.inquirer_seller_id, @conversation.seller_id
+      ).pluck(:id)
+      related_conv_ids.concat(s2s_convs)
+    elsif is_support_thread
+      # Admin-to-Seller support/broadcast threads for this seller
+      admin_seller_convs = Conversation.where(seller_id: @conversation.seller_id, buyer_id: nil)
+                                      .where("admin_id IS NOT NULL OR is_whatsapp = true")
                                       .pluck(:id)
       related_conv_ids.concat(admin_seller_convs)
-    end
-    
-    if @conversation.buyer_id.present?
-      # Find any Admin-Buyer conversation for this buyer that doesn't have a seller
-      admin_buyer_convs = Conversation.where(buyer_id: @conversation.buyer_id)
-                                     .where(seller_id: nil)
+    elsif is_buyer_support
+      # Admin-to-Buyer support threads for this buyer
+      admin_buyer_convs = Conversation.where(buyer_id: @conversation.buyer_id, seller_id: nil)
                                      .where.not(admin_id: nil)
                                      .pluck(:id)
       related_conv_ids.concat(admin_buyer_convs)
+    else
+      # Exact match on participants
+      exact_convs = Conversation.where(
+        admin_id: @conversation.admin_id,
+        buyer_id: @conversation.buyer_id,
+        seller_id: @conversation.seller_id,
+        inquirer_seller_id: @conversation.inquirer_seller_id
+      ).pluck(:id)
+      related_conv_ids.concat(exact_convs)
     end
-    
-    # Get all messages from these conversations, including ad info
-    all_messages = Message.where(conversation_id: related_conv_ids.uniq).order(created_at: :asc)
+
+    # Get all messages from these conversations with preloaded ads
+    all_messages = Message.where(conversation_id: related_conv_ids.uniq)
+                          .includes(ad: [:category, :subcategory])
+                          .order(created_at: :asc)
     
     # Include ad information for each message
     messages_with_ads = all_messages.map do |message|
@@ -465,15 +463,15 @@ class MessagesController < ApplicationController
       sender_id: message.sender_id,
       ad_id: message.ad_id,
       product_context: message.product_context,
-      status: message.status,
+      status: message.status_text,
       read_at: message.read_at,
       delivered_at: message.delivered_at
     }
   end
 
   def add_ad_information(message_data, message)
-    if message.ad_id
-      ad = Ad.find(message.ad_id)
+    ad = message.ad
+    if ad
       message_data[:ad] = {
         id: ad.id,
         title: ad.title,
