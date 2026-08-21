@@ -20,6 +20,9 @@ node_modules/
 # Ruby bundle caches
 vendor/bundle
 
+# Database dumps (large local/backup files, never needed in image)
+db/dumps/
+
 # Test directories
 test/
 spec/

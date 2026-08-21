@@ -8,6 +8,7 @@
     "**/test",
     "**/spec",
     "**/coverage",
+    "db/dumps",
     "config/master.key"
   ],
   "steps": {
