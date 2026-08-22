@@ -8,6 +8,8 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
   retry_on StandardError, wait: :polynomially_longer, attempts: 3
   discard_on ActiveJob::DeserializationError
 
+  THROTTLE_DELAY = ENV.fetch('CAMPAIGN_THROTTLE_DELAY', '0.1').to_f
+
   def perform(user_id, user_type, dry_run = true, channels = { email: true, whatsapp: true })
     model_class = user_type == 'buyer' ? Buyer : Seller
     user = model_class.find_by(id: user_id)
@@ -35,6 +37,7 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
         unless dry_run
           send_email_via_nextjs(user, email, user_type)
           RedisConnection.with { |conn| conn.sadd(email_dedup_key, email) }
+          sleep THROTTLE_DELAY
         end
       end
     end
@@ -46,6 +49,7 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
         unless dry_run
           send_whatsapp_template(user, phone, user_type)
           RedisConnection.with { |conn| conn.sadd(phone_dedup_key, phone) }
+          sleep THROTTLE_DELAY
         end
       end
     end

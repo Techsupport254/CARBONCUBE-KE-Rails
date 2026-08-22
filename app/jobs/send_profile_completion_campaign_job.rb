@@ -9,6 +9,7 @@ class SendProfileCompletionCampaignJob < ApplicationJob
   discard_on ActiveJob::DeserializationError
 
   PROFILE_FIELDS = %w[enterprise_name description phone_number email profile_picture].freeze
+  THROTTLE_DELAY = ENV.fetch('CAMPAIGN_THROTTLE_DELAY', '0.1').to_f
 
   def perform(dry_run = true, test_email = nil)
     sellers = find_incomplete_sellers
@@ -54,6 +55,7 @@ class SendProfileCompletionCampaignJob < ApplicationJob
       unless dry_run
         send_email(email, seller, missing, completion)
         RedisConnection.with { |conn| conn.sadd(dedup_key, email) }
+        sleep THROTTLE_DELAY
       end
       sent_count += 1
     end
