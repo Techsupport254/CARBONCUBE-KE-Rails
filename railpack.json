@@ -11,7 +11,7 @@
     "db/dumps",
     "config/master.key"
   ],
-  "buildAptPackages": ["...", "build-essential"],
+  "buildAptPackages": ["build-essential", "libjemalloc-dev", "libpq-dev", "libyaml-dev"],
   "steps": {
     "prune:node": {
       "commands": ["rm -rf node_modules && bun install --production"]
