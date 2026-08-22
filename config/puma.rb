@@ -34,7 +34,10 @@ environment ENV.fetch("RAILS_ENV") { "development" }
 
 # Specifies the `pidfile` that Puma will use.
 # Default to nil so Puma does not fail in containers where tmp/pids is missing.
-pidfile ENV.fetch("PIDFILE") { nil }
+# Puma's `pidfile` DSL coerces nil to an empty string, so only call it when a
+# path is actually provided.
+pidfile_path = ENV["PIDFILE"].to_s.strip
+pidfile pidfile_path unless pidfile_path.empty?
 
 # Use the `preload_app!` method when specifying a `workers` number.
 # This directive tells Puma to first boot the application and load code
