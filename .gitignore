@@ -52,8 +52,12 @@ credentials.yaml
 # Firebase service account
 /config/firebase-service-account.json
 
-# Database dumps
+# Database dumps / sensitive data files
 /db/dumps/*
+db_backup_*.dump
+/*.sql
+resources.txt
+scratch/*.sql
 
 # GA4 service account credentials
 config/ga4_credentials.json

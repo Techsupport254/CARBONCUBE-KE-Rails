@@ -60,7 +60,9 @@ module CarbonecomRails
     config.force_ssl = Rails.env.production?
 
     # Active Record Encryption for message content at rest
-    base_secret = ENV['ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY'] || ENV['SECRET_KEY_BASE'] || 'cc_enc_d85f543161caeaee2ef04ca51cf434e3415c8980bcf2e2ff62ddfe31c8adad6d'
+    base_secret = ENV['ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY'] || ENV['SECRET_KEY_BASE']
+    raise "ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY or SECRET_KEY_BASE must be set" if base_secret.blank?
+
     config.active_record.encryption.primary_key = ENV['ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY'] || Digest::SHA256.hexdigest("#{base_secret}_primary")[0..31]
     config.active_record.encryption.deterministic_key = ENV['ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY'] || Digest::SHA256.hexdigest("#{base_secret}_deterministic")[0..31]
     config.active_record.encryption.key_derivation_salt = ENV['ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT'] || Digest::SHA256.hexdigest("#{base_secret}_salt")[0..31]

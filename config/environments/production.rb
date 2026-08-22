@@ -60,7 +60,7 @@ Rails.application.configure do
   config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = false
+  config.force_ssl = true
 
   # Log to STDOUT by default
   config.logger = ActiveSupport::Logger.new(STDOUT)
@@ -102,13 +102,10 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
-  # Allow all hosts (internal Docker network, reverse proxies, and public domains)
+  # Allow only the public Carbon domains and their subdomains.
   config.hosts = [
     ".carboncube-ke.com",
-    "carboncube-ke.com",
-    "localhost",
-    "127.0.0.1",
-    /.*/
+    "carboncube-ke.com"
   ]
 
   # Use a different cache store in production.

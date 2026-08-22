@@ -120,7 +120,9 @@ class SendProfileCompletionCampaignJob < ApplicationJob
     http.open_timeout = 10
 
     request = Net::HTTP::Post.new(uri.path, { 'Content-Type' => 'application/json' })
-    token = ENV['ADMIN_API_TOKEN'] || ENV['INTERNAL_API_KEY'] || 'carboncube-internal-campaign-key-2026-xyz'
+    token = ENV['ADMIN_API_TOKEN'] || ENV['INTERNAL_API_KEY']
+    raise "ADMIN_API_TOKEN or INTERNAL_API_KEY must be set" if token.blank?
+
     request['Authorization'] = "Bearer #{token}"
 
     payload = {
