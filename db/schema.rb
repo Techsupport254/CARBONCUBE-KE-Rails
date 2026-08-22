@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_22_194707) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -121,6 +121,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.string "ip_address"
     t.string "utm_content"
     t.string "utm_term"
+    t.index "((data ->> 'user_email'::text))", name: "index_analytics_on_user_email"
+    t.index "((data ->> 'visitor_id'::text))", name: "index_analytics_on_visitor_id"
+    t.index ["created_at"], name: "index_analytics_on_created_at"
+    t.index ["referrer"], name: "index_analytics_on_referrer"
+    t.index ["source", "created_at"], name: "index_analytics_on_source_created_at"
+    t.index ["source"], name: "index_analytics_on_source"
+    t.index ["utm_campaign"], name: "index_analytics_on_utm_campaign"
+    t.index ["utm_content"], name: "index_analytics_on_utm_content"
+    t.index ["utm_medium"], name: "index_analytics_on_utm_medium"
+    t.index ["utm_source", "created_at"], name: "index_analytics_on_utm_source_created_at"
+    t.index ["utm_source"], name: "index_analytics_on_utm_source"
+    t.index ["utm_term"], name: "index_analytics_on_utm_term"
   end
 
   create_table "banners", force: :cascade do |t|
@@ -642,7 +654,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", force: :cascade do |t|
+  create_table "monitoring_metrics", id: false, force: :cascade do |t|
+    t.bigserial "id", null: false
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"
@@ -1021,6 +1034,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.string "linkedin_url"
     t.string "website"
     t.text "flag_notes"
+    t.string "google_place_id"
+    t.jsonb "google_place_reviews", default: []
+    t.datetime "google_reviews_fetched_at"
+    t.datetime "google_place_id_fetched_at"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -1034,6 +1051,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.index ["deleted", "ads_count"], name: "index_sellers_on_deleted_and_ads_count"
     t.index ["deleted", "blocked", "created_at"], name: "index_sellers_on_status_created_at"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
+    t.index ["google_place_id"], name: "index_sellers_on_google_place_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true
     t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
     t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"

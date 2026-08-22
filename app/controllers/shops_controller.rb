@@ -168,6 +168,14 @@ class ShopsController < ApplicationController
     total_reviews = all_reviews.count
     average_rating = all_reviews.average(:rating).to_f.round(1)
 
+    google_reviews = @shop.google_place_reviews || []
+    google_reviews_count = google_reviews.size
+    google_average_rating = if google_reviews_count > 0
+      (google_reviews.sum { |r| r["rating"].to_f } / google_reviews_count).round(1)
+    else
+      0.0
+    end
+
     @reviews = all_reviews
                  .includes(:buyer, :ad)
                  .order(created_at: :desc)
@@ -195,7 +203,9 @@ class ShopsController < ApplicationController
         updated_at: review.updated_at,
         buyer: review.buyer && {
           id: review.buyer.id,
-          name: review.buyer.fullname || review.buyer.name || "Buyer ##{review.buyer.id}"
+          name: review.buyer.fullname || review.buyer.name || "Buyer ##{review.buyer.id}",
+          username: review.buyer.username,
+          profile_picture: review.buyer.profile_picture
         },
         seller: seller && {
           id: seller.id,
@@ -213,9 +223,12 @@ class ShopsController < ApplicationController
     
     render json: {
       reviews: reviews_data,
+      google_reviews: google_reviews,
       statistics: {
         total_reviews: total_reviews,
         average_rating: average_rating,
+        google_reviews_count: google_reviews_count,
+        google_average_rating: google_average_rating,
         rating_distribution: rating_distribution
       },
       pagination: {

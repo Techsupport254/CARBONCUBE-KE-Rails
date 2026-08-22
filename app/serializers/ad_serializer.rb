@@ -2,7 +2,7 @@ class AdSerializer < ActiveModel::Serializer
   attributes :id, :title, :description, :price, :brand, :condition, :manufacturer, :model, :specifications,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name,
-             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :media_urls, :first_media_url, :tier_priority,
+             :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :seller_reviews_count, :seller_average_rating, :media_urls, :first_media_url, :tier_priority,
              :seller_is_verified, :seller_document_verified, :is_added_by_sales,
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged
@@ -81,6 +81,14 @@ class AdSerializer < ActiveModel::Serializer
       # Calculate from database
       object.reviews.average(:rating)&.round(1) || 0.0
     end
+  end
+
+  def seller_average_rating
+    object.seller&.average_rating&.round(1) || 0.0
+  end
+
+  def seller_reviews_count
+    object.seller&.reviews&.count.to_i
   end
 
   def media_urls

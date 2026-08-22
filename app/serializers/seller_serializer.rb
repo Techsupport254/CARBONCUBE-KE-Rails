@@ -4,7 +4,8 @@ class SellerSerializer < ActiveModel::Serializer
              :age_group_id, :zipcode, :city, :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
              :carbon_code, :created_at, :updated_at,
-             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website
+             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website,
+             :google_place_reviews, :google_reviews_fetched_at
 
   has_many :categories
   has_many :seller_documents, serializer: SellerDocumentSerializer

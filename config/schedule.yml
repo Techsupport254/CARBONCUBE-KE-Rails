@@ -48,3 +48,12 @@ document_compliance_check:
   queue: low
   description: "Weekly check for unverified or expired seller documents and enqueue reminders"
 
+# --- GOOGLE REVIEWS ---
+# Refresh Google Place reviews for sellers once a month on the 1st at 3:00 AM EAT (00:00 UTC).
+# Each seller is spaced 10 minutes apart to stay within the free 1,000 requests/month cap.
+sync_google_reviews:
+  cron: "0 0 1 * *"
+  class: "SyncGoogleReviewsSchedulerJob"
+  queue: low
+  description: "Schedule distributed monthly refresh of Google Place reviews for all sellers"
+
