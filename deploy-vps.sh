@@ -70,8 +70,11 @@ deploy_docker_services() {
     fi
     
     # Step 2: Prune unused Docker resources
-    echo "   Pruning unused Docker resources..."
-    docker system prune -f
+    # Do NOT use "docker system prune -f" here: it wipes the BuildKit build
+    # cache, so the next build is a cold, heavy build that OOMs the 4 GB VPS.
+    echo "   Pruning unused Docker resources (keeping build cache)..."
+    docker container prune -f >/dev/null 2>&1 || true
+    docker image prune -f >/dev/null 2>&1 || true
     
     # Step 3: Rebuild and start services
     echo "   Rebuilding and starting services..."
