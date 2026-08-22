@@ -102,11 +102,14 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
-  # Allow only the public Carbon domains and their subdomains.
+  # Allow the public Carbon domains, their subdomains, and any extra hosts
+  # supplied via environment variables (e.g. temporary preview/staging hosts).
   config.hosts = [
     ".carboncube-ke.com",
-    "carboncube-ke.com"
-  ]
+    "carboncube-ke.com",
+    ENV.fetch("HOST", nil),
+    *ENV.fetch("RAILS_ALLOWED_HOSTS", "").split(",").map(&:strip).compact_blank
+  ].compact
 
   # Use a different cache store in production.
   # Use file store if Redis is not available, otherwise use Redis
