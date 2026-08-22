@@ -11,6 +11,7 @@
     "db/dumps",
     "config/master.key"
   ],
+  "buildAptPackages": ["...", "build-essential"],
   "steps": {
     "prune:node": {
       "commands": ["rm -rf node_modules && bun install --production"]
