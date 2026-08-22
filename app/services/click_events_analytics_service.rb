@@ -118,7 +118,7 @@ class ClickEventsAnalyticsService
   # Get timestamps for frontend filtering - optimized to use SQL aggregations instead of loading all into memory
   # This is much faster for large datasets as it uses database-level aggregations
   # OPTIMIZATION: Limit to last 2 years by default to improve performance
-  def timestamps(limit: 10000, date_limit: 2.years.ago)
+  def timestamps(limit: nil, date_limit: 2.years.ago)
     # Build base query with ordering - each event type will use a fresh copy
     base_ordered_query = base_query.order("click_events.created_at DESC")
     
@@ -495,8 +495,7 @@ class ClickEventsAnalyticsService
       category_query = category_query.where(click_events: { ad_id: ad_ids })
     end
     
-    # Use SQL aggregations to get counts - limit timestamps to recent events for performance
-    # Only get timestamps for the most recent 1000 events per category to avoid memory issues
+    # Use SQL aggregations to get counts with per-event-type timestamps
     category_query
       .group('categories.id', 'categories.name')
       .select(
@@ -505,23 +504,23 @@ class ClickEventsAnalyticsService
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wish_list_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
-        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.created_at IS NOT NULL) as timestamps_array"
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_click_timestamps_array",
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_timestamps_array",
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wishlist_timestamps_array"
       )
       .order('categories.name')
       .map do |row|
-        # Limit timestamps to most recent 1000 per category for performance
-        timestamps = if row.respond_to?(:timestamps_array) && row.timestamps_array
-          row.timestamps_array.first(1000).map { |ts| ts&.iso8601 }.compact
-        else
-          []
-        end
+        parse_ts = ->(arr) { arr&.first(1000)&.map { |ts| ts&.iso8601 }&.compact || [] }
         
         {
           category_name: row.category_name,
           ad_clicks: row.ad_clicks.to_i,
           wish_list_clicks: row.wish_list_clicks.to_i,
           reveal_clicks: row.reveal_clicks.to_i,
-          timestamps: timestamps
+          timestamps: parse_ts.call(row.respond_to?(:ad_click_timestamps_array) ? row.ad_click_timestamps_array : nil),
+          ad_click_timestamps: parse_ts.call(row.respond_to?(:ad_click_timestamps_array) ? row.ad_click_timestamps_array : nil),
+          reveal_timestamps: parse_ts.call(row.respond_to?(:reveal_timestamps_array) ? row.reveal_timestamps_array : nil),
+          wishlist_timestamps: parse_ts.call(row.respond_to?(:wishlist_timestamps_array) ? row.wishlist_timestamps_array : nil)
         }
       end
   end

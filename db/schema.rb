@@ -155,10 +155,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.bigint "sub_county_id"
     t.string "profile_picture"
     t.string "location_precision", default: "approximate"
-    t.index ["latitude", "longitude"], name: "index_branches_on_coordinates", where: "((latitude IS NOT NULL) AND (longitude IS NOT NULL))"
     t.index ["latitude", "longitude"], name: "index_branches_on_latitude_and_longitude"
     t.index ["location_precision"], name: "index_branches_on_location_precision"
-    t.index ["seller_id", "latitude"], name: "index_branches_on_seller_id_and_latitude", where: "(latitude IS NOT NULL)"
+    t.index ["seller_id", "latitude"], name: "index_branches_on_seller_id_and_latitude"
     t.index ["seller_id"], name: "index_branches_on_seller_id"
   end
 
@@ -643,8 +642,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", id: false, force: :cascade do |t|
-    t.bigserial "id", null: false
+  create_table "monitoring_metrics", force: :cascade do |t|
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"
@@ -972,7 +970,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.uuid "seller_id", null: false
     t.index ["expires_at"], name: "index_seller_tiers_on_expires_at"
     t.index ["payment_transaction_id"], name: "index_seller_tiers_on_payment_transaction_id"
-    t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_and_tier"
     t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_id_and_tier_id"
     t.index ["seller_id", "tier_id"], name: "index_seller_tiers_on_seller_id_tier_id"
     t.index ["seller_id"], name: "index_seller_tiers_on_seller_id"
@@ -1034,7 +1031,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_21_195300) do
     t.index ["carbon_code_id"], name: "index_sellers_on_carbon_code_id"
     t.index ["county_id"], name: "index_sellers_on_county_id"
     t.index ["created_at"], name: "index_sellers_on_created_at"
-    t.index ["deleted", "ads_count"], name: "index_sellers_on_deleted_and_ads_count", order: { ads_count: :desc }
+    t.index ["deleted", "ads_count"], name: "index_sellers_on_deleted_and_ads_count"
     t.index ["deleted", "blocked", "created_at"], name: "index_sellers_on_status_created_at"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true

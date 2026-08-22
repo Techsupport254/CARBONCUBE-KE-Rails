@@ -3,7 +3,8 @@
 # Script to safely dump data from production and restore to local database
 # This script only READS from production - it never modifies production data
 
-set -e  # Exit on error
+set -e
+set -o pipefail
 
 # Use postgresql@17 binaries (must match or exceed production server version)
 PG_BIN_DIR="/opt/homebrew/opt/postgresql@17/bin"
@@ -17,7 +18,7 @@ NC='\033[0m' # No Color
 
 # Production database URL (READ-ONLY operations only)
 # Can be overridden by setting the PRODUCTION_DB env variable
-if [ -z "$PRODUCTION_DB" ]; then
+if [ -z "${PRODUCTION_DB:-}" ]; then
   PRODUCTION_DB="postgresql://carbon:Nx9CC4ENjmmpcnqPeWLV@49.12.235.140:6543/postgres?sslmode=disable"
 fi
 
@@ -53,7 +54,7 @@ echo ""
 # --clean: Include DROP commands before CREATE (for clean restore)
 # --if-exists: Use IF EXISTS in DROP commands
 # --exclude-schema: Exclude Supabase schemas (no longer used)
-pg_dump "$PRODUCTION_DB" \
+if ! pg_dump "$PRODUCTION_DB" \
   --format=custom \
   --no-owner \
   --no-privileges \
@@ -66,9 +67,12 @@ pg_dump "$PRODUCTION_DB" \
   --exclude-schema='information_schema' \
   --exclude-schema='pg_catalog' \
   --file="$DUMP_FILE" \
-  2>&1 | sed 's/^/  /'
+  2>&1 | sed 's/^/  /'; then
+  echo -e "${RED}✗ Failed to create dump from production${NC}"
+  exit 1
+fi
 
-if [ $? -ne 0 ] || [ ! -s "$DUMP_FILE" ]; then
+if [ ! -s "$DUMP_FILE" ]; then
   echo -e "${RED}✗ Failed to create dump from production or dump is empty${NC}"
   exit 1
 fi
@@ -89,19 +93,48 @@ psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "DROP DATABASE I
 echo "Creating fresh database..."
 psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
 
+# The production dump references the 'extensions' schema for some PostgreSQL
+# extensions. Pre-create that schema and the extensions locally so that the
+# restore's `CREATE EXTENSION IF NOT EXISTS` statements are no-ops.
+echo "Preparing local database schemas and extensions..."
+psql "$LOCAL_DB" -c "CREATE SCHEMA IF NOT EXISTS extensions;" 2>&1 | sed 's/^/  /' || true
+psql "$LOCAL_DB" -c "DO \$\$
+BEGIN
+  BEGIN CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_stat_statements not available'; END;
+  BEGIN CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_trgm not available'; END;
+  BEGIN CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pgcrypto not available'; END;
+  BEGIN CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'uuid-ossp not available'; END;
+END \$\$;" 2>&1 | sed 's/^/  /' || true
+
 # Restore using pg_restore
-pg_restore \
+echo "Running pg_restore..."
+if pg_restore \
   --dbname="$LOCAL_DB" \
   --no-owner \
   --no-privileges \
   --verbose \
   "$DUMP_FILE" \
-  2>&1 | sed 's/^/  /'
+  2>&1 | sed 's/^/  /'; then
+  PG_RESTORE_STATUS=0
+else
+  PG_RESTORE_STATUS=$?
+fi
 
-if [ $? -ne 0 ]; then
-  echo -e "${RED}✗ Failed to restore to local database${NC}"
+if [ "$PG_RESTORE_STATUS" -eq 1 ]; then
+  echo -e "${RED}✗ Failed to restore to local database (fatal error)${NC}"
   exit 1
 fi
+
+if [ "$PG_RESTORE_STATUS" -eq 2 ]; then
+  echo -e "${YELLOW}⚠ pg_restore completed with warnings (e.g., duplicates or missing extensions). Continuing...${NC}"
+fi
+
+# The production dump occasionally contains duplicate rows in monitoring_metrics,
+# which prevents the primary key from being re-created. Clean those up and
+# re-add the primary key if necessary.
+echo "Cleaning up duplicate monitoring_metrics rows and re-adding primary key..."
+psql "$LOCAL_DB" -c "DELETE FROM monitoring_metrics m1 USING (SELECT id, MIN(ctid) AS min_ctid FROM monitoring_metrics GROUP BY id HAVING COUNT(*) > 1) dups WHERE m1.id = dups.id AND m1.ctid <> dups.min_ctid;" 2>&1 | sed 's/^/  /' || true
+psql "$LOCAL_DB" -c "ALTER TABLE monitoring_metrics ADD CONSTRAINT IF NOT EXISTS monitoring_metrics_pkey PRIMARY KEY (id);" 2>&1 | sed 's/^/  /' || true
 
 echo ""
 echo -e "${GREEN}✓ Successfully restored production data to local database${NC}"
@@ -120,11 +153,11 @@ if [ "$TABLE_EXISTS" = "t" ]; then
   psql "$LOCAL_DB" -c "INSERT INTO schema_migrations (version) VALUES ('20260706104332') ON CONFLICT (version) DO NOTHING;" 2>/dev/null || true
 fi
 
-# Run pending migrations
-bundle exec rake db:migrate \
-  2>&1 | sed 's/^/  /'
+# Ensure gems are installed before running migrations
+bundle check 2>&1 | sed 's/^/  /' || bundle install 2>&1 | sed 's/^/  /'
 
-if [ $? -ne 0 ]; then
+# Run pending migrations
+if ! bundle exec rake db:migrate 2>&1 | sed 's/^/  /'; then
   echo -e "${RED}✗ Failed to run migrations${NC}"
   exit 1
 fi
@@ -140,4 +173,3 @@ echo ""
 echo "Dump file saved at: $DUMP_FILE"
 echo "Local database: carbon_development"
 echo ""
-

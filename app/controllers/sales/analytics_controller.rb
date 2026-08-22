@@ -8,7 +8,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v6_#{device_hash}"
+    cache_key = "sales_analytics_index_v7_#{device_hash}"
     response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
@@ -737,16 +737,20 @@ class Sales::AnalyticsController < ApplicationController
       Analytic.excluding_internal_users.where('created_at >= ?', two_years_ago)
     end
 
-    # Apply source/UTM filter if provided (case-insensitive matching)
-    if selected_source
-      base_scope = base_scope.where(
-        "CASE
-          WHEN source IS NOT NULL AND source != '' THEN LOWER(source)
-          WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source)
-          ELSE 'other'
-        END = LOWER(?)",
-        selected_source.downcase
-      )
+    # Apply source/UTM filter if provided (case-insensitive matching using index-friendly conditions)
+    if selected_source.present?
+      src = selected_source.to_s.downcase
+      if src == 'direct' || src == 'other'
+        base_scope = base_scope.where(
+          "(source IS NULL OR source = '' OR LOWER(source) = :src) AND (utm_source IS NULL OR utm_source = '' OR LOWER(utm_source) IN ('direct', 'other'))",
+          src: src
+        )
+      else
+        base_scope = base_scope.where(
+          "LOWER(source) = :src OR ((source IS NULL OR source = '') AND LOWER(utm_source) = :src)",
+          src: src
+        )
+      end
     elsif selected_utm_type && selected_utm_value
       # Case-insensitive matching for UTM parameters
       case selected_utm_type
@@ -766,7 +770,62 @@ class Sales::AnalyticsController < ApplicationController
     visitor_id_sql = "data->>'visitor_id'"
     visitor_scope = base_scope.where("#{visitor_id_sql} IS NOT NULL")
 
-    # OPTIMIZATION: Parallelize independent DB aggregation queries across thread pool
+    is_drilldown = selected_source.present? || (selected_utm_type.present? && selected_utm_value.present?)
+
+    if is_drilldown
+      total_visits = 0
+      unique_visitors = 0
+      daily_visits = {}
+      daily_unique_visitors = {}
+      visit_timestamps = []
+      unique_visitor_timestamps = []
+      utm_campaign_distribution = {}
+      referrer_distribution = {}
+
+      threads = [
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { total_visits = base_scope.count } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql)) } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_visits = base_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).count } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_unique_visitors = visitor_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).distinct.count(Arel.sql(visitor_id_sql)) } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { visit_timestamps = compact_count_series(base_scope, 'analytics.created_at') } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitor_timestamps = compact_distinct_series(visitor_scope, 'analytics.created_at', Arel.sql(visitor_id_sql)) } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count } },
+        Thread.new { ActiveRecord::Base.connection_pool.with_connection { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } }
+      ]
+      threads.each(&:join)
+
+      avg_visits_per_visitor = unique_visitors > 0 ? (total_visits.to_f / unique_visitors).round(2) : 0
+      top_referrers = referrer_distribution.sort_by { |_, count| -count }.first(10)
+      drill_name = selected_source || selected_utm_value
+
+      return {
+        total_visits: total_visits,
+        unique_visitors: unique_visitors,
+        returning_visitors: 0,
+        new_visitors: 0,
+        avg_visits_per_visitor: avg_visits_per_visitor,
+        source_distribution: { drill_name => total_visits },
+        other_sources_count: 0,
+        incomplete_utm_count: 0,
+        unique_visitors_by_source: { drill_name => unique_visitors },
+        visits_by_source: { drill_name => total_visits },
+        utm_source_distribution: {},
+        utm_medium_distribution: {},
+        utm_campaign_distribution: utm_campaign_distribution,
+        utm_content_distribution: {},
+        utm_term_distribution: {},
+        referrer_distribution: referrer_distribution,
+        daily_visits: daily_visits,
+        visit_timestamps: visit_timestamps,
+        unique_visitor_timestamps: unique_visitor_timestamps,
+        shop_share_data_with_timestamps: [],
+        daily_unique_visitors: daily_unique_visitors,
+        top_sources: [[drill_name, total_visits]],
+        top_referrers: top_referrers
+      }
+    end
+
+    # OPTIMIZATION: Parallelize independent DB aggregation queries across thread pool for overview
     source_distribution = nil
     unique_visitors = nil
     utm_source_distribution = nil
@@ -778,6 +837,8 @@ class Sales::AnalyticsController < ApplicationController
     unique_visitors_by_source = nil
     daily_visits = nil
     daily_unique_visitors = nil
+    visit_timestamps = []
+    unique_visitor_timestamps = []
 
     threads = [
       Thread.new { ActiveRecord::Base.connection_pool.with_connection { source_distribution = base_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).count } },
@@ -789,8 +850,10 @@ class Sales::AnalyticsController < ApplicationController
       Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_term_distribution = base_scope.where.not(utm_term: [nil, '']).group(Arel.sql("LOWER(utm_term)")).count } },
       Thread.new { ActiveRecord::Base.connection_pool.with_connection { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } },
       Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors_by_source = visitor_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).distinct.count(Arel.sql(visitor_id_sql)) } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_visits = base_scope.group("DATE(created_at)").order("DATE(created_at)").count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_unique_visitors = visitor_scope.group("DATE(created_at)").order("DATE(created_at)").distinct.count(Arel.sql(visitor_id_sql)) } }
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_visits = base_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).count } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_unique_visitors = visitor_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).distinct.count(Arel.sql(visitor_id_sql)) } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { visit_timestamps = compact_count_series(base_scope, 'analytics.created_at') } },
+      Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitor_timestamps = compact_distinct_series(visitor_scope, 'analytics.created_at', Arel.sql(visitor_id_sql)) } }
     ]
     threads.each(&:join)
 
@@ -817,8 +880,8 @@ class Sales::AnalyticsController < ApplicationController
       utm_term_distribution: utm_term_distribution,
       referrer_distribution: referrer_distribution,
       daily_visits: daily_visits,
-      visit_timestamps: [],
-      unique_visitor_timestamps: [],
+      visit_timestamps: visit_timestamps,
+      unique_visitor_timestamps: unique_visitor_timestamps,
       shop_share_data_with_timestamps: [],
       daily_unique_visitors: daily_unique_visitors,
       top_sources: top_sources,
@@ -1072,16 +1135,23 @@ class Sales::AnalyticsController < ApplicationController
     compact_series(scope, time_column) { |relation| relation.count }
   end
 
+  def compact_distinct_series(scope, time_column, distinct_column)
+    compact_series(scope, time_column) { |relation| relation.distinct.count(distinct_column) }
+  end
+
   def compact_sum_series(scope, time_column, value_column)
     compact_series(scope, time_column) { |relation| relation.sum(value_column) }
   end
 
   def compact_series(scope, time_column)
-    today_start = Time.zone.today.beginning_of_day
-    daily = yield(scope.where("#{time_column} < ?", today_start)
-                       .group(Arel.sql("DATE(#{time_column})"))
-                       .order(Arel.sql("DATE(#{time_column})")))
-    hourly = yield(scope.where("#{time_column} >= ?", today_start)
+    # Align to Africa/Nairobi timezone (UTC+3)
+    nairobi_now = Time.now.utc + 3.hours
+    nairobi_today_start_utc = nairobi_now.beginning_of_day - 3.hours
+
+    daily = yield(scope.where("#{time_column} < ?", nairobi_today_start_utc)
+                       .group(Arel.sql("DATE(#{time_column} + INTERVAL '3 hour')"))
+                       .order(Arel.sql("DATE(#{time_column} + INTERVAL '3 hour')")))
+    hourly = yield(scope.where("#{time_column} >= ?", nairobi_today_start_utc)
                         .group(Arel.sql("DATE_TRUNC('hour', #{time_column})"))
                         .order(Arel.sql("DATE_TRUNC('hour', #{time_column})")))
 
