@@ -107,7 +107,7 @@ Rails.application.configure do
   config.hosts = [
     ".carboncube-ke.com",
     "carboncube-ke.com",
-    ENV.fetch("HOST", nil),
+    ENV.fetch("HOST", nil).presence,
     *ENV.fetch("RAILS_ALLOWED_HOSTS", "").split(",").map(&:strip).compact_blank
   ].compact
 
