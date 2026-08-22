@@ -24,5 +24,8 @@
       ],
       "deployOutputs": [{ "include": ["tmp/react-email-rails"] }]
     }
+  },
+  "deploy": {
+    "startCommand": "bundle exec puma -C config/puma.rb"
   }
 }
