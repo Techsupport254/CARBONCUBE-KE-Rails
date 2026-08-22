@@ -118,3 +118,5 @@ gem "react-email-rails", "~> 0.8"
 
 gem "prawn", "~> 2.5"
 gem "prawn-table", "~> 0.2.2"
+
+gem "rack-attack", "~> 6.8"
