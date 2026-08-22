@@ -1,4 +1,16 @@
+require "ipaddr"
+
 class Rack::Attack
+  PRIVATE_NETWORKS = [
+    IPAddr.new("10.0.0.0/8"),
+    IPAddr.new("172.16.0.0/12"),
+    IPAddr.new("192.168.0.0/16"),
+    IPAddr.new("127.0.0.0/8"),
+    IPAddr.new("169.254.0.0/16"),
+    IPAddr.new("fc00::/7"),
+    IPAddr.new("::1/128")
+  ].freeze
+
   class << self
     def real_ip(req)
       forwarded = req.env["HTTP_X_FORWARDED_FOR"]
@@ -6,11 +18,26 @@ class Rack::Attack
 
       req.env["HTTP_X_REAL_IP"] || req.ip
     end
+
+    def private_ip?(ip)
+      return false unless ip
+      return true if %w[127.0.0.1 ::1].include?(ip)
+
+      IPAddr.new(ip)
+      PRIVATE_NETWORKS.any? { |net| net.include?(ip) }
+    rescue IPAddr::InvalidAddressError
+      false
+    end
   end
 
   # Don't rate-limit health checks or uptime endpoints
   safelist("allow/health") do |req|
     req.path.start_with?("/health", "/up", "/rails/health")
+  end
+
+  # Don't rate-limit internal/private network traffic (Dokploy/Docker builds, SSG)
+  safelist("allow/private-networks") do |req|
+    Rack::Attack.private_ip?(Rack::Attack.real_ip(req))
   end
 
   # Authentication: brute-force protection (login, oauth, reactivation, etc.)

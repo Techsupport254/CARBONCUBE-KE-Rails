@@ -39,3 +39,12 @@ request_phone_number_campaign:
   queue: broadcast
   description: "Weekly campaign requesting phone numbers for active sellers missing a contact phone number"
 
+# --- DOCUMENT COMPLIANCE ---
+# Check for unverified or expired seller documents every Monday at 8:00 AM EAT (05:00 UTC).
+# Enqueues a reminder for each non-compliant seller.
+document_compliance_check:
+  cron: "0 5 * * 1"
+  class: "DocumentComplianceCheckJob"
+  queue: low
+  description: "Weekly check for unverified or expired seller documents and enqueue reminders"
+
