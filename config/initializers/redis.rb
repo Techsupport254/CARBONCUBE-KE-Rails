@@ -34,6 +34,11 @@ module RedisConnection
       with { |conn| conn.get(key) }
     end
 
+    def mget(keys)
+      return [] if keys.blank?
+      with { |conn| conn.mget(*keys) }
+    end
+
     def del(key)
       with { |conn| conn.del(key) }
     end

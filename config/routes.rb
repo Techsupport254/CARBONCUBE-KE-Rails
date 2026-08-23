@@ -819,6 +819,8 @@ Rails.application.routes.draw do
         get :searches
       end
     end
+    get 'online', to: 'online#index'
+
     resources :ad_searches, only: [:index] do
       collection do
         get :analytics

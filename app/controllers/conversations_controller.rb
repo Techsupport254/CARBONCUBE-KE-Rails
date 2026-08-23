@@ -1,5 +1,6 @@
 class ConversationsController < ApplicationController
   before_action :authenticate_user
+  skip_before_action :authenticate_user, only: [:online_status]
   before_action :set_conversation, only: [:show]
 
   def index
@@ -91,7 +92,8 @@ class ConversationsController < ApplicationController
       # Check if user is online using Redis or Rails cache
       cache_key = "online_user_#{user_type}_#{user_id}"
       is_online = begin
-        RedisConnection.exists?(cache_key) || Rails.cache.exist?(cache_key)
+        RedisConnection.exists?(cache_key).to_i.positive? ||
+          Rails.cache.exist?(cache_key)
       rescue
         false
       end

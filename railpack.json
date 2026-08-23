@@ -26,7 +26,7 @@
     }
   },
   "deploy": {
-    "startCommand": "bundle exec puma -C config/puma.rb",
+    "startCommand": "bundle exec rails db:migrate && bundle exec puma -C config/puma.rb",
     "variables": {
       "RAILS_ALLOWED_HOSTS": "victor-carboncube-kenya-backend-u0rtk0,victor-carboncube-kenya-backend-u0rtk0:3000"
     }

@@ -84,10 +84,8 @@ class PresenceChannel < ApplicationCable::Channel
     when 'conversation_viewed'
       handle_conversation_viewed(data['conversation_id'])
     when 'heartbeat'
-      # Update user's online status
+      # Refresh user's online TTL in Redis only (no DB write)
       track_user_online(true)
-      # Update user's last_active_at timestamp
-      update_user_last_active
       # Process any pending delivery receipts
       process_pending_delivery_receipts
       # Send heartbeat response to confirm connection is alive
@@ -205,49 +203,18 @@ class PresenceChannel < ApplicationCable::Channel
     
     begin
       if online
-        # Set user as online with a 5-minute expiration
-        RedisConnection.setex(cache_key, 300, true) # 300 seconds = 5 minutes
+        # Set user as online with a 5-minute expiration.
+        # If the key already exists (heartbeat), only refresh TTL so we keep
+        # the original online-since timestamp. Otherwise set the join timestamp.
+        if RedisConnection.exists?(cache_key).to_i > 0
+          RedisConnection.expire(cache_key, 300)
+        else
+          RedisConnection.setex(cache_key, 300, Time.current.to_i)
+        end
       else
         # Remove user from online tracking
         RedisConnection.del(cache_key)
       end
-      
-      # Broadcast online status change to all subscribers (with error handling)
-      broadcast_online_status_change(online)
-      
-    rescue => e
-      # Don't re-raise to prevent connection issues
-    end
-  end
-
-  def update_user_last_active
-    # Update the user's last_active_at timestamp when they send a heartbeat
-    user = connection.current_user
-    if user.respond_to?(:last_active_at)
-      user.update_column(:last_active_at, Time.current)
-    end
-  rescue => e
-    # Don't re-raise to prevent connection issues
-  end
-
-  def broadcast_online_status_change(online)
-    # Broadcast online status change to all subscribers
-    user_type = @user_type || get_user_type_from_connection
-    user_id = @user_id || connection.current_user.id
-    
-    begin
-      ActionCable.server.broadcast(
-        "presence_channel",
-        {
-          type: "online_status",
-          user_type: user_type,
-          user_id: user_id,
-          online: online,
-          last_seen_at: connection.current_user&.respond_to?(:last_active_at) ? connection.current_user.last_active_at : nil,
-          timestamp: Time.current.iso8601
-        }
-      )
-      
     rescue => e
       # Don't re-raise to prevent connection issues
     end

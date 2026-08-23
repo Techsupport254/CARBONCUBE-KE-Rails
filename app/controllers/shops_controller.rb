@@ -168,7 +168,7 @@ class ShopsController < ApplicationController
     total_reviews = all_reviews.count
     average_rating = all_reviews.average(:rating).to_f.round(1)
 
-    google_reviews = @shop.google_place_reviews || []
+    google_reviews = @shop.respond_to?(:google_place_reviews) ? (@shop.google_place_reviews || []) : []
     google_reviews_count = google_reviews.size
     google_average_rating = if google_reviews_count > 0
       (google_reviews.sum { |r| r["rating"].to_f } / google_reviews_count).round(1)
