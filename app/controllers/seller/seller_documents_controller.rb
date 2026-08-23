@@ -46,7 +46,7 @@ class Seller::SellerDocumentsController < ApplicationController
   end
 
   def seller_document_params
-    params.permit(:document_type_id, :document_url, :document_expiry_date)
+    params.permit(:document_type_id, :document_url, :document_expiry_date, :document_verified)
   end
 
   def authenticate_seller

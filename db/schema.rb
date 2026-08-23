@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_22_194707) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
@@ -51,6 +51,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_22_194707) do
     t.string "oauth_token"
     t.string "oauth_refresh_token"
     t.string "oauth_expires_at"
+    t.string "phone_number"
+    t.string "profile_picture"
+    t.string "location"
+    t.string "city"
+    t.string "zipcode"
+    t.bigint "county_id"
+    t.bigint "sub_county_id"
     t.index ["id"], name: "index_admins_on_uuid", unique: true
   end
 
@@ -601,6 +608,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_22_194707) do
     t.string "oauth_expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "phone_number"
+    t.string "profile_picture"
+    t.string "location"
+    t.string "city"
+    t.string "zipcode"
+    t.bigint "county_id"
+    t.bigint "sub_county_id"
     t.index ["id"], name: "index_marketing_users_on_uuid", unique: true
   end
 
@@ -920,6 +934,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_22_194707) do
     t.string "oauth_token"
     t.string "oauth_refresh_token"
     t.string "oauth_expires_at"
+    t.string "phone_number"
+    t.string "profile_picture"
+    t.string "location"
+    t.string "city"
+    t.string "zipcode"
+    t.bigint "county_id"
+    t.bigint "sub_county_id"
     t.index ["id"], name: "index_sales_users_on_uuid", unique: true
   end
 

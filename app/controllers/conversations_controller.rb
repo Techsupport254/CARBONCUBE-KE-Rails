@@ -1,6 +1,7 @@
 class ConversationsController < ApplicationController
   before_action :authenticate_user
   skip_before_action :authenticate_user, only: [:online_status, :online_ping]
+  before_action :set_current_user_from_token, only: [:online_ping]
   before_action :set_conversation, only: [:show]
 
   def index
@@ -92,7 +93,7 @@ class ConversationsController < ApplicationController
       # Check if user is online using Redis or Rails cache
       cache_key = "online_user_#{user_type}_#{user_id}"
       is_online = begin
-        RedisConnection.exists?(cache_key).to_i.positive? ||
+        RedisConnection.exists?(cache_key) ||
           Rails.cache.exist?(cache_key)
       rescue
         false
@@ -139,6 +140,26 @@ class ConversationsController < ApplicationController
     render json: { ok: false }, status: :ok
   end
 
+  def location_from_request
+    country = request.headers['CF-IPCountry'].to_s
+    city = request.headers['CF-IPCity'].to_s
+    parts = [city.presence, country.presence].compact
+    return parts.join(', ') if parts.any?
+
+    ip = request.remote_ip
+    return nil if ip.blank? || internal_ip?(ip)
+
+    "IP: #{ip}"
+  end
+
+  def internal_ip?(ip)
+    require 'ipaddr'
+    addr = IPAddr.new(ip)
+    addr.loopback? || addr.private? || addr.link_local?
+  rescue IPAddr::InvalidAddressError
+    true
+  end
+
   def track_user_online
     user_type = case @current_user.class.name
                 when 'Buyer' then 'buyer'
@@ -150,22 +171,40 @@ class ConversationsController < ApplicationController
                 end
 
     cache_key = "online_user_#{user_type}_#{@current_user.id}"
+    current_page = params[:current_page].to_s
 
-    if RedisConnection.exists?(cache_key).to_i.positive?
+    if RedisConnection.exists?(cache_key)
       RedisConnection.expire(cache_key, 300)
     else
       RedisConnection.setex(cache_key, 300, Time.current.to_i)
     end
+
+    RedisConnection.setex("#{cache_key}:page", 300, current_page) if current_page.present?
+
+    referrer = params[:referrer].to_s
+    RedisConnection.setex("#{cache_key}:referrer", 300, referrer) if referrer.present?
+
+    location = location_from_request
+    RedisConnection.setex("#{cache_key}:location", 300, location) if location.present?
   end
 
   def track_guest_online(guest_id)
     cache_key = "online_guest_#{guest_id}"
+    current_page = params[:current_page].to_s
 
-    if RedisConnection.exists?(cache_key).to_i.positive?
+    if RedisConnection.exists?(cache_key)
       RedisConnection.expire(cache_key, 300)
     else
       RedisConnection.setex(cache_key, 300, Time.current.to_i)
     end
+
+    RedisConnection.setex("#{cache_key}:page", 300, current_page) if current_page.present?
+
+    referrer = params[:referrer].to_s
+    RedisConnection.setex("#{cache_key}:referrer", 300, referrer) if referrer.present?
+
+    location = location_from_request
+    RedisConnection.setex("#{cache_key}:location", 300, location) if location.present?
   end
 
   def mark_read
@@ -463,6 +502,34 @@ class ConversationsController < ApplicationController
       render json: { error: 'Invalid token format' }, status: :unauthorized
     rescue => e
       render json: { error: 'Authentication failed' }, status: :unauthorized
+    end
+  end
+
+  def set_current_user_from_token
+    token = request.headers["Authorization"]&.split(" ")&.last
+    return if token.blank?
+
+    begin
+      result = JsonWebToken.decode(token)
+      return unless result[:success]
+
+      decoded = result[:payload]
+      role = (decoded[:role] || decoded["role"])&.downcase
+
+      @current_user = case role
+                      when "seller"
+                        Seller.find_by(id: decoded[:seller_id] || decoded["seller_id"])
+                      when "buyer"
+                        Buyer.find_by(id: decoded[:buyer_id] || decoded["buyer_id"] || decoded[:user_id] || decoded["user_id"])
+                      when "admin"
+                        Admin.find_by(id: decoded[:user_id] || decoded["user_id"] || decoded[:admin_id] || decoded["admin_id"])
+                      when "sales", "salesuser"
+                        SalesUser.find_by(id: decoded[:user_id] || decoded["user_id"] || decoded[:sales_id] || decoded["sales_id"])
+                      when "marketing"
+                        MarketingUser.find_by(id: decoded[:user_id] || decoded["user_id"] || decoded[:marketing_id] || decoded["marketing_id"])
+                      end
+    rescue StandardError => e
+      Rails.logger.warn "set_current_user_from_token failed: #{e.message}"
     end
   end
 

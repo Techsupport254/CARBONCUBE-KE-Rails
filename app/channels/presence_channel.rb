@@ -206,7 +206,7 @@ class PresenceChannel < ApplicationCable::Channel
         # Set user as online with a 5-minute expiration.
         # If the key already exists (heartbeat), only refresh TTL so we keep
         # the original online-since timestamp. Otherwise set the join timestamp.
-        if RedisConnection.exists?(cache_key).to_i > 0
+        if RedisConnection.exists?(cache_key)
           RedisConnection.expire(cache_key, 300)
         else
           RedisConnection.setex(cache_key, 300, Time.current.to_i)

@@ -6,9 +6,11 @@ class Api::V1::SellerLocationsController < ApplicationController
     seller_ts = Seller.where(deleted: false).maximum(:updated_at).to_i
     branch_ts = Branch.maximum(:updated_at).to_i
     tier_ts = SellerTier.maximum(:updated_at).to_i
+    review_ts = Review.maximum(:updated_at).to_i
+    google_reviews_ts = Seller.maximum(:google_reviews_fetched_at).to_i
     seller_count = Seller.where(deleted: false).count
 
-    cache_key = "api/v1/seller_locations/#{seller_ts}-#{branch_ts}-#{tier_ts}-#{seller_count}"
+    cache_key = "api/v1/seller_locations/#{seller_ts}-#{branch_ts}-#{tier_ts}-#{review_ts}-#{google_reviews_ts}-#{seller_count}"
 
     # Return 304 Not Modified if client cache is fresh
     if stale?(etag: cache_key, public: false)
@@ -45,6 +47,13 @@ class Api::V1::SellerLocationsController < ApplicationController
           .index_by(&:seller_id)
 
         # Format the payload
+        review_aggregates = Review
+          .joins(:ad)
+          .where(ads: { seller_id: seller_ids })
+          .group("ads.seller_id")
+          .select("ads.seller_id AS seller_id, COUNT(*) AS total, AVG(reviews.rating) AS avg_rating")
+          .index_by { |r| r.seller_id.to_s }
+
         sellers_data = sellers.map do |seller|
           branch = branch_coords[seller.id] || first_branches[seller.id]
           full_location = [branch&.location, seller.location].compact.map(&:strip).reject(&:blank?).uniq.join(', ')
@@ -53,6 +62,14 @@ class Api::V1::SellerLocationsController < ApplicationController
           resolved_county = seller.county&.name.presence || 'Not Available'
           resolved_sub_county = seller.sub_county&.name.presence || 'Not Available'
           display_location = full_location.presence || seller.city.presence || 'Not Available'
+          review_stats = review_aggregates[seller.id.to_s]
+          google_reviews = seller.google_place_reviews || []
+          google_reviews_count = google_reviews.size
+          google_average_rating = if google_reviews_count > 0
+            (google_reviews.sum { |r| r["rating"].to_f } / google_reviews_count).round(1)
+          else
+            0.0
+          end
 
           {
             id: seller.id,
@@ -71,7 +88,11 @@ class Api::V1::SellerLocationsController < ApplicationController
             profile_picture: seller.profile_picture,
             document_verified: seller.document_verified || false,
             ads_count: seller.ads_count,
-            tier: seller.seller_tier&.tier&.name || 'Tier 1'
+            tier: seller.seller_tier&.tier&.name || 'Tier 1',
+            total_reviews: review_stats&.total.to_i,
+            average_rating: review_stats&.avg_rating.to_f.round(1),
+            google_reviews_count: google_reviews_count,
+            google_average_rating: google_average_rating
           }
         end
 

@@ -23,9 +23,10 @@ class ConversationSerializer < ActiveModel::Serializer
       fullname: admin_user.fullname,
       username: admin_user.try(:username) || admin_user.fullname,
       email: admin_user.email,
+      phone_number: admin_user.try(:phone_number),
       role: user_role,
-      profile_picture: 'https://carboncube-ke.com/logo.png',
-      profile_picture_url: 'https://carboncube-ke.com/logo.png'
+      profile_picture: resolve_profile_picture(admin_user.try(:profile_picture)),
+      profile_picture_url: resolve_profile_picture(admin_user.try(:profile_picture))
     }
   end
 

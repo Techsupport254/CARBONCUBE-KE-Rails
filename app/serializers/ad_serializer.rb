@@ -5,10 +5,17 @@ class AdSerializer < ActiveModel::Serializer
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :seller_reviews_count, :seller_average_rating, :media_urls, :first_media_url, :tier_priority,
              :seller_is_verified, :seller_document_verified, :is_added_by_sales,
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
-             :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged
+             :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
+             :seller_is_online
 
   def is_flagged
     object.flagged?
+  end
+
+  def seller_is_online
+    return false if object.seller_id.blank?
+
+    RedisConnection.exists?("online_user_seller_#{object.seller_id}") == true
   end
 
   has_one :seller, serializer: SellerSerializer

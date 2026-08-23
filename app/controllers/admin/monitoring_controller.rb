@@ -88,7 +88,7 @@ class Admin::MonitoringController < ApplicationController
     slug     = 'carboncube-status'
 
     # Fetch heartbeat data and status page config in parallel
-    heartbeat_url   = URI("#{base_url}/api/status-page/heartbeat/#{slug}")
+    heartbeat_url   = URI("#{base_url}/api/status-page/heartbeat/#{slug}?data_points=1440")
     status_page_url = URI("#{base_url}/api/status-page/#{slug}")
 
     heartbeat_data  = JSON.parse(Net::HTTP.get(heartbeat_url))

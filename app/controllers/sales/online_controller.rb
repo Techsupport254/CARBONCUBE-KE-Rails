@@ -3,8 +3,11 @@ class Sales::OnlineController < ApplicationController
   before_action :authenticate_sales_user
 
   def index
-    user_keys = RedisConnection.keys('online_user_*')
-    guest_keys = RedisConnection.keys('online_guest_*')
+    all_user_keys = RedisConnection.keys('online_user_*')
+    all_guest_keys = RedisConnection.keys('online_guest_*')
+
+    user_keys = all_user_keys.reject { |k| k.to_s.end_with?(':page') }
+    guest_keys = all_guest_keys.reject { |k| k.to_s.end_with?(':page') }
 
     parsed_users = user_keys.filter_map do |key|
       match = key.to_s.match(/\Aonline_user_([^_]+)_(.+)\z/)
@@ -27,9 +30,29 @@ class Sales::OnlineController < ApplicationController
       return
     end
 
-    values = RedisConnection.mget(parsed.map { |p| p[:key] })
+    main_keys = parsed.map { |p| p[:key] }
+    page_keys = main_keys.map { |k| "#{k}:page" }
+
+    values = RedisConnection.mget(main_keys)
     online_at_by_key = parsed.each_with_object({}).with_index do |(item, hash), index|
       hash[item[:key]] = values[index]
+    end
+
+    page_values = RedisConnection.mget(page_keys)
+    page_by_key = main_keys.each_with_object({}).with_index do |(key, hash), index|
+      hash[key] = page_values[index]
+    end
+
+    referrer_keys = main_keys.map { |k| "#{k}:referrer" }
+    referrer_values = RedisConnection.mget(referrer_keys)
+    referrer_by_key = main_keys.each_with_object({}).with_index do |(key, hash), index|
+      hash[key] = referrer_values[index]
+    end
+
+    location_keys = main_keys.map { |k| "#{k}:location" }
+    location_values = RedisConnection.mget(location_keys)
+    location_by_key = main_keys.each_with_object({}).with_index do |(key, hash), index|
+      hash[key] = location_values[index]
     end
 
     grouped = parsed.group_by { |p| p[:type] }
@@ -52,16 +75,19 @@ class Sales::OnlineController < ApplicationController
             username: nil,
             fullname: 'Guest',
             type: 'guest',
-            online_at: online_at
+            online_at: online_at,
+            current_page: page_by_key[item[:key]],
+            referrer: referrer_by_key[item[:key]],
+            location: location_by_key[item[:key]]
           }
         end
       else
-        ids = items.map { |item| item[:id].to_i }
+        ids = items.map { |item| item[:id] }
         records = records_for_type(user_type, ids)
-        record_by_id = records.index_by(&:id)
+        record_by_id = records.index_by { |r| r.id.to_s }
 
         users = items.filter_map do |item|
-          record = record_by_id[item[:id].to_i]
+          record = record_by_id[item[:id]]
           next unless record
 
           online_at_value = online_at_by_key[item[:key]]
@@ -69,15 +95,18 @@ class Sales::OnlineController < ApplicationController
           {
             id: item[:id],
             name: display_name_for(record, user_type),
-            email: record.email,
-            phone_number: record.respond_to?(:phone_number) ? record.phone_number : nil,
-            profile_picture: record.respond_to?(:profile_picture) ? record.profile_picture : nil,
-            document_verified: record.respond_to?(:document_verified) ? record.document_verified : nil,
-            enterprise_name: record.respond_to?(:enterprise_name) ? record.enterprise_name : nil,
-            username: record.respond_to?(:username) ? record.username : nil,
-            fullname: record.respond_to?(:fullname) ? record.fullname : nil,
+            email: record.attributes['email'],
+            phone_number: record.attributes['phone_number'],
+            profile_picture: record.attributes['profile_picture'],
+            document_verified: record.attributes['document_verified'],
+            enterprise_name: record.attributes['enterprise_name'],
+            username: record.attributes['username'],
+            fullname: record.attributes['fullname'],
             type: user_type,
-            online_at: online_at
+            online_at: online_at,
+            current_page: page_by_key[item[:key]],
+            referrer: referrer_by_key[item[:key]],
+            location: location_by_key[item[:key]]
           }
         end
       end
@@ -109,11 +138,11 @@ class Sales::OnlineController < ApplicationController
     when 'seller'
       Seller.where(id: ids).select(:id, :fullname, :username, :enterprise_name, :email, :phone_number, :profile_picture, :document_verified)
     when 'admin'
-      Admin.where(id: ids).select(:id, :username, :email, :profile_picture)
+      Admin.where(id: ids).select(:id, :fullname, :username, :email, :phone_number, :profile_picture)
     when 'sales'
-      SalesUser.where(id: ids).select(:id, :fullname, :username, :email, :phone_number, :profile_picture)
+      SalesUser.where(id: ids).select(:id, :fullname, :email, :phone_number, :profile_picture)
     when 'marketing'
-      MarketingUser.where(id: ids).select(:id, :fullname, :username, :email, :phone_number, :profile_picture)
+      MarketingUser.where(id: ids).select(:id, :fullname, :email, :phone_number, :profile_picture)
     else
       []
     end
@@ -122,13 +151,13 @@ class Sales::OnlineController < ApplicationController
   def display_name_for(record, user_type)
     case user_type
     when 'buyer'
-      record.fullname.presence || record.username.presence || record.email || 'Buyer'
+      record.attributes['fullname'].presence || record.attributes['username'].presence || record.attributes['email'] || 'Buyer'
     when 'seller'
-      record.enterprise_name.presence || record.fullname.presence || record.username.presence || 'Seller'
+      record.attributes['enterprise_name'].presence || record.attributes['fullname'].presence || record.attributes['username'].presence || 'Seller'
     when 'admin'
-      record.username.presence || record.email || 'Admin'
+      record.attributes['username'].presence || record.attributes['email'] || 'Admin'
     when 'sales', 'marketing'
-      record.fullname.presence || record.username.presence || record.email || user_type.capitalize
+      record.attributes['fullname'].presence || record.attributes['email'] || user_type.capitalize
     else
       record.to_s
     end

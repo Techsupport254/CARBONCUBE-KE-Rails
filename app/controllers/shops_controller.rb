@@ -216,7 +216,9 @@ class ShopsController < ApplicationController
         ad: {
           id: review.ad.id,
           title: review.ad.title,
-          price: review.ad.price
+          price: review.ad.price,
+          first_media_url: review.ad.first_valid_media_url,
+          media_urls: review.ad.valid_media_urls
         }
       }
     end

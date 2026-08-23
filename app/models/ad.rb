@@ -308,35 +308,23 @@ class Ad < ApplicationRecord
     wish_lists.count
   end
 
-  # Check if ad has valid images
+  # Check if ad has any image URLs
   def has_valid_images?
     return false if media.blank?
-    
-    # Check if media is an array and not empty
-    return false unless media.is_a?(Array) && media.any?
-    
-    # Check if all media URLs are valid (not nil, not empty, and properly formatted)
-    media.all? do |url|
-      url.present? && 
-      url.is_a?(String) && 
-      url.strip.length > 0 &&
-      (url.start_with?('http://') || url.start_with?('https://'))
-    end
+
+    media.is_a?(Array) && media.any? { |url| url.is_a?(String) && url.present? }
   end
 
-  # Get only valid media URLs
+  # Get all non-empty media URLs (relative or absolute; frontend resolves them)
   def valid_media_urls
     return [] unless has_valid_images?
-    
+
     media.select do |url|
-      url.present? && 
-      url.is_a?(String) && 
-      url.strip.length > 0 &&
-      (url.start_with?('http://') || url.start_with?('https://'))
+      url.is_a?(String) && url.present?
     end
   end
 
-  # Get first valid media URL
+  # Get first non-empty media URL
   def first_valid_media_url
     valid_media_urls.first
   end

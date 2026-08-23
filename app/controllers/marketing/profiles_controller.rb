@@ -1,43 +1,43 @@
-class Sales::ProfilesController < ApplicationController
-  before_action :authenticate_sales_user
-  before_action :set_sales_user, only: [:show, :update, :request_verification, :verify_email]
+class Marketing::ProfilesController < ApplicationController
+  before_action :authenticate_marketing_user
+  before_action :set_marketing_user, only: [:show, :update, :request_verification, :verify_email]
 
-  # GET /sales/profile
+  # GET /marketing/profile
   def show
-    sales_user_data = @sales_user.as_json
-    sales_user_data[:role] = 'sales'
-    sales_user_data[:has_password] = @sales_user.password_digest.present?
-    sales_user_data[:email_verified] = email_verified?(@sales_user)
-    render json: sales_user_data
+    marketing_user_data = @marketing_user.as_json
+    marketing_user_data[:role] = 'marketing'
+    marketing_user_data[:has_password] = @marketing_user.password_digest.present?
+    marketing_user_data[:email_verified] = email_verified?(@marketing_user)
+    render json: marketing_user_data
   end
 
-  # PATCH/PUT /sales/profile
+  # PATCH/PUT /marketing/profile
   def update
     uploaded_profile_picture_url = process_and_upload_profile_picture
     return if performed?
 
-    update_attrs = sales_user_params.to_h
+    update_attrs = marketing_user_params.to_h
     update_attrs[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
 
-    if @sales_user.update(update_attrs)
-      sales_user_data = @sales_user.as_json
-      sales_user_data[:role] = 'sales'
-      sales_user_data[:has_password] = @sales_user.password_digest.present?
-      sales_user_data[:email_verified] = email_verified?(@sales_user)
-      render json: sales_user_data
+    if @marketing_user.update(update_attrs)
+      marketing_user_data = @marketing_user.as_json
+      marketing_user_data[:role] = 'marketing'
+      marketing_user_data[:has_password] = @marketing_user.password_digest.present?
+      marketing_user_data[:email_verified] = email_verified?(@marketing_user)
+      render json: marketing_user_data
     else
-      render json: @sales_user.errors, status: :unprocessable_entity
+      render json: @marketing_user.errors, status: :unprocessable_entity
     end
   end
 
-  # POST /sales/profile/change-password
+  # POST /marketing/profile/change-password
   def change_password
     # For Google OAuth users without a password, skip current password check
-    is_google_user_without_password = current_sales_user.provider == 'google' && current_sales_user.password_digest.blank?
+    is_google_user_without_password = current_marketing_user.provider == 'google' && current_marketing_user.password_digest.blank?
 
     # If user has a password, require current password
-    if current_sales_user.password_digest.present?
-      unless params[:currentPassword].present? && current_sales_user.authenticate(params[:currentPassword])
+    if current_marketing_user.password_digest.present?
+      unless params[:currentPassword].present? && current_marketing_user.authenticate(params[:currentPassword])
         render json: { error: 'Current password is incorrect' }, status: :unauthorized
         return
       end
@@ -46,7 +46,7 @@ class Sales::ProfilesController < ApplicationController
     # Check if new password matches confirmation
     if params[:newPassword] == params[:confirmPassword]
       # Update the password
-      if current_sales_user.update(password: params[:newPassword])
+      if current_marketing_user.update(password: params[:newPassword])
         # Password changed successfully - session should be cleared on frontend
         # Return response indicating session invalidation
         render json: {
@@ -54,20 +54,20 @@ class Sales::ProfilesController < ApplicationController
           session_invalidated: true
         }, status: :ok
       else
-        render json: { errors: current_sales_user.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: current_marketing_user.errors.full_messages }, status: :unprocessable_entity
       end
     else
       render json: { error: 'New password and confirmation do not match' }, status: :unprocessable_entity
     end
   end
 
-  # POST /sales/profile/request-verification
+  # POST /marketing/profile/request-verification
   def request_verification
-    email = @sales_user.email
-    fullname = @sales_user.fullname
+    email = @marketing_user.email
+    fullname = @marketing_user.fullname
 
     # Google OAuth users are automatically verified and do not need an OTP
-    if @sales_user.respond_to?(:provider) && @sales_user.provider.to_s.downcase == 'google'
+    if @marketing_user.respond_to?(:provider) && @marketing_user.provider.to_s.downcase == 'google'
       render json: { message: 'Email is already verified via Google.' }, status: :ok
       return
     end
@@ -97,12 +97,12 @@ class Sales::ProfilesController < ApplicationController
     render json: { message: 'Verification code sent to your email' }, status: :ok
   end
 
-  # POST /sales/profile/verify-email
+  # POST /marketing/profile/verify-email
   def verify_email
-    email = @sales_user.email
+    email = @marketing_user.email
 
     # Google OAuth users are automatically verified
-    if @sales_user.respond_to?(:provider) && @sales_user.provider.to_s.downcase == 'google'
+    if @marketing_user.respond_to?(:provider) && @marketing_user.provider.to_s.downcase == 'google'
       render json: { verified: true, message: 'Email is already verified via Google' }, status: :ok
       return
     end
@@ -125,30 +125,30 @@ class Sales::ProfilesController < ApplicationController
 
   private
 
-  def set_sales_user
-    @sales_user = current_sales_user
+  def set_marketing_user
+    @marketing_user = current_marketing_user
   end
 
-  def sales_user_params
+  def marketing_user_params
     params.permit(:fullname, :email, :phone_number, :location, :city, :zipcode,
                   :county_id, :sub_county_id, :profile_picture)
   end
 
-  def authenticate_sales_user
-    @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result
-    unless @current_sales_user
+  def authenticate_marketing_user
+    @current_marketing_user = MarketingAuthorizeApiRequest.new(request.headers).result
+    unless @current_marketing_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end
 
-  def current_sales_user
-    @current_sales_user
+  def current_marketing_user
+    @current_marketing_user
   end
 
-  def email_verified?(sales_user)
-    return true if sales_user.respond_to?(:provider) && sales_user.provider.to_s.downcase == 'google'
+  def email_verified?(marketing_user)
+    return true if marketing_user.respond_to?(:provider) && marketing_user.provider.to_s.downcase == 'google'
 
-    EmailOtp.exists?(email: sales_user.email, verified: true)
+    EmailOtp.exists?(email: marketing_user.email, verified: true)
   end
 
   def process_and_upload_profile_picture
@@ -163,7 +163,7 @@ class Sales::ProfilesController < ApplicationController
     uploaded = Cloudinary::Uploader.upload(
       pic.tempfile.path,
       upload_preset: ENV['UPLOAD_PRESET'],
-      folder: 'sales_profile_pictures',
+      folder: 'marketing_profile_pictures',
       transformation: [
         { width: 400, height: 400, crop: 'fill', gravity: 'face' },
         { quality: 'auto', fetch_format: 'auto' }
@@ -171,7 +171,7 @@ class Sales::ProfilesController < ApplicationController
     )
     uploaded['secure_url']
   rescue => e
-    Rails.logger.error "Error uploading sales profile picture: #{e.message}"
+    Rails.logger.error "Error uploading marketing profile picture: #{e.message}"
     render json: { error: 'Failed to upload profile picture' }, status: :unprocessable_entity
     nil
   end
