@@ -3,13 +3,24 @@ class Sales::OnlineController < ApplicationController
   before_action :authenticate_sales_user
 
   def index
-    keys = RedisConnection.keys('online_user_*')
-    parsed = keys.filter_map do |key|
+    user_keys = RedisConnection.keys('online_user_*')
+    guest_keys = RedisConnection.keys('online_guest_*')
+
+    parsed_users = user_keys.filter_map do |key|
       match = key.to_s.match(/\Aonline_user_([^_]+)_(.+)\z/)
       next unless match
 
       { type: match[1], id: match[2], key: key }
     end
+
+    parsed_guests = guest_keys.filter_map do |key|
+      match = key.to_s.match(/\Aonline_guest_(.+)\z/)
+      next unless match
+
+      { type: 'guest', id: match[1], key: key }
+    end
+
+    parsed = parsed_users + parsed_guests
 
     if parsed.empty?
       render json: { online_users: {}, total: 0 }
@@ -26,29 +37,49 @@ class Sales::OnlineController < ApplicationController
     total = 0
 
     grouped.each do |user_type, items|
-      ids = items.map { |item| item[:id].to_i }
-      records = records_for_type(user_type, ids)
-      record_by_id = records.index_by(&:id)
+      if user_type == 'guest'
+        users = items.filter_map do |item|
+          online_at_value = online_at_by_key[item[:key]]
+          online_at = online_at_value ? Time.at(online_at_value.to_i).iso8601 : nil
+          {
+            id: item[:id],
+            name: 'Guest',
+            email: nil,
+            phone_number: nil,
+            profile_picture: nil,
+            document_verified: nil,
+            enterprise_name: nil,
+            username: nil,
+            fullname: 'Guest',
+            type: 'guest',
+            online_at: online_at
+          }
+        end
+      else
+        ids = items.map { |item| item[:id].to_i }
+        records = records_for_type(user_type, ids)
+        record_by_id = records.index_by(&:id)
 
-      users = items.filter_map do |item|
-        record = record_by_id[item[:id].to_i]
-        next unless record
+        users = items.filter_map do |item|
+          record = record_by_id[item[:id].to_i]
+          next unless record
 
-        online_at_value = online_at_by_key[item[:key]]
-        online_at = online_at_value ? Time.at(online_at_value.to_i).iso8601 : nil
-        {
-          id: item[:id],
-          name: display_name_for(record, user_type),
-          email: record.email,
-          phone_number: record.respond_to?(:phone_number) ? record.phone_number : nil,
-          profile_picture: record.respond_to?(:profile_picture) ? record.profile_picture : nil,
-          document_verified: record.respond_to?(:document_verified) ? record.document_verified : nil,
-          enterprise_name: record.respond_to?(:enterprise_name) ? record.enterprise_name : nil,
-          username: record.respond_to?(:username) ? record.username : nil,
-          fullname: record.respond_to?(:fullname) ? record.fullname : nil,
-          type: user_type,
-          online_at: online_at
-        }
+          online_at_value = online_at_by_key[item[:key]]
+          online_at = online_at_value ? Time.at(online_at_value.to_i).iso8601 : nil
+          {
+            id: item[:id],
+            name: display_name_for(record, user_type),
+            email: record.email,
+            phone_number: record.respond_to?(:phone_number) ? record.phone_number : nil,
+            profile_picture: record.respond_to?(:profile_picture) ? record.profile_picture : nil,
+            document_verified: record.respond_to?(:document_verified) ? record.document_verified : nil,
+            enterprise_name: record.respond_to?(:enterprise_name) ? record.enterprise_name : nil,
+            username: record.respond_to?(:username) ? record.username : nil,
+            fullname: record.respond_to?(:fullname) ? record.fullname : nil,
+            type: user_type,
+            online_at: online_at
+          }
+        end
       end
 
       online_users[user_type] = users

@@ -146,6 +146,7 @@ Rails.application.routes.draw do
       get :unread_count
       get :unread_counts
       post :online_status
+      post :online_ping
     end
   end
 

@@ -1,6 +1,6 @@
 class ConversationsController < ApplicationController
   before_action :authenticate_user
-  skip_before_action :authenticate_user, only: [:online_status]
+  skip_before_action :authenticate_user, only: [:online_status, :online_ping]
   before_action :set_conversation, only: [:show]
 
   def index
@@ -120,6 +120,52 @@ class ConversationsController < ApplicationController
     end
     
     render json: { online_status: online_status }, status: :ok
+  end
+
+  def online_ping
+    guest_id = params[:guest_id]
+
+    if @current_user
+      track_user_online
+    elsif guest_id.present?
+      track_guest_online(guest_id)
+    else
+      return render json: { ok: false }, status: :ok
+    end
+
+    render json: { ok: true, online: true }, status: :ok
+  rescue StandardError => e
+    Rails.logger.error "online_ping failed: #{e.message}"
+    render json: { ok: false }, status: :ok
+  end
+
+  def track_user_online
+    user_type = case @current_user.class.name
+                when 'Buyer' then 'buyer'
+                when 'Seller' then 'seller'
+                when 'Admin' then 'admin'
+                when 'SalesUser' then 'sales'
+                when 'MarketingUser' then 'marketing'
+                else @current_user.class.name.downcase
+                end
+
+    cache_key = "online_user_#{user_type}_#{@current_user.id}"
+
+    if RedisConnection.exists?(cache_key).to_i.positive?
+      RedisConnection.expire(cache_key, 300)
+    else
+      RedisConnection.setex(cache_key, 300, Time.current.to_i)
+    end
+  end
+
+  def track_guest_online(guest_id)
+    cache_key = "online_guest_#{guest_id}"
+
+    if RedisConnection.exists?(cache_key).to_i.positive?
+      RedisConnection.expire(cache_key, 300)
+    else
+      RedisConnection.setex(cache_key, 300, Time.current.to_i)
+    end
   end
 
   def mark_read
