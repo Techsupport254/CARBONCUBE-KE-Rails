@@ -11,14 +11,18 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
+  create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
   create_schema "pgbouncer"
   create_schema "vault"
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
+  enable_extension "pgcrypto"
   enable_extension "plpgsql"
+  enable_extension "uuid-ossp"
 
   create_table "abouts", force: :cascade do |t|
     t.text "description"
@@ -128,18 +132,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
     t.string "ip_address"
     t.string "utm_content"
     t.string "utm_term"
-    t.index "((data ->> 'user_email'::text))", name: "index_analytics_on_user_email"
-    t.index "((data ->> 'visitor_id'::text))", name: "index_analytics_on_visitor_id"
-    t.index ["created_at"], name: "index_analytics_on_created_at"
-    t.index ["referrer"], name: "index_analytics_on_referrer"
-    t.index ["source", "created_at"], name: "index_analytics_on_source_created_at"
-    t.index ["source"], name: "index_analytics_on_source"
-    t.index ["utm_campaign"], name: "index_analytics_on_utm_campaign"
-    t.index ["utm_content"], name: "index_analytics_on_utm_content"
-    t.index ["utm_medium"], name: "index_analytics_on_utm_medium"
-    t.index ["utm_source", "created_at"], name: "index_analytics_on_utm_source_created_at"
-    t.index ["utm_source"], name: "index_analytics_on_utm_source"
-    t.index ["utm_term"], name: "index_analytics_on_utm_term"
   end
 
   create_table "banners", force: :cascade do |t|
@@ -668,8 +660,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", id: false, force: :cascade do |t|
-    t.bigserial "id", null: false
+  create_table "monitoring_metrics", force: :cascade do |t|
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"

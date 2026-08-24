@@ -106,12 +106,23 @@ BEGIN
   BEGIN CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'uuid-ossp not available'; END;
 END \$\$;" 2>&1 | sed 's/^/  /' || true
 
+# Build a filtered TOC list that skips Supabase-only objects which cannot be
+# restored locally (event triggers referencing extensions.* functions and the
+# supabase_realtime publication).
+echo "Filtering Supabase-only objects from restore list..."
+TOC_LIST="$DUMP_DIR/production_dump_${TIMESTAMP}.list"
+pg_restore --list "$DUMP_FILE" \
+  | grep -v ' EVENT TRIGGER ' \
+  | grep -v ' PUBLICATION ' \
+  > "$TOC_LIST"
+
 # Restore using pg_restore
 echo "Running pg_restore..."
 if pg_restore \
   --dbname="$LOCAL_DB" \
   --no-owner \
   --no-privileges \
+  --use-list="$TOC_LIST" \
   --verbose \
   "$DUMP_FILE" \
   2>&1 | sed 's/^/  /'; then
@@ -135,6 +146,9 @@ fi
 echo "Cleaning up duplicate monitoring_metrics rows and re-adding primary key..."
 psql "$LOCAL_DB" -c "DELETE FROM monitoring_metrics m1 USING (SELECT id, MIN(ctid) AS min_ctid FROM monitoring_metrics GROUP BY id HAVING COUNT(*) > 1) dups WHERE m1.id = dups.id AND m1.ctid <> dups.min_ctid;" 2>&1 | sed 's/^/  /' || true
 psql "$LOCAL_DB" -c "ALTER TABLE monitoring_metrics ADD CONSTRAINT IF NOT EXISTS monitoring_metrics_pkey PRIMARY KEY (id);" 2>&1 | sed 's/^/  /' || true
+
+# Remove the TOC list now that the restore is done
+rm -f "$TOC_LIST"
 
 echo ""
 echo -e "${GREEN}✓ Successfully restored production data to local database${NC}"
