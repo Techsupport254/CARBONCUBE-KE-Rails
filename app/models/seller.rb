@@ -3,10 +3,12 @@ class Seller < ApplicationRecord
   self.primary_key = 'id'
 
   after_create :associate_guest_clicks
+  after_commit :schedule_city_geocoding, on: %i[create update]
   before_create :generate_uuid
   before_validation :normalize_email
   before_validation :normalize_username
   before_validation :normalize_phone_numbers
+  before_validation :normalize_city
   
   # Store device hash temporarily for association (set via attr_accessor)
   attr_accessor :device_hash_for_association
@@ -289,6 +291,18 @@ class Seller < ApplicationRecord
   def normalize_phone_numbers
     self.phone_number = normalize_phone(phone_number) if phone_number.present?
     self.secondary_phone_number = normalize_phone(secondary_phone_number) if secondary_phone_number.present?
+  end
+
+  def normalize_city
+    return if city.present?
+
+    self.city = sub_county&.name&.titleize || county&.name&.titleize
+  end
+
+  def schedule_city_geocoding
+    return unless saved_change_to_location? || saved_change_to_city? || saved_change_to_county_id? || saved_change_to_sub_county_id?
+
+    GeocodeSellersJob.perform_later(id, force: true)
   end
 
   def normalize_phone(phone)

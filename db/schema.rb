@@ -660,7 +660,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "monitoring_metrics", force: :cascade do |t|
+  create_table "monitoring_metrics", id: false, force: :cascade do |t|
+    t.bigserial "id", null: false
     t.string "name"
     t.decimal "value"
     t.datetime "timestamp"

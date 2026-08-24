@@ -46,15 +46,15 @@ class SellerPricingTemplate < ApplicationRecord
         next
       end
 
-      min = tier['min_quantity']
+      min = tier['min_quantity'].to_s.to_i
 
-      unless min.is_a?(Numeric) && min.to_i >= 0
+      if min.negative?
         errors.add(:price_tiers, "tier #{index + 1} min_quantity must be a positive number")
       end
 
       if tier.key?('max_quantity') && tier['max_quantity'].present?
-        max = tier['max_quantity']
-        unless max.is_a?(Numeric) && max.to_i >= min.to_i
+        max = tier['max_quantity'].to_s.to_i
+        if max < min
           errors.add(:price_tiers, "tier #{index + 1} max_quantity must be >= min_quantity")
         end
       end

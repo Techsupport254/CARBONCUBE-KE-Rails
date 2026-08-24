@@ -1931,6 +1931,35 @@ class Buyer::AdsController < ApplicationController
   def popular_searches
     query = params[:q].to_s.strip.downcase
 
+    # Cache the full formatted list (expensive: ~50 sequential LIKE-based DB queries)
+    # for 10 minutes. Query filtering and limiting are applied on the cached result
+    # so that autocomplete requests (with ?q=) stay fast without re-hitting the DB.
+    formatted_searches = Rails.cache.fetch('popular_searches_full_v1', expires_in: 10.minutes) do
+      build_popular_searches_data
+    end
+
+    # If a query is provided, filter the cached searches to only relevant ones
+    if query.present?
+      formatted_searches = formatted_searches.select do |s|
+        term_lower = s[:term].to_s.downcase
+        # Include if term contains query OR query contains term (for related matches)
+        term_lower.include?(query) || query.include?(term_lower)
+      end
+    end
+
+    # Sort by count descending and take top results
+    max_results = query.present? ? 5 : 15  # Fewer results when filtering by query
+    formatted_searches = formatted_searches.sort_by { |s| -s[:count] }.first(max_results)
+
+    render json: {
+      popular_searches: formatted_searches,
+      total: formatted_searches.length
+    }
+  end
+
+  # Builds the full list of popular searches with images, prices, and category info.
+  # Extracted from popular_searches to allow the result to be cached as a unit.
+  def build_popular_searches_data
     # Get popular searches from Redis analytics
     redis_searches = SearchRedisService.popular_searches(50, :weekly)
 
@@ -1968,18 +1997,8 @@ class Buyer::AdsController < ApplicationController
     # Combine filtered Redis searches with additional high-value searches
     combined_searches = filtered_redis_searches + additional_searches
 
-    # If a query is provided, filter the searches to only relevant ones
-    if query.present?
-      filtered_searches = combined_searches.select do |term, _|
-        term_lower = term.downcase
-        # Include if term contains query OR query contains term (for related matches)
-        term_lower.include?(query) || query.include?(term_lower)
-      end
-      combined_searches = filtered_searches
-    end
-
     # Format the response with images, prices, and category info
-    formatted_searches = combined_searches.map do |term, count|
+    combined_searches.map do |term, count|
       image_url = get_search_image(term)
       price_info = get_search_price_info(term)
       category_info = get_search_category_info(term)
@@ -1997,15 +2016,6 @@ class Buyer::AdsController < ApplicationController
 
       result
     end
-
-    # Sort by count descending and take top results
-    max_results = query.present? ? 5 : 15  # Fewer results when filtering by query
-    formatted_searches = formatted_searches.sort_by { |s| -s[:count] }.first(max_results)
-
-    render json: {
-      popular_searches: formatted_searches,
-      total: formatted_searches.length
-    }
   end
 
 
@@ -2268,28 +2278,38 @@ class Buyer::AdsController < ApplicationController
     # Use @ad from before_action instead of finding it again
     ad = @ad
 
-    # Logging disabled to reduce console noise
-    # Rails.logger.info "Fetching related ads for ad ID: #{ad.id}, category: #{ad.category_id}, subcategory: #{ad.subcategory_id}"
-
     # Use the limit param from frontend, default to 10
     limit_count = (params[:limit]&.to_i || 10).clamp(1, 20)
 
-    # Fetch ads that share either the same category or subcategory
-    # Apply the same filters as the main ads endpoint
-    related_ads = Ad.active.with_valid_images
-                    .joins(:seller, seller: { seller_tier: :tier })
-                    .where(sellers: { blocked: false, deleted: false, flagged: false })
-                    .where(flagged: false)
-                    .where.not(id: ad.id)
-                    .where('ads.category_id = ? OR ads.subcategory_id = ?', ad.category_id, ad.subcategory_id)
-                    .where('ads.id != ?', ad.id) # Double check to exclude current ad
-                    .select('ads.*, CASE tiers.id
-                              WHEN 4 THEN 1
-                              WHEN 3 THEN 2
-                              WHEN 2 THEN 3
-                              WHEN 1 THEN 4
-                              ELSE 5
-                            END AS tier_priority')
+    # Cache the expensive query (OR + RANDOM() ordering prevents index use) for 5 minutes.
+    # We cache only the ordered IDs so that serialization stays fresh (seller_is_online,
+    # flash_sale_info, etc.) while avoiding the slow query on every request.
+    cache_key = "related_ads_#{ad.id}_#{limit_count}"
+    related_ids = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      Ad.active.with_valid_images
+         .joins(:seller, seller: { seller_tier: :tier })
+         .where(sellers: { blocked: false, deleted: false, flagged: false })
+         .where(flagged: false)
+         .where.not(id: ad.id)
+         .where('ads.category_id = ? OR ads.subcategory_id = ?', ad.category_id, ad.subcategory_id)
+         .order(Arel.sql('CASE tiers.id
+                    WHEN 4 THEN 1
+                    WHEN 3 THEN 2
+                    WHEN 2 THEN 3
+                    WHEN 1 THEN 4
+                    ELSE 5
+                  END ASC, RANDOM()'))
+         .limit(limit_count)
+         .pluck(:id)
+    end
+
+    if related_ids.empty?
+      render json: [], each_serializer: AdSerializer
+      return
+    end
+
+    # Fetch fresh records by cached IDs (preserves tier-priority + random order)
+    related_ads = Ad.where(id: related_ids)
                     .includes(
                       :category,
                       :subcategory,
@@ -2297,23 +2317,11 @@ class Buyer::AdsController < ApplicationController
                       offer_ads: :offer,
                       seller: { seller_tier: :tier, categories: [], seller_documents: :document_type }
                     )
-                    .order(Arel.sql('CASE tiers.id
-                              WHEN 4 THEN 1
-                              WHEN 3 THEN 2
-                              WHEN 2 THEN 3
-                              WHEN 1 THEN 4
-                              ELSE 5
-                            END ASC, RANDOM()'))
-                    .limit(limit_count)
-    
-    # Final validation: ensure no related ad has the same ID as the current ad
-    filtered_related_ads = related_ads.reject { |related_ad| related_ad.id == ad.id }
-    
-    if filtered_related_ads.length != related_ads.length
-      Rails.logger.warn "Filtered out #{related_ads.length - filtered_related_ads.length} ads that matched current ad ID"
-    end
+                    .index_by(&:id)
+                    .values_at(*related_ids)
+                    .compact
 
-    render json: filtered_related_ads, each_serializer: AdSerializer
+    render json: related_ads, each_serializer: AdSerializer
   end
 
 

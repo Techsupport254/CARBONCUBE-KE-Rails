@@ -116,7 +116,7 @@ class ShopsController < ApplicationController
         fullname: @shop.fullname,
         phone_number: @shop.phone_number,
         secondary_phone_number: @shop.secondary_phone_number,
-        city: @shop.city,
+        city: @shop.city || @shop.sub_county&.name || @shop.county&.name,
         county: @shop.county&.name,
         sub_county: @shop.sub_county&.name,
         business_registration_number: @shop.business_registration_number,

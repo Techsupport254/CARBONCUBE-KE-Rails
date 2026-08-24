@@ -34,7 +34,9 @@ class GeocodeSellersJob < ApplicationJob
               location_precision: coordinates[:precision] || 'approximate'
             )
           end
-          
+
+          seller.update_column(:city, coordinates[:city]) if coordinates[:city].present?
+
           Rails.logger.info "Successfully geocoded seller: #{seller.enterprise_name} (#{seller.location}) [precision: #{coordinates[:precision]}]"
         else
           Rails.logger.warn "Failed to geocode seller: #{seller.enterprise_name} (#{seller.location})"
@@ -227,12 +229,16 @@ class GeocodeSellersJob < ApplicationJob
                         'approximate'
                       end
 
+          address = result['address'] || {}
+          osm_city = %w[city town suburb village].map { |k| address[k] }.find(&:present?)
+
           return {
             lat: result['lat'].to_f,
             lon: result['lon'].to_f,
             display_name: result['display_name'],
             query: query,
-            precision: precision
+            precision: precision,
+            city: osm_city&.titleize
           }
         end
       end

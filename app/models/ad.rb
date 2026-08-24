@@ -103,8 +103,10 @@ class Ad < ApplicationRecord
   validates :pricing_unit, inclusion: { in: ->(ad) { ad.allowed_pricing_units } }, if: -> { pricing_unit.present? }
   validates :price_display_mode, inclusion: { in: %w[public tiered price_range request_quote] }, if: -> { price_display_mode.present? }
 
-  validate :price_tiers_shape, if: -> { price_tiers.present? }
-  validate :price_tiers_ascending, if: -> { price_tiers.present? }
+  validate :price_tiers_shape, if: -> { price_display_mode == 'tiered' && price_tiers.present? }
+  validate :price_tiers_ascending, if: -> { price_display_mode == 'tiered' && price_tiers.present? }
+
+  before_validation :normalize_price_tiers
 
   SERVICE_CATEGORY_NAMES = ['Services', 'Service', 'services', 'Professional Services', 'Equipment Leasing'].freeze
 
@@ -537,20 +539,20 @@ class Ad < ApplicationRecord
         next
       end
 
-      min = tier['min_quantity']
-      unit = tier['unit_price']
+      min = tier['min_quantity'].to_s.to_i
+      unit = tier['unit_price'].to_s.to_f
 
-      unless min.is_a?(Numeric) && min.to_i > 0
+      if min <= 0
         errors.add(:price_tiers, "tier #{index + 1} min_quantity must be a positive number")
       end
 
-      unless unit.is_a?(Numeric) && unit.to_f > 0
+      if unit <= 0
         errors.add(:price_tiers, "tier #{index + 1} unit_price must be a positive number")
       end
 
       if tier['max_quantity'].present?
-        max = tier['max_quantity']
-        unless max.is_a?(Numeric) && max.to_i >= min.to_i
+        max = tier['max_quantity'].to_s.to_i
+        if max < min
           errors.add(:price_tiers, "tier #{index + 1} max_quantity must be >= min_quantity")
         end
       end
@@ -558,12 +560,38 @@ class Ad < ApplicationRecord
   end
 
   def price_tiers_ascending
-    min_quantities = price_tiers.map { |t| t['min_quantity'].to_i }
+    min_quantities = price_tiers.map { |t| t['min_quantity'].to_s.to_i }
     (1...min_quantities.length).each do |i|
       if min_quantities[i] <= min_quantities[i - 1]
         errors.add(:price_tiers, "min_quantity must increase with each tier")
         break
       end
+    end
+  end
+
+  # FormData and some JSON clients send tier fields as strings. Coerce them to
+  # numbers before validation and drop tiers entirely when the ad is not using
+  # tiered pricing so they don't block public/price_range/request_quote modes.
+  def normalize_price_tiers
+    return unless specifications.is_a?(Hash)
+
+    if price_display_mode != 'tiered'
+      specifications['price_tiers'] = [] if specifications.key?('price_tiers')
+      return
+    end
+
+    tiers = specifications['price_tiers']
+    return unless tiers.is_a?(Array)
+
+    specifications['price_tiers'] = tiers.filter_map do |tier|
+      next unless tier.is_a?(Hash)
+
+      normalized = {}
+      normalized['min_quantity'] = tier['min_quantity'].to_s.to_i if tier.key?('min_quantity')
+      normalized['max_quantity'] = tier['max_quantity'].to_s.to_i if tier['max_quantity'].present?
+      normalized['unit_price'] = tier['unit_price'].to_s.to_f if tier.key?('unit_price')
+      normalized['label'] = tier['label'].to_s if tier['label'].present?
+      normalized
     end
   end
 
