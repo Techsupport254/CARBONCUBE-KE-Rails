@@ -6,8 +6,8 @@ class Sales::OnlineController < ApplicationController
     all_user_keys = RedisConnection.keys('online_user_*')
     all_guest_keys = RedisConnection.keys('online_guest_*')
 
-    user_keys = all_user_keys.reject { |k| k.to_s.end_with?(':page') }
-    guest_keys = all_guest_keys.reject { |k| k.to_s.end_with?(':page') }
+    user_keys = all_user_keys.reject { |k| k.to_s.match?(/:(?:page|location|referrer)\z/) }
+    guest_keys = all_guest_keys.reject { |k| k.to_s.match?(/:(?:page|location|referrer)\z/) }
 
     parsed_users = user_keys.filter_map do |key|
       match = key.to_s.match(/\Aonline_user_([^_]+)_(.+)\z/)
