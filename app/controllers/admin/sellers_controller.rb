@@ -41,7 +41,7 @@ class Admin::SellersController < ApplicationController
       sort_by = params[:sort_by] || 'created_at'
       sort_order = params[:sort_order] || 'desc'
       
-      allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at total_ads]
+      allowed_sort_fields = %w[id fullname email enterprise_name location created_at updated_at last_active_at total_ads aggregate_rating]
       allowed_sort_orders = %w[asc desc]
 
       sort_by = 'created_at' unless allowed_sort_fields.include?(sort_by)
@@ -50,16 +50,45 @@ class Admin::SellersController < ApplicationController
       sort_by = 'last_active_at' if sort_by == 'last_activity'
       filtered_query = sellers_query
       sellers_query = filtered_query
-        .left_outer_joins(:ads)
+        .left_outer_joins(ads: :reviews)
         .where("ads.deleted = ? OR ads.id IS NULL", false)
         .group('sellers.id')
-        .select('sellers.*, COUNT(ads.id) AS total_ads_count')
+        .select(<<~SQL.squish)
+          sellers.*,
+          COUNT(DISTINCT ads.id) AS total_ads_count,
+          COALESCE(AVG(reviews.rating), 0) AS local_average_rating,
+          COUNT(reviews.id) AS local_reviews_count,
+          COALESCE(
+            (SELECT SUM((r->>'rating')::numeric)
+             FROM jsonb_array_elements(sellers.google_place_reviews) AS r),
+            0
+          ) AS google_rating_sum,
+          COALESCE(jsonb_array_length(sellers.google_place_reviews), 0) AS google_reviews_count,
+          COUNT(reviews.id) + COALESCE(jsonb_array_length(sellers.google_place_reviews), 0) AS total_reviews_count,
+          COALESCE(
+            (
+              COALESCE(AVG(reviews.rating), 0) * COUNT(reviews.id) +
+              COALESCE(
+                (SELECT SUM((r->>'rating')::numeric)
+                 FROM jsonb_array_elements(sellers.google_place_reviews) AS r),
+                0
+              )
+            ) / NULLIF(
+              COUNT(reviews.id) + COALESCE(jsonb_array_length(sellers.google_place_reviews), 0),
+              0
+            ),
+            0
+          ) AS aggregate_rating
+        SQL
         .includes(:carbon_code)
-      sellers_query = if sort_by == 'total_ads'
-        sellers_query.order("total_ads_count #{sort_order}")
-      else
-        sellers_query.order("sellers.#{sort_by} #{sort_order}")
-      end
+      sellers_query = case sort_by
+                      when 'total_ads'
+                        sellers_query.order("total_ads_count #{sort_order}, total_reviews_count DESC")
+                      when 'aggregate_rating'
+                        sellers_query.order("aggregate_rating #{sort_order}, total_reviews_count DESC")
+                      else
+                        sellers_query.order("sellers.#{sort_by} #{sort_order}, total_reviews_count DESC")
+                      end
 
       page = params[:page]&.to_i || 1
       per_page = params[:per_page]&.to_i || 20
@@ -82,6 +111,16 @@ class Admin::SellersController < ApplicationController
       @sellers_data = @sellers.map do |seller|
         row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
         row['total_ads'] = seller[:total_ads_count] || 0
+        row['local_reviews_count'] = seller[:local_reviews_count] || 0
+        row['google_reviews_count'] = seller[:google_reviews_count] || 0
+        row['total_reviews'] = seller[:total_reviews_count] || 0
+        row['local_rating'] = seller[:local_average_rating].to_f.round(1)
+        row['google_rating'] = if (seller[:google_reviews_count] || 0).positive?
+          (seller[:google_rating_sum].to_f / seller[:google_reviews_count]).round(1)
+        else
+          0.0
+        end
+        row['aggregate_rating'] = seller[:aggregate_rating].to_f.round(1)
         row['in_call_queue'] = in_call_queue_ids.include?(seller.id)
         row['call_queue_reasons'] = in_call_queue_reasons[seller.id] || []
         row['call_queue_reasons_display'] = (in_call_queue_reasons[seller.id] || []).map { |r| CallQueue::QUEUE_TYPES[r] || r.humanize }
@@ -177,18 +216,22 @@ class Admin::SellersController < ApplicationController
   def reviews
     cache_key = "seller_reviews_v3_#{@seller.id}_#{@seller.updated_at.to_i}"
     reviews_data = Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
-      @seller.reviews_received.includes(:ad, :buyer)
+      @seller.reviews_received.includes(:ad, :buyer, :seller)
              .where(ads: { id: @seller.ads.select(:id) })
              .order(created_at: :desc)
              .map do |r|
                ad = r.ad
                buyer = r.buyer
+               reviewer = buyer || r.seller
+               reviewer_name = buyer&.fullname.presence || r.seller&.fullname.presence || 'Verified Customer'
                {
                  id: r.id,
                  rating: r.rating,
                  review: r.review,
                  created_at: r.created_at,
-                 buyer_name: buyer&.fullname || 'Verified Customer',
+                 buyer_name: reviewer_name,
+                 buyer_email: reviewer&.email,
+                 source: 'carbon',
                  ad_id: ad&.id,
                  ad_title: ad&.title,
                  ad_price: ad&.price,
@@ -771,15 +814,39 @@ class Admin::SellersController < ApplicationController
         end
       end
       
-      # Single-query review and rating aggregation
-      rating_stats = if ad_ids.present?
+      # Local review stats
+      local_rating_stats = if ad_ids.present?
         seller.reviews_received.joins(:ad).where(ads: { id: ad_ids }).group(:rating).count
       else
         {}
       end
-      total_reviews_count = rating_stats.values.sum
-      mean_rating = total_reviews_count > 0 ? (rating_stats.sum { |rating, count| rating * count }.to_f / total_reviews_count).round(2) : 0.0
-    
+      local_reviews_count = local_rating_stats.values.sum
+
+      # Google review stats
+      google_reviews_raw = seller.google_place_reviews || []
+      google_reviews_count = google_reviews_raw.size
+      google_rating_stats = google_reviews_raw.each_with_object(Hash.new(0)) do |gr, h|
+        rating = gr["rating"].to_i
+        h[rating] += 1 if rating.between?(1, 5)
+      end
+
+      # Combined review stats
+      combined_rating_stats = (1..5).index_with { |r| (local_rating_stats[r] || 0) + (google_rating_stats[r] || 0) }
+      total_reviews_count = local_reviews_count + google_reviews_count
+      mean_rating = total_reviews_count > 0 ? (combined_rating_stats.sum { |rating, count| rating * count }.to_f / total_reviews_count).round(2) : 0.0
+
+      # Map Google reviews to the same shape as local reviews
+      mapped_google_reviews = google_reviews_raw.map do |gr|
+        {
+          id: gr["time"].to_i,
+          rating: gr["rating"].to_i,
+          review: gr["text"],
+          created_at: gr["time"] ? Time.at(gr["time"]).iso8601 : nil,
+          buyer_name: gr["author_name"] || 'Google User',
+          source: 'google'
+        }
+      end
+
       {
         total_ads: total_ads_count,
         total_ads_wishlisted: ad_ids.present? ? WishList.where(ad_id: ad_ids).count : 0,
@@ -788,28 +855,35 @@ class Admin::SellersController < ApplicationController
         rating_pie_chart: (1..5).map do |rating|
           {
             rating: rating,
-            count: rating_stats[rating] || 0
+            count: combined_rating_stats[rating] || 0
           }
         end,
-        reviews: ad_ids.present? ? seller.reviews_received.includes(:ad, :buyer)
+        reviews: ad_ids.present? ? seller.reviews_received.includes(:ad, :buyer, :seller)
                         .where(ads: { id: ad_ids })
                         .order(created_at: :desc)
                         .limit(20)
                         .map do |r|
                           ad = r.ad
                           buyer = r.buyer
+                          reviewer = buyer || r.seller
+                          reviewer_name = buyer&.fullname.presence || r.seller&.fullname.presence || 'Verified Customer'
                           {
                             id: r.id,
                             rating: r.rating,
                             review: r.review,
                             created_at: r.created_at,
-                            buyer_name: buyer&.fullname || 'Verified Customer',
+                            buyer_name: reviewer_name,
+                            buyer_email: reviewer&.email,
+                            source: 'carbon',
                             ad_id: ad&.id,
                             ad_title: ad&.title,
                             ad_price: ad&.price,
                             ad_image: ad&.first_media_url
                           }
                         end : [],
+        google_reviews: mapped_google_reviews,
+        google_reviews_count: google_reviews_count,
+        local_reviews_count: local_reviews_count,
     
         ad_clicks: total_clicks,
         add_to_wish_list: wishlist_count,

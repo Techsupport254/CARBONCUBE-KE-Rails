@@ -259,8 +259,8 @@ class ClickEventsAnalyticsService
       .joins("LEFT JOIN categories ON categories.id = ads.category_id")
       .joins("LEFT JOIN sellers ON sellers.id = ads.seller_id")
       .where("ads.deleted = ?", false)
-      .group("ads.id", "ads.title", "ads.media", "ads.seller_id", "categories.name", 
-              "sellers.enterprise_name", "sellers.fullname")
+      .group("ads.id", "ads.title", "ads.media", "ads.seller_id", "categories.name",
+              "sellers.enterprise_name", "sellers.fullname", "sellers.profile_picture")
       .select(
         "ads.id as ad_id",
         "ads.title as ad_title",
@@ -269,6 +269,7 @@ class ClickEventsAnalyticsService
         "categories.name as category_name",
         "sellers.enterprise_name as seller_enterprise_name",
         "sellers.fullname as seller_fullname",
+        "sellers.profile_picture as seller_avatar_url",
         "COUNT(*) as total_click_events",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
@@ -291,7 +292,7 @@ class ClickEventsAnalyticsService
       click_to_reveal_rate = ad_clicks > 0 ? (reveal_clicks.to_f / ad_clicks * 100).round(2) : 0.0
       
       seller_name = row.seller_enterprise_name.presence || row.seller_fullname.presence || 'Unknown Seller'
-      
+
       {
         ad_id: row.ad_id,
         ad_title: row.ad_title || 'Unknown Ad',
@@ -299,6 +300,9 @@ class ClickEventsAnalyticsService
         category_name: row.category_name || 'Uncategorized',
         seller_name: seller_name,
         seller_id: row.seller_id,
+        seller_avatar_url: row.seller_avatar_url,
+        seller_fullname: row.seller_fullname,
+        seller_enterprise_name: row.seller_enterprise_name,
         total_click_events: row.total_click_events.to_i,
         ad_clicks: ad_clicks,
         reveal_clicks: reveal_clicks,

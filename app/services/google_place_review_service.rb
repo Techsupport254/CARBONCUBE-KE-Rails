@@ -17,7 +17,8 @@ class GooglePlaceReviewService
   private
 
   def resolve_place_id
-    query = [@seller.enterprise_name, @seller.city].compact.join(" ").strip
+    query_parts = [@seller.enterprise_name, @seller.location, @seller.city].compact_blank.map(&:strip)
+    query = query_parts.join(" ").strip
     return if query.blank?
 
     response = request("/textsearch/json", query: query)
