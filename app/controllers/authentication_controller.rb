@@ -485,9 +485,16 @@ class AuthenticationController < ApplicationController
       user_response[:phone_number] = user.phone_number
     end
 
-    # Include secondary_phone_number for users that have this field (Buyer, Seller)
-    if user.respond_to?(:secondary_phone_number) && user.secondary_phone_number.present?
-      user_response[:secondary_phone_number] = user.secondary_phone_number
+    # Include is_manager, is_lead, and compensation_type for sales users
+    if user.is_a?(SalesUser)
+      user_response[:is_manager] = user.is_manager || false
+      user_response[:is_lead] = user.is_lead || false
+      user_response[:compensation_type] = user.compensation_type || 'commission'
+    end
+
+    # Include enterprise_name for sellers
+    if user.respond_to?(:enterprise_name) && user.enterprise_name.present?
+      user_response[:enterprise_name] = user.enterprise_name
     end
 
     render json: { user: user_response }, status: :ok

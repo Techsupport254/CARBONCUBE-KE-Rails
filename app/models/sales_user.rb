@@ -1,5 +1,6 @@
 class SalesUser < ApplicationRecord
   has_many :carbon_codes, as: :associable, dependent: :nullify
+  has_many :sales_daily_reports, dependent: :destroy
   belongs_to :lead, class_name: 'SalesUser', optional: true
   has_many :team_members, class_name: 'SalesUser', foreign_key: 'lead_id', dependent: :nullify, inverse_of: :lead
 

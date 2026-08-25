@@ -441,6 +441,12 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :daily_reports, only: [:index, :show] do
+      collection do
+        get :summary
+      end
+    end
+
     resources :carbon_codes, only: [:index, :show, :create, :update, :destroy]
 
     resources :riders do 
@@ -907,6 +913,16 @@ Rails.application.routes.draw do
 
     # Holidays (read-only for sales users)
     get 'holidays', to: 'holidays#index'
+
+    # Daily field reports for sales users
+    resources :daily_reports, only: [:index, :show, :create, :update] do
+      collection do
+        get :today
+        get :summary
+        post :parse_ai
+        get :onboarded_sellers_count
+      end
+    end
   end
 
   # Original routes without /api prefix for backward compatibility

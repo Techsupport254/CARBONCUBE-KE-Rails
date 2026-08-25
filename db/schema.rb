@@ -921,6 +921,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
     t.index ["sub_county_id"], name: "index_riders_on_sub_county_id"
   end
 
+  create_table "sales_daily_reports", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "sales_user_id", null: false
+    t.date "report_date", null: false
+    t.string "route_areas", null: false
+    t.integer "businesses_visited", default: 0, null: false
+    t.integer "businesses_onboarded", default: 0, null: false
+    t.text "challenges"
+    t.text "notes"
+    t.boolean "verified_by_manager", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "categories", default: [], array: true
+    t.text "ai_summary"
+    t.string "sentiment"
+    t.string "urgency"
+    t.string "action_items", default: [], array: true
+    t.index ["categories"], name: "index_sales_daily_reports_on_categories", using: :gin
+    t.index ["report_date"], name: "index_sales_daily_reports_on_report_date"
+    t.index ["sales_user_id", "report_date"], name: "idx_sales_daily_reports_user_date", unique: true
+    t.index ["sales_user_id"], name: "index_sales_daily_reports_on_sales_user_id"
+  end
+
   create_table "sales_holidays", force: :cascade do |t|
     t.string "name", null: false
     t.date "date", null: false
@@ -1334,6 +1356,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
   add_foreign_key "riders", "sub_counties"
+  add_foreign_key "sales_daily_reports", "sales_users"
   add_foreign_key "sales_user_field_locations", "sales_users"
   add_foreign_key "sales_users", "sales_users", column: "lead_id"
   add_foreign_key "seller_carbon_code_assignments", "carbon_codes"
