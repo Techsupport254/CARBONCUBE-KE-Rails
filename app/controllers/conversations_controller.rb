@@ -222,6 +222,14 @@ class ConversationsController < ApplicationController
       return
     end
 
+    # Staff can only mark conversations they are assigned to as read.
+    # P2P buyer↔seller threads (admin_id is not the staff user) must not be touched.
+    staff_types = %w[Admin SalesUser MarketingUser]
+    if staff_types.include?(@current_user.class.name) && @conversation.admin_id != @current_user.id
+      render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
+      return
+    end
+
     unread_messages = related_conversations_for_mark_read.flat_map do |conversation|
       conversation.messages.unread.where.not(sender: @current_user).to_a
     end
