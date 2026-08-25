@@ -2,23 +2,73 @@
 require 'httparty'
 
 class GeocodingController < ApplicationController
+  # Nominatim requires ~1 second between requests from the same IP.
+  # This mutex enforces that within a single Rails process.
+  NOMINATIM_MIN_INTERVAL = 1.0
+  MUTEX = Mutex.new
+
+  class << self
+    attr_accessor :last_nominatim_request_at
+  end
+
   # Reverse geocoding: Convert lat/lng to address using Nominatim
   def reverse
     latitude = params[:lat]&.to_f
     longitude = params[:lon]&.to_f
-    zoom = params[:zoom]&.to_i || 18 # Default to zoom 18 for detailed results
-    
+    zoom = params[:zoom]&.to_i || 18
+
     unless latitude && longitude
       render json: { error: 'Latitude and longitude are required' }, status: :bad_request
       return
     end
-    
-    begin
-      # Use Nominatim API for reverse geocoding
-      # Note: Nominatim requires a User-Agent header and has usage policies
-      nominatim_url = 'https://nominatim.openstreetmap.org/reverse'
-      
-      response = HTTParty.get(nominatim_url, {
+
+    cache_key = "nominatim:reverse:#{latitude.round(6)}:#{longitude.round(6)}:#{zoom}"
+    data = fetch_or_request(cache_key) { nominatim_reverse(latitude, longitude, zoom) }
+
+    if data
+      render json: data, status: :ok
+    else
+      render json: {
+        error: 'Failed to get location data',
+        display_name: "#{latitude}, #{longitude}"
+      }, status: :bad_gateway
+    end
+  end
+
+  # Forward geocoding: Convert address/query to coordinates using Nominatim
+  def search
+    query = params[:q] || params[:query]
+    limit = params[:limit]&.to_i || 5
+
+    unless query.present?
+      render json: { error: 'Query parameter is required' }, status: :bad_request
+      return
+    end
+
+    cache_key = "nominatim:search:#{Digest::MD5.hexdigest("#{query}:#{limit}")}"
+    data = fetch_or_request(cache_key) { nominatim_search(query, limit) }
+
+    if data
+      render json: Array(data), status: :ok
+    else
+      render json: [], status: :bad_gateway
+    end
+  end
+
+  private
+
+  def fetch_or_request(cache_key)
+    data = Rails.cache.read(cache_key)
+    if data.nil?
+      data = yield
+      Rails.cache.write(cache_key, data, expires_in: 1.hour) unless data.nil?
+    end
+    data
+  end
+
+  def nominatim_reverse(latitude, longitude, zoom)
+    with_nominatim_rate_limit do
+      response = HTTParty.get('https://nominatim.openstreetmap.org/reverse', {
         query: {
           format: 'json',
           lat: latitude,
@@ -32,43 +82,23 @@ class GeocodingController < ApplicationController
         },
         timeout: 10
       })
-      
+
       if response.success?
-        data = JSON.parse(response.body)
-        render json: data, status: :ok
+        JSON.parse(response.body)
       else
         Rails.logger.error "Nominatim API error: #{response.code} - #{response.body}"
-        render json: { 
-          error: 'Failed to get location data',
-          display_name: "#{latitude}, #{longitude}"
-        }, status: :bad_gateway
+        nil
       end
-    rescue => e
-      Rails.logger.error "Geocoding error: #{e.message}"
-      Rails.logger.error e.backtrace.first(10).join("\n")
-      render json: { 
-        error: 'Geocoding service unavailable',
-        display_name: "#{latitude}, #{longitude}"
-      }, status: :internal_server_error
     end
+  rescue => e
+    Rails.logger.error "Geocoding error: #{e.message}"
+    Rails.logger.error e.backtrace.first(10).join("\n")
+    nil
   end
 
-  # Forward geocoding: Convert address/query to coordinates using Nominatim
-  def search
-    query = params[:q] || params[:query]
-    limit = params[:limit]&.to_i || 5
-    
-    unless query.present?
-      render json: { error: 'Query parameter is required' }, status: :bad_request
-      return
-    end
-    
-    begin
-      # Use Nominatim API for forward geocoding/search
-      # Note: Nominatim requires a User-Agent header and has usage policies
-      nominatim_url = 'https://nominatim.openstreetmap.org/search'
-      
-      response = HTTParty.get(nominatim_url, {
+  def nominatim_search(query, limit)
+    with_nominatim_rate_limit do
+      response = HTTParty.get('https://nominatim.openstreetmap.org/search', {
         query: {
           format: 'json',
           q: query,
@@ -81,20 +111,30 @@ class GeocodingController < ApplicationController
         },
         timeout: 10
       })
-      
+
       if response.success?
-        data = JSON.parse(response.body)
-        # Ensure we return an array
-        render json: Array(data), status: :ok
+        JSON.parse(response.body)
       else
         Rails.logger.error "Nominatim search API error: #{response.code} - #{response.body}"
-        render json: [], status: :bad_gateway
+        nil
       end
-    rescue => e
-      Rails.logger.error "Geocoding search error: #{e.message}"
-      Rails.logger.error e.backtrace.first(10).join("\n")
-      render json: [], status: :internal_server_error
+    end
+  rescue => e
+    Rails.logger.error "Geocoding search error: #{e.message}"
+    Rails.logger.error e.backtrace.first(10).join("\n")
+    nil
+  end
+
+  def with_nominatim_rate_limit
+    MUTEX.synchronize do
+      last = self.class.last_nominatim_request_at
+      if last
+        wait = NOMINATIM_MIN_INTERVAL - (Time.current.to_f - last)
+        sleep(wait) if wait > 0
+      end
+      result = yield
+      self.class.last_nominatim_request_at = Time.current.to_f
+      result
     end
   end
 end
-

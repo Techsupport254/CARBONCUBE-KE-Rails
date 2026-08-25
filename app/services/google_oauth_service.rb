@@ -4,7 +4,15 @@ class GoogleOauthService
   GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
   GOOGLE_USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
   GOOGLE_PEOPLE_API_URL = 'https://people.googleapis.com/v1/people/me'
-  
+
+  # Rate limit Nominatim requests to ~1 per second per process.
+  NOMINATIM_MIN_INTERVAL = 1.0
+  NOMINATIM_MUTEX = Mutex.new
+
+  class << self
+    attr_accessor :last_nominatim_request_at
+  end
+
   def initialize(auth_code, redirect_uri, user_ip = nil, role = 'Buyer', location_data = nil, is_registration = false, device_hash = nil)
     @auth_code = auth_code
     @redirect_uri = redirect_uri
@@ -1269,9 +1277,34 @@ class GoogleOauthService
   end
 
   # Call OpenStreetMap Nominatim for an address query, restricted to Kenya.
+  # Caches results and enforces a ~1 second per-process rate limit.
   def nominatim_search(query, limit = 3)
     return nil if query.blank?
 
+    cache_key = "nominatim:search:#{Digest::MD5.hexdigest("#{query}:#{limit}")}"
+    cached = Rails.cache.read(cache_key)
+    return cached if cached.present?
+
+    result = nil
+    NOMINATIM_MUTEX.synchronize do
+      last = self.class.last_nominatim_request_at
+      if last
+        wait = NOMINATIM_MIN_INTERVAL - (Time.current.to_f - last)
+        sleep(wait) if wait > 0
+      end
+      self.class.last_nominatim_request_at = Time.current.to_f
+
+      result = nominatim_api_call(query, limit)
+    end
+
+    Rails.cache.write(cache_key, result, expires_in: 1.hour) if result.present?
+    result
+  rescue => e
+    Rails.logger.warn "Nominatim search error for '#{query}': #{e.message}"
+    nil
+  end
+
+  def nominatim_api_call(query, limit)
     uri = URI('https://nominatim.openstreetmap.org/search')
     uri.query = URI.encode_www_form(
       q: query,
@@ -1307,9 +1340,6 @@ class GoogleOauthService
       'region_name' => address['state'] || address['county'] || address['region'],
       'country' => address['country']
     }
-  rescue => e
-    Rails.logger.warn "Nominatim search error for '#{query}': #{e.message}"
-    nil
   end
 
   # Resolve a city name to a Kenyan town/city using Nominatim.

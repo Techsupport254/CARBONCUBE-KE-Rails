@@ -199,17 +199,20 @@ export default function AdFlagged({
 						>
 							Reason for Review
 						</Text>
-						<Text
-							style={{
-								margin: 0,
-								fontSize: "13px",
-								color: "#7f1d1d",
-								lineHeight: "20px",
-								fontWeight: 500,
-							}}
-						>
-							{flagReason}
-						</Text>
+						{flagReason.split(/\r?\n/).filter(Boolean).map((line, i) => (
+							<Text
+								key={i}
+								style={{
+									margin: i === 0 ? 0 : "4px 0 0",
+									fontSize: "13px",
+									color: "#7f1d1d",
+									lineHeight: "20px",
+									fontWeight: 500,
+								}}
+							>
+								{line.trim()}
+							</Text>
+						))}
 					</Section>
 				)}
 

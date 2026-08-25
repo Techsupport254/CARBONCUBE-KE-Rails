@@ -120,7 +120,7 @@ class Admin::AdsController < ApplicationController
     @ad = Ad.find(params[:id])
     flag_notes = params[:notes] || params[:flag_notes]
     @ad.update(flagged: true, flag_notes: flag_notes)
-    SellerMailer.ad_flagged(@ad.seller, @ad, flag_notes).deliver_now if @ad.seller
+    SellerMailer.ad_flagged(@ad.seller, @ad, flag_notes, params[:to_email]).deliver_now if @ad.seller
     render json: @ad.as_json(only: [:id, :title, :flagged, :flag_notes]), status: :ok
   end
 
