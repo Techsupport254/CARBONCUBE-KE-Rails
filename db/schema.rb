@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_25_093506) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -915,6 +915,39 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
     t.index ["sub_county_id"], name: "index_riders_on_sub_county_id"
   end
 
+  create_table "sales_holidays", force: :cascade do |t|
+    t.string "name", null: false
+    t.date "date", null: false
+    t.boolean "recurring", default: false, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["date", "name"], name: "index_sales_holidays_on_date_and_name", unique: true
+    t.index ["date"], name: "index_sales_holidays_on_date"
+    t.index ["recurring"], name: "index_sales_holidays_on_recurring"
+  end
+
+  create_table "sales_user_field_locations", force: :cascade do |t|
+    t.uuid "sales_user_id", null: false
+    t.decimal "latitude", precision: 10, scale: 8, null: false
+    t.decimal "longitude", precision: 11, scale: 8, null: false
+    t.string "display_name"
+    t.jsonb "address", default: {}
+    t.string "area"
+    t.string "city"
+    t.string "county"
+    t.string "country"
+    t.text "notes"
+    t.date "check_in_date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "pings", default: []
+    t.index ["check_in_date"], name: "index_sales_user_field_locations_on_check_in_date"
+    t.index ["pings"], name: "index_sales_user_field_locations_on_pings", using: :gin
+    t.index ["sales_user_id", "check_in_date"], name: "idx_sales_field_locations_user_date", unique: true
+    t.index ["sales_user_id"], name: "index_sales_user_field_locations_on_sales_user_id"
+  end
+
   create_table "sales_users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "fullname"
     t.string "email"
@@ -933,7 +966,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
     t.string "zipcode"
     t.bigint "county_id"
     t.bigint "sub_county_id"
+    t.uuid "lead_id"
+    t.string "manager_email"
+    t.string "compensation_type"
+    t.boolean "is_lead", default: false, null: false
+    t.boolean "is_manager", default: false, null: false
     t.index ["id"], name: "index_sales_users_on_uuid", unique: true
+    t.index ["lead_id"], name: "index_sales_users_on_lead_id"
   end
 
   create_table "search_analytics", force: :cascade do |t|
@@ -956,6 +995,32 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_sectors_on_name", unique: true
+  end
+
+  create_table "seller_carbon_code_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.bigint "carbon_code_id", null: false
+    t.uuid "sales_user_id", null: false
+    t.decimal "latitude", precision: 10, scale: 7, null: false
+    t.decimal "longitude", precision: 10, scale: 7, null: false
+    t.string "display_name"
+    t.string "area"
+    t.string "city"
+    t.string "county"
+    t.string "country"
+    t.decimal "distance_km", precision: 8, scale: 2
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "seller_gps_latitude", precision: 10, scale: 7
+    t.decimal "seller_gps_longitude", precision: 10, scale: 7
+    t.string "seller_gps_display_name"
+    t.decimal "nearest_ping_distance_km", precision: 8, scale: 2
+    t.datetime "nearest_ping_at"
+    t.index ["carbon_code_id"], name: "index_seller_carbon_code_assignments_on_carbon_code_id"
+    t.index ["created_at"], name: "index_seller_carbon_code_assignments_on_created_at"
+    t.index ["sales_user_id"], name: "index_seller_carbon_code_assignments_on_sales_user_id"
+    t.index ["seller_id"], name: "index_seller_carbon_code_assignments_on_seller_id"
   end
 
   create_table "seller_documents", force: :cascade do |t|
@@ -1260,6 +1325,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_161154) do
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
   add_foreign_key "riders", "sub_counties"
+  add_foreign_key "sales_user_field_locations", "sales_users"
+  add_foreign_key "sales_users", "sales_users", column: "lead_id"
+  add_foreign_key "seller_carbon_code_assignments", "carbon_codes"
+  add_foreign_key "seller_carbon_code_assignments", "sales_users"
+  add_foreign_key "seller_carbon_code_assignments", "sellers"
   add_foreign_key "seller_documents", "document_types"
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade

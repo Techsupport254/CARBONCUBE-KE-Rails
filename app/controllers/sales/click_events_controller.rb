@@ -82,6 +82,26 @@ class Sales::ClickEventsController < ApplicationController
         contact_counts: analytics_data[:contact_counts] || {}
       }
 
+      if is_commission_sales? && response_data[:recent_click_events].is_a?(Array)
+        response_data[:recent_click_events] = response_data[:recent_click_events].map do |event|
+          ev = event.deep_dup
+          if ev[:buyer_info].is_a?(Hash)
+            ev[:buyer_info][:email] = mask_email(ev[:buyer_info][:email])
+            ev[:buyer_info][:phone] = mask_phone(ev[:buyer_info][:phone])
+          end
+          if ev[:user_info].is_a?(Hash)
+            ev[:user_info][:email] = mask_email(ev[:user_info][:email])
+          end
+          if ev[:contact_interaction].is_a?(Hash)
+            ev[:contact_interaction][:phone_number] = mask_phone(ev[:contact_interaction][:phone_number])
+          end
+          ev[:device_hash] = nil
+          ev[:user_agent] = nil
+          ev[:ip_address] = nil
+          ev
+        end
+      end
+
       render json: response_data
     rescue => e
       Rails.logger.error "Click events analytics error: #{e.message}"
@@ -174,5 +194,25 @@ class Sales::ClickEventsController < ApplicationController
     unless @current_sales_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
+  end
+
+  def is_commission_sales?
+    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+  end
+
+  def mask_email(email)
+    return nil if email.blank?
+    parts = email.to_s.strip.split('@')
+    return email if parts.length != 2
+    name, domain = parts
+    masked_name = name.length > 2 ? "#{name[0]}***#{name[-1]}" : "#{name[0]}***"
+    "#{masked_name}@#{domain}"
+  end
+
+  def mask_phone(phone)
+    return nil if phone.blank?
+    clean = phone.to_s.strip
+    return clean if clean.length < 5
+    "#{clean[0..3]}****#{clean[-2..-1]}"
   end
 end

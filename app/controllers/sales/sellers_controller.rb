@@ -1,6 +1,6 @@
 class Sales::SellersController < ApplicationController
   before_action :authenticate_sales_user
-  before_action :set_seller, only: [:show, :destroy, :assign_carbon_code]
+  before_action :set_seller, only: [:show, :assign_carbon_code]
 
   # GET /sales/sellers
   def index
@@ -39,21 +39,9 @@ class Sales::SellersController < ApplicationController
     render json: @seller.as_json(include: { tier: { only: [:name] } })
   end
 
-  # DELETE /sales/sellers/:id - Permanent delete
-  def destroy
-    begin
-      if @seller.destroy
-        render json: { message: "Seller '#{@seller.fullname}' and all their data permanently deleted successfully" }, status: :ok
-      else
-        render json: { error: "Failed to delete seller permanently", details: @seller.errors.full_messages }, status: :unprocessable_entity
-      end
-    rescue => e
-      Rails.logger.error "❌ Error permanently deleting seller: #{e.message}"
-      render json: { error: "Internal server error during deletion", details: e.message }, status: :internal_server_error
-    end
-  end
-
   # PATCH /sales/sellers/:id/assign_carbon_code
+  # Assigns a carbon code to a seller and captures the sales user's GPS location
+  # at the moment of assignment for anti-fraud verification.
   def assign_carbon_code
     code_string = params[:carbon_code].to_s.strip.upcase
 
@@ -68,7 +56,7 @@ class Sales::SellersController < ApplicationController
     end
 
     carbon_code = CarbonCode.find_by(code: code_string)
-    
+
     unless carbon_code
       render json: { error: "Carbon code '#{code_string}' not found" }, status: :not_found
       return
@@ -83,7 +71,11 @@ class Sales::SellersController < ApplicationController
       # Increment usage if it's a new assignment and not just updating to the same code
       if @seller.saved_change_to_carbon_code_id?
         carbon_code.increment!(:times_used)
+
+        # Record the assignment with the sales user's GPS location for verification
+        record_assignment_location(carbon_code)
       end
+
       render json: { message: 'Carbon code assigned successfully', carbon_code: carbon_code.code, label: carbon_code.label }, status: :ok
     else
       render json: { error: 'Failed to assign carbon code', details: @seller.errors.full_messages }, status: :unprocessable_entity
@@ -103,5 +95,42 @@ class Sales::SellersController < ApplicationController
     @seller = Seller.includes(:tier).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Seller not found' }, status: :not_found
+  end
+
+  # Record the sales user's GPS location at the moment of carbon code assignment.
+  # The frontend sends lat/lng + reverse-geocoded address from the browser.
+  # Also computes distance to the seller's registered location for admin verification.
+  def record_assignment_location(carbon_code)
+    lat = params[:latitude]
+    lng = params[:longitude]
+
+    # If no location provided, still create the assignment record (without GPS)
+    assignment = SellerCarbonCodeAssignment.new(
+      seller: @seller,
+      carbon_code: carbon_code,
+      sales_user: @current_sales_user,
+      latitude: lat,
+      longitude: lng,
+      display_name: params[:display_name],
+      area: params[:area],
+      city: params[:city],
+      county: params[:county],
+      country: params[:country],
+      notes: params[:notes]&.strip&.presence
+    )
+
+    # Compute distance to seller's registered location if available.
+    # Seller coordinates are geocoded and stored on their branches.
+    branch = @seller.branches.first
+    seller_lat = branch&.latitude
+    seller_lng = branch&.longitude
+    if lat.present? && lng.present? && seller_lat.present? && seller_lng.present?
+      assignment.distance_km = assignment.distance_to(seller_lat, seller_lng)
+    end
+
+    assignment.save!
+  rescue StandardError => e
+    Rails.logger.error "Failed to record assignment location: #{e.message}"
+    # Don't fail the assignment if location recording fails
   end
 end

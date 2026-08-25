@@ -4,9 +4,10 @@ type ButtonProps = {
   href: string
   children: React.ReactNode
   variant?: "primary" | "secondary"
+  style?: React.CSSProperties
 }
 
-export function Button({ href, children, variant = "primary" }: ButtonProps) {
+export function Button({ href, children, variant = "primary", style }: ButtonProps) {
   const baseStyle: Record<string, string | number> = {
     display: "inline-block",
     padding: "8px 16px",
@@ -34,6 +35,7 @@ export function Button({ href, children, variant = "primary" }: ButtonProps) {
       style={{
         ...baseStyle,
         ...variantStyles[variant],
+        ...style,
       }}
     >
       {children}

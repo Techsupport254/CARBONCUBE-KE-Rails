@@ -2,20 +2,27 @@ require 'google/apis/analyticsdata_v1beta'
 require 'googleauth'
 
 class GoogleAnalyticsService
-  PROPERTY_ID = ENV['GA4_PROPERTY_ID']
-
   def initialize
     @service = Google::Apis::AnalyticsdataV1beta::AnalyticsDataService.new
-    @service.authorization = authorize
+    begin
+      @service.authorization = authorize
+    rescue => e
+      @auth_error = e.message
+    end
     # Disable verbose Google API client logging
     @service.logger.level = Logger::WARN if @service.logger
     Google::Apis.logger.level = Logger::WARN if Google::Apis.logger
   end
 
-  def sources_report(start_date: '2024-10-07', end_date: 'today')
-    return empty_response unless PROPERTY_ID.present?
+  def property_id
+    ENV['GA4_PROPERTY_ID'] || ENV['NEXT_PUBLIC_GA4_PROPERTY_ID']
+  end
 
-    property = "properties/#{PROPERTY_ID}"
+  def sources_report(start_date: '2024-10-07', end_date: 'today')
+    return empty_response.merge(error: @auth_error) if @auth_error.present?
+    return empty_response.merge(error: 'GA4_PROPERTY_ID not configured') unless property_id.present?
+
+    property = "properties/#{property_id}"
 
     request = Google::Apis::AnalyticsdataV1beta::RunReportRequest.new(
       date_ranges: [
@@ -45,9 +52,10 @@ class GoogleAnalyticsService
   end
 
   def sources_by_source_report(start_date: '2024-10-07', end_date: 'today')
-    return empty_source_breakdown unless PROPERTY_ID.present?
+    return empty_source_breakdown.merge(error: @auth_error) if @auth_error.present?
+    return empty_source_breakdown.merge(error: 'GA4_PROPERTY_ID not configured') unless property_id.present?
 
-    property = "properties/#{PROPERTY_ID}"
+    property = "properties/#{property_id}"
 
     request = Google::Apis::AnalyticsdataV1beta::RunReportRequest.new(
       date_ranges: [
@@ -84,9 +92,10 @@ class GoogleAnalyticsService
   end
 
   def totals_report(start_date: '2024-10-07', end_date: 'today')
-    return empty_totals unless PROPERTY_ID.present?
+    return empty_totals.merge(error: @auth_error) if @auth_error.present?
+    return empty_totals.merge(error: 'GA4_PROPERTY_ID not configured') unless property_id.present?
 
-    property = "properties/#{PROPERTY_ID}"
+    property = "properties/#{property_id}"
 
     request = Google::Apis::AnalyticsdataV1beta::RunReportRequest.new(
       date_ranges: [

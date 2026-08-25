@@ -397,6 +397,11 @@ class Buyer::ProfilesController < ApplicationController
       # After successful save, if carbon code was assigned and changed, increment usage
       if @seller.saved_change_to_carbon_code_id? && @seller.carbon_code_id.present?
         CarbonCode.find_by(id: @seller.carbon_code_id)&.increment!(:times_used)
+
+        # Record the assignment with the seller's GPS for anti-fraud verification.
+        # The seller enters the code on their own phone, so we capture THEIR location
+        # and later cross-reference it with the sales user's hourly ping trail.
+        record_carbon_code_assignment(@seller, params[:profile][:carbon_code_id])
       end
 
       # Overwrite temp password with the buyer's real password_digest
@@ -609,6 +614,36 @@ class Buyer::ProfilesController < ApplicationController
   
 
   private
+
+  # Record a carbon code assignment with the seller's GPS location.
+  # The seller self-registers on their own phone and enters the code given to them
+  # by a sales user. We capture the seller's GPS to later cross-reference with
+  # the sales user's hourly ping trail — verifying the sales user was actually
+  # in the field near the seller.
+  def record_carbon_code_assignment(seller, carbon_code_id)
+    carbon_code = CarbonCode.find_by(id: carbon_code_id)
+    return unless carbon_code
+
+    # The sales user who owns this carbon code (via polymorphic associable)
+    sales_user = carbon_code.associable if carbon_code.associable_type == 'SalesUser'
+
+    assignment = SellerCarbonCodeAssignment.new(
+      seller: seller,
+      carbon_code: carbon_code,
+      sales_user: sales_user,
+      seller_gps_latitude: params[:profile][:gps_latitude],
+      seller_gps_longitude: params[:profile][:gps_longitude],
+      seller_gps_display_name: params[:profile][:gps_display_name]
+    )
+
+    if assignment.save
+      # Cross-reference with the sales user's pings to compute nearest distance
+      assignment.cross_reference_pings! if sales_user
+    end
+  rescue StandardError => e
+    Rails.logger.error "Failed to record carbon code assignment: #{e.message}"
+    # Don't fail the registration if assignment recording fails
+  end
 
   def authenticate_buyer
     @current_user = BuyerAuthorizeApiRequest.new(request.headers).result

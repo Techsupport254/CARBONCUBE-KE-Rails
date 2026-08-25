@@ -1,5 +1,6 @@
 class Sales::GoogleAnalyticsController < ApplicationController
   before_action :authenticate_sales_user
+  before_action :ensure_employed_or_manager
 
   def sources
     start_date = params[:start_date] || '2024-10-07'
@@ -46,6 +47,12 @@ class Sales::GoogleAnalyticsController < ApplicationController
     @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result
     unless @current_sales_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
+  end
+
+  def ensure_employed_or_manager
+    if @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+      render json: { error: 'Access restricted to employed sales staff and managers' }, status: :forbidden
     end
   end
 end

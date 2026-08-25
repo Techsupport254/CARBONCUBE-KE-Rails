@@ -154,7 +154,7 @@ class ShopsController < ApplicationController
   def reviews
     slug = params[:slug]
     
-    @shop = find_shop_by_slug(slug)
+    @shop = find_shop_by_slug(slug) || (params[:id].present? ? Seller.includes(:seller_tier, :tier).find_by(id: params[:id], deleted: false) : nil)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -247,7 +247,7 @@ class ShopsController < ApplicationController
   def meta_tags
     slug = params[:slug]
     
-    @shop = find_shop_by_slug(slug)
+    @shop = find_shop_by_slug(slug) || (params[:id].present? ? Seller.includes(:seller_tier, :tier).find_by(id: params[:id], deleted: false) : nil)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -390,7 +390,7 @@ class ShopsController < ApplicationController
   def create_review
     slug = params[:slug]
     
-    @shop = find_shop_by_slug(slug)
+    @shop = find_shop_by_slug(slug) || (params[:id].present? ? Seller.includes(:seller_tier, :tier).find_by(id: params[:id], deleted: false) : nil)
     
     unless @shop
       render json: { error: 'Shop not found' }, status: :not_found
@@ -453,79 +453,108 @@ class ShopsController < ApplicationController
   private
 
   def find_shop_by_slug(slug)
-    enterprise_name_from_slug = slug.gsub('-', ' ').gsub('_', ' ')
+    return nil if slug.blank?
+
+    slug_str = slug.to_s.strip
+    enterprise_name_from_slug = slug_str.gsub(/[-_]/, ' ')
+    normalized_slug = normalize_shop_name(enterprise_name_from_slug)
+    slug_without_and = normalized_slug.gsub(/\band\b/, ' ').gsub(/\s+/, ' ').strip
+
+    # 1. Exact match on username
+    shop = Seller.includes(:seller_tier, :tier)
+                 .where(deleted: false)
+                 .where('LOWER(TRIM(username)) = ?', slug_str.downcase)
+                 .first
+    return shop if shop
+
+    # 2. Direct exact match on enterprise_name or fullname
+    shop = Seller.includes(:seller_tier, :tier)
+                 .where(deleted: false)
+                 .where('LOWER(TRIM(enterprise_name)) = ? OR LOWER(TRIM(fullname)) = ?', enterprise_name_from_slug.downcase, enterprise_name_from_slug.downcase)
+                 .first
+    return shop if shop
+
+    # 3. Clean alphanumeric exact match on enterprise_name or fullname (Handles &, Ltd., special chars)
+    sql_clean_enterprise = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(enterprise_name), '[^a-z0-9]', ' ', 'g'), '\\s+', ' ', 'g'))"
+    sql_clean_fullname = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(fullname), '[^a-z0-9]', ' ', 'g'), '\\s+', ' ', 'g'))"
     
-    normalized_slug_name = normalize_shop_name(enterprise_name_from_slug)
-    
-    normalized_enterprise_name = enterprise_name_from_slug.downcase.strip.squeeze(' ')
-    shop = Strategy1.call(slug, normalized_enterprise_name) ||
-           Strategy2.call(slug, normalized_slug_name) ||
-           Strategy3.call(slug, normalized_enterprise_name) ||
-           Strategy4.call(slug, normalized_slug_name) ||
-           Strategy6.call(slug) ||
-           Strategy5.call(slug)
+    shop = Seller.includes(:seller_tier, :tier)
+                 .where(deleted: false)
+                 .where("#{sql_clean_enterprise} = ? OR #{sql_clean_fullname} = ?", normalized_slug, normalized_slug)
+                 .first
+    return shop if shop
 
-    shop
-  end
-
-  class Strategy1
-    def self.call(slug, normalized_enterprise_name)
-      Seller.includes(:seller_tier, :tier)
-            .where(deleted: false)
-            .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) = ?', normalized_enterprise_name)
-            .first
+    # 4. Try matching without 'and' / '&' (e.g. 'morgan steel works hardware ltd' vs 'morgan steel works & hardware ltd')
+    if slug_without_and.present? && slug_without_and != normalized_slug
+      sql_clean_no_and_ent = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(#{sql_clean_enterprise}, '\\band\\b', ' ', 'g'), '\\s+', ' ', 'g'))"
+      sql_clean_no_and_fn = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(#{sql_clean_fullname}, '\\band\\b', ' ', 'g'), '\\s+', ' ', 'g'))"
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_clean_no_and_ent} = ? OR #{sql_clean_no_and_fn} = ?", slug_without_and, slug_without_and)
+                   .first
+      return shop if shop
     end
-  end
 
-  class Strategy2
-    def self.call(slug, normalized_slug_name)
-      Seller.includes(:seller_tier, :tier)
-            .where(deleted: false)
-            .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) = ?', normalized_slug_name)
-            .first
+    # Also handle if the DB has 'and'/'&' but the slug did not have 'and'
+    if normalized_slug.present?
+      sql_clean_no_and_ent = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(#{sql_clean_enterprise}, '\\band\\b', ' ', 'g'), '\\s+', ' ', 'g'))"
+      sql_clean_no_and_fn = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(#{sql_clean_fullname}, '\\band\\b', ' ', 'g'), '\\s+', ' ', 'g'))"
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_clean_no_and_ent} = ? OR #{sql_clean_no_and_fn} = ?", normalized_slug, normalized_slug)
+                   .first
+      return shop if shop
     end
-  end
 
-  class Strategy3
-    def self.call(slug, normalized_enterprise_name)
-      Seller.includes(:seller_tier, :tier)
-            .where(deleted: false)
-            .where('LOWER(TRIM(REGEXP_REPLACE(enterprise_name, \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_enterprise_name}%")
-            .first
+    # 5. Handle 'limited' vs 'ltd'
+    slug_ltd = normalized_slug.gsub(/\blimited\b/, 'ltd').gsub(/\s+/, ' ').strip
+    slug_limited = normalized_slug.gsub(/\bltd\b/, 'limited').gsub(/\s+/, ' ').strip
+    [slug_ltd, slug_limited].uniq.each do |variant|
+      next if variant.blank? || variant == normalized_slug
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_clean_enterprise} = ? OR #{sql_clean_fullname} = ?", variant, variant)
+                   .first
+      return shop if shop
     end
-  end
 
-  class Strategy4
-    def self.call(slug, normalized_slug_name)
-      Seller.includes(:seller_tier, :tier)
-            .where(deleted: false)
-            .where('LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(enterprise_name, \'[^a-z0-9\\s]\', \'\', \'g\'), \'\\s+\', \' \', \'g\'))) ILIKE ?', "%#{normalized_slug_name}%")
-            .first
+    # 6. ILIKE contains match for normalized alphanumeric text
+    if normalized_slug.length >= 4
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_clean_enterprise} ILIKE ? OR #{sql_clean_fullname} ILIKE ?", "%#{normalized_slug}%", "%#{normalized_slug}%")
+                   .first
+      return shop if shop
     end
-  end
 
-  class Strategy5
-    def self.call(slug)
+    # 7. Numeric ID lookup
+    if slug_str =~ /\A\d+\z/
       begin
-        shop_id = slug.to_i
-        if shop_id > 0
-          Seller.includes(:seller_tier, :tier)
-                .where(deleted: false)
-                .find(shop_id)
-        end
+        shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: slug_str.to_i)
+        return shop if shop
       rescue ActiveRecord::RecordNotFound
-        nil
       end
     end
-  end
 
-  class Strategy6
-    def self.call(slug)
-      Seller.includes(:seller_tier, :tier)
-            .where(deleted: false)
-            .where('LOWER(TRIM(username)) = ?', slug.downcase.strip)
-            .first
+    # 8. Ruby in-memory parameterize fallback for edge cases
+    first_word = enterprise_name_from_slug.split.first
+    if first_word.present? && first_word.length >= 3
+      candidates = Seller.includes(:seller_tier, :tier)
+                          .where(deleted: false)
+                          .where('enterprise_name ILIKE ? OR fullname ILIKE ?', "%#{first_word}%", "%#{first_word}%")
+                          .limit(50)
+      shop = candidates.find do |candidate|
+        ent_param = candidate.enterprise_name&.parameterize
+        fn_param = candidate.fullname&.parameterize
+        ent_slug = candidate.enterprise_name.present? ? normalize_shop_name(candidate.enterprise_name).gsub(/\s+/, '-') : nil
+        fn_slug = candidate.fullname.present? ? normalize_shop_name(candidate.fullname).gsub(/\s+/, '-') : nil
+
+        slug_str == ent_param || slug_str == fn_param || slug_str == ent_slug || slug_str == fn_slug
+      end
+      return shop if shop
     end
+
+    nil
   end
   
   def normalize_shop_name(name)

@@ -9,6 +9,8 @@ type WelcomeEmailProps = {
   dashboardUrl: string
   storefront_url?: string | null
   enterprise_name?: string | null
+  categories_url?: string | null
+  how_to_shop_url?: string | null
   supportEmail: string
   supportPhone: string
   timestamp: string
@@ -21,6 +23,8 @@ export default function WelcomeEmail({
   dashboardUrl,
   storefront_url,
   enterprise_name,
+  categories_url,
+  how_to_shop_url,
   supportEmail,
   supportPhone,
 }: WelcomeEmailProps) {
@@ -42,9 +46,49 @@ export default function WelcomeEmail({
           Hi {name},
         </Text>
 
-        <Text className="rsp-body" style={{ margin: "0 0 10px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
-          Your {isSeller ? "seller" : "buyer"} account is ready. You can now {isSeller ? "showcase products, receive orders, and connect with buyers across Kenya" : "browse products and connect with sellers across Kenya"}.
-        </Text>
+        {isSeller ? (
+          <Text className="rsp-body" style={{ margin: "0 0 10px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+            Your seller account is ready. You can now showcase products, receive orders, and connect with buyers across Kenya.
+          </Text>
+        ) : (
+          <>
+            <Text className="rsp-body" style={{ margin: "0 0 10px", fontSize: "14px", color: "#475569", lineHeight: "21px" }}>
+              Your buyer account is ready. You can now browse products from verified sellers, save your favorites, and connect directly with sellers across Kenya.
+            </Text>
+
+            <Section style={{ margin: "16px 0", padding: "16px", backgroundColor: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+              <Text style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 600, color: "#334155" }}>
+                What you can do now
+              </Text>
+              <Text style={{ margin: "0 0 3px", fontSize: "13px", color: "#475569", lineHeight: "20px" }}>
+                • <strong>Browse products and sellers</strong> — explore categories and verified storefronts across Kenya.
+              </Text>
+              <Text style={{ margin: "0 0 3px", fontSize: "13px", color: "#475569", lineHeight: "20px" }}>
+                • <strong>Save your favorites</strong> — keep track of products and sellers you love.
+              </Text>
+              <Text style={{ margin: "0 0 3px", fontSize: "13px", color: "#475569", lineHeight: "20px" }}>
+                • <strong>Message or call sellers</strong> — ask about availability, pricing, and pickup directly.
+              </Text>
+              <Text style={{ margin: "0 0 12px", fontSize: "13px", color: "#475569", lineHeight: "20px" }}>
+                • <strong>Read seller reviews</strong> — see what other buyers say before you reach out.
+              </Text>
+
+              {categories_url && (
+                <Section style={{ margin: "8px 0 0" }}>
+                  <Button href={categories_url} variant="secondary">
+                    Explore Categories
+                  </Button>
+                </Section>
+              )}
+
+              {how_to_shop_url && (
+                <Text style={{ margin: "10px 0 0", fontSize: "12px", color: "#64748b", lineHeight: "18px" }}>
+                  New to Carbon? <Link href={how_to_shop_url} style={{ color: "#f59e0b", textDecoration: "none", fontWeight: 500 }}>See how to shop</Link>.
+                </Text>
+              )}
+            </Section>
+          </>
+        )}
 
         {isSeller && storefront_url && (
           <>

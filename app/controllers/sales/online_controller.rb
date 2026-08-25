@@ -1,6 +1,7 @@
 # app/controllers/sales/online_controller.rb
 class Sales::OnlineController < ApplicationController
   before_action :authenticate_sales_user
+  before_action :ensure_employed_or_manager
 
   def index
     all_user_keys = RedisConnection.keys('online_user_*')
@@ -129,6 +130,12 @@ class Sales::OnlineController < ApplicationController
     return if @current_sales_user
 
     render json: { error: 'Not Authorized' }, status: :unauthorized
+  end
+
+  def ensure_employed_or_manager
+    return if @current_sales_user&.is_manager || @current_sales_user&.compensation_type == 'employed'
+
+    render json: { error: 'Online user analytics are restricted to employed sales staff and managers' }, status: :forbidden
   end
 
   def records_for_type(user_type, ids)

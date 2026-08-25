@@ -57,3 +57,23 @@ sync_google_reviews:
   queue: low
   description: "Schedule distributed monthly refresh of Google Place reviews for all sellers"
 
+# --- FIELD LOCATIONS ---
+# Flush hourly field location pings from Redis to PostgreSQL at 5:00 PM EAT (14:00 UTC).
+# Pings are collected from sales users every hour 8am-4pm; this job persists them
+# as a single row per user per day with a JSONB array of all pings.
+sync_field_locations:
+  cron: "0 14 * * *"
+  class: "SyncFieldLocationsJob"
+  queue: low
+  description: "Flush daily field location pings from Redis to PostgreSQL"
+
+# --- SALES ONBOARDING SUMMARY ---
+# Send every sales user a Wednesday 7:00 AM EAT (04:00 UTC) email summarising
+# the sellers onboarded in the past 7 days. Managers and leads also see the
+# full team leaderboard and all team onboardings.
+weekly_seller_onboarding_summary:
+  cron: "0 4 * * 3"
+  class: "WeeklySellerOnboardingSummaryJob"
+  queue: low
+  description: "Weekly sales onboarding email with personal and team seller lists"
+

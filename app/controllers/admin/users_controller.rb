@@ -17,7 +17,7 @@ class Admin::UsersController < ApplicationController
               # Return all staff users (admin, sales, marketing)
               all_users = []
               Admin.all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'admin', created_at: u.created_at } }
-              SalesUser.all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'sales', created_at: u.created_at } }
+              SalesUser.includes(:lead).all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'sales', created_at: u.created_at, lead_id: u.lead_id, manager_email: u.manager_email, lead: u.lead ? { id: u.lead.id, fullname: u.lead.fullname } : nil, is_lead: u.is_lead, is_manager: u.is_manager, compensation_type: u.compensation_type } }
               MarketingUser.all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'marketing', created_at: u.created_at } }
               all_users.sort_by { |u| u[:created_at] }.reverse
             end
@@ -41,7 +41,7 @@ class Admin::UsersController < ApplicationController
         
         all_users = []
         admin_results.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'admin', created_at: u.created_at, username: u.username } }
-        sales_results.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'sales', created_at: u.created_at } }
+        sales_results.includes(:lead).each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'sales', created_at: u.created_at, lead_id: u.lead_id, manager_email: u.manager_email, lead: u.lead ? { id: u.lead.id, fullname: u.lead.fullname } : nil, is_lead: u.is_lead, is_manager: u.is_manager, compensation_type: u.compensation_type } }
         marketing_results.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'marketing', created_at: u.created_at } }
         users = all_users.sort_by { |u| u[:created_at] }.reverse
       end
@@ -79,6 +79,12 @@ class Admin::UsersController < ApplicationController
                 when 'MarketingUser' then 'marketing'
                 end,
           username: user.respond_to?(:username) ? user.username : nil,
+          lead_id: user.respond_to?(:lead_id) ? user.lead_id : nil,
+          manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
+          lead: user.respond_to?(:lead) && user.lead ? { id: user.lead.id, fullname: user.lead.fullname } : nil,
+          is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
+          is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
+          compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
           created_at: user.created_at,
           updated_at: user.updated_at
         }
@@ -101,7 +107,6 @@ class Admin::UsersController < ApplicationController
     role = params[:role]&.downcase
     email = params[:email]&.downcase&.strip
     fullname = params[:fullname]&.strip
-    password = params[:password]
     username = params[:username]&.strip if params[:username].present?
     
     # Validate required fields
@@ -112,10 +117,11 @@ class Admin::UsersController < ApplicationController
     if email.blank?
       return render json: { error: 'Email is required' }, status: :bad_request
     end
-    
-    if password.blank?
-      return render json: { error: 'Password is required' }, status: :bad_request
-    end
+
+    # Password is optional — when not provided, a random one is generated so the
+    # account is valid. The staff user sets their own password on first login via
+    # the "Forgot Password" flow.
+    password = params[:password].presence || SecureRandom.alphanumeric(32)
     
     # Check if email already exists
     existing_user = Admin.find_by(email: email) ||
@@ -151,7 +157,11 @@ class Admin::UsersController < ApplicationController
                  email: email,
                  fullname: fullname || email.split('@').first,
                  password: password,
-                 password_confirmation: password
+                 password_confirmation: password,
+                 is_lead: params[:is_lead].to_s == 'true',
+                 is_manager: params[:is_manager].to_s == 'true',
+                 manager_email: params[:manager_email]&.strip,
+                 compensation_type: params[:compensation_type]&.strip&.presence
                )
              when 'marketing'
                MarketingUser.create!(
@@ -162,6 +172,9 @@ class Admin::UsersController < ApplicationController
                )
              end
       
+      # Notify the new staff user (BCC audit inbox). Password is never included.
+      StaffMailer.account_created(user, actor: @current_user).deliver_later
+
       render json: {
         success: true,
         message: "#{role.capitalize} user created successfully",
@@ -171,6 +184,10 @@ class Admin::UsersController < ApplicationController
           fullname: user.fullname,
           role: role,
           username: user.respond_to?(:username) ? user.username : nil,
+          is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
+          is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
+          manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
+          compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
           created_at: user.created_at
         }
       }, status: :created
@@ -209,6 +226,13 @@ class Admin::UsersController < ApplicationController
     # Update attributes
     update_params = {}
     
+    if role == 'sales'
+      update_params[:is_lead] = params[:is_lead].to_s == 'true' if params.key?(:is_lead)
+      update_params[:is_manager] = params[:is_manager].to_s == 'true' if params.key?(:is_manager)
+      update_params[:manager_email] = params[:manager_email]&.strip&.presence if params.key?(:manager_email)
+      update_params[:compensation_type] = params[:compensation_type]&.strip&.presence if params.key?(:compensation_type)
+    end
+    
     if params[:email].present?
       # Check if email is already taken by another user
       existing_user = Admin.find_by(email: params[:email]) ||
@@ -244,6 +268,35 @@ class Admin::UsersController < ApplicationController
     
     begin
       if user.update(update_params)
+        # Build the change list from Rails' saved_changes so we only report
+        # attributes that actually changed in the database. This avoids showing
+        # "email: x -> x" when the frontend re-sends the same value.
+        changes_for_email = user.saved_changes.each_with_object({}) do |(field, values), memo|
+          case field
+          when 'password_digest'
+            memo['password'] = ['••••••••', '••••••••']
+          when 'updated_at', 'created_at'
+            next # ignore timestamps
+          else
+            old_val = values[0]
+            new_val = values[1]
+            # Skip entries where old == new (shouldn't happen via saved_changes,
+            # but guard against boolean/nil edge cases)
+            next if old_val == new_val
+
+            memo[field] = [old_val, new_val]
+          end
+        end
+
+        # Notify the staff user about the update (BCC audit inbox).
+        if changes_for_email.any?
+          StaffMailer.account_updated(
+            user,
+            actor: @current_user,
+            changes: changes_for_email
+          ).deliver_later
+        end
+
         render json: {
           success: true,
           message: 'User updated successfully',
@@ -253,6 +306,10 @@ class Admin::UsersController < ApplicationController
             fullname: user.fullname,
             role: role,
             username: user.respond_to?(:username) ? user.username : nil,
+            is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
+            is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
+            manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
+            compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
             updated_at: user.updated_at
           }
         }, status: :ok

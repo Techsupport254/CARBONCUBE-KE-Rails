@@ -16,6 +16,26 @@ class WelcomeMailer < ApplicationMailer
     )
     dashboard_url = get_dashboard_url(user)
 
+    categories_url = nil
+    how_to_shop_url = nil
+
+    if user.instance_of?(Buyer)
+      categories_url = UtmUrlHelper.append_utm(
+        "https://carboncube-ke.com/categories",
+        source: 'email',
+        medium: 'welcome',
+        campaign: 'signup',
+        content: 'categories'
+      )
+      how_to_shop_url = UtmUrlHelper.append_utm(
+        "https://carboncube-ke.com/how-to-shop",
+        source: 'email',
+        medium: 'welcome',
+        campaign: 'signup',
+        content: 'how_to_shop'
+      )
+    end
+
     storefront_url = nil
     enterprise_name = nil
     image_path = nil
@@ -53,6 +73,8 @@ class WelcomeMailer < ApplicationMailer
         user_type: user_type,
         login_url: login_url,
         dashboard_url: dashboard_url,
+        categories_url: categories_url,
+        how_to_shop_url: how_to_shop_url,
         storefront_url: storefront_url,
         enterprise_name: enterprise_name,
         support_email: ENV['BREVO_EMAIL'] || "support@carboncube.co.ke",

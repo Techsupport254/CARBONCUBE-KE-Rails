@@ -1,5 +1,6 @@
 class Sales::AdSearchesController < ApplicationController
   before_action :authenticate_sales_user
+  before_action :ensure_employed_or_manager
 
   # GET /sales/ad_searches
   # GET /api/sales/ad_searches
@@ -263,5 +264,11 @@ class Sales::AdSearchesController < ApplicationController
     unless @current_sales_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
+  end
+
+  def ensure_employed_or_manager
+    return if @current_sales_user&.is_manager || @current_sales_user&.compensation_type == 'employed'
+
+    render json: { error: 'Search analytics are restricted to employed sales staff and managers' }, status: :forbidden
   end
 end

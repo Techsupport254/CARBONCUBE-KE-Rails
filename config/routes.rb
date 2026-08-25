@@ -433,6 +433,14 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :holidays, only: [:index, :create, :destroy]
+
+    resources :field_locations, only: [:index, :show] do
+      collection do
+        get :assignments
+      end
+    end
+
     resources :carbon_codes, only: [:index, :show, :create, :update, :destroy]
 
     resources :riders do 
@@ -872,7 +880,7 @@ Rails.application.routes.draw do
       end
     end
     resources :reviews, only: [:index, :show]
-    resources :sellers, only: [:index, :show, :destroy] do
+    resources :sellers, only: [:index, :show] do
       member do
         patch :assign_carbon_code
       end
@@ -891,6 +899,14 @@ Rails.application.routes.draw do
     get 'catalog/models', to: 'catalogs#models'
     get 'catalog/model/:slug', to: 'catalogs#show', constraints: { slug: /[^\/]+/ }, format: false
     get 'catalog', to: 'catalogs#show'
+
+    # Field location check-ins for sales users (non-managers)
+    get 'field_locations/status', to: 'field_locations#status'
+    get 'field_locations/history', to: 'field_locations#history'
+    post 'field_locations', to: 'field_locations#create'
+
+    # Holidays (read-only for sales users)
+    get 'holidays', to: 'holidays#index'
   end
 
   # Original routes without /api prefix for backward compatibility

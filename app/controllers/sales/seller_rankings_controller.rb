@@ -23,6 +23,15 @@ class Sales::SellerRankingsController < ApplicationController
         sellers
       end
 
+      if is_commission_sales?
+        ranked_sellers = ranked_sellers.map do |s|
+          s = s.dup
+          s[:email] = mask_email(s[:email])
+          s[:phone_number] = mask_phone(s[:phone_number])
+          s
+        end
+      end
+
       render json: {
         rankings: ranked_sellers,
         total: ranked_sellers.count,
@@ -65,6 +74,15 @@ class Sales::SellerRankingsController < ApplicationController
         end
       end
 
+      if is_commission_sales?
+        ranked_sellers = ranked_sellers.map do |s|
+          s = s.dup
+          s[:email] = mask_email(s[:email])
+          s[:phone_number] = mask_phone(s[:phone_number])
+          s
+        end
+      end
+
       render json: {
         rankings: ranked_sellers,
         metric_type: metric_type,
@@ -85,6 +103,26 @@ class Sales::SellerRankingsController < ApplicationController
     unless @current_sales_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
+  end
+
+  def is_commission_sales?
+    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+  end
+
+  def mask_email(email)
+    return nil if email.blank?
+    parts = email.to_s.strip.split('@')
+    return email if parts.length != 2
+    name, domain = parts
+    masked_name = name.length > 2 ? "#{name[0]}***#{name[-1]}" : "#{name[0]}***"
+    "#{masked_name}@#{domain}"
+  end
+
+  def mask_phone(phone)
+    return nil if phone.blank?
+    clean = phone.to_s.strip
+    return clean if clean.length < 5
+    "#{clean[0..3]}****#{clean[-2..-1]}"
   end
 end
 

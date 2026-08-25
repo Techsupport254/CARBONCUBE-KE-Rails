@@ -1,5 +1,7 @@
 class Sales::BuyersController < ApplicationController
   before_action :authenticate_sales_user
+  before_action :ensure_employed_or_manager
+  before_action :ensure_manager, only: [:destroy]
   before_action :set_buyer, only: [:show, :destroy]
 
   # GET /sales/buyers
@@ -59,6 +61,18 @@ class Sales::BuyersController < ApplicationController
     unless @current_sales_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
+  end
+
+  def ensure_employed_or_manager
+    return if @current_sales_user&.is_manager || @current_sales_user&.compensation_type == 'employed'
+
+    render json: { error: 'Buyer management is restricted to employed sales staff and managers' }, status: :forbidden
+  end
+
+  def ensure_manager
+    return if @current_sales_user&.is_manager
+
+    render json: { error: 'Only managers can delete buyers' }, status: :forbidden
   end
 
   def set_buyer

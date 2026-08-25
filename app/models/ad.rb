@@ -44,8 +44,9 @@ class Ad < ApplicationRecord
     <<~SQL.squish
       CASE
         WHEN ads.is_added_by_sales = TRUE THEN TRUE
-        WHEN sellers.created_at IS NOT NULL 
-          AND ads.created_at <= sellers.created_at + INTERVAL '1 day' 
+        WHEN sellers.created_at IS NOT NULL
+          AND sellers.carbon_code_id IS NOT NULL
+          AND ads.created_at <= sellers.created_at + INTERVAL '1 day'
         THEN TRUE
         WHEN ads.is_added_by_sales IS NULL AND (
           (SELECT MIN(t.created_at) FROM ads t WHERE t.is_added_by_sales = TRUE) IS NULL
@@ -67,8 +68,9 @@ class Ad < ApplicationRecord
 
   def self.is_window_sales_added_sql
     <<~SQL.squish
-      (ads.is_added_by_sales IS NOT TRUE AND 
-       sellers.created_at IS NOT NULL AND 
+      (ads.is_added_by_sales IS NOT TRUE AND
+       sellers.created_at IS NOT NULL AND
+       sellers.carbon_code_id IS NOT NULL AND
        ads.created_at <= sellers.created_at + INTERVAL '1 day' AND NOT #{is_legacy_sales_added_sql})
     SQL
   end
@@ -333,7 +335,7 @@ class Ad < ApplicationRecord
 
   def effective_is_added_by_sales
     return true if self[:is_added_by_sales] == true
-    return true if seller&.created_at && created_at && created_at <= seller.created_at + SALES_ADDED_GRACE_PERIOD
+    return true if seller&.carbon_code_id.present? && seller&.created_at && created_at && created_at <= seller.created_at + SALES_ADDED_GRACE_PERIOD
     return true if self[:is_added_by_sales].nil? && legacy_sales_added?
     false
   end

@@ -157,6 +157,13 @@ class Sales::AnalyticsController < ApplicationController
       }
     end
 
+    if is_commission_sales?
+      response_data = response_data.deep_dup
+      response_data[:active_ads_valuation] = nil
+      response_data[:ads_data_with_timestamps] = []
+      response_data[:targets] = {}
+    end
+
     render json: response_data
   end
 
@@ -334,6 +341,15 @@ class Sales::AnalyticsController < ApplicationController
       end
     end
 
+    if is_commission_sales?
+      sellers = sellers.map do |s|
+        s = s.dup
+        s[:email] = mask_email(s[:email])
+        s[:phone_number] = mask_phone(s[:phone_number])
+        s
+      end
+    end
+
     render json: { sellers: sellers }
   rescue => e
     Rails.logger.error "Error getting category sellers: #{e.message}"
@@ -418,12 +434,22 @@ class Sales::AnalyticsController < ApplicationController
     internal_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
     excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + internal_exclusions).uniq
 
+    if sales_scoped_rep? && user_type == 'buyers'
+      render json: { users: [], type: 'buyers', count: 0 }
+      return
+    end
+
     if user_type == 'sellers'
       # 1. Fetch sellers with basic associations
       users_scope = Seller.where(deleted: false)
                           .includes({ seller_tier: :tier }, :carbon_code)
                           .order(created_at: :desc)
       
+      if sales_scoped_rep?
+        user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_sales_user.id).pluck(:id)
+        users_scope = users_scope.where(carbon_code_id: user_carbon_code_ids)
+      end
+
       # Apply exclusion filtering
       if excluded_email_patterns.any?
         users_scope = exclude_emails_by_pattern(users_scope, excluded_email_patterns)
@@ -522,6 +548,23 @@ class Sales::AnalyticsController < ApplicationController
       end
     end
     
+    if is_commission_sales?
+      if user_type == 'buyers'
+        users_data.each do |u|
+          u[:email] = mask_email(u[:email])
+          u[:phone] = mask_phone(u[:phone])
+        end
+      else
+        user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_sales_user.id).pluck(:id)
+        users.each_with_index do |seller, idx|
+          unless seller.carbon_code_id.present? && user_carbon_code_ids.include?(seller.carbon_code_id)
+            users_data[idx][:email] = mask_email(users_data[idx][:email])
+            users_data[idx][:phone] = mask_phone(users_data[idx][:phone])
+          end
+        end
+      end
+    end
+
     render json: { users: users_data, type: user_type, count: users_data.count }
   end
 
@@ -1179,5 +1222,29 @@ class Sales::AnalyticsController < ApplicationController
     end
     
     query
+  end
+
+  def sales_scoped_rep?
+    !@current_sales_user&.is_manager && !@current_sales_user&.is_lead
+  end
+
+  def is_commission_sales?
+    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+  end
+
+  def mask_email(email)
+    return nil if email.blank?
+    parts = email.to_s.strip.split('@')
+    return email if parts.length != 2
+    name, domain = parts
+    masked_name = name.length > 2 ? "#{name[0]}***#{name[-1]}" : "#{name[0]}***"
+    "#{masked_name}@#{domain}"
+  end
+
+  def mask_phone(phone)
+    return nil if phone.blank?
+    clean = phone.to_s.strip
+    return clean if clean.length < 5
+    "#{clean[0..3]}****#{clean[-2..-1]}"
   end
 end

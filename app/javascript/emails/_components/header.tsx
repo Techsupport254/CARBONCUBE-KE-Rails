@@ -11,11 +11,12 @@ export function Header({ variant = "default" }: HeaderProps) {
       style={{
         padding: "14px 20px",
         borderBottom: variant === "default" ? "1px solid #f1f5f9" : "none",
+        textAlign: "left",
       }}
     >
-      <table role="presentation" width="100%" cellPadding="0" cellSpacing="0" border={0}>
+      <table role="presentation" cellPadding="0" cellSpacing="0" border={0} align="left" style={{ width: "auto" }}>
         <tr>
-          <td style={{ verticalAlign: "middle" }}>
+          <td align="left" style={{ verticalAlign: "middle", width: "20px" }}>
             <Img
               src="https://carboncube-ke.com/logo.png"
               width="20"
@@ -24,7 +25,7 @@ export function Header({ variant = "default" }: HeaderProps) {
               style={{ display: "inline-block", verticalAlign: "middle" }}
             />
           </td>
-          <td style={{ verticalAlign: "middle", paddingLeft: "8px" }}>
+          <td align="left" style={{ verticalAlign: "middle", paddingLeft: "8px" }}>
             <Text
               style={{
                 margin: 0,
@@ -32,6 +33,7 @@ export function Header({ variant = "default" }: HeaderProps) {
                 fontWeight: 600,
                 color: "#1e293b",
                 letterSpacing: "-0.1px",
+                textAlign: "left",
               }}
             >
               Carbon Cube Kenya
