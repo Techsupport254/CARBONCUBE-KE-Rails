@@ -6,8 +6,27 @@ class MarketingUser < ApplicationRecord
             format: { with: /\A\d{10}\z/ },
             allow_blank: true
   
+  scope :active, -> { where(active: true) }
+  scope :deactivated, -> { where(active: false) }
+
   def deleted?
-    false
+    !active?
+  end
+
+  def active?
+    active != false
+  end
+
+  def deactivated?
+    !active?
+  end
+
+  def deactivate!
+    update(active: false, deactivated_at: Time.current)
+  end
+
+  def reactivate!
+    update(active: true, deactivated_at: nil)
   end
   
   def user_type

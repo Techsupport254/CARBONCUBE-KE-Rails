@@ -639,18 +639,19 @@ class OauthAccountLinkingService
           region_name = ip_data['regionName'] # Full region name
           country = ip_data['country']
           country_code = ip_data['countryCode']
-          lat = ip_data['lat']
-          lon = ip_data['lon']
-          
-          location_data[:city] = city
-          location_data[:location] = "#{city}, #{region_name}, #{country}"
-          location_data[:zipcode] = ip_data['zip']
 
-          # Map to Kenyan counties and sub-counties using API data
-          county_mapping = map_to_kenyan_county_from_api(ip_data)
-          if county_mapping
-            location_data[:county_id] = county_mapping[:county_id]
-            location_data[:sub_county_id] = county_mapping[:sub_county_id]
+          # Only set location if country is verified as Kenya
+          if country.to_s.downcase.include?('kenya') || country_code.to_s.upcase == 'KE'
+            location_data[:city] = city
+            location_data[:location] = "#{city}, #{region_name}, #{country}"
+            location_data[:zipcode] = ip_data['zip']
+
+            # Map to Kenyan counties and sub-counties using API data
+            county_mapping = map_to_kenyan_county_from_api(ip_data)
+            if county_mapping
+              location_data[:county_id] = county_mapping[:county_id]
+              location_data[:sub_county_id] = county_mapping[:sub_county_id]
+            end
           end
         end
       end
@@ -658,7 +659,7 @@ class OauthAccountLinkingService
       Rails.logger.warn "Failed to get location from IP: #{e.message}"
       Rails.logger.warn "Backtrace: #{e.backtrace.first(3).join("\n")}"
     end
-    
+
     location_data
   end
 

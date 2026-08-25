@@ -1,7 +1,7 @@
 class SellerCarbonCodeAssignment < ApplicationRecord
   belongs_to :seller
   belongs_to :carbon_code
-  belongs_to :sales_user
+  belongs_to :sales_user, optional: true
 
   # Sales user's GPS (if they manually assigned the code — rare case)
   validates :latitude, numericality: { greater_than_or_equal_to: -90, less_than_or_equal_to: 90 }, allow_nil: true

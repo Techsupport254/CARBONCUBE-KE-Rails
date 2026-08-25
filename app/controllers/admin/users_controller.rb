@@ -5,20 +5,32 @@ class Admin::UsersController < ApplicationController
   def index
     role = params[:role]&.downcase
     query = params[:query]&.strip
+    status = params[:status]&.downcase
     
+    admin_scope = Admin.all
+    sales_scope = SalesUser.includes(:lead).all
+    marketing_scope = MarketingUser.all
+
+    if status.present? && status != 'all'
+      is_active = (status == 'active')
+      admin_scope = admin_scope.where(active: is_active)
+      sales_scope = sales_scope.where(active: is_active)
+      marketing_scope = marketing_scope.where(active: is_active)
+    end
+
     users = case role
             when 'admin'
-              Admin.all
+              admin_scope
             when 'sales'
-              SalesUser.all
+              sales_scope
             when 'marketing'
-              MarketingUser.all
+              marketing_scope
             else
               # Return all staff users (admin, sales, marketing)
               all_users = []
-              Admin.all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'admin', created_at: u.created_at } }
-              SalesUser.includes(:lead).all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'sales', created_at: u.created_at, lead_id: u.lead_id, manager_email: u.manager_email, lead: u.lead ? { id: u.lead.id, fullname: u.lead.fullname } : nil, is_lead: u.is_lead, is_manager: u.is_manager, compensation_type: u.compensation_type } }
-              MarketingUser.all.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'marketing', created_at: u.created_at } }
+              admin_scope.each { |u| all_users << format_user_hash(u, 'admin') }
+              sales_scope.each { |u| all_users << format_user_hash(u, 'sales') }
+              marketing_scope.each { |u| all_users << format_user_hash(u, 'marketing') }
               all_users.sort_by { |u| u[:created_at] }.reverse
             end
     
@@ -27,22 +39,22 @@ class Admin::UsersController < ApplicationController
       if role.present?
         users = case role
                 when 'admin'
-                  Admin.where("email ILIKE :search OR fullname ILIKE :search OR username ILIKE :search", search: "%#{query}%")
+                  admin_scope.where("email ILIKE :search OR fullname ILIKE :search OR username ILIKE :search", search: "%#{query}%")
                 when 'sales'
-                  SalesUser.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
+                  sales_scope.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
                 when 'marketing'
-                  MarketingUser.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
+                  marketing_scope.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
                 end
       else
         # Search across all roles
-        admin_results = Admin.where("email ILIKE :search OR fullname ILIKE :search OR username ILIKE :search", search: "%#{query}%")
-        sales_results = SalesUser.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
-        marketing_results = MarketingUser.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
+        admin_results = admin_scope.where("email ILIKE :search OR fullname ILIKE :search OR username ILIKE :search", search: "%#{query}%")
+        sales_results = sales_scope.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
+        marketing_results = marketing_scope.where("email ILIKE :search OR fullname ILIKE :search", search: "%#{query}%")
         
         all_users = []
-        admin_results.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'admin', created_at: u.created_at, username: u.username } }
-        sales_results.includes(:lead).each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'sales', created_at: u.created_at, lead_id: u.lead_id, manager_email: u.manager_email, lead: u.lead ? { id: u.lead.id, fullname: u.lead.fullname } : nil, is_lead: u.is_lead, is_manager: u.is_manager, compensation_type: u.compensation_type } }
-        marketing_results.each { |u| all_users << { id: u.id, email: u.email, fullname: u.fullname, role: 'marketing', created_at: u.created_at } }
+        admin_results.each { |u| all_users << format_user_hash(u, 'admin') }
+        sales_results.each { |u| all_users << format_user_hash(u, 'sales') }
+        marketing_results.each { |u| all_users << format_user_hash(u, 'marketing') }
         users = all_users.sort_by { |u| u[:created_at] }.reverse
       end
     end
@@ -69,25 +81,12 @@ class Admin::UsersController < ApplicationController
       paginated_users
     else
       paginated_users.map do |user|
-        {
-          id: user.id,
-          email: user.email,
-          fullname: user.fullname || user.email.split('@').first,
-          role: case user.class.name
-                when 'Admin' then 'admin'
-                when 'SalesUser' then 'sales'
-                when 'MarketingUser' then 'marketing'
-                end,
-          username: user.respond_to?(:username) ? user.username : nil,
-          lead_id: user.respond_to?(:lead_id) ? user.lead_id : nil,
-          manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
-          lead: user.respond_to?(:lead) && user.lead ? { id: user.lead.id, fullname: user.lead.fullname } : nil,
-          is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
-          is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
-          compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        }
+        r = case user.class.name
+            when 'Admin' then 'admin'
+            when 'SalesUser' then 'sales'
+            when 'MarketingUser' then 'marketing'
+            end
+        format_user_hash(user, r)
       end
     end
     
@@ -178,18 +177,7 @@ class Admin::UsersController < ApplicationController
       render json: {
         success: true,
         message: "#{role.capitalize} user created successfully",
-        user: {
-          id: user.id,
-          email: user.email,
-          fullname: user.fullname,
-          role: role,
-          username: user.respond_to?(:username) ? user.username : nil,
-          is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
-          is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
-          manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
-          compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
-          created_at: user.created_at
-        }
+        user: format_user_hash(user, role)
       }, status: :created
     rescue ActiveRecord::RecordInvalid => e
       render json: {
@@ -226,6 +214,16 @@ class Admin::UsersController < ApplicationController
     # Update attributes
     update_params = {}
     
+    # Handle activation / deactivation
+    if params.key?(:active)
+      new_active = (params[:active].to_s == 'true' || params[:active] == true)
+      if user.id == @current_user.id && role == 'admin' && !new_active
+        return render json: { error: 'Cannot deactivate your own admin account' }, status: :unprocessable_entity
+      end
+      update_params[:active] = new_active
+      update_params[:deactivated_at] = new_active ? nil : Time.current
+    end
+
     if role == 'sales'
       update_params[:is_lead] = params[:is_lead].to_s == 'true' if params.key?(:is_lead)
       update_params[:is_manager] = params[:is_manager].to_s == 'true' if params.key?(:is_manager)
@@ -297,21 +295,16 @@ class Admin::UsersController < ApplicationController
           ).deliver_later
         end
 
+        status_msg = if update_params.key?(:active)
+                       update_params[:active] ? 'User reactivated successfully' : 'User deactivated successfully'
+                     else
+                       'User updated successfully'
+                     end
+
         render json: {
           success: true,
-          message: 'User updated successfully',
-          user: {
-            id: user.id,
-            email: user.email,
-            fullname: user.fullname,
-            role: role,
-            username: user.respond_to?(:username) ? user.username : nil,
-            is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
-            is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
-            manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
-            compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
-            updated_at: user.updated_at
-          }
+          message: status_msg,
+          user: format_user_hash(user, role)
         }, status: :ok
       else
         render json: {
@@ -359,6 +352,28 @@ class Admin::UsersController < ApplicationController
   end
 
   private
+
+  def format_user_hash(user, role)
+    is_active = user.respond_to?(:active) ? (user.active != false) : true
+    {
+      id: user.id,
+      email: user.email,
+      fullname: user.fullname.presence || user.email.split('@').first,
+      role: role,
+      active: is_active,
+      status: is_active ? 'active' : 'inactive',
+      deactivated_at: user.respond_to?(:deactivated_at) ? user.deactivated_at : nil,
+      username: user.respond_to?(:username) ? user.username : nil,
+      lead_id: user.respond_to?(:lead_id) ? user.lead_id : nil,
+      manager_email: user.respond_to?(:manager_email) ? user.manager_email : nil,
+      lead: user.respond_to?(:lead) && user.lead ? { id: user.lead.id, fullname: user.lead.fullname } : nil,
+      is_lead: user.respond_to?(:is_lead) ? user.is_lead : nil,
+      is_manager: user.respond_to?(:is_manager) ? user.is_manager : nil,
+      compensation_type: user.respond_to?(:compensation_type) ? user.compensation_type : nil,
+      created_at: user.created_at,
+      updated_at: user.updated_at
+    }
+  end
 
   def authenticate_admin
     @current_user = AdminAuthorizeApiRequest.new(request.headers).result

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_25_093506) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -62,6 +62,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_093506) do
     t.string "zipcode"
     t.bigint "county_id"
     t.bigint "sub_county_id"
+    t.boolean "active", default: true, null: false
+    t.datetime "deactivated_at"
+    t.index ["active"], name: "index_admins_on_active"
     t.index ["id"], name: "index_admins_on_uuid", unique: true
   end
 
@@ -607,6 +610,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_093506) do
     t.string "zipcode"
     t.bigint "county_id"
     t.bigint "sub_county_id"
+    t.boolean "active", default: true, null: false
+    t.datetime "deactivated_at"
+    t.index ["active"], name: "index_marketing_users_on_active"
     t.index ["id"], name: "index_marketing_users_on_uuid", unique: true
   end
 
@@ -971,6 +977,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_093506) do
     t.string "compensation_type"
     t.boolean "is_lead", default: false, null: false
     t.boolean "is_manager", default: false, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "deactivated_at"
+    t.index ["active"], name: "index_sales_users_on_active"
     t.index ["id"], name: "index_sales_users_on_uuid", unique: true
     t.index ["lead_id"], name: "index_sales_users_on_lead_id"
   end
@@ -1000,9 +1009,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_093506) do
   create_table "seller_carbon_code_assignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "seller_id", null: false
     t.bigint "carbon_code_id", null: false
-    t.uuid "sales_user_id", null: false
-    t.decimal "latitude", precision: 10, scale: 7, null: false
-    t.decimal "longitude", precision: 10, scale: 7, null: false
+    t.uuid "sales_user_id"
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
     t.string "display_name"
     t.string "area"
     t.string "city"

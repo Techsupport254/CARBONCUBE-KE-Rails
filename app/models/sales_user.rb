@@ -13,8 +13,27 @@ class SalesUser < ApplicationRecord
   validates :compensation_type, inclusion: { in: %w[commission employed] }, allow_blank: true
   validate :lead_cannot_be_self
 
+  scope :active, -> { where(active: true) }
+  scope :deactivated, -> { where(active: false) }
+
   def deleted?
-    false
+    !active?
+  end
+
+  def active?
+    active != false
+  end
+
+  def deactivated?
+    !active?
+  end
+
+  def deactivate!
+    update(active: false, deactivated_at: Time.current)
+  end
+
+  def reactivate!
+    update(active: true, deactivated_at: nil)
   end
 
   def user_type

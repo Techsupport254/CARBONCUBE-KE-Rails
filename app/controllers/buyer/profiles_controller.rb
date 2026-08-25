@@ -626,19 +626,22 @@ class Buyer::ProfilesController < ApplicationController
 
     # The sales user who owns this carbon code (via polymorphic associable)
     sales_user = carbon_code.associable if carbon_code.associable_type == 'SalesUser'
+    profile_p = params[:profile] || {}
 
     assignment = SellerCarbonCodeAssignment.new(
       seller: seller,
       carbon_code: carbon_code,
       sales_user: sales_user,
-      seller_gps_latitude: params[:profile][:gps_latitude],
-      seller_gps_longitude: params[:profile][:gps_longitude],
-      seller_gps_display_name: params[:profile][:gps_display_name]
+      seller_gps_latitude: profile_p[:gps_latitude].presence,
+      seller_gps_longitude: profile_p[:gps_longitude].presence,
+      seller_gps_display_name: profile_p[:gps_display_name].presence
     )
 
     if assignment.save
       # Cross-reference with the sales user's pings to compute nearest distance
-      assignment.cross_reference_pings! if sales_user
+      assignment.cross_reference_pings! if sales_user && assignment.seller_gps_latitude.present?
+    else
+      Rails.logger.warn "Failed to save carbon code assignment: #{assignment.errors.full_messages.join(', ')}"
     end
   rescue StandardError => e
     Rails.logger.error "Failed to record carbon code assignment: #{e.message}"

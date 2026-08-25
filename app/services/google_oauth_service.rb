@@ -65,7 +65,7 @@ class GoogleOauthService
       location_info['location_sources'] = [
         "Google People API (limited)",
         "IP-based geolocation",
-        "Google Maps Geocoding API",
+        "OpenStreetMap Nominatim geocoding",
         "Browser geolocation (frontend)",
         "User input form (fallback)"
       ]
@@ -554,9 +554,47 @@ class GoogleOauthService
       counter += 1
     end
 
-    # Get location data
-    city = location_info.dig('ip_location', 'city') || location_info.dig('geocoded_location', 'city')
-    location = location_info.dig('ip_location', 'formatted_address') || location_info.dig('geocoded_location', 'formatted_address') 
+    # Get location data (prioritize client-side OSM/browser location over IP)
+    client_loc = @location_data.is_a?(Hash) ? @location_data : {}
+    osm_data = client_loc['osm_location'] || client_loc[:osm_location] || {}
+
+    city = osm_data['city'] || osm_data[:city] || client_loc['city'] || client_loc[:city]
+    location = osm_data['locationName'] || osm_data[:locationName] || osm_data['display_name'] || osm_data[:display_name] || client_loc['location'] || client_loc[:location]
+    county_id = client_loc['county_id'] || client_loc[:county_id]
+    sub_county_id = client_loc['sub_county_id'] || client_loc[:sub_county_id]
+
+    # If county wasn't provided directly but OSM gave county/sub-county names, map them
+    if county_id.blank? && (osm_data['county'] || osm_data[:county]).present?
+      osm_county_name = osm_data['county'] || osm_data[:county]
+      osm_sub_county_name = osm_data['sub_county'] || osm_data[:sub_county]
+      matched_county = County.where('name ILIKE ?', "%#{osm_county_name.to_s.strip}%").first
+      if matched_county
+        county_id = matched_county.id
+        if osm_sub_county_name.present?
+          matched_sc = matched_county.sub_counties.where('name ILIKE ?', "%#{osm_sub_county_name.to_s.strip}%").first
+          sub_county_id = matched_sc&.id
+        end
+      end
+    end
+
+    # Only fallback to IP location if NO client location was detected AND IP country is strictly Kenya
+    if city.blank? && location.blank?
+      detected_country = location_info.dig('ip_location', 'country') || location_info.dig('geocoded_location', 'country')
+      is_kenya = detected_country.to_s.downcase.include?('kenya')
+
+      if is_kenya
+        city = location_info.dig('ip_location', 'city') || location_info.dig('geocoded_location', 'city')
+        location = location_info.dig('ip_location', 'formatted_address') || location_info.dig('geocoded_location', 'formatted_address')
+        county_id ||= location_info.dig('ip_location', 'county_id')
+        sub_county_id ||= location_info.dig('ip_location', 'sub_county_id')
+      end
+    end
+
+    # Verify the city resolves to a real Kenyan town/city via Nominatim.
+    # This blocks bad client data or misconfigured IP geolocation from saving
+    # non-Kenyan values such as Johannesburg.
+    city = nominatim_city_search(city, county_id) if city.present?
+
     # Extract and fix profile picture URL from Google
     profile_picture = nil
     if user_info['picture'].present?
@@ -582,8 +620,8 @@ class GoogleOauthService
       uid: user_info['id'],
       # Use actual detected data - no hardcoded defaults
       age_group_id: calculate_age_group(user_info),
-      county_id: location_info.dig('ip_location', 'county_id'),
-      sub_county_id: location_info.dig('ip_location', 'sub_county_id')
+      county_id: county_id,
+      sub_county_id: sub_county_id
     }
 
     # Check for ALL required fields that would prevent user creation
@@ -1200,68 +1238,100 @@ class GoogleOauthService
     results.max_by { |r| r['confidence'] }
   end
 
-  # Method 3: Google Maps Geocoding API
+  # Method 3: OpenStreetMap Nominatim geocoding (always restricted to Kenya)
   def get_location_from_geocoding(location_info)
     begin
-      Rails.logger.info "Getting location from Google Maps Geocoding API"
-      
-      # Use Google Maps Geocoding API to get more detailed location
-      # This requires a Google Maps API key
-      if ENV['GOOGLE_MAPS_API_KEY']
-        # Build address string from available data
-        address_parts = []
-        address_parts << location_info['ip_location']['city'] if location_info['ip_location']&.dig('city')
-        address_parts << location_info['ip_location']['region_name'] if location_info['ip_location']&.dig('region_name')
-        address_parts << location_info['ip_location']['country'] if location_info['ip_location']&.dig('country')
-        
-        if address_parts.any?
-          address_string = address_parts.join(', ')
-          Rails.logger.info "Geocoding address: #{address_string}"
-          
-          # Use Google Maps Geocoding API
-          geocoding_url = "https://maps.googleapis.com/maps/api/geocode/json"
-          response = HTTParty.get(geocoding_url, {
-            query: {
-              address: address_string,
-              key: ENV['GOOGLE_MAPS_API_KEY']
-            },
-            timeout: 10
-          })
-          
-          if response.success?
-            geocoding_data = JSON.parse(response.body)
-            if geocoding_data['status'] == 'OK' && geocoding_data['results'].any?
-              result = geocoding_data['results'].first
-              geocoded_location = {
-                'formatted_address' => result['formatted_address'],
-                'latitude' => result['geometry']['location']['lat'],
-                'longitude' => result['geometry']['location']['lng'],
-                'place_id' => result['place_id'],
-                'address_components' => result['address_components']
-              }
-              
-              Rails.logger.info "Geocoded location: #{geocoded_location['formatted_address']}"
-              geocoded_location
-            else
-              Rails.logger.error "Geocoding failed: #{geocoding_data['status']}"
-              nil
-            end
-          else
-            Rails.logger.error "Geocoding API request failed: #{response.code}"
-            nil
-          end
-        else
-          Rails.logger.error "No address data available for geocoding"
-          nil
-        end
-      else
-        Rails.logger.error "Google Maps API key not configured"
-        nil
-      end
+      Rails.logger.info "Getting location from OpenStreetMap Nominatim"
+
+      ip_location = location_info['ip_location'] || {}
+      return nil unless ip_location['city'].present? || ip_location['region_name'].present?
+
+      query_parts = [ip_location['city'], ip_location['region_name'], ip_location['country']].compact
+      address_string = query_parts.join(', ')
+
+      Rails.logger.info "Nominatim geocoding address: #{address_string}"
+      result = nominatim_search(address_string, 3)
+      return nil unless result
+
+      {
+        'formatted_address' => result['display_name'],
+        'latitude' => result['lat'],
+        'longitude' => result['lon'],
+        'place_id' => result['place_id'],
+        'city' => result['city'],
+        'region_name' => result['region_name'],
+        'country' => result['country']
+      }
     rescue => e
-      Rails.logger.error "Geocoding error: #{e.message}"
+      Rails.logger.error "Nominatim geocoding error: #{e.message}"
       nil
     end
+  end
+
+  # Call OpenStreetMap Nominatim for an address query, restricted to Kenya.
+  def nominatim_search(query, limit = 3)
+    return nil if query.blank?
+
+    uri = URI('https://nominatim.openstreetmap.org/search')
+    uri.query = URI.encode_www_form(
+      q: query,
+      format: 'json',
+      limit: limit,
+      addressdetails: 1,
+      countrycodes: 'ke'
+    )
+
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.read_timeout = 4
+    http.open_timeout = 2
+
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request['User-Agent'] = 'CarbonCube-Kenya/1.0 (contact: info@carboncube-ke.com)'
+    request['Accept'] = 'application/json'
+
+    response = http.request(request)
+    return nil unless response.is_a?(Net::HTTPSuccess)
+
+    data = JSON.parse(response.body)
+    return nil if data.empty?
+
+    result = data.first
+    address = result['address'] || {}
+    {
+      'display_name' => result['display_name'],
+      'lat' => result['lat'].to_f,
+      'lon' => result['lon'].to_f,
+      'place_id' => result['place_id'],
+      'city' => %w[city town village suburb].map { |k| address[k] }.find(&:present?)&.titleize,
+      'region_name' => address['state'] || address['county'] || address['region'],
+      'country' => address['country']
+    }
+  rescue => e
+    Rails.logger.warn "Nominatim search error for '#{query}': #{e.message}"
+    nil
+  end
+
+  # Resolve a city name to a Kenyan town/city using Nominatim.
+  def nominatim_city_search(city, county_id = nil)
+    return nil if city.blank?
+
+    query_parts = [city.to_s.strip]
+    if county_id.present?
+      county = County.find_by(id: county_id)
+      query_parts << county.name if county&.name.present?
+    end
+    query_parts << 'Kenya'
+    query = query_parts.uniq.join(', ')
+
+    result = nominatim_search(query, 3)
+    country = result&.dig('country')
+    return nil unless country.to_s.downcase.include?('kenya')
+
+    result['city']
+  rescue => e
+    Rails.logger.warn "Nominatim city search error for '#{city}': #{e.message}"
+    nil
   end
 
   def exchange_code_for_token

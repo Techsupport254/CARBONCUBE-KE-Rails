@@ -423,6 +423,7 @@ class Seller::ProfilesController < ApplicationController
       # After successful save, if carbon code was assigned and changed, increment usage
       if @seller.saved_change_to_carbon_code_id? && @seller.carbon_code_id.present?
         CarbonCode.find_by(id: @seller.carbon_code_id)&.increment!(:times_used)
+        record_carbon_code_assignment(@seller, @seller.carbon_code_id)
       end
       
       # Ensure seller has a tier (assign Premium if not)
@@ -600,5 +601,30 @@ private
     rescue => e
     end
     uploaded_urls
+  end
+
+  def record_carbon_code_assignment(seller, carbon_code_id)
+    carbon_code = CarbonCode.find_by(id: carbon_code_id)
+    return unless carbon_code
+
+    sales_user = carbon_code.associable if carbon_code.associable_type == 'SalesUser'
+    profile_p = params[:profile] || {}
+
+    assignment = SellerCarbonCodeAssignment.new(
+      seller: seller,
+      carbon_code: carbon_code,
+      sales_user: sales_user,
+      seller_gps_latitude: profile_p[:gps_latitude].presence,
+      seller_gps_longitude: profile_p[:gps_longitude].presence,
+      seller_gps_display_name: profile_p[:gps_display_name].presence
+    )
+
+    if assignment.save
+      assignment.cross_reference_pings! if sales_user && assignment.seller_gps_latitude.present?
+    else
+      Rails.logger.warn "Failed to record carbon code assignment: #{assignment.errors.full_messages.join(', ')}"
+    end
+  rescue StandardError => e
+    Rails.logger.error "Failed to record carbon code assignment: #{e.message}"
   end
 end

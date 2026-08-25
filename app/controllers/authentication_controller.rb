@@ -136,6 +136,12 @@ class AuthenticationController < ApplicationController
         return
       end
 
+      # Block login if the staff user is deactivated
+      if (@user.is_a?(Admin) || @user.is_a?(SalesUser) || @user.is_a?(MarketingUser)) && @user.respond_to?(:active?) && !@user.active?
+        render json: { errors: ['Your account has been deactivated. Please contact an administrator.'] }, status: :unauthorized
+        return
+      end
+
       # 🚫 Pilot restriction for sellers outside Nairobi (only if pilot phase is enabled)
       if ENV['PILOT_PHASE_ENABLED'] == 'true' && role == 'Seller' && @user.county&.county_code.to_i != 47
         render json: {
@@ -438,6 +444,14 @@ class AuthenticationController < ApplicationController
       render json: { 
         error: 'Account has been blocked',
         error_type: 'account_blocked'
+      }, status: :unauthorized
+      return
+    end
+
+    if (user.is_a?(Admin) || user.is_a?(SalesUser) || user.is_a?(MarketingUser)) && user.respond_to?(:active?) && !user.active?
+      render json: { 
+        error: 'Account has been deactivated',
+        error_type: 'account_deactivated'
       }, status: :unauthorized
       return
     end

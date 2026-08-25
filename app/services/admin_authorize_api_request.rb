@@ -35,15 +35,14 @@ class AdminAuthorizeApiRequest
     end
 
     # Try to find admin by ID first
-    if admin_id
-      admin = Admin.find_by(id: admin_id)
-      return admin if admin
-    end
+    admin = Admin.find_by(id: admin_id) if admin_id
+    admin ||= Admin.find_by(email: admin_email) if admin_email
 
-    # Try to find admin by email if ID didn't work
-    if admin_email
-      admin = Admin.find_by(email: admin_email)
-      return admin if admin
+    if admin
+      if admin.respond_to?(:active?) && !admin.active?
+        raise ExceptionHandler::InvalidToken, 'Account has been deactivated'
+      end
+      return admin
     end
 
     raise ExceptionHandler::InvalidToken, 'Invalid token'
