@@ -41,6 +41,14 @@ class SalesUser < ApplicationRecord
     'sales'
   end
 
+  def full_sales_dashboard_access?
+    is_manager? || compensation_type == 'employed'
+  end
+
+  def team_sales_dashboard_access?
+    is_lead? || full_sales_dashboard_access?
+  end
+
   private
 
   def lead_cannot_be_self

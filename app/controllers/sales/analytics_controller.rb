@@ -23,7 +23,11 @@ class Sales::AnalyticsController < ApplicationController
       
       all_ads = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false })
       all_ads = exclude_emails_by_pattern(all_ads, excluded_email_patterns)
-      all_reviews = Review.all
+      all_reviews = Review.joins(ad: :seller)
+                          .left_joins(:buyer)
+                          .where(ads: { deleted: false })
+                          .where(sellers: { deleted: false, blocked: false, flagged: false })
+                          .where("(buyers.id IS NOT NULL AND buyers.deleted = ?) OR reviews.seller_id IS NOT NULL", false)
       # Filter wishlists to exclude deleted/blocked buyers, blocked/deleted sellers, and deleted ads
       all_wishlists = WishList.joins(:buyer, ad: :seller)
                               .where(buyers: { deleted: false })
@@ -138,7 +142,7 @@ class Sales::AnalyticsController < ApplicationController
         total_buyers: all_buyers.count,
         total_ads: all_ads.count,
         active_ads_valuation: all_ads.sum(:price) || 0,
-        total_reviews: Review.count, # Simplified
+        total_reviews: all_reviews.count,
         total_ads_wish_listed: all_wishlists.count,
         subscription_countdowns: all_paid_seller_tiers.count,
         without_subscription: all_unpaid_seller_tiers.count,
@@ -157,7 +161,7 @@ class Sales::AnalyticsController < ApplicationController
       }
     end
 
-    if is_commission_sales?
+    if commission_sales?
       response_data = response_data.deep_dup
       response_data[:active_ads_valuation] = nil
       response_data[:ads_data_with_timestamps] = []
@@ -341,7 +345,7 @@ class Sales::AnalyticsController < ApplicationController
       end
     end
 
-    if is_commission_sales?
+    if commission_sales?
       sellers = sellers.map do |s|
         s = s.dup
         s[:email] = mask_email(s[:email])
@@ -548,7 +552,7 @@ class Sales::AnalyticsController < ApplicationController
       end
     end
     
-    if is_commission_sales?
+    if commission_sales?
       if user_type == 'buyers'
         users_data.each do |u|
           u[:email] = mask_email(u[:email])
@@ -783,7 +787,7 @@ class Sales::AnalyticsController < ApplicationController
     # Apply source/UTM filter if provided (case-insensitive matching using index-friendly conditions)
     if selected_source.present?
       src = selected_source.to_s.downcase
-      if src == 'direct' || src == 'other'
+      if ['direct', 'other'].include?(src)
         base_scope = base_scope.where(
           "(source IS NULL OR source = '' OR LOWER(source) = :src) AND (utm_source IS NULL OR utm_source = '' OR LOWER(utm_source) IN ('direct', 'other'))",
           src: src
@@ -1225,11 +1229,11 @@ class Sales::AnalyticsController < ApplicationController
   end
 
   def sales_scoped_rep?
-    !@current_sales_user&.is_manager && !@current_sales_user&.is_lead
+    !@current_sales_user&.team_sales_dashboard_access?
   end
 
-  def is_commission_sales?
-    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+  def commission_sales?
+    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.team_sales_dashboard_access?
   end
 
   def mask_email(email)
@@ -1245,6 +1249,6 @@ class Sales::AnalyticsController < ApplicationController
     return nil if phone.blank?
     clean = phone.to_s.strip
     return clean if clean.length < 5
-    "#{clean[0..3]}****#{clean[-2..-1]}"
+    "#{clean[0..3]}****#{clean[-2..]}"
   end
 end

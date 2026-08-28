@@ -166,6 +166,10 @@ class Seller::AnalyticsController < ApplicationController
         return
       end
 
+      if tier_id >= 2
+        response_data[:market_intelligence] = build_market_intelligence(tier_id, response_data[:search_insights])
+      end
+
       render json: response_data
     rescue => e
       Rails.logger.error "Analytics error for seller #{current_seller&.id}: #{e.message}"
@@ -2323,7 +2327,7 @@ class Seller::AnalyticsController < ApplicationController
 
     seller_categories = current_seller.ads.active.distinct.pluck(:category_id)
     category_names = Category.where(id: seller_categories).pluck(:name)
-    category_insights = generate_category_search_insights_from_redis(seller_categories, popular_all, popular_weekly)
+    category_insights = generate_category_search_insights_from_redis(seller_categories, popular_all, popular_weekly, popular_daily)
 
     # Popular searches filtered to only terms related to seller's categories (same keyword logic as category_insights)
     popular_all_related = filter_popular_searches_by_seller_categories(seller_categories, popular_all)
@@ -2357,6 +2361,32 @@ class Seller::AnalyticsController < ApplicationController
       last_updated: latest_analytics&.updated_at&.iso8601 || Time.current.iso8601,
       seller_categories: category_names
     }
+  end
+
+  def build_market_intelligence(tier_id, search_insights)
+    primary_category_id = get_competitor_category_id || get_primary_category_id
+
+    market_intelligence = {
+      primary_category: nil,
+      most_searched: [],
+      pricing: empty_pricing_intelligence
+    }
+
+    if primary_category_id
+      category = Category.find_by(id: primary_category_id)
+      market_intelligence[:primary_category] = {
+        id: primary_category_id,
+        name: category&.name
+      }
+      market_intelligence[:pricing] = calculate_pricing_intelligence(primary_category_id)
+      market_intelligence[:competitor] = calculate_competitor_stats(primary_category_id) if tier_id >= 3
+    end
+
+    if search_insights && search_insights[:category_insights]
+      market_intelligence[:most_searched] = search_insights[:category_insights].first(5)
+    end
+
+    market_intelligence
   end
 
   # Filter Redis popular searches to only terms matching any of the seller's category keywords or catalog items.
@@ -2395,7 +2425,7 @@ class Seller::AnalyticsController < ApplicationController
   end
 
   # Category insights from Redis popular searches (full phrases) filtered by seller's category keywords
-  def generate_category_search_insights_from_redis(seller_category_ids, popular_all, popular_weekly)
+  def generate_category_search_insights_from_redis(seller_category_ids, popular_all, popular_weekly, popular_daily = [])
     return [] if seller_category_ids.empty?
 
     insights = []
@@ -2420,12 +2450,16 @@ class Seller::AnalyticsController < ApplicationController
       by_term = related_searches.group_by { |t, _| t.to_s.downcase }.transform_values { |pairs| pairs.max_by { |_, c| c } }
       related_searches = by_term.values.sort_by { |_, c| -c }.first(10)
 
+      related_term_set = related_searches.to_set { |t, _| t.to_s.downcase }
+      daily_total = popular_daily.sum { |t, c| related_term_set.include?(t.to_s.downcase) ? c.to_i : 0 }
+      weekly_total = popular_weekly.sum { |t, c| related_term_set.include?(t.to_s.downcase) ? c.to_i : 0 }
+
       if related_searches.any?
         insights << {
           category_name: category.name,
           related_searches: related_searches.first(5).map { |t, c| [t.to_s, c.to_i] },
           total_related_searches: related_searches.size,
-          search_volume_trend: calculate_search_volume_trend(related_searches)
+          search_volume_trend: calculate_search_volume_trend(daily_total, weekly_total)
         }
       end
     end
@@ -2433,13 +2467,26 @@ class Seller::AnalyticsController < ApplicationController
   end
 
 
-  def calculate_search_volume_trend(related_searches)
-    # Simplified trend calculation - compare recent vs older searches
-    return "stable" if related_searches.empty?
+  def calculate_search_volume_trend(daily_total, weekly_total)
+    # Compare today's total search volume for this category against the
+    # average daily volume over the last 7 days.
+    return "stable" if daily_total.zero? && weekly_total.zero?
 
-    # This is a placeholder - in a real implementation, you'd compare
-    # search volumes across different time periods
-    "increasing"
+    daily_avg = weekly_total.positive? ? weekly_total / 7.0 : 0.0
+
+    if daily_avg.zero?
+      return daily_total.positive? ? "increasing" : "stable"
+    end
+
+    ratio = daily_total.to_f / daily_avg
+
+    if ratio > 1.15
+      "increasing"
+    elsif ratio < 0.85
+      "decreasing"
+    else
+      "stable"
+    end
   end
 
 

@@ -130,7 +130,7 @@ class Sales::QuarterlyTargetsController < ApplicationController
   end
 
   def ensure_employed_or_manager
-    return if @current_sales_user&.is_manager || @current_sales_user&.compensation_type == 'employed'
+    return if @current_sales_user&.full_sales_dashboard_access?
 
     render json: { error: 'Quarterly targets are restricted to employed sales staff and managers' }, status: :forbidden
   end

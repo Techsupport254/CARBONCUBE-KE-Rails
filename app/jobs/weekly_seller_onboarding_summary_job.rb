@@ -60,14 +60,20 @@ class WeeklySellerOnboardingSummaryJob < ApplicationJob
 
     team_current_total = all_time_counts.values.sum
 
-    # Build one PDF for the team; only managers/leads get it attached
-    team_pdf = build_team_pdf(window_start, window_end, team_summary_array, all_team_sellers, team_current_total)
+    # Build one PDF for the team only if there are onboardings; only managers/leads get it attached
+    team_pdf = all_team_sellers.any? ? build_team_pdf(window_start, window_end, team_summary_array, all_team_sellers, team_current_total) : nil
+
+    # Do not send a blank report to anyone
+    return if all_team_sellers.empty?
 
     SalesUser.find_each do |sales_user|
       personal_sellers = sellers_by_sales_user[sales_user.id] || []
       personal_count = personal_sellers.size
       personal_current_total = all_time_counts[sales_user.id] || 0
       is_manager_or_lead = sales_user.is_manager || sales_user.is_lead
+
+      # Do not spam non-managers with empty personal reports
+      next if personal_count.zero? && !is_manager_or_lead
 
       # Leads and managers get the full team view; regular sales users only get their own data
       summary_for_email = is_manager_or_lead ? team_summary_array : []

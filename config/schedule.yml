@@ -67,6 +67,15 @@ sync_field_locations:
   queue: low
   description: "Flush daily field location pings from Redis to PostgreSQL"
 
+# --- GEOCODING ---
+# Re-geocode seller branches with missing or coarse coordinates every night.
+# Nominatim requires <= 1 req/sec and the job handles that internally.
+geocode_sellers:
+  cron: "0 2 * * *"
+  class: "GeocodeSellersJob"
+  queue: low
+  description: "Backfill and improve geocoding for seller branches"
+
 # --- SALES ONBOARDING SUMMARY ---
 # Send every sales user a Wednesday 7:00 AM EAT (04:00 UTC) email summarising
 # the sellers onboarded in the past 7 days. Managers and leads also see the

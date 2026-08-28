@@ -23,7 +23,7 @@ class Sales::SellerRankingsController < ApplicationController
         sellers
       end
 
-      if is_commission_sales?
+      if commission_sales?
         ranked_sellers = ranked_sellers.map do |s|
           s = s.dup
           s[:email] = mask_email(s[:email])
@@ -74,7 +74,7 @@ class Sales::SellerRankingsController < ApplicationController
         end
       end
 
-      if is_commission_sales?
+      if commission_sales?
         ranked_sellers = ranked_sellers.map do |s|
           s = s.dup
           s[:email] = mask_email(s[:email])
@@ -105,8 +105,8 @@ class Sales::SellerRankingsController < ApplicationController
     end
   end
 
-  def is_commission_sales?
-    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+  def commission_sales?
+    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.team_sales_dashboard_access?
   end
 
   def mask_email(email)
@@ -122,7 +122,7 @@ class Sales::SellerRankingsController < ApplicationController
     return nil if phone.blank?
     clean = phone.to_s.strip
     return clean if clean.length < 5
-    "#{clean[0..3]}****#{clean[-2..-1]}"
+    "#{clean[0..3]}****#{clean[-2..]}"
   end
 end
 

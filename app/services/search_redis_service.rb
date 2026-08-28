@@ -73,6 +73,7 @@ class SearchRedisService
           data = redis.hgetall(key)
           next if data.empty?
           {
+            id: key,
             search_term: data['search_term'],
             user_id: data['user_id'],
             session_id: data['session_id'],

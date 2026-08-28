@@ -51,7 +51,7 @@ class Sales::GoogleAnalyticsController < ApplicationController
   end
 
   def ensure_employed_or_manager
-    if @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+    unless @current_sales_user&.full_sales_dashboard_access?
       render json: { error: 'Access restricted to employed sales staff and managers' }, status: :forbidden
     end
   end

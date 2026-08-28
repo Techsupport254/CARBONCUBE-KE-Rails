@@ -53,9 +53,9 @@ class Sales::DailyReportsController < ApplicationController
     start_date = params[:start_date].present? ? parse_report_date(params[:start_date]) : eat_today
     end_date = params[:end_date].present? ? parse_report_date(params[:end_date]) : start_date
 
-    scoped_reports = if @current_sales_user.is_manager
+    scoped_reports = if @current_sales_user.full_sales_dashboard_access?
                        SalesDailyReport.all
-                     elsif @current_sales_user.is_lead
+                     elsif @current_sales_user.team_sales_dashboard_access?
                        team_ids = [@current_sales_user.id] + @current_sales_user.team_members.pluck(:id)
                        SalesDailyReport.where(sales_user_id: team_ids)
                      else
@@ -67,9 +67,9 @@ class Sales::DailyReportsController < ApplicationController
     total_visited_today = selected_reports.sum(:businesses_visited)
     total_onboarded_today = selected_reports.sum(:businesses_onboarded)
 
-    active_reps_scope = if @current_sales_user.is_manager
+    active_reps_scope = if @current_sales_user.full_sales_dashboard_access?
                           SalesUser.active.where(is_manager: false)
-                        elsif @current_sales_user.is_lead
+                        elsif @current_sales_user.team_sales_dashboard_access?
                           SalesUser.active.where(lead_id: @current_sales_user.id).or(SalesUser.where(id: @current_sales_user.id))
                         else
                           SalesUser.where(id: @current_sales_user.id)
@@ -101,16 +101,16 @@ class Sales::DailyReportsController < ApplicationController
     page = [params[:page]&.to_i || 1, 1].max
     per_page = [params[:per_page]&.to_i || 20, 100].min
 
-    if @current_sales_user.is_manager
+    if @current_sales_user.full_sales_dashboard_access?
       reports = SalesDailyReport.includes(:sales_user).recent
-    elsif @current_sales_user.is_lead
+    elsif @current_sales_user.team_sales_dashboard_access?
       team_ids = [@current_sales_user.id] + @current_sales_user.team_members.pluck(:id)
       reports = SalesDailyReport.includes(:sales_user).where(sales_user_id: team_ids).recent
     else
       reports = SalesDailyReport.includes(:sales_user).where(sales_user_id: @current_sales_user.id).recent
     end
-    
-    if params[:sales_user_id].present? && (@current_sales_user.is_manager || @current_sales_user.is_lead)
+
+    if params[:sales_user_id].present? && @current_sales_user.team_sales_dashboard_access?
       reports = reports.where(sales_user_id: params[:sales_user_id])
     end
 
@@ -144,7 +144,7 @@ class Sales::DailyReportsController < ApplicationController
         per_page: per_page,
         total_count: total,
         total_pages: (total.to_f / per_page).ceil,
-        is_lead_or_manager: @current_sales_user.is_manager || @current_sales_user.is_lead
+        is_lead_or_manager: @current_sales_user.team_sales_dashboard_access?
       }
     }
   end
@@ -267,9 +267,9 @@ class Sales::DailyReportsController < ApplicationController
   private
 
   def set_report
-    if @current_sales_user.is_manager
+    if @current_sales_user.full_sales_dashboard_access?
       @report = SalesDailyReport.find(params[:id])
-    elsif @current_sales_user.is_lead
+    elsif @current_sales_user.team_sales_dashboard_access?
       team_ids = [@current_sales_user.id] + @current_sales_user.team_members.pluck(:id)
       @report = SalesDailyReport.where(sales_user_id: team_ids).find(params[:id])
     else

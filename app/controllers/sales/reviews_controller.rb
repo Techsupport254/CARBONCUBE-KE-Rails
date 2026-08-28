@@ -4,11 +4,13 @@ class Sales::ReviewsController < ApplicationController
 
   # GET /sales/reviews
   def index
-    # Filter out reviews from deleted/blocked buyers and blocked/deleted sellers
-    @reviews = Review.joins(:buyer, ad: :seller)
-                     .where(buyers: { deleted: false })
+    # Show buyer and seller reviews, filtering out deleted/blocked authors and sellers
+    @reviews = Review.joins(ad: :seller)
+                     .left_joins(:buyer)
+                     .where(ads: { deleted: false })
                      .where(sellers: { deleted: false, blocked: false, flagged: false })
-                     .includes(:buyer, :ad)
+                     .where("(buyers.id IS NOT NULL AND buyers.deleted = ?) OR reviews.seller_id IS NOT NULL", false)
+                     .includes(:buyer, :seller, :ad)
                      .order(created_at: :desc)
 
     # Get pagination parameters
@@ -29,11 +31,17 @@ class Sales::ReviewsController < ApplicationController
         created_at: review.created_at&.iso8601,
         updated_at: review.updated_at&.iso8601,
         buyer_id: review.buyer_id,
-        buyer: {
+        seller_id: review.seller_id,
+        buyer: review.buyer ? {
           id: review.buyer.id,
           name: review.buyer.fullname || review.buyer.name || "Buyer ##{review.buyer.id}",
           fullname: review.buyer.fullname
-        },
+        } : nil,
+        seller: review.seller ? {
+          id: review.seller.id,
+          name: review.seller.fullname,
+          enterprise_name: review.seller.enterprise_name
+        } : nil,
         ad: review.ad ? {
           id: review.ad.id,
           title: review.ad.title,

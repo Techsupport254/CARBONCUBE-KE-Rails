@@ -82,7 +82,7 @@ class Sales::ClickEventsController < ApplicationController
         contact_counts: analytics_data[:contact_counts] || {}
       }
 
-      if is_commission_sales? && response_data[:recent_click_events].is_a?(Array)
+      if commission_sales? && response_data[:recent_click_events].is_a?(Array)
         response_data[:recent_click_events] = response_data[:recent_click_events].map do |event|
           ev = event.deep_dup
           if ev[:buyer_info].is_a?(Hash)
@@ -196,8 +196,8 @@ class Sales::ClickEventsController < ApplicationController
     end
   end
 
-  def is_commission_sales?
-    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.is_manager
+  def commission_sales?
+    @current_sales_user&.compensation_type == 'commission' && !@current_sales_user&.team_sales_dashboard_access?
   end
 
   def mask_email(email)
@@ -213,6 +213,6 @@ class Sales::ClickEventsController < ApplicationController
     return nil if phone.blank?
     clean = phone.to_s.strip
     return clean if clean.length < 5
-    "#{clean[0..3]}****#{clean[-2..-1]}"
+    "#{clean[0..3]}****#{clean[-2..]}"
   end
 end

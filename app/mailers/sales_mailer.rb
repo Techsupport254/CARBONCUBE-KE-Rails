@@ -57,7 +57,6 @@ class SalesMailer < ApplicationMailer
 
     mail(
       to: sales_user.email,
-      bcc: ENV['BREVO_EMAIL'],
       subject: "#{subject_prefix} Summary: #{@start_date.strftime('%b %d')}–#{@end_date.strftime('%b %d')}",
       react: {
         recipient_name: @recipient_name,
