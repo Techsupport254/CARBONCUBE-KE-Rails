@@ -4,7 +4,7 @@ class SellerSerializer < ActiveModel::Serializer
              :age_group_id, :zipcode, :city, :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
              :carbon_code, :created_at, :updated_at,
-             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website
+             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url
   attribute :google_place_reviews, if: :google_place_reviews_column?
   attribute :google_reviews_fetched_at, if: :google_place_reviews_column?
 

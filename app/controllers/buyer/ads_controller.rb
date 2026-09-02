@@ -48,6 +48,16 @@ class Buyer::AdsController < ApplicationController
           ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
           ads_query = filter_by_search(ads_query) if params[:search].present? || params[:query].present?
 
+          # Delta sync support: only return ads modified since last_sync_at
+          if params[:last_sync_at].present?
+            begin
+              sync_time = Time.zone.parse(params[:last_sync_at])
+              ads_query = ads_query.where('ads.updated_at >= ?', sync_time) if sync_time
+            rescue ArgumentError
+              # Ignore invalid timestamp format
+            end
+          end
+
           # Enhanced randomization with multiple factors for better distribution
           get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
         end
@@ -69,6 +79,13 @@ class Buyer::AdsController < ApplicationController
       ads_query = filter_by_condition(ads_query) if params[:condition].present? && params[:condition] != 'All'
       ads_query = filter_by_location(ads_query) if params[:location].present? && params[:location] != 'All'
       ads_query = filter_by_search(ads_query) if params[:search].present? || params[:query].present?
+      if params[:last_sync_at].present?
+        begin
+          sync_time = Time.zone.parse(params[:last_sync_at])
+          ads_query = ads_query.where('ads.updated_at >= ?', sync_time) if sync_time
+        rescue ArgumentError
+        end
+      end
 
       ads_query.count
     end
@@ -79,11 +96,19 @@ class Buyer::AdsController < ApplicationController
       best_sellers = calculate_best_sellers_fast(20) # Get 20 best sellers
     end
 
+    # Parse requested fields for sparse fieldsets
+    requested_fields = params[:fields].present? ? params[:fields].to_s.split(',').map(&:strip).map(&:to_sym) : nil
+    is_lite_mode = params[:lite] == 'true' || params[:data_saver] == 'true'
+
     # For balanced ads, @ads is already optimized (hash format from get_balanced_ads)
     # For regular ads, optimize serialization
     optimized_ads = if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
       # Already optimized from get_balanced_ads - just use as is
-      @ads
+      if requested_fields.present?
+        @ads.map { |ad_h| ad_h.slice(*requested_fields) }
+      else
+        @ads
+      end
     else
       # Regular ads - optimize serialization with media URL processing
       @ads.map do |ad|
@@ -126,24 +151,26 @@ class Buyer::AdsController < ApplicationController
           end
         end
 
-      {
-        id: ad.id,
-        title: ad.title,
-        price: ad.effective_price,
-          media: media_json,
+        ad_data = {
+          id: ad.id,
+          title: ad.title,
+          price: ad.effective_price,
+          media: is_lite_mode ? nil : media_json,
           media_urls: media_urls,
           first_media_url: first_media_url,
-        created_at: ad.created_at,
-        subcategory_id: ad.subcategory_id,
-        category_id: ad.category_id,
-        seller_id: ad.seller_id,
-        seller_tier: ad.seller&.seller_tier&.tier&.id || 1,
-        seller_tier_name: ad.seller&.seller_tier&.tier&.name || "Free",
-        seller_name: ad.seller&.fullname,
-        category_name: ad.category&.name,
-        subcategory_name: ad.subcategory&.name,
-        specifications: ad.specifications
-      }
+          created_at: ad.created_at,
+          subcategory_id: ad.subcategory_id,
+          category_id: ad.category_id,
+          seller_id: ad.seller_id,
+          seller_tier: ad.seller&.seller_tier&.tier&.id || 1,
+          seller_tier_name: ad.seller&.seller_tier&.tier&.name || "Free",
+          seller_name: ad.seller&.fullname,
+          category_name: ad.category&.name,
+          subcategory_name: ad.subcategory&.name,
+          specifications: is_lite_mode ? nil : ad.specifications
+        }.compact
+
+        requested_fields.present? ? ad_data.slice(*requested_fields) : ad_data
       end
     end
 
@@ -153,14 +180,14 @@ class Buyer::AdsController < ApplicationController
       render json: {
         ads: optimized_ads,
         subcategory_counts: @subcategory_counts || {},
-        best_sellers: best_sellers,
+        best_sellers: is_lite_mode ? [] : best_sellers,
         pagination: {
           current_page: page,
           per_page: per_page,
           total_count: total_count,
-          total_pages: (total_count.to_f / per_page).ceil
+          total_pages: total_count ? (total_count.to_f / per_page).ceil : 1
         }
-      }
+      }.compact
     end
   end
 

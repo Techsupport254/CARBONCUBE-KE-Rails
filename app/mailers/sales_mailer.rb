@@ -48,9 +48,14 @@ class SalesMailer < ApplicationMailer
       content: 'dashboard'
     )
 
-    if pdf_content
+    if pdf_content.present?
+      decoded = begin
+        Base64.strict_decode64(pdf_content)
+      rescue ArgumentError
+        pdf_content
+      end
       date_str = @end_date.to_s
-      attachments["weekly_onboarding_summary_#{date_str}.pdf"] = { mime_type: 'application/pdf', content: pdf_content }
+      attachments["weekly_onboarding_summary_#{date_str}.pdf"] = { mime_type: 'application/pdf', content: decoded }
     end
 
     subject_prefix = is_manager_or_lead ? 'Team Onboarding' : 'Your Onboarding'

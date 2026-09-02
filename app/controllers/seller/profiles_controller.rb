@@ -253,7 +253,7 @@ class Seller::ProfilesController < ApplicationController
   end
 
   def seller_params
-    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website)
+    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url)
   end
 
   def authenticate_seller
@@ -291,30 +291,34 @@ class Seller::ProfilesController < ApplicationController
     auth_header = request.headers['Authorization']
     token_val = auth_header.split(' ').last if auth_header.present? && auth_header.start_with?('Bearer ')
 
-    if token_val.present? && token_val.include?('.')
-      # JWT token provided, manually authenticate seller
-      authenticate_seller
-      return if performed?
-    end
-
-    seller = current_seller
-    cache_key = nil
-    cached_data = nil
-
-    # Check if there is a pending registration token in the Authorization header
-    if seller.nil?
-      if token_val.present? && !token_val.include?('.')
+    if token_val.present?
+      if token_val.include?('.')
+        # Check if this is a pending_seller JWT (from buyer-to-seller conversion)
+        decoded = JsonWebToken.decode(token_val)
+        if decoded[:success] && decoded[:payload]['type'] == 'pending_seller'
+          cached_data = decoded[:payload].with_indifferent_access
+          seller = Seller.find_by(email: cached_data[:email])
+        else
+          # Otherwise, try authenticating as an existing seller
+          authenticate_seller
+          return if performed?
+          seller = current_seller
+        end
+      else
         # A pending token is a 64-character hex string without dots (unlike JWT which has dots)
         cache_key = "pending_google_registration_#{token_val}"
         pending_data = Rails.cache.read(cache_key)
 
         if pending_data.present? && pending_data.is_a?(Hash) && pending_data[:role].to_s.casecmp?("seller")
           cached_data = pending_data.with_indifferent_access
-
-          # Check if seller already exists by email
           seller = Seller.find_by(email: cached_data[:email])
         end
       end
+    else
+      # If no token in header, it might be in cookies, fallback to standard authenticate
+      authenticate_seller
+      return if performed?
+      seller = current_seller
     end
 
     unless seller || cached_data

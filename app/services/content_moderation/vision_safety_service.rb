@@ -5,12 +5,16 @@ require 'json'
 require 'uri'
 require 'open-uri'
 require 'base64'
+require 'stringio'
 require 'cloudinary'
+require 'googleauth'
 
 module ContentModeration
   class VisionSafetyService
     GROQ_API_KEY = ENV['GROQ_API_KEY']
-    GEMINI_API_KEY = ENV['GEMINI_API_KEY']
+    GEMINI_API_KEYS = [ENV['GEMINI_API_KEY'], ENV['GEMINI_API_KEY_2']].compact_blank
+    GEMINI_VERTEX_PROJECT_ID = ENV['GEMINI_VERTEX_PROJECT_ID']
+    GEMINI_VERTEX_LOCATION = ENV['GEMINI_VERTEX_LOCATION']
     BASE_URL = 'https://api.groq.com/openai/v1/chat/completions'
     VISION_MODEL = 'qwen/qwen3.6-27b'
 
@@ -148,23 +152,42 @@ module ContentModeration
 
 
     def self.check_gemini_vision(img_url)
-      return { evaluated: false } unless GEMINI_API_KEY.present?
+      res = check_gemini_vision_vertex(img_url)
+      return res if res[:evaluated]
+
+      check_gemini_vision_api_key(img_url)
+    end
+
+    def self.check_gemini_vision_vertex(img_url)
+      return { evaluated: false } if GEMINI_VERTEX_PROJECT_ID.blank? || GEMINI_VERTEX_LOCATION.blank?
+
+      image_data = URI.parse(img_url).open(read_timeout: 12, open_timeout: 6).read
+      base64_image = Base64.strict_encode64(image_data)
 
       begin
-        image_data = URI.parse(img_url).open(read_timeout: 12, open_timeout: 6).read
-        base64_image = Base64.strict_encode64(image_data)
+        authorizer = if ENV['GOOGLE_SERVICE_ACCOUNT_JSON'].present?
+                       Google::Auth::ServiceAccountCredentials.make_creds(
+                         json_key_io: StringIO.new(ENV['GOOGLE_SERVICE_ACCOUNT_JSON']),
+                         scope: 'https://www.googleapis.com/auth/cloud-platform'
+                       )
+                     else
+                       Google::Auth.get_application_default(['https://www.googleapis.com/auth/cloud-platform'])
+                     end
+        token = authorizer.fetch_access_token!['access_token']
 
-        uri = URI("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=#{GEMINI_API_KEY}")
+        uri = URI("https://#{GEMINI_VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/#{GEMINI_VERTEX_PROJECT_ID}/locations/#{GEMINI_VERTEX_LOCATION}/publishers/google/models/gemini-2.5-flash:generateContent")
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
-        http.read_timeout = 15
-        http.open_timeout = 6
+        http.read_timeout = 30
+        http.open_timeout = 10
 
         req = Net::HTTP::Post.new(uri)
         req['Content-Type'] = 'application/json'
+        req['Authorization'] = "Bearer #{token}"
         req.body = {
           contents: [
             {
+              role: 'user',
               parts: [
                 { text: PROMPT },
                 {
@@ -196,12 +219,81 @@ module ContentModeration
           reason: parsed['description'] || 'Evaluated by Vision AI'
         }
       rescue Net::ReadTimeout, Net::OpenTimeout, SocketError => e
-        Rails.logger.debug { "Gemini Vision network timeout/socket issue for #{img_url}: #{e.message}" }
+        Rails.logger.debug { "Gemini Vertex network timeout/socket issue for #{img_url}: #{e.message}" }
         { evaluated: false }
       rescue => e
-        Rails.logger.warn "Gemini Vision check exception for #{img_url}: #{e.message}"
+        Rails.logger.warn "Gemini Vertex check exception for #{img_url}: #{e.message}"
         { evaluated: false }
       end
+    end
+
+    def self.check_gemini_vision_api_key(img_url)
+      return { evaluated: false } if GEMINI_API_KEYS.blank?
+
+      image_data = URI.parse(img_url).open(read_timeout: 12, open_timeout: 6).read
+      base64_image = Base64.strict_encode64(image_data)
+
+      GEMINI_API_KEYS.each_with_index do |api_key, index|
+        begin
+          uri = URI("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=#{api_key}")
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = true
+          http.read_timeout = 15
+          http.open_timeout = 6
+
+          req = Net::HTTP::Post.new(uri)
+          req['Content-Type'] = 'application/json'
+          req.body = {
+            contents: [
+              {
+                parts: [
+                  { text: PROMPT },
+                  {
+                    inline_data: {
+                      mime_type: 'image/jpeg',
+                      data: base64_image
+                    }
+                  }
+                ]
+              }
+            ],
+            generationConfig: { response_mime_type: 'application/json' }
+          }.to_json
+
+          res = http.request(req)
+          unless res.is_a?(Net::HTTPSuccess)
+            Rails.logger.debug { "Gemini key #{index + 1} returned #{res.code}, trying next if available" }
+            next
+          end
+
+          parsed_body = JSON.parse(res.body)
+          output_text = parsed_body.dig('candidates', 0, 'content', 'parts', 0, 'text').to_s.strip
+          parsed = JSON.parse(output_text)
+
+          score = parsed['nsfw_score'].to_i.clamp(0, 100)
+          is_nsfw = parsed['is_nsfw'] == true || score >= 50
+
+          return {
+            evaluated: true,
+            is_nsfw: is_nsfw,
+            nsfw_score: score,
+            reason: parsed['description'] || 'Evaluated by Vision AI'
+          }
+        rescue Net::ReadTimeout, Net::OpenTimeout, SocketError => e
+          Rails.logger.debug { "Gemini Vision network timeout/socket issue for #{img_url}: #{e.message}" }
+          return { evaluated: false }
+        rescue => e
+          msg = e.message.to_s.downcase
+          if msg.include?('rate limit') || msg.include?('429') || msg.include?('quota') || msg.include?('limit')
+            Rails.logger.debug { "Gemini key #{index + 1} rate-limited for #{img_url}, trying next if available" }
+            next
+          end
+          Rails.logger.warn "Gemini Vision check exception for #{img_url}: #{e.message}"
+          return { evaluated: false }
+        end
+      end
+
+      { evaluated: false }
     end
 
     def self.check_groq_vision(img_url)
@@ -238,7 +330,7 @@ module ContentModeration
         data = JSON.parse(response.body)
         raw_content = data.dig('choices', 0, 'message', 'content').to_s.strip
 
-        json_text = raw_content.gsub(%r{<think>[\s\S]*?</think>}i, '').strip
+        json_text = raw_content.gsub(/```[\s\S]*?```/i, '').strip
         match = json_text.match(/\{[\s\S]*\}/)
 
         if match
@@ -265,6 +357,6 @@ module ContentModeration
       match ? match[1].split('/').last : nil
     end
 
-    private_class_method :check_cloudinary_moderation, :check_gemini_vision, :check_groq_vision, :extract_cloudinary_public_id
+    private_class_method :check_cloudinary_moderation, :check_gemini_vision, :check_gemini_vision_api_key, :check_gemini_vision_vertex, :check_groq_vision, :extract_cloudinary_public_id
   end
 end

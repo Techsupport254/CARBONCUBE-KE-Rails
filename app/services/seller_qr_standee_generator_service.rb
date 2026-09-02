@@ -103,10 +103,18 @@ class SellerQrStandeeGeneratorService
       name_approx_len = [shop_name.length * 12.5, 310].min
       badge_offset_x = (name_approx_len / 2.0) + 20
 
+      mime_type = "image/png"
+      if seller.profile_picture.present? && seller.profile_picture.include?('googleusercontent')
+        mime_type = "image/jpeg"
+      end
+
       # Avatar SVG snippet
       top_avatar_content = if seller_avatar_b64
         %(<clipPath id="avatarClip"><circle cx="#{center_x}" cy="#{avatar_cy}" r="#{inner_r}"/></clipPath>
-          <image href="data:image/png;base64,#{seller_avatar_b64}" x="#{center_x - inner_r}" y="#{avatar_cy - inner_r}" width="#{inner_r * 2}" height="#{inner_r * 2}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>)
+          <image href="data:#{mime_type};base64,#{seller_avatar_b64}" x="#{center_x - inner_r}" y="#{avatar_cy - inner_r}" width="#{inner_r * 2}" height="#{inner_r * 2}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>)
+      elsif carbon_logo_b64
+        %(<clipPath id="avatarClip"><circle cx="#{center_x}" cy="#{avatar_cy}" r="#{inner_r}"/></clipPath>
+          <image href="data:image/png;base64,#{carbon_logo_b64}" x="#{center_x - inner_r}" y="#{avatar_cy - inner_r}" width="#{inner_r * 2}" height="#{inner_r * 2}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>)
       else
         %(<circle cx="#{center_x}" cy="#{avatar_cy}" r="#{inner_r}" fill="#0284c7"/>
           <text x="#{center_x}" y="#{avatar_cy + 9}" class="font-sans" font-size="24" font-weight="900" fill="#ffffff" text-anchor="middle">#{CGI.escapeHTML(initials)}</text>)
@@ -115,7 +123,11 @@ class SellerQrStandeeGeneratorService
       center_logo_content = if seller_avatar_b64
         inner_center_r = center_logo_r - 5
         %(<clipPath id="centerClip"><circle cx="#{center_x}" cy="#{center_logo_cy}" r="#{inner_center_r}"/></clipPath>
-          <image href="data:image/png;base64,#{seller_avatar_b64}" x="#{center_x - inner_center_r}" y="#{center_logo_cy - inner_center_r}" width="#{inner_center_r * 2}" height="#{inner_center_r * 2}" clip-path="url(#centerClip)" preserveAspectRatio="xMidYMid slice"/>)
+          <image href="data:#{mime_type};base64,#{seller_avatar_b64}" x="#{center_x - inner_center_r}" y="#{center_logo_cy - inner_center_r}" width="#{inner_center_r * 2}" height="#{inner_center_r * 2}" clip-path="url(#centerClip)" preserveAspectRatio="xMidYMid slice"/>)
+      elsif carbon_logo_b64
+        inner_center_r = center_logo_r - 5
+        %(<clipPath id="centerClip"><circle cx="#{center_x}" cy="#{center_logo_cy}" r="#{inner_center_r}"/></clipPath>
+          <image href="data:image/png;base64,#{carbon_logo_b64}" x="#{center_x - inner_center_r}" y="#{center_logo_cy - inner_center_r}" width="#{inner_center_r * 2}" height="#{inner_center_r * 2}" clip-path="url(#centerClip)" preserveAspectRatio="xMidYMid slice"/>)
       else
         %(<circle cx="#{center_x}" cy="#{center_logo_cy}" r="#{center_logo_r - 5}" fill="#0284c7"/>
           <text x="#{center_x}" y="#{center_logo_cy + 6}" class="font-sans" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle">#{CGI.escapeHTML(initials)}</text>)
@@ -144,20 +156,19 @@ class SellerQrStandeeGeneratorService
           <circle cx="#{center_x}" cy="#{avatar_cy}" r="#{avatar_r}" fill="#ffffff" stroke="#{theme_hex}" stroke-width="3.5"/>
           #{top_avatar_content}
 
-          <!-- Merchant Name & Outlined Verified Seal -->
+          <!-- Merchant Name -->
           <g transform="translate(#{center_x}, 152)">
             <text x="0" y="0" class="font-sans" font-size="22" font-weight="800" fill="#0f172a" text-anchor="middle">#{CGI.escapeHTML(shop_name)}</text>
-            <!-- 12-point seal badge -->
-            <g transform="translate(#{badge_offset_x}, -6) scale(0.85)">
-              <polygon points="0,-10 2.6,-7.5 6,-8 6.5,-4.5 9.5,-2.5 8,1 9.5,4.5 6.5,6.5 6,10 2.6,9.5 0,12 -2.6,9.5 -6,10 -6.5,6.5 -9.5,4.5 -8,1 -9.5,-2.5 -6.5,-4.5 -6,-8 -2.6,-7.5" fill="none" stroke="#{theme_hex}" stroke-width="2"/>
-              <path d="M -3.5 0.5 L -1 3.5 L 3.5 -2.5" fill="none" stroke="#{theme_hex}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
           </g>
 
-          <!-- Tier Badge Pill -->
+          <!-- Tier Badge Pill with Verified Seal -->
           <g transform="translate(#{center_x}, 180)">
-            <rect x="-65" y="-10" width="130" height="20" rx="10" ry="10" fill="#fef3c7"/>
-            <text x="0" y="4" class="font-sans" font-size="9.5" font-weight="800" fill="#92400e" text-anchor="middle" letter-spacing="0.6">#{CGI.escapeHTML(tier_name)}</text>
+            <rect x="-70" y="-12" width="140" height="24" rx="12" ry="12" fill="#fef3c7"/>
+            <g transform="translate(-54, 0) scale(0.75)">
+              <polygon points="0,-10 2.6,-7.5 6,-8 6.5,-4.5 9.5,-2.5 8,1 9.5,4.5 6.5,6.5 6,10 2.6,9.5 0,12 -2.6,9.5 -6,10 -6.5,6.5 -9.5,4.5 -8,1 -9.5,-2.5 -6.5,-4.5 -6,-8 -2.6,-7.5" fill="none" stroke="#92400e" stroke-width="2"/>
+              <path d="M -3.5 0.5 L -1 3.5 L 3.5 -2.5" fill="none" stroke="#92400e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+            <text x="8" y="4" class="font-sans" font-size="9.5" font-weight="800" fill="#92400e" text-anchor="middle" letter-spacing="0.6">#{CGI.escapeHTML(tier_name)}</text>
           </g>
 
           <!-- QR Code Container Box -->

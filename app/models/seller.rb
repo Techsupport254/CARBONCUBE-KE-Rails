@@ -33,6 +33,7 @@ class Seller < ApplicationRecord
   has_many :call_queues, dependent: :destroy
   has_many :branches, dependent: :destroy
   has_many :seller_pricing_templates, dependent: :destroy
+  has_one :google_business_profile_connection, dependent: :destroy
   has_many :whatsapp_message_logs, dependent: :destroy
   has_many :email_communication_logs, dependent: :destroy
   has_many :whatsapp_product_sessions, dependent: :destroy

@@ -179,6 +179,8 @@ Rails.application.routes.draw do
   # Handle requests to /auth/google/callback (in case redirect URI is misconfigured)
   get 'auth/google/callback', to: 'authentication#google_oauth_callback'
   post 'auth/google/callback', to: 'authentication#google_oauth_callback'
+  # Buyer-to-Seller conversion (for buyers who sign up via Google with seller role)
+  post 'auth/convert_buyer_to_seller', to: 'authentication#convert_buyer_to_seller'
   resources :banners, only: [:index]
   resources :categories, only: [:index, :show] do
     member do
@@ -497,6 +499,7 @@ Rails.application.routes.draw do
         post 'verify-email'
       end
     end
+
     resources :ad_searches, only: [:index, :show, :destroy] do
       collection do
         get :analytics
@@ -600,6 +603,14 @@ Rails.application.routes.draw do
       post 'request-verification', to: 'profiles#request_verification'
       post 'verify-email', to: 'profiles#verify_email'
     end
+
+    post 'google-business-profile/authorize', to: 'google_business_profiles#authorize'
+    get 'google-business-profile/callback', to: 'google_business_profiles#callback'
+    get 'google-business-profile/status', to: 'google_business_profiles#status'
+    get 'google-business-profile/locations', to: 'google_business_profiles#locations'
+    post 'google-business-profile/select-location', to: 'google_business_profiles#select_location'
+    post 'google-business-profile/sync', to: 'google_business_profiles#sync'
+    delete 'google-business-profile', to: 'google_business_profiles#disconnect'
 
     post 'seo_analysis', to: 'seo_analyses#create'
 
@@ -922,6 +933,13 @@ Rails.application.routes.draw do
         post :parse_ai
         get :onboarded_sellers_count
       end
+    end
+
+    # Executive field reports: KPIs, leaderboard, commission status, AI summary, on-demand PDF
+    scope :reports do
+      get  'executive_summary',       to: 'reports#executive_summary'
+      get  'download_pdf',            to: 'reports#download_pdf'
+      patch 'commission/:id/mark_paid', to: 'reports#mark_commission_paid'
     end
   end
 

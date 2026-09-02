@@ -253,7 +253,7 @@ export default function WeeklyOnboardingSummary({
         <Text className="rsp-caption" style={{ margin: "16px 0 0", fontSize: "12px", color: "#94a3b8", lineHeight: "17px" }}>
           This email is sent every Wednesday at 7:00 AM EAT. It covers the past 7 days of seller onboardings.
           {" "}
-          {isManagerOrLead ? "Managers and leads see the full team view; regular sales users see only their own onboardings." : ""}
+          {isManagerOrLead ? "Employed sales team, managers, and leads see the full team view; commission foot soldiers see only their own onboardings." : ""}
         </Text>
       </Section>
     </EmailLayout>

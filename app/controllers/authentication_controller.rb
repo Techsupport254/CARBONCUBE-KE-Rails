@@ -1019,9 +1019,34 @@ class AuthenticationController < ApplicationController
       end
       
       unless result[:success] && result[:user]
-        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
+        # If this is a role mismatch (buyer trying to register as seller), generate a convert_token
+        # so the frontend can show a "Convert to Seller" option instead of a plain error
+        if result[:role_mismatch] && result[:existing_role].to_s.downcase == 'buyer'
+          convert_payload = {
+            email: user_info['email'],
+            name: user_info['name'],
+            picture: user_info['picture'],
+            sub: user_info['id'] || user_info['sub'],
+            type: 'buyer_to_seller_conversion',
+            exp: 15.minutes.from_now.to_i
+          }
+          convert_token = JsonWebToken.encode(convert_payload)
+          mismatch_params = {
+            role_mismatch: 'true',
+            existing_role: result[:existing_role].to_s,
+            convert_token: convert_token,
+            email: CGI.escape(user_info['email'].to_s),
+            name: CGI.escape(user_info['name'].to_s)
+          }
+          mismatch_params[:picture] = CGI.escape(user_info['picture'].to_s) if user_info['picture'].present?
+          mismatch_qs = mismatch_params.map { |k, v| "#{k}=#{v}" }.join('&')
+          redirect_to "#{oauth_redirect_base}?#{mismatch_qs}", allow_other_host: true, status: 302
+        else
+          redirect_to "#{oauth_redirect_base}?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
+        end
         return
       end
+
       
       user = result[:user]
       user_role = determine_role(user)
@@ -1392,6 +1417,67 @@ class AuthenticationController < ApplicationController
       Rails.logger.error e.backtrace.first(5).join("\n")
       render json: { success: false, error: 'Invalid or expired authorization code' }, status: :not_found
     end
+  end
+
+  # POST /auth/convert_buyer_to_seller
+  # Converts an existing Buyer account (authenticated via Google OAuth) into a pending Seller.
+  # The frontend calls this after the user clicks "Continue as Seller" on the role-mismatch screen.
+  # Expects params: { convert_token: <JWT issued during role_mismatch redirect> }
+  def convert_buyer_to_seller
+    convert_token = params[:convert_token]
+
+    unless convert_token.present?
+      render json: { success: false, error: 'Missing conversion token' }, status: :bad_request
+      return
+    end
+
+    decoded = JsonWebToken.decode(convert_token)
+    unless decoded[:success]
+      render json: { success: false, error: decoded[:error] || 'Invalid conversion token.' }, status: :unprocessable_entity
+      return
+    end
+
+    payload = decoded[:payload]
+
+    # Validate token type
+    unless payload['type'] == 'buyer_to_seller_conversion'
+      render json: { success: false, error: 'Invalid conversion token type.' }, status: :bad_request
+      return
+    end
+
+    email = payload['email']
+    buyer = Buyer.find_by(email: email)
+
+    unless buyer
+      render json: { success: false, error: 'No buyer account found for this email.' }, status: :not_found
+      return
+    end
+
+    # Build a pending_token (same format as the seller pending registration flow)
+    pending_payload = {
+      type: 'pending_seller',
+      email: buyer.email,
+      name: buyer.fullname || payload['name'],
+      picture: buyer.profile_picture || payload['picture'],
+      phone_number: buyer.phone_number,
+      provider: buyer.provider || 'google',
+      uid: buyer.uid || payload['sub'],
+      buyer_id: buyer.id,  # reference to the existing buyer being converted
+      exp: 24.hours.from_now.to_i
+    }
+    pending_token = JsonWebToken.encode(pending_payload)
+
+    render json: {
+      success: true,
+      pending_token: pending_token,
+      email: buyer.email,
+      name: buyer.fullname || payload['name'],
+      phone_number: buyer.phone_number,
+      picture: buyer.profile_picture || payload['picture']
+    }, status: :ok
+  rescue => e
+    Rails.logger.error "convert_buyer_to_seller error: #{e.class} - #{e.message}"
+    render json: { success: false, error: 'Conversion failed. Please try again.' }, status: :internal_server_error
   end
 
   # Complete registration with missing fields

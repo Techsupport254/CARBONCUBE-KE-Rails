@@ -78,5 +78,8 @@ module CarbonecomRails
     # Strip trailing dots from URL paths to prevent RoutingError on slug URLs
     require_relative '../lib/middleware/strip_trailing_dot'
     config.middleware.insert_before Rack::Runtime, Middleware::StripTrailingDot
+
+    # Enable response compression (gzip/deflate) to reduce mobile data consumption by up to 80%
+    config.middleware.use Rack::Deflater
   end
 end

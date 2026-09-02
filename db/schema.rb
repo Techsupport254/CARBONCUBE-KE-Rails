@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_02_134433) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -209,10 +209,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
     t.index "lower((email)::text)", name: "index_purchasers_on_lower_email", unique: true
     t.index ["age_group_id"], name: "index_buyers_on_age_group_id"
     t.index ["county_id"], name: "index_buyers_on_county_id"
+    t.index ["created_at"], name: "index_buyers_on_created_at"
+    t.index ["deleted", "blocked", "last_active_at"], name: "index_buyers_on_deleted_blocked_last_active_at"
+    t.index ["deleted", "last_active_at"], name: "index_buyers_on_deleted_last_active_at"
     t.index ["education_id"], name: "index_buyers_on_education_id"
+    t.index ["email"], name: "index_buyers_on_email", opclass: :gin_trgm_ops, using: :gin
     t.index ["employment_id"], name: "index_buyers_on_employment_id"
+    t.index ["fullname"], name: "index_buyers_on_fullname", opclass: :gin_trgm_ops, using: :gin
     t.index ["id"], name: "index_buyers_on_uuid", unique: true
     t.index ["income_id"], name: "index_buyers_on_income_id"
+    t.index ["location"], name: "index_buyers_on_location", opclass: :gin_trgm_ops, using: :gin
     t.index ["phone_number"], name: "index_buyers_on_phone_number", unique: true, where: "(phone_number IS NOT NULL)"
     t.index ["sector_id"], name: "index_buyers_on_sector_id"
     t.index ["sub_county_id"], name: "index_buyers_on_sub_county_id"
@@ -494,6 +500,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
     t.index ["created_at"], name: "index_fingerprint_removal_requests_on_created_at"
     t.index ["device_hash"], name: "index_fingerprint_removal_requests_on_device_hash"
     t.index ["status"], name: "index_fingerprint_removal_requests_on_status"
+  end
+
+  create_table "google_business_profile_connections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.string "google_account_id"
+    t.string "google_location_id"
+    t.string "location_name"
+    t.text "location_address"
+    t.string "access_token_ciphertext"
+    t.string "refresh_token_ciphertext"
+    t.datetime "access_token_expires_at"
+    t.string "status", default: "connected", null: false
+    t.datetime "connected_at"
+    t.datetime "last_synced_at"
+    t.text "last_sync_error"
+    t.integer "review_count", default: 0, null: false
+    t.decimal "average_rating", precision: 3, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["google_account_id", "google_location_id"], name: "index_gbp_connections_on_google_location", unique: true
+    t.index ["seller_id"], name: "index_google_business_profile_connections_on_seller_id", unique: true
+    t.index ["status"], name: "index_google_business_profile_connections_on_status"
   end
 
   create_table "incomes", force: :cascade do |t|
@@ -1000,6 +1028,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
     t.boolean "is_manager", default: false, null: false
     t.boolean "active", default: true, null: false
     t.datetime "deactivated_at"
+    t.integer "paid_commission_batches", default: 0, null: false
+    t.datetime "last_commission_paid_at"
     t.index ["active"], name: "index_sales_users_on_active"
     t.index ["id"], name: "index_sales_users_on_uuid", unique: true
     t.index ["lead_id"], name: "index_sales_users_on_lead_id"
@@ -1146,6 +1176,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
     t.jsonb "google_place_reviews", default: []
     t.datetime "google_reviews_fetched_at"
     t.datetime "google_place_id_fetched_at"
+    t.string "google_business_profile_url"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -1333,6 +1364,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_25_150000) do
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "email_communication_logs", "sellers"
+  add_foreign_key "google_business_profile_connections", "sellers"
   add_foreign_key "issue_attachments", "issues"
   add_foreign_key "issue_comments", "issue_comments", column: "parent_id"
   add_foreign_key "issue_comments", "issues"
