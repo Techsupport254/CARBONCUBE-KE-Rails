@@ -5,7 +5,7 @@ class SalesDailyReport < ApplicationRecord
   validates :route_areas, presence: true
   validates :businesses_visited, numericality: { greater_than_or_equal_to: 0 }
   validates :businesses_onboarded, numericality: { greater_than_or_equal_to: 0 }
-  validates :sales_user_id, uniqueness: { scope: :report_date, message: 'already submitted a report for this date' }
+  validates :sales_user_id, uniqueness: { scope: :report_date }
 
   scope :recent, -> { order(report_date: :desc, created_at: :desc) }
   scope :for_date, ->(date) { where(report_date: date) }

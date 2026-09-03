@@ -23,7 +23,7 @@ namespace :import do
           - Hardware sellers hard to crack and rejection by sellers is noticeable.
           - When can I be provided credit? I need to use bundles during onboarding.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "ANNA",
@@ -34,7 +34,7 @@ namespace :import do
         challenges: <<~MSG.chomp,
           Most businesses were hesitant, mostly the big hardwares or sellers. The older sellers had trust issues, with some requesting time to think over it.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "ADE",
@@ -46,7 +46,7 @@ namespace :import do
           - Airtime constraints. Limited airtime made it challenging to consistently reach and follow up with prospective sellers. Additional airtime support would help improve communication and seller onboarding.
           - There was a power cut which made most sellers close their businesses early.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "ANNA",
@@ -57,7 +57,7 @@ namespace :import do
         challenges: <<~MSG.chomp,
           Reception is not too good. Most do not embrace digital marketing, though every day is a learning day on the right target.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "DUKE",
@@ -69,7 +69,7 @@ namespace :import do
           - Welders have no smartphone.
           - Some have forgotten passwords of emails; navigation is difficult.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "ADE",
@@ -80,7 +80,7 @@ namespace :import do
         challenges: <<~MSG.chomp,
           Most sellers were complaining of the online presence of the platform. They feel it is not satisfying enough especially those who want to do research before joining the platform.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "DUKE",
@@ -91,7 +91,7 @@ namespace :import do
         challenges: <<~MSG.chomp,
           Sellers tend to be shy away or cautious when you ask for emails, but phone numbers are easy.
         MSG
-        notes: "Has prospective clients",
+        notes: "Has prospective clients"
       },
       {
         code: "DUKE",
@@ -103,7 +103,7 @@ namespace :import do
           - Clients hesitant to join the platform but gave out phone numbers - will follow up.
           - Some thought it is a con and company-self benefiting initiative like how jiji did to them.
         MSG
-        notes: nil,
+        notes: nil
       },
       {
         code: "ADE",
@@ -114,8 +114,8 @@ namespace :import do
         challenges: <<~MSG.chomp,
           Airtime to follow up with leads but hoping it will be sorted soon.
         MSG
-        notes: nil,
-      },
+        notes: nil
+      }
     ]
 
     imported = 0
@@ -137,7 +137,7 @@ namespace :import do
 
       report = SalesDailyReport.find_or_initialize_by(
         sales_user_id: sales_user.id,
-        report_date: report_date,
+        report_date: report_date
       )
 
       if report.persisted?
@@ -155,7 +155,7 @@ namespace :import do
         sentiment: nil,
         urgency: nil,
         action_items: [],
-        verified_by_manager: false,
+        verified_by_manager: false
       )
 
       if report.save
