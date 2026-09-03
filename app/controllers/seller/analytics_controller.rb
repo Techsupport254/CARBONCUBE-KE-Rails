@@ -2312,17 +2312,42 @@ class Seller::AnalyticsController < ApplicationController
     }
   end
 
-  # Get search insights for sellers: real-time full-phrase data from Redis (what people actually search)
+  # Get search insights for sellers from persisted SearchAnalytic records.
+  # Falls back to Redis if no analytics rows exist yet.
   def get_search_insights
-    redis_analytics = SearchRedisService.analytics
+    latest = SearchAnalytic.latest
 
-    # Popular searches from Redis (full phrases with counts), same source as sales Search Analytics
-    popular_all = SearchRedisService.popular_searches(20, :all)
-    popular_daily = SearchRedisService.popular_searches(20, :daily)
-    popular_weekly = SearchRedisService.popular_searches(20, :weekly)
-    popular_monthly = SearchRedisService.popular_searches(20, :monthly)
+    if latest
+      daily_records = SearchAnalytic.where(date: latest.date)
+      weekly_records = SearchAnalytic.where('date >= ?', 7.days.ago.to_date)
+      monthly_records = SearchAnalytic.where('date >= ?', 30.days.ago.to_date)
+      all_records = SearchAnalytic.all
 
-    # Normalize to [term, count] (Redis scores may be float)
+      popular_daily = aggregate_popular_searches(daily_records)
+      popular_weekly = aggregate_popular_searches(weekly_records)
+      popular_monthly = aggregate_popular_searches(monthly_records)
+      popular_all = aggregate_popular_searches(all_records)
+
+      total_searches_today = latest.total_searches_today || latest.raw_analytics_data&.dig('total_searches_today')
+      unique_search_terms_today = latest.unique_search_terms_today
+      total_search_records = latest.total_search_records || latest.raw_analytics_data&.dig('total_search_records')
+      total_searches_weekly = latest.raw_analytics_data&.dig('total_searches_weekly')
+      last_updated = latest.updated_at&.iso8601
+    else
+      popular_all = SearchRedisService.popular_searches(20, :all)
+      popular_daily = SearchRedisService.popular_searches(20, :daily)
+      popular_weekly = SearchRedisService.popular_searches(20, :weekly)
+      popular_monthly = SearchRedisService.popular_searches(20, :monthly)
+
+      redis_analytics = SearchRedisService.analytics
+      total_searches_today = redis_analytics[:total_searches_today]
+      unique_search_terms_today = redis_analytics[:unique_search_terms_today]
+      total_search_records = redis_analytics[:total_search_records]
+      total_searches_weekly = redis_analytics[:total_searches_weekly]
+      last_updated = Time.current.iso8601
+    end
+
+    # Normalize to [term, count]
     normalize = ->(arr) { arr.map { |term, score| [term.to_s, score.to_i] } }
 
     seller_categories = current_seller.ads.active.distinct.pluck(:category_id)
@@ -2335,13 +2360,11 @@ class Seller::AnalyticsController < ApplicationController
     popular_weekly_related = filter_popular_searches_by_seller_categories(seller_categories, popular_weekly)
     popular_daily_related = filter_popular_searches_by_seller_categories(seller_categories, popular_daily)
 
-    latest_analytics = SearchAnalytic.latest
-
     {
-      total_searches_today: redis_analytics[:total_searches_today],
-      unique_search_terms_today: redis_analytics[:unique_search_terms_today],
-      total_search_records: redis_analytics[:total_search_records],
-      total_searches_weekly: redis_analytics[:total_searches_weekly],
+      total_searches_today: total_searches_today,
+      unique_search_terms_today: unique_search_terms_today,
+      total_search_records: total_search_records,
+      total_searches_weekly: total_searches_weekly,
 
       popular_searches_all_time: normalize.call(popular_all),
       popular_searches_daily: normalize.call(popular_daily),
@@ -2358,9 +2381,25 @@ class Seller::AnalyticsController < ApplicationController
       category_insights: category_insights,
       term_last_searched_at: SearchRedisService.search_term_timestamps,
 
-      last_updated: latest_analytics&.updated_at&.iso8601 || Time.current.iso8601,
+      last_updated: last_updated,
       seller_categories: category_names
     }
+  end
+
+  def aggregate_popular_searches(records)
+    return [] if records.blank?
+
+    by_term = {}
+    records.each do |record|
+      (record.raw_analytics_data&.dig('popular_searches') || []).each do |term, count|
+        key = term.to_s.downcase.strip
+        next if key.blank?
+        by_term[key] ||= [term.to_s, 0]
+        by_term[key][1] += count.to_i
+      end
+    end
+
+    by_term.values.sort_by { |_, count| -count }.first(20)
   end
 
   def build_market_intelligence(tier_id, search_insights)
