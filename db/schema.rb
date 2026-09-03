@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_03_150002) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_03_150005) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -137,7 +137,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_150002) do
     t.string "ip_address"
     t.string "utm_content"
     t.string "utm_term"
+    t.index "((data ->> 'visitor_id'::text)), created_at", name: "index_analytics_on_visitor_id_created_at", where: "((data ->> 'visitor_id'::text) IS NOT NULL)"
     t.index "created_at, ((data ->> 'visitor_id'::text))", name: "index_analytics_on_created_at_visitor_id", where: "((data ->> 'visitor_id'::text) IS NOT NULL)"
+    t.index "lower((data ->> 'device_fingerprint'::text)) gin_trgm_ops", name: "index_analytics_on_data_device_fingerprint_trgm", where: "((data ->> 'device_fingerprint'::text) IS NOT NULL)", using: :gin
+    t.index "lower((data ->> 'email'::text)) gin_trgm_ops", name: "index_analytics_on_data_email_trgm", where: "((data ->> 'email'::text) IS NOT NULL)", using: :gin
+    t.index "lower((data ->> 'user_email'::text)) gin_trgm_ops", name: "index_analytics_on_data_user_email_trgm", where: "((data ->> 'user_email'::text) IS NOT NULL)", using: :gin
+    t.index "lower((source)::text)", name: "index_analytics_on_source_lower", where: "((source IS NOT NULL) AND ((source)::text <> ''::text))"
+    t.index "lower((utm_campaign)::text)", name: "index_analytics_on_utm_campaign_lower", where: "((utm_campaign IS NOT NULL) AND ((utm_campaign)::text <> ''::text))"
+    t.index "lower((utm_medium)::text)", name: "index_analytics_on_utm_medium_lower", where: "((utm_medium IS NOT NULL) AND ((utm_medium)::text <> ''::text))"
+    t.index "lower((utm_source)::text)", name: "index_analytics_on_utm_source_lower", where: "((utm_source IS NOT NULL) AND ((utm_source)::text <> ''::text))"
+    t.index "lower(user_agent) gin_trgm_ops", name: "index_analytics_on_user_agent_trgm", where: "(user_agent IS NOT NULL)", using: :gin
+    t.index ["created_at"], name: "index_analytics_on_created_at"
+    t.index ["referrer"], name: "index_analytics_on_referrer", where: "((referrer IS NOT NULL) AND ((referrer)::text <> ''::text))"
   end
 
   create_table "banners", force: :cascade do |t|
@@ -331,6 +342,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_150002) do
     t.uuid "buyer_id"
     t.datetime "review_request_sent_at"
     t.uuid "seller_id"
+    t.index "((metadata ->> 'action'::text))", name: "index_click_events_on_metadata_action", where: "((metadata ->> 'action'::text) IS NOT NULL)"
+    t.index "((metadata ->> 'action_type'::text))", name: "index_click_events_on_metadata_action_type", where: "((metadata ->> 'action_type'::text) IS NOT NULL)"
+    t.index "((metadata ->> 'converted_from_guest'::text))", name: "index_click_events_on_metadata_converted", where: "((metadata ->> 'converted_from_guest'::text) IS NOT NULL)"
+    t.index "((metadata ->> 'device_hash'::text))", name: "index_click_events_on_metadata_device_hash", where: "((metadata ->> 'device_hash'::text) IS NOT NULL)"
+    t.index "((metadata ->> 'post_login_reveal'::text))", name: "index_click_events_on_metadata_post_login", where: "((metadata ->> 'post_login_reveal'::text) IS NOT NULL)"
+    t.index "((metadata ->> 'triggered_login_modal'::text))", name: "index_click_events_on_metadata_login_modal", where: "((metadata ->> 'triggered_login_modal'::text) IS NOT NULL)"
+    t.index "((metadata ->> 'user_role'::text))", name: "index_click_events_on_metadata_user_role", where: "((metadata ->> 'user_role'::text) IS NOT NULL)"
+    t.index "lower((metadata ->> 'device_hash'::text)) gin_trgm_ops", name: "index_click_events_on_metadata_device_hash_trgm", where: "((metadata ->> 'device_hash'::text) IS NOT NULL)", using: :gin
+    t.index "lower((metadata ->> 'user_agent'::text)) gin_trgm_ops", name: "index_click_events_on_metadata_user_agent_trgm", where: "((metadata ->> 'user_agent'::text) IS NOT NULL)", using: :gin
+    t.index "lower((metadata ->> 'user_email'::text)) gin_trgm_ops", name: "index_click_events_on_metadata_user_email_trgm", where: "((metadata ->> 'user_email'::text) IS NOT NULL)", using: :gin
+    t.index "lower((metadata ->> 'user_email'::text))", name: "index_click_events_on_metadata_user_email", where: "((metadata ->> 'user_email'::text) IS NOT NULL)"
     t.index ["ad_id", "created_at"], name: "index_click_events_on_ad_id_created_at"
     t.index ["ad_id", "event_type", "created_at"], name: "index_click_events_on_ad_event_created"
     t.index ["ad_id", "event_type"], name: "index_click_events_on_ad_id_event_type"

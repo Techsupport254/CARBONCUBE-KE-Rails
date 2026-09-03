@@ -115,116 +115,54 @@ class ClickEventsAnalyticsService
     }
   end
 
-  # Get timestamps for frontend filtering - optimized to use SQL aggregations instead of loading all into memory
-  # This is much faster for large datasets as it uses database-level aggregations
-  # OPTIMIZATION: Limit to last 2 years by default to improve performance
+  # Get timestamps for frontend filtering - pre-aggregated into daily/hourly buckets
+  # Returns [iso_timestamp, count] tuples. Daily buckets for past days, hourly for today (Nairobi time).
+  # This dramatically reduces payload and query time compared to returning one string per event.
   def timestamps(limit: nil, date_limit: 2.years.ago)
-    # Build base query with ordering - each event type will use a fresh copy
-    base_ordered_query = base_query.order("click_events.created_at DESC")
-    
-    # Apply date limit if provided (for performance optimization)
-    if date_limit.present?
-      base_ordered_query = base_ordered_query.where('click_events.created_at >= ?', date_limit)
-    end
-    
-    # Apply limit only if provided (nil means no limit - return all records)
-    if limit.present?
-      base_ordered_query = base_ordered_query.limit(limit)
-    end
-    
-    # Get timestamps using direct pluck - pluck returns Time objects which we convert to ISO8601
-    # Use qualified column name to avoid ambiguity
-    # Get all click events timestamps
-    click_events_timestamps = base_ordered_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get reveal events timestamps - build fresh query from base
-    reveal_events_query = base_query
-      .where(event_type: 'Reveal-Seller-Details')
-      .order("click_events.created_at DESC")
-    reveal_events_query = reveal_events_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    reveal_events_query = reveal_events_query.limit(limit) if limit.present?
-    reveal_events_timestamps = reveal_events_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get ad clicks timestamps - build fresh query from base
-    ad_clicks_query = base_query
-      .where(event_type: 'Ad-Click')
-      .order("click_events.created_at DESC")
-    ad_clicks_query = ad_clicks_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    ad_clicks_query = ad_clicks_query.limit(limit) if limit.present?
-    ad_clicks_timestamps = ad_clicks_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get guest reveal timestamps
-    guest_reveals_query = base_query
-      .where(event_type: 'Reveal-Seller-Details', buyer_id: nil)
-      .order("click_events.created_at DESC")
-    guest_reveals_query = guest_reveals_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    guest_reveals_query = guest_reveals_query.limit(limit) if limit.present?
-    guest_reveal_timestamps = guest_reveals_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get authenticated reveal timestamps
-    authenticated_reveals_query = base_query
-      .where(event_type: 'Reveal-Seller-Details')
-      .where.not(buyer_id: nil)
-      .order("click_events.created_at DESC")
-    authenticated_reveals_query = authenticated_reveals_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    authenticated_reveals_query = authenticated_reveals_query.limit(limit) if limit.present?
-    authenticated_reveal_timestamps = authenticated_reveals_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get conversion timestamps (using JSONB query with index)
-    conversions_query = base_query
-      .where(event_type: 'Reveal-Seller-Details')
-      .where("metadata->>'converted_from_guest' = ?", 'true')
-      .order("click_events.created_at DESC")
-    conversions_query = conversions_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    conversions_query = conversions_query.limit(limit) if limit.present?
-    conversion_timestamps = conversions_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get post-login reveal timestamps
-    post_login_reveals_query = base_query
-      .where(event_type: 'Reveal-Seller-Details')
-      .where("metadata->>'post_login_reveal' = ?", 'true')
-      .order("click_events.created_at DESC")
-    post_login_reveals_query = post_login_reveals_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    post_login_reveals_query = post_login_reveals_query.limit(limit) if limit.present?
-    post_login_reveal_timestamps = post_login_reveals_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get guest login attempt timestamps
-    guest_login_attempts_query = base_query
-      .where(event_type: 'Reveal-Seller-Details', buyer_id: nil)
-      .where("metadata->>'triggered_login_modal' = ?", 'true')
-      .order("click_events.created_at DESC")
-    guest_login_attempts_query = guest_login_attempts_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    guest_login_attempts_query = guest_login_attempts_query.limit(limit) if limit.present?
-    guest_login_attempt_timestamps = guest_login_attempts_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
-    # Get callback request timestamps
-    callback_requests_query = base_query
-      .where(event_type: 'Callback-Request')
-      .order("click_events.created_at DESC")
-    callback_requests_query = callback_requests_query.where('click_events.created_at >= ?', date_limit) if date_limit.present?
-    callback_requests_query = callback_requests_query.limit(limit) if limit.present?
-    callback_requests_timestamps = callback_requests_query.pluck(Arel.sql("click_events.created_at"))
-      .map { |ts| ts&.iso8601 }.compact
-    
+    scope = base_query
+    scope = scope.where('click_events.created_at >= ?', date_limit) if date_limit.present?
+
     {
-      click_events_timestamps: click_events_timestamps,
-      reveal_events_timestamps: reveal_events_timestamps,
-      ad_clicks_timestamps: ad_clicks_timestamps,
-      callback_requests_timestamps: callback_requests_timestamps,
-      guest_reveal_timestamps: guest_reveal_timestamps,
-      authenticated_reveal_timestamps: authenticated_reveal_timestamps,
-      conversion_timestamps: conversion_timestamps,
-      post_login_reveal_timestamps: post_login_reveal_timestamps,
-      guest_login_attempt_timestamps: guest_login_attempt_timestamps
+      click_events_timestamps: compact_timestamp_series(scope),
+      reveal_events_timestamps: compact_timestamp_series(scope.where(event_type: 'Reveal-Seller-Details')),
+      ad_clicks_timestamps: compact_timestamp_series(scope.where(event_type: 'Ad-Click')),
+      callback_requests_timestamps: compact_timestamp_series(scope.where(event_type: 'Callback-Request')),
+      guest_reveal_timestamps: compact_timestamp_series(scope.where(event_type: 'Reveal-Seller-Details', buyer_id: nil)),
+      authenticated_reveal_timestamps: compact_timestamp_series(scope.where(event_type: 'Reveal-Seller-Details').where.not(buyer_id: nil)),
+      conversion_timestamps: compact_timestamp_series(scope.where(event_type: 'Reveal-Seller-Details').where("metadata->>'converted_from_guest' = ?", 'true')),
+      post_login_reveal_timestamps: compact_timestamp_series(scope.where(event_type: 'Reveal-Seller-Details').where("metadata->>'post_login_reveal' = ?", 'true')),
+      guest_login_attempt_timestamps: compact_timestamp_series(scope.where(event_type: 'Reveal-Seller-Details', buyer_id: nil).where("metadata->>'triggered_login_modal' = ?", 'true'))
     }
+  end
+
+  # Aggregate a timestamp scope into daily (before Nairobi today) and hourly (today) buckets.
+  # Aligns to Africa/Nairobi timezone (UTC+3) to match the rest of the analytics UI.
+  def compact_timestamp_series(scope)
+    nairobi_now = Time.now.utc + 3.hours
+    nairobi_today_start_utc = nairobi_now.beginning_of_day - 3.hours
+
+    daily = scope
+      .where("click_events.created_at < ?", nairobi_today_start_utc)
+      .group(Arel.sql("DATE(click_events.created_at + INTERVAL '3 hour')"))
+      .order(Arel.sql("DATE(click_events.created_at + INTERVAL '3 hour')"))
+      .count
+
+    hourly = scope
+      .where("click_events.created_at >= ?", nairobi_today_start_utc)
+      .group(Arel.sql("DATE_TRUNC('hour', click_events.created_at)"))
+      .order(Arel.sql("DATE_TRUNC('hour', click_events.created_at)"))
+      .count
+
+    daily_buckets = daily.map do |date, count|
+      date_key = date.respond_to?(:to_date) ? date.to_date : Date.parse(date.to_s)
+      [date_key.iso8601, count.to_i]
+    end
+
+    hourly_buckets = hourly.map do |ts, count|
+      [ts.iso8601, count.to_i]
+    end
+
+    daily_buckets + hourly_buckets
   end
 
   # Get breakdowns - optimized to use single queries

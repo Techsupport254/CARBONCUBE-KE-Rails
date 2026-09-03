@@ -149,23 +149,23 @@ class ClickEvent < ApplicationRecord
       )
     end
     
-    # 2. Exclude by domains (using a single OR-joined LIKE or regex if possible, but keeping it safe)
-    # Since LIKE can't be easily batched in a single IN, we use a loop for now or a regex.
-    # PostgreSQL regex ~* can handle multiple patterns separated by |
+    # 2. Exclude by domains using LIKE ANY to leverage trigram/B-tree indexes
     if hardcoded_excluded_domains.any?
-      domain_regex = hardcoded_excluded_domains.map { |d| "@#{Regexp.escape(d)}$" }.join('|')
+      domain_patterns = hardcoded_excluded_domains.map { |d| "%@#{d}" }
       query = query.where(
-        "(buyers.email IS NULL OR LOWER(buyers.email) !~* ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') !~* ?)",
-        domain_regex,
-        domain_regex
+        "(buyers.email IS NULL OR NOT (LOWER(buyers.email) LIKE ANY(array[?]))) AND (metadata->>'user_email' IS NULL OR NOT (LOWER(metadata->>'user_email') LIKE ANY(array[?])))",
+        domain_patterns,
+        domain_patterns
       )
     end
     
-    # 3. Exclude by device hash
+    # 3. Exclude by device hash using LIKE ANY to leverage trigram indexes
     if device_hash_exclusions.any?
-      # Use same regex strategy for device hashes
-      hash_regex = device_hash_exclusions.map { |h| "^#{Regexp.escape(h)}" }.join('|')
-      query = query.where("COALESCE(metadata->>'device_hash', '') !~* ?", hash_regex)
+      device_hash_patterns = device_hash_exclusions.map { |h| "#{h.downcase}%" }
+      query = query.where(
+        "metadata->>'device_hash' IS NULL OR NOT (LOWER(metadata->>'device_hash') LIKE ANY(array[?]))",
+        device_hash_patterns
+      )
     end
     
     # 4. Exclude by database email patterns (mixed email and domain)
@@ -192,20 +192,23 @@ class ClickEvent < ApplicationRecord
       end
       
       if domain_patterns.any?
-        db_domain_regex = domain_patterns.uniq.map { |d| "@#{Regexp.escape(d)}$" }.join('|')
+        db_domain_patterns = domain_patterns.uniq.map { |d| "%@#{d}" }
         query = query.where(
-          "(buyers.email IS NULL OR LOWER(buyers.email) !~* ?) AND (metadata->>'user_email' IS NULL OR LOWER(metadata->>'user_email') !~* ?)",
-          db_domain_regex,
-          db_domain_regex
+          "(buyers.email IS NULL OR NOT (LOWER(buyers.email) LIKE ANY(array[?]))) AND (metadata->>'user_email' IS NULL OR NOT (LOWER(metadata->>'user_email') LIKE ANY(array[?])))",
+          db_domain_patterns,
+          db_domain_patterns
         )
       end
     end
     
-    # 5. Exclude by user agent
+    # 5. Exclude by user agent using LIKE ANY to leverage trigram indexes
     user_agent_exclusions = exclusion_lists[:user_agent_exclusions] || []
     if user_agent_exclusions.any?
-      ua_regex = user_agent_exclusions.join('|')
-      query = query.where("metadata->>'user_agent' IS NULL OR metadata->>'user_agent' !~* ?", ua_regex)
+      user_agent_patterns = user_agent_exclusions.map { |ua| "%#{ua.downcase}%" }
+      query = query.where(
+        "metadata->>'user_agent' IS NULL OR NOT (LOWER(metadata->>'user_agent') LIKE ANY(array[?]))",
+        user_agent_patterns
+      )
     end
     
     query

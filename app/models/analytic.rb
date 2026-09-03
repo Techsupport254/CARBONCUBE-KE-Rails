@@ -63,26 +63,32 @@ class Analytic < ApplicationRecord
       )
     end
     
-    # 2. Batch domain exclusions using regex
+    # 2. Batch domain exclusions using LIKE ANY
     domains_to_exclude = (hardcoded_excluded_domains + email_domain_exclusions.reject { |p| p.include?('@') }).map(&:downcase).uniq
     if domains_to_exclude.any?
-      domain_regex = domains_to_exclude.map { |d| "@#{Regexp.escape(d)}$" }.join('|')
+      domain_patterns = domains_to_exclude.map { |d| "%@#{d}" }
       query = query.where(
-        "(data->>'user_email' IS NULL OR LOWER(data->>'user_email') !~* ?) AND (data->>'email' IS NULL OR LOWER(data->>'email') !~* ?)",
-        domain_regex, domain_regex
+        "(data->>'user_email' IS NULL OR NOT (LOWER(data->>'user_email') LIKE ANY (array[?]))) AND (data->>'email' IS NULL OR NOT (LOWER(data->>'email') LIKE ANY (array[?])))",
+        domain_patterns, domain_patterns
       )
     end
-    
-    # 3. Batch device hash exclusions using regex
+
+    # 3. Batch device hash exclusions using LIKE ANY
     if device_hash_exclusions.any?
-      hash_regex = device_hash_exclusions.map { |h| "^#{Regexp.escape(h)}" }.join('|')
-      query = query.where("COALESCE(data->>'device_fingerprint', '') !~* ?", hash_regex)
+      device_patterns = device_hash_exclusions.map { |h| "#{h.downcase}%" }
+      query = query.where(
+        "data->>'device_fingerprint' IS NULL OR NOT (LOWER(data->>'device_fingerprint') LIKE ANY (array[?]))",
+        device_patterns
+      )
     end
-    
-    # 4. Batch user agent exclusions using regex
+
+    # 4. Batch user agent exclusions using LIKE ANY
     if user_agent_exclusions.any?
-      ua_regex = user_agent_exclusions.join('|')
-      query = query.where("user_agent IS NULL OR user_agent !~* ?", ua_regex)
+      ua_patterns = user_agent_exclusions.map { |ua| "%#{ua.downcase}%" }
+      query = query.where(
+        "user_agent IS NULL OR NOT (LOWER(user_agent) LIKE ANY (array[?]))",
+        ua_patterns
+      )
     end
     
     query

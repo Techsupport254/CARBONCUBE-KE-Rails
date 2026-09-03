@@ -81,5 +81,8 @@ module CarbonecomRails
 
     # Enable response compression (gzip/deflate) to reduce mobile data consumption by up to 80%
     config.middleware.use Rack::Deflater
+
+    # Enable Brotli compression for clients that support it (br); falls back to Deflater/gzip otherwise
+    config.middleware.use Rack::Brotli, quality: 5
   end
 end
