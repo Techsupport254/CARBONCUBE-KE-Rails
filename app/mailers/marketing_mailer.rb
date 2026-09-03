@@ -83,6 +83,6 @@ class MarketingMailer < ApplicationMailer
 
   def self.review_url_for(ad)
     slug = Ad.slugify(ad.title)
-    "https://carboncube-ke.com/ads/#{slug}/review?id=#{ad.id}"
+    "https://carboncube-ke.com/ads/#{slug}/review?id=#{ad.id}&utm_source=brevo&utm_medium=email&utm_campaign=review_request"
   end
 end
