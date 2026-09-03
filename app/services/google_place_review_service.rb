@@ -162,9 +162,15 @@ class GooglePlaceReviewService
     return false if non_business_place?(place)
     return true if phone_matches?(place)
     return true if website_matches_email?(place)
+    return false unless concrete_business?(place)
     return false unless strong_name_match?(place)
 
     address_or_branch_matches?(place)
+  end
+
+  def concrete_business?(place)
+    types = Array(place['types']) - %w[establishment point_of_interest]
+    types.any?
   end
 
   def place_details(place_id, fields)
