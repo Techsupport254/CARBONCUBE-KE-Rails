@@ -726,6 +726,9 @@ Rails.application.routes.draw do
         member do
           post :dismiss
         end
+        collection do
+          post :dismiss_all
+        end
       end
       resources :conversations, only: [:index, :show, :create] do
         # Messages are nested under conversations

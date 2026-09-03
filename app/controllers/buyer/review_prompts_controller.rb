@@ -24,6 +24,15 @@ class Buyer::ReviewPromptsController < ApplicationController
     head :no_content
   end
 
+  def dismiss_all
+    current_user.review_prompts
+      .not_dismissed_or_completed
+      .where(status: %w[pending sent])
+      .update_all(status: 'dismissed', updated_at: Time.current)
+
+    head :no_content
+  end
+
   private
 
   def ensure_buyer_or_seller
