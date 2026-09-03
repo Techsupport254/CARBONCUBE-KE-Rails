@@ -79,21 +79,16 @@ class SellersController < ApplicationController
     if params[:format] == 'xml' || params[:sitemap] == 'true'
       # Get all active sellers for sitemap generation
       sellers = Seller.where(deleted: false, blocked: false)
-                      .select(:id, :enterprise_name, :fullname, :created_at)
+                      .select(:id, :enterprise_name, :fullname, :slug, :created_at)
                       .order(:enterprise_name)
       
       # Convert enterprise names to slugs for sitemap
       sellers_data = sellers.map do |seller|
-        slug = seller.enterprise_name.downcase
-                     .gsub(/[^a-z0-9\s]/, '') # Remove special characters
-                     .gsub(/\s+/, '-')        # Replace spaces with hyphens
-                     .strip
-        
         {
           id: seller.id,
           name: seller.fullname,
           enterprise_name: seller.enterprise_name,
-          slug: slug,
+          slug: seller.slug,
           created_at: seller.created_at
         }
       end

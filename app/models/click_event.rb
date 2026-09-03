@@ -4,6 +4,8 @@ class ClickEvent < ApplicationRecord
   belongs_to :ad, optional: true
   has_one :review_prompt, dependent: :nullify
 
+  after_create_commit :refresh_ad_stats
+
   EVENT_TYPES = %w[
     Ad-Click
     Reveal-Seller-Details
@@ -225,5 +227,11 @@ class ClickEvent < ApplicationRecord
       user_name: user_name,
       role: role
     )
+  end
+
+  private
+
+  def refresh_ad_stats
+    AdStat.schedule_refresh_if_stale
   end
 end

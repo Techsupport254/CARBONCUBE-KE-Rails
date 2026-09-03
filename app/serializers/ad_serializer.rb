@@ -1,5 +1,5 @@
 class AdSerializer < ActiveModel::Serializer
-  attributes :id, :title, :description, :price, :brand, :condition, :manufacturer, :model, :specifications,
+  attributes :id, :title, :slug, :description, :price, :brand, :condition, :manufacturer, :model, :specifications,
              :item_weight, :weight_unit, :item_length, :item_width, :item_height,
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name,
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :seller_reviews_count, :seller_average_rating, :media_urls, :first_media_url, :tier_priority,

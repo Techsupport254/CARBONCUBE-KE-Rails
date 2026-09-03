@@ -123,7 +123,7 @@ class ShopsController < ApplicationController
         categories: shop_categories,
         total_reviews: total_reviews,
         average_rating: average_rating,
-        slug: slug,
+        slug: @shop.slug,
         document_verified: @shop.document_verified,
         seller_documents: @shop.seller_documents.map do |doc|
           {
@@ -456,6 +456,11 @@ class ShopsController < ApplicationController
     return nil if slug.blank?
 
     slug_str = slug.to_s.strip
+
+    # Try canonical slug first
+    shop = Seller.where(deleted: false).find_by(slug: slug_str)
+    return shop if shop
+
     enterprise_name_from_slug = slug_str.gsub(/[-_]/, ' ')
     normalized_slug = normalize_shop_name(enterprise_name_from_slug)
     slug_without_and = normalized_slug.gsub(/\band\b/, ' ').gsub(/\s+/, ' ').strip
@@ -528,7 +533,7 @@ class ShopsController < ApplicationController
     end
 
     # 7. Numeric ID lookup
-    if slug_str =~ /\A\d+\z/
+    if slug_str.match?(/\A\d+\z/)
       begin
         shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: slug_str.to_i)
         return shop if shop

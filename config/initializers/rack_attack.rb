@@ -71,6 +71,11 @@ class Rack::Attack
     Rack::Attack.real_ip(req) if req.path == "/proxy-image"
   end
 
+  # Click-event spam / gaming protection
+  throttle("buyer/click_events", limit: 60, period: 1.minute) do |req|
+    Rack::Attack.real_ip(req) if req.post? && req.path == "/buyer/click_events"
+  end
+
   # Catch-all for the rest of the API
   throttle("req/ip", limit: 300, period: 5.minutes) do |req|
     Rack::Attack.real_ip(req)

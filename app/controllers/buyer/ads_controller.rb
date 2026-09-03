@@ -17,7 +17,7 @@ class Buyer::AdsController < ApplicationController
       # Use shorter cache with randomization factor for home page balanced ads
       cache_key = "balanced_ads_#{per_page}_#{Time.current.to_i / 900}"
       
-      result = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
+      result = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
         get_balanced_ads(per_page)
       end
       @ads = result[:ads]
@@ -92,8 +92,10 @@ class Buyer::AdsController < ApplicationController
 
     # Include best sellers for home page (balanced=true)
     best_sellers = []
-    if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
-      best_sellers = calculate_best_sellers_fast(20) # Get 20 best sellers
+    if params[:balanced] == 'true'
+      best_category_id = params[:category_id].present? && params[:category_id] != 'All' ? params[:category_id].to_i : nil
+      best_subcategory_id = params[:subcategory_id].present? && params[:subcategory_id] != 'All' ? params[:subcategory_id].to_i : nil
+      best_sellers = calculate_best_sellers_fast(20, category_id: best_category_id, subcategory_id: best_subcategory_id)
     end
 
     # Parse requested fields for sparse fieldsets
@@ -154,6 +156,7 @@ class Buyer::AdsController < ApplicationController
         ad_data = {
           id: ad.id,
           title: ad.title,
+          slug: ad.slug,
           price: ad.effective_price,
           media: is_lite_mode ? nil : media_json,
           media_urls: media_urls,
@@ -176,7 +179,9 @@ class Buyer::AdsController < ApplicationController
 
     # Add cache headers for faster transfer
     response.headers['Cache-Control'] = 'public, max-age=1800' # 30 minutes cache
-    
+
+    Rails.logger.info "BestSellers served: count=#{best_sellers.length}, version=v4.0-demand, lite=#{is_lite_mode}" if best_sellers.any?
+
       render json: {
         ads: optimized_ads,
         subcategory_counts: @subcategory_counts || {},
@@ -193,13 +198,14 @@ class Buyer::AdsController < ApplicationController
 
   # GET /buyer/ads/:id
   def show
-    @ad = Ad.includes(
+    ad_scope = Ad.includes(
       :category,
       :subcategory,
       :reviews,
       :offer_ads,
       seller: { seller_tier: :tier, seller_documents: :document_type }
-    ).find_by_id_or_slug(params[:id])
+    )
+    @ad = ad_scope.find_by(slug: params[:id].to_s) || ad_scope.find_by(id: params[:id].to_s)
 
     unless @ad
       render json: { error: 'Ad not found' }, status: :not_found
@@ -2047,255 +2053,323 @@ class Buyer::AdsController < ApplicationController
 
 
   # GET /buyer/ads/recommendations
-  # Get personalized recommendations based on user's clicked/revealed ads
+  # Get personalized recommendations based on user's engagement
   def recommendations
     begin
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
-      
+
       # Optionally authenticate buyer if token is present (not required for guests)
       buyer_id = nil
       begin
         buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
         current_buyer = buyer_auth.result
         buyer_id = current_buyer&.id if current_buyer&.is_a?(Buyer)
-      rescue => e
+      rescue => _e
         # Silently fail - guest users are allowed
       end
-      
+
       limit = params[:limit]&.to_i || 100
       limit = [limit, 500].min # Cap at 500
-      
 
-    # Get clicked/revealed ads for this user (device_hash for guests, buyer_id for authenticated)
-    clicked_ad_ids = []
-    clicked_categories = []
-    clicked_subcategories = []
-    clicked_sellers = []
-    
-    if device_hash.present? || buyer_id.present?
-      # Get click events - prioritize reveal clicks as they show stronger interest
-      click_events_query = ClickEvent
-        .excluding_internal_users
-        .where(event_type: ['Ad-Click', 'Reveal-Seller-Details'])
-      
-      if buyer_id.present?
-        # Authenticated user - use buyer_id
-        click_events_query = click_events_query.where(
-          "metadata->>'user_id' = ? OR metadata->>'device_hash' = ?",
-          buyer_id.to_s,
-          device_hash.to_s
-        )
-      elsif device_hash.present?
-        # Guest user - use device_hash
-        click_events_query = click_events_query.where("metadata->>'device_hash' = ?", device_hash.to_s)
-      end
-      
-      # Get recent click events (last 100 to avoid too much data)
-      click_events = click_events_query
-        .order(created_at: :desc)
-        .limit(100)
-        .includes(:ad)
-        .where.not(ad_id: nil)
-
-      # Extract ad IDs, categories, subcategories, and sellers from clicked ads
-      click_events.each do |event|
-        next unless event.ad && !event.ad.deleted
-        
-        clicked_ad_ids << event.ad_id
-        clicked_categories << event.ad.category_id if event.ad.category_id
-        clicked_subcategories << event.ad.subcategory_id if event.ad.subcategory_id
-        clicked_sellers << event.ad.seller_id if event.ad.seller_id
-      end
-      
-      # Remove duplicates
-      clicked_categories.uniq!
-      clicked_subcategories.uniq!
-      clicked_sellers.uniq!
-    end
-    
-    # If user has no click history, fall back to best sellers
-    if clicked_ad_ids.empty? && clicked_subcategories.empty? && clicked_categories.empty? && clicked_sellers.empty?
-      best_sellers = calculate_best_sellers_fast(limit)
-      render json: best_sellers
-      return
-    end
-    
-    # Find similar ads based on clicked ads
-    # Priority: 1) Same subcategory (highest), 2) Same category, 3) Same seller
-    recommended_ads_query = Ad.active.with_valid_images
-      .joins(:seller, :category, :subcategory)
-      .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
-      .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
-      .where(sellers: { blocked: false, deleted: false, flagged: false })
-      .where(flagged: false)
-    
-    # Exclude already clicked ads only if we have clicked ads
-    if clicked_ad_ids.any?
-      recommended_ads_query = recommended_ads_query.where.not(id: clicked_ad_ids)
-    end
-    
-    # Build similarity conditions using Arel for proper OR handling
-    if clicked_subcategories.any? || clicked_categories.any? || clicked_sellers.any?
-      # Build OR conditions using Arel
-      or_conditions = []
-      
-      if clicked_subcategories.any?
-        or_conditions << Ad.arel_table[:subcategory_id].in(clicked_subcategories)
-      end
-      
-      if clicked_categories.any?
-        or_conditions << Ad.arel_table[:category_id].in(clicked_categories)
-      end
-      
-      if clicked_sellers.any?
-        or_conditions << Ad.arel_table[:seller_id].in(clicked_sellers)
-      end
-      
-      # Combine with OR - handle single and multiple conditions
-      if or_conditions.length == 1
-        combined_condition = or_conditions.first
-      else
-        combined_condition = or_conditions.reduce { |acc, condition| acc.or(condition) }
-      end
-      
-      recommended_ads_query = recommended_ads_query.where(combined_condition)
-    else
-      # Fallback to best sellers if no similarity found
-      Rails.logger.info "No similarity conditions, falling back to best sellers"
-      best_sellers = calculate_best_sellers_fast(limit)
-      render json: best_sellers
-      return
-    end
-    
-    # Get ads with tier priority
-    # NOTE: Cannot use a SELECT alias with includes() — ActiveRecord generates a
-    # separate DISTINCT subquery that doesn't have the alias. Inline the CASE
-    # expression directly in ORDER BY instead.
-    recommended_ads = recommended_ads_query
-      .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
-      .order(Arel.sql('CASE tiers.id
-                 WHEN 4 THEN 1
-                 WHEN 3 THEN 2
-                 WHEN 2 THEN 3
-                 WHEN 1 THEN 4
-                 ELSE 5
-               END ASC, RANDOM(), ads.created_at DESC'))
-      .limit(limit * 3) # Get more to allow for scoring
-    
-    # Use .load.size instead of .count to avoid a separate COUNT query
-    # that also triggers the DISTINCT subquery issue
-    recommended_ads = recommended_ads.load
-    Rails.logger.info "Query returned #{recommended_ads.size} recommended ads"
-    
-    # If no ads found, fall back to best sellers
-    if recommended_ads.empty?
-      Rails.logger.info "No recommended ads found, falling back to best sellers"
-      best_sellers = calculate_best_sellers_fast(limit)
-      render json: best_sellers
-      return
-    end
-    
-    # Calculate comprehensive scores and add personalization boost
-    scored_ads = recommended_ads.map do |ad|
-      # Calculate similarity score in Ruby (safer than SQL)
-      similarity_score = 0
-      if clicked_subcategories.include?(ad.subcategory_id)
-        similarity_score = 3 # Highest priority: same subcategory
-      elsif clicked_categories.include?(ad.category_id)
-        similarity_score = 2 # Medium priority: same category
-      elsif clicked_sellers.include?(ad.seller_id)
-        similarity_score = 1 # Lower priority: same seller
-      end
-      
-      # Base comprehensive score
-      # Get seller_tier_id from the ad's seller association (loaded via includes)
-      seller_tier_id = ad.seller&.seller_tier&.tier_id || 1
-      tier_bonus = calculate_tier_bonus(seller_tier_id)
-      recency_score = calculate_recency_score(ad.created_at)
-      
-      # Get engagement metrics
-      wishlist_count = WishList.where(ad_id: ad.id).count
-      # Reviews are loaded via includes, so we can access them directly
-      review_count = ad.reviews&.count || 0
-      avg_rating = if ad.reviews&.any?
-        ad.reviews.sum(&:rating).to_f / review_count
-      else
-        0.0
-      end
-      click_count = ClickEvent.where(ad_id: ad.id, event_type: 'Ad-Click').excluding_internal_users.count
-      
-      wishlist_score = calculate_wishlist_score(wishlist_count)
-      rating_score = calculate_rating_score(avg_rating, review_count)
-      click_score = calculate_click_score(click_count)
-      
-      comprehensive_score = (
-        (recency_score * 0.25) +
-        (tier_bonus * 0.15) +
-        (wishlist_score * 0.25) +
-        (rating_score * 0.20) +
-        (click_score * 0.15)
-      )
-      
-      # Personalization boost based on similarity + random jitter for freshness
-      jitter = (rand * 0.4) - 0.2
-      personalized_score = comprehensive_score + (similarity_score * 2.0) + jitter
-      
-      {
-        id: ad.id,
-        ad_id: ad.id,
-        title: ad.title,
-        price: ad.effective_price.to_f,
-        media: ad.media,
-        media_urls: ad.media.is_a?(String) ? JSON.parse(ad.media || '[]') : (ad.media || []),
-        first_media_url: ad.media.is_a?(String) ? (JSON.parse(ad.media || '[]').first || '') : (ad.media&.first || ''),
-        created_at: ad.created_at,
-        seller_id: ad.seller_id,
-        seller_name: ad.seller&.enterprise_name || ad.seller&.username || 'Unknown',
-        category_id: ad.category_id,
-        category_name: ad.category&.name,
-        subcategory_id: ad.subcategory_id,
-        subcategory_name: ad.subcategory&.name,
-        specifications: ad.specifications,
-        seller_tier: seller_tier_id || 1,
-        seller_tier_name: (ad.seller&.seller_tier&.tier&.name || ad.seller_tier_name || 'Free'),
-        tier_priority: (ad.seller&.seller_tier&.tier_id ? (5 - [ad.seller.seller_tier.tier_id, 4].min) : 5),
-        comprehensive_score: comprehensive_score.round(2),
-        personalized_score: personalized_score.round(2),
-        similarity_score: similarity_score,
-        metrics: {
-          avg_rating: avg_rating.round(2),
-          review_count: review_count,
-          total_clicks: click_count,
-          wishlist_count: wishlist_count
-        }
-      }
-    end
-    
-    # Sort by personalized score and return top results
-    sorted_ads = scored_ads.sort_by { |ad| -ad[:personalized_score] }.first(limit)
-    
-    Rails.logger.info "Returning #{sorted_ads.count} sorted recommendations"
-    
-      # Ensure we always return something - fallback to best sellers if empty
-      if sorted_ads.empty?
-        Rails.logger.info "Sorted ads empty, falling back to best sellers"
+      # If no user identity, fall back to best sellers (no personalization)
+      if device_hash.blank? && buyer_id.blank?
         best_sellers = calculate_best_sellers_fast(limit)
+        Rails.logger.info "Recommendations no-identity: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
         render json: best_sellers
-      else
-        render json: sorted_ads
+        return
       end
+
+      # Build user profile from recent engagement
+      profile = build_user_profile(device_hash, buyer_id)
+
+      # If no meaningful engagement, fall back to best sellers
+      if profile[:ad_ids].empty?
+        Rails.logger.info "No user profile for recommendations, falling back to best sellers"
+        best_sellers = calculate_best_sellers_fast(limit)
+        Rails.logger.info "Recommendations no-profile: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: best_sellers
+        return
+      end
+
+      # Fetch personalized recommendations
+      recs = calculate_recommendations_fast(limit, profile)
+
+      # Fallback to best sellers if empty
+      if recs.empty?
+        Rails.logger.info "No personalized recommendations found, falling back to best sellers"
+        best_sellers = calculate_best_sellers_fast(limit)
+        Rails.logger.info "Recommendations fallback: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: best_sellers
+        return
+      end
+
+      Rails.logger.info "Recommendations served: count=#{recs.length}, version=v4.0-personalized, buyer=#{buyer_id}, device=#{device_hash}"
+      render json: recs
     rescue => e
       Rails.logger.error "Error in recommendations: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
-      # Fallback to best sellers on any error
-      begin
-        fallback_limit = limit || 100
-        best_sellers = calculate_best_sellers_fast(fallback_limit)
-        render json: best_sellers || []
-      rescue => fallback_error
-        Rails.logger.error "Error in fallback best sellers: #{fallback_error.message}"
-        Rails.logger.error fallback_error.backtrace.first(10).join("\n")
-        render json: { error: 'Failed to load recommendations' }, status: :internal_server_error
+      fallback_limit = limit || 100
+      best_sellers = calculate_best_sellers_fast(fallback_limit)
+      Rails.logger.info "Recommendations error-fallback: count=#{(best_sellers || []).length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
+      render json: best_sellers || []
+    end
+  end
+
+  def build_user_profile(device_hash, buyer_id)
+    # No identity signals means no personal profile to build.
+    return { ad_ids: [], category_ids: [], subcategory_ids: [], seller_ids: [] } if device_hash.blank? && buyer_id.blank?
+
+    cache_key = "user_profile_#{buyer_id || 'guest'}_#{Digest::MD5.hexdigest(device_hash.to_s)}_#{Time.current.to_i / 300}"
+
+    Rails.cache.fetch(cache_key, expires_in: 5.minutes, race_condition_ttl: 5.seconds) do
+      ad_ids = Set.new
+
+      # Recent click events (primary signal for guests and logged-in users)
+      click_events_query = ClickEvent
+        .excluding_internal_users
+        .where(
+          event_type: [
+            'Ad-Click', 'Reveal-Seller-Details', 'Add-to-Cart', 'Message-Seller',
+            'Make-Offer', 'Callback-Request', 'Quote-Request', 'Share-Ad', 'Add-to-Wish-List'
+          ],
+          created_at: 90.days.ago..
+        )
+        .where.not(ad_id: nil)
+
+      if buyer_id.present?
+        click_events_query = click_events_query.where(
+          "metadata->>'user_id' = ? OR metadata->>'device_hash' = ? OR buyer_id = ?",
+          buyer_id.to_s, device_hash.to_s, buyer_id
+        )
+      else
+        # Guests only have a device_hash; never compare it to the UUID buyer_id column.
+        click_events_query = click_events_query.where(
+          "metadata->>'device_hash' = ?",
+          device_hash.to_s
+        )
+      end
+
+      ad_ids.merge(click_events_query.pluck(:ad_id))
+
+      # For authenticated users, also use wishlist, cart, and conversations
+      if buyer_id.present?
+        ad_ids.merge(
+          WishList.where(buyer_id: buyer_id)
+                  .where('created_at >= ?', 90.days.ago)
+                  .pluck(:ad_id)
+        )
+        ad_ids.merge(
+          CartItem.where(buyer_id: buyer_id)
+                  .where('created_at >= ?', 90.days.ago)
+                  .pluck(:ad_id)
+        )
+        ad_ids.merge(
+          Conversation.where(buyer_id: buyer_id)
+                      .where('created_at >= ?', 90.days.ago)
+                      .pluck(:ad_id)
+        )
+      end
+
+      # Load ad metadata for the user's engaged live ads
+      ad_data = Ad.live.where(id: ad_ids.to_a)
+                  .pluck(:category_id, :subcategory_id, :seller_id)
+
+      {
+        ad_ids: ad_ids.to_a,
+        category_ids: ad_data.map(&:first).compact.uniq,
+        subcategory_ids: ad_data.map(&:second).compact.uniq,
+        seller_ids: ad_data.map(&:third).compact.uniq
+      }
+    end
+  end
+
+  def calculate_recommendations_fast(limit, profile)
+    rotation_key = Time.current.to_i / 900
+    profile_parts = [
+      profile[:ad_ids].sort.join(','),
+      profile[:category_ids].sort.join(','),
+      profile[:subcategory_ids].sort.join(','),
+      profile[:seller_ids].sort.join(',')
+    ]
+    profile_hash = Digest::MD5.hexdigest(profile_parts.join('|'))
+    cache_key = "recommendations_v2_#{profile_hash}_#{limit}_#{rotation_key}"
+
+    Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
+      ad_ids_sql = profile[:ad_ids].any? ? profile[:ad_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+      subcategory_ids_sql = profile[:subcategory_ids].any? ? profile[:subcategory_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+      category_ids_sql = profile[:category_ids].any? ? profile[:category_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+      seller_ids_sql = profile[:seller_ids].any? ? profile[:seller_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+
+      sql = <<~SQL.squish
+        SELECT * FROM (
+          SELECT
+            ads.id,
+            ads.title,
+            ads.price,
+            ads.media,
+            ads.created_at,
+            ads.category_id,
+            ads.subcategory_id,
+            ads.seller_id,
+            ads.specifications,
+            sellers.fullname as seller_name,
+            categories.name as category_name,
+            subcategories.name as subcategory_name,
+            COALESCE(tiers.id, 1) as seller_tier_id,
+            COALESCE(tiers.name, 'Free') as seller_tier_name,
+
+            COALESCE(ad_stats.conversations_7d, 0) as conversations_7d,
+            COALESCE(ad_stats.add_to_cart_7d, 0) as add_to_cart_7d,
+            COALESCE(ad_stats.wishlist_count, 0) as wishlist_count,
+            COALESCE(ad_stats.review_count, 0) as review_count,
+            COALESCE(ad_stats.avg_rating, 0.0) as avg_rating,
+            COALESCE(ad_stats.click_count, 0) as click_count,
+
+            (
+              LN(COALESCE(ad_stats.conversations_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.conversations_30d, 0) + 1) * 2.0 +
+              LN(COALESCE(ad_stats.conversations_90d, 0) + 1) * 0.5 +
+
+              LN(COALESCE(ad_stats.add_to_cart_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.add_to_cart_30d, 0) + 1) * 1.0 +
+
+              LN(COALESCE(ad_stats.message_seller_7d, 0) + 1) * 2.5 +
+              LN(COALESCE(ad_stats.make_offer_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.callback_request_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.quote_request_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.reveal_details_7d, 0) + 1) * 1.0 +
+              LN(COALESCE(ad_stats.share_ad_7d, 0) + 1) * 1.0 +
+
+              LN(COALESCE(ad_stats.click_count, 0) + 1) * 0.3 +
+
+              LN(COALESCE(ad_stats.wishlist_count, 0) + 1) * 2.0 +
+
+              CASE
+                WHEN COALESCE(ad_stats.review_count, 0) > 0
+                THEN (
+                  (
+                    (ad_stats.avg_rating * ad_stats.review_count + 17.5)
+                    / (ad_stats.review_count + 5)
+                    / 5.0
+                  ) * 30
+                )
+                ELSE 0
+              END +
+
+              CASE
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 12
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 7
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 4
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
+                ELSE 0
+              END +
+
+              CASE COALESCE(tiers.id, 1)
+                WHEN 4 THEN 2.5
+                WHEN 3 THEN 1.5
+                WHEN 2 THEN 0.5
+                ELSE 0
+              END +
+
+              CASE
+                WHEN ads.subcategory_id IN (#{subcategory_ids_sql}) THEN 6
+                WHEN ads.category_id IN (#{category_ids_sql}) THEN 4
+                WHEN ads.seller_id IN (#{seller_ids_sql}) THEN 2
+                ELSE 0
+              END
+            ) as comprehensive_score
+
+          FROM ads
+          INNER JOIN ad_stats ON ad_stats.ad_id = ads.id
+          INNER JOIN sellers ON sellers.id = ads.seller_id
+          INNER JOIN categories ON categories.id = ads.category_id
+          INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
+          LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
+          LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+
+          WHERE ads.deleted = false
+            AND ads.flagged = false
+            AND sellers.blocked = false
+            AND sellers.deleted = false
+            AND sellers.flagged = false
+            AND ads.media IS NOT NULL
+            AND ads.media != ''
+            AND ads.media::text != '[]'
+            AND (ads.media::jsonb -> 0) IS NOT NULL
+            AND ads.id NOT IN (#{ad_ids_sql})
+            AND (
+              ads.subcategory_id IN (#{subcategory_ids_sql})
+              OR ads.category_id IN (#{category_ids_sql})
+              OR ads.seller_id IN (#{seller_ids_sql})
+            )
+        ) as sub
+        ORDER BY (comprehensive_score * (1.0 + (RANDOM() * 0.1))) DESC
+        LIMIT #{ActiveRecord::Base.connection.quote([limit * 5, 500].max)}
+      SQL
+
+      results = ActiveRecord::Base.connection.execute(sql).to_a
+
+      # Process media URLs for frontend compatibility
+      results.first(limit).map do |row|
+        media_json = row['media']
+
+        media_urls = []
+        first_media_url = nil
+
+        if media_json.present?
+          begin
+            if media_json.is_a?(String)
+              if media_json.strip == '[]' || media_json.strip == 'null' || media_json.strip == ''
+                media_array = []
+              else
+                media_array = JSON.parse(media_json)
+              end
+            else
+              media_array = media_json
+            end
+
+            if media_array.is_a?(Array) && media_array.any?
+              media_urls = media_array.select do |url|
+                url.present? &&
+                url.is_a?(String) &&
+                url.strip.length > 0 &&
+                (url.start_with?('http://') || url.start_with?('https://'))
+              end
+              first_media_url = media_urls.first
+            end
+          rescue JSON::ParserError
+            if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
+              media_urls = [media_json]
+              first_media_url = media_json
+            end
+          end
+        end
+
+        {
+          ad_id: row['id'],
+          id: row['id'],
+          title: row['title'],
+          price: row['price']&.to_f || 0.0,
+          media: media_json,
+          media_urls: media_urls,
+          first_media_url: first_media_url,
+          created_at: row['created_at'],
+          seller_name: row['seller_name'],
+          seller_id: row['seller_id'],
+          category_name: row['category_name'],
+          subcategory_name: row['subcategory_name'],
+          specifications: row['specifications'],
+          seller_tier: row['seller_tier_id'],
+          seller_tier_name: row['seller_tier_name'],
+          metrics: {
+            avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
+            review_count: row['review_count']&.to_i || 0,
+            total_clicks: row['click_count']&.to_i || 0,
+            wishlist_count: row['wishlist_count']&.to_i || 0
+          },
+          comprehensive_score: row['comprehensive_score']&.to_f&.round(2) || 0.0,
+          algorithm_version: 'v4.0-personalized'
+        }
       end
     end
   end
@@ -2967,91 +3041,103 @@ class Buyer::AdsController < ApplicationController
     params.require(:ad).permit(:title, :description, { media: [] }, :subcategory_id, :category_id, :seller_id, :price, :brand, :manufacturer, :item_length, :item_width, :item_height, :item_weight, :weight_unit, :condition)
   end
 
-  def calculate_best_sellers_fast(limit)
+  def calculate_best_sellers_fast(limit, category_id: nil, subcategory_id: nil)
     # OPTIMIZED: Use caching for best sellers calculation with 15-minute rotation
     rotation_key = Time.current.to_i / 900
-    cache_key = "best_sellers_dynamic_#{limit}_#{rotation_key}"
-    
-    Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
-      sql = <<-SQL
+    cache_key = "best_sellers_dynamic_#{limit}_#{category_id}-#{subcategory_id}_#{rotation_key}"
+
+    category_condition = if category_id.present?
+      "AND ads.category_id = #{ActiveRecord::Base.connection.quote(category_id)}"
+    else
+      ""
+    end
+
+    subcategory_condition = if subcategory_id.present?
+      "AND ads.subcategory_id = #{ActiveRecord::Base.connection.quote(subcategory_id)}"
+    else
+      ""
+    end
+
+    Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
+      sql = <<~SQL.squish
         SELECT * FROM (
           SELECT
-                       ads.id,
-                       ads.title,
-                       ads.price,
-                       ads.media,
-                       ads.created_at,
+            ads.id,
+            ads.title,
+            ads.price,
+            ads.media,
+            ads.created_at,
             ads.category_id,
             ads.subcategory_id,
             ads.seller_id,
             ads.specifications,
-                       sellers.fullname as seller_name,
-                       categories.name as category_name,
-                       subcategories.name as subcategory_name,
-                       COALESCE(tiers.id, 1) as seller_tier_id,
-                       COALESCE(tiers.name, 'Free') as seller_tier_name,
+            sellers.fullname as seller_name,
+            categories.name as category_name,
+            subcategories.name as subcategory_name,
+            COALESCE(tiers.id, 1) as seller_tier_id,
+            COALESCE(tiers.name, 'Free') as seller_tier_name,
 
-            -- Pre-calculated metrics (much faster than separate joins)
-            COALESCE(wishlist_stats.wishlist_count, 0) as wishlist_count,
-            COALESCE(review_stats.review_count, 0) as review_count,
-            COALESCE(review_stats.avg_rating, 0.0) as avg_rating,
-            COALESCE(click_stats.click_count, 0) as click_count,
+            COALESCE(ad_stats.conversations_7d, 0) as conversations_7d,
+            COALESCE(ad_stats.add_to_cart_7d, 0) as add_to_cart_7d,
+            COALESCE(ad_stats.wishlist_count, 0) as wishlist_count,
+            COALESCE(ad_stats.review_count, 0) as review_count,
+            COALESCE(ad_stats.avg_rating, 0.0) as avg_rating,
+            COALESCE(ad_stats.click_count, 0) as click_count,
 
-            -- Calculated comprehensive score in SQL
             (
-              (
-                CASE
-                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 8
-                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 5
-                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 3
-                  WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
-                  ELSE 0
-                END * 0.25
-              ) + (
-                CASE COALESCE(tiers.id, 1)
-                  WHEN 4 THEN 15
-                  WHEN 3 THEN 8
-                  WHEN 2 THEN 4
-                  ELSE 0
-                END * 0.15
-              ) + (
-                LN(COALESCE(wishlist_stats.wishlist_count, 0) + 1) * 20 * 0.25
-              ) + (
-                (
-                  (COALESCE(review_stats.avg_rating, 0.0) / 5.0) * 30 +
-                  LN(COALESCE(review_stats.review_count, 0) + 1) * 10
-                ) * 0.20
-              ) + (
-                LN(COALESCE(click_stats.click_count, 0) + 1) * 15 * 0.15
-              )
+              LN(COALESCE(ad_stats.conversations_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.conversations_30d, 0) + 1) * 2.0 +
+              LN(COALESCE(ad_stats.conversations_90d, 0) + 1) * 0.5 +
+
+              LN(COALESCE(ad_stats.add_to_cart_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.add_to_cart_30d, 0) + 1) * 1.0 +
+
+              LN(COALESCE(ad_stats.message_seller_7d, 0) + 1) * 2.5 +
+              LN(COALESCE(ad_stats.make_offer_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.callback_request_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.quote_request_7d, 0) + 1) * 3.0 +
+              LN(COALESCE(ad_stats.reveal_details_7d, 0) + 1) * 1.0 +
+              LN(COALESCE(ad_stats.share_ad_7d, 0) + 1) * 1.0 +
+
+              LN(COALESCE(ad_stats.click_count, 0) + 1) * 0.3 +
+
+              LN(COALESCE(ad_stats.wishlist_count, 0) + 1) * 2.0 +
+
+              CASE
+                WHEN COALESCE(ad_stats.review_count, 0) > 0
+                THEN (
+                  (
+                    (ad_stats.avg_rating * ad_stats.review_count + 17.5)
+                    / (ad_stats.review_count + 5)
+                    / 5.0
+                  ) * 30
+                )
+                ELSE 0
+              END +
+
+              CASE
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 12
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 7
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 4
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '365 days' THEN 1
+                ELSE 0
+              END +
+
+              CASE COALESCE(tiers.id, 1)
+                WHEN 4 THEN 2.5
+                WHEN 3 THEN 1.5
+                WHEN 2 THEN 0.5
+                ELSE 0
+              END
             ) as comprehensive_score
 
           FROM ads
+          INNER JOIN ad_stats ON ad_stats.ad_id = ads.id
           INNER JOIN sellers ON sellers.id = ads.seller_id
           INNER JOIN categories ON categories.id = ads.category_id
           INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
           LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
           LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
-
-          -- Pre-aggregated metrics (much faster than individual joins)
-          LEFT JOIN (
-            SELECT ad_id, COUNT(*) as wishlist_count
-            FROM wish_lists
-            GROUP BY ad_id
-          ) wishlist_stats ON wishlist_stats.ad_id = ads.id
-
-          LEFT JOIN (
-            SELECT ad_id, COUNT(*) as review_count, AVG(rating) as avg_rating
-            FROM reviews
-            GROUP BY ad_id
-          ) review_stats ON review_stats.ad_id = ads.id
-
-          LEFT JOIN (
-            SELECT ad_id, COUNT(*) as click_count
-            FROM click_events
-            WHERE event_type = 'Ad-Click'
-            GROUP BY ad_id
-          ) click_stats ON click_stats.ad_id = ads.id
 
           WHERE ads.deleted = false
             AND ads.flagged = false
@@ -3062,9 +3148,11 @@ class Buyer::AdsController < ApplicationController
             AND ads.media != ''
             AND ads.media::text != '[]'
             AND (ads.media::jsonb -> 0) IS NOT NULL
+            #{category_condition}
+            #{subcategory_condition}
         ) as sub
-        ORDER BY (comprehensive_score * (1.0 + (RANDOM() * 0.4))) DESC
-        LIMIT #{[limit * 3, 100].max}
+        ORDER BY (comprehensive_score * (1.0 + (RANDOM() * 0.1))) DESC
+        LIMIT #{ActiveRecord::Base.connection.quote([limit * 5, 500].max)}
       SQL
 
       results = ActiveRecord::Base.connection.execute(sql).to_a
@@ -3134,7 +3222,8 @@ class Buyer::AdsController < ApplicationController
             total_clicks: row['click_count']&.to_i || 0,
             wishlist_count: row['wishlist_count']&.to_i || 0
           },
-          comprehensive_score: row['comprehensive_score']&.to_f&.round(2) || 0.0
+          comprehensive_score: row['comprehensive_score']&.to_f&.round(2) || 0.0,
+          algorithm_version: 'v4.0-demand'
         }
       end
     end

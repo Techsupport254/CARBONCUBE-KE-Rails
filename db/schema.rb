@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_03_070000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_03_150001) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -95,6 +95,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_070000) do
     t.jsonb "specifications"
     t.uuid "branch_id"
     t.text "flag_notes"
+    t.string "slug"
     t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
@@ -108,6 +109,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_070000) do
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id"], name: "index_ads_on_seller_id"
     t.index ["seller_id"], name: "index_ads_seller_id"
+    t.index ["slug"], name: "index_ads_on_slug", unique: true
     t.index ["subcategory_id", "deleted", "flagged", "created_at"], name: "index_ads_on_subcategory_deleted_flagged_created_at"
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_balanced_subcategory", where: "((deleted = false) AND (flagged = false) AND (media IS NOT NULL) AND (media <> ''::text) AND (media <> '[]'::text))"
@@ -1201,6 +1203,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_070000) do
     t.datetime "google_reviews_fetched_at"
     t.datetime "google_place_id_fetched_at"
     t.string "google_business_profile_url"
+    t.string "slug"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -1217,6 +1220,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_070000) do
     t.index ["google_place_id"], name: "index_sellers_on_google_place_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true
     t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true
+    t.index ["slug"], name: "index_sellers_on_slug", unique: true
     t.index ["sub_county_id"], name: "index_sellers_on_sub_county_id"
     t.index ["username"], name: "index_sellers_on_username", unique: true, where: "((username IS NOT NULL) AND ((username)::text <> ''::text))"
   end

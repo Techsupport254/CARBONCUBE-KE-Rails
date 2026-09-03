@@ -3,6 +3,7 @@ class Seller < ApplicationRecord
   self.primary_key = 'id'
 
   after_create :associate_guest_clicks
+  after_create :set_slug, if: -> { slug.blank? }
   after_commit :schedule_city_geocoding, on: %i[create update]
   before_create :generate_uuid
   before_validation :normalize_email
@@ -207,6 +208,12 @@ class Seller < ApplicationRecord
   end
 
   private
+
+  def set_slug
+    base = (enterprise_name || fullname).to_s.parameterize
+    base = "shop" if base.blank?
+    update_column(:slug, "#{base}-#{id}")
+  end
 
   def generate_uuid
     self.id = SecureRandom.uuid if id.blank?

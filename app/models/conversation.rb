@@ -10,6 +10,8 @@ class Conversation < ApplicationRecord
 
   has_many :messages, dependent: :destroy
 
+  after_create_commit :refresh_ad_stats
+
   # Find or create conversation with race condition handling
   # Uses database-level conflict resolution for better reliability
   def self.find_or_create_conversation!(attributes)
@@ -281,6 +283,10 @@ class Conversation < ApplicationRecord
     if admin_id.present? && !Admin.exists?(admin_id)
       errors.add(:admin_id, 'Admin does not exist')
     end
+  end
+
+  def refresh_ad_stats
+    AdStat.schedule_refresh_if_stale
   end
 end
 

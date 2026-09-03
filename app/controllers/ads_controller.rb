@@ -22,18 +22,18 @@ class AdsController < ApplicationController
 
   # GET /ads/:id
   def show
-    @ad = Ad.active.joins(:seller)
-            .where(sellers: { blocked: false, deleted: false, flagged: false })
-            .where(flagged: false)
-            .includes(
-              :category,
-              :subcategory,
-              :reviews,
-              :offer_ads,
-              seller: { seller_tier: :tier },
-              offer_ads: :offer
-            )
-            .find_by_id_or_slug(params[:id])
+    ad_scope = Ad.active.joins(:seller)
+                .where(sellers: { blocked: false, deleted: false, flagged: false })
+                .where(flagged: false)
+                .includes(
+                  :category,
+                  :subcategory,
+                  :reviews,
+                  :offer_ads,
+                  seller: { seller_tier: :tier },
+                  offer_ads: :offer
+                )
+    @ad = ad_scope.find_by(slug: params[:id].to_s) || ad_scope.find_by(id: params[:id].to_s)
 
     if @ad
       # Get similar products

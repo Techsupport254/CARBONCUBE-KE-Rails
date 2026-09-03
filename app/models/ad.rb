@@ -14,6 +14,7 @@ class Ad < ApplicationRecord
   scope :deleted, -> { where(deleted: true) }
   scope :with_valid_images, -> { where.not(media: [nil, [], ""]) }
   scope :from_active_sellers, -> { joins(:seller).where(sellers: { blocked: false, deleted: false, flagged: false }) }
+  scope :live, -> { active.with_valid_images.from_active_sellers.where(flagged: false) }
   scope :for_branch, ->(branch) {
     return all unless branch
 
@@ -172,6 +173,9 @@ class Ad < ApplicationRecord
   # Callbacks for cache invalidation
   after_save :invalidate_caches
   after_destroy :invalidate_caches
+
+  # Auto-generate canonical slug on create
+  after_create :set_slug, if: -> { slug.blank? }
   
   # Google Merchant API sync callbacks
   after_save :schedule_google_merchant_sync, if: :should_sync_to_google_merchant?
@@ -244,12 +248,16 @@ class Ad < ApplicationRecord
          .gsub(/^\.+/, "")        # trim leading dots
   end
 
-  # Find an ad by numeric ID or by slugified title
+  # Find an ad by canonical slug, numeric ID, or by slugified title
   def self.find_by_id_or_slug(param)
     return nil if param.blank?
 
-    # Try direct ID lookup first
-    ad = where(id: param).first
+    # Try canonical slug first
+    ad = find_by(slug: param.to_s)
+    return ad if ad
+
+    # Try direct ID lookup
+    ad = find_by(id: param.to_s)
     return ad if ad
 
     normalized_slug = slugify(param)
@@ -596,6 +604,12 @@ class Ad < ApplicationRecord
       normalized['label'] = tier['label'].to_s if tier['label'].present?
       normalized
     end
+  end
+
+  def set_slug
+    base = title.to_s.parameterize
+    base = "ad" if base.blank?
+    update_column(:slug, "#{base}-#{id}")
   end
 
   def create_slug(title)

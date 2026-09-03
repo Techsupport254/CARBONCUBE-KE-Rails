@@ -13,14 +13,6 @@ call_center_metrics:
   queue: default
   description: "Refresh call center KPIs and chart data for all periods"
 
-# --- BEST SELLERS ---
-# Precompute best-seller rankings every 30 minutes for fast homepage loading.
-precompute_best_sellers:
-  cron: "*/30 * * * *"
-  class: "PrecomputeBestSellersJob"
-  queue: low
-  description: "Precompute best-seller scores for homepage and category pages"
-
 # --- SEARCH ANALYTICS ---
 # Sync search analytics from Redis to PostgreSQL nightly at 1:00 AM EAT (22:00 UTC).
 sync_search_analytics:
@@ -94,3 +86,9 @@ weekly_seller_onboarding_summary:
   class: "WeeklySellerOnboardingSummaryJob"
   queue: low
   description: "Weekly sales onboarding email with personal and team seller lists"
+
+refresh_ad_stats:
+  cron: "*/15 * * * *"
+  class: "RefreshAdStatsJob"
+  queue: low
+  description: "Refresh pre-aggregated ad_stats materialized view"

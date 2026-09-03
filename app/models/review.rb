@@ -2,6 +2,9 @@ class Review < ApplicationRecord
   belongs_to :ad, counter_cache: true
   belongs_to :buyer, optional: true
   belongs_to :seller, optional: true
+
+  after_create_commit :refresh_ad_stats
+
   after_save :check_seller_rating
 
   # Note: images column is already JSON type in database, no need to serialize
@@ -78,5 +81,9 @@ class Review < ApplicationRecord
     if buyer_id.blank? && seller_id.blank?
       errors.add(:base, "Review must have a buyer or a seller as an author")
     end
+  end
+
+  def refresh_ad_stats
+    AdStat.schedule_refresh_if_stale
   end
 end
