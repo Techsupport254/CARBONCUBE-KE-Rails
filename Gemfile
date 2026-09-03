@@ -89,6 +89,10 @@ gem 'mini_magick'
 # QR code generation for welcome images
 gem 'rqrcode'
 
+# Error tracking
+gem 'sentry-ruby', '~> 6.7'
+gem 'sentry-rails', '~> 6.7'
+
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
