@@ -159,7 +159,7 @@ class Admin::SellersController < ApplicationController
       }
     end
 
-    if is_commission_sales?
+    if commission_sales?
       user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_user.id).pluck(:id)
       sellers_response = sellers_response.deep_dup
       sellers_response[:sellers] = sellers_response[:sellers].map do |seller_row|
@@ -211,7 +211,7 @@ class Admin::SellersController < ApplicationController
       data.merge(analytics: analytics_data)
     end
 
-    if is_commission_sales?
+    if commission_sales?
       seller_data = seller_data.deep_dup
       seller_data[:document_url] = nil
       seller_data[:business_registration_number] = nil
@@ -255,7 +255,7 @@ class Admin::SellersController < ApplicationController
   end
 
   def verify_document
-    if is_commission_sales?
+    if commission_sales?
       render json: { error: 'Document verification is restricted to managers and administrators' }, status: :forbidden
       return
     end
@@ -649,7 +649,7 @@ class Admin::SellersController < ApplicationController
   end
 
   def send_reminder
-    if is_commission_sales?
+    if commission_sales?
       render json: { error: 'Sending compliance reminders is restricted to managers and administrators' }, status: :forbidden
       return
     end
@@ -691,7 +691,7 @@ class Admin::SellersController < ApplicationController
     @current_user.is_a?(SalesUser) && !@current_user.is_manager && !@current_user.is_lead
   end
 
-  def is_commission_sales?
+  def commission_sales?
     @current_user.is_a?(SalesUser) && @current_user.compensation_type == 'commission' && !@current_user.is_manager
   end
 
@@ -708,7 +708,7 @@ class Admin::SellersController < ApplicationController
     return nil if phone.blank?
     clean = phone.to_s.strip
     return clean if clean.length < 5
-    "#{clean[0..3]}****#{clean[-2..-1]}"
+    "#{clean[0..3]}****#{clean[-2..]}"
   end
 
   def assign_default_tier_for_seller(seller)

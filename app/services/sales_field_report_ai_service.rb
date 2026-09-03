@@ -43,8 +43,6 @@ class SalesFieldReportAiService
     fallback_analysis(input_text, route_areas, visited, onboarded, challenges, notes)
   end
 
-  private
-
   def self.call_groq_ai(input_text, orig_route, orig_visited, orig_onboarded, orig_challenges, orig_notes)
     prompt = <<~PROMPT
       You are an AI Operations Assistant for Carbon Cube Kenya (e-commerce marketplace).
@@ -130,16 +128,16 @@ class SalesFieldReportAiService
     onboarded = orig_onboarded.to_i
 
     if visited.zero? && text =~ /(?:visited|met|talked to|covered)\s*(\d+)/i
-      visited = $1.to_i
+      visited = ::Regexp.last_match(1).to_i
     end
 
     if onboarded.zero? && text =~ /(?:onboarded|signed up|registered|added)\s*(\d+)/i
-      onboarded = $1.to_i
+      onboarded = ::Regexp.last_match(1).to_i
     end
 
     route = orig_route.presence
-    if route.blank? && text =~ /(?:worked at|was in|visited businesses around|around)\s*([A-Za-z0-9\s,\/&-]+?)(?:\.|\n|onboarded|visited|\d+)/i
-      route = $1.strip
+    if route.blank? && text =~ %r{(?:worked at|was in|visited businesses around|around)\s*([A-Za-z0-9\s,/&-]+?)(?:\.|\n|onboarded|visited|\d+)}i
+      route = ::Regexp.last_match(1).strip
     end
 
     sentiment = if categories.include?('app_technical') || categories.include?('airtime_bundles')
@@ -177,15 +175,15 @@ class SalesFieldReportAiService
     t = text.to_s.downcase
     cats = []
 
-    cats << 'app_technical' if t =~ /app|refresh|crash|camera|upload|log(ged)? out|password|bug|stuck/
-    cats << 'seller_trust' if t =~ /trust|hesitant|skeptical|scam|think over|think about|reluctant|jiji/
-    cats << 'seller_hardware_rejection' if t =~ /hardware|hard to crack|rejection/
-    cats << 'seller_device_constraints' if t =~ /smart\s*phone|welder|kiosk|no phone|button phone|feature phone/
-    cats << 'airtime_bundles' if t =~ /airtime|bundle|credit|data|call prospective|calling/
-    cats << 'transport_reimbursement' if t =~ /transport|fare|reimburse|commute/
-    cats << 'platform_presence' if t =~ /online presence|visibility|traffic|buyer/
-    cats << 'external_environment' if t =~ /power|blackout|rain|weather|closed early/
-    cats << 'ad_uploads_assist' if t =~ /ads|products|photo|upload.*ads/
+    cats << 'app_technical' if /app|refresh|crash|camera|upload|log(ged)? out|password|bug|stuck/.match?(t)
+    cats << 'seller_trust' if /trust|hesitant|skeptical|scam|think over|think about|reluctant|jiji/.match?(t)
+    cats << 'seller_hardware_rejection' if /hardware|hard to crack|rejection/.match?(t)
+    cats << 'seller_device_constraints' if /smart\s*phone|welder|kiosk|no phone|button phone|feature phone/.match?(t)
+    cats << 'airtime_bundles' if /airtime|bundle|credit|data|call prospective|calling/.match?(t)
+    cats << 'transport_reimbursement' if /transport|fare|reimburse|commute/.match?(t)
+    cats << 'platform_presence' if /online presence|visibility|traffic|buyer/.match?(t)
+    cats << 'external_environment' if /power|blackout|rain|weather|closed early/.match?(t)
+    cats << 'ad_uploads_assist' if /ads|products|photo|upload.*ads/.match?(t)
 
     cats.uniq
   end
@@ -198,4 +196,6 @@ class SalesFieldReportAiService
     items << 'Provide reassurance marketing collateral for hesitant sellers' if categories.include?('seller_trust')
     items
   end
+
+  private_class_method :call_groq_ai, :fallback_analysis, :rule_based_categories, :generate_action_items
 end
