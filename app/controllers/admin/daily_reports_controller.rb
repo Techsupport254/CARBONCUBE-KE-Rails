@@ -57,7 +57,7 @@ class Admin::DailyReportsController < ApplicationController
     submitted_reps_count = today_reports.count
 
     all_categories = SalesDailyReport.where('report_date >= ?', today - 30.days).pluck(:categories).flatten.compact
-    category_counts = all_categories.each_with_object(Hash.new(0)) { |cat, h| h[cat] += 1 }
+    category_counts = all_categories.tally
 
     render json: {
       today: today.iso8601,
@@ -79,28 +79,29 @@ class Admin::DailyReportsController < ApplicationController
     render json: { error: 'Not Authorized' }, status: :unauthorized
   end
 
-  def serialize_admin_report(r)
-    sales_user = r.sales_user
+  def serialize_admin_report(report)
+    sales_user = report.sales_user
+    email = sales_user&.email
     {
-      id: r.id,
-      sales_user_id: r.sales_user_id,
-      sales_user_name: sales_user&.fullname || sales_user&.email&.split('@')&.first || 'Sales Rep',
+      id: report.id,
+      sales_user_id: report.sales_user_id,
+      sales_user_name: sales_user&.fullname || email&.split('@')&.first || 'Sales Rep',
       sales_user_email: sales_user&.email,
       sales_user_phone: sales_user&.phone_number,
-      report_date: r.report_date.iso8601,
-      route_areas: r.route_areas,
-      businesses_visited: r.businesses_visited,
-      businesses_onboarded: r.businesses_onboarded,
-      challenges: r.challenges,
-      notes: r.notes,
-      categories: r.categories || [],
-      ai_summary: r.ai_summary,
-      sentiment: r.sentiment,
-      urgency: r.urgency,
-      action_items: r.action_items || [],
-      verified_by_manager: r.verified_by_manager,
-      created_at: r.created_at.iso8601,
-      updated_at: r.updated_at.iso8601
+      report_date: report.report_date.iso8601,
+      route_areas: report.route_areas,
+      businesses_visited: report.businesses_visited,
+      businesses_onboarded: report.businesses_onboarded,
+      challenges: report.challenges,
+      notes: report.notes,
+      categories: report.categories || [],
+      ai_summary: report.ai_summary,
+      sentiment: report.sentiment,
+      urgency: report.urgency,
+      action_items: report.action_items || [],
+      verified_by_manager: report.verified_by_manager,
+      created_at: report.created_at.iso8601,
+      updated_at: report.updated_at.iso8601
     }
   end
 end

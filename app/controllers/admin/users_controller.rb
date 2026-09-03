@@ -216,7 +216,7 @@ class Admin::UsersController < ApplicationController
     
     # Handle activation / deactivation
     if params.key?(:active)
-      new_active = (params[:active].to_s == 'true' || params[:active] == true)
+      new_active = params[:active].to_s == 'true' || params[:active] == true
       if user.id == @current_user.id && role == 'admin' && !new_active
         return render json: { error: 'Cannot deactivate your own admin account' }, status: :unprocessable_entity
       end
