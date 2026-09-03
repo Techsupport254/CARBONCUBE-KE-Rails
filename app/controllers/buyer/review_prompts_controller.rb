@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Buyer::ReviewPromptsController < ApplicationController
-  before_action :authenticate_user
+  before_action :authenticate_request
   before_action :ensure_buyer_or_seller
   before_action :set_review_prompt, only: [:dismiss]
 

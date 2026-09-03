@@ -975,6 +975,14 @@ Rails.application.routes.draw do
     end
 
     resources :reviews
+    resources :review_prompts, only: [:index] do
+      member do
+        post :dismiss
+      end
+      collection do
+        post :dismiss_all
+      end
+    end
     resources :conversations, only: [:index, :show, :create] do
       # Messages are nested under conversations
       resources :messages, only: [:index, :create]
