@@ -10,7 +10,7 @@ class Buyer::ReviewPromptsController < ApplicationController
       .not_dismissed_or_completed
       .where('scheduled_at <= ?', Time.current)
       .where(status: %w[pending sent])
-      .includes(:ad)
+      .includes(ad: :seller)
       .order(scheduled_at: :asc)
       .limit(50)
 
@@ -44,6 +44,9 @@ class Buyer::ReviewPromptsController < ApplicationController
       ad_title: ad.title,
       ad_slug: Ad.slugify(ad.title),
       seller_name: ad.seller&.enterprise_name || ad.seller&.fullname,
+      seller_enterprise_name: ad.seller&.enterprise_name,
+      seller_email: ad.seller&.email,
+      seller_profile_picture: ad.seller&.profile_picture,
       image_url: ad.media&.first,
       review_url: MarketingMailer.review_url_for(ad),
       scheduled_at: prompt.scheduled_at,
