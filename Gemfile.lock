@@ -430,6 +430,13 @@ GEM
       rubocop (~> 1.86, >= 1.86.2)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
+    sentry-rails (6.7.0)
+      railties (>= 5.2.0)
+      sentry-ruby (~> 6.7.0)
+    sentry-ruby (6.7.0)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      logger
     sidekiq (8.0.7)
       connection_pool (>= 2.5.0)
       json (>= 2.9.0)
@@ -525,6 +532,8 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rails
   rubocop-rspec
+  sentry-rails (~> 6.7)
+  sentry-ruby (~> 6.7)
   sidekiq
   sidekiq-cron (~> 2.0)
   user_agent_parser
