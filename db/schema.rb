@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_03_150001) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_03_150002) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -137,6 +137,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_150001) do
     t.string "ip_address"
     t.string "utm_content"
     t.string "utm_term"
+    t.index "created_at, ((data ->> 'visitor_id'::text))", name: "index_analytics_on_created_at_visitor_id", where: "((data ->> 'visitor_id'::text) IS NOT NULL)"
   end
 
   create_table "banners", force: :cascade do |t|
