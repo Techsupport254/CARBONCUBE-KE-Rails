@@ -12,7 +12,7 @@ class Buyer::ReviewPromptsController < ApplicationController
       .where(status: %w[pending sent])
       .includes(ad: :seller)
       .order(scheduled_at: :asc)
-      .limit(50)
+      .limit(5)
 
     render json: {
       prompts: prompts.map { |p| review_prompt_json(p) }
