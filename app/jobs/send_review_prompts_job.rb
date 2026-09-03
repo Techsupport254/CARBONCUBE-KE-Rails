@@ -6,7 +6,13 @@ class SendReviewPromptsJob < ApplicationJob
   BATCH_SIZE = 100
   FIRST_DELAY = 24.hours
   REMINDER_DELAYS = [3.days, 7.days].freeze
-  QUALIFYING_EVENTS = %w[Reveal-Seller-Details Message-Seller].freeze
+  QUALIFYING_EVENTS = %w[
+    Reveal-Seller-Details
+    Message-Seller
+    Callback-Request
+    Quote-Request
+    Make-Offer
+  ].freeze
 
   def perform
     create_prompts
@@ -64,6 +70,7 @@ class SendReviewPromptsJob < ApplicationJob
       .where('buyer_id IS NOT NULL OR seller_id IS NOT NULL')
       .where.not(id: ReviewPrompt.where.not(click_event_id: nil).select(:click_event_id))
       .where('created_at >= ?', 30.days.ago)
+      .where("event_type != 'Reveal-Seller-Details' OR metadata->>'action' = 'seller_contact_interaction'")
       .includes(:buyer, :seller, :ad)
   end
 
