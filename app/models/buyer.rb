@@ -15,6 +15,7 @@ class Buyer < ApplicationRecord
   has_secure_password validations: false
 
   has_many :reviews, dependent: :destroy
+  has_many :review_prompts, dependent: :destroy
   has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :wish_listed_ads, through: :wish_lists, source: :ad

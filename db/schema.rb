@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_02_134433) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_03_060000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -882,6 +882,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_02_134433) do
     t.index ["year", "quarter"], name: "index_quarterly_targets_on_year_and_quarter"
   end
 
+  create_table "review_prompts", force: :cascade do |t|
+    t.uuid "buyer_id", null: false
+    t.bigint "ad_id", null: false
+    t.bigint "click_event_id"
+    t.string "status", default: "pending", null: false
+    t.string "channel", default: "email", null: false
+    t.datetime "scheduled_at"
+    t.datetime "sent_at"
+    t.datetime "opened_at"
+    t.datetime "completed_at"
+    t.integer "reminders_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ad_id"], name: "index_review_prompts_on_ad_id"
+    t.index ["buyer_id", "ad_id"], name: "index_review_prompts_on_buyer_id_and_ad_id", unique: true
+    t.index ["buyer_id"], name: "index_review_prompts_on_buyer_id"
+    t.index ["click_event_id"], name: "index_review_prompts_on_click_event_id"
+    t.index ["reminders_count"], name: "index_review_prompts_on_reminders_count"
+    t.index ["scheduled_at"], name: "index_review_prompts_on_scheduled_at"
+    t.index ["status"], name: "index_review_prompts_on_status"
+  end
+
   create_table "review_requests", force: :cascade do |t|
     t.uuid "seller_id", null: false
     t.text "reason"
@@ -1380,6 +1402,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_02_134433) do
   add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"
+  add_foreign_key "review_prompts", "ads"
+  add_foreign_key "review_prompts", "buyers"
+  add_foreign_key "review_prompts", "click_events"
   add_foreign_key "review_requests", "sellers"
   add_foreign_key "reviews", "ads"
   add_foreign_key "reviews", "buyers", on_delete: :cascade

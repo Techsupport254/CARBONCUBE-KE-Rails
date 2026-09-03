@@ -8,7 +8,7 @@ class Review < ApplicationRecord
   # The json column type handles serialization automatically
 
   validates :rating, presence: true, inclusion: { in: 1..5 }
-  validates :review, presence: true
+  validates :review, length: { maximum: 2000 }, allow_blank: true
   validates :images, length: { maximum: 5, message: "cannot have more than 5 images" }
 
   # Ensure either a buyer or a seller is present
@@ -55,7 +55,7 @@ class Review < ApplicationRecord
       if tokens.any?
         payload = {
           title: "New Review on #{ad.title.truncate(30)}",
-          body: "#{rating} stars: #{review.truncate(100)}",
+          body: "#{rating} stars: #{review.to_s.truncate(100)}",
           data: {
             type: 'review',
             review_id: id,

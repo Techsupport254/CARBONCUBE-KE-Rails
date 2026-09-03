@@ -30,6 +30,7 @@ class Ad < ApplicationRecord
   belongs_to :branch, optional: true
   
   has_many :reviews, dependent: :destroy
+  has_many :review_prompts, dependent: :destroy
   has_many :cart_items, dependent: :destroy
   has_many :wish_lists, dependent: :destroy
   has_many :click_events, dependent: :destroy

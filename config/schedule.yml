@@ -56,6 +56,16 @@ sync_google_reviews:
   queue: low
   description: "Schedule distributed monthly refresh of connected Google Business Profile reviews"
 
+# --- REVIEW PROMPTS ---
+# Create and send pending product review prompts every hour.
+# First prompt is sent 24h after a buyer reveals seller details or messages the seller.
+# Two email reminders follow at 3 and 7 days if the buyer has not reviewed.
+send_review_prompts:
+  cron: "0 * * * *"
+  class: "SendReviewPromptsJob"
+  queue: low
+  description: "Create and email product review prompts to qualifying buyers"
+
 # --- FIELD LOCATIONS ---
 # Flush hourly field location pings from Redis to PostgreSQL at 5:00 PM EAT (14:00 UTC).
 # Pings are collected from sales users every hour 8am-4pm; this job persists them

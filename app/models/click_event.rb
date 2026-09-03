@@ -2,6 +2,7 @@ class ClickEvent < ApplicationRecord
   belongs_to :buyer, optional: true
   belongs_to :seller, optional: true
   belongs_to :ad, optional: true
+  has_one :review_prompt, dependent: :nullify
 
   EVENT_TYPES = %w[
     Ad-Click
