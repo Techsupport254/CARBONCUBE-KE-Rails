@@ -3,6 +3,7 @@ class AddAnalyticTrigramAndVisitorIndexes < ActiveRecord::Migration[7.1]
 
   def up
     execute "CREATE EXTENSION IF NOT EXISTS pg_trgm"
+    execute "SET search_path TO public, extensions"
 
     execute <<~SQL.squish
       CREATE INDEX CONCURRENTLY IF NOT EXISTS index_analytics_on_data_user_email_trgm

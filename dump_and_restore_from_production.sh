@@ -25,6 +25,11 @@ fi
 # Local database URL
 LOCAL_DB="postgresql://postgres:postgres@localhost:5432/carbon_development"
 
+# The restore may place pg_trgm in either 'public' or 'extensions'. Ensure
+# pg_restore, psql and other PostgreSQL clients can resolve operator classes
+# like gin_trgm_ops regardless of which schema holds the extension.
+export PGOPTIONS="-c search_path=public,extensions"
+
 # Create dump directory if it doesn't exist
 DUMP_DIR="db/dumps"
 mkdir -p "$DUMP_DIR"
@@ -93,17 +98,17 @@ psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "DROP DATABASE I
 echo "Creating fresh database..."
 psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
 
-# The production dump references the 'extensions' schema for some PostgreSQL
-# extensions. Pre-create that schema and the extensions locally so that the
-# restore's `CREATE EXTENSION IF NOT EXISTS` statements are no-ops.
+# The production dump keeps some extensions in 'extensions' (Supabase-style), but
+# pg_trgm lives in 'public' in production. Pre-create the extensions in the same
+# schemas so the restore's `CREATE EXTENSION IF NOT EXISTS` statements are no-ops.
 echo "Preparing local database schemas and extensions..."
 psql "$LOCAL_DB" -c "CREATE SCHEMA IF NOT EXISTS extensions;" 2>&1 | sed 's/^/  /' || true
 psql "$LOCAL_DB" -c "DO \$\$
 BEGIN
   BEGIN CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_stat_statements not available'; END;
-  BEGIN CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_trgm not available'; END;
   BEGIN CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pgcrypto not available'; END;
   BEGIN CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA extensions; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'uuid-ossp not available'; END;
+  BEGIN CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'pg_trgm not available'; END;
 END \$\$;" 2>&1 | sed 's/^/  /' || true
 
 # Build a filtered TOC list that skips Supabase-only objects which cannot be
@@ -144,7 +149,7 @@ fi
 # re-add the primary key if necessary.
 echo "Cleaning up duplicate monitoring_metrics rows and re-adding primary key..."
 psql "$LOCAL_DB" -c "DELETE FROM monitoring_metrics m1 USING (SELECT id, MIN(ctid) AS min_ctid FROM monitoring_metrics GROUP BY id HAVING COUNT(*) > 1) dups WHERE m1.id = dups.id AND m1.ctid <> dups.min_ctid;" 2>&1 | sed 's/^/  /' || true
-psql "$LOCAL_DB" -c "ALTER TABLE monitoring_metrics ADD CONSTRAINT IF NOT EXISTS monitoring_metrics_pkey PRIMARY KEY (id);" 2>&1 | sed 's/^/  /' || true
+psql "$LOCAL_DB" -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'monitoring_metrics_pkey') THEN ALTER TABLE monitoring_metrics ADD CONSTRAINT monitoring_metrics_pkey PRIMARY KEY (id); END IF; END \$\$;" 2>&1 | sed 's/^/  /' || true
 
 # Remove the TOC list now that the restore is done
 rm -f "$TOC_LIST"
