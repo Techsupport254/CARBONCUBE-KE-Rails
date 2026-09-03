@@ -51,14 +51,14 @@ export default function ProductReviewRequest({ name, products }: ProductReviewRe
                     width="44"
                     height="44"
                     alt={product.title}
-                    style={{ borderRadius: "4px", objectFit: "contain", display: "block", background: "#f8fafc" }}
+                    style={{ borderRadius: "4px", objectFit: "cover", display: "block" }}
                   />
                 </td>
                 <td style={{ verticalAlign: "top", paddingLeft: "10px" }}>
-                  <Text style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: 600, color: "#1e293b" }}>
+                  <Text style={{ margin: 0, fontSize: "13px", fontWeight: 600, color: "#1e293b", lineHeight: "18px" }}>
                     {product.title}
                   </Text>
-                  <Text style={{ margin: "0 0 4px", fontSize: "11px", color: "#94a3b8" }}>
+                  <Text style={{ margin: 0, fontSize: "11px", color: "#94a3b8", lineHeight: "15px" }}>
                     {product.sellerName}
                   </Text>
                   <Link
@@ -69,6 +69,8 @@ export default function ProductReviewRequest({ name, products }: ProductReviewRe
                       fontWeight: 500,
                       color: "#f59e0b",
                       textDecoration: "none",
+                      marginTop: "2px",
+                      lineHeight: "18px",
                     }}
                   >
                     Write a review
