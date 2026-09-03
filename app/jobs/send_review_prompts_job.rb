@@ -17,13 +17,16 @@ class SendReviewPromptsJob < ApplicationJob
 
   def create_prompts
     qualifying_events.find_each do |event|
-      next unless event.buyer&.email.present?
       next unless event.ad && !event.ad.deleted?
-      next if ReviewPrompt.exists?(buyer_id: event.buyer_id, ad_id: event.ad_id)
-      next if Review.exists?(buyer_id: event.buyer_id, ad_id: event.ad_id)
+      next if own_product?(event)
+
+      user = event.buyer || event.seller
+      next unless user&.email.present?
+      next if already_reviewed?(event)
 
       ReviewPrompt.create!(
         buyer: event.buyer,
+        seller: event.seller,
         ad: event.ad,
         click_event: event,
         status: 'pending',
@@ -37,13 +40,14 @@ class SendReviewPromptsJob < ApplicationJob
 
   def send_ready_prompts
     ReviewPrompt.ready.limit(BATCH_SIZE).find_each do |prompt|
-      next unless prompt.buyer&.email.present?
+      user = prompt.buyer || prompt.seller
+      next unless user&.email.present?
       next if prompt.ad&.deleted?
 
       MarketingMailer
         .product_review_request(
-          name: prompt.buyer.fullname,
-          email: prompt.buyer.email,
+          name: user.fullname,
+          email: user.email,
           products: [product_payload(prompt)]
         )
         .deliver_later
@@ -57,10 +61,26 @@ class SendReviewPromptsJob < ApplicationJob
   def qualifying_events
     ClickEvent
       .where(event_type: QUALIFYING_EVENTS)
-      .where.not(buyer_id: nil)
+      .where('buyer_id IS NOT NULL OR seller_id IS NOT NULL')
       .where.not(id: ReviewPrompt.where.not(click_event_id: nil).select(:click_event_id))
       .where('created_at >= ?', 30.days.ago)
-      .includes(:buyer, :ad)
+      .includes(:buyer, :seller, :ad)
+  end
+
+  def own_product?(event)
+    return false unless event.ad
+
+    event.ad.seller_id == (event.seller_id || event.buyer_id)
+  end
+
+  def already_reviewed?(event)
+    if event.buyer_id?
+      Review.exists?(buyer_id: event.buyer_id, ad_id: event.ad_id)
+    elsif event.seller_id?
+      Review.exists?(seller_id: event.seller_id, ad_id: event.ad_id)
+    else
+      false
+    end
   end
 
   def product_payload(prompt)

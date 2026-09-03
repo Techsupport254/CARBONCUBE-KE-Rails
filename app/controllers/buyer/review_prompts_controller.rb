@@ -2,7 +2,7 @@
 
 class Buyer::ReviewPromptsController < ApplicationController
   before_action :authenticate_user
-  before_action :ensure_buyer
+  before_action :ensure_buyer_or_seller
   before_action :set_review_prompt, only: [:dismiss]
 
   def index
@@ -26,10 +26,10 @@ class Buyer::ReviewPromptsController < ApplicationController
 
   private
 
-  def ensure_buyer
-    return if current_user.is_a?(Buyer)
+  def ensure_buyer_or_seller
+    return if current_user.is_a?(Buyer) || current_user.is_a?(Seller)
 
-    render json: { error: 'Only buyers can access review prompts' }, status: :forbidden
+    render json: { error: 'Only buyers or sellers can access review prompts' }, status: :forbidden
   end
 
   def set_review_prompt

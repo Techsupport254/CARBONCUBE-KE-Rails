@@ -5,20 +5,25 @@ class ReviewPrompt < ApplicationRecord
   CHANNELS = %w[email push].freeze
   MAX_SENDS = 3
 
-  belongs_to :buyer
+  belongs_to :buyer, optional: true
+  belongs_to :seller, optional: true
   belongs_to :ad
   belongs_to :click_event, optional: true
 
   validates :status, inclusion: { in: STATUSES }
   validates :channel, inclusion: { in: CHANNELS }
-  validates :buyer_id, uniqueness: { scope: :ad_id }
+  validates :buyer_id, uniqueness: { scope: :ad_id }, if: -> { buyer_id? }
+  validates :seller_id, uniqueness: { scope: :ad_id }, if: -> { seller_id? }
+  validate :reviewer_present
   validate :not_if_already_reviewed, on: :create
 
   scope :ready, lambda {
     where('status = ? OR (status = ? AND reminders_count < ?)', 'pending', 'sent', MAX_SENDS)
       .where('scheduled_at <= ?', Time.current)
   }
-  scope :for_buyer, ->(buyer) { where(buyer:) }
+  scope :for_user, lambda { |user|
+    user.is_a?(Seller) ? where(seller: user) : where(buyer: user)
+  }
   scope :not_dismissed_or_completed, -> { where.not(status: %w[completed dismissed]) }
 
   def mark_sent!(next_scheduled_at: nil)
@@ -49,10 +54,19 @@ class ReviewPrompt < ApplicationRecord
 
   private
 
-  def not_if_already_reviewed
-    return unless buyer_id? && ad_id?
+  def reviewer_present
+    return if buyer_id? || seller_id?
 
-    already_exists = Review.exists?(buyer_id: buyer_id, ad_id: ad_id)
-    errors.add(:ad_id, 'already reviewed by this buyer') if already_exists
+    errors.add(:base, 'Review prompt must have a buyer or a seller')
+  end
+
+  def not_if_already_reviewed
+    return unless ad_id?
+
+    if buyer_id? && Review.exists?(buyer_id: buyer_id, ad_id: ad_id)
+      errors.add(:ad_id, 'already reviewed by this buyer')
+    elsif seller_id? && Review.exists?(seller_id: seller_id, ad_id: ad_id)
+      errors.add(:ad_id, 'already reviewed by this seller')
+    end
   end
 end

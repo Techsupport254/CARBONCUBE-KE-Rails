@@ -38,6 +38,7 @@ class Seller < ApplicationRecord
   has_many :email_communication_logs, dependent: :destroy
   has_many :whatsapp_product_sessions, dependent: :destroy
   has_many :click_events, dependent: :nullify
+  has_many :review_prompts, dependent: :destroy
   has_many :categories_seller_records, class_name: 'CategoriesSeller', dependent: :delete_all
   has_one :categories_seller
   has_one :category, through: :categories_seller
