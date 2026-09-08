@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_03_150005) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_08_112056) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -905,6 +905,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_03_150005) do
     t.index ["metric_type", "year", "quarter"], name: "index_quarterly_targets_on_metric_year_quarter", unique: true
     t.index ["status"], name: "index_quarterly_targets_on_status"
     t.index ["year", "quarter"], name: "index_quarterly_targets_on_year_and_quarter"
+  end
+
+  create_table "restore_credentials", force: :cascade do |t|
+    t.string "user_type", null: false
+    t.bigint "user_id", null: false
+    t.string "credential_id", null: false
+    t.text "public_key", null: false
+    t.bigint "sign_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["credential_id"], name: "index_restore_credentials_on_credential_id", unique: true
+    t.index ["user_type", "user_id"], name: "index_restore_credentials_on_user", unique: true
   end
 
   create_table "review_prompts", force: :cascade do |t|
