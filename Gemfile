@@ -69,6 +69,9 @@ gem 'bcrypt', '~> 3.1.7'
 # JWT for token authentication
 gem 'jwt'
 
+# FIDO2 / WebAuthn server-side support for Restore Credentials (Google Play zero-tap sign-in)
+gem 'webauthn', '~> 3.2'
+
 # HTTP client for API requests
 gem 'httparty'
 

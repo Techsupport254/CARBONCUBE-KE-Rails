@@ -167,6 +167,12 @@ Rails.application.routes.draw do
   # Apple OAuth routes
   post 'auth/apple', to: 'authentication#apple_oauth'
 
+  # Restore Credentials (FIDO2) endpoints for zero-tap sign-in on new Android devices
+  post 'auth/restore_credentials/create_options', to: 'restore_credentials#create_options'
+  post 'auth/restore_credentials/create', to: 'restore_credentials#create'
+  post 'auth/restore_credentials/signin_options', to: 'restore_credentials#signin_options'
+  post 'auth/restore_credentials/signin', to: 'restore_credentials#signin'
+
   # Google OAuth routes
   post 'auth/google', to: 'authentication#google_oauth'
   get 'auth/google_oauth2/initiate', to: 'authentication#google_oauth_initiate' # For redirect flow with signed state
