@@ -91,6 +91,16 @@ class Seller < ApplicationRecord
   # Auto-verify documents for 2025 and 2026 sellers (same cohort as premium-for-first-half promo)
   before_save :auto_verify_document_for_2025_and_2026_sellers
 
+  def verified_google_business_profile?
+    google_business_profile_connection&.connected? && google_business_profile_connection.google_location_id.present?
+  end
+
+  def verified_google_reviews
+    return [] unless verified_google_business_profile?
+
+    google_place_reviews.presence || []
+  end
+
   def calculate_mean_rating
     # Use cached reviews if available, otherwise calculate
     if reviews_received.loaded?

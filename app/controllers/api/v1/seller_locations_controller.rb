@@ -26,7 +26,7 @@ class Api::V1::SellerLocationsController < ApplicationController
 
         # Fetch sellers with eager loaded associations (no N+1 queries)
         sellers = Seller
-          .includes(:county, :sub_county, seller_tier: :tier)
+          .includes(:county, :sub_county, :google_business_profile_connection, seller_tier: :tier)
           .where(deleted: false)
           .order(ads_count: :desc, enterprise_name: :asc)
 
@@ -63,7 +63,7 @@ class Api::V1::SellerLocationsController < ApplicationController
           resolved_sub_county = seller.sub_county&.name.presence || 'Not Available'
           display_location = full_location.presence || seller.city.presence || 'Not Available'
           review_stats = review_aggregates[seller.id.to_s]
-          google_reviews = seller.google_place_reviews || []
+          google_reviews = seller.verified_google_reviews
           google_reviews_count = google_reviews.size
           google_average_rating = if google_reviews_count > 0
             (google_reviews.sum { |r| r["rating"].to_f } / google_reviews_count).round(1)

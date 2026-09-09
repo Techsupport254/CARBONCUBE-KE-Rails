@@ -57,6 +57,7 @@ class Admin::SellersController < ApplicationController
       filtered_query = sellers_query
       sellers_query = filtered_query
         .left_outer_joins(ads: :reviews)
+        .left_outer_joins(:google_business_profile_connection)
         .where("ads.deleted = ? OR ads.id IS NULL", false)
         .group('sellers.id')
         .select(<<~SQL.squish)
@@ -64,23 +65,35 @@ class Admin::SellersController < ApplicationController
           COUNT(DISTINCT ads.id) AS total_ads_count,
           COALESCE(AVG(reviews.rating), 0) AS local_average_rating,
           COUNT(reviews.id) AS local_reviews_count,
-          COALESCE(
-            (SELECT SUM((r->>'rating')::numeric)
-             FROM jsonb_array_elements(sellers.google_place_reviews) AS r),
-            0
-          ) AS google_rating_sum,
-          COALESCE(jsonb_array_length(sellers.google_place_reviews), 0) AS google_reviews_count,
-          COUNT(reviews.id) + COALESCE(jsonb_array_length(sellers.google_place_reviews), 0) AS total_reviews_count,
+          CASE
+            WHEN bool_or(google_business_profile_connections.status = 'connected' AND google_business_profile_connections.google_location_id IS NOT NULL AND google_business_profile_connections.google_location_id != '')
+            THEN COALESCE((SELECT SUM((r->>'rating')::numeric) FROM jsonb_array_elements(sellers.google_place_reviews) AS r), 0)
+            ELSE 0
+          END AS google_rating_sum,
+          CASE
+            WHEN bool_or(google_business_profile_connections.status = 'connected' AND google_business_profile_connections.google_location_id IS NOT NULL AND google_business_profile_connections.google_location_id != '')
+            THEN COALESCE(jsonb_array_length(sellers.google_place_reviews), 0)
+            ELSE 0
+          END AS google_reviews_count,
+          COUNT(reviews.id) + CASE
+            WHEN bool_or(google_business_profile_connections.status = 'connected' AND google_business_profile_connections.google_location_id IS NOT NULL AND google_business_profile_connections.google_location_id != '')
+            THEN COALESCE(jsonb_array_length(sellers.google_place_reviews), 0)
+            ELSE 0
+          END AS total_reviews_count,
           COALESCE(
             (
               COALESCE(AVG(reviews.rating), 0) * COUNT(reviews.id) +
-              COALESCE(
-                (SELECT SUM((r->>'rating')::numeric)
-                 FROM jsonb_array_elements(sellers.google_place_reviews) AS r),
-                0
-              )
+              CASE
+                WHEN bool_or(google_business_profile_connections.status = 'connected' AND google_business_profile_connections.google_location_id IS NOT NULL AND google_business_profile_connections.google_location_id != '')
+                THEN COALESCE((SELECT SUM((r->>'rating')::numeric) FROM jsonb_array_elements(sellers.google_place_reviews) AS r), 0)
+                ELSE 0
+              END
             ) / NULLIF(
-              COUNT(reviews.id) + COALESCE(jsonb_array_length(sellers.google_place_reviews), 0),
+              COUNT(reviews.id) + CASE
+                WHEN bool_or(google_business_profile_connections.status = 'connected' AND google_business_profile_connections.google_location_id IS NOT NULL AND google_business_profile_connections.google_location_id != '')
+                THEN COALESCE(jsonb_array_length(sellers.google_place_reviews), 0)
+                ELSE 0
+              END,
               0
             ),
             0
@@ -908,8 +921,8 @@ class Admin::SellersController < ApplicationController
       end
       local_reviews_count = local_rating_stats.values.sum
 
-      # Google review stats
-      google_reviews_raw = seller.google_place_reviews || []
+      # Google review stats (only included if seller has a connected GBP)
+      google_reviews_raw = seller.verified_google_reviews
       google_reviews_count = google_reviews_raw.size
       google_rating_stats = google_reviews_raw.each_with_object(Hash.new(0)) do |gr, h|
         rating = gr["rating"].to_i

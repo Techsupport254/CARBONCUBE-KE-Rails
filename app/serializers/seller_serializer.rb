@@ -5,8 +5,8 @@ class SellerSerializer < ActiveModel::Serializer
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
              :carbon_code, :created_at, :updated_at,
              :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url
-  attribute :google_place_reviews, if: :google_place_reviews_column?
-  attribute :google_reviews_fetched_at, if: :google_place_reviews_column?
+  attribute :google_place_reviews, if: :include_google_place_reviews?
+  attribute :google_reviews_fetched_at, if: :include_google_place_reviews?
 
   has_many :categories
   has_many :seller_documents, serializer: SellerDocumentSerializer
@@ -15,11 +15,14 @@ class SellerSerializer < ActiveModel::Serializer
     object.seller_tier&.tier
   end
 
-  # Guard against the google_place_reviews column being missing on the
-  # database (e.g. migration not yet applied in production). Without this,
-  # AMS raises NoMethodError when serializing sellers.
-  def google_place_reviews_column?
-    object.class.column_names.include?("google_place_reviews")
+  def include_google_place_reviews?
+    return false unless object.class.column_names.include?("google_place_reviews")
+
+    object.respond_to?(:verified_google_business_profile?) && object.verified_google_business_profile?
+  end
+
+  def google_place_reviews
+    object.verified_google_reviews
   end
 
   def carbon_code
