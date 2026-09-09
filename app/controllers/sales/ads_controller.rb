@@ -8,6 +8,10 @@ class Sales::AdsController < ApplicationController
   
   # GET /sales/ads
   def index
+    if params[:duplicate] == '1' || params[:duplicates] == '1'
+      return duplicates
+    end
+
     per_page = params[:per_page]&.to_i || 20
     page = params[:page]&.to_i || 1
     
@@ -84,7 +88,119 @@ class Sales::AdsController < ApplicationController
       }
     }
   end
-  
+
+  # GET /sales/ads/duplicates
+  def duplicates
+    page = [params[:page].to_i, 1].max
+    per_page = params[:per_page].present? ? [params[:per_page].to_i, 1].max : 15
+    filter_type = params[:filter_type].presence || 'all' # 'all', 'cross_seller', 'same_seller'
+    search_query = params[:query].to_s.strip.downcase
+
+    data_file = Rails.root.join('data', 'duplicate_images_audit_report.json')
+    data_file = Rails.root.join('../duplicate_images_audit_report.json') unless File.exist?(data_file)
+
+    unless File.exist?(data_file)
+      return render json: {
+        stats: {},
+        clusters: [],
+        pagination: { current_page: 1, per_page: per_page, total_count: 0, total_pages: 0 }
+      }
+    end
+
+    report = JSON.parse(File.read(data_file))
+    clusters = report['etag_duplicates'] || []
+
+    # Fetch live status for ads in clusters to ensure up-to-date flagged/deleted states
+    all_ad_ids = clusters.flat_map { |c| c['ads'].map { |a| a['ad_id'] } }.uniq
+    live_ads = Ad.includes(:seller, seller: { carbon_code: :associable }).where(id: all_ad_ids).index_by(&:id)
+
+    # Enrich clusters with live db info
+    enriched_clusters = clusters.map do |cluster|
+      enriched_ads = cluster['ads'].map do |ad_data|
+        ad = live_ads[ad_data['ad_id']]
+        if ad
+          seller = ad.seller
+          code = seller&.carbon_code
+          rep = code&.associable
+          onboarded_by = if rep.respond_to?(:fullname) && rep.fullname.present?
+                           "#{rep.fullname} (#{code.code})"
+                         elsif rep.respond_to?(:email) && rep.email.present?
+                           "#{rep.email} (#{code.code})"
+                         elsif code.present?
+                           "Code #{code.code}"
+                         else
+                           "Direct / Organic"
+                         end
+          {
+            ad_id: ad.id,
+            id: ad.id,
+            title: ad.title,
+            price: ad.price,
+            flagged: ad.flagged,
+            deleted: ad.deleted,
+            is_added_by_sales: ad.is_added_by_sales,
+            seller_id: seller&.id,
+            seller_name: seller&.fullname.presence || seller&.enterprise_name.presence || 'Unknown',
+            enterprise_name: seller&.enterprise_name,
+            carbon_code: code&.code,
+            onboarded_by: onboarded_by,
+            sales_rep_name: rep.respond_to?(:fullname) ? rep.fullname : nil,
+            sales_rep_email: rep.respond_to?(:email) ? rep.email : nil,
+            product_url: ad.product_url,
+            image_url: ad.first_valid_media_url || ad_data['image_url'],
+            first_media_url: ad.first_valid_media_url || ad_data['image_url'],
+            media_urls: ad.valid_media_urls,
+            created_at: ad.created_at
+          }
+        else
+          ad_data
+        end
+      end
+
+      sellers_count = enriched_ads.map { |a| a[:seller_id] || a['seller_id'] }.uniq.size
+      is_cross_seller = sellers_count > 1
+
+      cluster.merge(
+        'ads' => enriched_ads,
+        'sellers_count' => sellers_count,
+        'is_cross_seller' => is_cross_seller
+      )
+    end
+
+    # Apply filters
+    if filter_type == 'cross_seller'
+      enriched_clusters.select! { |c| c['is_cross_seller'] }
+    elsif filter_type == 'same_seller'
+      enriched_clusters.reject! { |c| c['is_cross_seller'] }
+    end
+
+    if search_query.present?
+      enriched_clusters.select! do |c|
+        c['ads'].any? do |a|
+          title = (a[:title] || a['title']).to_s.downcase
+          seller = (a[:seller_name] || a['seller_name']).to_s.downcase
+          enterprise = (a[:enterprise_name] || a['enterprise_name']).to_s.downcase
+          rep = (a[:onboarded_by] || a['onboarded_by']).to_s.downcase
+          title.include?(search_query) || seller.include?(search_query) || enterprise.include?(search_query) || rep.include?(search_query)
+        end
+      end
+    end
+
+    total_count = enriched_clusters.size
+    total_pages = (total_count.to_f / per_page).ceil
+    paginated_clusters = enriched_clusters.slice((page - 1) * per_page, per_page) || []
+
+    render json: {
+      stats: report['stats'] || {},
+      clusters: paginated_clusters,
+      pagination: {
+        current_page: page,
+        per_page: per_page,
+        total_count: total_count,
+        total_pages: total_pages
+      }
+    }
+  end
 
   # GET /sales/ads/:id
   def show

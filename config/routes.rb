@@ -887,6 +887,7 @@ Rails.application.routes.draw do
         get :flagged
         get :stats
         get :conditions
+        get :duplicates
         post :bulk_flag
         post :bulk_restore
         post :bulk_destroy
