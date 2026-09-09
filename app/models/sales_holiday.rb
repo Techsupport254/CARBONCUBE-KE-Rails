@@ -19,11 +19,10 @@ class SalesHoliday < ApplicationRecord
 
   # Days sales users are NOT expected to share field locations:
   # - Configured holidays
-  # - Wednesdays (all-staff meetings)
   # - Saturday and Sunday (weekends)
   def self.non_working_day?(date)
     date = Date.parse(date.to_s) unless date.is_a?(Date)
-    return true if date.saturday? || date.sunday? || date.wednesday?
+    return true if date.saturday? || date.sunday?
 
     holiday_on?(date)
   end
@@ -32,7 +31,6 @@ class SalesHoliday < ApplicationRecord
   def self.exemption_name(date)
     date = Date.parse(date.to_s) unless date.is_a?(Date)
     return 'Weekend' if date.saturday? || date.sunday?
-    return 'Wednesday meeting' if date.wednesday?
 
     for_date(date)&.name
   end

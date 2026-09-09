@@ -78,9 +78,6 @@ class WeeklySellerOnboardingSummaryJob < ApplicationJob
       personal_current_total = all_time_counts[sales_user.id] || 0
       has_team_access = sales_user.team_sales_dashboard_access?
 
-      # Do not spam commission foot soldiers with empty personal reports
-      next if personal_count.zero? && !has_team_access
-
       # Employed sales team, leads, and managers get the full team view; commission foot soldiers get only their own data
       summary_for_email = has_team_access ? team_summary_array : []
       all_sellers_for_email = has_team_access ? all_team_sellers : []

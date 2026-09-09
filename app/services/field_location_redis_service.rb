@@ -113,7 +113,7 @@ class FieldLocationRedisService
     end
 
     # Check if a ping is within work hours (8am-4pm EAT, UTC+3) and on a
-    # working day (Mon–Tue, Thu–Fri — not weekends or Wednesday meetings).
+    # working day (Mon–Fri — not weekends).
     # The controller already checks holidays; this is a secondary guard.
     #
     # @param ping [Hash]
@@ -124,9 +124,9 @@ class FieldLocationRedisService
       now = eat_now
       return false unless now.hour.between?(WORK_START_HOUR, WORK_END_HOUR)
 
-      # 0=Sunday, 6=Saturday, 3=Wednesday (all-staff meeting)
+      # 0=Sunday, 6=Saturday
       day = now.wday
-      day != 0 && day != 6 && day != 3
+      day != 0 && day != 6
     end
 
     private

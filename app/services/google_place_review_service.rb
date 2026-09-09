@@ -44,18 +44,14 @@ class GooglePlaceReviewService
     @api_key = ENV.fetch('GOOGLE_MAPS_API_KEY')
   end
 
+  # DEPRECATED: Google Places API heuristic matching is retired in favor of
+  # owner-authorized Google Business Profile integration (GoogleBusinessProfileService).
+  # Automatic resolution via text search frequently matched unrelated businesses with wrong reviews.
   def sync!
-    if @seller.google_place_id.present? && !place_still_valid?
-      @seller.update!(
-        google_place_id: nil,
-        google_place_reviews: [],
-        google_reviews_fetched_at: nil,
-        google_place_id_fetched_at: nil
-      )
-    end
-
-    resolve_place_id if @seller.google_place_id.blank?
-    fetch_reviews if @seller.google_place_id.present?
+    Rails.logger.warn(
+      "GooglePlaceReviewService is deprecated. Use GoogleBusinessProfileService for seller #{@seller.id} instead."
+    )
+    false
   end
 
   private

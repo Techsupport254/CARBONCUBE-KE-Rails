@@ -32,6 +32,34 @@ class Seller::GoogleBusinessProfilesController < ApplicationController
       last_sync_error: nil
     )
     connection.save!
+
+    # If the user manages exactly one Business Profile location, auto-select it and sync immediately
+    begin
+      service = GoogleBusinessProfileService.new(connection)
+      candidate_locations = service.locations
+      if candidate_locations.size == 1
+        loc = candidate_locations.first
+        connection.update!(
+          google_account_id: loc[:account_id],
+          google_location_id: loc[:location_id],
+          location_name: loc[:title],
+          location_address: loc[:address],
+          status: 'connected',
+          last_sync_error: nil
+        )
+
+        seller_updates = {}
+        seller_updates[:google_place_id] = loc[:place_id] if loc[:place_id].present?
+        seller_updates[:google_business_profile_url] = loc[:maps_uri] if loc[:maps_uri].present?
+        connection.seller.update!(seller_updates) if seller_updates.any?
+
+        service.sync_reviews!
+        return redirect_to_frontend('google_business_profile=synced')
+      end
+    rescue StandardError => e
+      Rails.logger.warn("Auto-location selection on Google Business Profile callback failed: #{e.message}")
+    end
+
     redirect_to_frontend('google_business_profile=connected')
   rescue GoogleBusinessProfileService::ApiError, KeyError => e
     Rails.logger.warn("Google Business Profile connection failed: #{e.message}")
@@ -61,7 +89,7 @@ class Seller::GoogleBusinessProfilesController < ApplicationController
     end
 
     location = GoogleBusinessProfileService.new(@connection).locations.find do |candidate|
-      candidate[:account_id] == params[:account_id] && candidate[:location_id] == params[:location_id]
+      candidate[:account_id].to_s == params[:account_id].to_s && candidate[:location_id].to_s == params[:location_id].to_s
     end
     return render json: { error: 'Selected location is not available to this Google account.' }, status: :unprocessable_entity if location.blank?
 
@@ -73,6 +101,12 @@ class Seller::GoogleBusinessProfilesController < ApplicationController
       status: 'connected',
       last_sync_error: nil
     )
+
+    seller_updates = {}
+    seller_updates[:google_place_id] = location[:place_id] if location[:place_id].present?
+    seller_updates[:google_business_profile_url] = location[:maps_uri] if location[:maps_uri].present?
+    current_seller.update!(seller_updates) if seller_updates.any?
+
     GoogleBusinessProfileService.new(@connection).sync_reviews!
     render json: connection_payload(@connection.reload)
   rescue GoogleBusinessProfileService::ApiError => e
@@ -100,8 +134,20 @@ class Seller::GoogleBusinessProfilesController < ApplicationController
       location_name: nil,
       location_address: nil,
       status: 'disconnected',
-      last_sync_error: nil
+      last_sync_error: nil,
+      review_count: 0,
+      average_rating: nil,
+      last_synced_at: nil
     )
+
+    current_seller.update!(
+      google_place_reviews: [],
+      google_reviews_fetched_at: nil,
+      google_place_id: nil,
+      google_place_id_fetched_at: nil,
+      google_business_profile_url: nil
+    )
+
     render json: connection_payload(@connection)
   end
 
@@ -128,7 +174,8 @@ class Seller::GoogleBusinessProfilesController < ApplicationController
       location_selected: connection.google_location_id.present?,
       location: {
         name: connection.location_name,
-        address: connection.location_address
+        address: connection.location_address,
+        maps_uri: connection.seller.google_business_profile_url
       },
       review_count: connection.review_count,
       average_rating: connection.average_rating,

@@ -1,36 +1,54 @@
 # frozen_string_literal: true
 
 namespace :google_place_reviews do
-  desc 'Re-validate existing Google Place reviews and remove mismatched ones'
-  task cleanup: :environment do
-    sellers = Seller.where('jsonb_array_length(google_place_reviews) > 0')
-    puts "Checking #{sellers.count} sellers with Google Place reviews..."
+  desc 'Purge unverified Google Maps API reviews and place IDs from sellers without an active Google Business Profile connection'
+  task purge_unverified: :environment do
+    connected_seller_ids = GoogleBusinessProfileConnection
+      .where(status: 'connected')
+      .where.not(google_location_id: nil)
+      .pluck(:seller_id)
+
+    unverified_sellers = Seller.where(
+      'jsonb_array_length(google_place_reviews) > 0 OR google_place_id IS NOT NULL'
+    )
+    unverified_sellers = unverified_sellers.where.not(id: connected_seller_ids) if connected_seller_ids.any?
+
+    total = unverified_sellers.count
+    puts "Found #{total} sellers with unverified Google Maps reviews or place IDs..."
 
     cleared = 0
-    kept = 0
-    failed = 0
-
-    sellers.find_each do |seller|
-      begin
-        before = seller.google_place_reviews.size
-        GooglePlaceReviewService.new(seller).sync!
-        after = seller.reload.google_place_reviews.size
-
-        if after.zero? && before.positive?
-          cleared += 1
-          puts "CLEARED: #{seller.enterprise_name} (#{seller.id})"
-        elsif after.positive?
-          kept += 1
-          puts "KEPT:    #{seller.enterprise_name} (#{seller.id}) — #{after} reviews"
-        else
-          kept += 1
-        end
-      rescue StandardError => e
-        failed += 1
-        puts "FAILED:  #{seller.enterprise_name} (#{seller.id}): #{e.message}"
-      end
+    unverified_sellers.find_each do |seller|
+      seller.update_columns(
+        google_place_reviews: [],
+        google_place_id: nil,
+        google_reviews_fetched_at: nil,
+        google_place_id_fetched_at: nil,
+        updated_at: Time.current
+      )
+      cleared += 1
+      puts "CLEARED unverified reviews: #{seller.enterprise_name} (#{seller.id})"
     end
 
-    puts "Done. Cleared: #{cleared}, Kept: #{kept}, Failed: #{failed}"
+    puts "Done. Cleared unverified Google reviews from #{cleared} sellers."
+  end
+
+  desc 'Alias for purge_unverified: clear unverified Google Maps reviews'
+  task cleanup: :purge_unverified
+
+  desc 'Sync Google reviews for all sellers with an active Google Business Profile connection'
+  task sync_connected: :environment do
+    connections = GoogleBusinessProfileConnection
+      .where(status: 'connected')
+      .where.not(google_location_id: nil)
+
+    puts "Syncing #{connections.count} connected Google Business Profile accounts..."
+    connections.find_each do |conn|
+      begin
+        GoogleBusinessProfileService.new(conn).sync_reviews!
+        puts "SYNCED: Seller #{conn.seller_id} (#{conn.location_name}) — #{conn.review_count} reviews"
+      rescue StandardError => e
+        puts "FAILED: Seller #{conn.seller_id}: #{e.message}"
+      end
+    end
   end
 end

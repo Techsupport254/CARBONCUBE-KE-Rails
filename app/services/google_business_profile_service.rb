@@ -54,7 +54,9 @@ class GoogleBusinessProfileService
 
   def locations
     accounts.flat_map do |account|
-      account_id = account.fetch('name').split('/').last
+      account_id = account['name']&.split('/')&.last
+      next [] if account_id.blank?
+
       list_locations(account_id)
     end
   end
@@ -73,7 +75,10 @@ class GoogleBusinessProfileService
       break if page_token.blank?
     end
 
-    average_rating = reviews.empty? ? nil : reviews.sum { |review| review['rating'] }.fdiv(reviews.size).round(2)
+    average_rating = if reviews.any?
+      reviews.sum { |review| review['rating'] }.fdiv(reviews.size).round(2)
+    end
+
     @connection.update!(
       review_count: reviews.size,
       average_rating: average_rating,
@@ -81,7 +86,12 @@ class GoogleBusinessProfileService
       last_sync_error: nil,
       status: 'connected'
     )
-    @connection.seller.update!(google_place_reviews: reviews, google_reviews_fetched_at: Time.current)
+
+    seller_attrs = {
+      google_place_reviews: reviews,
+      google_reviews_fetched_at: Time.current
+    }
+    @connection.seller.update!(seller_attrs)
   rescue StandardError => e
     @connection.update_columns(status: 'error', last_sync_error: e.message, updated_at: Time.current)
     raise
@@ -96,15 +106,24 @@ class GoogleBusinessProfileService
   def list_locations(account_id)
     response = get(
       "#{BUSINESS_INFORMATION_URL}/accounts/#{account_id}/locations",
-      readMask: 'name,title,storefrontAddress,metadata'
+      readMask: 'name,title,storefrontAddress,metadata,websiteUri'
     )
     Array(response['locations']).map do |location|
       location_id = location.fetch('name').split('/').last
+      address_parts = Array(location.dig('storefrontAddress', 'addressLines'))
+      address_parts << location.dig('storefrontAddress', 'locality')
+      address_parts << location.dig('storefrontAddress', 'administrativeArea')
+      formatted_address = address_parts.compact_blank.uniq.join(', ')
+
       {
         account_id: account_id,
         location_id: location_id,
         title: location['title'],
-        address: Array(location.dig('storefrontAddress', 'addressLines')).join(', '),
+        address: formatted_address.presence,
+        place_id: location.dig('metadata', 'placeId'),
+        maps_uri: location.dig('metadata', 'mapsUri'),
+        new_review_uri: location.dig('metadata', 'newReviewUri'),
+        website_uri: location['websiteUri'],
         verification_state: location.dig('metadata', 'hasVoiceOfMerchant') ? 'verified' : 'unknown'
       }
     end
@@ -146,20 +165,40 @@ class GoogleBusinessProfileService
   end
 
   def normalize_review(review)
+    iso_time = review['updateTime'].presence || review['createTime']
+    parsed_time = begin
+      Time.iso8601(iso_time) if iso_time.present?
+    rescue ArgumentError
+      nil
+    end
+
+    relative_time = if parsed_time
+      ActionController::Base.helpers.time_ago_in_words(parsed_time) + ' ago'
+    end
+
     {
       'google_review_id' => review['reviewId'],
       'author_name' => review.dig('reviewer', 'displayName'),
       'profile_photo_url' => review.dig('reviewer', 'profilePhotoUrl'),
       'rating' => star_rating_value(review['starRating']),
       'text' => review['comment'],
-      'time' => review['updateTime'],
+      'time' => iso_time,
+      'timestamp' => parsed_time&.to_i,
+      'relative_time_description' => relative_time,
       'review_reply' => review.dig('reviewReply', 'comment'),
       'review_reply_time' => review.dig('reviewReply', 'updateTime')
     }
   end
 
   def star_rating_value(value)
-    { 'ONE' => 1, 'TWO' => 2, 'THREE' => 3, 'FOUR' => 4, 'FIVE' => 5 }.fetch(value, 0)
+    case value.to_s.upcase
+    when 'ONE', '1' then 1
+    when 'TWO', '2' then 2
+    when 'THREE', '3' then 3
+    when 'FOUR', '4' then 4
+    when 'FIVE', '5' then 5
+    else value.to_i
+    end
   end
 
   def parse_response(uri, request)

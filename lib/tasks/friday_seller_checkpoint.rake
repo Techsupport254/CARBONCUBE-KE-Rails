@@ -69,15 +69,17 @@ namespace :admin do
     end
     pdf_content = pdf.render
 
-    # Define admin emails
-    admin_emails = [
-      "victor@carboncube-ke.com",
-      "beverlyne.sales@carboncube-ke.com",
-      "arwabeverlyne2@gmail.com",
-      "kiruivictor097@gmail.com"
-    ]
+    # Define admin report recipients (only active admins and sales managers)
+    configured_emails = ENV['ADMIN_REPORT_EMAILS'].to_s.split(',').map(&:strip).reject(&:blank?)
+    admin_emails = if configured_emails.any?
+                     configured_emails
+                   else
+                     active_admins = Admin.where(active: true).pluck(:email)
+                     active_managers = SalesUser.active.where(is_manager: true).pluck(:email)
+                     (active_admins + active_managers + ['victor@carboncube-ke.com']).uniq
+                   end
 
-    # Send email to each admin
+    # Send email to each active recipient
     admin_emails.each do |email|
       AdminReportsMailer.weekly_seller_checkpoint(email, csv_data, pdf_content, seller_count).deliver_now
       puts "Sent email to #{email}"
