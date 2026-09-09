@@ -47,7 +47,7 @@ namespace :admin do
                    else
                      active_admins = Admin.where(active: true).pluck(:email)
                      active_managers = SalesUser.active.where(is_manager: true).pluck(:email)
-                     (active_admins + active_managers + ['victor@carboncube-ke.com']).uniq
+                     (active_admins + active_managers).map(&:strip).reject(&:blank?).uniq
                    end
 
     # Send email to each active recipient
