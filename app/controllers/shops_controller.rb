@@ -457,39 +457,84 @@ class ShopsController < ApplicationController
 
     slug_str = slug.to_s.strip
 
-    # Try canonical slug first
+    # 1. Try canonical slug first
     shop = Seller.where(deleted: false).find_by(slug: slug_str)
     return shop if shop
+
+    # 2. Extract UUID if slug ends with UUID format (e.g. name-uuid or shop-uuid)
+    if slug_str =~ /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\z/i
+      shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: $1)
+      return shop if shop
+    end
 
     enterprise_name_from_slug = slug_str.gsub(/[-_]/, ' ')
     normalized_slug = normalize_shop_name(enterprise_name_from_slug)
     slug_without_and = normalized_slug.gsub(/\band\b/, ' ').gsub(/\s+/, ' ').strip
 
-    # 1. Exact match on username
+    # 3. Direct exact match on enterprise_name
+    shop = Seller.includes(:seller_tier, :tier)
+                 .where(deleted: false)
+                 .where('LOWER(TRIM(enterprise_name)) = ?', enterprise_name_from_slug.downcase)
+                 .first
+    return shop if shop
+
+    # 4. Clean alphanumeric exact match on enterprise_name (with spaces)
+    sql_clean_enterprise = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(enterprise_name), '[^a-z0-9]', ' ', 'g'), '\\s+', ' ', 'g'))"
+    sql_clean_fullname = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(fullname), '[^a-z0-9]', ' ', 'g'), '\\s+', ' ', 'g'))"
+    
+    if normalized_slug.present?
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_clean_enterprise} = ?", normalized_slug)
+                   .first
+      return shop if shop
+    end
+
+    # 5. Stripped alphanumeric exact match (ignores all punctuation and spaces; e.g. 'ricks' vs 'rick s', 'mkautoparts' vs 'm k autoparts')
+    slug_no_punct = slug_str.unicode_normalize(:nfkc).downcase.gsub(/[^a-z0-9]/, '')
+    if slug_no_punct.length >= 3
+      sql_strip_enterprise = "REGEXP_REPLACE(LOWER(enterprise_name), '[^a-z0-9]', '', 'g')"
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_strip_enterprise} = ?", slug_no_punct)
+                   .first
+      return shop if shop
+    end
+
+    # 6. Direct exact match on fullname
+    shop = Seller.includes(:seller_tier, :tier)
+                 .where(deleted: false)
+                 .where('LOWER(TRIM(fullname)) = ?', enterprise_name_from_slug.downcase)
+                 .first
+    return shop if shop
+
+    # 7. Exact match on username
     shop = Seller.includes(:seller_tier, :tier)
                  .where(deleted: false)
                  .where('LOWER(TRIM(username)) = ?', slug_str.downcase)
                  .first
     return shop if shop
 
-    # 2. Direct exact match on enterprise_name or fullname
-    shop = Seller.includes(:seller_tier, :tier)
-                 .where(deleted: false)
-                 .where('LOWER(TRIM(enterprise_name)) = ? OR LOWER(TRIM(fullname)) = ?', enterprise_name_from_slug.downcase, enterprise_name_from_slug.downcase)
-                 .first
-    return shop if shop
+    # 8. Clean alphanumeric match on fullname
+    if normalized_slug.present?
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_clean_fullname} = ?", normalized_slug)
+                   .first
+      return shop if shop
+    end
 
-    # 3. Clean alphanumeric exact match on enterprise_name or fullname (Handles &, Ltd., special chars)
-    sql_clean_enterprise = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(enterprise_name), '[^a-z0-9]', ' ', 'g'), '\\s+', ' ', 'g'))"
-    sql_clean_fullname = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(fullname), '[^a-z0-9]', ' ', 'g'), '\\s+', ' ', 'g'))"
-    
-    shop = Seller.includes(:seller_tier, :tier)
-                 .where(deleted: false)
-                 .where("#{sql_clean_enterprise} = ? OR #{sql_clean_fullname} = ?", normalized_slug, normalized_slug)
-                 .first
-    return shop if shop
+    # 9. Stripped alphanumeric match on fullname
+    if slug_no_punct.length >= 3
+      sql_strip_fullname = "REGEXP_REPLACE(LOWER(fullname), '[^a-z0-9]', '', 'g')"
+      shop = Seller.includes(:seller_tier, :tier)
+                   .where(deleted: false)
+                   .where("#{sql_strip_fullname} = ?", slug_no_punct)
+                   .first
+      return shop if shop
+    end
 
-    # 4. Try matching without 'and' / '&' (e.g. 'morgan steel works hardware ltd' vs 'morgan steel works & hardware ltd')
+    # 10. Try matching without 'and' / '&'
     if slug_without_and.present? && slug_without_and != normalized_slug
       sql_clean_no_and_ent = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(#{sql_clean_enterprise}, '\\band\\b', ' ', 'g'), '\\s+', ' ', 'g'))"
       sql_clean_no_and_fn = "TRIM(REGEXP_REPLACE(REGEXP_REPLACE(#{sql_clean_fullname}, '\\band\\b', ' ', 'g'), '\\s+', ' ', 'g'))"
@@ -511,7 +556,7 @@ class ShopsController < ApplicationController
       return shop if shop
     end
 
-    # 5. Handle 'limited' vs 'ltd'
+    # 11. Handle 'limited' vs 'ltd'
     slug_ltd = normalized_slug.gsub(/\blimited\b/, 'ltd').gsub(/\s+/, ' ').strip
     slug_limited = normalized_slug.gsub(/\bltd\b/, 'limited').gsub(/\s+/, ' ').strip
     [slug_ltd, slug_limited].uniq.each do |variant|
@@ -523,7 +568,7 @@ class ShopsController < ApplicationController
       return shop if shop
     end
 
-    # 6. ILIKE contains match for normalized alphanumeric text
+    # 12. ILIKE contains match for normalized alphanumeric text
     if normalized_slug.length >= 4
       shop = Seller.includes(:seller_tier, :tier)
                    .where(deleted: false)
@@ -532,7 +577,7 @@ class ShopsController < ApplicationController
       return shop if shop
     end
 
-    # 7. Numeric ID lookup
+    # 13. Numeric ID lookup
     if slug_str.match?(/\A\d+\z/)
       begin
         shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: slug_str.to_i)
@@ -541,7 +586,7 @@ class ShopsController < ApplicationController
       end
     end
 
-    # 8. Ruby in-memory parameterize fallback for edge cases
+    # 14. Ruby in-memory parameterize fallback for edge cases
     first_word = enterprise_name_from_slug.split.first
     if first_word.present? && first_word.length >= 3
       candidates = Seller.includes(:seller_tier, :tier)
@@ -549,8 +594,8 @@ class ShopsController < ApplicationController
                           .where('enterprise_name ILIKE ? OR fullname ILIKE ?', "%#{first_word}%", "%#{first_word}%")
                           .limit(50)
       shop = candidates.find do |candidate|
-        ent_param = candidate.enterprise_name&.parameterize
-        fn_param = candidate.fullname&.parameterize
+        ent_param = candidate.enterprise_name&.unicode_normalize(:nfkc)&.parameterize
+        fn_param = candidate.fullname&.unicode_normalize(:nfkc)&.parameterize
         ent_slug = candidate.enterprise_name.present? ? normalize_shop_name(candidate.enterprise_name).gsub(/\s+/, '-') : nil
         fn_slug = candidate.fullname.present? ? normalize_shop_name(candidate.fullname).gsub(/\s+/, '-') : nil
 
@@ -565,7 +610,7 @@ class ShopsController < ApplicationController
   def normalize_shop_name(name)
     return '' if name.blank?
     
-    name.to_s.downcase
+    name.to_s.unicode_normalize(:nfkc).downcase
         .gsub(/[^a-z0-9\s]/, '')
         .gsub(/\s+/, ' ')
         .strip

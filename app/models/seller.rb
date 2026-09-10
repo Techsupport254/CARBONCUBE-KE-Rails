@@ -10,6 +10,7 @@ class Seller < ApplicationRecord
   before_validation :normalize_username
   before_validation :normalize_phone_numbers
   before_validation :normalize_city
+  before_validation :normalize_enterprise_name
   
   # Store device hash temporarily for association (set via attr_accessor)
   attr_accessor :device_hash_for_association
@@ -220,7 +221,8 @@ class Seller < ApplicationRecord
   private
 
   def set_slug
-    base = (enterprise_name || fullname).to_s.parameterize
+    clean_name = (enterprise_name || fullname).to_s.unicode_normalize(:nfkc)
+    base = clean_name.parameterize
     base = "shop" if base.blank?
     update_column(:slug, "#{base}-#{id}")
   end
@@ -316,6 +318,15 @@ class Seller < ApplicationRecord
     return if city.present?
 
     self.city = sub_county&.name&.titleize || county&.name&.titleize
+  end
+
+  def normalize_enterprise_name
+    return if enterprise_name.blank?
+
+    self.enterprise_name = enterprise_name.to_s
+      .unicode_normalize(:nfkc)
+      .strip
+      .gsub(/\s+/, ' ')
   end
 
   def schedule_city_geocoding
