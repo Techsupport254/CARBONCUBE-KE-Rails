@@ -268,7 +268,7 @@
     "scope": "Industrial sieve tubes, industrial dust collector sleeves, liquid bag filters, air intake elements.",
     "location": "Lokitaung Rd off Likoni Rd, Industrial Area, Nairobi",
     "phone": "0715 674 636",
-    "email": null,
+    "email": "info@pantech-ke.com",
     "website": "pantech-ke.com",
     "twitter": null
   },
@@ -3801,6 +3801,108 @@
     "phone": "0724 930 405",
     "email": null,
     "website": "kingfinnkenya.com",
+    "twitter": null
+  },
+  {
+    "name": "Kidani Mabati Factory",
+    "category": "Hardware & Construction Materials",
+    "part": 1,
+    "subcategories": [
+      "Roofing Sheets",
+      "Roofing Accessories"
+    ],
+    "scope": "Aluzinc roofing sheets — box profile, corrugated, tile, prime, zigtile, rolltops, plus gutters, ridges and flashing accessories.",
+    "location": "Kamakis, Ruiru",
+    "phone": "0712 932 831",
+    "email": "sales@kidanimabati.co.ke",
+    "website": "kidanimabati.co.ke",
+    "twitter": null
+  },
+  {
+    "name": "Morgan Steel Works & Hardware",
+    "category": "Automotive Parts & Accessories",
+    "part": 2,
+    "subcategories": [
+      "Vehicle Seats",
+      "Metal Fabrication"
+    ],
+    "scope": "Matatu and bus seat fabrication, round-bus seating, steel works and hardware.",
+    "location": "Park Road, Nairobi",
+    "phone": "0731 903 570",
+    "email": "elimburumburu@gmail.com",
+    "website": null,
+    "twitter": null
+  },
+  {
+    "name": "James Maina Vehicle Cushion Maker",
+    "category": "Automotive Parts & Accessories",
+    "part": 2,
+    "subcategories": [
+      "Seat Covers & Cushions",
+      "Metal Fabrication"
+    ],
+    "scope": "Vehicle cushion making, seat covers and light fabrication for matatus and private vehicles.",
+    "location": "Park Road, Nairobi",
+    "phone": "0715 991 895",
+    "email": "jaymohmaich14@gmail.com",
+    "website": null,
+    "twitter": null
+  },
+  {
+    "name": "Samuel Kanyugo Cushion Covers",
+    "category": "Automotive Parts & Accessories",
+    "part": 2,
+    "subcategories": [
+      "Seat Covers & Cushions"
+    ],
+    "scope": "Custom-made vehicle cushion covers.",
+    "location": "Park Road, Nairobi",
+    "phone": "0111 853 999",
+    "email": "kanyugosamuelkingori@gmail.com",
+    "website": null,
+    "twitter": null
+  },
+  {
+    "name": "Mugo Kenol Furniture",
+    "category": "Furniture & Bedding",
+    "part": 2,
+    "subcategories": [
+      "Furniture"
+    ],
+    "scope": "Custom furniture making and carpentry services.",
+    "location": "Kenol, Murang'a",
+    "phone": "0726 577 388",
+    "email": "wmugo477@gmail.com",
+    "website": null,
+    "twitter": null
+  },
+  {
+    "name": "Ngara Upholstery Market",
+    "category": "Automotive Parts & Accessories",
+    "part": 2,
+    "subcategories": [
+      "Vehicle Seats",
+      "Seat Covers & Cushions"
+    ],
+    "scope": "Matatu seats, vehicle upholstery services and rolling bar installation.",
+    "location": "Park Road, Ngara, Nairobi",
+    "phone": "0794 689 888",
+    "email": "ndotchez111@gmail.com",
+    "website": null,
+    "twitter": null
+  },
+  {
+    "name": "Kemoi Welding Solutions",
+    "category": "Services",
+    "part": 2,
+    "subcategories": [
+      "Welding & Fabrication"
+    ],
+    "scope": "Welding and metal fabrication services — gates, windows, frames and structural work.",
+    "location": "Eldoret-Iten Road, Kimumu, Moiben",
+    "phone": "0724 734 626",
+    "email": "ruthkemoi219@gmail.com",
+    "website": null,
     "twitter": null
   }
 ]

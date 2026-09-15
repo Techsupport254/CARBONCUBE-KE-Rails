@@ -339,12 +339,20 @@ class Seller < ApplicationRecord
   # If this seller's phone matches a Brand Kenya prospect, mark the brand as
   # registered/onboarded — sales can see the conversion on the pipeline.
   def link_sales_brand_prospect
-    return if phone_number.blank?
+    brand = nil
 
-    suffix = phone_number.gsub(/\D/, '')[-9..]
-    return if suffix.blank? || suffix.length < 9
+    if phone_number.present?
+      suffix = phone_number.gsub(/\D/, '')[-9..]
+      brand = SalesBrand.find_by('phone LIKE ?', "%#{suffix}") if suffix.present? && suffix.length >= 9
+    end
 
-    brand = SalesBrand.find_by('phone LIKE ?', "%#{suffix}")
+    if brand.nil? && secondary_phone_number.present?
+      suffix = secondary_phone_number.gsub(/\D/, '')[-9..]
+      brand = SalesBrand.find_by('phone LIKE ?', "%#{suffix}") if suffix.present? && suffix.length >= 9
+    end
+
+    brand ||= SalesBrand.find_by('LOWER(email) = ?', email.downcase.strip) if email.present?
+
     return unless brand
 
     brand.register!(id)

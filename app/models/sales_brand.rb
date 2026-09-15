@@ -196,13 +196,18 @@ class SalesBrand < ApplicationRecord
     )
   end
 
-  # Find a platform seller whose phone matches this brand's (normalized).
+  # Find a platform seller matching this brand — by phone (normalized suffix)
+  # first, then by exact email.
   def matching_seller
-    return nil if phone.blank?
+    if phone.present?
+      suffix = phone.gsub(/\D/, '')[-9..]
+      if suffix.present? && suffix.length >= 9
+        seller = Seller.find_by('phone_number LIKE ? OR secondary_phone_number LIKE ?',
+                                "%#{suffix}", "%#{suffix}")
+        return seller if seller
+      end
+    end
 
-    suffix = phone.gsub(/\D/, '')[-9..]
-    return nil if suffix.blank? || suffix.length < 9
-
-    Seller.find_by('phone_number LIKE ?', "%#{suffix}")
+    Seller.find_by('LOWER(email) = ?', email.downcase.strip) if email.present?
   end
 end
