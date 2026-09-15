@@ -213,6 +213,13 @@ Rails.application.routes.draw do
     end
   end
   post '/comments/:id/vote', to: 'issues#vote_comment'
+
+  # Public help center FAQs (common issues and how to resolve them)
+  resources :faqs, only: [:index] do
+    member do
+      post :helpful
+    end
+  end
   get 'sitemap/categories', to: 'sitemap#categories'
   get 'sitemap/subcategories', to: 'sitemap#subcategories'
   get 'sitemap/stats', to: 'sitemap#stats'
@@ -838,6 +845,17 @@ Rails.application.routes.draw do
 
     # AI summary generation
     post 'ai/generate_summary', to: 'call_center#generate_summary'
+
+    # Brand Kenya directory — sales outreach on verified Kenyan manufacturers
+    resources :brands, only: [:index, :show, :create, :update, :destroy] do
+      collection do
+        get :stats
+        get :follow_ups
+      end
+      member do
+        post :activities, action: :create_activity
+      end
+    end
 
     # Messages for call center
     resources :conversations, only: [:index, :show, :create] do

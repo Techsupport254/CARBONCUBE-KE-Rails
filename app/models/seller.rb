@@ -3,6 +3,7 @@ class Seller < ApplicationRecord
   self.primary_key = 'id'
 
   after_create :associate_guest_clicks
+  after_create :link_sales_brand_prospect
   after_create :set_slug, if: -> { slug.blank? }
   after_commit :schedule_city_geocoding, on: %i[create update]
   before_create :generate_uuid
@@ -333,6 +334,28 @@ class Seller < ApplicationRecord
     return unless saved_change_to_location? || saved_change_to_city? || saved_change_to_county_id? || saved_change_to_sub_county_id?
 
     GeocodeSellersJob.perform_later(id, force: true)
+  end
+
+  # If this seller's phone matches a Brand Kenya prospect, mark the brand as
+  # registered/onboarded — sales can see the conversion on the pipeline.
+  def link_sales_brand_prospect
+    return if phone_number.blank?
+
+    suffix = phone_number.gsub(/\D/, '')[-9..]
+    return if suffix.blank? || suffix.length < 9
+
+    brand = SalesBrand.find_by('phone LIKE ?', "%#{suffix}")
+    return unless brand
+
+    brand.register!(id)
+    brand.activities.create!(
+      activity_type: 'registered',
+      sales_user_id: brand.sales_user_id,
+      occurred_at: Time.current,
+      notes: "Self-registered on the platform (#{enterprise_name.presence || fullname})"
+    )
+  rescue StandardError => e
+    Rails.logger.error "link_sales_brand_prospect failed for seller #{id}: #{e.message}"
   end
 
   def normalize_phone(phone)

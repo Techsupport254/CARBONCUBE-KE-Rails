@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_08_112056) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -342,11 +342,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_08_112056) do
     t.uuid "buyer_id"
     t.datetime "review_request_sent_at"
     t.uuid "seller_id"
-    t.index "((metadata ->> 'action'::text))", name: "index_click_events_on_metadata_action", where: "((metadata ->> 'action'::text) IS NOT NULL)"
-    t.index "((metadata ->> 'action_type'::text))", name: "index_click_events_on_metadata_action_type", where: "((metadata ->> 'action_type'::text) IS NOT NULL)"
-    t.index "((metadata ->> 'converted_from_guest'::text))", name: "index_click_events_on_metadata_converted", where: "((metadata ->> 'converted_from_guest'::text) IS NOT NULL)"
     t.index "((metadata ->> 'device_hash'::text))", name: "index_click_events_on_metadata_device_hash", where: "((metadata ->> 'device_hash'::text) IS NOT NULL)"
-    t.index "((metadata ->> 'post_login_reveal'::text))", name: "index_click_events_on_metadata_post_login", where: "((metadata ->> 'post_login_reveal'::text) IS NOT NULL)"
     t.index "((metadata ->> 'triggered_login_modal'::text))", name: "index_click_events_on_metadata_login_modal", where: "((metadata ->> 'triggered_login_modal'::text) IS NOT NULL)"
     t.index "((metadata ->> 'user_role'::text))", name: "index_click_events_on_metadata_user_role", where: "((metadata ->> 'user_role'::text) IS NOT NULL)"
     t.index "lower((metadata ->> 'device_hash'::text)) gin_trgm_ops", name: "index_click_events_on_metadata_device_hash_trgm", where: "((metadata ->> 'device_hash'::text) IS NOT NULL)", using: :gin
@@ -508,6 +504,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_08_112056) do
     t.text "answer"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "category", default: "general", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "helpful_count", default: 0, null: false
+    t.integer "not_helpful_count", default: 0, null: false
+    t.index ["category"], name: "index_faqs_on_category"
   end
 
   create_table "fingerprint_removal_requests", force: :cascade do |t|
@@ -1009,6 +1010,57 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_08_112056) do
     t.index ["sub_county_id"], name: "index_riders_on_sub_county_id"
   end
 
+  create_table "sales_brand_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "sales_brand_id", null: false
+    t.uuid "sales_user_id"
+    t.integer "activity_type", default: 5, null: false
+    t.datetime "occurred_at", null: false
+    t.text "notes"
+    t.string "outcome"
+    t.date "follow_up_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
+    t.index ["activity_type"], name: "index_sales_brand_activities_on_activity_type"
+    t.index ["follow_up_date"], name: "index_sales_brand_activities_on_follow_up_date"
+    t.index ["occurred_at"], name: "index_sales_brand_activities_on_occurred_at"
+    t.index ["sales_brand_id"], name: "index_sales_brand_activities_on_sales_brand_id"
+    t.index ["sales_user_id"], name: "index_sales_brand_activities_on_sales_user_id"
+  end
+
+  create_table "sales_brands", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "part", default: 1, null: false
+    t.string "category"
+    t.string "subcategories", default: [], array: true
+    t.text "scope"
+    t.string "location"
+    t.string "phone"
+    t.string "email"
+    t.string "website"
+    t.string "twitter"
+    t.integer "status", default: 0, null: false
+    t.date "follow_up_date"
+    t.text "follow_up_note"
+    t.text "notes"
+    t.datetime "last_contacted_at"
+    t.uuid "sales_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "seller_id"
+    t.datetime "registered_at"
+    t.integer "source", default: 0, null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
+    t.index ["category"], name: "index_sales_brands_on_category"
+    t.index ["follow_up_date"], name: "index_sales_brands_on_follow_up_date"
+    t.index ["sales_user_id"], name: "index_sales_brands_on_sales_user_id"
+    t.index ["seller_id"], name: "index_sales_brands_on_seller_id"
+    t.index ["source"], name: "index_sales_brands_on_source"
+    t.index ["status"], name: "index_sales_brands_on_status"
+  end
+
   create_table "sales_daily_reports", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "sales_user_id", null: false
     t.date "report_date", null: false
@@ -1454,6 +1506,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_08_112056) do
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
   add_foreign_key "riders", "sub_counties"
+  add_foreign_key "sales_brand_activities", "sales_brands"
+  add_foreign_key "sales_brand_activities", "sales_users"
+  add_foreign_key "sales_brands", "sales_users"
+  add_foreign_key "sales_brands", "sellers"
   add_foreign_key "sales_daily_reports", "sales_users"
   add_foreign_key "sales_user_field_locations", "sales_users"
   add_foreign_key "sales_users", "sales_users", column: "lead_id"

@@ -1,0 +1,1421 @@
+[
+ {
+  "name": "Associated Battery Mfrs (ABM) / Chloride Exide",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Batteries",
+   "Spare Parts"
+  ],
+  "scope": "Automotive lead-acid starting batteries, solar storage (Maxpower, Powerlast, Chloride Solar), maintenance-free batteries.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0719 080 000",
+  "email": null,
+  "website": "chlorideexide.com",
+  "twitter": null
+ },
+ {
+  "name": "Sameer Africa (Yana Tyres)",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Tyres",
+   "Rims"
+  ],
+  "scope": "Passenger vehicle radial tyres, light commercial tyres, heavy truck tyres, high-mileage retreading.",
+  "location": "Enterprise Rd, Nairobi",
+  "phone": "0733 600 037",
+  "email": null,
+  "website": "sameerafrica.com",
+  "twitter": null
+ },
+ {
+  "name": "Kenya Vehicle Mfrs (KVM)",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Other Automotive"
+  ],
+  "scope": "Commercial bus coachbuilding, prime mover chassis assembly, custom trailers, utility service vehicle bodies.",
+  "location": "Garissa Rd, Thika",
+  "phone": "0722 205 348",
+  "email": null,
+  "website": "kvm.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Mobius Motors",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Other Automotive"
+  ],
+  "scope": "Homegrown rugged SUVs (Mobius II, Mobius 3) engineered specifically for African rural and urban terrain.",
+  "location": "Mombasa Rd, Nairobi",
+  "phone": null,
+  "email": "info@mobiusmotors.com",
+  "website": "mobiusmotors.com",
+  "twitter": null
+ },
+ {
+  "name": "Auto Springs East Africa",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Automotive Spare Parts"
+  ],
+  "scope": "Multi-leaf tempered springs, parabolic springs, high-tensile U-bolts, centre bolts, OEM suspension components.",
+  "location": "Limuru / Nairobi",
+  "phone": "0722 205 210",
+  "email": null,
+  "website": "autosprings.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "National Oil Corp (NOCK - SupaLube)",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Lubricants"
+  ],
+  "scope": "Engine oils, commercial gear oils, industrial hydraulic fluids, multi-purpose automotive greases.",
+  "location": "South C, Nairobi",
+  "phone": "020 695 2000",
+  "email": null,
+  "website": "nationaloil.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Hass Petroleum Lubricants",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Lubricants"
+  ],
+  "scope": "Synthetic multi-grade motor oils, industrial hydraulic fluids, brake fluids, engine radiator coolants.",
+  "location": "Upper Hill, Nairobi",
+  "phone": "020 271 2100",
+  "email": null,
+  "website": "hasspetroleum.com",
+  "twitter": null
+ },
+ {
+  "name": "Associated Vehicle Assemblers (AVA)",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Other Automotive"
+  ],
+  "scope": "High-capacity contract motor vehicle assembly (Toyota, Hino, Scania), custom bus and commercial coachwork.",
+  "location": "Miritini, Mombasa",
+  "phone": "041 243 3311",
+  "email": null,
+  "website": "ava.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Banbros Commercial Springs",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Spare Parts"
+  ],
+  "scope": "Tempered leaf spring sets, suspension rebuilds, commercial bus and truck body fabrication.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0722 204 455",
+  "email": null,
+  "website": "banbros.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Labadie Springs & Automotive",
+  "category": "Automotive Parts & Accessories",
+  "part": 1,
+  "subcategories": [
+   "Spare Parts"
+  ],
+  "scope": "Commercial fleet leaf springs, coil springs, shackle pins and polyurethane suspension bushes.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0722 710 405",
+  "email": null,
+  "website": "labadiesprings.com",
+  "twitter": null
+ },
+ {
+  "name": "Totosci Holdings Ltd",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Accessories",
+   "Peripherals"
+  ],
+  "scope": "Locally manufactured USB charging and data cables (Type-C, Lightning, Micro), custom biometric OTG cables.",
+  "location": "Kirinyaga & Nairobi",
+  "phone": "+254 724 871 079",
+  "email": null,
+  "website": "totosci.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Edison Ngunjiri Electronics",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Internal Components"
+  ],
+  "scope": "Custom Printed Circuit Board (PCB) routing, multilayer board fabrication, IoT sensor hardware.",
+  "location": "Nairobi / Embu",
+  "phone": null,
+  "email": null,
+  "website": "hackster.io",
+  "twitter": "@NgunjiriEdison"
+ },
+ {
+  "name": "East Africa Device Assembly (EADAK)",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Phones",
+   "Tablets"
+  ],
+  "scope": "Locally assembled 4G/5G Neon smartphones, digital literacy tablets, smart communication devices.",
+  "location": "Athi River EPZ",
+  "phone": "020 790 3000",
+  "email": null,
+  "website": "eadak.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "JKUAT (Taifa Laptops & Tablets)",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Laptops",
+   "Computers"
+  ],
+  "scope": "Taifa A3 educational laptops, school tablets, custom desktop assembly terminals for institutional use.",
+  "location": "Juja, Kiambu",
+  "phone": "067 587 0001",
+  "email": null,
+  "website": "jkuat.ac.ke",
+  "twitter": null
+ },
+ {
+  "name": "BRCK (Kio Kit & Routers)",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Tablets",
+   "Networking"
+  ],
+  "scope": "Ruggedized shockproof Kio tablets, wireless micro-servers, multi-network connectivity routers.",
+  "location": "Kilimani, Nairobi",
+  "phone": "0718 272 520",
+  "email": null,
+  "website": "brck.com",
+  "twitter": null
+ },
+ {
+  "name": "Moi University DLP Assembly",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Tablets",
+   "Laptops"
+  ],
+  "scope": "Digital literacy educational tablets, teacher companion laptops, local digital storage devices.",
+  "location": "Rivatex, Eldoret",
+  "phone": "053 43620",
+  "email": null,
+  "website": "mu.ac.ke",
+  "twitter": null
+ },
+ {
+  "name": "PayGo Energy Hardware",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Internal Components"
+  ],
+  "scope": "Proprietary smart cylinder valves, IoT digital telemetry gas flow meters for pay-as-you-go cooking.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": "paygoenergy.co",
+  "twitter": null
+ },
+ {
+  "name": "Craft Silicon Hardware",
+  "category": "Computers, Phones and Accessories",
+  "part": 1,
+  "subcategories": [
+   "Peripherals",
+   "POS Systems"
+  ],
+  "scope": "Micro-banking POS hardware terminals, agency banking thermal receipt printers, chip card readers.",
+  "location": "Westlands, Nairobi",
+  "phone": "020 429 8000",
+  "email": null,
+  "website": "craftsilicon.com",
+  "twitter": null
+ },
+ {
+  "name": "Pantech Kenya Limited (TopTek)",
+  "category": "Filtration",
+  "part": 1,
+  "subcategories": [
+   "Industrial Filters",
+   "Air Filters"
+  ],
+  "scope": "Industrial sieve tubes, industrial dust collector sleeves, liquid bag filters, air intake elements.",
+  "location": "Industrial Area, Nairobi",
+  "phone": null,
+  "email": null,
+  "website": "pantechkenya.com",
+  "twitter": null
+ },
+ {
+  "name": "Davis & Shirtliff Filtration",
+  "category": "Filtration",
+  "part": 1,
+  "subcategories": [
+   "Industrial Filters",
+   "Other Filtration"
+  ],
+  "scope": "Rapid sand filters, cartridge filtration systems, reverse osmosis membranes, UV purification units.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0711 079 000",
+  "email": null,
+  "website": "davisandshirtliff.com",
+  "twitter": null
+ },
+ {
+  "name": "Chil-Fil / Auto Filters Kenya",
+  "category": "Filtration",
+  "part": 1,
+  "subcategories": [
+   "Air / Fuel / Oil Filters"
+  ],
+  "scope": "Automotive engine oil filters, primary fuel filter elements, heavy generator air filter assemblies.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "020 558 741",
+  "email": null,
+  "website": null,
+  "twitter": null
+ },
+ {
+  "name": "Aquasantec (Kentank Filtration)",
+  "category": "Filtration",
+  "part": 1,
+  "subcategories": [
+   "Other Filtration"
+  ],
+  "scope": "Multi-media sediment gravity water filtration tanks, commercial filtration purifiers, carbon filters.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "020 398 5000",
+  "email": null,
+  "website": "aquasantec.com",
+  "twitter": null
+ },
+ {
+  "name": "Kobian Scientific Filtration",
+  "category": "Filtration",
+  "part": 1,
+  "subcategories": [
+   "Industrial Filters"
+  ],
+  "scope": "Pharmaceutical grade membrane filters, laboratory filtration papers, chemical filter media.",
+  "location": "Funzi Rd, Nairobi",
+  "phone": "020 554 115",
+  "email": null,
+  "website": "kobianscientific.com",
+  "twitter": null
+ },
+ {
+  "name": "Mabati Rolling Mills (MRM)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "Dumuzas, Versatile, Resicote color corrugated roofing sheets, structural C/Z purlins, steel hollow sections.",
+  "location": "Mariakani & Athi River",
+  "phone": "0709 888 888",
+  "email": null,
+  "website": "mabati.com",
+  "twitter": null
+ },
+ {
+  "name": "Devki Steel Mills / Maisha Steel",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "High-tensile TMT steel rebars (D10, D12, D16, D20), welded mesh BRC, binding wire, profile beams.",
+  "location": "Ruiru & Kwale",
+  "phone": "0722 205 330",
+  "email": null,
+  "website": "devkigroup.com",
+  "twitter": null
+ },
+ {
+  "name": "Bamburi Cement (Holcim)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "Powermax, Nguvu, Fundi hydraulic Portland cement, commercial ready-mix concrete formulations.",
+  "location": "Mombasa & Athi River",
+  "phone": "020 289 3000",
+  "email": null,
+  "website": "lafarge.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "National Cement (Simba Cement)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "Simba Cement 32.5R, 42.5N, clinker, building stone aggregates, ballast.",
+  "location": "Athi River & Nakuru",
+  "phone": "0722 205 330",
+  "email": null,
+  "website": "simbacement.com",
+  "twitter": null
+ },
+ {
+  "name": "David Odhiambo Plastic Lumber",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "Termite-proof, zero-rot fencing posts and landscaping lumber extruded from 100% recycled plastic waste.",
+  "location": "Western Kenya / Nairobi",
+  "phone": "0740 692 271",
+  "email": null,
+  "website": null,
+  "twitter": "@_DavidOdhiambo"
+ },
+ {
+  "name": "East African Cables PLC",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Power & Electrical"
+  ],
+  "scope": "Single-core copper building wires, multi-core armoured underground cables, overhead aluminum conductors.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "020 692 5000",
+  "email": null,
+  "website": "eacables.com",
+  "twitter": null
+ },
+ {
+  "name": "Metsec Cables (Doshi Group)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Power & Electrical"
+  ],
+  "scope": "Low-voltage electrical wiring cables, flexible PVC cords, conduit pipes, commercial trunking.",
+  "location": "Mombasa Rd, Nairobi",
+  "phone": "0703 030 000",
+  "email": null,
+  "website": "metsec.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Roto Moulders Limited (Roto Tanks)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Plumbing Supplies"
+  ],
+  "scope": "Polyethylene cylindrical water storage tanks, septic tanks, PVC drainage piping and fittings.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0722 203 645",
+  "email": null,
+  "website": "rototanks.com",
+  "twitter": null
+ },
+ {
+  "name": "Top Tank (Tile & Carpet)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Plumbing Supplies"
+  ],
+  "scope": "Anti-bacterial water tanks, rainwater harvesting manifolds, drainage pipes, sanitary ware.",
+  "location": "Mombasa Rd, Nairobi",
+  "phone": "0700 888 888",
+  "email": null,
+  "website": "toptank.com",
+  "twitter": null
+ },
+ {
+  "name": "Crown Paints Kenya PLC",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "Rufftop textured coatings, Permacote exterior paint, Supercover emulsion, silicone waterproofing.",
+  "location": "Likoni Rd, Nairobi",
+  "phone": "0709 887 000",
+  "email": null,
+  "website": "crownpaints.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Basco Paints (Duracoat)",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction Materials"
+  ],
+  "scope": "Duracoat antibacterial paints, acrylic wall putty, water-repellent sealers, road marking enamels.",
+  "location": "Embakasi, Nairobi",
+  "phone": "0703 061 000",
+  "email": null,
+  "website": "duracoat.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Apex Steel Ltd",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Construction / Plumbing"
+  ],
+  "scope": "BS 4449 Grade 500 deformed bars, PPR hot & cold plumbing pipes, HDPE pressure pipes.",
+  "location": "Ruaraka, Nairobi",
+  "phone": "0780 505 050",
+  "email": null,
+  "website": "apex-steel.com",
+  "twitter": null
+ },
+ {
+  "name": "Safety Plus World Kenya",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Safety Wear"
+  ],
+  "scope": "Steel-toe safety boots, high-vis reflector vests, welding aprons, industrial safety helmets.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0722 841 841",
+  "email": null,
+  "website": "safetyplusworld.com",
+  "twitter": null
+ },
+ {
+  "name": "J Gichanga Non-Woven & Safety",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Safety Wear"
+  ],
+  "scope": "3-ply protective face masks, sanitary disposable caps, non-woven carrier packaging.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@TheGichanga"
+ },
+ {
+  "name": "Awa Home Products",
+  "category": "Hardware & Construction Materials",
+  "part": 1,
+  "subcategories": [
+   "Other Hardware"
+  ],
+  "scope": "Industrial multi-surface degreasers, sanitation detergents, floor cleaners, commercial chemicals.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@awa_home"
+ },
+ {
+  "name": "Syinix Kenya Assembly",
+  "category": "TVs & Audio and Electronics",
+  "part": 1,
+  "subcategories": [
+   "Smart TVs",
+   "Soundbars"
+  ],
+  "scope": "Locally assembled Android Frameless Smart TVs (32\"-65\") with integrated voltage stabilizers, soundbars.",
+  "location": "Mombasa Rd, Nairobi",
+  "phone": "0700 000 777",
+  "email": null,
+  "website": "ke.syinix.com",
+  "twitter": null
+ },
+ {
+  "name": "Vitron Electronics",
+  "category": "TVs & Audio and Electronics",
+  "part": 1,
+  "subcategories": [
+   "Smart TVs",
+   "Soundbars"
+  ],
+  "scope": "Frameless Smart Android TVs, digital satellite LED TVs, 2.1 & 3.1 channel active subwoofer units.",
+  "location": "Luthuli Ave, Nairobi",
+  "phone": "0720 123 456",
+  "email": null,
+  "website": "vitron.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Sayona Electronics Kenya",
+  "category": "TVs & Audio and Electronics",
+  "part": 1,
+  "subcategories": [
+   "Home Theater",
+   "Electronics"
+  ],
+  "scope": "Multimedia home theater speaker systems, active subwoofers, electric home appliances.",
+  "location": "Mokhtar Daddah St, Nairobi",
+  "phone": "0711 333 444",
+  "email": null,
+  "website": "sayona.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Ampex Audio Kenya",
+  "category": "TVs & Audio and Electronics",
+  "part": 1,
+  "subcategories": [
+   "Soundbars & Speakers"
+  ],
+  "scope": "Heavy-bass active subwoofers, PA horn speakers, digital mixing amplifiers for venues and vehicles.",
+  "location": "River Rd, Nairobi",
+  "phone": "0722 000 333",
+  "email": null,
+  "website": "ampexkenya.com",
+  "twitter": null
+ },
+ {
+  "name": "Armco Electronics Kenya",
+  "category": "TVs & Audio and Electronics",
+  "part": 1,
+  "subcategories": [
+   "Other Electronics"
+  ],
+  "scope": "Automatic voltage switchers (AVS), high-capacity power surge protectors, domestic appliances.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0700 333 999",
+  "email": null,
+  "website": "armcokenya.com",
+  "twitter": null
+ },
+ {
+  "name": "Signet Kenya (KBC Digital)",
+  "category": "TVs & Audio and Electronics",
+  "part": 1,
+  "subcategories": [
+   "Decoders & Receivers"
+  ],
+  "scope": "DVB-T2 free-to-air broadcast set-top boxes, digital broadcast receiver hardware.",
+  "location": "Harry Thuku Rd, Nairobi",
+  "phone": "020 222 4865",
+  "email": null,
+  "website": "kbc.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Davis & Shirtliff Engineering",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Borehole",
+   "Plumber"
+  ],
+  "scope": "Hydrogeological surveys, borehole drilling, solar pumping systems, pump overhaul services.",
+  "location": "80+ branches nationwide",
+  "phone": "0711 079 000",
+  "email": null,
+  "website": "davisandshirtliff.com",
+  "twitter": null
+ },
+ {
+  "name": "Hydro Water Well (K) Ltd",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Borehole Specialist"
+  ],
+  "scope": "Industrial & commercial borehole drilling, hydro-logging, casing installation and yield testing.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0722 204 430",
+  "email": null,
+  "website": "hydrowaterwell.com",
+  "twitter": null
+ },
+ {
+  "name": "Fundis On Demand (Fundis App)",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Electrician / Plumber / Mason"
+  ],
+  "scope": "Vetted, on-demand certified electricians, plumbers, carpenters, masons, and appliance technicians.",
+  "location": "Nairobi & Metros",
+  "phone": "0798 979 979",
+  "email": null,
+  "website": "fundis.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "CMC Motors Commercial Workshops",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Mechanics",
+   "Machinery"
+  ],
+  "scope": "Heavy diesel engine overhauls, commercial fleet servicing, farm tractor transmission repairs.",
+  "location": "Lusaka Rd, Nairobi + branches",
+  "phone": "020 693 2000",
+  "email": null,
+  "website": "cmcmotors.com",
+  "twitter": null
+ },
+ {
+  "name": "Plug Wa Cherehani (Juktex)",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Industrial Machinery"
+  ],
+  "scope": "Sales, repair, and parts servicing for commercial and industrial automated sewing machinery.",
+  "location": "Gikomba / CBD, Nairobi",
+  "phone": "0724 715 785",
+  "email": null,
+  "website": null,
+  "twitter": "@PatoJuktex"
+ },
+ {
+  "name": "Symatech Labs Ltd",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Computer Repairs / IT"
+  ],
+  "scope": "Enterprise software engineering, custom mobile applications, database architecture, cloud infrastructure.",
+  "location": "Nairobi",
+  "phone": "0713 946 234",
+  "email": null,
+  "website": "symatechlabs.com",
+  "twitter": null
+ },
+ {
+  "name": "Santana Africa Studio",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Carpenter"
+  ],
+  "scope": "Custom hardwood furniture, architectural metal-wood fixtures, commercial hospitality fit-outs.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": "santanaafrika@gmail.com",
+  "website": null,
+  "twitter": "@timuuo"
+ },
+ {
+  "name": "More Pips Furniture",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Carpenter"
+  ],
+  "scope": "Solid wood double-decker beds, shoe racks, TV consoles, modular wardrobes and sectionals.",
+  "location": "Nairobi",
+  "phone": "0706 945 535",
+  "email": null,
+  "website": null,
+  "twitter": "@VOKEZZO"
+ },
+ {
+  "name": "Moriasi 3D Models",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Mason / Modeler"
+  ],
+  "scope": "High-precision 3D physical architectural scale models for property developers and architects.",
+  "location": "Off Ngong Rd, Nairobi",
+  "phone": "0710 852 992",
+  "email": null,
+  "website": "moriasi3d.com",
+  "twitter": null
+ },
+ {
+  "name": "David Nahinga Construction",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Mason / Builder"
+  ],
+  "scope": "Turnkey residential masonry, structural costing (BOQ), site management, spatial planning.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@dnahinga"
+ },
+ {
+  "name": "Apex Metal & Welding Works",
+  "category": "Services",
+  "part": 1,
+  "subcategories": [
+   "Welder"
+  ],
+  "scope": "Heavy structural steel trusses, security perimeter gates, stainless tanks, metal window grilles.",
+  "location": "Kariobangi, Nairobi",
+  "phone": "0722 000 111",
+  "email": null,
+  "website": "apexmetal.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Ndume Limited (Gilgil)",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Farm Machinery",
+   "Tools"
+  ],
+  "scope": "Tractor disc ploughs, chisel ploughs, trailers, diesel posho mills, hammer mills, silage choppers.",
+  "location": "Gilgil, Nakuru",
+  "phone": "0722 766 846",
+  "email": null,
+  "website": "ndumeltd.net",
+  "twitter": null
+ },
+ {
+  "name": "Amiran Kenya Limited",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Irrigation",
+   "Machinery"
+  ],
+  "scope": "Amiran Farmers Kit (AFK), commercial drip lines, greenhouse tunnels, knapsack sprayers.",
+  "location": "Embakasi, Nairobi",
+  "phone": "0719 095 000",
+  "email": null,
+  "website": "amirankenya.com",
+  "twitter": null
+ },
+ {
+  "name": "SunCulture Kenya",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Irrigation",
+   "Machinery"
+  ],
+  "scope": "RainMaker solar water pumps, ClimateSmart direct-drip irrigation kits, pay-as-you-grow solar.",
+  "location": "Westlands, Nairobi",
+  "phone": "0700 111 020",
+  "email": null,
+  "website": "sunculture.com",
+  "twitter": null
+ },
+ {
+  "name": "Grekkon Limited",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Irrigation",
+   "Accessories"
+  ],
+  "scope": "Button drippers, rain hose irrigation, UV dam liners, high-pressure rain guns, shade nets.",
+  "location": "Westlands + branches",
+  "phone": "0700 456 555",
+  "email": null,
+  "website": "grekkon.com",
+  "twitter": null
+ },
+ {
+  "name": "Irri-Hub KE",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Irrigation"
+  ],
+  "scope": "Solar water pumping kits, smart IoT soil moisture sensors, climate-smart drip irrigation for smallholders.",
+  "location": "Nairobi",
+  "phone": "0112 148 880",
+  "email": null,
+  "website": "irrihub.com",
+  "twitter": null
+ },
+ {
+  "name": "DripFarm Solutions",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Irrigation"
+  ],
+  "scope": "Tailored smallholder drip irrigation kits, micro-sprinklers, greenhouse farming infrastructure.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": "dripfarmsolutions.com",
+  "twitter": "@KakiLackson"
+ },
+ {
+  "name": "BrazAfric Enterprises",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Farm Machinery"
+  ],
+  "scope": "Coffee pulpers, commercial grain dryers, silos, coffee roasters, sorting and grading equipment.",
+  "location": "Ruiru, Kiambu",
+  "phone": "0722 201 340",
+  "email": null,
+  "website": "brazafric.com",
+  "twitter": null
+ },
+ {
+  "name": "Kenyaplex Agribusiness",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Farm Machinery"
+  ],
+  "scope": "Commercial electric & diesel posho mills, feed mixers, chaff cutters, seed dehullers.",
+  "location": "Kariobangi, Nairobi",
+  "phone": "0720 000 888",
+  "email": null,
+  "website": "kenyaplex.com",
+  "twitter": null
+ },
+ {
+  "name": "Peter Kanyingi Nutrition",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Other Agriculture"
+  ],
+  "scope": "Poultry and dairy animal feed premixes, egg layer concentrates, dairy productivity meals.",
+  "location": "Central Kenya",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@kanyingip"
+ },
+ {
+  "name": "Ralph Sungu Poultry",
+  "category": "Agriculture",
+  "part": 1,
+  "subcategories": [
+   "Other Agriculture"
+  ],
+  "scope": "Day-old improved Kienyeji chicks, fertile hatching eggs, farm-compounded poultry feeds.",
+  "location": "Nairobi / Nyanza",
+  "phone": "0782 651 284",
+  "email": null,
+  "website": null,
+  "twitter": "@RalphSungu"
+ },
+ {
+  "name": "Kilele Coffee Co.",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Arabica Coffee"
+  ],
+  "scope": "Direct-trade barista quality coffee sourced from Nyeri & Mt. Kenya smallholder cooperatives.",
+  "location": "Nyeri / Karatina / Nanyuki",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@joshkariuki"
+ },
+ {
+  "name": "Bio Food Products",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Dairy & Cheeses"
+  ],
+  "scope": "Artisanal European-style cheeses, whole Greek yogurts, lactose-free milk, probiotic drinks.",
+  "location": "Industrial Area, Nairobi",
+  "phone": "0709 350 000",
+  "email": null,
+  "website": "biofoods.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Farmer's Choice Kenya",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Processed Meats"
+  ],
+  "scope": "Fresh pork and beef sausages, smoked bacon, delicatessen meats (Kenya's meat processor since 1980).",
+  "location": "Kahawa West, Nairobi",
+  "phone": "0722 201 508",
+  "email": null,
+  "website": "farmerschoice.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "Highlands Drinks Ltd",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Beverages"
+  ],
+  "scope": "Highlands mineral water, Club soda, tropical cordials and sparkling carbonated soft drinks.",
+  "location": "Nyeri",
+  "phone": "020 200 4882",
+  "email": null,
+  "website": "highlandske.com",
+  "twitter": null
+ },
+ {
+  "name": "Kericho Gold (Gold Crown)",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Specialty Teas"
+  ],
+  "scope": "Premium orthodox black teas, chamomile, peppermint, fruit infusions exported globally.",
+  "location": "Mombasa / Kericho",
+  "phone": "041 222 2841",
+  "email": null,
+  "website": "kerichogold.com",
+  "twitter": null
+ },
+ {
+  "name": "Bakuli Foods",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Snacks"
+  ],
+  "scope": "Oven-dried roasted coconut chips retailed at Healthy U and Artcaffé Market stores.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@onlymagugz"
+ },
+ {
+  "name": "Bee Happy Kenya",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Raw Honey"
+  ],
+  "scope": "100% pure raw unheated Kenyan honey, natural beeswax blocks, apiculture equipment.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@beehappykenya"
+ },
+ {
+  "name": "Billionaire Natural Foods",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Honey & Spreads"
+  ],
+  "scope": "Natural forest honey, roasted cashew nuts, homemade peanut and cashew nut spreads.",
+  "location": "Nairobi",
+  "phone": "0722 525 307",
+  "email": null,
+  "website": null,
+  "twitter": "@Billionair1w"
+ },
+ {
+  "name": "Ukoo Farm Spices",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Herbs & Spices"
+  ],
+  "scope": "Farm-direct culinary natural herbs (rosemary, thyme, mint, basil) and sun-dried organic spices.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@UkooFarm"
+ },
+ {
+  "name": "Frozen Isle Kenya",
+  "category": "Food, Beverage & Agro-Processing",
+  "part": 2,
+  "subcategories": [
+   "Indigenous Greens"
+  ],
+  "scope": "Pre-washed, blanched and blast-frozen traditional vegetables (Managu, Terere, Kunde).",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@frozenislekenya"
+ },
+ {
+  "name": "Luguah Naturals",
+  "category": "Beauty & Skincare",
+  "part": 2,
+  "subcategories": [
+   "Organic Skincare"
+  ],
+  "scope": "Cold-pressed hair growth oils, whipped shea body butters, herbal scalp serums with organic farmers.",
+  "location": "Nairobi",
+  "phone": "+254 780 898 891",
+  "email": null,
+  "website": "luguahnaturals.com",
+  "twitter": null
+ },
+ {
+  "name": "SuzieBeauty Cosmetics",
+  "category": "Beauty & Skincare",
+  "part": 2,
+  "subcategories": [
+   "Color Cosmetics"
+  ],
+  "scope": "Kenya's pioneer cosmetics brand: foundations, mineral powders, lipsticks crafted for African skin tones.",
+  "location": "Nairobi",
+  "phone": "0722 000 999",
+  "email": null,
+  "website": "suziebeauty.com",
+  "twitter": null
+ },
+ {
+  "name": "Cinnabar Green",
+  "category": "Beauty & Skincare",
+  "part": 2,
+  "subcategories": [
+   "Botanical Bodycare"
+  ],
+  "scope": "Essential-oil body washes, organic lotions, and botanical home diffusers using farm-grown oils.",
+  "location": "Laikipia / Nairobi",
+  "phone": "0722 201 100",
+  "email": null,
+  "website": "cinnabargreen.com",
+  "twitter": null
+ },
+ {
+  "name": "Katya Natures",
+  "category": "Beauty & Skincare",
+  "part": 2,
+  "subcategories": [
+   "Artisanal Soap"
+  ],
+  "scope": "Natural cold-process goat milk soaps and essential oil bars bearing the Kenyan flag.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@Katya_Natures"
+ },
+ {
+  "name": "Botanique Naturelle",
+  "category": "Beauty & Skincare",
+  "part": 2,
+  "subcategories": [
+   "Melanin Skincare"
+  ],
+  "scope": "Plant-based facial and body treatments designed specifically for African skin exposed to equatorial sun.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@KaitaDavid"
+ },
+ {
+  "name": "Forgrac Herbals",
+  "category": "Beauty & Skincare",
+  "part": 2,
+  "subcategories": [
+   "Hair & Scalp"
+  ],
+  "scope": "Anti-dandruff herbal hair formulations, hot oil treatments, scalp restoration tonics.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@forgrac"
+ },
+ {
+  "name": "Bata Shoe Company Kenya",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Footwear (Safari Boots)"
+  ],
+  "scope": "Safari boots, Toughees school shoes, Ngoma canvas sneakers produced at Limuru factory since 1939.",
+  "location": "Limuru, Kiambu",
+  "phone": "0726 618 618",
+  "email": null,
+  "website": "batakenya.com",
+  "twitter": null
+ },
+ {
+  "name": "Rivatex East Africa Limited",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Integrated Textile Mill"
+  ],
+  "scope": "Cotton spinning, weaving, African print Kitenge fabrics, institutional uniforms, hospital linens.",
+  "location": "Eldoret, Uasin Gishu",
+  "phone": "053 203 1000",
+  "email": null,
+  "website": "rivatex.co.ke",
+  "twitter": null
+ },
+ {
+  "name": "VaaKenya",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Handcrafted Shoes"
+  ],
+  "scope": "Bespoke Kenyan footwear studio designing and handcrafting leather boots and dress shoes from raw hides.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@mugevincent"
+ },
+ {
+  "name": "Njoroge Macharia Leathercraft",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Cowboy Hats & Belts"
+  ],
+  "scope": "Self-taught master craftsman tooling full-grain leather cowboy hats, heavy belts, and utility gear.",
+  "location": "Nairobi",
+  "phone": "0722 111 128",
+  "email": null,
+  "website": null,
+  "twitter": "@lesoi_ndoka"
+ },
+ {
+  "name": "PackIt Afrik",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Sisal Kiondos"
+  ],
+  "scope": "Handwoven sisal kiondo tote bags, leather-trimmed cross-body sling bags, plant pot covers.",
+  "location": "Nairobi",
+  "phone": "0728 205 130",
+  "email": null,
+  "website": null,
+  "twitter": "@AyukoLizz"
+ },
+ {
+  "name": "iLonito Leather",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Minimalist Leather"
+  ],
+  "scope": "Hand-stitched full-grain leather wallets, key organizers, everyday carry (EDC) leather pouches.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@deadlyclass7"
+ },
+ {
+  "name": "Gichana Quality Apparel",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Streetwear & Hoodies"
+  ],
+  "scope": "Heavyweight graphic typography t-shirts, custom fleece hoodies with nationwide door-to-door delivery.",
+  "location": "Nairobi",
+  "phone": "0781 945 205",
+  "email": null,
+  "website": null,
+  "twitter": "@ChanaJoanne"
+ },
+ {
+  "name": "Mosh Aprons",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Kitchen Aprons"
+  ],
+  "scope": "Hand-sewn culinary denim, canvas, and drill utility aprons tailored at KES 450 with custom straps.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@_mu_shie"
+ },
+ {
+  "name": "Thogithi Environmental CBO",
+  "category": "Footwear, Leather & Textiles",
+  "part": 2,
+  "subcategories": [
+   "Handspun Textiles"
+  ],
+  "scope": "Hand-knit wool garments, buttons hand-carved from coconut shells, natural hand-spun yarn.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@thogithiCBO"
+ },
+ {
+  "name": "Kazuri Beads & Pottery",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Ceramic Jewelry"
+  ],
+  "scope": "Handmade ceramic beads, fair-trade costume jewelry, and hand-painted pottery (Karen, Nairobi).",
+  "location": "Karen, Nairobi",
+  "phone": "020 232 8507",
+  "email": null,
+  "website": "kazuri.com",
+  "twitter": null
+ },
+ {
+  "name": "Kitengela Hot Glass (Anselm)",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Recycled Glass Art"
+  ],
+  "scope": "Mouth-blown art glass, studio chandeliers, functional tableware, stained glass architectural panels.",
+  "location": "Kitengela, Kajiado",
+  "phone": "0720 983 011",
+  "email": null,
+  "website": "kitengela.com",
+  "twitter": null
+ },
+ {
+  "name": "Something Handcrafted (Peter)",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Stone Mirrors"
+  ],
+  "scope": "Full-length standing and wall vanity mirrors framed in hand-chiseled volcanic and river stones.",
+  "location": "Nairobi",
+  "phone": "0726 547 143",
+  "email": null,
+  "website": null,
+  "twitter": "@Yours_Peter"
+ },
+ {
+  "name": "Crystal Gardens Kitengela",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Clay Planters"
+  ],
+  "scope": "Large hand-molded terracotta clay and sisal-fiber decorative planters and landscape urns.",
+  "location": "Kitengela",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@crystalgardensK"
+ },
+ {
+  "name": "Gabriel Kanja Tribal Décor",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Hardwood Sculptures"
+  ],
+  "scope": "Hand-carved African wildlife tabletop sculptures, tribal wall clocks, decorative wooden centerpieces.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@gabrielkanja"
+ },
+ {
+  "name": "Millie_k Kakuma Artisans",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Seed Beadwork"
+  ],
+  "scope": "Maasai & Turkana beaded table runners, coasters, ethnic statement necklaces and wristbands.",
+  "location": "Kakuma, Turkana",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@Mildred96212531"
+ },
+ {
+  "name": "Dr. Idris Maimoon Ambulances",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Ambulance Fabrication"
+  ],
+  "scope": "Conversion and fabrication of Type I, II, and III ALS and BLS emergency medical ambulances.",
+  "location": "Nairobi / Mombasa",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@IdrisMaimoon"
+ },
+ {
+  "name": "Toto Care Box Africa Trust",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Infant Care Boxes"
+  ],
+  "scope": "Waterproof infant sleeping boxes and handwoven Moses baskets bundled with clean newborn delivery gear.",
+  "location": "Nairobi",
+  "phone": "0701 945 110",
+  "email": null,
+  "website": "totocarebox.org",
+  "twitter": null
+ },
+ {
+  "name": "Asepsis Limited",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Food Biosecurity"
+  ],
+  "scope": "Commercial food processing biosecurity chemicals and clean-in-place sanitation systems.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": "asepsis-kenya.com",
+  "twitter": null
+ },
+ {
+  "name": "Zollz Fine Art Photography",
+  "category": "Crafts, Décor & Specialized Engineering",
+  "part": 2,
+  "subcategories": [
+   "Framed Photo Prints"
+  ],
+  "scope": "Museum-grade framed photographic prints documenting Kenyan topography, wildlife, and heritage.",
+  "location": "Nairobi",
+  "phone": null,
+  "email": null,
+  "website": null,
+  "twitter": "@zollz"
+ }
+]
