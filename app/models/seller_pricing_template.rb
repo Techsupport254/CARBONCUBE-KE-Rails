@@ -6,7 +6,7 @@ class SellerPricingTemplate < ApplicationRecord
   belongs_to :subcategory, optional: true
 
   validates :pricing_unit, presence: true
-  validates :price_display_mode, presence: true, inclusion: { in: %w[public tiered request_quote] }
+  validates :price_display_mode, presence: true, inclusion: { in: %w[public tiered price_range request_quote] }
   validates :price_tiers, presence: true, if: -> { price_display_mode == 'tiered' }
 
   validate :price_tiers_shape, if: -> { price_tiers.present? }

@@ -73,9 +73,11 @@ module Sales
 
       brand = SalesBrand.new(
         name: params[:name],
-        source: 'field',
+        source: params[:source].presence_in(%w[directory field]) || 'field',
+        part: params[:part].presence || 2,
         sales_user: @current_sales_user,
         category: params[:category].presence,
+        subcategories: Array(params[:subcategories]).map { |s| s.to_s.strip }.compact_blank,
         scope: params[:scope].presence,
         location: params[:location].presence,
         phone: params[:phone].presence,
@@ -179,6 +181,11 @@ module Sales
       %i[name phone location category email website twitter scope].each do |field|
         update_attrs[field] = params[field] if params.key?(field)
       end
+      if params.key?(:subcategories)
+        update_attrs[:subcategories] =
+          Array(params[:subcategories]).map { |s| s.to_s.strip }.compact_blank
+      end
+      update_attrs[:part] = params[:part] if params.key?(:part)
       update_attrs[:sales_user_id] = params[:salesUserId].presence if params.key?(:salesUserId)
       update_attrs[:last_contacted_at] = Time.current if params[:markContacted].to_s == 'true'
 
