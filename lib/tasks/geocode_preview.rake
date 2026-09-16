@@ -50,7 +50,11 @@ namespace :geocode do
         response = http.request(request)
 
         if response.is_a?(Net::HTTPSuccess)
-          data = JSON.parse(response.body)
+          data = begin
+                   JSON.parse(response.body)
+                 rescue JSON::ParserError
+                   []
+                 end
 
           if data.any?
             first = data.first

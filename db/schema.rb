@@ -1444,10 +1444,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   end
 
   add_foreign_key "ad_searches", "buyers", on_delete: :cascade
-  add_foreign_key "ad_searches", "buyers", on_delete: :cascade
   add_foreign_key "ads", "branches"
   add_foreign_key "ads", "categories"
-  add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "sellers", on_delete: :cascade
   add_foreign_key "ads", "subcategories"
   add_foreign_key "branches", "sellers"
@@ -1509,7 +1507,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   add_foreign_key "sales_brand_activities", "sales_brands"
   add_foreign_key "sales_brand_activities", "sales_users"
   add_foreign_key "sales_brands", "sales_users"
-  add_foreign_key "sales_brands", "sellers"
+  add_foreign_key "sales_brands", "sellers", on_delete: :nullify
   add_foreign_key "sales_daily_reports", "sales_users"
   add_foreign_key "sales_user_field_locations", "sales_users"
   add_foreign_key "sales_users", "sales_users", column: "lead_id"
