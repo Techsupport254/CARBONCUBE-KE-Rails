@@ -201,7 +201,7 @@ class AdQualityEnricherService
     end
 
     # 8. Smartphone match via DeviceCatalogService
-    if @ad.category_id == 2 && (@ad.subcategory_id == 8 || search_corpus.include?('phone') || search_corpus.include?('gb'))
+    if @ad.category_id == 2 && (@ad.subcategory_id == 39 || search_corpus.include?('phone') || search_corpus.include?('gb'))
       phone_match = DeviceCatalogService.search(title_text, 'phones', 'computersphonesandaccessories').first
       if phone_match && phone_match['title'].present?
         return {
@@ -210,7 +210,7 @@ class AdQualityEnricherService
           manufacturer: phone_match['brand'] || brand_text,
           model: phone_match['model'] || phone_match['title'],
           category_id: 2,
-          subcategory_id: 8, # Phones
+          subcategory_id: 39, # Phones
           specifications: phone_match['specifications'] || {},
           overview: "High-quality #{phone_match['title']} available on Carbon Cube Kenya with verified specs and fast delivery."
         }

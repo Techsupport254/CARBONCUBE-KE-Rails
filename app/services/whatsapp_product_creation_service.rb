@@ -389,16 +389,20 @@ class WhatsappProductCreationService
     subcategories = category.subcategories
     
     if subcategories.any?
-      sections = [{
-        title: "Select Subcategory",
-        rows: subcategories.map { |sub|
-          {
-            id: "subcategory_#{sub.id}",
-            title: sub.name,
-            description: "Click to select"
+      # WhatsApp interactive lists cap at 10 rows per section — split into
+      # multiple sections so categories with >10 subcategories still send.
+      sections = subcategories.each_slice(10).map.with_index do |slice, idx|
+        {
+          title: idx.zero? ? "Select Subcategory" : "Select Subcategory (cont.)",
+          rows: slice.map { |sub|
+            {
+              id: "subcategory_#{sub.id}",
+              title: sub.name,
+              description: "Click to select"
+            }
           }
         }
-      }]
+      end
       
       WhatsAppCloudService.send_interactive_list(
         phone_number,
