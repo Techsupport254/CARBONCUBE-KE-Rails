@@ -1,4 +1,5 @@
 import { Section, Text } from "@react-email/components"
+import { Markdown } from "@react-email/markdown"
 import { EmailLayout } from "../_components/email_layout"
 
 type CustomCommunicationProps = {
@@ -30,9 +31,22 @@ export default function CustomCommunication({
           Hi {firstName || fullname},
         </Text>
 
-        <Text className="rsp-body" style={{ margin: "0 0 6px", fontSize: "14px", color: "#475569", lineHeight: "21px", whiteSpace: "pre-wrap" }}>
+        <Markdown
+          markdownCustomStyles={{
+            h2: { fontSize: "15px", fontWeight: 700, color: "#0f172a", margin: "18px 0 8px", lineHeight: "20px" },
+            h3: { fontSize: "14px", fontWeight: 600, color: "#0f172a", margin: "14px 0 6px", lineHeight: "18px" },
+            p: { fontSize: "14px", color: "#475569", lineHeight: "21px", margin: "0 0 10px" },
+            li: { fontSize: "14px", color: "#475569", lineHeight: "21px", margin: "0 0 3px" },
+            ul: { margin: "0 0 10px", paddingLeft: "18px" },
+            ol: { margin: "0 0 10px", paddingLeft: "18px" },
+            strong: { color: "#0f172a", fontWeight: 600 },
+            a: { color: "#f59e0b", textDecoration: "underline" },
+            blockquote: { borderLeft: "3px solid #e2e8f0", paddingLeft: "12px", margin: "10px 0", color: "#64748b", fontStyle: "italic" as const },
+            hr: { border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" },
+          }}
+        >
           {message}
-        </Text>
+        </Markdown>
       </Section>
     </EmailLayout>
   )
