@@ -224,6 +224,52 @@ class Seller < ApplicationRecord
     Rails.logger.error "Failed to associate guest clicks during seller creation: #{e.message}" if defined?(Rails.logger)
   end
 
+  # Derive a unique username from a name string (e.g. "Sali Products Ltd" → "sali-products-ltd").
+  # Appends a numeric suffix when the base is already taken.
+  def self.generate_unique_username(name)
+    base = name.to_s.strip
+              .gsub(/\s+/, '-')
+              .gsub(/[^a-zA-Z0-9_-]/, '')
+              .gsub(/[-_]{2,}/, '-')
+              .gsub(/^[-_]+|[-_]+$/, '')
+              .downcase
+    base = base[0..19]
+    base = 'seller' if base.length < 3
+
+    candidate = base
+    counter = 1
+    while exists?(username: candidate)
+      suffix = counter.to_s
+      candidate = "#{base[0..(19 - suffix.length - 1)]}-#{suffix}"
+      counter += 1
+    end
+    candidate
+  end
+
+  # Set a username + clean slug from the enterprise/full name, skipping if
+  # the seller already has both. Safe to call multiple times.
+  def assign_username_and_slug!
+    updates = {}
+    name = enterprise_name.presence || fullname.presence
+    return unless name
+
+    if username.blank?
+      updates[:username] = self.class.generate_unique_username(name)
+    end
+    if slug.blank? || slug.include?(id.to_s)
+      clean = name.parameterize
+      clean = 'shop' if clean.blank?
+      candidate = clean
+      counter = 1
+      while self.class.where(slug: candidate).where.not(id: id).exists?
+        candidate = "#{clean}-#{counter}"
+        counter += 1
+      end
+      updates[:slug] = candidate
+    end
+    update!(**updates) if updates.any?
+  end
+
   private
 
   def set_slug

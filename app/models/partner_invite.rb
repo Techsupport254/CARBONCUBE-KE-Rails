@@ -200,6 +200,7 @@ class PartnerInvite < ApplicationRecord
 
   # The shell seller starts bare — mirror the invitee's public identity so
   # the storefront isn't empty: logo as avatar, about text, website.
+  # Also ensures a username and clean slug exist.
   # Only fills blanks — anything the seller set themselves stays.
   def sync_storefront_profile!
     return unless seller
@@ -209,6 +210,7 @@ class PartnerInvite < ApplicationRecord
     updates[:description] = invitee.try(:description) if seller.description.blank? && invitee.try(:description).present?
     updates[:website] = invitee.try(:website) if seller.website.blank? && invitee.try(:website).present?
     seller.update!(updates) if updates.any?
+    seller.assign_username_and_slug!
   rescue StandardError => e
     Rails.logger.error "PartnerInvite##{id}: storefront profile sync failed — #{e.message}"
   end

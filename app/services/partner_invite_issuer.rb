@@ -19,14 +19,16 @@ class PartnerInviteIssuer
     email = invitee.try(:email)
     raise Error, 'An email is required to create the account — add one to the record first' if email.blank?
 
+    name = invitee.try(:name) || 'Partner'
     Seller.create!(
-      fullname: invitee.try(:contact_person).presence || invitee.try(:name) || 'Partner',
-      enterprise_name: invitee.try(:name) || 'Partner',
+      fullname: invitee.try(:contact_person).presence || name,
+      enterprise_name: name,
       email: email,
       phone_number: invitee.try(:phone),
       location: invitee.try(:location),
       provider: 'partner_invite',
-      password: SecureRandom.alphanumeric(32)
+      password: SecureRandom.alphanumeric(32),
+      username: Seller.generate_unique_username(name)
     )
   rescue ActiveRecord::RecordInvalid => e
     raise Error, e.record.errors.full_messages.join(', ')
