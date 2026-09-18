@@ -70,6 +70,49 @@ class SellerCommunicationsMailer < ApplicationMailer
   end
 
 
+  def partner_catalog_update
+    seller = params[:seller]
+    to_email = params[:to_email].presence || seller&.email
+
+    fullname = seller.enterprise_name.presence || seller.fullname
+    first_name = fullname.to_s.split(' ').first.presence || 'Partner'
+    total = params[:total_ads] || seller.ads.count
+    with_img = params[:with_images] || 0
+    without_img = params[:without_images] || 0
+    shop_url = "https://carboncube-ke.com/shop/#{seller.slug}"
+    dashboard_url = 'https://carboncube-ke.com/seller/dashboard'
+
+    timestamp = Time.current.strftime('%Y%m%d%H%M')
+    unique_subject = "Your #{total} Products Are Live on Carbon Cube Kenya — Images Needed for #{without_img} Listings - #{timestamp}"
+
+    mail_message = mail(
+      to: to_email,
+      subject: unique_subject,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        enterprise_name: seller.enterprise_name,
+        total_ads: total,
+        with_images: with_img,
+        without_images: without_img,
+        shop_url: shop_url,
+        dashboard_url: dashboard_url,
+        username: seller.username,
+        tier_name: seller.tier&.name || 'Premium Partner',
+        email: seller.email,
+        support_email: ENV['BREVO_EMAIL'] || 'info@carboncube-ke.com',
+        support_phone: '+254 712 990 524'
+      }
+    )
+
+    mail_message['In-Reply-To'] = nil
+    mail_message['References'] = nil
+    mail_message['X-Threading'] = 'false'
+    mail_message['X-Conversation-ID'] = SecureRandom.uuid
+
+    mail_message
+  end
+
   def general_update
     user = params[:seller] || params[:user]
     user_type = user.respond_to?(:user_type) ? user.user_type : 'seller'
