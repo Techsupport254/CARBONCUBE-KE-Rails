@@ -1,7 +1,7 @@
 class Admin::SellersController < ApplicationController
-  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics, :verify_document, :send_reminder, :updates]
-  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics, :verify_document, :send_reminder, :updates]
-  before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews, :verify_document, :send_reminder, :updates]
+  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics, :verify_document, :send_reminder, :updates, :promote_to_partner]
+  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics, :verify_document, :send_reminder, :updates, :promote_to_partner]
+  before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews, :verify_document, :send_reminder, :updates, :promote_to_partner]
 
   def index
     cache_scope = sales_scoped_rep? ? "sales_user_#{@current_user.id}" : "admin_global"
@@ -223,6 +223,12 @@ class Admin::SellersController < ApplicationController
       analytics_data = fetch_analytics(@seller)
       data.merge(analytics: analytics_data)
     end
+
+    # Partner linkage stays outside the cache — it's cheap and must be fresh.
+    seller_data = seller_data.merge(
+      partner_id: @seller.partner&.id,
+      partner_status: @seller.partner&.status
+    )
 
     if commission_sales?
       seller_data = seller_data.deep_dup
@@ -696,6 +702,46 @@ class Admin::SellersController < ApplicationController
       success: true,
       message: "Compliance reminder sequence queued for #{@seller.enterprise_name || @seller.fullname}"
     }, status: :ok
+  end
+
+  # POST /admin/sellers/:id/promote_to_partner
+  # Upgrade an existing seller to a formal partner. Their account is already
+  # active, so a pending "accept partnership" invite is issued rather than a
+  # password-setup link.
+  def promote_to_partner
+    if @seller.partner
+      render json: { error: 'This seller is already a partner', partner_id: @seller.partner.id }, status: :unprocessable_entity
+      return
+    end
+
+    partner = Partner.new(
+      name: params[:name].presence || @seller.enterprise_name || @seller.fullname,
+      partner_type: params[:partner_type].presence_in(Partner.partner_types.keys) || 'retailer',
+      status: 'negotiating',
+      contact_person: params[:contact_person].presence,
+      phone: params[:phone].presence || @seller.phone_number,
+      email: params[:email].presence || @seller.email,
+      website: params[:website].presence || @seller.website,
+      location: params[:location].presence || @seller.location,
+      description: params[:description].presence,
+      notes: params[:notes].presence,
+      seller: @seller,
+      sales_user: (@current_user if @current_user.is_a?(SalesUser))
+    )
+
+    unless partner.save
+      render json: { error: partner.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      return
+    end
+
+    invite = PartnerInviteIssuer.call(partner, actor: @current_user)
+    PartnerInviteJob.perform_later(invite.id) if invite&.pending?
+
+    render json: {
+      success: true,
+      partner: PartnerPresenter.partner(partner.reload),
+      invite: PartnerPresenter.invite(invite)
+    }, status: :created
   end
 
   private

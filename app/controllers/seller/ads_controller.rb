@@ -337,12 +337,13 @@ class Seller::AdsController < ApplicationController
 
     created_ads = []
     failed_ads = []
+    pricing_spec_keys = %i[pricing_unit price_display_mode price_range_max]
 
     ActiveRecord::Base.transaction do
       ads_params.each_with_index do |ad_data, idx|
         begin
-          ad_attr = ad_data.permit(:title, :description, :price, :brand, :manufacturer, :condition, :category_id, :subcategory_id, :model, :pricing_unit, :price_display_mode, :price_range_max, media: [], specifications: {})
-          
+          ad_attr = ad_data.permit(:title, :description, :price, :brand, :manufacturer, :condition, :category_id, :subcategory_id, :model, :sku, :units_per_pack, :stock_quantity, media: [], specifications: {})
+
           media_urls = Array(ad_data[:media]).map do |m|
             if m.is_a?(String) && m.start_with?('http')
               m
@@ -354,6 +355,13 @@ class Seller::AdsController < ApplicationController
           end.compact
 
           ad = current_seller.ads.build(ad_attr.except(:media))
+
+          # Pricing fields are stored inside specifications, not as ad columns
+          pricing_spec_keys.each do |key|
+            next unless ad_data.key?(key)
+            ad.specifications = (ad.specifications || {}).merge(key.to_s => ad_data[key])
+          end
+
           ad.media = media_urls if media_urls.any?
           ad.is_added_by_sales = false
           ad.branch_id = @current_branch&.id if @current_branch
@@ -424,6 +432,31 @@ class Seller::AdsController < ApplicationController
 
     if updated
       # Update seller's last active timestamp when updating an ad
+      current_seller.update_last_active!
+      render json: ad.as_json(include: [:category, :reviews], methods: [:mean_rating])
+    else
+      render json: { error: ad.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # PATCH /seller/ads/:id/stock
+  def update_stock
+    ad = current_seller.ads.find(params[:id])
+
+    if params[:stock_quantity].present?
+      new_quantity = params[:stock_quantity].to_i
+    elsif params[:adjustment].present?
+      new_quantity = ad.stock_quantity.to_i + params[:adjustment].to_i
+    else
+      return render json: { error: 'Provide stock_quantity or adjustment' }, status: :unprocessable_entity
+    end
+
+    if new_quantity.negative?
+      return render json: { error: 'Stock quantity cannot be negative' }, status: :unprocessable_entity
+    end
+
+    if ad.update(stock_quantity: new_quantity)
+      # Update seller's last active timestamp when updating stock
       current_seller.update_last_active!
       render json: ad.as_json(include: [:category, :reviews], methods: [:mean_rating])
     else
@@ -838,6 +871,7 @@ class Seller::AdsController < ApplicationController
       :title, :description, :category_id, :subcategory_id, :price,
       :brand, :manufacturer, :model, :item_length, :item_width,
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
+      :sku, :units_per_pack, :stock_quantity,
       media: [], existing_media: []
     )
     permitted[:specifications] = specifications_value if specifications_value

@@ -4,6 +4,7 @@ class AdSerializer < ActiveModel::Serializer
              :created_at, :updated_at, :category_id, :subcategory_id, :category_name, :subcategory_name, :seller_id, :seller_name,
              :seller_phone_number, :seller_tier_name, :seller_tier, :enterprise_name, :reviews_count, :average_rating, :seller_reviews_count, :seller_average_rating, :media_urls, :first_media_url, :tier_priority,
              :seller_is_verified, :seller_document_verified, :is_added_by_sales,
+             :seller_is_partner, :seller_partner_type,
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
              :seller_is_online
@@ -231,6 +232,16 @@ class AdSerializer < ActiveModel::Serializer
 
   def seller_is_verified
     seller_document_verified
+  end
+
+  # "Verified Partner" badge data — the seller's storefront is a formal
+  # partner storefront when its partner relationship is active.
+  def seller_is_partner
+    object.seller&.partner&.active? || false
+  end
+
+  def seller_partner_type
+    object.seller&.partner&.partner_type
   end
 
   def is_added_by_sales

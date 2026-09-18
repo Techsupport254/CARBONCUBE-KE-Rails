@@ -125,6 +125,8 @@ class ShopsController < ApplicationController
         average_rating: average_rating,
         slug: @shop.slug,
         document_verified: @shop.document_verified,
+        partner_status: @shop.partner&.status,
+        partner_type: @shop.partner&.partner_type,
         seller_documents: @shop.seller_documents.map do |doc|
           {
             id: doc.id,
@@ -463,7 +465,7 @@ class ShopsController < ApplicationController
 
     # 2. Extract UUID if slug ends with UUID format (e.g. name-uuid or shop-uuid)
     if slug_str =~ /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\z/i
-      shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: $1)
+      shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: Regexp.last_match(1))
       return shop if shop
     end
 

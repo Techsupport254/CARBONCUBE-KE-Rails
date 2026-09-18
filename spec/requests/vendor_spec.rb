@@ -1,103 +1,138 @@
-# spec/requests/seller_spec.rb
+# spec/requests/vendor_spec.rb
 require 'rails_helper'
 
 RSpec.describe 'Seller Management', type: :request do
-    let(:seller_params) {
-        {
-        seller: {
-            full_name: "John Doe",
-            phone_number: "1234567890",
-            email: "john.doe@example.com",
-            enterprise_name: "John's Enterprise",
-            location: "123 Main St, City, Country",
-            password: "securepassword",
-            business_registration_number: "123456789",
-            categories: [1, 2]
-            }
-        }
+  let(:signup_params) do
+    {
+      seller: {
+        fullname: 'John Doe',
+        email: 'john.doe@example.com',
+        phone_number: '0712345678',
+        password: 'securepassword1',
+        password_confirmation: 'securepassword1'
+      }
     }
-    let(:product_params) {
-        {
-        product: {
-            title: "New Product",
-            description: "This is a new product",
-            media: ["image1_url", "image2_url"],
-            category_id: 1,
-            price: 99.99,
-            quantity: 100,
-            brand: "Brand Name",
-            manufacturer: "Manufacturer Name",
-            package_length: 10.09,
-            package_width: 10.09,
-            package_height: 10.09,
-            package_weight: 2.09
-            }
-        }
+  end
+
+  let(:seller) do
+    Seller.create!(
+      fullname: 'John Doe',
+      email: 'john.doe@example.com',
+      provider: 'google',
+      uid: 'vendor-spec-uid',
+      password: 'securepassword1',
+      password_confirmation: 'securepassword1'
+    )
+  end
+
+  let(:auth_headers) do
+    token = JsonWebToken.encode(seller_id: seller.id, email: seller.email, role: 'seller')
+    { 'Authorization' => "Bearer #{token}" }
+  end
+
+  describe 'Seller Signup' do
+    it 'validates the signup details when no OTP is provided' do
+      post '/seller/signup', params: signup_params
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['success']).to be(true)
+    end
+
+    it 'returns 422 when required fields are missing' do
+      post '/seller/signup', params: { seller: { email: 'john.doe@example.com' } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it 'returns 422 when the email is already in use' do
+      seller # creates the seller with the same email
+
+      post '/seller/signup', params: signup_params
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body['errors']).to include('Email is already in use')
+    end
+  end
+
+  describe 'Seller Login' do
+    before { seller }
+
+    it 'logs in with valid credentials' do
+      post '/auth/login', params: { email: 'john.doe@example.com', password: 'securepassword1' }
+
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body['token']).to be_present
+      expect(body['user']['role']).to eq('Seller')
+    end
+
+    it 'rejects invalid credentials' do
+      post '/auth/login', params: { email: 'john.doe@example.com', password: 'wrong-password' }
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  describe 'Product Management' do
+    let(:category) { Category.create!(name: 'Tools') }
+    let(:subcategory) { Subcategory.create!(name: 'Power Tools', category_id: category.id) }
+
+    before do
+      tier = Tier.create!(name: 'Pro', ads_limit: 50)
+      SellerTier.create!(seller: seller, tier: tier, duration_months: 12, expires_at: 1.year.from_now)
+    end
+
+    it 'creates a product' do
+      post '/seller/ads', headers: auth_headers, params: ad_params
+
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body['title']).to eq('New Product')
+    end
+
+    it 'updates a product' do
+      post '/seller/ads', headers: auth_headers, params: ad_params
+      product_id = response.parsed_body['id']
+
+      put "/seller/ads/#{product_id}", headers: auth_headers, params: {
+        ad: { title: 'Updated Product', description: 'This is an updated product' }
+      }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['title']).to eq('Updated Product')
+    end
+
+    it 'deletes a product' do
+      post '/seller/ads', headers: auth_headers, params: ad_params
+      product_id = response.parsed_body['id']
+
+      delete "/seller/ads/#{product_id}", headers: auth_headers
+
+      expect(response).to have_http_status(:no_content)
+    end
+  end
+
+  describe 'Analytics' do
+    it 'views seller analytics' do
+      get '/seller/analytics', headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['tier_id']).to be_present
+    end
+  end
+
+  def ad_params
+    {
+      ad: {
+        title: 'New Product',
+        description: 'This is a new product',
+        category_id: category.id,
+        subcategory_id: subcategory.id,
+        price: 99.99,
+        stock_quantity: 100,
+        brand: 'Brand Name',
+        manufacturer: 'Manufacturer Name',
+        condition: 'brand_new'
+      }
     }
-
-    describe 'Seller Signup and Login' do
-        it 'signs up a seller' do
-            post '/seller/signup', params: seller_params
-            expect(response).to have_http_status(:created)
-        end
-
-        it 'logs in a seller' do
-            post '/seller/signup', params: seller_params
-            post '/seller/login', params: { email: seller_params[:seller][:email], password: seller_params[:seller][:password] }
-            expect(response).to have_http_status(:ok)
-            @jwt_token = JSON.parse(response.body)['token']
-        end
-    end
-
-    describe 'Product Management' do
-        before do
-            post '/seller/signup', params: seller_params
-            post '/seller/login', params: { email: seller_params[:seller][:email], password: seller_params[:seller][:password] }
-            @jwt_token = JSON.parse(response.body)['token']
-        end
-
-        it 'creates a product' do
-            post '/seller/products', headers: { Authorization: "Bearer #{@jwt_token}" }, params: product_params
-            expect(response).to have_http_status(:created)
-            expect(JSON.parse(response.body)['title']).to eq('New Product')
-        end
-
-        it 'updates a product' do
-            post '/seller/products', headers: { Authorization: "Bearer #{@jwt_token}" }, params: product_params
-            product_id = JSON.parse(response.body)['id']
-            put "/seller/products/#{product_id}", headers: { Authorization: "Bearer #{@jwt_token}" }, params: {
-                product: {
-                title: "Updated Product",
-                description: "This is an updated product"
-                }
-            }
-            expect(response).to have_http_status(:ok)
-            expect(JSON.parse(response.body)['title']).to eq('Updated Product')
-        end
-
-        it 'deletes a product' do
-            post '/seller/products', headers: { Authorization: "Bearer #{@jwt_token}" }, params: product_params
-            product_id = JSON.parse(response.body)['id']
-            delete "/seller/products/#{product_id}", headers: { Authorization: "Bearer #{@jwt_token}" }
-            expect(response).to have_http_status(:no_content)
-        end
-    end
-
-    describe 'Order Status and Analytics' do
-        before do
-            post '/seller/signup', params: seller_params
-            post '/seller/login', params: { email: seller_params[:seller][:email], password: seller_params[:seller][:password] }
-            @jwt_token = JSON.parse(response.body)['token']
-        end
-
-        it 'updates order status' do
-            patch '/seller/orders/22', headers: { Authorization: "Bearer #{@jwt_token}" }, params: { status: "transiting" }
-            expect(response).to have_http_status(:ok)
-        end
-
-        it 'views reviews and analytics' do
-            get '/seller/analytics', headers: { Authorization: "Bearer #{@jwt_token}" }
-            expect(response).to have_http_status(:ok)
-        end
-    end
+  end
 end

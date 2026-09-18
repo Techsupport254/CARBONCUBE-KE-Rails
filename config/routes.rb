@@ -286,6 +286,17 @@ Rails.application.routes.draw do
   post '/password_resets/verify_otp', to: 'password_resets#verify_otp'
   post '/password_resets/reset_password', to: 'password_resets#reset_password'
 
+  # Public partner directory — active selling partners for the footer strip
+  get 'partners', to: 'partners#index'
+
+  # Public partner-invite join flow (no auth — token is the credential)
+  post 'partner_invites/accept', to: 'partner_invites#accept'
+  get 'partner_invites/:token', to: 'partner_invites#show'
+
+  # Public Brand Kenya directory — onboarded homegrown brands
+  get 'brand_kenya', to: 'brand_kenya#index'
+  get 'brand_kenya/:id/logo', to: 'brand_kenya#logo', as: :brand_kenya_logo
+
   # Sign-Up OTP routes
   resources :email_otps, only: [:create] do
     collection do
@@ -429,6 +440,7 @@ Rails.application.routes.draw do
         get 'updates'
         post :verify_document
         post :send_reminder
+        post :promote_to_partner
       end
       collection do
         post 'bulk_actions'
@@ -578,6 +590,7 @@ Rails.application.routes.draw do
         get 'buyer_details/summary', to: 'buyer_details#summary'
         post 'offer', to: 'ads#create_offer'
         delete 'offer', to: 'ads#remove_offer'
+        patch 'stock', to: 'ads#update_stock'
       end
     end
 
@@ -615,6 +628,15 @@ Rails.application.routes.draw do
       post 'change-password', to: 'profiles#change_password'
       post 'request-verification', to: 'profiles#request_verification'
       post 'verify-email', to: 'profiles#verify_email'
+    end
+
+    # Partner self-service — sellers linked to a partner manage their own
+    # partnership profile and contact list here.
+    resource :partner_profile, only: [:show, :update], controller: 'partner_profiles' do
+      resources :contacts, only: [:index, :create, :update, :destroy], controller: 'partner_contacts'
+      resources :distributors, only: [:index, :create, :update, :destroy], controller: 'partner_distributors' do
+        post :resend_invite, on: :member
+      end
     end
 
     post 'google-business-profile/authorize', to: 'google_business_profiles#authorize'
@@ -854,6 +876,37 @@ Rails.application.routes.draw do
       end
       member do
         post :activities, action: :create_activity
+        post :promote_to_partner
+      end
+    end
+
+    # Partners — formal business relationships (manufacturers, distributors,
+    # financiers, logistics…). Lifecycle, timeline, distributors, contacts,
+    # broadcasts and join invites.
+    resources :partners, only: [:index, :show, :create, :update, :destroy] do
+      collection do
+        get :stats
+        get :follow_ups
+      end
+      member do
+        post :activities, action: :create_activity
+        post :invite
+        post :resend_invite
+        post :link_seller
+      end
+      resources :distributors, only: [:index, :create, :update, :destroy],
+                              controller: 'partner_distributors' do
+        member do
+          post :invite
+          post :resend_invite
+        end
+      end
+      resources :updates, only: [:index, :create], controller: 'partner_updates'
+      resources :contacts, only: [:index, :create, :update, :destroy],
+                           controller: 'partner_contacts' do
+        member do
+          post :invite
+        end
       end
     end
 

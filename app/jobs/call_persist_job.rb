@@ -72,6 +72,9 @@ class CallPersistJob < ApplicationJob
       # onto that brand's activity timeline (visits/calls are tracked per brand).
       link_call_to_sales_brand(log_data)
 
+      # Same mirroring for partner orgs and their distributor contacts.
+      link_call_to_partner(log_data)
+
       # Queue logic: if this is a Seller, resolve all pending queue entries for them
       if customer.present? && customer.is_a?(Seller)
         CallQueue.where(seller_id: customer.id, status: CallQueue::STATUS_PENDING).find_each do |queue_item|
@@ -134,6 +137,30 @@ class CallPersistJob < ApplicationJob
     )
   rescue StandardError => e
     Rails.logger.error "CallPersistJob: sales_brand link failed for #{brand&.id}: #{e.message}"
+  end
+
+  # Match the dialed number to a partner (or partner distributor/contact) and
+  # log a `call` activity on the partner's timeline.
+  def link_call_to_partner(log_data)
+    phone = log_data['to'].to_s.gsub(/\D/, '')
+    return if phone.length < 9
+
+    suffix = phone[-9..]
+    partner = Partner.where('phone LIKE ?', "%#{suffix}").first
+    partner ||= PartnerDistributor.where('phone LIKE ?', "%#{suffix}").first&.partner
+    partner ||= PartnerContact.where('phone LIKE ?', "%#{suffix}").first&.partner
+    return unless partner
+
+    partner.record_activity!(
+      type: 'call',
+      user: SalesUser.find_by(id: log_data['sales_user_id']),
+      occurred_at: Time.at(log_data['updated_at'].to_i),
+      notes: log_data['agent_notes'].presence,
+      outcome: log_data['disposition'].presence,
+      follow_up_date: log_data['follow_up_required'] == 'true' ? log_data['follow_up_date'].presence : nil
+    )
+  rescue StandardError => e
+    Rails.logger.error "CallPersistJob: partner link failed for #{partner&.id}: #{e.message}"
   end
 
   def send_call_summary_email(call_record, log_data)

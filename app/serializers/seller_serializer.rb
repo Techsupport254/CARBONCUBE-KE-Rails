@@ -3,7 +3,7 @@ class SellerSerializer < ActiveModel::Serializer
              :business_registration_number, :description, :username, :profile_picture,
              :age_group_id, :zipcode, :city, :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
-             :carbon_code, :created_at, :updated_at,
+             :carbon_code, :created_at, :updated_at, :partner_status, :partner_type,
              :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url
   attribute :google_place_reviews, if: :include_google_place_reviews?
   attribute :google_reviews_fetched_at, if: :include_google_place_reviews?
@@ -13,6 +13,16 @@ class SellerSerializer < ActiveModel::Serializer
 
   def tier
     object.seller_tier&.tier
+  end
+
+  # "Verified Partner" badge — storefront belongs to an active partner.
+  # Frontend shows the badge when this equals 'active'.
+  def partner_status
+    object.partner&.status
+  end
+
+  def partner_type
+    object.partner&.partner_type
   end
 
   def include_google_place_reviews?

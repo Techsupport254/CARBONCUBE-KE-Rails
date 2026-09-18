@@ -4,6 +4,7 @@ class Seller < ApplicationRecord
 
   after_create :associate_guest_clicks
   after_create :link_sales_brand_prospect
+  after_create :link_partner_records
   after_create :set_slug, if: -> { slug.blank? }
   after_commit :schedule_city_geocoding, on: %i[create update]
   before_create :generate_uuid
@@ -42,6 +43,9 @@ class Seller < ApplicationRecord
   has_many :whatsapp_product_sessions, dependent: :destroy
   has_many :click_events, dependent: :nullify
   has_many :sales_brands, dependent: :nullify
+  has_one :partner, dependent: :nullify
+  has_one :partner_distributor, dependent: :nullify
+  has_many :partner_invites, dependent: :nullify
   has_many :review_prompts, dependent: :destroy
   has_many :categories_seller_records, class_name: 'CategoriesSeller', dependent: :delete_all
   has_one :categories_seller
@@ -365,6 +369,40 @@ class Seller < ApplicationRecord
     )
   rescue StandardError => e
     Rails.logger.error "link_sales_brand_prospect failed for seller #{id}: #{e.message}"
+  end
+
+  # If this seller's phone/email matches a partner or distributor record, link
+  # the account. A pending new_account invite converts to existing_account so
+  # the invitee accepts the partnership with their fresh login instead.
+  def link_partner_records
+    suffixes = [phone_number, secondary_phone_number].filter_map do |p|
+      s = p.to_s.gsub(/\D/, '')[-9..]
+      s if s.present? && s.length >= 9
+    end
+
+    if suffixes.any?
+      Partner.where(seller_id: nil).where(
+        suffixes.map { 'phone LIKE ?' }.join(' OR '), *suffixes.map { |s| "%#{s}" }
+      ).first&.link_seller!(self)
+
+      PartnerDistributor.where(seller_id: nil).where(
+        suffixes.map { 'phone LIKE ?' }.join(' OR '), *suffixes.map { |s| "%#{s}" }
+      ).first&.link_seller!(self)
+    end
+
+    if email.present?
+      Partner.where(seller_id: nil).find_by('LOWER(email) = ?', email.downcase.strip)&.link_seller!(self)
+      PartnerDistributor.where(seller_id: nil)
+                        .find_by('LOWER(email) = ?', email.downcase.strip)&.link_seller!(self)
+    end
+
+    PartnerInvite.pending.where(invite_kind: 'new_account', seller_id: nil).find_each do |invite|
+      matched = suffixes.any? && invite.phone.to_s.gsub(/\D/, '').end_with?(suffixes.first.to_s)
+      matched ||= email.present? && invite.email.to_s.downcase.strip == email.downcase.strip
+      invite.update!(seller_id: id, invite_kind: 'existing_account') if matched
+    end
+  rescue StandardError => e
+    Rails.logger.error "link_partner_records failed for seller #{id}: #{e.message}"
   end
 
   def normalize_phone(phone)

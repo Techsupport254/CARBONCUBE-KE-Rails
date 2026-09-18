@@ -7,8 +7,10 @@ module Sales
   # visits, whatsapp, emails, meetings — repeatable), and platform
   # registration per brand.
   class BrandsController < ApplicationController
-    before_action :authenticate_sales_user
-    before_action :set_brand, only: %i[show update destroy create_activity]
+    include SalesOrAdminAuthenticatable
+
+    before_action :authenticate_sales_or_admin
+    before_action :set_brand, only: %i[show update destroy create_activity promote_to_partner]
 
     # GET /sales/brands
     # Params: search, category, status, part, follow_up (scheduled|overdue|today|upcoming),
@@ -75,7 +77,7 @@ module Sales
         name: params[:name],
         source: params[:source].presence_in(%w[directory field]) || 'field',
         part: params[:part].presence || 2,
-        sales_user: @current_sales_user,
+        sales_user: current_sales_user,
         category: params[:category].presence,
         subcategories: Array(params[:subcategories]).map { |s| s.to_s.strip }.compact_blank,
         scope: params[:scope].presence,
@@ -153,7 +155,7 @@ module Sales
 
       activity = @brand.record_activity!(
         type: type,
-        user: @current_sales_user,
+        user: @current_actor,
         occurred_at: parse_time(params[:occurredAt]),
         notes: params[:notes],
         outcome: params[:outcome],
@@ -212,7 +214,8 @@ module Sales
       if update_attrs[:seller_id].present?
         @brand.activities.create!(
           activity_type: 'registered',
-          sales_user: @current_sales_user,
+          sales_user: current_sales_user,
+          actor_name: current_actor_name,
           occurred_at: @brand.registered_at,
           notes: 'Registered on the platform as a seller'
         )
@@ -227,7 +230,7 @@ module Sales
         begin
           @brand.transition_to!(
             params[:status],
-            actor: @current_sales_user,
+            actor: @current_actor,
             follow_up_date: params[:followUpDate],
             follow_up_note: params[:followUpNote]
           )
@@ -236,10 +239,51 @@ module Sales
         end
       elsif params.key?(:followUpDate) && params[:followUpDate].blank? && @brand.follow_up?
         # Clearing the date should also clear stale "follow_up" status
-        @brand.transition_to!('contacted', actor: @current_sales_user)
+        @brand.transition_to!('contacted', actor: @current_actor)
       end
 
       render json: { success: true, brand: serialize_brand(@brand.reload) }
+    end
+
+    # POST /sales/brands/:id/promote_to_partner
+    # Convert a directory/field prospect into a formal partner. Pre-fills from
+    # the brand record; any partner field can be overridden in the same call.
+    # The brand flips to onboarded and keeps its activity history — the new
+    # partner links back via sales_brand_id.
+    def promote_to_partner
+      if @brand.partner
+        return render json: { error: 'This brand is already a partner', partner_id: @brand.partner.id },
+                      status: :unprocessable_entity
+      end
+
+      partner = Partner.new(
+        name: params[:name].presence || @brand.name,
+        partner_type: params[:partner_type].presence_in(Partner.partner_types.keys) || 'brand_manufacturer',
+        status: 'negotiating',
+        contact_person: params[:contact_person].presence || params[:contactPerson].presence,
+        phone: params[:phone].presence || @brand.phone,
+        email: params[:email].presence || @brand.email,
+        website: params[:website].presence || @brand.website,
+        location: params[:location].presence || @brand.location,
+        description: params[:description].presence,
+        notes: params[:notes].presence || @brand.scope,
+        sales_brand: @brand,
+        sales_user: current_sales_user
+      )
+      partner.seller_id = @brand.seller_id if @brand.seller_id.present?
+
+      unless partner.save
+        return render json: { error: partner.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      end
+
+      @brand.transition_to!('onboarded', actor: @current_actor) unless @brand.onboarded?
+
+      render json: {
+        success: true,
+        partner_id: partner.id,
+        partner: PartnerPresenter.partner(partner),
+        brand: serialize_brand(@brand.reload)
+      }, status: :created
     end
 
     # DELETE /sales/brands/:id
@@ -296,7 +340,7 @@ module Sales
 
       brand.record_activity!(
         type: type,
-        user: @current_sales_user,
+        user: @current_actor,
         occurred_at: parse_time(params[:occurredAt]),
         notes: params[:notes],
         outcome: params[:outcome],
@@ -324,7 +368,7 @@ module Sales
         follow_up_date: activity.follow_up_date,
         latitude: activity.latitude,
         longitude: activity.longitude,
-        agent_name: activity.sales_user&.fullname,
+        agent_name: activity.sales_user&.fullname || activity.actor_name,
         created_at: activity.created_at
       }
     end
@@ -332,7 +376,7 @@ module Sales
     def serialize_brand(brand)
       activities = brand.activities.loaded? ? brand.activities : brand.activities.to_a
       last_contact = activities.find { |a| SalesBrandActivity::CONTACT_TYPES.include?(a.activity_type) }
-      last_actor = activities.find { |a| a.sales_user_id.present? }
+      last_actor = activities.find { |a| a.sales_user_id.present? || a.actor_name.present? }
       {
         id: brand.id,
         name: brand.name,
@@ -351,8 +395,9 @@ module Sales
         notes: brand.notes,
         last_contacted_at: brand.last_contacted_at,
         sales_user_id: brand.sales_user_id,
-        agent_name: brand.sales_user&.fullname || last_actor&.sales_user&.fullname,
+        agent_name: brand.sales_user&.fullname || last_actor&.sales_user&.fullname || last_actor&.actor_name,
         seller_id: brand.seller_id,
+        partner_id: brand.partner&.id,
         registered_at: brand.registered_at,
         source: brand.source,
         latitude: brand.latitude,
@@ -365,11 +410,6 @@ module Sales
         created_at: brand.created_at,
         updated_at: brand.updated_at
       }
-    end
-
-    def authenticate_sales_user
-      @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result
-      render json: { error: 'Not Authorized' }, status: :unauthorized unless @current_sales_user
     end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_19_000500) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -96,6 +96,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
     t.uuid "branch_id"
     t.text "flag_notes"
     t.string "slug"
+    t.string "sku"
+    t.integer "units_per_pack"
+    t.integer "stock_quantity"
     t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
@@ -107,6 +110,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
+    t.index ["seller_id", "sku"], name: "index_ads_on_seller_id_and_sku"
     t.index ["seller_id"], name: "index_ads_on_seller_id"
     t.index ["seller_id"], name: "index_ads_seller_id"
     t.index ["slug"], name: "index_ads_on_slug", unique: true
@@ -814,6 +818,143 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
     t.index ["status"], name: "index_offers_on_status"
   end
 
+  create_table "partner_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "partner_id", null: false
+    t.uuid "sales_user_id"
+    t.integer "activity_type", default: 5, null: false
+    t.datetime "occurred_at", null: false
+    t.text "notes"
+    t.string "outcome"
+    t.date "follow_up_date"
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "actor_name"
+    t.index ["activity_type"], name: "index_partner_activities_on_activity_type"
+    t.index ["follow_up_date"], name: "index_partner_activities_on_follow_up_date"
+    t.index ["occurred_at"], name: "index_partner_activities_on_occurred_at"
+    t.index ["partner_id"], name: "index_partner_activities_on_partner_id"
+    t.index ["sales_user_id"], name: "index_partner_activities_on_sales_user_id"
+  end
+
+  create_table "partner_contacts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "partner_id", null: false
+    t.string "name", null: false
+    t.string "role_title"
+    t.string "email"
+    t.string "phone"
+    t.boolean "is_primary", default: false, null: false
+    t.boolean "receives_updates", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["is_primary"], name: "index_partner_contacts_on_is_primary"
+    t.index ["partner_id"], name: "index_partner_contacts_on_partner_id"
+  end
+
+  create_table "partner_distributors", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "partner_id", null: false
+    t.uuid "seller_id"
+    t.uuid "sales_user_id"
+    t.string "name", null: false
+    t.string "contact_person"
+    t.string "phone"
+    t.string "email"
+    t.string "location"
+    t.integer "status", default: 0, null: false
+    t.boolean "notify_pricing", default: true, null: false
+    t.boolean "notify_updates", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "actor_name"
+    t.string "territory"
+    t.string "business_type"
+    t.string "website"
+    t.string "logo_url"
+    t.index ["partner_id"], name: "index_partner_distributors_on_partner_id"
+    t.index ["sales_user_id"], name: "index_partner_distributors_on_sales_user_id"
+    t.index ["seller_id"], name: "index_partner_distributors_on_seller_id", unique: true
+    t.index ["status"], name: "index_partner_distributors_on_status"
+  end
+
+  create_table "partner_invites", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "invitee_type", null: false
+    t.uuid "invitee_id", null: false
+    t.uuid "seller_id"
+    t.string "invited_by_type"
+    t.uuid "invited_by_id"
+    t.string "email"
+    t.string "phone"
+    t.string "token", null: false
+    t.integer "status", default: 0, null: false
+    t.integer "invite_kind", default: 0, null: false
+    t.integer "reminder_count", default: 0, null: false
+    t.datetime "invite_sent_at"
+    t.datetime "last_reminded_at"
+    t.datetime "expires_at", null: false
+    t.datetime "accepted_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_partner_invites_on_expires_at"
+    t.index ["invited_by_type", "invited_by_id"], name: "index_partner_invites_on_invited_by"
+    t.index ["invitee_type", "invitee_id"], name: "index_partner_invites_on_invitee"
+    t.index ["seller_id"], name: "index_partner_invites_on_seller_id"
+    t.index ["status"], name: "index_partner_invites_on_status"
+    t.index ["token"], name: "index_partner_invites_on_token", unique: true
+  end
+
+  create_table "partner_updates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "partner_id", null: false
+    t.uuid "sales_user_id"
+    t.bigint "ad_id"
+    t.integer "kind", default: 1, null: false
+    t.string "title", null: false
+    t.text "body"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "actor_name"
+    t.index ["ad_id"], name: "index_partner_updates_on_ad_id"
+    t.index ["created_at"], name: "index_partner_updates_on_created_at"
+    t.index ["kind"], name: "index_partner_updates_on_kind"
+    t.index ["partner_id"], name: "index_partner_updates_on_partner_id"
+    t.index ["sales_user_id"], name: "index_partner_updates_on_sales_user_id"
+  end
+
+  create_table "partners", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "partner_type", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.string "contact_person"
+    t.string "phone"
+    t.string "email"
+    t.string "website"
+    t.string "location"
+    t.string "logo_url"
+    t.text "description"
+    t.date "signed_on"
+    t.text "agreement_notes"
+    t.decimal "commission_rate", precision: 5, scale: 2
+    t.date "follow_up_date"
+    t.text "follow_up_note"
+    t.datetime "last_contacted_at"
+    t.text "notes"
+    t.uuid "seller_id"
+    t.uuid "sales_brand_id"
+    t.uuid "sales_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["follow_up_date"], name: "index_partners_on_follow_up_date"
+    t.index ["partner_type"], name: "index_partners_on_partner_type"
+    t.index ["sales_brand_id"], name: "index_partners_on_sales_brand_id", unique: true
+    t.index ["sales_user_id"], name: "index_partners_on_sales_user_id"
+    t.index ["seller_id"], name: "index_partners_on_seller_id", unique: true
+    t.index ["status"], name: "index_partners_on_status"
+  end
+
   create_table "password_otps", force: :cascade do |t|
     t.string "otp_digest"
     t.datetime "otp_sent_at"
@@ -1022,6 +1163,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
     t.datetime "updated_at", null: false
     t.decimal "latitude", precision: 10, scale: 7
     t.decimal "longitude", precision: 10, scale: 7
+    t.string "actor_name"
     t.index ["activity_type"], name: "index_sales_brand_activities_on_activity_type"
     t.index ["follow_up_date"], name: "index_sales_brand_activities_on_follow_up_date"
     t.index ["occurred_at"], name: "index_sales_brand_activities_on_occurred_at"
@@ -1461,20 +1603,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   add_foreign_key "call_records", "sales_users"
   add_foreign_key "cart_items", "ads"
   add_foreign_key "cart_items", "buyers", on_delete: :cascade
-  add_foreign_key "cart_items", "buyers", on_delete: :cascade
   add_foreign_key "categories_sellers", "subcategories"
   add_foreign_key "click_events", "ads"
   add_foreign_key "click_events", "buyers", on_delete: :cascade
-  add_foreign_key "click_events", "buyers", on_delete: :cascade
   add_foreign_key "comment_votes", "issue_comments", column: "comment_id"
-  add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers", on_delete: :cascade
-  add_foreign_key "conversations", "buyers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
-  add_foreign_key "conversations", "sellers", column: "inquirer_seller_id", on_delete: :cascade
-  add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "conversations", "sellers", on_delete: :cascade
   add_foreign_key "email_communication_logs", "sellers"
   add_foreign_key "google_business_profile_connections", "sellers"
@@ -1482,14 +1618,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   add_foreign_key "issue_comments", "issue_comments", column: "parent_id"
   add_foreign_key "issue_comments", "issues"
   add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
-  add_foreign_key "issues", "admins", column: "assigned_to_id", on_delete: :cascade
   add_foreign_key "messages", "ads", on_delete: :nullify
   add_foreign_key "messages", "conversations", on_delete: :cascade
   add_foreign_key "offer_ads", "ads"
   add_foreign_key "offer_ads", "offers"
   add_foreign_key "offers", "sellers", on_delete: :cascade
-  add_foreign_key "offers", "sellers", on_delete: :cascade
-  add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
+  add_foreign_key "partner_activities", "partners"
+  add_foreign_key "partner_activities", "sales_users"
+  add_foreign_key "partner_contacts", "partners"
+  add_foreign_key "partner_distributors", "partners"
+  add_foreign_key "partner_distributors", "sales_users"
+  add_foreign_key "partner_distributors", "sellers", on_delete: :nullify
+  add_foreign_key "partner_invites", "sellers", on_delete: :nullify
+  add_foreign_key "partner_updates", "ads"
+  add_foreign_key "partner_updates", "partners"
+  add_foreign_key "partner_updates", "sales_users"
+  add_foreign_key "partners", "sales_brands", on_delete: :nullify
+  add_foreign_key "partners", "sales_users"
+  add_foreign_key "partners", "sellers", on_delete: :nullify
   add_foreign_key "payment_transactions", "sellers", on_delete: :cascade
   add_foreign_key "payment_transactions", "tier_pricings"
   add_foreign_key "payment_transactions", "tiers"
@@ -1499,7 +1645,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   add_foreign_key "review_prompts", "sellers"
   add_foreign_key "review_requests", "sellers"
   add_foreign_key "reviews", "ads"
-  add_foreign_key "reviews", "buyers", on_delete: :cascade
   add_foreign_key "reviews", "buyers", on_delete: :cascade
   add_foreign_key "riders", "age_groups"
   add_foreign_key "riders", "counties"
@@ -1516,11 +1661,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   add_foreign_key "seller_carbon_code_assignments", "sellers"
   add_foreign_key "seller_documents", "document_types"
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade
-  add_foreign_key "seller_documents", "sellers", on_delete: :cascade
   add_foreign_key "seller_pricing_templates", "categories"
   add_foreign_key "seller_pricing_templates", "sellers"
   add_foreign_key "seller_pricing_templates", "subcategories"
-  add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "tiers"
   add_foreign_key "sellers", "age_groups"
@@ -1535,7 +1678,5 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_15_100100) do
   add_foreign_key "whatsapp_product_sessions", "sellers"
   add_foreign_key "wish_lists", "ads"
   add_foreign_key "wish_lists", "buyers", on_delete: :cascade
-  add_foreign_key "wish_lists", "buyers", on_delete: :cascade
-  add_foreign_key "wish_lists", "sellers", on_delete: :cascade
   add_foreign_key "wish_lists", "sellers", on_delete: :cascade
 end

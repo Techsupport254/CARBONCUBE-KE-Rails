@@ -89,14 +89,17 @@ class Seller::CatalogsController < ApplicationController
 
   def build_catalog_csv(products)
     CSV.generate(headers: true) do |csv|
-      csv << ['#', 'Title', 'Category', 'Subcategory', 'Price (KES)', 'Deleted', 'Description']
+      csv << ['#', 'SKU', 'Title', 'Category', 'Subcategory', 'Price (KES)', 'Units/Pack', 'Stock Qty', 'Deleted', 'Description']
       products.each_with_index do |product, index|
         csv << [
           index + 1,
+          product.sku,
           product.title,
           product.try(:category_name),
           product.try(:subcategory_name),
           product.price,
+          product.units_per_pack,
+          product.stock_quantity,
           product.deleted ? 'Yes' : 'No',
           product.description.to_s.squish
         ]

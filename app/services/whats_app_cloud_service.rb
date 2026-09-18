@@ -96,7 +96,7 @@ class WhatsAppCloudService
           },
           {
             type: 'body',
-            parameters: body_params.map { |val| { type: 'text', text: val } }
+            parameters: body_params.map { |val| { type: 'text', text: val.to_s.squish } }
           }
         ]
       }
@@ -122,9 +122,38 @@ class WhatsAppCloudService
       }
     }
 
-    payload[:template][:components] = components if components.any?
+    payload[:template][:components] = sanitize_components(components) if components.any?
 
     send_request(uri, payload, access_token)
+  end
+
+  # Meta rejects template text parameters containing newlines, tabs, or runs
+  # of more than 4 consecutive spaces (error #132018) — squish collapses all
+  # of these into single spaces.
+  def self.sanitize_components(components)
+    components.map do |component|
+      next component unless component[:parameters].is_a?(Array)
+
+      component.merge(
+        parameters: component[:parameters].map do |param|
+          param[:type] == 'text' ? param.merge(text: param[:text].to_s.squish) : param
+        end
+      )
+    end
+  end
+
+  # Send an approved template; if Meta rejects it (e.g. template still pending
+  # approval, or paused/rejected), fall back to the plain-text body so the
+  # notification isn't lost.
+  def self.send_template_or_text(to, template_name:, components: [], language: 'en', fallback_text: nil)
+    result = send_template(to, template_name, language, components)
+    return result if result[:success]
+
+    Rails.logger.warn "[WhatsAppCloudService] template #{template_name} failed " \
+                      "(#{result[:error]}); falling back to text"
+    return result if fallback_text.blank?
+
+    send_message(to, fallback_text)
   end
 
   def self.send_interactive_buttons(to, body_text, buttons)

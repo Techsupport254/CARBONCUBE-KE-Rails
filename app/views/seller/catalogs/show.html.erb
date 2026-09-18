@@ -231,6 +231,44 @@
             border: 1px solid rgba(0,0,0,0.1);
         }
 
+        .stock-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-left: 8px;
+            vertical-align: middle;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .stock-badge.in-stock {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .stock-badge.out-of-stock {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .sku-line {
+            color: var(--secondary);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .pack-line {
+            color: var(--secondary);
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
         .desc {
             max-width: 440px;
             color: var(--secondary);
@@ -540,7 +578,20 @@
                             <% if p.deleted %>
                                 <span class="deleted-badge">Deleted</span>
                             <% end %>
+                            <% if p.stock_tracked? %>
+                                <% if p.in_stock? %>
+                                    <span class="stock-badge in-stock">In Stock: <%= p.stock_quantity %></span>
+                                <% else %>
+                                    <span class="stock-badge out-of-stock">Out of Stock</span>
+                                <% end %>
+                            <% end %>
                         </div>
+                        <% if p.sku.present? %>
+                            <div class="sku-line">SKU: <%= p.sku %></div>
+                        <% end %>
+                        <% if p.units_per_pack.present? %>
+                            <div class="pack-line"><%= p.units_per_pack %> per <%= p.pricing_unit.presence || 'pack' %></div>
+                        <% end %>
                         <div class="desc"><%= render_catalog_markdown(p.description) %></div>
                         <% unless p.deleted %>
                             <a href="https://carboncube-ke.com/ads/<%= Ad.slugify(p.title) %>?id=<%= p.id %>" target="_blank" class="view-link">View Online</a>

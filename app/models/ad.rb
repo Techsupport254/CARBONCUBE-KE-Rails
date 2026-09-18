@@ -102,6 +102,9 @@ class Ad < ApplicationRecord
   validates :price, presence: true, numericality: { greater_than: 0 }, if: :price_required?
   validates :item_length, :item_width, :item_height, numericality: true, allow_nil: true
   validates :item_weight, numericality: { greater_than: 0 }, allow_nil: true
+  validates :sku, length: { maximum: 64 }, allow_nil: true
+  validates :units_per_pack, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :stock_quantity, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   validates :weight_unit, inclusion: { in: ['Grams', 'Kilograms'] }
   validates :pricing_unit, inclusion: { in: ->(ad) { ad.allowed_pricing_units } }, if: -> { pricing_unit.present? }
@@ -191,6 +194,9 @@ class Ad < ApplicationRecord
   # Multi-signal content and vision safety moderation on create and updates
   after_commit :schedule_content_moderation, on: :create
   after_commit :schedule_content_moderation, on: :update, if: :should_recheck_content_moderation?
+
+  # Partner price-drop alerts → distributor network
+  after_commit :enqueue_partner_price_drop, on: :update, if: :price_dropped_for_partner?
 
   # Soft delete
   def flag
@@ -443,10 +449,25 @@ class Ad < ApplicationRecord
     end
   end
 
+  # Stock tracking: stock_quantity NULL means untracked (always in stock),
+  # 0 means out of stock
+  def stock_tracked?
+    !stock_quantity.nil?
+  end
+
+  def in_stock?
+    !stock_tracked? || stock_quantity.positive?
+  end
+
+  # Adjust tracked stock by delta (negative to decrement). Fails validation
+  # and returns false if the result would go below zero.
+  def adjust_stock!(delta)
+    update(stock_quantity: stock_quantity.to_i + delta.to_i)
+  end
+
   def availability_status
-    # For now, assume all active ads are in stock
-    # This could be enhanced with actual inventory tracking
-    'IN_STOCK'
+    # Ads without stock tracking (stock_quantity NULL) are treated as in stock
+    in_stock? ? 'IN_STOCK' : 'OUT_OF_STOCK'
   end
 
   def dimensions_string
@@ -641,6 +662,19 @@ class Ad < ApplicationRecord
 
   def schedule_auto_quality_enrichment
     AutoEnrichAdQualityJob.perform_later(id)
+  end
+
+  # Price decreased on a partner storefront ad → alert subscribed distributors.
+  def price_dropped_for_partner?
+    return false unless saved_change_to_price?
+
+    old_price, new_price = saved_change_to_price
+    new_price.present? && old_price.present? && new_price < old_price && seller&.partner.present?
+  end
+
+  def enqueue_partner_price_drop
+    old_price, new_price = saved_change_to_price
+    PartnerPriceDropJob.perform_later(id, old_price.to_s, new_price.to_s)
   end
 
   def schedule_content_moderation

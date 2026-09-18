@@ -1,8 +1,12 @@
 # frozen_string_literal: true
 
 class SalesBrand < ApplicationRecord
+  include ActorAttribution
+
   belongs_to :sales_user, optional: true
   belongs_to :seller, optional: true
+  # Set when this prospect converted into a formal partner (promote_to_partner)
+  has_one :partner, dependent: :nullify
   has_many :activities, -> { recent_first },
            class_name: 'SalesBrandActivity',
            inverse_of: :sales_brand,
@@ -65,11 +69,15 @@ class SalesBrand < ApplicationRecord
 
   # Record a touchpoint (call, visit, whatsapp, …) and roll its effects up to
   # the brand's current-state fields.
+  # `user` may be a SalesUser or an Admin — only a SalesUser is written to
+  # sales_user_id; an admin is attributed via the activity's actor_name.
   def record_activity!(type:, user:, occurred_at: nil, notes: nil, outcome: nil, follow_up_date: nil,
                        latitude: nil, longitude: nil)
+    rep = sales_user_for(user)
     activity = activities.create!(
       activity_type: type,
-      sales_user: user,
+      sales_user: rep,
+      actor_name: actor_name_for(user),
       occurred_at: occurred_at.presence || Time.current,
       notes: notes,
       outcome: outcome,
@@ -80,7 +88,7 @@ class SalesBrand < ApplicationRecord
 
     updates = {}
     # The rep who adds the first activity becomes the owner when unassigned
-    updates[:sales_user_id] = user.id if sales_user_id.nil? && user
+    updates[:sales_user_id] = rep.id if sales_user_id.nil? && rep
     if SalesBrandActivity::CONTACT_TYPES.include?(activity.activity_type)
       updates[:last_contacted_at] = activity.occurred_at
       updates[:status] = 'contacted' if not_contacted?
@@ -121,8 +129,11 @@ class SalesBrand < ApplicationRecord
   # - onboarded: tries to link an existing platform seller by phone; clears follow-up
   # Logs a status_change activity on the timeline when the status changes.
   # nil follow_up_* args mean "leave as-is"; blank means "clear".
+  # `actor` may be a SalesUser or an Admin — only a SalesUser is written to
+  # sales_user_id; an admin is attributed via the activity's actor_name.
   def transition_to!(new_status, actor: nil, follow_up_date: nil, follow_up_note: nil)
     target = new_status.to_s
+    rep = sales_user_for(actor)
     date = follow_up_date.nil? ? self.follow_up_date : follow_up_date.presence
     note = follow_up_note.nil? ? self.follow_up_note : follow_up_note.presence
 
@@ -144,7 +155,7 @@ class SalesBrand < ApplicationRecord
 
     attrs = { status: target }
     # The rep changing the pipeline becomes the owner when unassigned
-    attrs[:sales_user_id] = actor.id if actor && sales_user_id.nil?
+    attrs[:sales_user_id] = rep.id if rep && sales_user_id.nil?
     # Any status other than not_contacted implies contact has happened — keep
     # the "reached" roll-up accurate even when no activity was logged.
     attrs[:last_contacted_at] ||= Time.current if target != 'not_contacted'
@@ -177,7 +188,8 @@ class SalesBrand < ApplicationRecord
     update!(attrs)
     activities.create!(
       activity_type: 'status_change',
-      sales_user: actor,
+      sales_user: rep,
+      actor_name: actor_name_for(actor),
       occurred_at: Time.current,
       outcome: status,
       notes: "Status changed to #{status.humanize}"
