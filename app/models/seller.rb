@@ -47,6 +47,7 @@ class Seller < ApplicationRecord
   has_one :partner_distributor, dependent: :nullify
   has_many :partner_invites, dependent: :nullify
   has_many :review_prompts, dependent: :destroy
+  has_many :seller_carbon_code_assignments, dependent: :destroy
   has_many :categories_seller_records, class_name: 'CategoriesSeller', dependent: :delete_all
   has_one :categories_seller
   has_one :category, through: :categories_seller
