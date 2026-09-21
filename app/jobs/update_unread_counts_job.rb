@@ -67,7 +67,7 @@ class UpdateUnreadCountsJob < ApplicationJob
   # OPTIMIZED: Single SQL query for seller unread count
   def calculate_total_unread_for_seller_optimized(seller_id)
     Message.joins(:conversation)
-           .where(conversations: { seller_id: seller_id })
+           .where("conversations.seller_id = :id OR conversations.inquirer_seller_id = :id OR conversations.buyer_id = :id", id: seller_id)
            .where.not(sender_id: seller_id)
            .where(read_at: nil)
            .count
@@ -133,9 +133,29 @@ class UpdateUnreadCountsJob < ApplicationJob
   end
   
   def broadcast_unread_count_to_user(user_type, user_id, unread_count)
+    payload = {
+      type: 'unread_count_update',
+      unread_count: unread_count,
+      count: unread_count,
+      timestamp: Time.current.iso8601
+    }
+
+    # Primary stream subscribed by frontend useActionCable
+    ActionCable.server.broadcast(
+      "conversations_#{user_type}_#{user_id}",
+      payload
+    )
+
+    # Presence stream fallback
+    ActionCable.server.broadcast(
+      "presence_#{user_type}_#{user_id}",
+      payload
+    )
+
+    # Backward compatibility stream
     ActionCable.server.broadcast(
       "#{user_type}_#{user_id}_unread_counts",
-      { unread_count: unread_count, timestamp: Time.current.iso8601 }
+      payload
     )
   rescue => e
     Rails.logger.error "Failed to broadcast unread count to #{user_type} #{user_id}: #{e.message}"

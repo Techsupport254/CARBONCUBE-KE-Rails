@@ -273,7 +273,7 @@ class MessagesController < ApplicationController
                      find_buyer_conversation
                    when 'Seller'
                      find_seller_conversation
-                   when 'Admin', 'SalesUser'
+                   when 'Admin', 'SalesUser', 'MarketingUser'
                      find_admin_conversation
                    end
 
@@ -288,13 +288,14 @@ class MessagesController < ApplicationController
   end
 
   def find_seller_conversation
-    # Find conversation where current seller is either the seller or the inquirer_seller
+    # Find conversation where current seller is either the seller, buyer, or inquirer_seller
     Conversation.active_participants
                 .where(
       id: params[:conversation_id]
     ).where(
-      "(seller_id = ? OR inquirer_seller_id = ?)", 
+      "(seller_id = ? OR buyer_id = ? OR inquirer_seller_id = ?)", 
       @current_user.id, 
+      @current_user.id,
       @current_user.id
     ).first
   end

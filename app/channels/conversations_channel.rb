@@ -74,10 +74,10 @@ class ConversationsChannel < ApplicationCable::Channel
     user = connection.current_user || find_user_from_params
     return reject unless user
     
-    conversation_id = data['conversation_id']&.to_i
+    conversation_id = data['conversation_id']&.to_s
     typing_status = data['typing'] == true
     
-    return unless conversation_id && validate_conversation_access(conversation_id, user)
+    return unless conversation_id.present? && validate_conversation_access(conversation_id, user)
     
     # Broadcast typing status to conversation participants
     broadcast_to_conversation_participants(
@@ -115,10 +115,10 @@ class ConversationsChannel < ApplicationCable::Channel
   private
 
   def find_user_from_params
-    user_type = params[:user_type]
     user_id = params[:user_id]
+    user_type = params[:user_type]
     
-    return nil unless user_type && user_id
+    return nil unless user_id && user_type
     
     case user_type.downcase
     when 'buyer'
@@ -146,7 +146,7 @@ class ConversationsChannel < ApplicationCable::Channel
     when 'buyer'
       conversation.buyer_id == user.id
     when 'seller'
-      conversation.seller_id == user.id || conversation.inquirer_seller_id == user.id
+      conversation.seller_id == user.id || conversation.inquirer_seller_id == user.id || conversation.buyer_id == user.id
     when 'admin', 'sales', 'marketing'
       true # Admins, sales, and marketing users can access all conversations
     when 'rider'

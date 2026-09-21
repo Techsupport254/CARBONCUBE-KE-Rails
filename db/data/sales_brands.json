@@ -106,32 +106,17 @@
     "twitter": null
   },
   {
-    "name": "BrazAfric Enterprises",
-    "category": "Agriculture",
-    "part": 1,
-    "subcategories": [
-      "Farm Machinery"
-    ],
-    "scope": "Coffee pulpers, commercial grain dryers, silos, coffee roasters, sorting and grading equipment.",
-    "location": "Mombasa Rd, Nairobi",
-    "phone": "0722 925 611",
-    "email": null,
-    "website": "brazafric.com",
-    "twitter": null
-  },
-  {
     "name": "BrazAfric Enterprises Ltd",
     "category": "Agriculture",
     "part": 1,
     "subcategories": [
       "Farm Machinery",
-      "Agriculture Spare Parts",
-      "Other Agriculture"
+      "Farm Tools"
     ],
-    "scope": "Regional agricultural engineering solutions provider and distributor of coffee pulping and processing machinery, grain driers, seed cleaners, colour sorters, silos, and farm processing accessories.",
-    "location": "Mudher Industrial Park, Off Mombasa Road, Nairobi",
-    "phone": "0722 925 611",
-    "email": "info@brazafric.com",
+    "scope": "Supplier and fabricator of post-harvest agricultural machinery, coffee processing plants, grain driers, sorters, silage equipment, and commercial farm machinery.",
+    "location": "BrazAfric Complex, Enterprise Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0722 201 320",
+    "email": "sales@brazafric.com",
     "website": "brazafric.com",
     "twitter": null
   },
@@ -151,19 +136,19 @@
     "twitter": null
   },
   {
-    "name": "Car & General (Kenya) Ltd",
+    "name": "Car & General Agriculture Division",
     "category": "Agriculture",
     "part": 1,
+    "scope": "Primary distributor for Kubota agricultural tractors, power tillers, Briggs & Stratton petrol and diesel irrigation pumps, motorized knapsack sprayers, brush cutters, and genuine spare parts.",
+    "location": "New Cargen House, Corner of Lusaka and Dunga Roads, Industrial Area, Nairobi, Kenya",
+    "phone": "020 694 3000",
+    "email": "info@cargen.com",
+    "website": "cargen.com",
     "subcategories": [
       "Farm Machinery",
       "Farm Tools",
       "Agriculture Spare Parts"
     ],
-    "scope": "Primary distributor for Kubota agricultural tractors, power tillers, Briggs & Stratton petrol and diesel irrigation pumps, motorized knapsack sprayers, brush cutters, and genuine spare parts.",
-    "location": "New Cargen House, Corner of Lusaka and Dunga Roads, Industrial Area, Nairobi",
-    "phone": "020 694 3000",
-    "email": "info@cargen.com",
-    "website": "cargen.com",
     "twitter": null
   },
   {
@@ -351,32 +336,17 @@
     "twitter": null
   },
   {
-    "name": "Farm Engineering Industries (FEIL)",
-    "category": "Agriculture",
-    "part": 1,
-    "subcategories": [
-      "Farm Machinery"
-    ],
-    "scope": "Sugarcane/tipping trailers, bowsers, skip loaders, cane loaders.",
-    "location": "Mombasa Rd, Nairobi",
-    "phone": "0706 000 056",
-    "email": null,
-    "website": "feil.biz",
-    "twitter": null
-  },
-  {
     "name": "Farm Engineering Industries Ltd (FEIL)",
     "category": "Agriculture",
     "part": 1,
     "subcategories": [
       "Farm Machinery",
-      "Agriculture Spare Parts",
-      "Agriculture Accessories"
+      "Agriculture Spare Parts"
     ],
-    "scope": "Premier Kenyan machinery fabricator and distributor manufacturing agricultural tipping trailers, water tankers, disc harrows, sugarcane haulage equipment, tractor loaders, and farm implements.",
-    "location": "Mombasa Road, Nairobi / Kisumu-Kakamega Highway, Kisumu",
-    "phone": "0706 565 656",
-    "email": "info@feil.biz",
+    "scope": "Kenyan agricultural machinery fabricator producing tractor trailers, disc ploughs, harrows, ridgers, front loaders, and agricultural spare parts.",
+    "location": "FEIL Complex, Kisumu-Nairobi Highway, Kisumu & Enterprise Rd, Nairobi, Kenya",
+    "phone": "0722 203 148 / 057 202 0233",
+    "email": "sales@feil.biz",
     "website": "feil.biz",
     "twitter": null
   },
@@ -634,21 +604,6 @@
     "twitter": null
   },
   {
-    "name": "Kifaru Implements Kenya",
-    "category": "Agriculture",
-    "part": 1,
-    "subcategories": [
-      "Farm Machinery",
-      "Agriculture Spare Parts"
-    ],
-    "scope": "Heavy-duty trailed disc harrows, tractor disc ploughs, chisel ploughs, seed drills, and agricultural tillage spare parts.",
-    "location": "Gilgil Industrial Area, Gilgil / Nakuru County, Kenya",
-    "phone": "0722 757 758",
-    "email": "info@ndumekenya.com",
-    "website": "ndumekenya.com",
-    "twitter": null
-  },
-  {
     "name": "MEA Fertilizers Ltd",
     "category": "Agriculture",
     "part": 1,
@@ -732,24 +687,10 @@
       "Farm Tools",
       "Agriculture Spare Parts"
     ],
-    "scope": "Iconic pioneer Kenyan manufacturer and foundry founded in Gilgil, producing heavy-duty disc ploughs, chisel ploughs, air seeders, planters, agricultural trailers, water bowsers, hammermills, and replacement spares.",
-    "location": "Gilgil – Nyahururu Road, Gilgil, Nakuru County",
-    "phone": "0796 259 323",
+    "scope": "Iconic pioneer Kenyan manufacturer and foundry in Gilgil producing tractor disc ploughs, Kifaru trailed disc harrows, seed drills, trailers, diesel posho mills, and water pumps.",
+    "location": "Gilgil – Nyahururu Road, Gilgil, Nakuru County, Kenya",
+    "phone": "0796 259 323 / 020 205 3277",
     "email": "sales@ndumekenya.com",
-    "website": "ndumekenya.com",
-    "twitter": null
-  },
-  {
-    "name": "Ndume Limited (Gilgil)",
-    "category": "Agriculture",
-    "part": 1,
-    "subcategories": [
-      "Farm Machinery"
-    ],
-    "scope": "Tractor disc ploughs, chisel ploughs, trailers, diesel posho mills, hammer mills, silage choppers.",
-    "location": "Gilgil, Nakuru",
-    "phone": "0796 259 323",
-    "email": null,
     "website": "ndumekenya.com",
     "twitter": null
   },
@@ -996,11 +937,11 @@
       "Automotive Spare Parts",
       "Batteries"
     ],
-    "scope": "Automotive lead-acid starting batteries, solar storage (Maxpower, Powerlast, Chloride Solar), maintenance-free batteries.",
-    "location": "Industrial Area, Nairobi",
+    "scope": "East Africa largest battery manufacturer in Industrial Area Nairobi; produces automotive lead-acid starting batteries, commercial truck batteries, maintenance-free batteries (Chloride Solar, Maxpower, Spark).",
+    "location": "Commercial Street, Industrial Area, Nairobi, Kenya",
     "phone": "0719 080 000",
-    "email": null,
-    "website": "chlorideexide.com",
+    "email": "customerservice@abm.co.ke",
+    "website": "abmeastafrica.com",
     "twitter": null
   },
   {
@@ -1032,29 +973,15 @@
     "twitter": null
   },
   {
-    "name": "Auto Springs East Africa",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Automotive Spare Parts"
-    ],
-    "scope": "Multi-leaf tempered springs, parabolic springs, high-tensile U-bolts, centre bolts, OEM suspension components.",
-    "location": "Limuru (HQ); Bamburi Rd depot, Industrial Area, Nairobi",
-    "phone": "020 205 2982 / 0717 511 049",
-    "email": null,
-    "website": "autosprings.net",
-    "twitter": null
-  },
-  {
     "name": "Auto Springs East Africa PLC",
     "category": "Automotive Parts & Accessories",
     "part": 1,
     "subcategories": [
       "Automotive Spare Parts"
     ],
-    "scope": "Local manufacturer of automotive suspension leaf springs, coil springs, helper springs, parabolic springs, U-bolts, centre bolts, and suspension bushes.",
-    "location": "Bamburi Road, Industrial Area, Nairobi",
-    "phone": "0717 511 049",
+    "scope": "Premier local manufacturer of automotive suspension leaf springs, coil springs, helper springs, parabolic springs, high-tensile U-bolts, centre bolts, and OEM suspension components.",
+    "location": "Limuru (HQ) & Bamburi Road Depot, Industrial Area, Nairobi, Kenya",
+    "phone": "0717 511 049 / 020 205 2982",
     "email": "sales@autosprings.net",
     "website": "autosprings.net",
     "twitter": null
@@ -1074,46 +1001,18 @@
     "twitter": null
   },
   {
-    "name": "Banbros Commercial Spares",
+    "name": "Banbros Limited",
     "category": "Automotive Parts & Accessories",
     "part": 1,
     "subcategories": [
       "Automotive Accessories",
       "Automotive Spare Parts"
     ],
-    "scope": "Commercial vehicle body parts and accessories fabricator, supplying bus side panels, custom driver/passenger seats, and commercial vehicle body hardware.",
-    "location": "Baba Dogo Road, Ruaraka, Nairobi",
-    "phone": "0722 900 100",
+    "scope": "Commercial vehicle body fabrication, tempered leaf spring sets, suspension rebuilds, bus side panels, custom driver/passenger seats, and commercial vehicle body hardware.",
+    "location": "Baba Dogo Road, Ruaraka & Mombasa Road, Mavoko, Nairobi, Kenya",
+    "phone": "0722 900 100 / 0720 512 616",
     "email": "info@banbros.co.ke",
     "website": "banbros.co.ke",
-    "twitter": null
-  },
-  {
-    "name": "Banbros Limited",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Automotive Spare Parts"
-    ],
-    "scope": "Tempered leaf spring sets, suspension rebuilds, commercial bus and truck body fabrication.",
-    "location": "Mombasa Rd, Mavoko (Syokimau-Katani)",
-    "phone": "0720 512 616 / 020 2107266",
-    "email": null,
-    "website": "banbros.co.ke",
-    "twitter": null
-  },
-  {
-    "name": "BasiGo Kenya",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Other Automotive"
-    ],
-    "scope": "Locally assembles E9 Kubwa & King Long electric buses (at KVM, Thika).",
-    "location": "Nairobi; assembly at KVM, Thika",
-    "phone": "0705 837 904",
-    "email": null,
-    "website": "basi-go.com",
     "twitter": null
   },
   {
@@ -1124,25 +1023,26 @@
       "Automotive Spare Parts",
       "Other Automotive"
     ],
-    "scope": "Electric bus assembler, fleet operator, and supplier of high-voltage battery powertrains, DC fast chargers, and OEM electric transit bus spare parts.",
-    "location": "Mkungu Close, Westlands, Nairobi, Kenya",
+    "scope": "Electric bus assembler, fleet operator, and supplier of high-voltage battery powertrains, DC fast chargers, and OEM electric transit bus spare parts (E9 Kubwa & King Long assembled at KVM, Thika).",
+    "location": "Mkungu Close, Westlands, Nairobi & Assembly at KVM, Thika, Kenya",
     "phone": "0705 837 904",
     "email": "info@basi-go.com",
     "website": "basi-go.com",
     "twitter": null
   },
   {
-    "name": "Car & General (Kenya) PLC",
+    "name": "Car & General Automotive Division (TVS)",
     "category": "Automotive Parts & Accessories",
     "part": 1,
+    "scope": "TVS motorcycle and three-wheeler (tuk-tuk) assembly plant in Industrial Area Nairobi (~200 units/day), genuine spares, MRF tyres, and automotive accessories.",
+    "location": "Lusaka & Dunga Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0800 724 600 / 020 694 3000",
+    "email": "info@cargen.com",
+    "website": "cargen.com",
     "subcategories": [
+      "Automotive Spare Parts",
       "Other Automotive"
     ],
-    "scope": "TVS motorcycle assembly (~200 bikes/day) + power equipment.",
-    "location": "Lusaka/Dunga Rd, Industrial Area, Nairobi",
-    "phone": "0800 724 600",
-    "email": null,
-    "website": "cargen.com",
     "twitter": null
   },
   {
@@ -1231,30 +1131,16 @@
     "twitter": null
   },
   {
-    "name": "Hass Petroleum Kenya Limited",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Lubricants"
-    ],
-    "scope": "Regional petroleum marketer and blender of Hass Lubes, including synthetic motor oils, heavy-duty diesel oils, 2-stroke/4-stroke motorcycle oils, and transmission fluids.",
-    "location": "Hass Plaza, Lower Hill Road, Upper Hill, Nairobi",
-    "phone": "0706 666 997",
-    "email": "info@hasspetroleum.com",
-    "website": "hasspetroleum.com",
-    "twitter": null
-  },
-  {
     "name": "Hass Petroleum Lubricants",
     "category": "Automotive Parts & Accessories",
     "part": 1,
     "subcategories": [
       "Lubricants"
     ],
-    "scope": "Synthetic multi-grade motor oils, industrial hydraulic fluids, brake fluids, engine radiator coolants.",
-    "location": "Hass Plaza, Lower Hill Rd, Nairobi",
+    "scope": "Local manufacturer and blender of Mach automotive engine oils, gear oils, hydraulic lubricants, and heavy industrial greases.",
+    "location": "Hass Plaza, Lower Hill Road, Upper Hill, Nairobi, Kenya",
     "phone": "0706 666 997 / 020 276 0000",
-    "email": null,
+    "email": "info@hasspetroleum.com",
     "website": "hasspetroleum.com",
     "twitter": null
   },
@@ -1542,24 +1428,10 @@
     "subcategories": [
       "Lubricants"
     ],
-    "scope": "Engine oils, commercial gear oils, industrial hydraulic fluids, multi-purpose automotive greases.",
-    "location": "KAWI House, South C, Nairobi",
+    "scope": "Kenya state energy corporation blending SupaLube premium automotive multigrade engine lubricants, gear oils, transmission fluids, and industrial greases.",
+    "location": "Athi River Blending Depot & Kawi House, South C, Nairobi, Kenya",
     "phone": "0709 591 000 / 020 695 2000",
-    "email": null,
-    "website": "nationaloil.co.ke",
-    "twitter": null
-  },
-  {
-    "name": "National Oil Corporation (NOCK)",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Lubricants"
-    ],
-    "scope": "State-owned brand owner and blender of SupaLube lubricants, including passenger car motor oils, heavy-duty diesel engine oils, and industrial transmission lubricants.",
-    "location": "KAWI Complex, South C, Red Cross Road, Nairobi",
-    "phone": "0709 591 000",
-    "email": "customerservice@nockenya.co.ke",
+    "email": "info@nock.co.ke",
     "website": "nationaloil.co.ke",
     "twitter": null
   },
@@ -1627,24 +1499,10 @@
       "Automotive Spare Parts",
       "Other Automotive"
     ],
-    "scope": "Kenyan EV brand designing and assembling electric utility motorcycles (Roam Air), mass transit electric buses (Roam Move), battery packs, and EV spares.",
+    "scope": "Kenyan electric mobility company designing, engineering, and assembling Roam Air electric motorcycles, Roam Rapid electric transit buses, DC fast charging stations, and lithium battery modules.",
     "location": "Roam Park, Mombasa Road, Nairobi, Kenya",
     "phone": "0740 666 555",
-    "email": "info@roam-electric.com",
-    "website": "roam-electric.com",
-    "twitter": null
-  },
-  {
-    "name": "Roam Electric (Roam Air)",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Other Automotive"
-    ],
-    "scope": "East Africa's largest e-motorcycle plant; designs/assembles Roam Air + e-buses.",
-    "location": "Roam Park, National Park East Gate Rd, off Mombasa Rd, Nairobi",
-    "phone": "0740 666 555",
-    "email": null,
+    "email": "sales@roam-electric.com",
     "website": "roam-electric.com",
     "twitter": null
   },
@@ -1704,20 +1562,6 @@
     "phone": "0111 853 999",
     "email": "kanyugosamuelkingori@gmail.com",
     "website": null,
-    "twitter": null
-  },
-  {
-    "name": "Spark Batteries Kenya (ABM Division)",
-    "category": "Automotive Parts & Accessories",
-    "part": 1,
-    "subcategories": [
-      "Batteries"
-    ],
-    "scope": "Kenyan lead-acid battery manufacturer producing maintenance-free automotive starting batteries (Spark, Powerlast) and solar energy storage units.",
-    "location": "Commercial Street, Industrial Area, Nairobi, Kenya",
-    "phone": "0719 080 000",
-    "email": "customerservice@abm.co.ke",
-    "website": "abmeastafrica.com",
     "twitter": null
   },
   {
@@ -1837,21 +1681,6 @@
     "twitter": null
   },
   {
-    "name": "BRCK (Kio Kit & Routers)",
-    "category": "Computers, Phones and Accessories",
-    "part": 1,
-    "subcategories": [
-      "Networking Equipment",
-      "Tablets"
-    ],
-    "scope": "Ruggedized shockproof Kio tablets, wireless micro-servers, multi-network connectivity routers.",
-    "location": "Bishop Magua Centre, Kilimani, Nairobi",
-    "phone": "0718 272 887",
-    "email": null,
-    "website": "brck.com",
-    "twitter": null
-  },
-  {
     "name": "BRCK Limited",
     "category": "Computers, Phones and Accessories",
     "part": 1,
@@ -1859,9 +1688,9 @@
       "Networking Equipment",
       "Tablets"
     ],
-    "scope": "Designer and manufacturer of rugged IoT microservers, connectivity hardware, and educational devices including the SupaBRCK, BRCK v1 rugged router, Moja Wi-Fi hardware, and Kio Kit tablets.",
-    "location": "2nd Floor, Bishop Magua Centre, George Padmore Lane, Kilimani, Nairobi",
-    "phone": "0718 272 881",
+    "scope": "Designer and manufacturer of rugged IoT microservers, connectivity hardware, and educational devices including SupaBRCK, BRCK v1 rugged router, Moja Wi-Fi hardware, and Kio Kit tablets.",
+    "location": "Bishop Magua Centre, Ngong Road, Nairobi, Kenya",
+    "phone": "0718 272 881 / 0718 272 887",
     "email": "info@brck.com",
     "website": "brck.com",
     "twitter": null
@@ -1933,21 +1762,6 @@
     "twitter": null
   },
   {
-    "name": "East Africa Device Assembly (EADAK)",
-    "category": "Computers, Phones and Accessories",
-    "part": 1,
-    "subcategories": [
-      "Phones",
-      "Tablets"
-    ],
-    "scope": "Locally assembled 4G/5G Neon smartphones, digital literacy tablets, smart communication devices.",
-    "location": "Athi River EPZ",
-    "phone": "020 790 3000",
-    "email": null,
-    "website": "eadak.co.ke",
-    "twitter": null
-  },
-  {
     "name": "East Africa Device Assembly Kenya (EADAK)",
     "category": "Computers, Phones and Accessories",
     "part": 1,
@@ -1956,11 +1770,11 @@
       "Tablets",
       "Networking Equipment"
     ],
-    "scope": "Kenya's premier smartphone and device assembly plant located in Mavoko; manufactures localized 4G/5G smart devices including the Neon Smarta and Neon Ultra series and broadband terminals.",
-    "location": "Athi River, Mavoko, Machakos County",
-    "phone": "0722 003 272",
+    "scope": "Kenya premier smartphone and device assembly plant located in Mavoko; locally assembles 4G/5G Neon smart devices, mobile phones, educational literacy tablets, and IoT hardware.",
+    "location": "Athi River EPZ, Mavoko, Machakos County, Kenya",
+    "phone": "0722 003 272 / 020 790 3000",
     "email": "customercare@safaricom.co.ke",
-    "website": "safaricom.co.ke",
+    "website": "eadak.co.ke",
     "twitter": null
   },
   {
@@ -2028,21 +1842,6 @@
     "twitter": null
   },
   {
-    "name": "JKUAT (Taifa Laptops & Tablets)",
-    "category": "Computers, Phones and Accessories",
-    "part": 1,
-    "subcategories": [
-      "Computers",
-      "Laptops"
-    ],
-    "scope": "Taifa A3 educational laptops, school tablets, custom desktop assembly terminals for institutional use.",
-    "location": "Juja, Kiambu",
-    "phone": "0112 694 692",
-    "email": null,
-    "website": "jkuat.ac.ke",
-    "twitter": null
-  },
-  {
     "name": "JamboPay (Web Tribe Limited)",
     "category": "Computers, Phones and Accessories",
     "part": 1,
@@ -2090,7 +1889,7 @@
     "twitter": null
   },
   {
-    "name": "MU Technologies Digital Assembly Plant",
+    "name": "MU Technologies (Moi University Assembly Plant)",
     "category": "Computers, Phones and Accessories",
     "part": 1,
     "subcategories": [
@@ -2099,10 +1898,10 @@
       "Tablets",
       "Computer Spare Parts"
     ],
-    "scope": "Local computer assembly factory operated by Moi University at Rivatex Eldoret; assembles educational laptops, pupil tablets, teacher PCs, and desktop computers for institutional markets.",
-    "location": "Rivatex Complex, Kipkaren Road, Eldoret",
-    "phone": "0790 940 508",
-    "email": "info@mu.ac.ke",
+    "scope": "Moi University local digital assembly plant in Eldoret producing custom desktop computers, education laptops, digital literacy tablets, and replacement computing components.",
+    "location": "Moi University Main Campus, Kesses, Eldoret, Kenya",
+    "phone": "0790 940 508 / 0736 138 770",
+    "email": "technologies@mu.ac.ke",
     "website": "mu.ac.ke",
     "twitter": null
   },
@@ -2138,21 +1937,6 @@
     "phone": "0733 612 230",
     "email": "sales@mitsumidistribution.com",
     "website": "mitsumidistribution.com",
-    "twitter": null
-  },
-  {
-    "name": "Moi University DLP Assembly",
-    "category": "Computers, Phones and Accessories",
-    "part": 1,
-    "subcategories": [
-      "Laptops",
-      "Tablets"
-    ],
-    "scope": "Digital literacy educational tablets, teacher companion laptops, local digital storage devices.",
-    "location": "Rivatex, Eldoret",
-    "phone": "0790 940 508 / 0736 138 770",
-    "email": null,
-    "website": "mu.ac.ke",
     "twitter": null
   },
   {
@@ -2384,8 +2168,8 @@
       "Tablets",
       "Accessories"
     ],
-    "scope": "Kenya's pioneer homegrown computing brand assembled locally at JKUAT Industrial & Technology Park; products include Taifa A3 laptops, desktop workstations, and educational tablets.",
-    "location": "JKUAT Industrial Park, JKUAT Main Campus, Juja, Kiambu",
+    "scope": "Kenya pioneer homegrown computing brand assembled locally at JKUAT Industrial Park; produces Taifa A3 laptops, mini-PCs, educational tablets, and computer peripherals.",
+    "location": "JKUAT Industrial Park, JKUAT Main Campus, Juja, Kiambu, Kenya",
     "phone": "0112 694 692",
     "email": "taifa@jkuat.ac.ke",
     "website": "jkuatindustrialpark.com",
@@ -2529,21 +2313,6 @@
     "twitter": null
   },
   {
-    "name": "Davis & Shirtliff (Filtration)",
-    "category": "Filtration",
-    "part": 1,
-    "subcategories": [
-      "Industrial Filters",
-      "Other Filtration"
-    ],
-    "scope": "Rapid sand filters, cartridge filtration systems, reverse osmosis membranes, UV purification units.",
-    "location": "Dundori Rd, Industrial Area, Nairobi",
-    "phone": "0711 079 000",
-    "email": null,
-    "website": "davisandshirtliff.com",
-    "twitter": null
-  },
-  {
     "name": "Davis & Shirtliff Industrial Filtration",
     "category": "Filtration",
     "part": 1,
@@ -2551,10 +2320,10 @@
       "Industrial Filters",
       "Other Filtration"
     ],
-    "scope": "Regional engineering manufacturer and assembler of industrial fluid filtration systems, media sand filters, multi-cartridge filters, bag filters, and RO membrane separation units.",
-    "location": "Dundori Road, Industrial Area, Nairobi",
-    "phone": "0711 079 000",
-    "email": "contactcenter@dayliff.com",
+    "scope": "Comprehensive water and fluid filtration engineering: sand filters, ultrafiltration, reverse osmosis, cartridge filters, and heavy industrial water treatment plants.",
+    "location": "D&S Complex, Dundori Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0711 079 000 / 020 696 8000",
+    "email": "contactcenter@downtowndns.com",
     "website": "davisandshirtliff.com",
     "twitter": null
   },
@@ -2686,32 +2455,18 @@
     "subcategories": [
       "Air Filters",
       "Fuel Filters",
-      "Oil & Hydraulic Filters"
-    ],
-    "scope": "Kenyan automotive parts brand owner and supplier of proprietary filtration lines including Power Filter, Sunny Genuine Filters, and Filter Guard (air, oil, and fuel filters).",
-    "location": "10 Dar Es Salaam Road, Industrial Area, Nairobi",
-    "phone": "0710 600 307",
-    "email": "sales@mutsimoto.com",
-    "website": "mutsimoto.com",
-    "twitter": null
-  },
-  {
-    "name": "Mutsimoto Motor Company Ltd",
-    "category": "Filtration",
-    "part": 1,
-    "subcategories": [
       "Industrial Filters",
       "Oil & Hydraulic Filters"
     ],
-    "scope": "Air, oil, fuel & hydraulic filters; 800+ types, specialized/contract filters.",
-    "location": "Biashara St, Nakuru; Dar es Salaam Rd office, Nairobi",
-    "phone": "0710 600 307",
-    "email": null,
+    "scope": "Local manufacturer of automotive and heavy industrial filters: air filters, diesel fuel water separators, and hydraulic oil filtration systems.",
+    "location": "Funzi Road, Off Enterprise Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0710 600 307 / 020 232 4588",
+    "email": "info@mutsimoto.com",
     "website": "mutsimoto.com",
     "twitter": null
   },
   {
-    "name": "Pantech Kenya Limited",
+    "name": "Pantech Kenya Limited (TopTek)",
     "category": "Filtration",
     "part": 1,
     "subcategories": [
@@ -2720,23 +2475,8 @@
       "Industrial Filters",
       "Oil & Hydraulic Filters"
     ],
-    "scope": "Manufacturer and supplier of TopTek™ brand filters, including automotive air, fuel, and oil filters, industrial baghouse dust filters, HVAC panels, and hydraulic filters.",
-    "location": "Lokitaung Road, Off Likoni Road, Shed 18, KIE, Nairobi",
-    "phone": "0715 674 636",
-    "email": "info@pantech-ke.com",
-    "website": "pantech-ke.com",
-    "twitter": null
-  },
-  {
-    "name": "Pantech Kenya Limited (TopTek)",
-    "category": "Filtration",
-    "part": 1,
-    "subcategories": [
-      "Industrial Filters",
-      "Oil & Hydraulic Filters"
-    ],
-    "scope": "Industrial sieve tubes, industrial dust collector sleeves, liquid bag filters, air intake elements.",
-    "location": "Lokitaung Rd off Likoni Rd, Industrial Area, Nairobi",
+    "scope": "Kenyan manufacturer and assembler of TopTek high-efficiency oil, fuel, air, and hydraulic filtration systems for commercial vehicles and plant equipment.",
+    "location": "Godown No 7, ICD Road, Off Mombasa Road, Nairobi, Kenya",
     "phone": "0715 674 636",
     "email": "info@pantech-ke.com",
     "website": "pantech-ke.com",
@@ -2798,25 +2538,10 @@
       "Industrial Filters",
       "Oil & Hydraulic Filters"
     ],
-    "scope": "Specialized local filtration manufacturer producing automotive air, fuel, and lube oil filters, as well as agricultural, heavy machinery, and industrial process filters.",
-    "location": "Busia Road, Off Enterprise Road, Industrial Area, Nairobi",
-    "phone": "0713 211 374",
-    "email": "sales@unifilterskenya.biz",
-    "website": "unifilterskenya.com",
-    "twitter": null
-  },
-  {
-    "name": "Unifilters Kenya Ltd",
-    "category": "Filtration",
-    "part": 1,
-    "subcategories": [
-      "Oil & Hydraulic Filters",
-      "Other Filtration"
-    ],
-    "scope": "OEM/aftermarket air, oil, fuel, cabin, hydraulic & separator filters; blended coolants.",
-    "location": "Tilisi Logistics Park, Limuru; Busia Rd office, Nairobi",
-    "phone": "0713 211 374",
-    "email": null,
+    "scope": "Pioneer Kenyan manufacturer of Unifilters brand automotive air filters, fuel filters, oil filters, hydraulic filters, and dust collection systems.",
+    "location": "Nanyuki Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0713 211 374 / 020 655 0174",
+    "email": "info@unifilterskenya.com",
     "website": "unifilterskenya.com",
     "twitter": null
   },
@@ -2856,10 +2581,10 @@
     "subcategories": [
       "Construction Materials"
     ],
-    "scope": "Hot-rolled steel products, rebars, wire products (~6 plants).",
-    "location": "40 Westlands Rd, Nairobi (HQ)",
+    "scope": "Largest integrated steel manufacturer in East Africa; produces TMT high-yield rebars, steel billets, wire rods, welded mesh, and construction steel from plants in Athi River and Mariakani.",
+    "location": "40 Westlands Rd, Nairobi & Namanga Rd, Athi River, Kenya",
     "phone": "0707 726 560",
-    "email": null,
+    "email": "info@abyssiniagroup.com",
     "website": "abyssiniagroup.com",
     "twitter": null
   },
@@ -2963,30 +2688,16 @@
     "twitter": null
   },
   {
-    "name": "Basco Products (Duracoat)",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Construction Materials"
-    ],
-    "scope": "Duracoat antibacterial paints, acrylic wall putty, water-repellent sealers, road marking enamels.",
-    "location": "Airport North Rd, Embakasi, Nairobi",
-    "phone": "020 682 3555 / 0800 221 331",
-    "email": null,
-    "website": "duracoat.com",
-    "twitter": null
-  },
-  {
     "name": "Basco Products (Kenya) Ltd (Duracoat)",
     "category": "Hardware",
     "part": 1,
     "subcategories": [
       "Construction Materials"
     ],
-    "scope": "Duracoat decorative wall paints, antibacterial formulations, acrylic wall putty, water-repellent sealers, and industrial coatings.",
-    "location": "Airport North Road, Embakasi, Nairobi",
-    "phone": "020 682 3556",
-    "email": "customerservice@bascopaints.com",
+    "scope": "Kenyan paint manufacturer producing Duracoat architectural coatings, automotive paints, industrial epoxy coatings, wood finishes, and waterproofing compounds.",
+    "location": "Basco Complex, Airport North Road, Embakasi, Nairobi, Kenya",
+    "phone": "020 682 3555 / 0800 221 331",
+    "email": "orders@duracoat.co.ke",
     "website": "duracoat.com",
     "twitter": null
   },
@@ -3100,20 +2811,6 @@
     "phone": "0709 887 000",
     "email": null,
     "website": "crownpaints.co.ke",
-    "twitter": null
-  },
-  {
-    "name": "Devki Steel Mills / Maisha Mabati",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Construction Materials"
-    ],
-    "scope": "High-tensile TMT steel rebars (D10, D12, D16, D20), welded mesh BRC, binding wire, profile beams.",
-    "location": "Ruiru & Kwale",
-    "phone": "0756 020 000",
-    "email": null,
-    "website": "devkigroupke.com",
     "twitter": null
   },
   {
@@ -3319,30 +3016,16 @@
     "twitter": null
   },
   {
-    "name": "Kaluworks Building Products",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Construction Materials"
-    ],
-    "scope": "Kenyan architectural and industrial manufacturing pioneer producing corrugated aluminium roofing sheets, fabricated profiles, and building materials.",
-    "location": "Mombasa / Commercial Street, Industrial Area, Nairobi",
-    "phone": "020 653 2000",
-    "email": "sales@kaluworks.com",
-    "website": "kaluworks.com",
-    "twitter": null
-  },
-  {
     "name": "Kaluworks Ltd",
     "category": "Hardware",
     "part": 1,
     "subcategories": [
       "Construction Materials"
     ],
-    "scope": "Aluminium rolled products, roofing (Tower Metcoppo/Rigidal), cookware.",
-    "location": "Industrial Area, Nairobi; mill at Mariakani",
-    "phone": "0722 485 550",
-    "email": null,
+    "scope": "Manufacturer of aluminum roofing sheets, color-coated coiled coils, cladding panels, and fabricated building components.",
+    "location": "Mombasa (HQ) & Enterprise Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0722 485 550 / 020 653 2000",
+    "email": "sales@kaluworks.com",
     "website": "kaluworks.com",
     "twitter": null
   },
@@ -3473,6 +3156,20 @@
     "twitter": null
   },
   {
+    "name": "Maisha Mabati Mills Ltd",
+    "category": "Hardware",
+    "part": 1,
+    "scope": "Kenya premier roofing sheet manufacturer under Devki Group; manufactures Alu-Zinc corrugated roofing sheets, box profile sheets, tile profiles, ridge caps, and gutters.",
+    "phone": "0756 020 000",
+    "email": "sales@maishamabati.com",
+    "website": "maishamabati.com",
+    "location": "Ruiru Kamiti Road, Ruiru, Kiambu County, Kenya",
+    "subcategories": [
+      "Construction Materials"
+    ],
+    "twitter": null
+  },
+  {
     "name": "Metro Concepts EA Ltd (Metro Plastics)",
     "category": "Hardware",
     "part": 1,
@@ -3487,30 +3184,16 @@
     "twitter": null
   },
   {
-    "name": "Metsec Cables (Doshi Group)",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Power & Electrical Equipment"
-    ],
-    "scope": "Low-voltage electrical wiring cables, flexible PVC cords, conduit pipes, commercial trunking.",
-    "location": "Mombasa Rd, Nairobi",
-    "phone": "0703 030 000",
-    "email": null,
-    "website": "metsec.co.ke",
-    "twitter": null
-  },
-  {
     "name": "Metsec Cables Ltd (Doshi Group)",
     "category": "Hardware",
     "part": 1,
     "subcategories": [
       "Power & Electrical Equipment"
     ],
-    "scope": "Low-voltage single/multi-core copper electrical wiring, PVC conduit pipes, commercial metal trunking, armoured underground power cables, and solar cables.",
-    "location": "Doshi Complex, Mombasa Road, Nairobi",
-    "phone": "0703 030 333",
-    "email": "info@metseccables.com",
+    "scope": "Premier Kenyan cable manufacturer producing low & medium voltage copper and aluminum electrical cables, armored cables, switchgear, and conduit trunking.",
+    "location": "Metsec Complex, Falcon Road, Off Enterprise Road, Industrial Area, Nairobi, Kenya",
+    "phone": "0703 030 000 / 0703 030 333",
+    "email": "sales@metsec.co.ke",
     "website": "metsec.co.ke",
     "twitter": null
   },
@@ -3543,29 +3226,15 @@
     "twitter": null
   },
   {
-    "name": "National Cement (Simba Cement)",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Construction Materials"
-    ],
-    "scope": "Simba Cement 32.5R, 42.5N, clinker, building stone aggregates, ballast.",
-    "location": "Athi River & Nakuru",
-    "phone": "0756 020 000 / 0709 110 000",
-    "email": null,
-    "website": "nccke.com",
-    "twitter": null
-  },
-  {
     "name": "National Cement Company (Simba Cement)",
     "category": "Hardware",
     "part": 1,
     "subcategories": [
       "Construction Materials"
     ],
-    "scope": "Iconic Kenyan cement manufacturer under the Devki Group producing Simba Cement (Power Plus 42.5 and Super 32.5 Portland pozzolana cement).",
-    "location": "Lukenya, Athi River / Mombasa Road, Nairobi",
-    "phone": "0709 110 000",
+    "scope": "Iconic Kenyan cement manufacturer under Devki Group producing Simba Cement 32.5R, 42.5N, clinker, building ballast, and aggregates.",
+    "location": "Lukenya, Athi River / Mombasa Road, Nairobi, Kenya",
+    "phone": "0756 020 000 / 0709 110 000",
     "email": "info@devki-group.com",
     "website": "devki-group.com",
     "twitter": null
@@ -3610,20 +3279,6 @@
     "phone": "0746 351 163",
     "email": "kenya.info@actom.co.za",
     "website": "actomkenya.co.ke",
-    "twitter": null
-  },
-  {
-    "name": "Prime Steel Mills Ltd",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Construction Materials"
-    ],
-    "scope": "Steel billets/rebar manufacturing.",
-    "location": "Namanga Rd, Athi River",
-    "phone": "0707 726 560",
-    "email": null,
-    "website": null,
     "twitter": null
   },
   {
@@ -3740,29 +3395,15 @@
     "twitter": null
   },
   {
-    "name": "Savannah Cement Ltd",
-    "category": "Hardware",
-    "part": 1,
-    "subcategories": [
-      "Construction Materials"
-    ],
-    "scope": "Cement grinding plant.",
-    "location": "Off Namanga Rd, Athi River",
-    "phone": "020 204 0000",
-    "email": null,
-    "website": "savannahcement.co.ke",
-    "twitter": null
-  },
-  {
     "name": "Savannah Cement PLC",
     "category": "Hardware",
     "part": 1,
     "subcategories": [
       "Construction Materials"
     ],
-    "scope": "Eco-friendly cement manufacturing plant in Kitengela producing high-strength Portland composite cement for infrastructure and building construction.",
-    "location": "Kitengela, Off Namanga Road, Machakos County",
-    "phone": "0724 255 777",
+    "scope": "Eco-friendly cement manufacturing plant producing high-strength Portland cement 32.5R and 42.5N and hydraulic road binders.",
+    "location": "Kitengela, Off Namanga Road, Machakos County, Kenya",
+    "phone": "0724 255 777 / 020 204 0000",
     "email": "info@savannahcement.com",
     "website": "savannahcement.com",
     "twitter": null
@@ -4073,24 +3714,10 @@
       "Mechanics",
       "Industrial Machinery Specialist"
     ],
-    "scope": "Heavy diesel commercial vehicle maintenance, fleet mechanical servicing, farm tractor transmission repairs, and industrial machinery support.",
+    "scope": "Commercial fleet mechanics, diesel engine overhauls, diagnostic mechanical servicing, tractor maintenance, and agricultural/heavy industrial machinery repair.",
     "location": "Lusaka Road, Industrial Area, Nairobi, Kenya",
-    "phone": "020 693 2000",
-    "email": "info@cmcmotors.com",
-    "website": "cmcmotors.com",
-    "twitter": null
-  },
-  {
-    "name": "CMC Motors Group Ltd",
-    "category": "Services",
-    "part": 1,
-    "subcategories": [
-      "Mechanics"
-    ],
-    "scope": "Heavy diesel engine overhauls, commercial fleet servicing, farm tractor transmission repairs.",
-    "location": "Lusaka Rd, Nairobi + branches",
-    "phone": "020 693 2000",
-    "email": null,
+    "phone": "020 693 2000 / 0722 204 900",
+    "email": "service@cmcmotors.com",
     "website": "cmcmotors.com",
     "twitter": null
   },
@@ -4137,37 +3764,6 @@
     "email": null,
     "website": "crystalgardens.co.ke",
     "twitter": "@crystalgardensK"
-  },
-  {
-    "name": "Davis & Shirtliff Engineering",
-    "category": "Services",
-    "part": 1,
-    "subcategories": [
-      "Borehole Specialist",
-      "Plumber"
-    ],
-    "scope": "Hydrogeological surveys, borehole drilling, solar pumping systems, pump overhaul services.",
-    "location": "Dundori Rd, Industrial Area, Nairobi",
-    "phone": "0711 079 000",
-    "email": null,
-    "website": "davisandshirtliff.com",
-    "twitter": null
-  },
-  {
-    "name": "Davis & Shirtliff Water Services",
-    "category": "Services",
-    "part": 1,
-    "subcategories": [
-      "Borehole Specialist",
-      "Equipment Leasing",
-      "Plumber"
-    ],
-    "scope": "Hydrogeological ground surveys, borehole drilling and rehabilitation, solar-powered water pump installation, water treatment system design, and pump rental.",
-    "location": "Dundori Road, Industrial Area, Nairobi",
-    "phone": "0711 079 000",
-    "email": "contactcenter@dayliff.com",
-    "website": "davisandshirtliff.com",
-    "twitter": null
   },
   {
     "name": "Drillex Kenya Ltd",
@@ -4222,24 +3818,10 @@
       "Mason",
       "Painter"
     ],
-    "scope": "On-demand vetted trade services: certified electricians, licensed plumbers, finish carpenters, structural masons, and commercial/residential painters.",
-    "location": "KP Offices, Milimani Road, Nairobi",
+    "scope": "Vetted trade specialist service network across Nairobi: certified electricians, licensed plumbers, professional carpenters, masons, and painters.",
+    "location": "Kilimani, Argwings Kodhek Road, Nairobi, Kenya",
     "phone": "0700 300 228",
     "email": "info@fundis.co.ke",
-    "website": "fundis.co.ke",
-    "twitter": null
-  },
-  {
-    "name": "Fundis On Demand (Fundis App)",
-    "category": "Services",
-    "part": 1,
-    "subcategories": [
-      "Electrician"
-    ],
-    "scope": "Vetted, on-demand certified electricians, plumbers, carpenters, masons, and appliance technicians.",
-    "location": "Milimani Rd, Nairobi",
-    "phone": "0700 300 228",
-    "email": null,
     "website": "fundis.co.ke",
     "twitter": null
   },
@@ -4728,37 +4310,6 @@
     "twitter": null
   },
   {
-    "name": "Armco (Kenya) Ltd",
-    "category": "TVs & Audio and Electronics",
-    "part": 1,
-    "subcategories": [
-      "Other Electronics"
-    ],
-    "scope": "Automatic voltage switchers (AVS), high-capacity power surge protectors, domestic appliances.",
-    "location": "Emirates Business Park, Eastern Bypass, Embakasi",
-    "phone": "020 800 2222 / 0726 229 999",
-    "email": null,
-    "website": "armcokenya.com",
-    "twitter": null
-  },
-  {
-    "name": "Armco Kenya (Armco Appliances)",
-    "category": "TVs & Audio and Electronics",
-    "part": 1,
-    "subcategories": [
-      "Smart TVs",
-      "LED & LCD TVs",
-      "Soundbars & Speakers",
-      "TV Accessories"
-    ],
-    "scope": "Long-established Kenyan consumer electronics brand offering smart televisions, digital LED panels, multimedia audio speakers, and TV accessories.",
-    "location": "Emirates Business Park, Eastern Bypass Slip Road, Off Airport North Road, Nairobi",
-    "phone": "0799 229 999",
-    "email": "info@armcokenya.com",
-    "website": "armcokenya.com",
-    "twitter": null
-  },
-  {
     "name": "Audiocom Kenya Ltd (Pioneer Audio)",
     "category": "TVs & Audio and Electronics",
     "part": 1,
@@ -5004,34 +4555,18 @@
     "twitter": null
   },
   {
-    "name": "Kyocera Document Solutions Kenya",
-    "category": "TVs & Audio and Electronics",
-    "part": 1,
-    "subcategories": [
-      "Copiers",
-      "Printers",
-      "Scanners"
-    ],
-    "scope": "Certified Kyocera partner supplying heavy-duty TASKalfa and ECOSYS multifunctional copiers, production laser printers, and enterprise document capture systems.",
-    "location": "16 Kanjata Road, off James Gichuru Road, Nairobi, Kenya",
-    "phone": "020 325 1000",
-    "email": "info@groupmfi.com",
-    "website": "groupmfi.com",
-    "twitter": null
-  },
-  {
     "name": "MFI Document Solutions",
     "category": "TVs & Audio and Electronics",
     "part": 1,
     "subcategories": [
-      "Printers",
       "Copiers",
+      "Printers",
       "Scanners",
       "Shredders",
       "Projectors & Screens"
     ],
-    "scope": "Established Kenyan office technology corporation delivering commercial copiers, network multifunction printers, large-format scanners, industrial shredders, and interactive projectors.",
-    "location": "No. 16 Kanjata Road, Off James Gichuru Road, Lavington, Nairobi",
+    "scope": "Established Kenyan office technology corporation delivering commercial copiers, network multifunction printers, large-format scanners, industrial shredders, and interactive projectors (official Kyocera partner).",
+    "location": "16 Kanjata Road, Off James Gichuru Road, Lavington, Nairobi, Kenya",
     "phone": "020 325 1000",
     "email": "info@groupmfi.com",
     "website": "groupmfi.com",
@@ -5286,25 +4821,10 @@
       "Soundbars & Speakers",
       "TV Accessories"
     ],
-    "scope": "Established consumer electronics enterprise with local Kenya operations and assembly, specializing in Android and Google Smart TVs, QLED TVs, soundbars, and wall mounts.",
-    "location": "Caxton House, 2nd Floor, Kenyatta Avenue, Nairobi",
+    "scope": "Consumer electronics brand assembling Android Smart TVs (32\"-75\"), 4K UHD screens, home audio soundbars, and consumer electronics.",
+    "location": "Embakasi SEZ Assembly / Cardinal Otunga Plaza, Nairobi, Kenya",
     "phone": "0794 896 833",
-    "email": "support.ke@syinix.com",
-    "website": "ke.syinix.com",
-    "twitter": null
-  },
-  {
-    "name": "Syinix Kenya Assembly",
-    "category": "TVs & Audio and Electronics",
-    "part": 1,
-    "subcategories": [
-      "Smart TVs",
-      "Soundbars & Speakers"
-    ],
-    "scope": "Locally assembled Android Frameless Smart TVs (32\"-65\") with integrated voltage stabilizers, soundbars.",
-    "location": "Nairobi",
-    "phone": "0794 896 833",
-    "email": null,
+    "email": "service@ke.syinix.com",
     "website": "ke.syinix.com",
     "twitter": null
   },
@@ -5357,21 +4877,6 @@
     "twitter": null
   },
   {
-    "name": "Vision Plus",
-    "category": "TVs & Audio and Electronics",
-    "part": 1,
-    "subcategories": [
-      "Smart TVs",
-      "Soundbars & Speakers"
-    ],
-    "scope": "LED/Smart TVs 24\"-75\" (Tatu City plant), soundbars, OEM contract assembly.",
-    "location": "Tatu City SEZ, Ruiru; HQ Baba Dogo Rd, Nairobi",
-    "phone": "0111 052 700",
-    "email": null,
-    "website": "visionplus.co.ke",
-    "twitter": null
-  },
-  {
     "name": "Vision Plus Kenya",
     "category": "TVs & Audio and Electronics",
     "part": 1,
@@ -5383,8 +4888,8 @@
       "TV Accessories",
       "Audio Accessories"
     ],
-    "scope": "Homegrown Kenyan consumer electronics brand specializing in frameless Android Smart TVs, 4K QLED TVs, Bluetooth soundbars, multimedia party speakers, and TV wall brackets.",
-    "location": "Gallant Mall, 1st Floor, Parklands, Nairobi",
+    "scope": "Homegrown Kenyan consumer electronics brand assembling frameless smart Android TVs (24\"-75\"), 4K QLEDs, soundbars, Bluetooth speakers, and TV wall brackets.",
+    "location": "Gallant Mall, Parklands & Tatu City SEZ Assembly Plant, Ruiru, Kenya",
     "phone": "0111 052 700",
     "email": "support@visionplus.co.ke",
     "website": "visionplus.co.ke",

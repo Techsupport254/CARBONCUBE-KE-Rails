@@ -222,12 +222,16 @@ class ConversationsController < ApplicationController
       return
     end
 
-    # Staff can only mark conversations they are assigned to as read.
-    # P2P buyer↔seller threads (admin_id is not the staff user) must not be touched.
+    # Staff can only mark conversations they are assigned to, general support threads, or whatsapp conversations
+    # P2P buyer↔seller threads without staff participation must not be touched by staff.
     staff_types = %w[Admin SalesUser MarketingUser]
-    if staff_types.include?(@current_user.class.name) && @conversation.admin_id != @current_user.id
-      render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
-      return
+    if staff_types.include?(@current_user.class.name)
+      is_assigned = @conversation.admin_id == @current_user.id
+      is_support = @conversation.admin_id.nil? || (@conversation.respond_to?(:is_whatsapp?) && @conversation.is_whatsapp?)
+      unless is_assigned || is_support || @current_user.is_a?(Admin)
+        render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
+        return
+      end
     end
 
     unread_messages = related_conversations_for_mark_read.flat_map do |conversation|
@@ -235,10 +239,10 @@ class ConversationsController < ApplicationController
     end
     
     processed_count = 0
-    now = Time.current
     unread_messages.each do |message|
       message.mark_as_read!
       processed_count += 1
+      broadcast_read_receipt(message)
     end
 
     # Update unread counts once for the conversation
@@ -565,8 +569,9 @@ class ConversationsController < ApplicationController
     Conversation.where(
       id: params[:id]
     ).where(
-      "(seller_id = ? OR inquirer_seller_id = ?)", 
+      "(seller_id = ? OR buyer_id = ? OR inquirer_seller_id = ?)", 
       @current_user.id, 
+      @current_user.id,
       @current_user.id
     ).first
   end
@@ -1212,5 +1217,36 @@ class ConversationsController < ApplicationController
              .count : 0
 
     render json: { count: total_unread }
+  end
+
+  def broadcast_read_receipt(message)
+    sender_type = message.sender_type.to_s.downcase
+    sender_id = message.sender_id
+    
+    # Broadcast to PresenceChannel stream (used by usePresence)
+    ActionCable.server.broadcast(
+      "presence_#{sender_type}_#{sender_id}",
+      {
+        type: 'message_read',
+        message_id: message.id,
+        conversation_id: message.conversation_id,
+        read_at: message.read_at,
+        status: 'read'
+      }
+    )
+
+    # Also broadcast to ConversationsChannel stream
+    ActionCable.server.broadcast(
+      "conversations_#{sender_type}_#{sender_id}",
+      {
+        type: 'message_read',
+        message_id: message.id,
+        conversation_id: message.conversation_id,
+        read_at: message.read_at,
+        status: 'read'
+      }
+    )
+  rescue => e
+    Rails.logger.warn "Failed to broadcast read receipt for message #{message.id}: #{e.message}"
   end
 end
