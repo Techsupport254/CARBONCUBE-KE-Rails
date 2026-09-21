@@ -21,6 +21,13 @@ namespace :sales_brands do
       brand.save!
     end
 
-    puts "sales_brands seeded: #{created} created, #{updated} updated, #{SalesBrand.count} total"
+    # Prune obsolete uncontacted directory records with no activities or seller linkage
+    pruned = SalesBrand.where(source: :directory, seller_id: nil)
+                       .where.not(name: data.map { |b| b['name'] })
+                       .left_joins(:activities)
+                       .where(sales_brand_activities: { id: nil })
+                       .destroy_all
+
+    puts "sales_brands seeded: #{created} created, #{updated} updated, #{pruned.size} obsolete pruned, #{SalesBrand.count} total"
   end
 end
