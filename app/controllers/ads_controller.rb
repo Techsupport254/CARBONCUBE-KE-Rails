@@ -36,6 +36,18 @@ class AdsController < ApplicationController
     @ad = ad_scope.find_by(slug: params[:id].to_s) || ad_scope.find_by(id: params[:id].to_s)
 
     if @ad
+      unless @ad.has_valid_images?
+        current_seller = begin
+          SellerAuthorizeApiRequest.new(request.headers).result
+        rescue StandardError
+          nil
+        end
+        unless current_seller.is_a?(Seller) && current_seller.id.to_s == @ad.seller_id.to_s
+          render json: { error: 'Ad not found' }, status: :not_found
+          return
+        end
+      end
+
       # Get similar products
       similar_products_data = SimilarProductsService.find_similar_products(@ad, limit: 15)
 

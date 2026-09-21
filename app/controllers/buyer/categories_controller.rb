@@ -1,10 +1,10 @@
 # app/controllers/buyer/categories_controller.rb
 class Buyer::CategoriesController < ApplicationController
   def index
-    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v4', expires_in: 5.minutes) do
+    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v5', expires_in: 5.minutes) do
       # Precompute active ads count per category and subcategory using the single source of truth:
-      # active undeleted ads belonging to undeleted, unblocked sellers
-      active_ads = Ad.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false })
+      # active undeleted ads with valid images belonging to undeleted, unblocked sellers
+      active_ads = Ad.active.with_valid_images.joins(:seller).where(flagged: false, sellers: { deleted: false, blocked: false })
       active_ads_by_category = active_ads.group(:category_id).count
       active_ads_by_subcategory = active_ads.where.not(subcategory_id: nil).group(:subcategory_id).count
 
@@ -31,7 +31,7 @@ class Buyer::CategoriesController < ApplicationController
       include: :subcategories,
       only: [:id, :name, :description, :created_at, :updated_at, :image_url]
     )
-    category_data['ads_count'] = @category.ads.joins(:seller).where(deleted: false, sellers: { deleted: false, blocked: false }).count
+    category_data['ads_count'] = @category.ads.active.with_valid_images.joins(:seller).where(flagged: false, sellers: { deleted: false, blocked: false }).count
     render json: category_data
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Category not found' }, status: :not_found

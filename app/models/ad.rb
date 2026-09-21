@@ -12,7 +12,10 @@ class Ad < ApplicationRecord
 
   scope :active, -> { where(deleted: false) }
   scope :deleted, -> { where(deleted: true) }
-  scope :with_valid_images, -> { where.not(media: [nil, [], ""]) }
+  scope :with_valid_images, -> {
+    where.not(media: [nil, [], ''])
+      .where("ads.media IS NOT NULL AND ads.media != '' AND ads.media != '[]' AND ads.media != '\"\"' AND ads.media != '[\"\"]' AND ads.media != 'null' AND length(trim(ads.media)) > 2")
+  }
   scope :from_active_sellers, -> { joins(:seller).where(sellers: { blocked: false, deleted: false, flagged: false }) }
   scope :live, -> { active.with_valid_images.from_active_sellers.where(flagged: false) }
   scope :for_branch, ->(branch) {
@@ -331,15 +334,30 @@ class Ad < ApplicationRecord
   def has_valid_images?
     return false if media.blank?
 
-    media.is_a?(Array) && media.any? { |url| url.is_a?(String) && url.present? }
+    if media.is_a?(Array)
+      media.any? { |url| url.is_a?(String) && url.strip.present? && !url.strip.in?(['[]', '""', 'null', '[""]']) }
+    elsif media.is_a?(String)
+      trimmed = media.strip
+      return false if trimmed.blank? || trimmed.in?(['[]', '""', 'null', '[""]'])
+
+      begin
+        parsed = JSON.parse(trimmed)
+        parsed.is_a?(Array) && parsed.any? { |url| url.is_a?(String) && url.strip.present? && !url.strip.in?(['[]', '""', 'null', '[""]']) }
+      rescue JSON::ParserError
+        false
+      end
+    else
+      false
+    end
   end
 
   # Get all non-empty media URLs (relative or absolute; frontend resolves them)
   def valid_media_urls
     return [] unless has_valid_images?
 
-    media.select do |url|
-      url.is_a?(String) && url.present?
+    urls = media.is_a?(Array) ? media : (JSON.parse(media.to_s) rescue [])
+    Array(urls).select do |url|
+      url.is_a?(String) && url.strip.present? && !url.strip.in?(['[]', '""', 'null', '[""]'])
     end
   end
 

@@ -2,6 +2,7 @@ class ShopsController < ApplicationController
   def locations
     locations = Seller.joins(:ads, :county)
                      .where(ads: { flagged: false, deleted: false })
+                     .merge(Ad.with_valid_images)
                      .where(deleted: false, blocked: false, flagged: false)
                      .where.not(county_id: nil)
                      .includes(:county, :sub_county)
@@ -65,9 +66,17 @@ class ShopsController < ApplicationController
       seller_tier: :tier
     ).find(@shop.id)
     
-    @ads = @shop.ads
-                .active
-                .where(flagged: false)
+    current_seller = begin
+      SellerAuthorizeApiRequest.new(request.headers).result
+    rescue StandardError
+      nil
+    end
+    is_owner = current_seller.is_a?(Seller) && current_seller.id.to_s == @shop.id.to_s
+
+    ads_base = @shop.ads.active.where(flagged: false)
+    ads_base = ads_base.with_valid_images unless is_owner
+
+    @ads = ads_base
                 .joins(:category, :subcategory, seller: { seller_tier: :tier })
                 .left_joins(:reviews)
                 .includes(
@@ -87,7 +96,7 @@ class ShopsController < ApplicationController
                 
     @ads.load
     
-    @total_count = @shop.ads.active.where(flagged: false).count
+    @total_count = ads_base.count
     
     total_reviews = Review.joins(:ad)
                          .where(ads: { seller_id: @shop.id })
@@ -104,6 +113,7 @@ class ShopsController < ApplicationController
     render json: {
       shop: {
         id: @shop.id,
+        is_owner: is_owner,
         enterprise_name: @shop.enterprise_name,
         description: @shop.description,
         email: @shop.email,
@@ -265,7 +275,7 @@ class ShopsController < ApplicationController
     
     location = [@shop.city, @shop.sub_county&.name, @shop.county&.name].compact.join(', ')
     tier = @shop.seller_tier&.tier&.name || 'Free'
-    product_count = @shop.ads.active.where(flagged: false).count
+    product_count = @shop.ads.active.where(flagged: false).with_valid_images.count
     
     title = "#{@shop.enterprise_name} - Shop | #{product_count} Products | #{tier} Tier Seller"
     
@@ -419,7 +429,7 @@ class ShopsController < ApplicationController
         return
       end
     else
-      ad = @shop.ads.active.where(flagged: false).first
+      ad = @shop.ads.active.where(flagged: false).with_valid_images.first
       unless ad
         render json: { error: 'No products available for review. Please select a specific product.' }, status: :unprocessable_entity
         return

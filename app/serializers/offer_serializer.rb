@@ -59,12 +59,14 @@ class OfferSerializer
                 enterprise_name: @offer.seller&.enterprise_name,
                 fullname: @offer.seller&.fullname
               },
-              # Ads with discounts - exclude ads from flagged, blocked, or deleted sellers
+              # Ads with discounts - exclude ads from flagged, blocked, or deleted sellers and ensure valid images
               ads: @offer.offer_ads.active
                 .joins(ad: :seller)
                 .where(sellers: { blocked: false, deleted: false, flagged: false })
                 .map do |offer_ad|
                 ad = offer_ad.ad
+                next nil unless ad && ad.has_valid_images?
+
                 seller = ad.seller
                 seller_tier = seller&.seller_tier
                 tier_id = seller_tier&.tier_id || 1
@@ -108,7 +110,7 @@ class OfferSerializer
                   rating: ad.reviews.average(:rating)&.round(1) || 0.0,
                   review_count: ad.reviews.count
                 }
-              end
+              end.compact
     }
   end
   

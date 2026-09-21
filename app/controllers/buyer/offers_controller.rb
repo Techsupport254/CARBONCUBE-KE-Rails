@@ -145,6 +145,13 @@ class Buyer::OffersController < ApplicationController
           WHERE offer_ads.offer_id IN (#{offer_ids.map { '?' }.join(',')})
             AND ads.deleted = false
             AND ads.flagged = false
+            AND ads.media IS NOT NULL
+            AND ads.media != ''
+            AND ads.media != '[]'
+            AND ads.media != '""'
+            AND ads.media != '[""]'
+            AND ads.media != 'null'
+            AND length(trim(ads.media)) > 2
             AND ad_sellers.blocked = false
             AND ad_sellers.deleted = false
             AND ad_sellers.flagged = false

@@ -232,6 +232,18 @@ class Buyer::AdsController < ApplicationController
       return
     end
 
+    unless @ad.has_valid_images?
+      current_seller = begin
+        SellerAuthorizeApiRequest.new(request.headers).result
+      rescue StandardError
+        nil
+      end
+      unless current_seller.is_a?(Seller) && current_seller.id.to_s == @ad.seller_id.to_s
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
+    end
+
     render json: @ad, serializer: AdSerializer, include_reviews: true
   end
   
@@ -2500,6 +2512,18 @@ class Buyer::AdsController < ApplicationController
       render json: { error: 'Ad not found' }, status: :not_found
       return
     end
+
+    unless @ad_with_relations.has_valid_images?
+      current_seller = begin
+        SellerAuthorizeApiRequest.new(request.headers).result
+      rescue StandardError
+        nil
+      end
+      unless current_seller.is_a?(Seller) && current_seller.id.to_s == @ad_with_relations.seller_id.to_s
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
+    end
   end
 
   def set_ad
@@ -2507,6 +2531,19 @@ class Buyer::AdsController < ApplicationController
 
     unless @ad
       render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
+
+    unless @ad.has_valid_images?
+      current_seller = begin
+        SellerAuthorizeApiRequest.new(request.headers).result
+      rescue StandardError
+        nil
+      end
+      unless current_seller.is_a?(Seller) && current_seller.id.to_s == @ad.seller_id.to_s
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
     end
   end
 
@@ -3307,6 +3344,7 @@ class Buyer::AdsController < ApplicationController
 
     # Get price range for products matching this term
     base_query = Ad.active
+                   .with_valid_images
                    .joins(:seller)
                    .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(flagged: false)
@@ -3355,6 +3393,7 @@ class Buyer::AdsController < ApplicationController
 
     # Get category and subcategory info for products matching this term
     category_stats = Ad.active
+                       .with_valid_images
                        .joins(:seller, :category, :subcategory)
                        .where(sellers: { blocked: false, deleted: false, flagged: false })
                        .where(flagged: false)
@@ -3378,8 +3417,9 @@ class Buyer::AdsController < ApplicationController
   def get_product_count_for_term(term)
     term_lower = term.downcase
 
-    # Count products matching this term (similar to search API but without image requirement)
+    # Count products matching this term with valid images
     Ad.active
+      .with_valid_images
       .joins(:seller)
       .where(sellers: { blocked: false, deleted: false, flagged: false })
       .where(flagged: false)
