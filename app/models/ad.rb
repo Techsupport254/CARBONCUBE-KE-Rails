@@ -389,7 +389,7 @@ class Ad < ApplicationRecord
     {
       offerId: id.to_s,
       contentLanguage: 'en',
-      feedLabel: 'primary',
+      feedLabel: ENV.fetch('GOOGLE_MERCHANT_FEED_LABEL', 'PRIMARY'),
       productAttributes: {
         title: title,
         description: description,
@@ -402,6 +402,7 @@ class Ad < ApplicationRecord
         },
         condition: google_condition,
         brand: brand.present? ? brand : nil,
+        identifierExists: brand.present? ? nil : false,
         # Additional recommended fields
         category: category&.name,
         subcategory: subcategory&.name,

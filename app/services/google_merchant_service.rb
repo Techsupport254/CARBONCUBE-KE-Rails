@@ -372,10 +372,10 @@ class GoogleMerchantService
     {
       offerId: "carbon_cube_#{ad.id}",
       contentLanguage: "en",
-      feedLabel: "carbon_cube_feed",
+      feedLabel: ENV.fetch("GOOGLE_MERCHANT_FEED_LABEL", "PRIMARY"),
       productAttributes: product_attrs
     }
-    end
+  end
     
   # Create URL-friendly slug from title
   def self.create_slug(title)
@@ -474,7 +474,8 @@ class GoogleMerchantService
         image_link: attrs[:image_link],
         availability: attrs[:availability],
         price: build_price(attrs[:price]),
-        condition: attrs[:condition]
+        condition: attrs[:condition],
+        identifier_exists: attrs[:brand].present? ? nil : false
       }
       
       # Only include brand if it's present and valid

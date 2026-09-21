@@ -115,8 +115,16 @@ Rails.application.routes.draw do
       # Seller locations endpoints
       get 'seller/locations', to: 'seller_locations#index'
       post 'seller/geocode-batch', to: 'seller_locations#geocode_batch'
+
+      # Google Merchant XML feed
+      get 'feeds/google_merchant', to: '/feeds#google_merchant', defaults: { format: 'xml' }
+      get 'feeds/google_merchant.xml', to: '/feeds#google_merchant', defaults: { format: 'xml' }
     end
   end
+
+  # Public Google Merchant XML feed shortcuts
+  get 'feeds/google_merchant', to: 'feeds#google_merchant', defaults: { format: 'xml' }
+  get 'feeds/google_merchant.xml', to: 'feeds#google_merchant', defaults: { format: 'xml' }
   get 'whatsapp/check', to: 'whatsapp#check_number'
   
   # Contact form routes
