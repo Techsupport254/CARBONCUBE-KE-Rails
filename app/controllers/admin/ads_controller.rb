@@ -221,7 +221,7 @@ end
   end
 
   def ad_params
-    params.require(:ad).permit(:title, :description, :price, :category_id, :subcategory_id, :brand, :manufacturer, :package_dimensions, :package_weight, :seller_id, :condition)
+    params.require(:ad).permit(:title, :description, :price, :category_id, :subcategory_id, :brand, :manufacturer, :package_dimensions, :package_weight, :seller_id, :condition, :is_brand_kenya)
   end
 
   def authenticate_admin

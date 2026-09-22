@@ -3,12 +3,13 @@ import { Markdown } from "@react-email/markdown"
 import { EmailLayout } from "../_components/email_layout"
 import { Button } from "../_components/button"
 import { InfoCard } from "../_components/info_card"
+import { MissingItemsList, type MissingItem } from "./missing_items_list"
 
 type CompleteProfileProps = {
   brandName: string
   contactName: string
   category?: string | null
-  missingItems: string[]
+  missingItems: MissingItem[]
   profileUrl: string
   shopUrl?: string | null
   listingUrl: string
@@ -24,8 +25,6 @@ export default function CompleteProfile({
   listingUrl,
 }: CompleteProfileProps) {
   const greeting = `Hello ${contactName},\n\n**${brandName}** is part of Brand Kenya, our verified directory of homegrown Kenyan brands${category ? `, listed under **${category}**` : ""}. To present your business professionally to buyers, please complete your dashboard.`
-
-  const checklist = missingItems.map((item) => `- ${item}`).join("\n")
 
   const next = `Your [Brand Kenya listing](${listingUrl}) updates automatically with your logo and details${shopUrl ? ", and buyers reach you through your storefront" : ""}.`
 
@@ -53,7 +52,7 @@ export default function CompleteProfile({
         <Markdown>{greeting}</Markdown>
 
         <InfoCard label="Complete your profile">
-          <Markdown>{checklist}</Markdown>
+          <MissingItemsList items={missingItems} />
         </InfoCard>
 
         <Section style={{ textAlign: "center", margin: "0 0 14px" }}>

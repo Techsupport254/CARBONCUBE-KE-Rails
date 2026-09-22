@@ -304,6 +304,7 @@ Rails.application.routes.draw do
 
   # Public Brand Kenya directory — onboarded homegrown brands
   get 'brand_kenya', to: 'brand_kenya#index'
+  get 'brand_kenya/ads', to: 'brand_kenya#ads'
   get 'brand_kenya/:id/logo', to: 'brand_kenya#logo', as: :brand_kenya_logo
 
   # Sign-Up OTP routes

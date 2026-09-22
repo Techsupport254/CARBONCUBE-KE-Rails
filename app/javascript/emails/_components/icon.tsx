@@ -5,9 +5,10 @@ type IconProps = {
   size?: number
   color?: string
   alt?: string
+  style?: React.CSSProperties
 }
 
-export function Icon({ name, size = 20, color = "#475569", alt = "" }: IconProps) {
+export function Icon({ name, size = 20, color = "#475569", alt = "", style }: IconProps) {
   const baseUrl = "https://api.iconify.design/lucide"
   const url = `${baseUrl}/${name}.svg?color=${encodeURIComponent(color)}&width=${size}&height=${size}`
 
@@ -22,6 +23,7 @@ export function Icon({ name, size = 20, color = "#475569", alt = "" }: IconProps
         verticalAlign: "middle",
         border: 0,
         outline: 0,
+        ...style,
       }}
     />
   )

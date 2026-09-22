@@ -9,6 +9,8 @@ module PartnerPresenter
     activities = record.activities.loaded? ? record.activities : record.activities.to_a
     last_contact = activities.find { |a| PartnerActivity::CONTACT_TYPES.include?(a.activity_type) }
     last_actor = activities.find { |a| a.sales_user_id.present? || a.actor_name.present? }
+    invites = record.invites.loaded? ? record.invites : record.invites.to_a
+    pending = invites.select { |i| i.status == 'pending' }.max_by(&:created_at)
     {
       id: record.id,
       name: record.name,
@@ -42,6 +44,7 @@ module PartnerPresenter
       activities_count: activities.size,
       distributors_count: record.distributors.size,
       contacts_count: record.contacts.size,
+      pending_invite: invite(pending),
       created_at: record.created_at,
       updated_at: record.updated_at
     }

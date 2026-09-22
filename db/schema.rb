@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_19_000500) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_22_110000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -99,6 +99,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_000500) do
     t.string "sku"
     t.integer "units_per_pack"
     t.integer "stock_quantity"
+    t.boolean "is_brand_kenya", default: false, null: false
     t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
@@ -108,6 +109,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_000500) do
     t.index ["deleted", "flagged", "seller_id", "created_at", "id"], name: "index_ads_best_sellers_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
+    t.index ["is_brand_kenya", "deleted", "flagged"], name: "index_ads_on_is_brand_kenya_deleted_flagged"
+    t.index ["is_brand_kenya"], name: "index_ads_on_is_brand_kenya"
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id", "sku"], name: "index_ads_on_seller_id_and_sku"
@@ -1658,7 +1661,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_000500) do
   add_foreign_key "sales_users", "sales_users", column: "lead_id"
   add_foreign_key "seller_carbon_code_assignments", "carbon_codes"
   add_foreign_key "seller_carbon_code_assignments", "sales_users"
-  add_foreign_key "seller_carbon_code_assignments", "sellers"
+  add_foreign_key "seller_carbon_code_assignments", "sellers", on_delete: :cascade
   add_foreign_key "seller_documents", "document_types"
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade
   add_foreign_key "seller_pricing_templates", "categories"

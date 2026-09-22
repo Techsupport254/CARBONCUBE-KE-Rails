@@ -102,3 +102,13 @@ partner_invite_reminders:
   class: "PartnerInviteReminderJob"
   queue: low
   description: "Send partner invite reminders and expire lapsed invites"
+
+# --- BRAND KENYA ---
+# Hourly sweep for directory brands that reached onboarded status; emails
+# them the complete-profile nudge. The job itself returns early unless
+# Rails.env.production? so it no-ops on dev/staging workers.
+brand_kenya_onboarded_notify:
+  cron: "0 * * * *"
+  class: "BrandKenyaOnboardedNotifyJob"
+  queue: low
+  description: "Email newly onboarded Brand Kenya brands to complete their profile (production only)"

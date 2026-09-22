@@ -19,7 +19,7 @@ module Sales
       page = (params[:page].presence || 1).to_i
       per_page = (params[:per_page].presence || 25).to_i.clamp(1, 100)
 
-      partners = Partner.includes(:sales_user, :activities).all
+      partners = Partner.includes(:sales_user, :activities, :invites).all
       partners = partners.search(params[:search]) if params[:search].present?
       partners = partners.where(partner_type: params[:partner_type]) if Partner.partner_types.key?(params[:partner_type].to_s)
       partners = partners.where(status: params[:status]) if Partner.statuses.key?(params[:status].to_s)

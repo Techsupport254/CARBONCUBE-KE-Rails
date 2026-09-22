@@ -24,6 +24,45 @@ class BrandKenyaController < ApplicationController
     }
   end
 
+  def ads
+    cache_key = "brand_kenya_homepage_ads_v4_#{Time.current.to_i / 300}"
+    data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      ads_scope = Ad.live.where(is_brand_kenya: true)
+                         .includes(:category, :subcategory, seller: { seller_tier: :tier })
+
+      # Sample ads across multiple sellers/shops so different stores are represented
+      ads_by_seller = ads_scope.to_a.group_by(&:seller_id)
+
+      diverse_ads = []
+      ads_by_seller.each do |_s_id, s_ads|
+        diverse_ads.concat(s_ads.shuffle.take(3))
+      end
+
+      # Fill up to 18 items (matching Best Sellers 3 rows of 6) with remaining ads
+      if diverse_ads.size < 18
+        remaining = (ads_scope.to_a - diverse_ads).shuffle.take(18 - diverse_ads.size)
+        diverse_ads.concat(remaining)
+      end
+
+      displayed_ads = diverse_ads.shuffle.take(18)
+
+      serialized_ads = ActiveModelSerializers::SerializableResource.new(
+        displayed_ads,
+        each_serializer: AdSerializer
+      ).as_json
+
+      {
+        title: 'Brand Kenya',
+        subtitle: 'Verified Homegrown Brands · Made in Kenya',
+        ads: serialized_ads,
+        total_count: ads_scope.count,
+        brands_count: ads_scope.select(:seller_id).distinct.count
+      }
+    end
+
+    render json: data
+  end
+
   def logo
     brand = SalesBrand.where(status: :onboarded).find_by(id: params[:id])
     remote = brand && remote_logo_url(brand)

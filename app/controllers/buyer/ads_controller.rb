@@ -4,6 +4,17 @@ class Buyer::AdsController < ApplicationController
   before_action :set_ad_with_relations, only: [:alternatives]
   before_action :authenticate_user_for_alternatives, only: [:alternatives]
 
+  # Shop-name tokens too generic to identify a shop on their own. A
+  # shop-name match requires at least one non-generic (distinctive) token,
+  # so queries like "electronics" don't surface every "X Electronics" shop.
+  GENERIC_SHOP_NAME_TOKENS = %w[
+    shop shops store stores seller sellers vendor vendors outlet outlets
+    ltd limited co company kenya kenyan nairobi enterprise enterprises
+    traders trading general electronics electronic hardware supplies
+    suppliers services solutions international intl group holdings mart
+    and the for of ag centre center plaza
+  ].freeze
+
   # GET /buyer/ads
   def index
     PerformanceMonitor.track_api_performance('buyer_ads_index') do
@@ -889,12 +900,110 @@ class Buyer::AdsController < ApplicationController
       end
     end
 
+    # Shop-name matching — searching a shop's name returns the products
+    # that shop sells (seller IDs resolved by quality-scored matching).
+    shop_seller_ids = matched_shop_seller_ids(original_query)
+    if shop_seller_ids.any?
+      search_conditions << "ads.seller_id IN (?)"
+      search_params << shop_seller_ids
+    end
+
     # Apply search conditions
     if search_conditions.any?
       ads_query = ads_query.where(search_conditions.join(' OR '), *search_params)
     end
 
     ads_query
+  end
+
+  # Resolve sellers whose shop name is a quality match for the query.
+  # Broad SQL prefilter for recall (full token or 3-char prefix), then
+  # scored in Ruby so only strong matches include that shop's products.
+  def matched_shop_seller_ids(query)
+    @matched_shop_seller_ids ||= {}
+    key = query.to_s.strip
+    return @matched_shop_seller_ids[key] if @matched_shop_seller_ids.key?(key)
+
+    tokens = shop_name_tokens(key)
+    @matched_shop_seller_ids[key] = if tokens.empty?
+                                      []
+                                    else
+                                      patterns = tokens.flat_map do |token|
+                                        token.length >= 4 ? ["%#{token}%", "%#{token[0, 3]}%"] : ["%#{token}%"]
+                                      end.uniq
+                                      like_condition = patterns.map do
+                                        "(sellers.enterprise_name ILIKE ? OR sellers.fullname ILIKE ?)"
+                                      end.join(' OR ')
+                                      # pg_trgm word_similarity catches typos the ILIKE
+                                      # patterns miss (e.g. transposed letters).
+                                      condition = "(#{like_condition}) OR word_similarity(?, sellers.enterprise_name) > 0.3 OR word_similarity(?, sellers.fullname) > 0.3"
+                                      binds = patterns.flat_map { |p| [p, p] } + [key, key]
+
+                                      Seller.where(blocked: false, deleted: false, flagged: false)
+                                            .where(condition, *binds)
+                                            .limit(200)
+                                            .select { |seller| shop_name_match_score(key, seller) >= 60 }
+                                            .map(&:id)
+                                    end
+  end
+
+  # Tiered shop-name relevance: exact normalized match (150), all
+  # distinctive query tokens in the name (120), containment either way
+  # (90), or fuzzy per-token match (60). Requires a distinctive token so
+  # generic words alone never match.
+  def shop_name_match_score(query, seller)
+    return 0 unless seller
+
+    query_norm = normalize_shop_text(query)
+    query_tokens = shop_name_tokens(query)
+    query_distinctive = query_tokens - GENERIC_SHOP_NAME_TOKENS
+    return 0 if query_norm.blank?
+
+    [seller.enterprise_name, seller.fullname].compact.filter_map do |raw_name|
+      name_norm = normalize_shop_text(raw_name)
+      name_tokens = shop_name_tokens(raw_name)
+      next if name_norm.blank? || name_tokens.empty?
+
+      name_distinctive = name_tokens - GENERIC_SHOP_NAME_TOKENS
+
+      if name_norm == query_norm ||
+         (name_distinctive.any? && name_distinctive.sort == query_distinctive.sort)
+        next 150
+      end
+
+      if query_distinctive.any? && (query_distinctive - name_tokens).empty?
+        next 120
+      end
+
+      if query_distinctive.any? &&
+         (name_norm.include?(query_norm) ||
+          (name_distinctive.any? && query_norm.include?(name_norm)))
+        next 90
+      end
+
+      if query_distinctive.any? &&
+         query_distinctive.all? { |t| name_tokens.any? { |nt| shop_tokens_close?(t, nt) } }
+        next 60
+      end
+
+      nil
+    end.max || 0
+  end
+
+  def shop_tokens_close?(a, b)
+    return true if a == b
+    return true if a.length >= 3 && b.start_with?(a)
+    return true if b.length >= 3 && a.start_with?(b)
+
+    a.length >= 4 && b.length >= 4 && levenshtein_distance(a, b) <= 1
+  end
+
+  def normalize_shop_text(text)
+    text.to_s.downcase.gsub(/[^a-z0-9\s]/, ' ').gsub(/\s+/, ' ').strip
+  end
+
+  def shop_name_tokens(text)
+    normalize_shop_text(text).split(' ').reject { |t| t.length < 2 }.uniq
   end
 
   # Calculate smart relevance score based on search intent
@@ -1065,6 +1174,12 @@ class Buyer::AdsController < ApplicationController
           score += 5
         end
       end
+    end
+
+    # Shop name match — tiered boost (exact > token-subset > containment >
+    # fuzzy) so a shop-name query surfaces that shop's products prominently.
+    if normalized_query.length >= 3
+      score += shop_name_match_score(normalized_query, ad.seller)
     end
 
     # Quality boosts
@@ -1543,8 +1658,13 @@ class Buyer::AdsController < ApplicationController
       # case-insensitive. This ensures obvious full-title searches like
       # "Sony PS4 wireless controller" return the right product even if
       # there are minor spacing/casing differences.
+      shop_seller_ids = matched_shop_seller_ids(query)
       exact_title_matches = exact_match_scope
-                              .where("LOWER(ads.title) LIKE LOWER(?)", "%#{query.downcase.strip}%")
+                              .where(
+                                "LOWER(ads.title) LIKE LOWER(:q) OR ads.seller_id IN (:shop_ids)",
+                                q: "%#{query.downcase.strip}%",
+                                shop_ids: shop_seller_ids.presence || [nil]
+                              )
     end
 
     # Parse search intent with Grok AI enhancement
@@ -3064,13 +3184,15 @@ class Buyer::AdsController < ApplicationController
   def filter_by_search(ads_query)
     search_term = (params[:search] || params[:query]).to_s.strip
     
+    shop_seller_ids = matched_shop_seller_ids(search_term)
     ads_query.where(
-      'ads.title ILIKE ? OR ads.description ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ? OR ads.specifications::text ILIKE ?',
+      'ads.title ILIKE ? OR ads.description ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ? OR ads.specifications::text ILIKE ? OR ads.seller_id IN (?)',
       "%#{search_term}%",
       "%#{search_term}%",
       "%#{search_term}%",
       "%#{search_term}%",
-      "%#{search_term}%"
+      "%#{search_term}%",
+      shop_seller_ids.presence || [nil]
     )
   end
 

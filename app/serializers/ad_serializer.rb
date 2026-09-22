@@ -7,7 +7,13 @@ class AdSerializer < ActiveModel::Serializer
              :seller_is_partner, :seller_partner_type,
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
-             :seller_is_online, :has_valid_images
+             :seller_is_online, :has_valid_images, :is_brand_kenya
+
+  def is_brand_kenya
+    object.attributes.key?('is_brand_kenya') ? object.is_brand_kenya == true : false
+  rescue StandardError
+    false
+  end
 
   def has_valid_images
     object.has_valid_images?

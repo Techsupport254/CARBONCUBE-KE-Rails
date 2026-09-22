@@ -871,7 +871,7 @@ class Seller::AdsController < ApplicationController
       :title, :description, :category_id, :subcategory_id, :price,
       :brand, :manufacturer, :model, :item_length, :item_width,
       :item_height, :item_weight, :weight_unit, :flagged, :condition,
-      :sku, :units_per_pack, :stock_quantity,
+      :sku, :units_per_pack, :stock_quantity, :is_brand_kenya,
       media: [], existing_media: []
     )
     permitted[:specifications] = specifications_value if specifications_value

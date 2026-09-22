@@ -18,6 +18,7 @@ class Ad < ApplicationRecord
   }
   scope :from_active_sellers, -> { joins(:seller).where(sellers: { blocked: false, deleted: false, flagged: false }) }
   scope :live, -> { active.with_valid_images.from_active_sellers.where(flagged: false) }
+  scope :brand_kenya, -> { where(is_brand_kenya: true) }
   scope :for_branch, ->(branch) {
     return all unless branch
 
