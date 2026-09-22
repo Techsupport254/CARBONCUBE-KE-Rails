@@ -613,12 +613,18 @@ class ConversationsController < ApplicationController
         [@conversation]
       end
     when 'SalesUser', 'MarketingUser', 'Admin'
-      Conversation.where(
-        admin_id: @conversation.admin_id,
-        buyer_id: @conversation.buyer_id,
-        seller_id: @conversation.seller_id,
-        inquirer_seller_id: @conversation.inquirer_seller_id
-      ).active_participants.to_a
+      if @conversation.respond_to?(:is_whatsapp?) && @conversation.is_whatsapp?
+        [@conversation]
+      elsif @conversation.seller_id.blank? && @conversation.admin_id.blank?
+        [@conversation]
+      else
+        Conversation.where(
+          admin_id: @conversation.admin_id,
+          buyer_id: @conversation.buyer_id,
+          seller_id: @conversation.seller_id,
+          inquirer_seller_id: @conversation.inquirer_seller_id
+        ).active_participants.to_a
+      end
     else
       [@conversation]
     end
@@ -844,8 +850,8 @@ class ConversationsController < ApplicationController
                                   .distinct
                                   .order("conversations.updated_at DESC")
     else
-      # Admins see conversations where they are assigned (admin_id)
-      conversations = Conversation.where(admin_id: @current_user.id)
+      # Admins see assigned conversations, unassigned support, and WhatsApp conversations
+      conversations = Conversation.where("conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true", @current_user.id)
                                   .active_participants
                                   .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
                                   .joins(:messages)
@@ -999,7 +1005,7 @@ class ConversationsController < ApplicationController
     if @current_user.is_a?(SalesUser)
       conversations = Conversation.active_participants
     else
-      conversations = Conversation.where(admin_id: @current_user.id)
+      conversations = Conversation.where("conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true", @current_user.id)
                                   .active_participants
     end
 

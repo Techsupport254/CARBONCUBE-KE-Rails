@@ -76,23 +76,24 @@ class UpdateUnreadCountsJob < ApplicationJob
   # OPTIMIZED: Single SQL query for admin unread count
   def calculate_total_unread_for_admin_optimized(admin_id)
     Message.joins(:conversation)
-           .where(conversations: { admin_id: admin_id })
+           .where("conversations.admin_id = :admin_id OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true", admin_id: admin_id)
            .where.not(sender_id: admin_id)
+           .where.not(sender_type: ['Admin', 'SalesUser'])
            .where(read_at: nil)
            .count
   end
   
   # OPTIMIZED: Cache total unread count for sales users
   def update_sales_users_unread_counts_optimized(conversation)
-    # OPTIMIZATION: Cache total unread for all sales users to avoid repeated calculations
-    # Since Admin model doesn't have role column, use all admins for sales functionality
-    total_unread_for_sales = Rails.cache.fetch("sales_total_unread", expires_in: 5.minutes) do
-      Message.joins(:conversation)
-             .where(conversations: { admin_id: Admin.select(:id) })
-             .where.not(sender_id: SalesUser.select(:id))
-             .where(read_at: nil)
-             .count
-    end
+    # Bust stale cached total before recalculating
+    Rails.cache.delete("sales_total_unread")
+
+    total_unread_for_sales = Message.joins(:conversation)
+                                    .where.not(sender_type: ['SalesUser', 'Admin'])
+                                    .where(read_at: nil)
+                                    .count
+    
+    Rails.cache.write("sales_total_unread", total_unread_for_sales, expires_in: 5.minutes)
     
     # Broadcast to all sales users
     SalesUser.find_each do |sales_user|
