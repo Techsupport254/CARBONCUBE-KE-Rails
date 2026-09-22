@@ -222,21 +222,13 @@ class ConversationsController < ApplicationController
       return
     end
 
-    # Staff can only mark conversations they are assigned to, general support threads, or whatsapp conversations
-    # P2P buyer↔seller threads without staff participation must not be touched by staff.
+    # Staff (Admin, SalesUser, MarketingUser) can mark any conversation they view as read
     staff_types = %w[Admin SalesUser MarketingUser]
     if staff_types.include?(@current_user.class.name)
-      is_assigned = @conversation.admin_id == @current_user.id
-      is_support = @conversation.admin_id.nil? || (@conversation.respond_to?(:is_whatsapp?) && @conversation.is_whatsapp?)
-      unless is_assigned || is_support || @current_user.is_a?(Admin)
-        render json: { error: 'Conversation not found or unauthorized' }, status: :not_found
-        return
-      end
+      # Staff authorized to view and mark read
     end
 
-    unread_messages = related_conversations_for_mark_read.flat_map do |conversation|
-      conversation.messages.unread.where.not(sender: @current_user).to_a
-    end
+    unread_messages = @conversation.messages.unread.where.not(sender: @current_user).to_a
     
     processed_count = 0
     unread_messages.each do |message|
