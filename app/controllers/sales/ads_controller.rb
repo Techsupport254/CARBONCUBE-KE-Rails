@@ -320,7 +320,9 @@ end
 
   # PATCH /sales/ads/:id/flag
   def flag
-    if @ad.update(flagged: true)
+    flag_notes = params[:notes] || params[:flag_notes]
+    if @ad.update(flagged: true, flag_notes: flag_notes)
+      SellerMailer.ad_flagged(@ad.seller, @ad, flag_notes, params[:to_email]).deliver_later if @ad.seller
       render json: { status: 'success', message: 'Ad flagged successfully' }
     else
       render json: { status: 'error', message: 'Failed to flag ad' }, status: :unprocessable_entity

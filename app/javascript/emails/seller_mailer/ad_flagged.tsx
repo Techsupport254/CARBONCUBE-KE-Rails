@@ -1,4 +1,5 @@
 import { Section, Text, Img, Row, Column, Hr } from "@react-email/components"
+import { Markdown } from "@react-email/markdown"
 import { EmailLayout } from "../_components/email_layout"
 import { Button } from "../_components/button"
 
@@ -199,20 +200,22 @@ export default function AdFlagged({
 						>
 							Reason for Review
 						</Text>
-						{flagReason.split(/\r?\n/).filter(Boolean).map((line, i) => (
-							<Text
-								key={i}
-								style={{
-									margin: i === 0 ? 0 : "4px 0 0",
-									fontSize: "13px",
-									color: "#7f1d1d",
-									lineHeight: "20px",
-									fontWeight: 500,
-								}}
-							>
-								{line.trim()}
-							</Text>
-						))}
+						<Markdown
+							markdownCustomStyles={{
+								p: { fontSize: "13px", color: "#7f1d1d", lineHeight: "20px", fontWeight: 500, margin: "0 0 8px" },
+								li: { fontSize: "13px", color: "#7f1d1d", lineHeight: "20px", fontWeight: 500, margin: "0 0 6px" },
+								ul: { margin: "0 0 8px", paddingLeft: "18px" },
+								ol: { margin: "0 0 8px", paddingLeft: "18px" },
+								bold: { color: "#991b1b", fontWeight: 700 },
+								italic: { fontStyle: "italic" as const },
+								link: { color: "#dc2626", textDecoration: "underline" },
+								h2: { fontSize: "14px", fontWeight: 700, color: "#991b1b", margin: "12px 0 6px", lineHeight: "18px" },
+								h3: { fontSize: "13px", fontWeight: 700, color: "#991b1b", margin: "10px 0 4px", lineHeight: "18px" },
+								blockQuote: { borderLeft: "3px solid #fecaca", paddingLeft: "12px", margin: "8px 0", color: "#7f1d1d", fontStyle: "italic" as const },
+							}}
+						>
+							{flagReason}
+						</Markdown>
 					</Section>
 				)}
 
