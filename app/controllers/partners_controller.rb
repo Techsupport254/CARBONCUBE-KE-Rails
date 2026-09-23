@@ -27,7 +27,7 @@ class PartnersController < ApplicationController
     {
       name: partner.name,
       logo_url: partner.logo_url,
-      shop_path: "/shop/#{seller.slug.presence || partner.name.parameterize}"
+      shop_path: "/shop/#{seller.url_slug}"
     }
   end
 end

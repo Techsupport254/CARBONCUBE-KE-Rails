@@ -80,7 +80,7 @@ task verify_seller_coordinates: :environment do
                           .uniq
                           .join(", ")
 
-        result = GeocodeSellersJob.new.send(:nominatim_search, nominatim_query, county, true)
+        result = GeocodeSellersJob.new.send(:nominatim_search, nominatim_query, :specific, county, true)
         sleep 1 # Nominatim rate limit
 
         if result

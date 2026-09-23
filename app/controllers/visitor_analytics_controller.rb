@@ -91,14 +91,20 @@ class VisitorAnalyticsController < ApplicationController
 
     offset = [(page - 1) * per_page, 0].max # Ensure offset is never negative
 
-    visitors = Visitor.external_users
+    visitors_scope = Visitor.external_users.date_filtered(date_filter)
+    visitors_scope = case params[:registration]
+                     when 'registered' then visitors_scope.registered
+                     when 'anonymous' then visitors_scope.anonymous
+                     else visitors_scope
+                     end
+
+    visitors = visitors_scope
                      .includes(:registered_user)
-                     .date_filtered(date_filter)
                      .order(last_visit_at: :desc)
                      .limit(per_page)
                      .offset(offset)
 
-    total_count = Visitor.external_users.date_filtered(date_filter).count
+    total_count = visitors_scope.count
 
     visitor_data = visitors.map.with_index(offset + 1) do |visitor, index|
       user_details = if visitor.registered_user

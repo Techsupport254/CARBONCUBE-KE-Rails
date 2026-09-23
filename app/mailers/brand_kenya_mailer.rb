@@ -80,7 +80,7 @@ class BrandKenyaMailer < ApplicationMailer
       category: @brand.category,
       missing_items: self.class.missing_items_for(@brand),
       profile_url: "#{SITE}/seller/profile?utm_source=brand_kenya&utm_medium=email&utm_campaign=brand_kenya",
-      shop_url: seller&.slug ? "#{SITE}/shop/#{seller.slug}" : nil,
+      shop_url: seller ? "#{SITE}/shop/#{seller.url_slug}" : nil,
       listing_url: "#{SITE}/brand-kenya"
     }
   end
@@ -95,7 +95,7 @@ class BrandKenyaMailer < ApplicationMailer
       registered: registered,
       missing_items: self.class.missing_items_for(@brand),
       cta_url: registered ? profile_url : signup_url,
-      shop_url: seller&.slug ? "#{SITE}/shop/#{seller.slug}" : nil,
+      shop_url: seller ? "#{SITE}/shop/#{seller.url_slug}" : nil,
       listing_url: "#{SITE}/brand-kenya"
     }
   end

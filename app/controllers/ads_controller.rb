@@ -33,7 +33,13 @@ class AdsController < ApplicationController
                   seller: { seller_tier: :tier },
                   offer_ads: :offer
                 )
-    @ad = ad_scope.find_by(slug: params[:id].to_s) || ad_scope.find_by(id: params[:id].to_s)
+    param = params[:id].to_s
+    if %w[null undefined].include?(param)
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
+
+    @ad = ad_scope.find_by(slug: param) || ad_scope.find_by(id: param) || ad_scope.find_by_id_or_slug(param)
 
     if @ad
       unless @ad.has_valid_images?
@@ -69,6 +75,7 @@ class AdsController < ApplicationController
         is_flagged: true,
         flagged: true,
         id: flagged_ad.id,
+        slug: flagged_ad.url_slug,
         title: flagged_ad.title,
         name: flagged_ad.title,
         flag_notes: flagged_ad.flag_notes,

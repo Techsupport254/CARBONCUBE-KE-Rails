@@ -101,8 +101,10 @@ class SimilarProductsService
 
     def find_same_products(ad, normalized_title, normalized_title_key, normalized_brand, normalized_manufacturer, exclude_current_seller: false)
       base_scope = build_base_scope(ad, exclude_current_seller: exclude_current_seller)
+      # Same category, but NOT same subcategory — identical title+brand is the
+      # same product even when a listing sits in the wrong subcategory
       same_product_scope = base_scope
-                             .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
+                             .where(category_id: ad.category_id)
 
       # Build matching conditions
       match_conditions = []
@@ -214,7 +216,46 @@ class SimilarProductsService
         { ad: alt, score: score }
       end.sort_by { |item| -item[:score] }.first(10).map { |item| item[:ad] }
 
-      scored_similar
+      # Broaden to the whole category when the subcategory yields little —
+      # miscategorized ads (a phone under "Laptops") shouldn't dead-end
+      return scored_similar if scored_similar.size >= 5
+
+      broad_scope = base_scope
+                      .where(category_id: ad.category_id)
+                      .where.not(id: exclude_ids + scored_similar.map(&:id))
+
+      broad_text = "#{ad.title} #{ad.brand} #{ad.model}"
+      broad_words = extract_key_words(broad_text)
+      if broad_words.any?
+        broad_conditions = broad_words.map { "(ads.title ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ?)" }.join(' OR ')
+        broad_params = broad_words.flat_map { |w| ["%#{w}%", "%#{w}%", "%#{w}%"] }
+        broad_scope = broad_scope.where(broad_conditions, *broad_params)
+      end
+
+      broad_scope = broad_scope.where.not(
+        "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?",
+        normalized_title_key
+      )
+
+      broad_candidates = broad_scope
+                           .select("ads.*,
+                                    CASE tiers.id
+                                      WHEN 4 THEN 1
+                                      WHEN 3 THEN 2
+                                      WHEN 2 THEN 3
+                                      WHEN 1 THEN 4
+                                      ELSE 5
+                                    END AS tier_priority")
+                           .includes(:reviews, offer_ads: :offer, seller: { seller_tier: :tier })
+                           .limit(20)
+                           .to_a
+
+      broad_items = broad_candidates.map do |alt|
+        score = calculate_alternative_score(alt, ad, normalized_title, normalized_brand, false)
+        { ad: alt, score: score }
+      end.sort_by { |item| -item[:score] }.first(10 - scored_similar.size).map { |item| item[:ad] }
+
+      scored_similar + broad_items
     end
 
     # Helper methods extracted from buyer/ads_controller.rb

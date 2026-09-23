@@ -39,14 +39,16 @@ class GeocodingController < ApplicationController
   def search
     query = params[:q] || params[:query]
     limit = params[:limit]&.to_i || 5
+    country = params[:country].presence || 'ke'
 
     unless query.present?
       render json: { error: 'Query parameter is required' }, status: :bad_request
       return
     end
 
-    cache_key = "nominatim:search:#{Digest::MD5.hexdigest("#{query}:#{limit}")}"
-    data = fetch_or_request(cache_key) { nominatim_search(query, limit) }
+    # v2 key: earlier keys cached worldwide (unscoped) results
+    cache_key = "nominatim:search:v2:#{Digest::MD5.hexdigest("#{query}:#{limit}:#{country}")}"
+    data = fetch_or_request(cache_key) { nominatim_search(query, limit, country) }
 
     if data
       render json: Array(data), status: :ok
@@ -61,7 +63,10 @@ class GeocodingController < ApplicationController
     data = Rails.cache.read(cache_key)
     if data.nil?
       data = yield
-      Rails.cache.write(cache_key, data, expires_in: 1.hour) unless data.nil?
+      # Skip caching empty results — a transient miss shouldn't be sticky for an hour
+      unless data.nil? || (data.respond_to?(:empty?) && data.empty?)
+        Rails.cache.write(cache_key, data, expires_in: 1.hour)
+      end
     end
     data
   end
@@ -96,13 +101,15 @@ class GeocodingController < ApplicationController
     nil
   end
 
-  def nominatim_search(query, limit)
+  def nominatim_search(query, limit, country = 'ke')
     with_nominatim_rate_limit do
       response = HTTParty.get('https://nominatim.openstreetmap.org/search', {
         query: {
           format: 'json',
           q: query,
           addressdetails: 1,
+          countrycodes: country,
+          dedupe: 1,
           limit: limit
         },
         headers: {

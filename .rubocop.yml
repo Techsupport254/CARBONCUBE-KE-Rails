@@ -41,3 +41,9 @@ RSpec/ExampleLength:
 
 RSpec/MultipleExpectations:
   Enabled: false
+
+# Ad.find_by_id_or_slug / Seller#find-by-slug helpers are hand-rolled lookup
+# methods, not Rails dynamic finders — allow them project-wide.
+Rails/DynamicFindBy:
+  AllowedMethods:
+    - find_by_id_or_slug

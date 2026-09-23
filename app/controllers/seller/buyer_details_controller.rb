@@ -14,7 +14,7 @@ class Seller::BuyerDetailsController < ApplicationController
     Rails.logger.info "BuyerDetailsController#show - current_seller_id: #{current_seller&.id}"
     
     # Verify the ad belongs to the current seller
-    ad = current_seller&.ads&.find_by(id: ad_id)
+    ad = current_seller&.ads&.find_by_id_or_slug(ad_id)
     Rails.logger.info "BuyerDetailsController#show - ad found: #{ad&.title}"
     Rails.logger.info "BuyerDetailsController#show - ad seller_id: #{ad&.seller_id}"
     
@@ -27,7 +27,7 @@ class Seller::BuyerDetailsController < ApplicationController
     end
 
     begin
-      buyer_details = BuyerDetailsUtility.get_ad_reviewers_details(ad_id)
+      buyer_details = BuyerDetailsUtility.get_ad_reviewers_details(ad.id)
       render json: {
         success: true,
         data: buyer_details
@@ -45,20 +45,20 @@ class Seller::BuyerDetailsController < ApplicationController
     ad_id = params[:ad_id]
     
     # Verify the ad belongs to the current seller
-    ad = current_seller.ads.find_by(id: ad_id)
+    ad = current_seller.ads.find_by_id_or_slug(ad_id)
     unless ad
       render json: { error: 'Ad not found or access denied' }, status: :not_found
       return
     end
 
     begin
-      buyer_details = BuyerDetailsUtility.get_ad_reviewers_details(ad_id)
-      
+      buyer_details = BuyerDetailsUtility.get_ad_reviewers_details(ad.id)
+
       # Return only summary statistics
       render json: {
         success: true,
         data: {
-          ad_id: ad_id,
+          ad_id: ad.id,
           total_reviews: buyer_details[:total_reviews],
           unique_reviewers: buyer_details[:unique_reviewers],
           summary: buyer_details[:summary]

@@ -654,16 +654,20 @@ class ConversationsController < ApplicationController
     buyer_id = @current_user.id
     seller_id = params[:seller_id]
 
-    # If seller_id is not provided but ad_id is, get seller_id from the ad
-    if params[:seller_id].blank? && params[:ad_id].present?
-      ad = Ad.find_by(id: params[:ad_id])
-      if ad
-        seller_id = ad.seller_id
-      else
+    # ad_id may arrive as a canonical slug (e.g. "flip-case-4696") — resolve it
+    # once so the conversation links to the real numeric id rather than a
+    # garbage 0/nil cast.
+    ad = nil
+    if params[:ad_id].present?
+      ad = Ad.find_by_id_or_slug(params[:ad_id])
+      unless ad
         render json: { error: 'Ad not found' }, status: :not_found
         return
       end
     end
+
+    # If seller_id is not provided but ad_id is, get seller_id from the ad
+    seller_id = ad.seller_id if params[:seller_id].blank? && ad
 
     # Ensure seller_id is present
     unless seller_id.present?
@@ -678,7 +682,7 @@ class ConversationsController < ApplicationController
       @conversation = Conversation.find_or_create_conversation!(
         buyer_id: buyer_id,
         seller_id: seller_id,
-        ad_id: params[:ad_id],
+        ad_id: ad&.id,
         inquirer_seller_id: nil,
         admin_id: params[:admin_id].presence
       )
@@ -755,13 +759,21 @@ class ConversationsController < ApplicationController
       return
     end
 
-    # Additional validation: check if ad belongs to current user (prevent self-messaging via ad_id)
+    # ad_id may arrive as a canonical slug — resolve it once so the
+    # conversation links to the real numeric id.
+    ad = nil
     if params[:ad_id].present?
-      ad = Ad.find_by(id: params[:ad_id])
-      if ad && ad.seller_id == @current_user.id && (params[:seller_id].blank? || params[:seller_id] == @current_user.id.to_s)
-        render json: { error: 'You cannot message yourself about your own ads' }, status: :unprocessable_entity
+      ad = Ad.find_by_id_or_slug(params[:ad_id])
+      unless ad
+        render json: { error: 'Ad not found' }, status: :not_found
         return
       end
+    end
+
+    # Additional validation: check if ad belongs to current user (prevent self-messaging via ad_id)
+    if ad && ad.seller_id == @current_user.id && (params[:seller_id].blank? || params[:seller_id] == @current_user.id.to_s)
+      render json: { error: 'You cannot message yourself about your own ads' }, status: :unprocessable_entity
+      return
     end
 
     # Determine the conversation structure based on who is messaging
@@ -777,10 +789,7 @@ class ConversationsController < ApplicationController
       inquirer_seller_id = @current_user.id  # Current seller is the inquirer
       
       # If seller_id is not provided, derive it from the ad
-      if seller_id.blank? && params[:ad_id].present?
-        ad = Ad.find_by(id: params[:ad_id])
-        seller_id = ad.seller_id if ad
-      end
+      seller_id = ad.seller_id if seller_id.blank? && ad
       Rails.logger.info "Seller-to-seller conversation: seller_id=#{seller_id}, inquirer_seller_id=#{inquirer_seller_id}"
     end
 
@@ -792,7 +801,7 @@ class ConversationsController < ApplicationController
         seller_id: seller_id,
         buyer_id: buyer_id,
         inquirer_seller_id: inquirer_seller_id,
-        ad_id: params[:ad_id],
+        ad_id: ad&.id,
         admin_id: params[:admin_id].presence
       )
       Rails.logger.info "Found or created conversation: #{@conversation.id}"
@@ -863,12 +872,21 @@ class ConversationsController < ApplicationController
   end
 
   def create_admin_conversation
-    # If seller_id is not provided but ad_id is, get seller_id from the ad
     seller_id = params[:seller_id]
-    if params[:seller_id].blank? && params[:ad_id].present?
-      ad = Ad.find(params[:ad_id])
-      seller_id = ad.seller_id
+
+    # ad_id may arrive as a canonical slug — resolve it once so the
+    # conversation links to the real numeric id.
+    ad = nil
+    if params[:ad_id].present?
+      ad = Ad.find_by_id_or_slug(params[:ad_id])
+      unless ad
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
     end
+
+    # If seller_id is not provided but ad_id is, get seller_id from the ad
+    seller_id = ad.seller_id if params[:seller_id].blank? && ad
 
     # Find existing conversation or create new one
     # Handle race conditions where multiple requests try to create the same conversation
@@ -879,7 +897,7 @@ class ConversationsController < ApplicationController
         seller_id: seller_id,
         buyer_id: params[:buyer_id],
         inquirer_seller_id: nil,
-        ad_id: params[:ad_id]
+        ad_id: ad&.id
       )
       Rails.logger.info "Found or created conversation: #{@conversation.id}"
     rescue => e

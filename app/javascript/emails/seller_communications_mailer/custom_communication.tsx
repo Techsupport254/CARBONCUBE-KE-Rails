@@ -39,9 +39,9 @@ export default function CustomCommunication({
             li: { fontSize: "14px", color: "#475569", lineHeight: "21px", margin: "0 0 3px" },
             ul: { margin: "0 0 10px", paddingLeft: "18px" },
             ol: { margin: "0 0 10px", paddingLeft: "18px" },
-            strong: { color: "#0f172a", fontWeight: 600 },
-            a: { color: "#f59e0b", textDecoration: "underline" },
-            blockquote: { borderLeft: "3px solid #e2e8f0", paddingLeft: "12px", margin: "10px 0", color: "#64748b", fontStyle: "italic" as const },
+            bold: { color: "#0f172a", fontWeight: 600 },
+            link: { color: "#f59e0b", textDecoration: "underline" },
+            blockQuote: { borderLeft: "3px solid #e2e8f0", paddingLeft: "12px", margin: "10px 0", color: "#64748b", fontStyle: "italic" as const },
             hr: { border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" },
           }}
         >

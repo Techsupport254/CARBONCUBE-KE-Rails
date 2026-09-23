@@ -117,6 +117,17 @@ class Seller::ConversationsController < ApplicationController
       return
     end
 
+    # ad_id may arrive as a canonical slug — resolve it so the conversation
+    # links to the real numeric id rather than a garbage 0/nil cast.
+    ad = nil
+    if params[:ad_id].present?
+      ad = Ad.find_by_id_or_slug(params[:ad_id])
+      unless ad
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
+    end
+
     # Determine the conversation structure based on who is messaging
     if params[:seller_id].present? && params[:seller_id] == @current_seller.id.to_s
       # Current seller owns the ad - they are responding to a buyer/inquirer
@@ -125,7 +136,7 @@ class Seller::ConversationsController < ApplicationController
       inquirer_seller_id = nil
     else
       # Current seller is inquiring about someone else's ad
-      seller_id = params[:seller_id]  # Ad owner
+      seller_id = params[:seller_id].presence || ad&.seller_id  # Ad owner
       buyer_id = nil  # No buyer involved
       inquirer_seller_id = @current_seller.id  # Current seller is the inquirer
     end
@@ -139,7 +150,7 @@ class Seller::ConversationsController < ApplicationController
         buyer_id: buyer_id,
         inquirer_seller_id: inquirer_seller_id,
         admin_id: params[:admin_id].presence,
-        ad_id: params[:ad_id]
+        ad_id: ad&.id
       )
     rescue => e
       Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}" if defined?(Rails.logger)

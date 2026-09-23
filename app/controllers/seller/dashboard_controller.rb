@@ -19,6 +19,7 @@ class Seller::DashboardController < ApplicationController
         # Shop header data
         shop: {
           enterprise_name: seller.enterprise_name,
+          slug: seller.url_slug,
           description: seller.description,
           profile_picture: get_profile_picture(seller),
           flagged: seller.flagged || false,

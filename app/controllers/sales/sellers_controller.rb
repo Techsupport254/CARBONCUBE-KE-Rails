@@ -92,7 +92,7 @@ class Sales::SellersController < ApplicationController
   end
 
   def set_seller
-    @seller = Seller.includes(:tier).find(params[:id])
+    @seller = Seller.find_by(slug: params[:id]) || Seller.includes(:tier).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Seller not found' }, status: :not_found
   end

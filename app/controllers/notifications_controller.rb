@@ -142,7 +142,7 @@ class NotificationsController < ApplicationController
       original_price: active_offer_ad&.original_price || ad.price,
       discount_percentage: active_offer_ad&.discount_percentage,
       image_url: ad.first_media_url || ad.media_urls&.first,
-      slug: ad.respond_to?(:slug) ? ad.slug : nil,
+      slug: ad.respond_to?(:url_slug) ? ad.url_slug : nil,
       category: ad.category&.name,
       subcategory: ad.subcategory&.name,
     }

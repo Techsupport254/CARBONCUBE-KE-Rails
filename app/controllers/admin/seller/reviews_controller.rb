@@ -11,11 +11,12 @@ class Admin::Seller::ReviewsController < ApplicationController
   private
 
   def set_seller
-    @seller = Seller.find(params[:seller_id])
+    @seller = Seller.find_by(slug: params[:seller_id]) || Seller.find(params[:seller_id])
   end
 
   def set_ad
-    @ad = @seller.ads.find(params[:ad_id])
+    @ad = @seller.ads.find_by_id_or_slug(params[:ad_id])
+    raise ActiveRecord::RecordNotFound unless @ad
   end
 
   def authenticate_admin

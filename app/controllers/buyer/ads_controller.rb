@@ -167,7 +167,7 @@ class Buyer::AdsController < ApplicationController
         ad_data = {
           id: ad.id,
           title: ad.title,
-          slug: ad.slug,
+          slug: ad.url_slug,
           price: ad.effective_price,
           media: is_lite_mode ? nil : media_json,
           media_urls: media_urls,
@@ -181,6 +181,7 @@ class Buyer::AdsController < ApplicationController
           seller_name: ad.seller&.fullname,
           category_name: ad.category&.name,
           subcategory_name: ad.subcategory&.name,
+          is_brand_kenya: ad.attributes.key?('is_brand_kenya') ? ad.is_brand_kenya == true : false,
           specifications: is_lite_mode ? nil : ad.specifications
         }.compact
 
@@ -216,7 +217,13 @@ class Buyer::AdsController < ApplicationController
       :offer_ads,
       seller: { seller_tier: :tier, seller_documents: :document_type }
     )
-    @ad = ad_scope.find_by(slug: params[:id].to_s) || ad_scope.find_by(id: params[:id].to_s)
+    param = params[:id].to_s
+    if %w[null undefined].include?(param)
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
+
+    @ad = ad_scope.find_by(slug: param) || ad_scope.find_by(id: param) || ad_scope.find_by_id_or_slug(param)
 
     unless @ad
       render json: { error: 'Ad not found' }, status: :not_found
@@ -231,6 +238,7 @@ class Buyer::AdsController < ApplicationController
         is_flagged: true,
         flagged: true,
         id: @ad.id,
+        slug: @ad.url_slug,
         title: @ad.title,
         name: @ad.title,
         flag_notes: @ad.flag_notes,
@@ -277,8 +285,10 @@ class Buyer::AdsController < ApplicationController
     normalized_manufacturer = normalize_brand(ad.manufacturer) if ad.manufacturer.present?
 
     # Find same product with improved matching logic
+    # Same category, but NOT same subcategory — identical title+brand is the
+    # same product even when a listing sits in the wrong subcategory
     same_product_scope = base_scope
-                           .where(category_id: ad.category_id, subcategory_id: ad.subcategory_id)
+                           .where(category_id: ad.category_id)
 
     # Build title matching conditions - use multiple strategies for better matching
     # Strategy 1: Exact match (case-insensitive, trimmed)
@@ -391,6 +401,46 @@ class Buyer::AdsController < ApplicationController
       end.sort_by { |item| -item[:score] }.first(10).map { |item| item[:ad] }
 
       similar_items = scored_similar
+    end
+
+    # Broaden to the whole category when the subcategory yields little —
+    # miscategorized ads (a phone under "Laptops") shouldn't dead-end
+    if scored_same_products.size + similar_items.size < 5
+      broad_scope = base_scope
+                      .where(category_id: ad.category_id)
+                      .where.not(id: scored_same_products.map(&:id) + similar_items.map(&:id))
+
+      broad_words = extract_key_words("#{ad.title} #{ad.brand} #{ad.model}")
+      if broad_words.any?
+        broad_conditions = broad_words.map { "(ads.title ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ?)" }.join(' OR ')
+        broad_params = broad_words.flat_map { |w| ["%#{w}%", "%#{w}%", "%#{w}%"] }
+        broad_scope = broad_scope.where(broad_conditions, *broad_params)
+      end
+
+      broad_scope = broad_scope.where.not(
+        "REGEXP_REPLACE(LOWER(COALESCE(ads.title, '')), '[^a-z0-9]+', '', 'g') = ?",
+        normalized_title_key
+      )
+
+      broad_candidates = broad_scope
+                           .select("ads.*,
+                                    CASE tiers.id
+                                      WHEN 4 THEN 1
+                                      WHEN 3 THEN 2
+                                      WHEN 2 THEN 3
+                                      WHEN 1 THEN 4
+                                      ELSE 5
+                                    END AS tier_priority")
+                           .includes(:reviews, offer_ads: :offer, seller: { seller_tier: :tier })
+                           .limit(20)
+                           .to_a
+
+      broad_items = broad_candidates.map do |alt|
+        score = calculate_alternative_score(alt, ad, normalized_title, normalized_brand, false)
+        { ad: alt, score: score }
+      end.sort_by { |item| -item[:score] }.first(10 - similar_items.size).map { |item| item[:ad] }
+
+      similar_items += broad_items
     end
 
     render json: {
@@ -1643,267 +1693,28 @@ class Buyer::AdsController < ApplicationController
     ads_per_page = 24 if ads_per_page < 1 || ads_per_page > 100
     shops_per_page = 10 if shops_per_page < 1 || shops_per_page > 50
 
-    # First, try an exact title match shortcut so that
-    # full-title queries like "Sony PS4 wireless controller"
-    # always hit the obvious product, without being confused
-    # by AI intent analysis.
-    exact_match_scope = Ad.active.with_valid_images
-                          .joins(:seller, :category, :subcategory)
-                          .where(sellers: { blocked: false, deleted: false, flagged: false })
-                          .where(flagged: false)
-
-    exact_title_matches = []
-    if query.present?
-      # Use a forgiving exact-ish match: title contains the full query text,
-      # case-insensitive. This ensures obvious full-title searches like
-      # "Sony PS4 wireless controller" return the right product even if
-      # there are minor spacing/casing differences.
-      shop_seller_ids = matched_shop_seller_ids(query)
-      exact_title_matches = exact_match_scope
-                              .where(
-                                "LOWER(ads.title) LIKE LOWER(:q) OR ads.seller_id IN (:shop_ids)",
-                                q: "%#{query.downcase.strip}%",
-                                shop_ids: shop_seller_ids.presence || [nil]
-                              )
-    end
-
-    # Parse search intent with Grok AI enhancement
+    # Parse search intent with Grok AI enhancement. The intent now only
+    # feeds relevance boosts inside AdSearchService — it can boost or
+    # reorder results but never shrinks the candidate pool.
     search_intent = if query.present?
                       analyze_search_intent_with_grok(query)
                     else
                       nil
                     end
 
-    # When query is a known phone model (e.g. "a54"), prefer phone category even for exact title matches
-    if exact_title_matches.present? && search_intent && search_intent[:category_hint] == 'phones'
-      phone_filtered = exact_title_matches.where(
-        "LOWER(categories.name) LIKE LOWER(?) OR LOWER(subcategories.name) LIKE LOWER(?)",
-        "%phone%", "%phone%"
-      )
-      exact_title_matches = phone_filtered if phone_filtered.exists?
-    end
+    result = AdSearchService.search_ads(
+      query: query,
+      search_intent: search_intent,
+      page: ads_page,
+      per_page: ads_per_page,
+      category: category_param,
+      subcategory: subcategory_param
+    )
+    ads = result[:ads]
+    ads_total_count = result[:total]
 
-    ads = if exact_title_matches.present?
-            # If we have exact title matches, use them as the primary
-            # result set and skip the more complex AI search logic.
-            exact_title_matches
-          else
-            scoped_ads = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-                           .where(sellers: { blocked: false, deleted: false, flagged: false })
-                           .where(flagged: false)
-
-            if query.present?
-              # Apply smart search logic based on intent analysis
-              scoped_ads = apply_smart_search(scoped_ads, query, search_intent)
-
-              # Fallback: if smart search returns no ads, use a simpler,
-              # more forgiving text search so obvious matches are not lost.
-              if scoped_ads.none?
-                fallback_base = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-                                  .where(sellers: { blocked: false, deleted: false, flagged: false })
-                                  .where(flagged: false)
-
-                words = query.downcase.split(/\s+/).reject(&:blank?)
-                fallback_scope = fallback_base
-                words.each do |word|
-                  next if word.length < 2
-                  fallback_scope = fallback_scope.where(
-                    "ads.title ILIKE :w OR ads.description ILIKE :w OR ads.brand ILIKE :w",
-                    w: "%#{word}%"
-                  )
-                end
-
-                if fallback_scope.exists?
-                  scoped_ads = fallback_scope
-                elsif CatalogSearchExpansionService.short_product_like?(query.strip) &&
-                      CatalogSearchExpansionService.expand(query.strip).present?
-                  # Only use PgSearch fuzzy fallback when catalog had at least some matches (avoids "a54" → Air Filter)
-                  pg_ids = fallback_base.merge(Ad.search_by_title_and_description(query)).limit(200).pluck(:id)
-                  scoped_ads = fallback_base.where(id: pg_ids) if pg_ids.any?
-                end
-              end
-
-              # Final safety net: if we STILL have no ads but we detected a brand,
-              # rerun the smart search using just the brand term. This ensures that
-              # \"Sony PS4 wireless controller\" will at least behave like a \"sony\"
-              # brand search instead of returning nothing.
-              if scoped_ads.none? && search_intent && search_intent[:brand].present?
-                brand_query = search_intent[:brand].to_s
-
-                brand_scope = Ad.active.with_valid_images.joins(:seller, :category, :subcategory)
-                                 .where(sellers: { blocked: false, deleted: false, flagged: false })
-                                 .where(flagged: false)
-
-                scoped_ads = apply_smart_search(brand_scope, brand_query, search_intent)
-              end
-            end
-
-            scoped_ads
-          end
-
-    if category_param.present? && category_param != 'All'
-      if category_param.to_s.match?(/\A\d+\z/)
-        ads = ads.where(category_id: category_param.to_i)
-      else
-        category = Category.find_by(name: category_param)
-        ads = ads.where(category_id: category.id) if category
-      end
-    end
-
-    if subcategory_param.present? && subcategory_param != 'All'
-      if subcategory_param.to_s.match?(/\A\d+\z/)
-        ads = ads.where(subcategory_id: subcategory_param.to_i)
-      else
-        subcategory = Subcategory.find_by(name: subcategory_param)
-        ads = ads.where(subcategory_id: subcategory.id) if subcategory
-      end
-    end
-
-    # Get total count for pagination
-    ads_total_count = ads.count
-
-    # For search queries, we'll recalculate the total count after relevance filtering
+    # For search queries the total is the filtered candidate-pool size.
     search_relevant_count = ads_total_count
-
-    # Build smart relevance scoring for search results
-    if query.present?
-      # Limit the number of ads loaded into memory for relevance scoring.
-      # Without this, the search loads ALL matching ads into Ruby memory,
-      # causing 500K+ allocations. 200 candidates is sufficient for ranking.
-      candidate_limit = [ads_per_page * 8, 200].max
-      ads_for_scoring = ads.limit(candidate_limit)
-
-      # Calculate smart relevance score for each ad based on search intent
-      ads_with_scores = ads_for_scoring.map do |ad|
-        relevance_score = calculate_smart_relevance_score(ad, query, search_intent)
-        { ad: ad, score: relevance_score }
-      end
-
-      # For brand-specific searches, prioritize brand matches more aggressively
-      if search_intent && search_intent[:is_product_search] && search_intent[:brand]
-        # Separate by brand match strength - ONLY include items that match the brand
-        brand_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 && brand_match?(item[:ad], search_intent[:brand]) } # Perfect brand + model matches
-        brand_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 && brand_match?(item[:ad], search_intent[:brand]) } # Strong brand matches
-        brand_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && brand_match?(item[:ad], search_intent[:brand]) } # Brand matches with lower scores
-        
-        # Standard relevance-based sorting for non-brand searches
-        exact_matches = ads_with_scores.select { |item| item[:score] >= 80 }
-        high_relevance = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 }
-        medium_relevance = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 }
-        low_relevance = ads_with_scores.select { |item| item[:score] > 0 && item[:score] < 20 }
-        
-        # New: If we have an EXACT title match (score >= 150), prioritize it even if brand doesn't match
-        # This fixes cases like "Crane scale" where a brand might be misclassified
-        exact_title_matches_any_brand = ads_with_scores.select { |item| item[:score] >= 150 }
-
-        # New: If the brand was just INFERRED (not explicit), be much more relaxed
-        if search_intent[:brand_inferred]
-          # For inferred brands, include all high-relevance matches
-          relevant_ads = brand_exact_matches + brand_strong_matches + high_relevance + exact_title_matches_any_brand
-          relevant_ads = relevant_ads.uniq { |item| item[:ad].id }
-        else
-          # For explicit brand searches, prioritize brand matches but don't EXCLUDE high-relevance non-brand matches
-          # especially if the score is very high (exact title match)
-          relevant_ads = brand_exact_matches + brand_strong_matches + brand_weak_matches + exact_title_matches_any_brand
-          
-          # Add a few high-relevance non-brand matches if we have space
-          if relevant_ads.size < ads_per_page
-            other_strong_matches = high_relevance.reject { |item| brand_match?(item[:ad], search_intent[:brand]) }.first(5)
-            relevant_ads.concat(other_strong_matches)
-          end
-        end
-      elsif search_intent && search_intent[:is_product_search] && search_intent[:product_type]
-        # For product type searches, prioritize product type matches
-        product_type_exact_matches = ads_with_scores.select { |item| item[:score] >= 80 } # Perfect product type matches
-        product_type_strong_matches = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 } # Strong product type matches
-        product_type_weak_matches = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 && product_type_match?(item[:ad], search_intent[:product_type]) } # Product type matches with lower scores
-        
-        # Also include exact title matches regardless of product type detection
-        exact_title_matches_fallback = ads_with_scores.select { |item| item[:score] >= 150 }
-        
-        other_matches = ads_with_scores.select { |item| item[:score] < 20 || !product_type_match?(item[:ad], search_intent[:product_type]) } # Non-product type matches
-
-        # Limit non-product-type matches to fill remaining slots
-        max_other_matches = [ads_per_page / 4, 2].max # At most 1/4 of results for product type searches, minimum 2
-        other_matches = other_matches.sort_by { |item| -item[:score] }.reject { |i| exact_title_matches_fallback.include?(i) }.first(max_other_matches)
-
-        relevant_ads = product_type_exact_matches + product_type_strong_matches + product_type_weak_matches + exact_title_matches_fallback + other_matches
-
-        # Add related products (prioritizing same product type)
-        if relevant_ads.size < ads_per_page
-          related_ads = find_related_products(product_type_exact_matches + product_type_strong_matches, search_intent)
-          slots_remaining = ads_per_page - relevant_ads.size
-          related_ads = related_ads.first(slots_remaining)
-          relevant_ads.concat(related_ads)
-        end
-      else
-        # Standard relevance-based sorting for non-brand searches
-        exact_matches = ads_with_scores.select { |item| item[:score] >= 80 }
-        high_relevance = ads_with_scores.select { |item| item[:score] >= 50 && item[:score] < 80 }
-        medium_relevance = ads_with_scores.select { |item| item[:score] >= 20 && item[:score] < 50 }
-        low_relevance = ads_with_scores.select { |item| item[:score] > 0 && item[:score] < 20 }
-
-        # For product searches, add related products
-        if search_intent && search_intent[:is_product_search] && (exact_matches.any? || high_relevance.any?)
-          related_ads = find_related_products(exact_matches + high_relevance, search_intent)
-          relevant_ads = exact_matches + high_relevance + medium_relevance + low_relevance + related_ads
-        else
-          relevant_ads = exact_matches + high_relevance + medium_relevance + low_relevance
-        end
-      end
-
-      # Remove duplicates
-      relevant_ads = relevant_ads.uniq { |item| item[:ad].id }
-
-      # Update total count for search results
-      search_relevant_count = relevant_ads.size
-
-      # Sort by relevance score, then by seller tier, then by recency
-      sorted_ads = relevant_ads.sort_by do |item|
-        ad = item[:ad]
-        tier_priority = case ad.seller&.seller_tier&.tier_id
-                        when 4 then 1  # Premium
-                        when 3 then 2  # Standard
-                        when 2 then 3  # Basic
-                        when 1 then 4  # Free
-                        else 5         # Unknown
-                        end
-
-        # Create sort key: [negative score for descending, tier priority, negative created_at for newest first, random for tie-breaking]
-        [-item[:score], tier_priority, -ad.created_at.to_i, rand]
-      end
-
-      # Apply pagination
-      ads = sorted_ads.map { |item| item[:ad] }
-      ads = ads.slice((ads_page - 1) * ads_per_page, ads_per_page) || []
-    else
-      # For non-search queries, use the original ordering
-      ads = ads
-        .joins(:seller, seller: { seller_tier: :tier })
-        .select('ads.*, 
-                 CASE tiers.id
-                   WHEN 4 THEN 1
-                   WHEN 3 THEN 2
-                   WHEN 2 THEN 3
-                   WHEN 1 THEN 4
-                   ELSE 5
-                 END AS tier_priority')
-        .includes(
-          :category,
-          :subcategory,
-          :reviews,
-          seller: { seller_tier: :tier }
-        )
-        .order(Arel.sql('CASE tiers.id
-                          WHEN 4 THEN 1
-                          WHEN 3 THEN 2
-                          WHEN 2 THEN 3
-                          WHEN 1 THEN 4
-                          ELSE 5
-                        END ASC, RANDOM()'))
-        .limit(ads_per_page)
-        .offset((ads_page - 1) * ads_per_page)
-    end
 
     # Enhanced shop search - find shops that match query OR have products matching the query
     matching_shops = []
@@ -2048,6 +1859,7 @@ class Buyer::AdsController < ApplicationController
         shop = shop_data[:shop]
         {
           id: shop.id,
+          slug: shop.url_slug,
           enterprise_name: shop.enterprise_name,
           description: shop.description,
           email: shop.email,
@@ -2339,6 +2151,8 @@ class Buyer::AdsController < ApplicationController
             ads.title,
             ads.price,
             ads.media,
+            ads.is_brand_kenya,
+            ads.slug,
             ads.created_at,
             ads.category_id,
             ads.subcategory_id,
@@ -2493,6 +2307,8 @@ class Buyer::AdsController < ApplicationController
           specifications: row['specifications'],
           seller_tier: row['seller_tier_id'],
           seller_tier_name: row['seller_tier_name'],
+          slug: row_url_slug(row),
+          is_brand_kenya: row['is_brand_kenya'] == true,
           metrics: {
             avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
             review_count: row['review_count']&.to_i || 0,
@@ -2790,7 +2606,9 @@ class Buyer::AdsController < ApplicationController
         location: alt.seller&.county,
         seller_location_name: alt.seller&.county&.name,
         brand: alt.brand,
-        manufacturer: alt.manufacturer
+        manufacturer: alt.manufacturer,
+        slug: alt.url_slug,
+        is_brand_kenya: alt.attributes.key?('is_brand_kenya') ? alt.is_brand_kenya == true : false
       }
     end
   end
@@ -2986,6 +2804,8 @@ class Buyer::AdsController < ApplicationController
           ads.title,
           ads.price,
           ads.media,
+          ads.is_brand_kenya,
+          ads.slug,
           ads.media::jsonb ->> 0 AS first_media_url,
           ads.created_at,
           ads.subcategory_id,
@@ -3111,6 +2931,8 @@ class Buyer::AdsController < ApplicationController
         average_rating: row['average_rating']&.to_f || 0.0,
         rating: row['average_rating']&.to_f || 0.0,
         mean_rating: row['average_rating']&.to_f || 0.0,
+        slug: row_url_slug(row),
+        is_brand_kenya: row['is_brand_kenya'] == true,
         flash_sale_info: offer_info_map[ad_id]
       }
     end
@@ -3225,6 +3047,8 @@ class Buyer::AdsController < ApplicationController
             ads.title,
             ads.price,
             ads.media,
+            ads.is_brand_kenya,
+            ads.slug,
             ads.created_at,
             ads.category_id,
             ads.subcategory_id,
@@ -3375,6 +3199,8 @@ class Buyer::AdsController < ApplicationController
           specifications: row['specifications'],
           seller_tier: row['seller_tier_id'],
           seller_tier_name: row['seller_tier_name'],
+          slug: row_url_slug(row),
+          is_brand_kenya: row['is_brand_kenya'] == true,
         metrics: {
             avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
             review_count: row['review_count']&.to_i || 0,
@@ -3434,6 +3260,12 @@ class Buyer::AdsController < ApplicationController
   end
 
   private
+
+  # Canonical slug for raw SQL result rows — stored slug, or the same
+  # "<title>-<id>" fallback Ad#url_slug produces.
+  def row_url_slug(row)
+    row['slug'].presence || "#{Ad.slugify(row['title']).presence || 'ad'}-#{row['id']}"
+  end
 
   def get_search_image(term)
     term_lower = term.downcase

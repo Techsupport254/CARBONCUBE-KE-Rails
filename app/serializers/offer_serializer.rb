@@ -91,6 +91,8 @@ class OfferSerializer
                 
                 {
                   id: ad.id,
+                  slug: ad.url_slug,
+                  is_brand_kenya: ad.is_brand_kenya == true,
                   title: ad.title,
                   original_price: offer_ad.original_price,
                   discounted_price: offer_ad.discounted_price,

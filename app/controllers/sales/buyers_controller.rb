@@ -4,28 +4,58 @@ class Sales::BuyersController < ApplicationController
   before_action :ensure_manager, only: [:destroy]
   before_action :set_buyer, only: [:show, :destroy]
 
+  # Columns rendered for the list — never serialize password digests or OAuth tokens.
+  BUYER_LIST_COLUMNS = %i[
+    id fullname username email phone_number location city
+    county_id sub_county_id blocked deleted profile_picture provider
+    created_at last_active_at
+  ].freeze
+
   # GET /sales/buyers
   def index
     per_page = params[:per_page]&.to_i || 20
     page = params[:page]&.to_i || 1
-    
-    buyers_query = Buyer.unscoped
-    
+
+    buyers_query = Buyer.unscoped.includes(:county, :sub_county)
+
     if params[:query].present?
       search_term = params[:query].strip
       buyers_query = buyers_query.where(
-        "fullname ILIKE :search OR 
-         phone_number ILIKE :search OR 
-         email ILIKE :search",
+        "fullname ILIKE :search OR
+         username ILIKE :search OR
+         phone_number ILIKE :search OR
+         email ILIKE :search OR
+         location ILIKE :search OR
+         city ILIKE :search",
         search: "%#{search_term}%"
       )
     end
-    
+
     total_count = buyers_query.count
-    @buyers = buyers_query.order(created_at: :desc).limit(per_page).offset((page - 1) * per_page)
-    
+    @buyers = buyers_query.order(created_at: :desc).limit(per_page).offset((page - 1) * per_page).to_a
+    buyer_ids = @buyers.map(&:id)
+
+    click_counts = ClickEvent.where(buyer_id: buyer_ids, event_type: 'Ad-Click').group(:buyer_id).count
+    reveal_counts = ClickEvent.where(buyer_id: buyer_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
+    review_counts = Review.where(buyer_id: buyer_ids).group(:buyer_id).count
+    wishlist_counts = WishList.where(buyer_id: buyer_ids).group(:buyer_id).count
+
+    buyers_data = @buyers.map do |buyer|
+      buyer.as_json(only: BUYER_LIST_COLUMNS).merge(
+        county_name: buyer.county&.name,
+        sub_county_name: buyer.sub_county&.name,
+        signup_method: buyer.oauth_user? ? 'google_oauth' : 'regular',
+        stats: {
+          clicks_count: click_counts[buyer.id] || 0,
+          reveals_count: reveal_counts[buyer.id] || 0,
+          wishlist_count: wishlist_counts[buyer.id] || 0,
+          reviews_count: review_counts[buyer.id] || 0
+        }
+      )
+    end
+
     render json: {
-      buyers: @buyers,
+      buyers: buyers_data,
       pagination: {
         current_page: page,
         per_page: per_page,
@@ -37,7 +67,10 @@ class Sales::BuyersController < ApplicationController
 
   # GET /sales/buyers/:id
   def show
-    render json: @buyer
+    render json: @buyer.as_json(only: BUYER_LIST_COLUMNS).merge(
+      county_name: @buyer.county&.name,
+      sub_county_name: @buyer.sub_county&.name
+    )
   end
 
   # DELETE /sales/buyers/:id - Permanent delete

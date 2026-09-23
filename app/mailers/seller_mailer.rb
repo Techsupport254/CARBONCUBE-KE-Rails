@@ -200,7 +200,7 @@ class SellerMailer < ApplicationMailer
     fullname = seller.fullname.presence || seller.enterprise_name.presence || "Merchant"
     first_name = fullname.to_s.split(" ").first.presence || "Partner"
     enterprise_name = seller.enterprise_name.presence || fullname
-    shop_slug = (seller.enterprise_name || seller.username || seller.id.to_s).parameterize
+    shop_slug = seller.url_slug
 
     base_frontend = if Rails.env.development?
       ENV.fetch('FRONTEND_URL', 'http://localhost:3000')

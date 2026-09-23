@@ -83,15 +83,17 @@ class Buyer::ConversationsController < ApplicationController
         
         # Add ad information if the message has an ad_id
         if message.ad_id
-          ad = Ad.find(message.ad_id)
-          message_data[:ad] = {
-            id: ad.id,
-            title: ad.title,
-            price: ad.price,
-            first_media_url: ad.media.first,
-            category: ad.category&.name,
-            subcategory: ad.subcategory&.name
-          }
+          ad = Ad.find_by(id: message.ad_id)
+          if ad
+            message_data[:ad] = {
+              id: ad.id,
+              title: ad.title,
+              price: ad.price,
+              first_media_url: ad.media.first,
+              category: ad.category&.name,
+              subcategory: ad.subcategory&.name
+            }
+          end
         end
         
         message_data
@@ -125,19 +127,27 @@ class Buyer::ConversationsController < ApplicationController
     # Find existing conversation or create new one
     # Handle race conditions where multiple requests try to create the same conversation
     begin
-      # If seller_id is not provided but ad_id is, get seller_id from the ad
-      if params[:seller_id].blank? && params[:ad_id].present?
-        ad = Ad.find(params[:ad_id])
-        seller_id = ad.seller_id if ad
+      # ad_id may arrive as a canonical slug — resolve it so the conversation
+      # links to the real numeric id rather than a garbage 0/nil cast.
+      ad = nil
+      if params[:ad_id].present?
+        ad = Ad.find_by_id_or_slug(params[:ad_id])
+        unless ad
+          render json: { error: 'Ad not found' }, status: :not_found
+          return
+        end
       end
-      
+
+      # If seller_id is not provided but ad_id is, get seller_id from the ad
+      seller_id = ad.seller_id if params[:seller_id].blank? && ad
+
       # Use the model method that handles race conditions properly
       @conversation = Conversation.find_or_create_conversation!(
         buyer_id: buyer_id,
         seller_id: seller_id,
         inquirer_seller_id: nil,
         admin_id: params[:admin_id].presence,
-        ad_id: params[:ad_id]
+        ad_id: ad&.id
       )
     rescue => e
       Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}" if defined?(Rails.logger)

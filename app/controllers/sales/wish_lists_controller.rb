@@ -60,6 +60,7 @@ class Sales::WishListsController < ApplicationController
           rating: ad_rating && ad_rating > 0 ? ad_rating.round(1) : nil,
           seller: seller_data ? {
             id: seller_data.id,
+            slug: seller_data.url_slug,
             shop_name: seller_data.enterprise_name,
             name: seller_data.fullname || seller_data.username || "Seller ##{seller_data.id}",
             profile_picture: seller_data.profile_picture

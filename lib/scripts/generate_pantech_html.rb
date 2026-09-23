@@ -224,7 +224,7 @@ template = %q{
                     <td>
                         <div style="font-weight: 600; font-size: 15px; margin-bottom: 5px;"><%= p['Title'] %></div>
                         <div class="desc"><%= p['Description'] %></div>
-                        <a href="https://carboncube-ke.com/ads/<%= slugify(p['Title']) %>?id=<%= p['ID'] %>" target="_blank" class="view-link">View Online</a>
+                        <a href="https://carboncube-ke.com/ads/<%= slugify(p['Title']) %>-<%= p['ID'] %>" target="_blank" class="view-link">View Online</a>
                     </td>
                     <td>
                         <div style="font-weight: 600;"><%= p['Category'] %></div>
@@ -252,12 +252,19 @@ def number_with_delimiter(number)
   number.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse
 end
 
+# Mirrors Ad.slugify so generated <title>-<id> links satisfy
+# Ad.find_by_id_or_slug's trailing-id prefix check.
 def slugify(title)
-  return "product" if title.blank?
-  title.downcase
-       .gsub(/[^a-z0-9\s.]/, '')
-       .gsub(/\s+/, '-')
+  return "product" if title.nil? || title.strip.empty?
+  title.to_s
+       .downcase
        .strip
+       .gsub(/[^\w\s.-]/, '')
+       .gsub(/\s+/, '-')
+       .squeeze('-')
+       .gsub(/^-+|-+$/, '')
+       .gsub(/\.+$/, '')
+       .gsub(/^\.+/, '')
 end
 
 # Render ERB

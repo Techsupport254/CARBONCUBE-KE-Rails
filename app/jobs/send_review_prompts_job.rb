@@ -29,6 +29,7 @@ class SendReviewPromptsJob < ApplicationJob
       user = event.buyer || event.seller
       next unless user&.email.present?
       next if already_reviewed?(event)
+      next if prompt_exists_for?(event)
 
       ReviewPrompt.create!(
         buyer: event.buyer,
@@ -88,6 +89,15 @@ class SendReviewPromptsJob < ApplicationJob
     else
       false
     end
+  end
+
+  # Matches ReviewPrompt's uniqueness validation (buyer_id/seller_id scoped to ad_id)
+  # so events that can't produce a prompt are skipped instead of failing validation hourly.
+  def prompt_exists_for?(event)
+    scope = ReviewPrompt.where(ad_id: event.ad_id)
+    scope = scope.where(buyer_id: event.buyer_id) if event.buyer_id?
+    scope = scope.where(seller_id: event.seller_id) if event.seller_id?
+    scope.exists?
   end
 
   def product_payload(prompt)

@@ -486,7 +486,13 @@ class MessagesController < ApplicationController
   end
 
   def message_params
-    params.require(:message).permit(:content, :ad_id)
+    permitted = params.require(:message).permit(:content, :ad_id)
+    # ad_id may arrive as a canonical slug — resolve it to the numeric id so
+    # the integer column doesn't end up with a garbage 0/nil cast.
+    if permitted[:ad_id].present?
+      permitted[:ad_id] = Ad.find_by_id_or_slug(permitted[:ad_id])&.id
+    end
+    permitted
   end
 
   def find_message_for_status_update(message_id)

@@ -12,9 +12,11 @@ class BrandKenyaController < ApplicationController
   LOGO_CACHE_TTL = 7.days
   LOGO_FAILURE_TTL = 5.minutes
   MAX_LOGO_REDIRECTS = 3
+  MAX_LOGO_BYTES = 2.megabytes
 
   def index
     brands = SalesBrand.where(status: :onboarded)
+                       .where.not(seller_id: nil)
                        .includes(:partner, :seller)
                        .order(:name)
 
@@ -34,7 +36,7 @@ class BrandKenyaController < ApplicationController
       ads_by_seller = ads_scope.to_a.group_by(&:seller_id)
 
       diverse_ads = []
-      ads_by_seller.each do |_s_id, s_ads|
+      ads_by_seller.each_value do |s_ads|
         diverse_ads.concat(s_ads.shuffle.take(3))
       end
 
@@ -64,6 +66,9 @@ class BrandKenyaController < ApplicationController
   end
 
   def logo
+    # SalesBrand ids are uuids — a non-uuid param raises PG::InvalidTextRepresentation
+    return head :not_found unless params[:id].to_s.match?(/\A[0-9a-f-]{36}\z/i)
+
     brand = SalesBrand.where(status: :onboarded).find_by(id: params[:id])
     remote = brand && remote_logo_url(brand)
     return head :not_found if remote.blank?
@@ -85,7 +90,7 @@ class BrandKenyaController < ApplicationController
 
   def serialize_brand(brand)
     partner = brand.partner
-    seller = brand.seller
+    seller = brand.seller || partner&.seller
     remote = remote_logo_url(brand)
     {
       id: brand.id,
@@ -100,7 +105,7 @@ class BrandKenyaController < ApplicationController
       twitter: brand.twitter.presence || seller&.twitter_url,
       logo_url: remote.present? ? brand_kenya_logo_url(brand.id) : nil,
       description: partner&.description.presence || seller&.description,
-      shop_slug: seller&.slug
+      shop_slug: seller&.url_slug
     }
   end
 
@@ -204,31 +209,44 @@ class BrandKenyaController < ApplicationController
     value = href.to_s.strip
     return if value.blank? || value.match?(/\A(?:data|javascript|mailto):/i)
 
-    URI.join(base.to_s, value).to_s
+    URI.join(base.to_s, escape_non_ascii(value)).to_s
   rescue StandardError
     nil
   end
 
+  # URI.join/URI.parse reject raw non-ASCII characters (e.g. CJK filenames
+  # like 图片1.png used by some Kenyan brand sites). Percent-encode just the
+  # non-ASCII bytes and leave the URL's ASCII structure untouched.
+  def escape_non_ascii(url)
+    url.to_s.gsub(/[^\x00-\x7F]/) { |c| c.bytes.map { |b| format('%%%02X', b) }.join }
+  end
+
   def remote_image_ok?(url)
-    _body, _uri, type = http_get(url)
-    type.to_s.start_with?('image/')
+    _body, _uri, type = http_get(url, limit: MAX_LOGO_BYTES, abort_over_limit: true)
+    acceptable_image_type?(type)
   end
 
   def logo_cache_key(brand, remote)
     "brand_kenya:logo:#{brand.id}:#{Digest::MD5.hexdigest(remote)}"
   end
 
+  # Script-bearing SVG served inline is an XSS vector — favicons fall back
+  # to png/ico anyway, so svg logos are never proxied.
+  def acceptable_image_type?(type)
+    type.to_s.start_with?('image/') && !type.to_s.casecmp('image/svg+xml').zero?
+  end
+
   def fetch_remote_logo(url)
-    body, _uri, type = http_get(url)
-    if body.present? && type.to_s.start_with?('image/')
+    body, _uri, type = http_get(url, limit: MAX_LOGO_BYTES, abort_over_limit: true)
+    if body.present? && acceptable_image_type?(type)
       { ok: true, body: body, type: type }
     else
       { ok: false }
     end
   end
 
-  def http_get(url, limit: nil)
-    uri = URI.parse(url)
+  def http_get(url, limit: nil, abort_over_limit: false)
+    uri = URI.parse(escape_non_ascii(url.to_s))
     MAX_LOGO_REDIRECTS.times do
       response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https',
                                  open_timeout: 3, read_timeout: 5) do |http|
@@ -241,6 +259,13 @@ class BrandKenyaController < ApplicationController
       end
 
       return unless response.is_a?(Net::HTTPSuccess)
+
+      # Hard cap: never serve/proxy more than `limit` bytes
+      if limit && abort_over_limit
+        content_length = response['content-length'].to_i
+        return if content_length.positive? && content_length > limit
+        return if response.body && response.body.bytesize > limit
+      end
 
       body = response.body
       body = body.byteslice(0, limit) if limit && body

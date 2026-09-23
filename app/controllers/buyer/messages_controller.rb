@@ -26,15 +26,17 @@ class Buyer::MessagesController < ApplicationController
       
       # Add ad information if the message has an ad_id
       if message.ad_id
-        ad = Ad.find(message.ad_id)
-        message_data[:ad] = {
-          id: ad.id,
-          title: ad.title,
-          price: ad.price,
-          first_media_url: ad.media.first,
-          category: ad.category&.name,
-          subcategory: ad.subcategory&.name
-        }
+        ad = Ad.find_by(id: message.ad_id)
+        if ad
+          message_data[:ad] = {
+            id: ad.id,
+            title: ad.title,
+            price: ad.price,
+            first_media_url: ad.media.first,
+            category: ad.category&.name,
+            subcategory: ad.subcategory&.name
+          }
+        end
       end
       
       message_data

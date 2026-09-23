@@ -36,6 +36,11 @@ Rails.application.configure do
   # config.action_dispatch.x_sendfile_header = "X-Sendfile" # for Apache
   # config.action_dispatch.x_sendfile_header = "X-Accel-Redirect" # for NGINX
 
+  # Clients behind Cloudflare/Traefik can send a bogus Client-IP header that
+  # conflicts with X-Forwarded-For and raises IpSpoofAttackError (500s).
+  # The proxies control the real forwarding chain, so the check is safe to drop.
+  config.action_dispatch.ip_spoofing_check = false
+
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 

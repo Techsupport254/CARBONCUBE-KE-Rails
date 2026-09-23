@@ -69,7 +69,7 @@ module Sales
       end
 
       if params.key?(:sellerId)
-        seller = Seller.find_by(id: params[:sellerId])
+        seller = Seller.find_by(id: params[:sellerId]) || Seller.find_by(slug: params[:sellerId])
         return render json: { error: 'Seller not found' }, status: :not_found unless seller
 
         update_attrs[:seller_id] = seller.id
@@ -173,7 +173,7 @@ module Sales
         notify_updates: distributor.notify_updates,
         seller_id: distributor.seller_id,
         seller_name: distributor.seller&.enterprise_name || distributor.seller&.fullname,
-        seller_slug: distributor.seller&.slug,
+        seller_slug: distributor.seller&.url_slug,
         agent_name: distributor.sales_user&.fullname || distributor.actor_name,
         notes: distributor.notes,
         pending_invite: serialize_invite(distributor.pending_invite),

@@ -27,7 +27,12 @@ class ShopsController < ApplicationController
 
   def show
     slug = params[:slug]
-    
+
+    if slug.blank? || %w[null undefined].include?(slug.to_s)
+      render json: { error: 'Shop not found' }, status: :not_found
+      return
+    end
+
     @shop = find_shop_by_slug(slug)
     
     unless @shop
@@ -133,7 +138,7 @@ class ShopsController < ApplicationController
         categories: shop_categories,
         total_reviews: total_reviews,
         average_rating: average_rating,
-        slug: @shop.slug,
+        slug: @shop.url_slug,
         document_verified: @shop.document_verified,
         partner_status: @shop.partner&.status,
         partner_type: @shop.partner&.partner_type,
@@ -165,7 +170,12 @@ class ShopsController < ApplicationController
 
   def reviews
     slug = params[:slug]
-    
+
+    if slug.blank? || %w[null undefined].include?(slug.to_s)
+      render json: { error: 'Shop not found' }, status: :not_found
+      return
+    end
+
     @shop = find_shop_by_slug(slug) || (params[:id].present? ? Seller.includes(:seller_tier, :tier).find_by(id: params[:id], deleted: false) : nil)
     
     unless @shop
@@ -221,12 +231,14 @@ class ShopsController < ApplicationController
         },
         seller: seller && {
           id: seller.id,
+          slug: seller.url_slug,
           name: seller.fullname,
           enterprise_name: seller.enterprise_name,
           profile_picture: seller.profile_picture
         },
         ad: {
           id: review.ad.id,
+          slug: review.ad.url_slug,
           title: review.ad.title,
           price: review.ad.price,
           first_media_url: review.ad.first_valid_media_url,
@@ -258,7 +270,12 @@ class ShopsController < ApplicationController
 
   def meta_tags
     slug = params[:slug]
-    
+
+    if slug.blank? || %w[null undefined].include?(slug.to_s)
+      render json: { error: 'Shop not found' }, status: :not_found
+      return
+    end
+
     @shop = find_shop_by_slug(slug) || (params[:id].present? ? Seller.includes(:seller_tier, :tier).find_by(id: params[:id], deleted: false) : nil)
     
     unless @shop
@@ -320,7 +337,7 @@ class ShopsController < ApplicationController
       "https://via.placeholder.com/1200x630/FFD700/000000?text=#{CGI.escape("#{@shop.enterprise_name} - Carbon Cube Kenya")}"
     end
     
-    shop_url = "https://carboncube-ke.com/shop/#{slug}"
+    shop_url = "https://carboncube-ke.com/shop/#{@shop.url_slug}"
     
     meta_tags_data = {
       title: title,
@@ -401,7 +418,12 @@ class ShopsController < ApplicationController
 
   def create_review
     slug = params[:slug]
-    
+
+    if slug.blank? || %w[null undefined].include?(slug.to_s)
+      render json: { error: 'Shop not found' }, status: :not_found
+      return
+    end
+
     @shop = find_shop_by_slug(slug) || (params[:id].present? ? Seller.includes(:seller_tier, :tier).find_by(id: params[:id], deleted: false) : nil)
     
     unless @shop
@@ -476,6 +498,18 @@ class ShopsController < ApplicationController
     # 2. Extract UUID if slug ends with UUID format (e.g. name-uuid or shop-uuid)
     if slug_str =~ /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\z/i
       shop = Seller.includes(:seller_tier, :tier).where(deleted: false).find_by(id: Regexp.last_match(1))
+      return shop if shop
+    end
+
+    # 2b. Match on the slug base of a canonical "name-<uuid>" slug — slugs are
+    # minted at signup and frozen, so a renamed shop (or a link with a stale
+    # uuid) only resolves on its base.
+    slug_base = slug_str.sub(/-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i, "")
+    if slug_base.present?
+      shop = Seller.where(deleted: false)
+                   .where("slug ~ ?", "^#{Regexp.escape(slug_base)}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+                   .order(:created_at)
+                   .first
       return shop if shop
     end
 

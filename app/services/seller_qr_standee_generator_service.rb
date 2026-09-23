@@ -17,7 +17,7 @@ class SellerQrStandeeGeneratorService
     temp_dir = Rails.root.join('tmp', 'qr_standees')
     FileUtils.mkdir_p(temp_dir)
 
-    slug = (seller.enterprise_name || seller.username || seller.id.to_s).parameterize
+    slug = seller.url_slug
     output_png = temp_dir.join("standee_#{seller.id}_#{Time.current.to_i}.png").to_s
     temp_svg = temp_dir.join("standee_#{seller.id}_#{Time.current.to_i}.svg").to_s
 

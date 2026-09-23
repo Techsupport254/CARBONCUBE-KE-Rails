@@ -123,7 +123,7 @@ class Seller::OffersController < ApplicationController
         seller_notes = ad_data[:seller_notes] || ad_data['seller_notes']
         
         # Get the ad to get current price if original_price not provided
-        ad = current_seller.ads.find_by(id: ad_id)
+        ad = current_seller.ads.find_by_id_or_slug(ad_id)
         if ad && original_price.blank?
           original_price = ad.price
         end
@@ -168,7 +168,9 @@ class Seller::OffersController < ApplicationController
     
     if ad_ids.any?
       current_products = @offer.target_products || []
-      updated_products = current_products - ad_ids.map(&:to_i)
+      # ad_ids may contain canonical slugs — resolve them to numeric ids
+      resolved_ids = ad_ids.map { |v| Ad.find_by_id_or_slug(v)&.id || v.to_i }
+      updated_products = current_products - resolved_ids
       @offer.update!(target_products: updated_products)
       
       render json: { 

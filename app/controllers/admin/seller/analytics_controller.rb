@@ -57,7 +57,7 @@ class Admin::Seller::AnalyticsController < ApplicationController
   private
 
   def set_seller
-    @seller = Seller.find(params[:seller_id])
+    @seller = Seller.find_by(slug: params[:seller_id]) || Seller.find(params[:seller_id])
   end
 
   def authenticate_admin

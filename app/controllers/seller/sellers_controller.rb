@@ -204,7 +204,7 @@ class Seller::SellersController < ApplicationController
   private
 
   def set_seller
-    @seller = Seller.find(params[:id])
+    @seller = Seller.find_by(slug: params[:id]) || Seller.find(params[:id])
   end
 
   def seller_params

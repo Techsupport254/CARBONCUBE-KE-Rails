@@ -49,6 +49,7 @@ class ConversationSerializer < ActiveModel::Serializer
       id: object.seller.id,
       fullname: object.seller.fullname,
       username: object.seller.username,
+      slug: object.seller.url_slug,
       enterprise_name: object.seller.enterprise_name,
       email: object.seller.email,
       phone_number: object.seller.phone_number,
@@ -63,6 +64,7 @@ class ConversationSerializer < ActiveModel::Serializer
       id: object.inquirer_seller.id,
       fullname: object.inquirer_seller.fullname,
       username: object.inquirer_seller.username,
+      slug: object.inquirer_seller.url_slug,
       enterprise_name: object.inquirer_seller.enterprise_name,
       email: object.inquirer_seller.email,
       phone_number: object.inquirer_seller.phone_number,
@@ -75,6 +77,7 @@ class ConversationSerializer < ActiveModel::Serializer
     return nil unless object.ad
     {
       id: object.ad.id,
+      slug: object.ad.url_slug,
       title: object.ad.title,
       price: object.ad.price,
       description: object.ad.description,

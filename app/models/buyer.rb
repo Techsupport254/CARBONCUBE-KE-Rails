@@ -7,6 +7,7 @@ class Buyer < ApplicationRecord
   before_validation :normalize_email
   before_validation :normalize_username
   before_validation :normalize_phone_numbers
+  before_validation :derive_location_fields
   before_validation :generate_username_from_fullname
   
   # Store device hash temporarily for association (set via attr_accessor)
@@ -222,6 +223,25 @@ class Buyer < ApplicationRecord
   def normalize_phone_numbers
     self.phone_number = normalize_phone(phone_number) if phone_number.present?
     self.secondary_phone_number = normalize_phone(secondary_phone_number) if secondary_phone_number.present?
+  end
+
+  # Fill structured location fields from the free-text location when a
+  # comma-separated segment matches a known county or sub-county name
+  # (e.g. "Nairobi, Kenya" -> Nairobi county). Mirrors Seller#derive_location_fields.
+  def derive_location_fields
+    return if location.blank?
+
+    segments = location.split(",").map { |s| s.strip.presence }.compact
+    return if segments.empty?
+
+    lowered = segments.map(&:downcase)
+
+    self.county ||= County.where("LOWER(name) IN (?)", lowered).first
+
+    sub_county_scope = county_id ? SubCounty.where(county_id: county_id) : SubCounty.all
+    self.sub_county ||= sub_county_scope.where("LOWER(name) IN (?)", lowered).first
+
+    self.city = sub_county&.name&.titleize || county&.name&.titleize if city.blank?
   end
 
   def normalize_phone(phone)

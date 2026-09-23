@@ -279,7 +279,7 @@ class Admin::SellersController < ApplicationController
       return
     end
 
-    seller = Seller.find(params[:id])
+    seller = Seller.find_by(slug: params[:id]) || Seller.find(params[:id])
     seller.update(document_verified: true)
     render json: { message: 'Seller document verified.' }, status: :ok
   end
@@ -581,7 +581,7 @@ class Admin::SellersController < ApplicationController
     if @seller
       flag_notes = params[:notes] || params[:flag_notes]
       if @seller.update(flagged: true, flag_notes: flag_notes)
-        SellerMailer.account_flagged(@seller, flag_notes).deliver_now
+        SellerMailer.account_flagged(@seller, flag_notes).deliver_later
         render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :flagged, :flag_notes]), status: :ok
       else
         render json: @seller.errors, status: :unprocessable_entity
@@ -593,7 +593,7 @@ class Admin::SellersController < ApplicationController
 
   def unflag
     if @seller
-      if @seller.update(flagged: false)
+      if @seller.update(flagged: false, flag_notes: nil)
         render json: @seller.as_json(only: [:id, :fullname, :enterprise_name, :location, :flagged]), status: :ok
       else
         render json: @seller.errors, status: :unprocessable_entity
@@ -622,10 +622,16 @@ class Admin::SellersController < ApplicationController
       sellers.update_all(blocked: false)
       render json: { message: "#{sellers.count} sellers unblocked successfully" }
     when 'flag'
-      sellers.update_all(flagged: true)
+      flag_notes = params[:notes] || params[:flag_notes]
+      sellers.update_all(flagged: true, flag_notes: flag_notes)
+      sellers.each do |seller|
+        next if seller.email.blank?
+
+        SellerMailer.account_flagged(seller, flag_notes).deliver_later
+      end
       render json: { message: "#{sellers.count} sellers flagged successfully" }
     when 'unflag'
-      sellers.update_all(flagged: false)
+      sellers.update_all(flagged: false, flag_notes: nil)
       render json: { message: "#{sellers.count} sellers unflagged successfully" }
     when 'delete'
       sellers.update_all(deleted: true)
@@ -646,7 +652,7 @@ class Admin::SellersController < ApplicationController
   end
 
   def assign_carbon_code
-    seller = Seller.find(params[:id])
+    seller = Seller.find_by(slug: params[:id]) || Seller.find(params[:id])
     carbon_code = CarbonCode.find_by(code: params[:carbon_code].to_s.strip.upcase)
     
     unless carbon_code
@@ -795,7 +801,8 @@ class Admin::SellersController < ApplicationController
   end
 
   def set_seller
-    @seller = Seller.includes(:county, :sub_county, :age_group, :document_type, :tier, :carbon_code, :categories).find(params[:id])
+    @seller = Seller.find_by(slug: params[:id]) ||
+              Seller.includes(:county, :sub_county, :age_group, :document_type, :tier, :carbon_code, :categories).find(params[:id])
   end
 
   def seller_params

@@ -88,7 +88,7 @@ class SellersController < ApplicationController
           id: seller.id,
           name: seller.fullname,
           enterprise_name: seller.enterprise_name,
-          slug: seller.slug,
+          slug: seller.url_slug,
           created_at: seller.created_at
         }
       end
@@ -125,7 +125,13 @@ class SellersController < ApplicationController
   end
 
   def ads
-    seller = Seller.find(params[:seller_id])
+    seller = Seller.where(deleted: false).find_by(slug: params[:seller_id]) ||
+             Seller.find_by(id: params[:seller_id])
+    unless seller
+      render json: { error: 'Seller not found' }, status: :not_found
+      return
+    end
+
     ads = seller.ads.active.includes(:category, :subcategory) # eager-load if needed
     
     # Add pagination support (only if page and limit are provided)

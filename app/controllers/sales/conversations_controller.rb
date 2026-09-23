@@ -166,13 +166,22 @@ class Sales::ConversationsController < ApplicationController
   end
 
   def create
-    # If seller_id is not provided but ad_id is, get seller_id from the ad
     seller_id = params[:seller_id]
-    if params[:seller_id].blank? && params[:ad_id].present?
-      ad = Ad.find(params[:ad_id])
-      seller_id = ad.seller_id if ad
+
+    # ad_id may arrive as a canonical slug — resolve it so the conversation
+    # links to the real numeric id rather than a garbage 0/nil cast.
+    ad = nil
+    if params[:ad_id].present?
+      ad = Ad.find_by_id_or_slug(params[:ad_id])
+      unless ad
+        render json: { error: 'Ad not found' }, status: :not_found
+        return
+      end
     end
-    
+
+    # If seller_id is not provided but ad_id is, get seller_id from the ad
+    seller_id = ad.seller_id if params[:seller_id].blank? && ad
+
     # Find existing conversation or create new one
     # Handle race conditions where multiple requests try to create the same conversation
     begin
@@ -182,7 +191,7 @@ class Sales::ConversationsController < ApplicationController
         seller_id: seller_id,
         buyer_id: params[:buyer_id],
         inquirer_seller_id: nil,
-        ad_id: params[:ad_id]
+        ad_id: ad&.id
       )
     rescue => e
       Rails.logger.error "Error in conversation creation: #{e.class.name} - #{e.message}" if defined?(Rails.logger)

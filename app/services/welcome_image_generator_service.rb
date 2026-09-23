@@ -163,7 +163,7 @@ class WelcomeImageGeneratorService
         ENV.fetch('FRONTEND_URL', 'https://carboncube-ke.com')
       end
       
-      shop_url = "#{base_url}/shop/#{seller.username || seller.id}"
+      shop_url = "#{base_url}/shop/#{seller.url_slug}"
       qr = RQRCode::QRCode.new(shop_url)
       
       qr_code_path = temp_dir.join("qr_#{seller.id}_#{Time.current.to_i}.png")

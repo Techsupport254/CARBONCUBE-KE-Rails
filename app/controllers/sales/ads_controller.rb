@@ -261,6 +261,7 @@ end
 
     seller_profile = {
       id: seller.id,
+      slug: seller.url_slug,
       name: seller.fullname.presence || seller.enterprise_name,
       enterprise_name: seller.enterprise_name,
       email: seller.email,
@@ -331,7 +332,7 @@ end
 
   # PATCH /sales/ads/:id/restore
   def restore
-    if @ad.update(flagged: false, deleted: false)
+    if @ad.update(flagged: false, deleted: false, flag_notes: nil)
       render json: { status: 'success', message: 'Ad restored successfully' }
     else
       render json: { status: 'error', message: 'Failed to restore ad' }, status: :unprocessable_entity
@@ -393,12 +394,20 @@ end
       return render json: { error: 'No ad IDs provided' }, status: :unprocessable_entity
     end
 
-    ads = Ad.where(id: ids)
+    flag_notes = params[:notes] || params[:flag_notes]
+    ads = Ad.where(id: ids).includes(:seller)
     count = ads.count
-    ads.update_all(flagged: true)
-    
-    render json: { 
-      status: 'success', 
+    ads.update_all(flagged: true, flag_notes: flag_notes)
+
+    ads.each do |ad|
+      seller = ad.seller
+      next if seller.nil? || seller.email.blank?
+
+      SellerMailer.ad_flagged(seller, ad, flag_notes).deliver_later
+    end
+
+    render json: {
+      status: 'success',
       message: "Successfully flagged #{count} ads",
       affected_count: count
     }
@@ -413,7 +422,7 @@ end
 
     ads = Ad.where(id: ids)
     count = ads.count
-    ads.update_all(flagged: false, deleted: false)
+    ads.update_all(flagged: false, deleted: false, flag_notes: nil)
     
     render json: { 
       status: 'success', 
@@ -999,9 +1008,8 @@ end
   end
 
   def set_ad
-    @ad = Ad.find(params[:id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
+    @ad = Ad.find_by_id_or_slug(params[:id])
+    render json: { error: 'Ad not found' }, status: :not_found unless @ad
   end
 
   def ad_params

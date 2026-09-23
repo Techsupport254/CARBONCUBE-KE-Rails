@@ -192,7 +192,7 @@ module Sales
       update_attrs[:last_contacted_at] = Time.current if params[:markContacted].to_s == 'true'
 
       if params[:sellerId].present?
-        seller = Seller.find_by(id: params[:sellerId])
+        seller = Seller.find_by(id: params[:sellerId]) || Seller.find_by(slug: params[:sellerId])
         return render json: { error: 'Seller not found' }, status: :not_found unless seller
 
         update_attrs[:seller_id] = seller.id

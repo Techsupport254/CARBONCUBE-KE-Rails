@@ -42,8 +42,8 @@
 
         <div style="background: #eef2ff; padding: 15px; margin: 15px 0 25px; border-radius: 8px; font-size: 13px; text-align: center; word-break: break-all;">
           <strong style="display: block; margin-bottom: 8px; color: #1e3a8a;">Your Shop Link:</strong>
-          <a href="https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>" style="color:#1e40af; text-decoration:none;">
-            https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>
+          <a href="https://carboncube-ke.com/shop/<%= @seller&.url_slug %>" style="color:#1e40af; text-decoration:none;">
+            https://carboncube-ke.com/shop/<%= @seller&.url_slug %>
           </a>
         </div>
 
@@ -60,7 +60,7 @@
 
         <div style="text-align: center; margin: 40px 0 20px;">
           <a href="https://carboncube-ke.com/seller/dashboard" style="display: inline-block; padding: 12px 24px; margin: 0 6px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; background: #1f2937; color: #fff;">Visit Dashboard</a>
-          <a href="https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-') %>" style="display: inline-block; padding: 12px 24px; margin: 0 6px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; background: #fbbf24; color: #111827;">View My Shop</a>
+          <a href="https://carboncube-ke.com/shop/<%= @seller&.url_slug %>" style="display: inline-block; padding: 12px 24px; margin: 0 6px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px; background: #fbbf24; color: #111827;">View My Shop</a>
         </div>
 
         <p style="text-align:center; font-size:12px; color:#6b7280;">

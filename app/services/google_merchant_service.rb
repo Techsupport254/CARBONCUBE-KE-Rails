@@ -350,8 +350,8 @@ class GoogleMerchantService
     additional_images = ad.valid_media_urls[1..10] || []
     
     product_attrs = {
-      title: ad.title,
-      description: ad.description,
+      title: GoogleMerchantTextSanitizer.clean_title(ad.title),
+      description: GoogleMerchantTextSanitizer.clean_description(ad.description),
       link: ad.product_url, # Use proper slug-based URL
       image_link: ad.first_valid_media_url,
       availability: normalize_availability(ad.availability_status),
@@ -363,7 +363,7 @@ class GoogleMerchantService
     }
     
     # Only include brand if it's valid (not blank, not "Unknown", not "Generic")
-    normalized_brand = normalize_brand(ad.brand, ad.title)
+    normalized_brand = normalize_brand(ad.brand, product_attrs[:title])
     product_attrs[:brand] = normalized_brand if normalized_brand.present? && !["Unknown", "Generic"].include?(normalized_brand)
     
     # Add additional images if available
@@ -489,7 +489,7 @@ class GoogleMerchantService
       end
       
       # Create product object
-      product = Google::Apis::ContentV2_1::Product.new(product_attrs)
+      product = Google::Apis::ContentV2_1::Product.new(**product_attrs)
         
         # Check if product already exists
         existing_product_id = ad.google_merchant_product_id

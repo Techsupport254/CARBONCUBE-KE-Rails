@@ -24,6 +24,8 @@ class Buyer::WishListsController < ApplicationController
         created_at: wl.created_at,
         ad: {
           id: ad.id,
+          slug: ad.url_slug,
+          is_brand_kenya: ad.is_brand_kenya == true,
           title: ad.title,
           price: ad.price,
           effective_price: effective_price,
@@ -84,23 +86,23 @@ class Buyer::WishListsController < ApplicationController
 
   # POST /buyer/wish_lists
   def create
-    ad = Ad.active.find(params[:ad_id])
+    ad = Ad.active.find_by_id_or_slug(params[:ad_id])
+    return render json: { error: 'Ad not found' }, status: :not_found unless ad
+
     current_user.wish_list_ad(ad)
     render json: { message: 'Ad wishlisted successfully' }, status: :created
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
   end
 
   # DELETE /buyer/wish_lists/:id
   def destroy
-    ad = Ad.active.find(params[:id])
+    ad = Ad.active.find_by_id_or_slug(params[:id])
+    return render json: { error: 'Ad not found' }, status: :not_found unless ad
+
     if current_user.unwish_list_ad(ad)
       render json: { message: 'Wish list removed successfully' }, status: :ok
     else
       render json: { error: 'Wish list not found' }, status: :not_found
     end
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
   end
 
   # POST /buyer/wish_lists/:id/add_to_cart
@@ -110,7 +112,9 @@ class Buyer::WishListsController < ApplicationController
       return
     end
 
-    ad = Ad.active.find(params[:id])
+    ad = Ad.active.find_by_id_or_slug(params[:id])
+    return render json: { error: 'Ad not found' }, status: :not_found unless ad
+
     cart_item = CartItem.new(buyer: current_user, ad: ad)
 
     if cart_item.save
@@ -118,8 +122,6 @@ class Buyer::WishListsController < ApplicationController
     else
       render json: { error: cart_item.errors.full_messages }, status: :unprocessable_entity
     end
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
   end
 
   private

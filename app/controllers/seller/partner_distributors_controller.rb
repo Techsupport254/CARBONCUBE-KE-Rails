@@ -165,7 +165,7 @@ class Seller::PartnerDistributorsController < ApplicationController
       notify_pricing: distributor.notify_pricing,
       notify_updates: distributor.notify_updates,
       seller_name: distributor.seller&.enterprise_name || distributor.seller&.fullname,
-      seller_slug: distributor.seller&.slug,
+      seller_slug: distributor.seller&.url_slug,
       pending_invite: serialize_invite(distributor.pending_invite),
       created_at: distributor.created_at
     }

@@ -198,7 +198,7 @@
       <!-- Shop Link -->
       <div class="shop-link">
         <strong><i class="fas fa-link icon"></i>Your Shop Link:</strong>
-        https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-')&.gsub(/[^a-z0-9\-]/, '') %>
+        https://carboncube-ke.com/shop/<%= @seller&.url_slug %>
         <br><br>
         Copy and share this link on <strong>WhatsApp, Facebook, Instagram, and with your customers</strong> to bring more buyers directly to your shop!
       </div>
@@ -241,7 +241,7 @@
       <!-- CTA Buttons -->
       <div class="cta">
         <a href="https://carboncube-ke.com/seller/dashboard" class="cta-button blue">Visit Dashboard</a>
-        <a href="https://carboncube-ke.com/shop/<%= @seller.enterprise_name&.downcase&.gsub(/\s+/, '-')&.gsub(/[^a-z0-9\-]/, '') %>" class="cta-button green">View My Shop</a>
+        <a href="https://carboncube-ke.com/shop/<%= @seller&.url_slug %>" class="cta-button green">View My Shop</a>
       </div>
     </div>
 

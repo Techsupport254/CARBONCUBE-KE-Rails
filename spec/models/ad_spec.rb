@@ -110,6 +110,38 @@ RSpec.describe Ad, type: :model do
     end
   end
 
+  describe '#google_merchant_policy_excluded?' do
+    it 'excludes ads in the Services category' do
+      ad.category = Category.new(name: 'Services')
+      expect(ad.google_merchant_policy_excluded?).to be(true)
+    end
+
+    it 'excludes vehicle categories' do
+      ad.category = Category.new(name: 'Vehicles')
+      ad.subcategory = nil
+      expect(ad.google_merchant_policy_excluded?).to be(true)
+    end
+
+    it 'excludes hire/rental titles like "Lorry for Hire Tata"' do
+      ad.title = 'Lorry for Hire Tata'
+      expect(ad.google_merchant_policy_excluded?).to be(true)
+    end
+
+    it 'excludes vehicle-for-sale titles' do
+      ad.title = 'Toyota Probox for sale'
+      expect(ad.google_merchant_policy_excluded?).to be(true)
+    end
+
+    it 'keeps ordinary product ads' do
+      expect(ad.google_merchant_policy_excluded?).to be(false)
+    end
+
+    it 'keeps vehicle parts and accessories' do
+      ad.title = 'Truck side mirror for Isuzu FRR'
+      expect(ad.google_merchant_policy_excluded?).to be(false)
+    end
+  end
+
   describe '#availability_status' do
     it "returns 'IN_STOCK' when stock is not tracked" do
       expect(described_class.new(stock_quantity: nil).availability_status).to eq('IN_STOCK')

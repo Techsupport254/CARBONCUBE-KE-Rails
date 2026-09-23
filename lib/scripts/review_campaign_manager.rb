@@ -43,7 +43,7 @@ def run_campaign(limit: 100, simulate: true)
       img_url = "https://carbon-v2.com/favicon.svg" if img_url.blank?
       
       # Determine review URL with UTMs
-      base_url = "https://carbon-v2.com/ads/#{ad.id}" # Using ID for safety as slug might not be guaranteed
+      base_url = "https://carboncube-ke.com/ads/#{ad.url_slug}"
       full_review_url = "#{base_url}?review=true&#{utm_params}"
 
       {

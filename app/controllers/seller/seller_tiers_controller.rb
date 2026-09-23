@@ -26,47 +26,35 @@ class Seller::SellerTiersController < ApplicationController
   def show
     # Handle both tier ID and seller ID cases
     if params[:seller_id]
-      # OPTIMIZATION: Eager load tier to avoid N+1 query
-      seller_tier = SellerTier.includes(:tier).find_by(seller_id: params[:seller_id])
-      
-      if seller_tier
-        # Calculate expiry date if not set
-        expiry_date = seller_tier.expires_at || (seller_tier.updated_at + seller_tier.duration_months.months)
-        
-        render json: {
-          subscription_countdown: seller_tier.subscription_countdown,
-          subscription_expiry_date: expiry_date.iso8601,
-          tier: {
-            id: seller_tier.tier.id,
-            name: seller_tier.tier.name,
-            ads_limit: seller_tier.tier.ads_limit
-          }
-        }
-      else
-        # If no seller tier exists, create a default free tier
-        seller = Seller.find_by(id: params[:seller_id])
-        if seller
-          # Create a default free tier for the seller
-          seller_tier = SellerTier.create(seller_id: seller.id, tier_id: 1, duration_months: 0)
-          # Reload with tier association
-          seller_tier = SellerTier.includes(:tier).find(seller_tier.id)
-          
-          # Calculate expiry date if not set
-          expiry_date = seller_tier.expires_at || (seller_tier.updated_at + seller_tier.duration_months.months)
-          
-          render json: {
-            subscription_countdown: seller_tier.subscription_countdown,
-            subscription_expiry_date: expiry_date.iso8601,
-            tier: {
-              id: seller_tier.tier.id,
-              name: seller_tier.tier.name,
-              ads_limit: seller_tier.tier.ads_limit
-            }
-          }
-        else
-          render json: { error: 'Seller not found' }, status: :not_found
-        end
+      # seller_id may arrive as a shop slug — resolve slug or UUID first
+      seller = Seller.find_by(slug: params[:seller_id]) || Seller.find_by(id: params[:seller_id])
+      unless seller
+        render json: { error: 'Seller not found' }, status: :not_found
+        return
       end
+
+      # OPTIMIZATION: Eager load tier to avoid N+1 query
+      seller_tier = SellerTier.includes(:tier).find_by(seller_id: seller.id)
+
+      unless seller_tier
+        # If no seller tier exists, create a default free tier
+        seller_tier = SellerTier.create(seller_id: seller.id, tier_id: 1, duration_months: 0)
+        # Reload with tier association
+        seller_tier = SellerTier.includes(:tier).find(seller_tier.id)
+      end
+
+      # Calculate expiry date if not set
+      expiry_date = seller_tier.expires_at || (seller_tier.updated_at + seller_tier.duration_months.months)
+
+      render json: {
+        subscription_countdown: seller_tier.subscription_countdown,
+        subscription_expiry_date: expiry_date.iso8601,
+        tier: {
+          id: seller_tier.tier.id,
+          name: seller_tier.tier.name,
+          ads_limit: seller_tier.tier.ads_limit
+        }
+      }
     else
       # Original behavior for tier ID
       @tier = Tier.find(params[:id])

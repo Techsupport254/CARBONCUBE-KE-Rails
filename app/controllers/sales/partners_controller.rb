@@ -143,7 +143,7 @@ module Sales
       end
 
       if params[:sellerId].present?
-        seller = Seller.find_by(id: params[:sellerId])
+        seller = Seller.find_by(id: params[:sellerId]) || Seller.find_by(slug: params[:sellerId])
         return render json: { error: 'Seller not found' }, status: :not_found unless seller
 
         @partner.link_seller!(seller, actor: @current_actor)
@@ -267,7 +267,7 @@ module Sales
     # Link a platform seller by id, or auto-match by the partner's phone/email.
     def link_seller
       seller = if params[:sellerId].present?
-                 Seller.find_by(id: params[:sellerId])
+                 Seller.find_by(id: params[:sellerId]) || Seller.find_by(slug: params[:sellerId])
                else
                  @partner.matching_seller
                end
@@ -311,7 +311,7 @@ module Sales
     # - otherwise → try to auto-match an existing seller
     def handle_seller_assignment(partner)
       if params[:sellerId].present?
-        seller = Seller.find_by(id: params[:sellerId])
+        seller = Seller.find_by(id: params[:sellerId]) || Seller.find_by(slug: params[:sellerId])
         raise ArgumentError, 'Seller not found' unless seller
 
         partner.seller_id = seller.id

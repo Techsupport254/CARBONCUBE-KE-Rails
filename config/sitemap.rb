@@ -36,27 +36,27 @@ SitemapGenerator::Sitemap.create do
     # Adjust the scope based on your actual model
     ads_scope = Ad.respond_to?(:published) ? Ad.published : Ad.all
     ads_scope.find_each do |ad|
-      add "/ads/#{ad.id}", 
-          priority: 0.8, 
+      add "/ads/#{ad.url_slug}",
+          priority: 0.8,
           changefreq: 'daily',
           lastmod: ad.updated_at
-      
+
       # Ad reviews if they exist
       if ad.respond_to?(:reviews) && ad.reviews.any?
-        add "/ads/#{ad.id}/reviews", 
-            priority: 0.6, 
+        add "/ads/#{ad.url_slug}/reviews",
+            priority: 0.6,
             changefreq: 'weekly',
             lastmod: ad.reviews.maximum(:updated_at)
       end
     end
   end
 
-  # Seller ad pages (dynamic from database)
+  # Seller shop pages (dynamic from database)
   if defined?(Seller)
     sellers_scope = Seller.respond_to?(:active) ? Seller.active : Seller.all
     sellers_scope.find_each do |seller|
-      add "/sellers/#{seller.id}/ads", 
-          priority: 0.7, 
+      add "/shop/#{seller.url_slug}",
+          priority: 0.7,
           changefreq: 'daily',
           lastmod: seller.updated_at
     end
@@ -81,17 +81,17 @@ SitemapGenerator::Sitemap.create do
   if defined?(Ad)
     ads_scope = Ad.respond_to?(:published) ? Ad.published : Ad.all
     ads_scope.find_each do |ad|
-      add "/buyer/ads/#{ad.id}", 
-          priority: 0.8, 
+      add "/buyer/ads/#{ad.url_slug}",
+          priority: 0.8,
           changefreq: 'daily',
           lastmod: ad.updated_at
-      
-      add "/buyer/ads/#{ad.id}/related", 
-          priority: 0.6, 
+
+      add "/buyer/ads/#{ad.url_slug}/related",
+          priority: 0.6,
           changefreq: 'daily'
-      
-      add "/buyer/ads/#{ad.id}/seller", 
-          priority: 0.6, 
+
+      add "/buyer/ads/#{ad.url_slug}/seller",
+          priority: 0.6,
           changefreq: 'weekly'
     end
   end

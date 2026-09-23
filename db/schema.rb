@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_22_110000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -1306,6 +1306,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_22_110000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["date"], name: "index_search_analytics_on_date", unique: true
+  end
+
+  create_table "search_synonyms", force: :cascade do |t|
+    t.string "term", null: false
+    t.string "synonym", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["term", "synonym"], name: "index_search_synonyms_on_term_and_synonym", unique: true
+    t.index ["term"], name: "index_search_synonyms_on_term"
   end
 
   create_table "sectors", force: :cascade do |t|

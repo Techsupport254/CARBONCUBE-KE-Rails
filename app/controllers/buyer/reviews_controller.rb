@@ -73,14 +73,18 @@ class Buyer::ReviewsController < ApplicationController
   private
 
   def set_ad
-    @ad = Ad.active.find(params[:ad_id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Ad not found' }, status: :not_found
+    @ad = Ad.active.find_by_id_or_slug(params[:ad_id])
+    render json: { error: 'Ad not found' }, status: :not_found unless @ad
   end
 
   def set_review
+    ad = Ad.find_by_id_or_slug(params[:ad_id])
+    unless ad
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
     reviews_relation = current_user.is_a?(Buyer) ? current_user.reviews : current_user.reviews_written
-    @review = reviews_relation.find_by!(id: params[:id], ad_id: params[:ad_id])
+    @review = reviews_relation.find_by!(id: params[:id], ad_id: ad.id)
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Review not found' }, status: :not_found
   end

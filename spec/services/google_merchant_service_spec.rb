@@ -148,8 +148,9 @@ RSpec.describe GoogleMerchantService, type: :service do
   end
 
   describe 'Ad#product_url' do
-    it 'generates a slugged ad URL' do
-      expect(valid_ad.product_url).to eq("https://carboncube-ke.com/ads/test-product?id=#{valid_ad.id}")
+    it 'generates a slugged ad URL using the canonical stored slug' do
+      expect(valid_ad.product_url).to eq("https://carboncube-ke.com/ads/#{valid_ad.slug}?id=#{valid_ad.id}")
+      expect(valid_ad.slug).to eq("test-product-#{valid_ad.id}")
     end
   end
 end

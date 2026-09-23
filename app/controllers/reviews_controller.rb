@@ -1,6 +1,11 @@
 class ReviewsController < ApplicationController
   def index
-    ad = Ad.find(params[:id])
+    ad = Ad.find_by_id_or_slug(params[:id])
+    unless ad
+      render json: { error: 'Ad not found' }, status: :not_found
+      return
+    end
+
     reviews = ad.reviews.includes(:buyer, :seller)
 
     reviews_data = reviews.map do |review|

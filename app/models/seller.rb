@@ -11,6 +11,7 @@ class Seller < ApplicationRecord
   before_validation :normalize_email
   before_validation :normalize_username
   before_validation :normalize_phone_numbers
+  before_validation :derive_location_fields
   before_validation :normalize_city
   before_validation :normalize_enterprise_name
   
@@ -257,18 +258,25 @@ class Seller < ApplicationRecord
     if username.blank?
       updates[:username] = self.class.generate_unique_username(name)
     end
-    if slug.blank? || slug.include?(id.to_s)
-      clean = name.parameterize
+    if slug.blank?
+      clean = name.to_s.unicode_normalize(:nfkc).parameterize
       clean = 'shop' if clean.blank?
       candidate = clean
-      counter = 1
-      while self.class.where(slug: candidate).where.not(id: id).exists?
-        candidate = "#{clean}-#{counter}"
-        counter += 1
+      # If the clean slug is taken, suffix with the seller id (a UUID) so the
+      # slug is unique by construction — same convention as set_slug.
+      if self.class.where(slug: candidate).where.not(id: id).exists?
+        candidate = "#{clean}-#{id}"
       end
       updates[:slug] = candidate
     end
     update!(**updates) if updates.any?
+  end
+
+  # Canonical path segment for /shop/ URLs — the stored slug, falling back to
+  # the UUID id (which shop slug resolution accepts via its trailing-uuid
+  # check) so links never 404 for sellers whose slug column is blank.
+  def url_slug
+    slug.presence || id.to_s
   end
 
   private
@@ -371,6 +379,24 @@ class Seller < ApplicationRecord
     return if city.present?
 
     self.city = sub_county&.name&.titleize || county&.name&.titleize
+  end
+
+  # Fill structured location fields from the free-text location when a
+  # comma-separated segment matches a known county or sub-county name
+  # (e.g. "Crown Z Towers, Eastern Bypass, Nairobi" -> Nairobi county).
+  # Runs before normalize_city so city gets backfilled from the result.
+  def derive_location_fields
+    return if location.blank?
+
+    segments = location.split(",").map { |s| s.strip.presence }.compact
+    return if segments.empty?
+
+    lowered = segments.map(&:downcase)
+
+    self.county ||= County.where("LOWER(name) IN (?)", lowered).first
+
+    sub_county_scope = county_id ? SubCounty.where(county_id: county_id) : SubCounty.all
+    self.sub_county ||= sub_county_scope.where("LOWER(name) IN (?)", lowered).first
   end
 
   def normalize_enterprise_name

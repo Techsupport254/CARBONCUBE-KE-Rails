@@ -14,7 +14,7 @@ class Sales::AdSearchesController < ApplicationController
     filters[:buyer_id] = params[:buyer_id] if params[:buyer_id].present?
     if params[:seller_id].present? || params[:id].present?
       seller_param = (params[:seller_id] || params[:id]).to_s.strip
-      seller = Seller.find_by(id: seller_param) || Seller.find_by(branch_id: seller_param)
+      seller = Seller.find_by(id: seller_param) || Seller.find_by(branch_id: seller_param) || Seller.find_by(slug: seller_param)
       filters[:seller_id] = seller ? seller.id : seller_param
     end
     filters[:start_date] = params[:start_date] if params[:start_date].present?

@@ -42,7 +42,7 @@ class WelcomeMailer < ApplicationMailer
 
     if is_seller
       enterprise_name = user.enterprise_name.presence || name
-      shop_slug = (user.enterprise_name || user.username || user.id.to_s).parameterize
+      shop_slug = user.url_slug
 
       base_frontend = if Rails.env.development?
         ENV.fetch('FRONTEND_URL', 'http://localhost:3000')

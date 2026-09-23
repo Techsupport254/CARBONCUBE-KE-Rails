@@ -28,7 +28,7 @@ class SendSingleSellerMarketingJob < ApplicationJob
         parameters: [
           {
             type: 'text',
-            text: (seller.username.presence || seller.slug.presence || seller.enterprise_name || 'shop').to_s.parameterize
+            text: seller.url_slug
           }
         ]
       }

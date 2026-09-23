@@ -36,6 +36,11 @@ class CategoriesController < ApplicationController
       end
     end
 
+    if @category.nil?
+      render json: { error: 'Category not found' }, status: :not_found
+      return
+    end
+
     # Get counties where there are active ads for this category
     # Only return counties from onboarded Kenyan counties
     counties = @category.ads

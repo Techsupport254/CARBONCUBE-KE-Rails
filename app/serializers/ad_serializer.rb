@@ -9,6 +9,12 @@ class AdSerializer < ActiveModel::Serializer
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
              :seller_is_online, :has_valid_images, :is_brand_kenya
 
+  # Canonical slug — stored slug, or the "<title>-<id>" fallback so clients
+  # building /ads/<slug> links never emit a null segment.
+  def slug
+    object.url_slug
+  end
+
   def is_brand_kenya
     object.attributes.key?('is_brand_kenya') ? object.is_brand_kenya == true : false
   rescue StandardError

@@ -9,7 +9,7 @@ class ReviewMailer < ApplicationMailer
 
     return unless seller&.email
 
-    review_url = "https://carboncube-ke.com/ads/#{Ad.slugify(ad.title)}/review?id=#{ad.id}"
+    review_url = "https://carboncube-ke.com/ads/#{ad.url_slug}/review"
 
     mail(
       to: seller.email,
@@ -33,7 +33,7 @@ class ReviewMailer < ApplicationMailer
 
     return unless buyer&.email
 
-    review_url = "https://carboncube-ke.com/ads/#{Ad.slugify(ad.title)}/review?id=#{ad.id}"
+    review_url = "https://carboncube-ke.com/ads/#{ad.url_slug}/review"
 
     mail(
       to: buyer.email,

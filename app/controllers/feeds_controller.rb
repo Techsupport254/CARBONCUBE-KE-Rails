@@ -6,7 +6,7 @@ class FeedsController < ApplicationController
   # GET /api/v1/feeds/google_merchant.xml
   def google_merchant
     # Check cache first (cache for 1 hour, bypass if refresh=true)
-    force_refresh = params[:refresh].present? && (params[:refresh] == 'true' || params[:refresh] == '1')
+    force_refresh = params[:refresh].present? && ['true', '1'].include?(params[:refresh])
     cached_xml = Rails.cache.read('google_merchant_xml_feed') unless force_refresh
 
     if cached_xml.present?
@@ -43,8 +43,8 @@ class FeedsController < ApplicationController
 
             xml.item do
               xml['g'].id "carbon_cube_#{ad.id}"
-              xml['g'].title ad.title
-              xml['g'].description ad.description.to_s.truncate(5000)
+              xml['g'].title GoogleMerchantTextSanitizer.clean_title(ad.title)
+              xml['g'].description GoogleMerchantTextSanitizer.clean_description(ad.description).truncate(5000)
               xml['g'].link ad.product_url
               xml['g'].image_link ad.first_valid_media_url
 
@@ -56,7 +56,7 @@ class FeedsController < ApplicationController
 
               xml['g'].condition ad.google_condition.downcase
               xml['g'].availability ad.in_stock? ? 'in_stock' : 'out_of_stock'
-              xml['g'].price "#{sprintf('%.2f', ad.effective_price)} KES"
+              xml['g'].price "#{format('%.2f', ad.effective_price)} KES"
 
               cleaned_brand = ad.brand.to_s.strip
               if cleaned_brand.present? && !%w[Unknown Generic None N/A Other].include?(cleaned_brand)

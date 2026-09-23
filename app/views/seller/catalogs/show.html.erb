@@ -594,7 +594,7 @@
                         <% end %>
                         <div class="desc"><%= render_catalog_markdown(p.description) %></div>
                         <% unless p.deleted %>
-                            <a href="https://carboncube-ke.com/ads/<%= Ad.slugify(p.title) %>?id=<%= p.id %>" target="_blank" class="view-link">View Online</a>
+                            <a href="https://carboncube-ke.com/ads/<%= p.url_slug %>" target="_blank" class="view-link">View Online</a>
                         <% end %>
                     </td>
                     <td>

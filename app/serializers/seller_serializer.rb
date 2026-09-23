@@ -11,6 +11,12 @@ class SellerSerializer < ActiveModel::Serializer
   has_many :categories
   has_many :seller_documents, serializer: SellerDocumentSerializer
 
+  # Canonical slug — stored slug, or the UUID fallback so clients building
+  # /shop/<slug> links never emit a null segment.
+  def slug
+    object.url_slug
+  end
+
   def tier
     object.seller_tier&.tier
   end

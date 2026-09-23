@@ -25,13 +25,24 @@ class Admin::ConversationsController < ApplicationController
   def create
     # Handle race conditions where multiple requests try to create the same conversation
     begin
+      # ad_id may arrive as a canonical slug — resolve it so the conversation
+      # links to the real numeric id rather than a garbage 0/nil cast.
+      ad = nil
+      if conversation_params[:ad_id].present?
+        ad = Ad.find_by_id_or_slug(conversation_params[:ad_id])
+        unless ad
+          render json: { errors: ['Ad not found'] }, status: :not_found
+          return
+        end
+      end
+
       # Use the model method that handles race conditions properly
       @conversation = Conversation.find_or_create_conversation!(
         admin_id: current_admin.id,
         seller_id: conversation_params[:seller_id],
         buyer_id: conversation_params[:buyer_id],
         inquirer_seller_id: nil,
-        ad_id: conversation_params[:ad_id]
+        ad_id: ad&.id
       )
       
       render json: @conversation, serializer: ConversationSerializer, status: :created

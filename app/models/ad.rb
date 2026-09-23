@@ -270,18 +270,34 @@ class Ad < ApplicationRecord
     ad = find_by(id: param.to_s)
     return ad if ad
 
+    # Try trailing numeric id ("flip-case-4696"). The digits are only treated as
+    # an id when the preceding words plausibly match that ad's slug/title —
+    # otherwise a spec like "iphone-16-pro-256" would misresolve to ad #256.
+    if (match = param.to_s.match(/\A(.+)-(\d+)\z/))
+      prefix = match[1]
+      candidate = find_by(id: match[2])
+      if candidate
+        stored_slug = candidate.slug.to_s
+        title_slug = slugify(candidate.title.to_s)
+        return candidate if stored_slug.start_with?("#{prefix}-") ||
+                            title_slug == prefix ||
+                            title_slug.start_with?("#{prefix}-") ||
+                            prefix.start_with?(title_slug)
+      end
+    end
+
     normalized_slug = slugify(param)
     return nil if normalized_slug.blank?
 
     # Also consider a space-separated version for titles stored with spaces
     spacey = normalized_slug.tr("-", " ")
 
-    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(title), '[^a-z0-9.]+', '-', 'g'), '-+', '-', 'g'), '-'))"
+    sanitized_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(title), '[^a-z0-9.]+', '-', 'g'), '-+', '-', 'g'), '-.'))"
 
     # The product URL generator (Ad#product_url / Ad#create_slug) strips non-alphanumeric
     # characters without inserting separators, so "9/41" becomes "941". Match that style too
     # so product links do not 404 when titles contain punctuation.
-    url_slug_sql = "LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(title), '[^a-z0-9\\s.]+', '', 'g'), '\\s+', '-', 'g')))"
+    url_slug_sql = "LOWER(BTRIM(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(title), '[^a-z0-9\\s.]+', '', 'g'), '\\s+', '-', 'g'), '-.'))"
 
     # Match against multiple representations of the title
     where(
@@ -416,8 +432,14 @@ class Ad < ApplicationRecord
   end
 
   def product_url
-    slug = create_slug(title)
-    "https://carboncube-ke.com/ads/#{slug}?id=#{id}"
+    "https://carboncube-ke.com/ads/#{url_slug}"
+  end
+
+  # Canonical path segment for /ads/ URLs — the stored slug, falling back to
+  # the same "<title>-<id>" shape set_slug mints so rows whose slug column is
+  # still blank still resolve via find_by_id_or_slug's trailing-id lookup.
+  def url_slug
+    slug.presence || "#{self.class.slugify(title).presence || 'ad'}-#{id}"
   end
 
   # Ad URL with UTM params for links sent to users (WhatsApp, email, etc.).
@@ -499,9 +521,23 @@ class Ad < ApplicationRecord
     GoogleMerchantService.sync_ad(self)
   end
 
+  # Google Merchant unsupported-content exclusions: services are not physical
+  # products, and motor/sail vehicles plus hire/rental listings are prohibited
+  # by Google's shopping policies.
+  GOOGLE_MERCHANT_EXCLUDED_CATEGORY = /\b(services?|vehicles?|car\s+hire|vehicle\s+hire|cars?|trucks?|lorr(?:y|ies)|buses|matatus?|boda|motorbikes?|motorcycles?|boats?|yachts?|tuktuks?)\b/i
+  GOOGLE_MERCHANT_EXCLUDED_TITLE = /\bfor\s+(hire|rent|rental|lease|leasing)\b|\b(?:hire|rent|rental)\s+(?:a\s+|an\s+|our\s+)?(?:car|lorry|truck|pickup|matatu|boda|motorbike|motorcycle|scooter|van|bus|boat|yacht)\b|\b(?:cars?|lorr(?:y|ies)|trucks?|pickups?|matatus?|boda(?:\s+boda)?|motorbikes?|motorcycles?|scooters?|vans?|buses|boats?|yachts?|tuktuks?|tuk\s*tuks?)\s+for\s+sale\b|\b(?:toyota|nissan|honda|mazda|subaru|isuzu|mitsubishi|suzuki|ford|tata|scania|hino|fuso|mercedes(?:[\s-]benz)?|bmw|audi|volkswagen|vw|land\s*rover|range\s*rover|lexus|peugeot|daihatsu|volvo|daf|iveco|yamaha|kawasaki|bajaj|tvs|hero)\b.{0,40}\bfor\s+sale\b/i
+
+  def google_merchant_policy_excluded?
+    names = [category&.name, subcategory&.name].compact
+    return true if names.any? { |n| n.match?(GOOGLE_MERCHANT_EXCLUDED_CATEGORY) }
+
+    title.to_s.match?(GOOGLE_MERCHANT_EXCLUDED_TITLE)
+  end
+
   def valid_for_google_merchant?
     return false if deleted?
     return false if flagged?
+    return false if google_merchant_policy_excluded?
     return false unless seller
     return false if seller.blocked?
     return false if seller.deleted?
@@ -527,7 +563,11 @@ class Ad < ApplicationRecord
     if flagged?
       errors << "Ad is flagged"
     end
-    
+
+    if google_merchant_policy_excluded?
+      errors << "Listing type is not supported by Google Shopping (services, vehicles, hire/rental)"
+    end
+
     unless seller
       errors << "No seller associated"
     else

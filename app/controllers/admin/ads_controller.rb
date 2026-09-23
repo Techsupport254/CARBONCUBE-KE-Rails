@@ -60,17 +60,18 @@ class Admin::AdsController < ApplicationController
 
   def show
     @ad = Ad.includes(:seller, :category, :subcategory, :reviews => :buyer)
-                      .find(params[:id])
-                      .tap do |ad|
-                        ad.define_singleton_method(:mean_rating) do
-                          # Use cached reviews if available, otherwise calculate
-                          if reviews.loaded?
-                            reviews.any? ? reviews.sum(&:rating).to_f / reviews.size : 0.0
-                          else
-                            reviews.average(:rating).to_f
-                          end
-                        end
-                      end
+                      .find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless @ad
+    @ad.tap do |ad|
+      ad.define_singleton_method(:mean_rating) do
+        # Use cached reviews if available, otherwise calculate
+        if reviews.loaded?
+          reviews.any? ? reviews.sum(&:rating).to_f / reviews.size : 0.0
+        else
+          reviews.average(:rating).to_f
+        end
+      end
+    end
     render json: @ad.as_json(
       include: {
         seller: { only: [:fullname, :email] },
@@ -100,7 +101,8 @@ class Admin::AdsController < ApplicationController
 
   # PATCH/PUT /admin/ads/:id
   def update
-    @ad = Ad.find(params[:id])
+    @ad = Ad.find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless @ad
     if @ad.update(ad_params)
       render json: @ad
     else
@@ -110,14 +112,16 @@ class Admin::AdsController < ApplicationController
 
   # DELETE /admin/ads/:id
   def destroy
-    @ad = Ad.find(params[:id])
+    @ad = Ad.find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless @ad
     @ad.destroy
     head :no_content
   end
 
   # Update flagged status
   def flag
-    @ad = Ad.find(params[:id])
+    @ad = Ad.find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless @ad
     flag_notes = params[:notes] || params[:flag_notes]
     @ad.update(flagged: true, flag_notes: flag_notes)
     SellerMailer.ad_flagged(@ad.seller, @ad, flag_notes, params[:to_email]).deliver_later if @ad.seller
@@ -126,8 +130,9 @@ class Admin::AdsController < ApplicationController
 
   # Update flagged status
   def restore
-    @ad = Ad.find(params[:id])
-    @ad.update(flagged: false)  # Set flagged to false
+    @ad = Ad.find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless @ad
+    @ad.update(flagged: false, flag_notes: nil)  # Set flagged to false
     head :no_content
   end
 

@@ -307,7 +307,7 @@ class Sales::AnalyticsController < ApplicationController
     end
 
     subcategory_id = params[:subcategory_id].presence
-    cache_key = "sales_cat_sellers_v3_#{category_id}_#{subcategory_id.presence || 'all'}"
+    cache_key = "sales_cat_sellers_v4_#{category_id}_#{subcategory_id.presence || 'all'}"
 
     sellers = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
       # Source seller IDs from active ads, not the sparse CategoriesSeller table
@@ -328,6 +328,7 @@ class Sales::AnalyticsController < ApplicationController
           {
             id: seller.id,
             fullname: seller.fullname,
+            slug: seller.url_slug,
             enterprise_name: seller.enterprise_name,
             email: seller.email,
             phone_number: seller.phone_number,
@@ -575,14 +576,15 @@ class Sales::AnalyticsController < ApplicationController
   # GET /sales/analytics/ads/:id/stats
   # Get statistics for a specific ad
   def ad_stats
-    ad_id = params[:id]
-    
     begin
-      ad = Ad.find_by(id: ad_id)
+      # :id may be a canonical slug (e.g. "flip-case-4696") — resolve first so
+      # the ad_id filters below always use the real numeric id.
+      ad = Ad.find_by_id_or_slug(params[:id])
       unless ad
         render json: { error: 'Ad not found' }, status: :not_found
         return
       end
+      ad_id = ad.id
       
       # Get device_hash from params or headers if available
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']

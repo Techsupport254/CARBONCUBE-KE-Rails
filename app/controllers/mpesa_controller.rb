@@ -35,6 +35,9 @@ class MpesaController < ApplicationController
         render json: { ResultCode: "C2B00012", ResultDesc: "Invalid Account Number" }
       end
     end
+  rescue JSON::ParserError => e
+    Rails.logger.error("Payment validation error: #{e.message}")
+    render json: { ResultCode: "C2B00012", ResultDesc: "Invalid request body" }
   end
 
   def confirm_payment

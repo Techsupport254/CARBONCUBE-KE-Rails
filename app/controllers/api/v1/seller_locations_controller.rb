@@ -1,5 +1,7 @@
 class Api::V1::SellerLocationsController < ApplicationController
-  before_action :authenticate_sales_user
+  include SalesOrAdminAuthenticatable
+
+  before_action :authenticate_sales_or_admin
 
   def index
     # Build cache key based on max updated_at across relevant tables
@@ -9,8 +11,10 @@ class Api::V1::SellerLocationsController < ApplicationController
     review_ts = Review.maximum(:updated_at).to_i
     google_reviews_ts = Seller.maximum(:google_reviews_fetched_at).to_i
     seller_count = Seller.where(deleted: false).count
+    # categories_sellers is a join table without timestamps — bust on row count
+    categories_sellers_count = CategoriesSeller.count
 
-    cache_key = "api/v1/seller_locations/#{seller_ts}-#{branch_ts}-#{tier_ts}-#{review_ts}-#{google_reviews_ts}-#{seller_count}"
+    cache_key = "api/v1/seller_locations/#{seller_ts}-#{branch_ts}-#{tier_ts}-#{review_ts}-#{google_reviews_ts}-#{seller_count}-#{categories_sellers_count}-v3"
 
     # Return 304 Not Modified if client cache is fresh
     if stale?(etag: cache_key, public: false)
@@ -54,6 +58,15 @@ class Api::V1::SellerLocationsController < ApplicationController
           .select("ads.seller_id AS seller_id, COUNT(*) AS total, AVG(reviews.rating) AS avg_rating")
           .index_by { |r| r.seller_id.to_s }
 
+        # Declared business categories/subcategories per seller (one bulk query)
+        seller_categories = CategoriesSeller
+          .where(seller_id: seller_ids)
+          .pluck(:seller_id, :category_id, :subcategory_id)
+          .each_with_object(Hash.new { |h, k| h[k] = { category_ids: [], subcategory_ids: [] } }) do |(sid, cid, scid), acc|
+            acc[sid][:category_ids] << cid if cid
+            acc[sid][:subcategory_ids] << scid if scid
+          end
+
         sellers_data = sellers.map do |seller|
           branch = branch_coords[seller.id] || first_branches[seller.id]
           full_location = [branch&.location, seller.location].compact.map(&:strip).reject(&:blank?).uniq.join(', ')
@@ -63,6 +76,7 @@ class Api::V1::SellerLocationsController < ApplicationController
           resolved_sub_county = seller.sub_county&.name.presence || 'Not Available'
           display_location = full_location.presence || seller.city.presence || 'Not Available'
           review_stats = review_aggregates[seller.id.to_s]
+          cats = seller_categories[seller.id]
           google_reviews = seller.verified_google_reviews
           google_reviews_count = google_reviews.size
           google_average_rating = if google_reviews_count > 0
@@ -74,6 +88,7 @@ class Api::V1::SellerLocationsController < ApplicationController
           {
             id: seller.id,
             fullname: seller.fullname,
+            slug: seller.url_slug,
             enterprise_name: display_name,
             location: display_location,
             branch_name: branch&.name,
@@ -92,7 +107,9 @@ class Api::V1::SellerLocationsController < ApplicationController
             total_reviews: review_stats&.total.to_i,
             average_rating: review_stats&.avg_rating.to_f.round(1),
             google_reviews_count: google_reviews_count,
-            google_average_rating: google_average_rating
+            google_average_rating: google_average_rating,
+            category_ids: cats[:category_ids].uniq,
+            subcategory_ids: cats[:subcategory_ids].uniq
           }
         end
 
@@ -120,14 +137,5 @@ class Api::V1::SellerLocationsController < ApplicationController
       message: 'Geocoding batch job started',
       status: 'processing'
     }, status: :accepted
-  end
-
-  private
-
-  def authenticate_sales_user
-    @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result
-    unless @current_sales_user
-      render json: { error: 'Not Authorized' }, status: :unauthorized
-    end
   end
 end

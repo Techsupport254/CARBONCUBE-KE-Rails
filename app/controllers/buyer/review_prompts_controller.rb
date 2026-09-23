@@ -51,7 +51,7 @@ class Buyer::ReviewPromptsController < ApplicationController
       id: prompt.id,
       ad_id: ad.id,
       ad_title: ad.title,
-      ad_slug: Ad.slugify(ad.title),
+      ad_slug: ad.url_slug,
       seller_name: ad.seller&.enterprise_name || ad.seller&.fullname,
       seller_enterprise_name: ad.seller&.enterprise_name,
       seller_email: ad.seller&.email,

@@ -405,7 +405,8 @@ class Seller::AdsController < ApplicationController
   end
 
   def update
-    ad = current_seller.ads.find(params[:id])
+    ad = current_seller.ads.find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless ad
     media_param = params[:ad][:media]
     existing_media_param = params[:ad][:existing_media]
 
@@ -441,7 +442,8 @@ class Seller::AdsController < ApplicationController
 
   # PATCH /seller/ads/:id/stock
   def update_stock
-    ad = current_seller.ads.find(params[:id])
+    ad = current_seller.ads.find_by_id_or_slug(params[:id])
+    raise ActiveRecord::RecordNotFound unless ad
 
     if params[:stock_quantity].present?
       new_quantity = params[:stock_quantity].to_i
@@ -474,7 +476,7 @@ class Seller::AdsController < ApplicationController
 
   # POST /seller/ads/:id/offer
   def create_offer
-    ad = current_seller.ads.find_by(id: params[:id])
+    ad = current_seller.ads.find_by_id_or_slug(params[:id])
     return render json: { error: 'Ad not found' }, status: :not_found unless ad
 
     begin
@@ -623,7 +625,7 @@ class Seller::AdsController < ApplicationController
 
   # DELETE /seller/ads/:id/offer
   def remove_offer
-    ad = current_seller.ads.find_by(id: params[:id])
+    ad = current_seller.ads.find_by_id_or_slug(params[:id])
     return render json: { error: 'Ad not found' }, status: :not_found unless ad
 
     begin
@@ -656,7 +658,7 @@ class Seller::AdsController < ApplicationController
 
   # app/controllers/seller/ads_controller.rb
   def restore
-    ad = current_seller.ads.deleted.find_by(id: params[:id])
+    ad = current_seller.ads.deleted.find_by_id_or_slug(params[:id])
 
     if ad.nil?
       return render json: { error: "Ad not found or not deleted" }, status: :not_found
@@ -833,7 +835,7 @@ class Seller::AdsController < ApplicationController
     @seller = current_seller
     return render json: { error: 'Seller not found' }, status: :not_found unless @seller
 
-    @ad = @seller.ads.find_by(id: params[:id])
+    @ad = @seller.ads.find_by_id_or_slug(params[:id])
     render json: { error: 'Ad not found' }, status: :not_found unless @ad
   end
 

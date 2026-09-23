@@ -61,7 +61,8 @@ class Admin::GoogleMerchantController < ApplicationController
   # POST /admin/google_merchant/sync_ad/:id
   def sync_ad
     begin
-      ad = Ad.find(params[:id])
+      ad = Ad.find_by_id_or_slug(params[:id])
+      raise ActiveRecord::RecordNotFound unless ad
       
       if ad.valid_for_google_merchant?
         # Queue background job instead of processing synchronously

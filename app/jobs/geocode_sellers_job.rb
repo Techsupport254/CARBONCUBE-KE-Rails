@@ -6,12 +6,12 @@ class GeocodeSellersJob < ApplicationJob
 
   def perform(seller_id = nil, force: false)
     sellers_to_process = Seller
-      .joins(:branches)
+      .left_joins(:branches)
       .where.not(sellers: { location: nil })
 
     unless force
       sellers_to_process = sellers_to_process.where(
-        "branches.latitude IS NULL OR branches.location_precision IN ('sub_county', 'county', 'approximate') OR branches.location_precision IS NULL"
+        "branches.id IS NULL OR branches.latitude IS NULL OR branches.location_precision IN ('sub_county', 'county', 'approximate') OR branches.location_precision IS NULL"
       )
     end
 
@@ -26,13 +26,19 @@ class GeocodeSellersJob < ApplicationJob
         coordinates = geocode_location(seller)
 
         if coordinates
-          # Update the seller's branch with coordinates and precision level
-          seller.branches.each do |branch|
-            branch.update(
-              latitude: coordinates[:lat],
-              longitude: coordinates[:lon],
-              location_precision: coordinates[:precision] || 'approximate'
-            )
+          if seller.branches.exists?
+            # Update the seller's branch with coordinates and precision level
+            seller.branches.each do |branch|
+              branch.update(
+                latitude: coordinates[:lat],
+                longitude: coordinates[:lon],
+                location_precision: coordinates[:precision] || 'approximate'
+              )
+            end
+          else
+            # Sellers without branches would never appear on the map —
+            # create a geocoded main branch from the seller's location
+            create_main_branch(seller, coordinates)
           end
 
           seller.update_column(:city, coordinates[:city]) if coordinates[:city].present?
@@ -50,6 +56,24 @@ class GeocodeSellersJob < ApplicationJob
   end
 
   private
+
+  def create_main_branch(seller, coordinates)
+    seller.branches.create!(
+      name: seller.enterprise_name.presence || seller.fullname.presence || 'Main Branch',
+      location: seller.location,
+      profile_picture: seller.profile_picture,
+      phone: seller.phone_number,
+      secondary_phone: seller.secondary_phone_number,
+      county_id: seller.county_id,
+      sub_county_id: seller.sub_county_id,
+      latitude: coordinates[:lat],
+      longitude: coordinates[:lon],
+      location_precision: coordinates[:precision] || 'approximate',
+      is_main_branch: true
+    )
+  rescue => e
+    Rails.logger.error "Failed to create main branch for seller #{seller.id}: #{e.message}"
+  end
 
   def sanitize_location(loc)
     return "" if loc.blank?

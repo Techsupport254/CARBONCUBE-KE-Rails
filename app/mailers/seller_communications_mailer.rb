@@ -79,7 +79,7 @@ class SellerCommunicationsMailer < ApplicationMailer
     total = params[:total_ads] || seller.ads.count
     with_img = params[:with_images] || 0
     without_img = params[:without_images] || 0
-    shop_url = "https://carboncube-ke.com/shop/#{seller.slug}"
+    shop_url = "https://carboncube-ke.com/shop/#{seller.url_slug}"
     dashboard_url = 'https://carboncube-ke.com/seller/dashboard'
 
     timestamp = Time.current.strftime('%Y%m%d%H%M')
@@ -404,7 +404,7 @@ class SellerCommunicationsMailer < ApplicationMailer
           title: ad.title,
           image: ad.respond_to?(:first_valid_media_url) ? ad.first_valid_media_url : nil,
           price: ad.respond_to?(:price) ? ad.price : nil,
-          url: ad.respond_to?(:product_url) ? ad.product_url : "https://carboncube-ke.com/ads/#{ad.id}"
+          url: "https://carboncube-ke.com/ads/#{ad.url_slug}"
         }
       end
     else
