@@ -76,8 +76,19 @@ class AdSearchService
         .where(flagged: false)
     end
 
-    # Blank-query ordering: seller tier priority, then random.
+    # Blank-query ordering: seller tier priority, then random. Results are
+    # identical for every visitor, so cache per minute — ORDER BY RANDOM()
+    # otherwise sorts the whole ads table on every browse request.
     def browse_page(scope, page, per_page)
+      Rails.cache.fetch(
+        "search_browse_#{page}_#{per_page}_#{Time.current.to_i / 60}",
+        expires_in: 2.minutes
+      ) do
+        browse_page_uncached(scope, page, per_page)
+      end
+    end
+
+    def browse_page_uncached(scope, page, per_page)
       scope
         .joins(:seller, seller: { seller_tier: :tier })
         .select('ads.*,
@@ -103,6 +114,7 @@ class AdSearchService
                         END ASC, RANDOM()'))
         .limit(per_page)
         .offset((page - 1) * per_page)
+        .to_a # materialize — a lazy Relation can't be cached
     end
 
     # === Candidate pool (recall) ==========================================

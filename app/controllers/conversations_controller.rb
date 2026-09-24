@@ -238,14 +238,7 @@ class ConversationsController < ApplicationController
     end
 
     # Update unread counts once for the conversation
-    if processed_count > 0
-      begin
-        UpdateUnreadCountsJob.perform_now(@conversation.id, unread_messages.last.id)
-      rescue => e
-        Rails.logger.warn "Failed to update unread counts: #{e.message}"
-        UpdateUnreadCountsJob.perform_later(@conversation.id, unread_messages.last.id)
-      end
-    end
+    UpdateUnreadCountsJob.perform_later(@conversation.id, unread_messages.last.id) if processed_count > 0
 
     render json: { 
       success: true, 

@@ -61,8 +61,8 @@ class ShopsController < ApplicationController
     end
     
     page = params[:page]&.to_i || 1
-    per_page = params[:per_page]&.to_i || 24
-    
+    per_page = [params[:per_page]&.to_i || 24, 100].min
+
     @shop = Seller.includes(
       :categories,
       :county,

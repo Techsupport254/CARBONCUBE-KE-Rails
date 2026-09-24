@@ -1,6 +1,9 @@
 class CountiesController < ApplicationController
   def index
-    counties = County.all.order(:name)
+    counties = Rails.cache.fetch('public_counties', expires_in: 24.hours) do
+      County.all.order(:name).to_a
+    end
+    expires_in 1.hour, public: true
     render json: counties, each_serializer: CountySerializer
   end
 

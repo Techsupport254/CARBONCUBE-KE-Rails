@@ -4,6 +4,21 @@ class OfferSerializer
   end
   
   def as_json
+    # Use the preloaded association when the controller includes it;
+    # the old joins(ad: :seller) bypassed preloading entirely.
+    all_offer_ads = if @offer.association(:offer_ads).loaded?
+      @offer.offer_ads.select(&:is_active)
+    else
+      @offer.offer_ads.active.to_a
+    end
+
+    # Exclude ads from flagged, blocked, or deleted sellers.
+    offer_ads = all_offer_ads.select do |oa|
+      ad = oa.ad
+      seller = ad&.seller
+      ad && seller && !seller.blocked? && !seller.deleted? && !seller.flagged?
+    end
+
     {
       id: @offer.id,
       name: @offer.name,
@@ -59,11 +74,8 @@ class OfferSerializer
                 enterprise_name: @offer.seller&.enterprise_name,
                 fullname: @offer.seller&.fullname
               },
-              # Ads with discounts - exclude ads from flagged, blocked, or deleted sellers and ensure valid images
-              ads: @offer.offer_ads.active
-                .joins(ad: :seller)
-                .where(sellers: { blocked: false, deleted: false, flagged: false })
-                .map do |offer_ad|
+              # Ads with discounts - excludes flagged/blocked/deleted sellers above.
+              ads: offer_ads.map do |offer_ad|
                 ad = offer_ad.ad
                 next nil unless ad && ad.has_valid_images?
 
@@ -109,8 +121,12 @@ class OfferSerializer
                   seller_name: seller&.fullname || seller&.enterprise_name,
                   # Additional useful fields
                   media_urls: ad.valid_media_urls,
-                  rating: ad.reviews.average(:rating)&.round(1) || 0.0,
-                  review_count: ad.reviews.count
+                  rating: if ad.reviews.loaded?
+                            ad.reviews.any? ? (ad.reviews.sum(&:rating).to_f / ad.reviews.size).round(1) : 0.0
+                          else
+                            ad.reviews.average(:rating)&.round(1) || 0.0
+                          end,
+                  review_count: ad.attributes.key?('reviews_count') ? (ad.reviews_count || 0) : ad.reviews.count
                 }
               end.compact
     }

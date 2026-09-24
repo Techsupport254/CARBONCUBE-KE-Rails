@@ -14,7 +14,7 @@ class Admin::SellerCommunicationsController < ApplicationController
 
     sellers.each do |seller|
       begin
-        SellerCommunicationsMailer.general_update(seller).deliver_now
+        SellerCommunicationsMailer.general_update(seller).deliver_later
         sent_count += 1
       rescue => e
         Rails.logger.error "Failed to send email to seller #{seller.id}: #{e.message}"

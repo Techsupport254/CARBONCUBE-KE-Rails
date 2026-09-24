@@ -2,20 +2,38 @@ class AdsController < ApplicationController
   # GET /ads
   def index
     per_page = params[:per_page]&.to_i || 100
-    per_page = [per_page, 500].min # Cap at 500 for performance
-    
-    # Fetch ads from all active sellers (not just premium) with valid images
-    # No caching to ensure true randomization on each request
-    @ads = Ad.active.with_valid_images.joins(:seller)
-             .where(sellers: { blocked: false, deleted: false, flagged: false })
-             .where(flagged: false)
+    per_page = [per_page, 200].min # Cap at 200 — serializer cost scales per row
+
+    # Fetch ads from all active sellers (not just premium) with valid images.
+    # The includes list covers every association AdSerializer/SellerSerializer
+    # touches, so a page of cards costs O(1) queries instead of O(records).
+    # ORDER BY RANDOM() would sort the whole table per request — instead keep
+    # a cached pool of shuffled live-ad ids per minute and page through it;
+    # each minute the pool reshuffles so the feed still rotates.
+    pool = Rails.cache.fetch("ads_random_pool/#{Time.current.to_i / 60}", expires_in: 2.minutes) do
+      Ad.active.with_valid_images.joins(:seller)
+        .where(sellers: { blocked: false, deleted: false, flagged: false })
+        .where(flagged: false)
+        .pluck(:id)
+        .shuffle
+    end
+
+    ids = pool.first(per_page)
+    @ads = Ad.where(id: ids)
+             .order(Arel.sql("array_position(ARRAY[#{ids.map(&:to_i).join(',')}]::bigint[], ads.id)"))
              .includes(
                :category,
                :subcategory,
-               seller: { seller_tier: :tier }
+               offer_ads: :offer,
+               seller: [
+                 { seller_tier: :tier },
+                 :partner,
+                 :categories,
+                 :seller_documents,
+                 :carbon_code,
+                 :google_business_profile_connection
+               ]
              )
-             .order(Arel.sql('RANDOM()'))
-             .limit(per_page)
 
     render json: @ads, each_serializer: AdSerializer
   end
@@ -28,10 +46,16 @@ class AdsController < ApplicationController
                 .includes(
                   :category,
                   :subcategory,
-                  :reviews,
-                  :offer_ads,
-                  seller: { seller_tier: :tier },
-                  offer_ads: :offer
+                  reviews: :buyer,
+                  offer_ads: :offer,
+                  seller: [
+                    { seller_tier: :tier },
+                    :partner,
+                    :categories,
+                    :seller_documents,
+                    :carbon_code,
+                    :google_business_profile_connection
+                  ]
                 )
     param = params[:id].to_s
     if %w[null undefined].include?(param)
@@ -54,8 +78,13 @@ class AdsController < ApplicationController
         end
       end
 
-      # Get similar products
-      similar_products_data = SimilarProductsService.find_similar_products(@ad, limit: 15)
+      # Get similar products — the matcher runs several ILIKE scans, so cache
+      # per ad for a few minutes (same TTL family as related_ads_* caches).
+      similar_products_data = Rails.cache.fetch(
+        "similar_ads_#{@ad.id}", expires_in: 5.minutes
+      ) do
+        SimilarProductsService.find_similar_products(@ad, limit: 15)
+      end
 
       # Render with similar products
       ad_data = AdSerializer.new(@ad).as_json

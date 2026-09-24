@@ -112,3 +112,12 @@ brand_kenya_onboarded_notify:
   class: "BrandKenyaOnboardedNotifyJob"
   queue: low
   description: "Email newly onboarded Brand Kenya brands to complete their profile (production only)"
+
+# --- MONITORING RETENTION ---
+# monitoring_metrics gets an INSERT on every request — purge rows older than
+# 7 days nightly so the table doesn't grow unboundedly.
+monitoring_cleanup:
+  cron: "30 3 * * *"
+  class: "MonitoringCleanupJob"
+  queue: low
+  description: "Delete monitoring_metrics/monitoring_errors rows older than 7 days"

@@ -30,7 +30,15 @@ class BrandKenyaController < ApplicationController
     cache_key = "brand_kenya_homepage_ads_v4_#{Time.current.to_i / 300}"
     data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
       ads_scope = Ad.live.where(is_brand_kenya: true)
-                         .includes(:category, :subcategory, seller: { seller_tier: :tier })
+                         .includes(:category, :subcategory, offer_ads: :offer,
+                                   seller: [
+                                     { seller_tier: :tier },
+                                     :partner,
+                                     :categories,
+                                     :seller_documents,
+                                     :carbon_code,
+                                     :google_business_profile_connection
+                                   ])
 
       # Sample ads across multiple sellers/shops so different stores are represented
       ads_by_seller = ads_scope.to_a.group_by(&:seller_id)

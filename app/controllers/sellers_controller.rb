@@ -100,27 +100,25 @@ class SellersController < ApplicationController
                       .includes(:categories, :seller_documents, :seller_tier, :tier, :county, :sub_county)
                       .order(:enterprise_name)
       
-      # Add pagination support (optional)
-      if params[:page] && params[:limit]
-        page = params[:page].to_i
-        limit = params[:limit].to_i
-        offset = (page - 1) * limit
-        
-        total_count = sellers.count
-        sellers = sellers.offset(offset).limit(limit)
-        
-        render json: {
-          sellers: sellers.map { |seller| SellerSerializer.new(seller).as_json },
-          pagination: {
-            current_page: page,
-            per_page: limit,
-            total_count: total_count,
-            total_pages: (total_count.to_f / limit).ceil
-          }
+      # Paginate by default — serializing every seller with the full
+      # SellerSerializer is a multi-second payload. The response shape stays
+      # { sellers:, pagination: } for all callers now.
+      page = (params[:page] || 1).to_i
+      limit = [(params[:limit] || 50).to_i, 200].min
+      offset = (page - 1) * limit
+
+      total_count = sellers.count
+      sellers = sellers.offset(offset).limit(limit)
+
+      render json: {
+        sellers: sellers.map { |seller| SellerSerializer.new(seller).as_json },
+        pagination: {
+          current_page: page,
+          per_page: limit,
+          total_count: total_count,
+          total_pages: (total_count.to_f / limit).ceil
         }
-      else
-        render json: sellers, each_serializer: SellerSerializer
-      end
+      }
     end
   end
 
@@ -133,16 +131,13 @@ class SellersController < ApplicationController
     end
 
     ads = seller.ads.active.includes(:category, :subcategory) # eager-load if needed
-    
-    # Add pagination support (only if page and limit are provided)
-    if params[:page] && params[:limit]
-      page = params[:page].to_i
-      limit = params[:limit].to_i
-      offset = (page - 1) * limit
-      
-      # Apply pagination
-      ads = ads.offset(offset).limit(limit)
-    end
+
+    # Always paginate — a seller with thousands of ads would otherwise
+    # serialize the whole collection into one response.
+    page = (params[:page] || 1).to_i
+    limit = [(params[:limit] || 100).to_i, 200].min
+    offset = (page - 1) * limit
+    ads = ads.offset(offset).limit(limit)
     
     render json: ads.map { |ad| ad.as_json.merge(
       {

@@ -34,6 +34,11 @@ class SalesBrand < ApplicationRecord
 
   before_validation :normalize_phone_number
 
+  # Keep ads.is_brand_kenya in sync — onboarded brands get the ribbon on all
+  # their ads; moving off onboarded (or unlinking the seller) removes it.
+  after_commit :sync_seller_ads_brand_flag, on: %i[create update destroy],
+               if: :brand_flag_state_changed?
+
   # Normalize Kenyan phone numbers the same way Seller/Buyer do, so suffix
   # matching against call logs and seller signups works.
   def normalize_phone_number
@@ -206,6 +211,20 @@ class SalesBrand < ApplicationRecord
       follow_up_note: nil,
       last_contacted_at: last_contacted_at || Time.current
     )
+  end
+
+  def brand_flag_state_changed?
+    destroyed? || saved_change_to_status? || saved_change_to_seller_id?
+  end
+
+  def sync_seller_ads_brand_flag
+    # Recompute from ALL of the seller's brands — one seller can be linked to
+    # several SalesBrand rows (e.g. multiple store locations)
+    if !destroyed? && saved_change_to_seller_id? && saved_change_to_seller_id[0].present?
+      old_seller = Seller.find_by(id: saved_change_to_seller_id[0])
+      old_seller&.ads&.update_all(is_brand_kenya: old_seller.brand_kenya?)
+    end
+    seller&.ads&.update_all(is_brand_kenya: seller.brand_kenya?)
   end
 
   # Find a platform seller matching this brand — by phone (normalized suffix)

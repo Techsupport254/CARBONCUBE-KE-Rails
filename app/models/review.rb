@@ -48,29 +48,11 @@ class Review < ApplicationRecord
   end
 
   def send_push_notification
-    begin
-      recipient = ad.seller
-      return unless recipient
-
-      # Retrieve tokens for the recipient
-      tokens = DeviceToken.where(user: recipient).pluck(:token)
-
-      if tokens.any?
-        payload = {
-          title: "New Review on #{ad.title.truncate(30)}",
-          body: "#{rating} stars: #{review.to_s.truncate(100)}",
-          data: {
-            type: 'review',
-            review_id: id,
-            ad_id: ad_id
-          }
-        }
-        
-        PushNotificationService.send_notification(tokens, payload)
-      end
-    rescue => e
-      Rails.logger.error "Failed to send review push notification: #{e.message}"
-    end
+    # Enqueue — the old inline call did a DeviceToken query + synchronous
+    # FCM HTTP request inside the review-save transaction.
+    ReviewPushNotificationJob.perform_later(id)
+  rescue => e
+    Rails.logger.error "Failed to enqueue review push notification: #{e.message}"
   end
 
   def check_seller_rating

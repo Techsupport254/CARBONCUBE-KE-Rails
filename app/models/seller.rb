@@ -169,8 +169,12 @@ class Seller < ApplicationRecord
     provider.present? || uid.present?
   end
 
+  # NOTE: the sellers.ads_count column exists but is unmaintained (no
+  # counter_cache) — it drifts to zero, so we count live and cache briefly.
   def ads_count
-    ads.where(deleted: false).count
+    Rails.cache.fetch("seller_ads_count/#{id}", expires_in: 5.minutes) do
+      ads.where(deleted: false).count
+    end
   end
   
   def deleted?
@@ -277,6 +281,12 @@ class Seller < ApplicationRecord
   # check) so links never 404 for sellers whose slug column is blank.
   def url_slug
     slug.presence || id.to_s
+  end
+
+  # Brand Kenya = has a SalesBrand record that reached :onboarded status
+  # (the same rule brand_kenya_controller uses for the public directory).
+  def brand_kenya?
+    sales_brands.exists?(status: :onboarded)
   end
 
   private

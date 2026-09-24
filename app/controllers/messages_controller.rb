@@ -30,12 +30,7 @@ class MessagesController < ApplicationController
         broadcast_read_receipt(message)
         
         # Update unread counts for all participants after marking as read
-        begin
-          UpdateUnreadCountsJob.perform_now(@conversation.id, message.id)
-        rescue StandardError => e
-          Rails.logger.warn "Failed to update unread counts after marking message as read: #{e.message}"
-          UpdateUnreadCountsJob.perform_later(@conversation.id, message.id)
-        end
+        UpdateUnreadCountsJob.perform_later(@conversation.id, message.id)
         
         render json: { 
           success: true, 

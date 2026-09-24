@@ -6,7 +6,11 @@ class ReviewsController < ApplicationController
       return
     end
 
+    page = (params[:page] || 1).to_i
+    per_page = [(params[:per_page] || 50).to_i, 100].min
     reviews = ad.reviews.includes(:buyer, :seller)
+                        .order(created_at: :desc)
+                        .offset((page - 1) * per_page).limit(per_page)
 
     reviews_data = reviews.map do |review|
       {

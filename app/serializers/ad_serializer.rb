@@ -85,6 +85,8 @@ class AdSerializer < ActiveModel::Serializer
   def reviews_count
     if object.reviews.loaded?
       object.reviews.size
+    elsif object.attributes.key?('reviews_count')
+      object.reviews_count || 0
     else
       object.reviews.count
     end
@@ -108,11 +110,11 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def seller_average_rating
-    object.seller&.average_rating&.round(1) || 0.0
+    seller_rating_stats.first
   end
 
   def seller_reviews_count
-    object.seller&.reviews&.count.to_i
+    seller_rating_stats.last
   end
 
   def media_urls
@@ -172,50 +174,9 @@ class AdSerializer < ActiveModel::Serializer
   end
 
   def flash_sale_info
-    # Find active or scheduled offer that includes this ad (any offer type)
-    # First try to use preloaded associations if available (more efficient)
-    active_offer_ad = nil
-    
-    if object.association(:offer_ads).loaded?
-      # Use preloaded associations
-      active_offer_ad = object.offer_ads.find do |offer_ad|
-        offer = offer_ad.association(:offer).loaded? ? offer_ad.offer : offer_ad.offer
-        offer && 
-        ['active', 'scheduled'].include?(offer.status) &&
-        offer.end_time >= Time.current  # Only check end_time - allow scheduled offers before start
-      end
-      
-      # If found via associations, ensure offer is loaded
-      if active_offer_ad && !active_offer_ad.association(:offer).loaded?
-        active_offer_ad = active_offer_ad.reload(include: :offer)
-      end
-    end
-    
-    # Fallback to database query if associations not loaded or not found
-    unless active_offer_ad
-      # Debug: Log all offer_ads for this ad to see what's available (only when enabled)
-      if flash_sale_debug_logs_enabled?
-        all_offer_ads = OfferAd.where(ad_id: object.id).includes(:offer)
-        Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - All OfferAds: #{all_offer_ads.map { |oa| { id: oa.id, offer_id: oa.offer_id, offer_status: oa.offer&.status, start_time: oa.offer&.start_time, end_time: oa.offer&.end_time } }.inspect}"
-      end
-      
-      # Include both active and scheduled offers
-      # Active offers: must have started (start_time <= now) and not ended (end_time >= now)
-      # Scheduled offers: can be shown before they start (start_time > now) as long as they haven't ended (end_time >= now)
-      active_offer_ad = OfferAd.joins(:offer)
-                               .where(ad_id: object.id)
-                               .where(offers: { 
-                                 status: ['active', 'scheduled']
-                               })
-                               .where('offers.end_time >= ?', Time.current)  # Only check end_time - allow scheduled offers before start
-                               .order('offers.start_time ASC')
-                               .first
-      
-      if flash_sale_debug_logs_enabled?
-        Rails.logger.debug "🔍 AdSerializer [Ad #{object.id}] - Found active_offer_ad: #{active_offer_ad ? { id: active_offer_ad.id, offer_id: active_offer_ad.offer_id, discount: active_offer_ad.discount_percentage } : 'nil'}"
-      end
-    end
-    
+    # Shares Ad#current_offer_ad with effective_price — one lookup serves
+    # both, using preloaded offer_ads when the caller includes them.
+    active_offer_ad = object.current_offer_ad
     return nil unless active_offer_ad
     
     offer = active_offer_ad.offer
@@ -244,6 +205,19 @@ class AdSerializer < ActiveModel::Serializer
 
   def seller_document_verified
     object.seller&.document_verified?
+  end
+
+  # [avg_rating, reviews_count] per seller — cached briefly because the
+  # through-association would otherwise run JOIN COUNT + JOIN AVG per card.
+  def seller_rating_stats
+    return [0.0, 0] unless object.seller
+
+    Rails.cache.fetch("seller_rating_stats/#{object.seller_id}", expires_in: 5.minutes) do
+      [
+        object.seller.average_rating&.round(1) || 0.0,
+        object.seller.reviews.count
+      ]
+    end
   end
 
   def seller_is_verified

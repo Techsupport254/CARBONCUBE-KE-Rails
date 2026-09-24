@@ -19,7 +19,7 @@ class Buyer::AdsController < ApplicationController
   def index
     PerformanceMonitor.track_api_performance('buyer_ads_index') do
       per_page = params[:per_page]&.to_i || 24
-      per_page = 500 if per_page > 500
+      per_page = [per_page, 200].min
       page = params[:page].to_i.positive? ? params[:page].to_i : 1
 
     # For the home page, get a balanced distribution of ads across subcategories
@@ -39,9 +39,16 @@ class Buyer::AdsController < ApplicationController
         # No caching for truly randomized results on each request
         @ads = fetch_ads_without_cache(per_page, page)
       else
-        # Use minimal caching with randomization factor
-        cache_key = "buyer_ads_#{per_page}_#{page}_#{params[:category_id]}_#{params[:subcategory_id]}_#{Time.current.to_i / 60}"
-        
+        # Use minimal caching with randomization factor. The key must include
+        # every param that changes the result set — otherwise a filtered
+        # request would be served (and then cache) another filter's results.
+        filter_fingerprint = Digest::MD5.hexdigest([
+          params[:category_id], params[:subcategory_id], params[:price_range],
+          params[:condition], params[:location], params[:search], params[:query],
+          params[:last_sync_at]
+        ].join('|'))
+        cache_key = "buyer_ads_#{per_page}_#{page}_#{filter_fingerprint}_#{Time.current.to_i / 60}"
+
         @ads = Rails.cache.fetch(cache_key, expires_in: 1.minute) do
           # Use optimized query with proper ActiveRecord objects
           ads_query = Ad.active.with_valid_images
@@ -50,7 +57,8 @@ class Buyer::AdsController < ApplicationController
                        .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
                        .where(sellers: { blocked: false, deleted: false, flagged: false })
                        .where(flagged: false)
-                       .includes(:category, :subcategory, seller: { seller_tier: :tier })
+                       .includes(:category, :subcategory, offer_ads: :offer,
+                                 seller: { seller_tier: :tier })
 
           ads_query = filter_by_category(ads_query) if params[:category_id].present? && params[:category_id] != 'All'
           ads_query = filter_by_subcategory(ads_query) if params[:subcategory_id].present? && params[:subcategory_id] != 'All'
@@ -69,8 +77,10 @@ class Buyer::AdsController < ApplicationController
             end
           end
 
-          # Enhanced randomization with multiple factors for better distribution
-          get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
+          # Enhanced randomization with multiple factors for better distribution.
+          # Materialize — caching a lazy Relation stores the query, not the
+          # results, so the cache would re-execute the SQL on every read.
+          get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page).to_a
         end
       end
     end
@@ -213,9 +223,16 @@ class Buyer::AdsController < ApplicationController
     ad_scope = Ad.includes(
       :category,
       :subcategory,
-      :reviews,
-      :offer_ads,
-      seller: { seller_tier: :tier, seller_documents: :document_type }
+      reviews: :buyer,
+      offer_ads: :offer,
+      seller: [
+        { seller_tier: :tier },
+        { seller_documents: :document_type },
+        :partner,
+        :categories,
+        :carbon_code,
+        :google_business_profile_connection
+      ]
     )
     param = params[:id].to_s
     if %w[null undefined].include?(param)
@@ -2013,7 +2030,7 @@ class Buyer::AdsController < ApplicationController
       end
 
       limit = params[:limit]&.to_i || 100
-      limit = [limit, 500].min # Cap at 500
+      limit = [limit, 100].min # Cap at 100
 
       # If no user identity, fall back to best sellers (no personalization)
       if device_hash.blank? && buyer_id.blank?
@@ -2379,6 +2396,7 @@ class Buyer::AdsController < ApplicationController
     subcategory_id = params[:subcategory_id]
     page = params[:page]&.to_i || 1
     per_page = params[:per_page]&.to_i || 20
+    per_page = [per_page, 100].min
     
     if subcategory_id.blank?
       render json: { error: 'Subcategory ID is required' }, status: :bad_request
@@ -2483,68 +2501,33 @@ class Buyer::AdsController < ApplicationController
     end
   end
 
+  # Dispatch on the JWT role claim — the old code ran all 5 authorizers
+  # sequentially, and each attempt re-decodes the token and hits the Redis
+  # blacklist check. BuyerAuthorizeApiRequest already resolves both buyer and
+  # seller roles, so the seller attempt was redundant.
   def authenticate_user_for_alternatives
-    # Try authenticating as different user types (buyer, seller, admin, sales, marketing)
     @current_user = nil
-    
-    # Try buyer authentication first
-    begin
-      buyer_auth = BuyerAuthorizeApiRequest.new(request.headers)
-      @current_user = buyer_auth.result
-    rescue ExceptionHandler::InvalidToken => e
-    rescue => e
-      Rails.logger.debug "Buyer::AdsController#alternatives: Buyer auth error: #{e.class.name}: #{e.message}"
-    end
+    role = alternatives_token_role
 
-    # Try seller authentication if buyer auth failed
-    if @current_user.nil? || !@current_user.is_a?(Buyer)
-      begin
-        seller_auth = SellerAuthorizeApiRequest.new(request.headers)
-        @current_user = seller_auth.result
-      rescue ExceptionHandler::InvalidToken => e
-        # silently fall through
-      rescue => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Seller auth error: #{e.class.name}: #{e.message}"
-      end
-    end
+    authorizers = case role
+                  when 'admin' then [AdminAuthorizeApiRequest]
+                  when 'sales' then [SalesAuthorizeApiRequest]
+                  when 'marketing' then [MarketingAuthorizeApiRequest]
+                  when 'buyer', 'seller' then [BuyerAuthorizeApiRequest]
+                  else
+                    # No role claim (legacy token) — try each in likelihood order
+                    [BuyerAuthorizeApiRequest, AdminAuthorizeApiRequest,
+                     SalesAuthorizeApiRequest, MarketingAuthorizeApiRequest]
+                  end
 
-    # Try admin authentication if still no user
-    if @current_user.nil?
+    authorizers.each do |klass|
       begin
-        admin_auth = AdminAuthorizeApiRequest.new(request.headers)
-        @current_user = admin_auth.result
-      rescue ExceptionHandler::InvalidToken => e
-        # silently fall through
+        @current_user = klass.new(request.headers).result
+        break if @current_user
+      rescue ExceptionHandler::InvalidToken
+        # token not valid for this user type — try next
       rescue => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Admin auth error: #{e.class.name}: #{e.message}"
-      end
-    end
-
-    # Try sales authentication if still no user
-    if @current_user.nil?
-      begin
-        # SalesAuthorizeApiRequest is in lib, ensure it's loaded
-        require_relative '../../lib/sales_authorize_api_request' unless defined?(SalesAuthorizeApiRequest)
-        sales_auth = SalesAuthorizeApiRequest.new(request.headers)
-        @current_user = sales_auth.result
-      rescue ExceptionHandler::InvalidToken => e
-        # silently fall through
-      rescue => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Sales auth error: #{e.class.name}: #{e.message}"
-      end
-    end
-
-    # Try marketing authentication if still no user
-    if @current_user.nil?
-      begin
-        # MarketingAuthorizeApiRequest is in lib, ensure it's loaded
-        require_relative '../../lib/marketing_authorize_api_request' unless defined?(MarketingAuthorizeApiRequest)
-        marketing_auth = MarketingAuthorizeApiRequest.new(request.headers)
-        @current_user = marketing_auth.result
-      rescue ExceptionHandler::InvalidToken => e
-        # silently fall through
-      rescue => e
-        Rails.logger.debug "Buyer::AdsController#alternatives: Marketing auth error: #{e.class.name}: #{e.message}"
+        Rails.logger.debug "Buyer::AdsController#alternatives: #{klass.name} error: #{e.class.name}: #{e.message}"
       end
     end
 
@@ -2553,6 +2536,20 @@ class Buyer::AdsController < ApplicationController
       Rails.logger.warn "Buyer::AdsController#alternatives: Authentication failed - no valid user found"
       render json: { error: 'Authentication required to view alternative sellers' }, status: :unauthorized
     end
+  end
+
+  # Decode the bearer token once to read the role claim for dispatch.
+  # Returns nil when no/invalid token — the caller falls back to trying
+  # each authorizer for legacy tokens without a role.
+  def alternatives_token_role
+    auth_header = request.headers['Authorization']
+    return nil unless auth_header&.start_with?('Bearer ')
+
+    token = auth_header.split(' ').last
+    decoded = JsonWebToken.decode(token)
+    decoded.is_a?(Hash) ? (decoded[:payload] || decoded)[:role]&.to_s&.downcase : nil
+  rescue StandardError
+    nil
   end
 
   def serialize_alternatives(scope)

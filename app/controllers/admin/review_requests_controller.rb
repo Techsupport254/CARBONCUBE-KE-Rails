@@ -96,7 +96,7 @@ class Admin::ReviewRequestsController < ApplicationController
       )
 
       # Notify seller of approval
-      SellerMailer.review_request_approved(seller, review_request).deliver_now
+      SellerMailer.review_request_approved(seller, review_request).deliver_later
     end
 
     render json: {
@@ -131,7 +131,7 @@ class Admin::ReviewRequestsController < ApplicationController
       )
 
       # Notify seller of rejection
-      SellerMailer.review_request_rejected(seller, review_request).deliver_now
+      SellerMailer.review_request_rejected(seller, review_request).deliver_later
     end
 
     render json: {

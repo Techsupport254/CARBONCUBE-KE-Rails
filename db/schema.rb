@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_24_130000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -101,6 +101,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
     t.integer "stock_quantity"
     t.boolean "is_brand_kenya", default: false, null: false
     t.index ["branch_id"], name: "index_ads_on_branch_id"
+    t.index ["brand"], name: "index_ads_on_brand_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
     t.index ["category_id"], name: "index_ads_on_category_id"
@@ -111,6 +112,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
     t.index ["is_brand_kenya", "deleted", "flagged"], name: "index_ads_on_is_brand_kenya_deleted_flagged"
     t.index ["is_brand_kenya"], name: "index_ads_on_is_brand_kenya"
+    t.index ["price"], name: "index_ads_on_price"
     t.index ["reviews_count"], name: "index_ads_on_reviews_count"
     t.index ["seller_id", "deleted", "flagged"], name: "index_ads_on_seller_deleted_flagged"
     t.index ["seller_id", "sku"], name: "index_ads_on_seller_id_and_sku"
@@ -121,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
     t.index ["subcategory_id", "deleted", "flagged"], name: "index_ads_on_subcategory_deleted_flagged"
     t.index ["subcategory_id"], name: "index_ads_balanced_subcategory", where: "((deleted = false) AND (flagged = false) AND (media IS NOT NULL) AND (media <> ''::text) AND (media <> '[]'::text))"
     t.index ["subcategory_id"], name: "index_ads_on_subcategory_id"
+    t.index ["title"], name: "index_ads_on_title_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["updated_at"], name: "index_ads_on_updated_at"
   end
 
   create_table "age_groups", force: :cascade do |t|
@@ -1203,6 +1207,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
     t.index ["sales_user_id"], name: "index_sales_brands_on_sales_user_id"
     t.index ["seller_id"], name: "index_sales_brands_on_seller_id"
     t.index ["source"], name: "index_sales_brands_on_source"
+    t.index ["status", "seller_id"], name: "index_sales_brands_on_status_and_seller_id"
     t.index ["status"], name: "index_sales_brands_on_status"
   end
 
@@ -1458,6 +1463,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
     t.index ["deleted", "ads_count"], name: "index_sellers_on_deleted_and_ads_count"
     t.index ["deleted", "blocked", "created_at"], name: "index_sellers_on_status_created_at"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
+    t.index ["enterprise_name"], name: "index_sellers_on_enterprise_name_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["fullname"], name: "index_sellers_on_fullname_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["google_place_id"], name: "index_sellers_on_google_place_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true
     t.index ["phone_number"], name: "index_sellers_on_phone_number", unique: true

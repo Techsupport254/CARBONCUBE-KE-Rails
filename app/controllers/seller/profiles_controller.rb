@@ -496,7 +496,7 @@ class Seller::ProfilesController < ApplicationController
 
     # Post-transaction: Send unified welcome email (includes storefront link & attached QR Standee)
     begin
-      WelcomeMailer.welcome_email(@seller).deliver_now
+      WelcomeMailer.welcome_email(@seller).deliver_later
     rescue => e
       Rails.logger.warn "Failed to deliver welcome email: #{e.message}"
     end

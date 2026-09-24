@@ -1,14 +1,17 @@
 class CategoriesController < ApplicationController
   # GET /categories
   def index
-    @categories = Rails.cache.fetch('public_categories_with_ads_count', expires_in: 24.hours) do
-      # Get categories with subcategories and ads count for public display
-      Category.includes(:subcategories, :ads).all.map do |category|
+    @categories = Rails.cache.fetch('public_categories_with_ads_count', expires_in: 1.hour) do
+      # Grouped count — the old includes(:ads) loaded every ad row into memory
+      # and still ran a COUNT per category.
+      counts = Ad.where(deleted: false).group(:category_id).count
+      Category.includes(:subcategories).all.map do |category|
         category_data = category.as_json(include: :subcategories)
-        category_data['ads_count'] = category.ads.where(deleted: false).count
+        category_data['ads_count'] = counts[category.id] || 0
         category_data
       end
     end
+    expires_in 1.hour, public: true
     render json: @categories
   end
 
@@ -27,13 +30,13 @@ class CategoriesController < ApplicationController
     # Try to find by ID first, then by name slug
     @category = Category.find_by(id: params[:id])
     if @category.nil?
-      # Create slug from name and try to find by that pattern
-      Category.all.each do |cat|
-        if cat.name.parameterize == params[:id]
-          @category = cat
-          break
-        end
-      end
+      # Match the parameterized name in SQL instead of loading every category.
+      # regexp_replace mirrors String#parameterize for our names.
+      slug = params[:id].to_s
+      @category = Category.where(
+        "trim(both '-' from regexp_replace(lower(name), '[^a-z0-9]+', '-', 'g')) = ?",
+        slug
+      ).first
     end
 
     if @category.nil?

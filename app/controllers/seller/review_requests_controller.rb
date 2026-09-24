@@ -63,7 +63,7 @@ class Seller::ReviewRequestsController < ApplicationController
       seller.update!(flagged: false)
 
       # Notify the seller that their review request was received
-      SellerMailer.review_request_confirmation(seller).deliver_now
+      SellerMailer.review_request_confirmation(seller).deliver_later
       
       # TODO: Send notification to admin team
       # NotificationService.notify_admins_of_review_request(review_request)

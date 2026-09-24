@@ -118,6 +118,7 @@ class Ad < ApplicationRecord
   validate :price_tiers_ascending, if: -> { price_display_mode == 'tiered' && price_tiers.present? }
 
   before_validation :normalize_price_tiers
+  before_validation :sync_brand_kenya_flag, if: -> { new_record? || will_save_change_to_seller_id? }
 
   SERVICE_CATEGORY_NAMES = ['Services', 'Service', 'services', 'Professional Services', 'Equipment Leasing'].freeze
 
@@ -398,7 +399,11 @@ class Ad < ApplicationRecord
   end
 
   def tracking_started_at
-    self.class.where(is_added_by_sales: true).minimum(:created_at)
+    # The earliest sales-tracked ad changes at most once — a MIN() scan per
+    # serialized ad is wasteful. Cache briefly; invalidates itself.
+    Rails.cache.fetch('ads_sales_tracking_started_at', expires_in: 10.minutes) do
+      self.class.where(is_added_by_sales: true).minimum(:created_at)
+    end
   end
 
   # Google Merchant API integration methods
@@ -458,15 +463,35 @@ class Ad < ApplicationRecord
     )
   end
 
+  # The OfferAd currently governing price/discount badge — active or
+  # scheduled and not yet ended (scheduled offers show a "coming soon"
+  # badge but must not affect price until they start). Memoized so
+  # effective_price and the serializer's flash_sale_info share one lookup.
+  def current_offer_ad
+    return @current_offer_ad if defined?(@current_offer_ad)
+
+    @current_offer_ad = if association(:offer_ads).loaded?
+      candidates = offer_ads.select do |oa|
+        offer = oa.offer
+        offer && ['active', 'scheduled'].include?(offer.status) &&
+          offer.end_time >= Time.current
+      end
+      candidates.min_by { |oa| oa.offer.start_time }
+    else
+      offer_ads.joins(:offer)
+               .where(offers: { status: ['active', 'scheduled'] })
+               .where('offers.end_time >= ?', Time.current)
+               .order('offers.start_time ASC')
+               .first
+    end
+  end
+
   # Returns the current price, taking into account active discounts/flash sales
   def effective_price
-    # Check for active or scheduled offer_ads that are currently within time bounds
-    active_offer = offer_ads.joins(:offer)
-                            .where(offers: { status: ['active', 'scheduled'] })
-                            .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
-                            .first
-
-    discounted = active_offer&.discounted_price
+    offer_ad = current_offer_ad
+    # Scheduled offers that haven't started don't affect the price yet.
+    offer_ad = nil if offer_ad && offer_ad.offer.start_time > Time.current
+    discounted = offer_ad&.discounted_price
     return price if discounted.nil? || discounted <= 0 || discounted >= price
 
     discounted
@@ -624,6 +649,13 @@ class Ad < ApplicationRecord
 
   private
 
+  # Keep the denormalized ribbon flag in step with the seller's Brand Kenya
+  # status on create/reassign — admin-set flags on existing ads are preserved
+  # because this only runs when the seller linkage changes.
+  def sync_brand_kenya_flag
+    self.is_brand_kenya = seller&.brand_kenya? || false
+  end
+
   def price_tiers_shape
     price_tiers.each_with_index do |tier, index|
       unless tier.is_a?(Hash)
@@ -772,5 +804,10 @@ class Ad < ApplicationRecord
           Rails.cache.delete('buyer_categories_with_ads_count')
       Rails.cache.delete('buyer_category_analytics')
     Rails.cache.delete('buyer_subcategories_all')
+    Rails.cache.delete('buyer_subcategories_all_v2')
+    Rails.cache.delete('public_categories_with_ads_count')
+    Rails.cache.delete_matched("ads_random_pool_*")
+    Rails.cache.delete("similar_ads_#{id}")
+    Rails.cache.delete("seller_ads_count/#{seller_id}") if seller_id
   end
 end
