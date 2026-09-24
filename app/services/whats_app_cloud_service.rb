@@ -295,36 +295,67 @@ class WhatsAppCloudService
         value = change['value']
         next unless value
 
+        contacts = value['contacts']
+
         if value['messages']
           value['messages'].each do |msg_data|
-            Rails.logger.info "[WhatsAppCloudService] Processing message: #{msg_data['id']}"
-            process_incoming_message(msg_data, value['metadata'])
+            begin
+              Rails.logger.info "[WhatsAppCloudService] Processing message: #{msg_data['id']}"
+              process_incoming_message(msg_data, value['metadata'], contacts)
+            rescue => e
+              Rails.logger.error "[WhatsAppCloudService] Error processing message #{msg_data['id']}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+            end
           end
         end
 
         if value['statuses']
           value['statuses'].each do |status_data|
-            Rails.logger.info "[WhatsAppCloudService] Processing status: #{status_data['id']} -> #{status_data['status']}"
-            process_status_update(status_data)
+            begin
+              Rails.logger.info "[WhatsAppCloudService] Processing status: #{status_data['id']} -> #{status_data['status']}"
+              process_status_update(status_data)
+            rescue => e
+              Rails.logger.error "[WhatsAppCloudService] Error processing status #{status_data['id']}: #{e.message}"
+            end
           end
         end
       end
     end
   end
 
-  def self.process_incoming_message(msg_data, metadata)
+  def self.process_incoming_message(msg_data, metadata, contacts = nil)
     from_number = msg_data['from']
     # official WhatsApp numbers come with country code, e.g., 254716404137
     # Our DB stores them as 0716404137 (10 digits)
-    local_number = from_number.start_with?('254') ? "0#{from_number[3..]}" : from_number
+    local_number = (from_number.to_s.start_with?('254') && from_number.to_s.length == 12) ? "0#{from_number[3..]}" : from_number.to_s
 
     Rails.logger.info "[WhatsAppCloudService] Incoming message from: #{from_number} (local: #{local_number}), type: #{msg_data['type']}"
 
-    # Try to find a user
-    user = Buyer.find_by(phone_number: local_number) || Seller.find_by(phone_number: local_number)
+    # Try to find a user (Buyer, Seller, or SalesUser)
+    user = Buyer.find_by(phone_number: local_number) ||
+           Buyer.find_by(phone_number: from_number) ||
+           Seller.find_by(phone_number: local_number) ||
+           Seller.find_by(phone_number: from_number)
+
+    # If the phone belongs to a SalesUser, resolve to their linked Buyer/Seller account or create one
+    if !user
+      sales_user = SalesUser.find_by(phone_number: local_number) || SalesUser.find_by(phone_number: from_number)
+      if sales_user
+        user = Seller.find_by(email: sales_user.email) ||
+               Buyer.find_by(email: sales_user.email) ||
+               find_or_create_whatsapp_buyer(from_number, local_number, sales_user.fullname, email: sales_user.email)
+      end
+    end
+
+    # If still not found, support anyone texting! Auto-create a guest Buyer profile for them
+    unless user
+      contact_name = contacts&.find { |c| c['wa_id'] == from_number }&.dig('profile', 'name').presence ||
+                     contacts&.first&.dig('profile', 'name').presence ||
+                     "WhatsApp User"
+      user = find_or_create_whatsapp_buyer(from_number, local_number, contact_name)
+    end
 
     unless user
-      Rails.logger.warn "[WhatsAppCloudService] Received message from unknown number: #{from_number} (local: #{local_number})"
+      Rails.logger.error "[WhatsAppCloudService] Could not resolve or create user for: #{from_number} (local: #{local_number})"
       return
     end
 
@@ -511,6 +542,55 @@ class WhatsAppCloudService
       Rails.logger.error "[WhatsAppCloudService] Media processing failed: #{e.message}"
       nil
     end
+  end
+
+  def self.find_or_create_whatsapp_buyer(from_number, local_number, contact_name = "WhatsApp User", email: nil)
+    # Check if already created by uid or phone
+    buyer = Buyer.find_by(provider: 'whatsapp', uid: from_number.to_s) ||
+            (local_number.present? && Buyer.find_by(phone_number: local_number.to_s)) ||
+            Buyer.find_by(phone_number: from_number.to_s)
+    return buyer if buyer
+
+    phone = (local_number.to_s =~ /\A\d{10}\z/) ? local_number.to_s : from_number.to_s
+    safe_name = contact_name.to_s.strip.presence || "WhatsApp User"
+
+    # Generate clean base username (3-20 chars)
+    slug_name = safe_name.downcase.gsub(/[^a-z0-9]/, '')
+    slug_name = "wa#{phone}" if slug_name.length < 3
+    base_username = slug_name[0..14]
+
+    username = base_username
+    counter = 1
+    while Buyer.exists?(username: username) || Seller.exists?(username: username)
+      username = "#{base_username[0..13]}#{counter}"
+      counter += 1
+      break if counter > 100
+    end
+
+    buyer_email = email.presence || "wa_#{from_number}@whatsapp.carboncube-ke.com"
+    if Buyer.exists?(email: buyer_email) || Seller.exists?(email: buyer_email)
+      buyer_email = "wa_#{from_number}_#{SecureRandom.hex(3)}@whatsapp.carboncube-ke.com"
+    end
+
+    buyer = Buyer.new(
+      fullname: safe_name,
+      username: username,
+      phone_number: phone,
+      email: buyer_email,
+      provider: 'whatsapp',
+      uid: from_number.to_s
+    )
+
+    if buyer.save
+      Rails.logger.info "[WhatsAppCloudService] Auto-created guest Buyer #{buyer.id} for WhatsApp number #{from_number} (#{safe_name})"
+      buyer
+    else
+      Rails.logger.error "[WhatsAppCloudService] Failed to auto-create Buyer: #{buyer.errors.full_messages.join(', ')}"
+      Buyer.find_by(phone_number: phone) || Buyer.find_by(email: buyer_email)
+    end
+  rescue => e
+    Rails.logger.error "[WhatsAppCloudService] Exception creating guest Buyer: #{e.message}"
+    nil
   end
 
   def self.find_or_create_incoming_conversation(user)

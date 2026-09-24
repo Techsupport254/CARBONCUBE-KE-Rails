@@ -252,19 +252,15 @@ class Message < ApplicationRecord
     end
   end
 
-  # Send WhatsApp notification to recipient (sellers only)
+  # Send WhatsApp notification to recipient
   def send_message_notification_whatsapp
     recipient = get_recipient
     return unless recipient
-    return unless recipient.is_a?(Seller)
-    
-    # Don't send if recipient is online
-    return if is_recipient_online?(recipient)
     
     # Don't send to self
     return if sender == recipient
 
-    # If it is a WhatsApp-initiated conversation, send directly
+    # If it is a WhatsApp-initiated conversation, send directly to whoever is on the thread (Buyer or Seller)
     if conversation.is_whatsapp?
       # Only send if we do not have a whatsapp_message_id yet (prevent loops)
       return if whatsapp_message_id.present?
@@ -285,6 +281,11 @@ class Message < ApplicationRecord
         update_column(:status, STATUS_DELIVERED)
       end
     else
+      # Regular in-app conversation — notifications sent to sellers only
+      return unless recipient.is_a?(Seller)
+
+      # Don't send if recipient is online
+      return if is_recipient_online?(recipient)
       # Regular in-app conversation — throttle to one WA ping per conversation per hour
       # so the seller isn't spammed every time the buyer types a message.
       throttle_key = "wa_ping_conv_#{conversation.id}"

@@ -394,7 +394,7 @@ class MessagesController < ApplicationController
     is_buyer_seller = @conversation.buyer_id.present? && @conversation.seller_id.present?
     is_seller_to_seller = @conversation.seller_id.present? && @conversation.inquirer_seller_id.present?
     is_support_thread = @conversation.buyer_id.nil? && (@conversation.admin_id.present? || @conversation.is_whatsapp?)
-    is_buyer_support = @conversation.seller_id.nil? && @conversation.buyer_id.present? && @conversation.admin_id.present?
+    is_buyer_support = @conversation.seller_id.nil? && @conversation.buyer_id.present? && (@conversation.admin_id.present? || @conversation.is_whatsapp?)
 
     related_conv_ids = [@conversation.id]
 
@@ -418,7 +418,7 @@ class MessagesController < ApplicationController
     elsif is_buyer_support
       # Admin-to-Buyer support threads for this buyer
       admin_buyer_convs = Conversation.where(buyer_id: @conversation.buyer_id, seller_id: nil)
-                                     .where.not(admin_id: nil)
+                                     .where("admin_id IS NOT NULL OR is_whatsapp = true")
                                      .pluck(:id)
       related_conv_ids.concat(admin_buyer_convs)
     else
