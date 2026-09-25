@@ -323,16 +323,26 @@ class WhatsAppCloudService
   end
 
   def self.process_incoming_message(msg_data, metadata, contacts = nil)
-    # Skip unsupported messages (Meta album header stubs, unsupported event types, etc.)
-    if msg_data['type'] == 'unsupported' || msg_data['type'].blank?
-      Rails.logger.info "[WhatsAppCloudService] Skipping unsupported message event #{msg_data['id']} (type: #{msg_data['type']})"
-      return
-    end
-
     from_number = msg_data['from']
     # official WhatsApp numbers come with country code, e.g., 254716404137
     # Our DB stores them as 0716404137 (10 digits)
     local_number = (from_number.to_s.start_with?('254') && from_number.to_s.length == 12) ? "0#{from_number[3..]}" : from_number.to_s
+
+    # WhatsApp Album Header Handling:
+    # When multiple images are sent as an album from WhatsApp, Meta emits an "unsupported" message
+    # with error code 131051 ("Message type unknown" / "Message type is currently not supported.")
+    # followed immediately by individual image webhooks sharing the same timestamp.
+    if msg_data['type'] == 'unsupported' || msg_data['type'].blank?
+      if msg_data['errors']&.any? { |e| e['code'].to_i == 131051 }
+        album_ts = msg_data['timestamp'].to_i
+        Rails.cache.write("wa_album:#{from_number}", { timestamp: album_ts, at: Time.current.to_i }, expires_in: 45.seconds)
+        Rails.cache.write("wa_album:#{local_number}", { timestamp: album_ts, at: Time.current.to_i }, expires_in: 45.seconds)
+        Rails.logger.info "[WhatsAppCloudService] Recorded WhatsApp album marker for #{from_number} (timestamp: #{album_ts})"
+      else
+        Rails.logger.info "[WhatsAppCloudService] Skipping unsupported message event #{msg_data['id']} (type: #{msg_data['type']})"
+      end
+      return
+    end
 
     Rails.logger.info "[WhatsAppCloudService] Incoming message from: #{from_number} (local: #{local_number}), type: #{msg_data['type']}"
 
@@ -391,28 +401,47 @@ class WhatsAppCloudService
     conversation.with_lock do
       last_message = conversation.messages.order(created_at: :desc, id: :desc).first
 
-      has_media = content.include?('![') || content.include?('[Video') ||
-                  (last_message&.content.present? && (last_message.content.include?('![') || last_message.content.include?('[Video')))
+      album_msg_id = Rails.cache.read("wa_album_msg:#{conversation.id}")
+      target_message = (album_msg_id && conversation.messages.find_by(id: album_msg_id)) || last_message
 
-      can_merge = last_message &&
-                  last_message.sender_type == user.class.name &&
-                  last_message.sender_id == user.id &&
-                  last_message.created_at >= 15.seconds.ago &&
-                  has_media
+      current_meta_ts = msg_data['timestamp'].to_s
+      last_meta_ts = Rails.cache.read("wa_last_meta_ts:#{conversation.id}").to_s
+      album_marker = Rails.cache.read("wa_album:#{from_number}") || Rails.cache.read("wa_album:#{local_number}")
+
+      is_media_message = content.include?('![') || content.include?('[Video')
+
+      # An image is part of an album if and only if:
+      # 1. An album header (error 131051) was received within the last 45s and its timestamp matches current timestamp (within 3 seconds)
+      # 2. OR the previous message in this conversation was received within the last 45s with the EXACT SAME WhatsApp timestamp.
+      is_album = false
+      if is_media_message
+        if album_marker.present? && (album_marker[:timestamp].to_i - current_meta_ts.to_i).abs <= 3
+          is_album = true
+        elsif last_meta_ts.present? && last_meta_ts == current_meta_ts
+          is_album = true
+        end
+      end
+
+      can_merge = is_album &&
+                  target_message &&
+                  target_message.sender_type == user.class.name &&
+                  target_message.sender_id == user.id &&
+                  target_message.created_at >= 45.seconds.ago &&
+                  (target_message.content.to_s.include?('![') || target_message.content.to_s.include?('[Video'))
 
       if can_merge
         # Avoid duplicate appends (retries, duplicate webhooks)
-        unless last_message.content.include?(content) || (msg_data['id'].present? && last_message.whatsapp_message_id == msg_data['id'])
-          new_content = "#{last_message.content}\n\n#{content}".strip
-          last_message.update!(content: new_content)
+        unless target_message.content.include?(content) || (msg_data['id'].present? && target_message.whatsapp_message_id == msg_data['id'])
+          new_content = "#{target_message.content}\n\n#{content}".strip
+          target_message.update!(content: new_content)
           conversation.touch
-          last_message.broadcast_new_message
+          target_message.broadcast_new_message
           begin
-            UpdateUnreadCountsJob.perform_later(conversation.id, last_message.id)
+            UpdateUnreadCountsJob.perform_later(conversation.id, target_message.id)
           rescue StandardError => e
             Rails.logger.warn "[WhatsAppCloudService] Failed to schedule unread counts update: #{e.message}"
           end
-          Rails.logger.info "[WhatsAppCloudService] Merged incoming WhatsApp message #{msg_data['id']} into message ID=#{last_message.id}"
+          Rails.logger.info "[WhatsAppCloudService] Merged incoming WhatsApp message #{msg_data['id']} into album message ID=#{target_message.id}"
         end
       else
         message = conversation.messages.build(
@@ -423,6 +452,10 @@ class WhatsAppCloudService
         )
 
         if message.save
+          if is_media_message
+            Rails.cache.write("wa_album_msg:#{conversation.id}", message.id, expires_in: 45.seconds)
+            Rails.cache.write("wa_last_meta_ts:#{conversation.id}", current_meta_ts, expires_in: 45.seconds)
+          end
           Rails.logger.info "[WhatsAppCloudService] Saved incoming message ID=#{message.id} from #{user.class.name} #{user.id} in conversation #{conversation.id}"
         else
           Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
