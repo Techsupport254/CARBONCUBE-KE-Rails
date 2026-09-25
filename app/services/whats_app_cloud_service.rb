@@ -405,22 +405,17 @@ class WhatsAppCloudService
       target_message = (album_msg_id && conversation.messages.find_by(id: album_msg_id)) || last_message
 
       current_meta_ts = msg_data['timestamp'].to_s
-      last_meta_ts = Rails.cache.read("wa_last_meta_ts:#{conversation.id}").to_s
       album_marker = Rails.cache.read("wa_album:#{from_number}") || Rails.cache.read("wa_album:#{local_number}")
 
       is_media_message = content.include?('![') || content.include?('[Video')
+      is_forwarded = msg_data.dig('context', 'forwarded').present? || msg_data.dig('context', 'frequently_forwarded').present?
 
-      # An image is part of an album if and only if:
-      # 1. An album header (error 131051) was received within the last 45s and its timestamp matches current timestamp (within 3 seconds)
-      # 2. OR the previous message in this conversation was received within the last 45s with the EXACT SAME WhatsApp timestamp.
-      is_album = false
-      if is_media_message
-        if album_marker.present? && (album_marker[:timestamp].to_i - current_meta_ts.to_i).abs <= 3
-          is_album = true
-        elsif last_meta_ts.present? && last_meta_ts == current_meta_ts
-          is_album = true
-        end
-      end
+      # An image is part of an album ONLY if:
+      # 1. It is NOT a forwarded message (forwarded messages in WhatsApp are always individual bubbles)
+      # 2. AND an authentic Meta album container header (error 131051) was received for this sender matching this send action.
+      # We intentionally do NOT merge based on identical timestamps alone, ensuring forwarded or rapidly sent separate images never get combined.
+      is_album = is_media_message && !is_forwarded && album_marker.present? &&
+                 (album_marker[:timestamp].to_i - current_meta_ts.to_i).abs <= 3
 
       can_merge = is_album &&
                   target_message &&
@@ -452,9 +447,8 @@ class WhatsAppCloudService
         )
 
         if message.save
-          if is_media_message
+          if is_media_message && is_album
             Rails.cache.write("wa_album_msg:#{conversation.id}", message.id, expires_in: 45.seconds)
-            Rails.cache.write("wa_last_meta_ts:#{conversation.id}", current_meta_ts, expires_in: 45.seconds)
           end
           Rails.logger.info "[WhatsAppCloudService] Saved incoming message ID=#{message.id} from #{user.class.name} #{user.id} in conversation #{conversation.id}"
         else
