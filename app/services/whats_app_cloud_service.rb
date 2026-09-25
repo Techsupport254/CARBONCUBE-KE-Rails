@@ -323,6 +323,12 @@ class WhatsAppCloudService
   end
 
   def self.process_incoming_message(msg_data, metadata, contacts = nil)
+    # Skip unsupported messages (Meta album header stubs, unsupported event types, etc.)
+    if msg_data['type'] == 'unsupported' || msg_data['type'].blank?
+      Rails.logger.info "[WhatsAppCloudService] Skipping unsupported message event #{msg_data['id']} (type: #{msg_data['type']})"
+      return
+    end
+
     from_number = msg_data['from']
     # official WhatsApp numbers come with country code, e.g., 254716404137
     # Our DB stores them as 0716404137 (10 digits)
@@ -364,33 +370,14 @@ class WhatsAppCloudService
     # Extract content and media URLs
     content, media_urls = extract_message_content(msg_data)
 
+    if content.blank?
+      Rails.logger.info "[WhatsAppCloudService] Skipping message #{msg_data['id']} with empty content"
+      return
+    end
+
     Rails.logger.info "[WhatsAppCloudService] Extracted content: #{content&.truncate(200)} (media_urls: #{media_urls&.length})"
     
-    # Product creation logic disabled - not complete yet
-    # # Check if this is a seller using product creation commands
-    # if user.is_a?(Seller)
-    #   product_creation_result = WhatsappProductCreationService.process_message(
-    #     user,
-    #     local_number,
-    #     content,
-    #     media_urls
-    #   )
-    #   
-    #   if product_creation_result.is_a?(Hash) && product_creation_result[:should_respond]
-    #     send_message(from_number, product_creation_result[:response])
-    #     Rails.logger.info "[WhatsAppCloudService] Sent product creation response to seller #{user.id}"
-    #     
-    #     # Handle interactive category selection trigger
-    #     if product_creation_result[:trigger_category_selection]
-    #       category_result = WhatsappProductCreationService.send_category_selection(from_number)
-    #       Rails.logger.info "[WhatsAppCloudService] Category selection triggered: #{category_result}"
-    #     end
-    #   end
-    # end
-
     # Find or create a conversation
-    # For now, we'll try to find the most recent conversation for this user
-    # or create a new one with a default admin/support if it's a general inquiry
     conversation = find_or_create_incoming_conversation(user)
 
     unless conversation
@@ -400,26 +387,56 @@ class WhatsAppCloudService
 
     Rails.logger.info "[WhatsAppCloudService] Conversation: #{conversation.id} (buyer: #{conversation.buyer_id}, seller: #{conversation.seller_id})"
 
-    # Create the message
-    # We skip callbacks that might trigger an infinite loop (sending back a notification)
-    message = conversation.messages.build(
-      content: content,
-      sender: user,
-      whatsapp_message_id: msg_data['id'],
-      status: Message::STATUS_SENT # Meta already sent it to us
-    )
+    # Concurrency safe message creation & aggregation
+    conversation.with_lock do
+      last_message = conversation.messages.order(created_at: :desc, id: :desc).first
 
-    if message.save
-      Rails.logger.info "[WhatsAppCloudService] Saved incoming message ID=#{message.id} from #{user.class.name} #{user.id} in conversation #{conversation.id}"
-    else
-      Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
+      has_media = content.include?('![') || content.include?('[Video') ||
+                  (last_message&.content.present? && (last_message.content.include?('![') || last_message.content.include?('[Video')))
+
+      can_merge = last_message &&
+                  last_message.sender_type == user.class.name &&
+                  last_message.sender_id == user.id &&
+                  last_message.created_at >= 15.seconds.ago &&
+                  has_media
+
+      if can_merge
+        # Avoid duplicate appends (retries, duplicate webhooks)
+        unless last_message.content.include?(content) || (msg_data['id'].present? && last_message.whatsapp_message_id == msg_data['id'])
+          new_content = "#{last_message.content}\n\n#{content}".strip
+          last_message.update!(content: new_content)
+          conversation.touch
+          last_message.broadcast_new_message
+          begin
+            UpdateUnreadCountsJob.perform_later(conversation.id, last_message.id)
+          rescue StandardError => e
+            Rails.logger.warn "[WhatsAppCloudService] Failed to schedule unread counts update: #{e.message}"
+          end
+          Rails.logger.info "[WhatsAppCloudService] Merged incoming WhatsApp message #{msg_data['id']} into message ID=#{last_message.id}"
+        end
+      else
+        message = conversation.messages.build(
+          content: content,
+          sender: user,
+          whatsapp_message_id: msg_data['id'],
+          status: Message::STATUS_SENT
+        )
+
+        if message.save
+          Rails.logger.info "[WhatsAppCloudService] Saved incoming message ID=#{message.id} from #{user.class.name} #{user.id} in conversation #{conversation.id}"
+        else
+          Rails.logger.error "[WhatsAppCloudService] Failed to save message: #{message.errors.full_messages.join(', ')}"
+        end
+      end
     end
   end
   
   def self.extract_message_content(msg_data)
+    media_urls = []
+    
     content = case msg_data['type']
               when 'text'
-                msg_data['text']['body']
+                msg_data.dig('text', 'body')
               when 'interactive'
                 # Handle interactive button responses
                 if msg_data['interactive']['type'] == 'button_reply'
@@ -434,16 +451,17 @@ class WhatsAppCloudService
               when 'image', 'video'
                 media_data = msg_data[msg_data['type']]
                 media_id = media_data['id']
-                caption = media_data['caption']
+                caption = media_data['caption']&.strip
                 
-                # Attempt to download and upload to Cloudinary
+                # Download and upload to Cloudinary once
                 url = download_and_upload_media(media_id, msg_data['type'])
+                media_urls << url if url
                 if url
+                  clean_caption = caption.present? ? caption.tr('[]', '()').gsub(/\r?\n+/, ' - ').strip : nil
                   if msg_data['type'] == 'image'
-                    caption.present? ? "![#{caption}](#{url})\n\n#{caption}" : "![Image](#{url})"
+                    clean_caption.present? ? "![#{clean_caption}](#{url})" : "![Image](#{url})"
                   else
-                    # For video, we can store it as a link or a special markdown if the frontend handles it
-                    caption.present? ? "[Video: #{caption}](#{url})\n\n#{caption}" : "[Video Message](#{url})"
+                    clean_caption.present? ? "[Video: #{clean_caption}](#{url})" : "[Video Message](#{url})"
                   end
                 else
                   "[Message type: #{msg_data['type']}]"
@@ -454,35 +472,15 @@ class WhatsAppCloudService
               when 'audio'
                 "[Audio Message]"
               when 'sticker'
-                "![Sticker](#{download_and_upload_media(msg_data['sticker']['id'], 'image')})"
+                sticker_url = download_and_upload_media(msg_data.dig('sticker', 'id'), 'image')
+                media_urls << sticker_url if sticker_url
+                sticker_url ? "![Sticker](#{sticker_url})" : "[Sticker]"
               when 'system'
                 msg_data.dig('system', 'body') || '[System message]'
               else
-                "[Unsupported Message: #{msg_data['type']}]"
+                nil
               end
-    
-    # Extract media URLs for product creation
-    media_urls = []
-    image_caption = nil
-    
-    if ['image', 'video'].include?(msg_data['type'])
-      media_data = msg_data[msg_data['type']]
-      media_id = media_data['id']
-      url = download_and_upload_media(media_id, msg_data['type'])
-      media_urls << url if url
-      
-      # Extract image caption if present
-      image_caption = media_data['caption'] if media_data['caption']
-    end
-    
-    # If there's an image caption, use it as the content (for product details)
-    if image_caption && content.blank?
-      content = image_caption
-    elsif image_caption && content.present?
-      # Combine caption with existing content
-      content = "#{content}\n\nCaption: #{image_caption}"
-    end
-    
+
     [content, media_urls]
   end
 
