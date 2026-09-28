@@ -15,8 +15,8 @@ class ProcessReadReceiptJob < ApplicationJob
       return
     end
     
-    # Find the reader - try buyer first, then seller, then admin
-    reader = Buyer.find_by(id: reader_user_id) || Seller.find_by(id: reader_user_id) || Admin.find_by(id: reader_user_id)
+    # Find the reader - try buyer first, then seller, then admin, then sales user
+    reader = Buyer.find_by(id: reader_user_id) || Seller.find_by(id: reader_user_id) || Admin.find_by(id: reader_user_id) || SalesUser.find_by(id: reader_user_id)
     
     unless reader
       Rails.logger.warn "Reader not found: #{reader_user_id}"
@@ -30,10 +30,24 @@ class ProcessReadReceiptJob < ApplicationJob
       Rails.logger.info "Skipping read receipt for own message"
       return
     end
+
+    # If reader is staff (Admin, SalesUser, MarketingUser) and conversation is peer-to-peer, do NOT mark as read!
+    if reader.is_a?(Admin) || reader.is_a?(SalesUser) || (defined?(MarketingUser) && reader.is_a?(MarketingUser))
+      conv = message.conversation
+      is_peer_to_peer = conv && ((conv.buyer_id.present? && conv.seller_id.present?) ||
+                                 (conv.seller_id.present? && conv.inquirer_seller_id.present?))
+      if is_peer_to_peer
+        Rails.logger.info "Skipping read receipt: staff viewing peer-to-peer conversation"
+        return
+      end
+    end
     
     # Update message read status
     message.update!(status: 'read', read_at: Time.current)
     Rails.logger.info "Updated message status to: #{message.status}"
+
+    # Cancel unread message reminders for this recipient
+    UnreadMessageReminderService.cancel_reminders(message.conversation_id, reader.id)
     
     # Set Redis data
     read_key = "message_read:#{message.id}:#{reader.id}"

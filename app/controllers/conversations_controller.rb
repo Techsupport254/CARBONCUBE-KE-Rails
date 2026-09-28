@@ -222,10 +222,21 @@ class ConversationsController < ApplicationController
       return
     end
 
-    # Staff (Admin, SalesUser, MarketingUser) can mark any conversation they view as read
+    # Staff (Admin, SalesUser, MarketingUser) can only mark support conversations as read.
+    # When observing peer-to-peer conversations (between buyer and seller, or two sellers),
+    # staff must NOT mark messages as read.
     staff_types = %w[Admin SalesUser MarketingUser]
     if staff_types.include?(@current_user.class.name)
-      # Staff authorized to view and mark read
+      is_peer_to_peer = (@conversation.buyer_id.present? && @conversation.seller_id.present?) ||
+                         (@conversation.seller_id.present? && @conversation.inquirer_seller_id.present?)
+      if is_peer_to_peer
+        render json: { 
+          success: true, 
+          processed_count: 0,
+          message: "Staff viewing peer-to-peer conversation; messages not marked as read" 
+        }
+        return
+      end
     end
 
     unread_messages = @conversation.messages.unread.where.not(sender: @current_user).to_a
@@ -239,6 +250,9 @@ class ConversationsController < ApplicationController
 
     # Update unread counts once for the conversation
     UpdateUnreadCountsJob.perform_later(@conversation.id, unread_messages.last.id) if processed_count > 0
+
+    # Cancel any pending unread message reminders for this conversation & user
+    UnreadMessageReminderService.cancel_reminders(@conversation.id, @current_user.id) if processed_count > 0
 
     render json: { 
       success: true, 

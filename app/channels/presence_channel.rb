@@ -311,6 +311,14 @@ class PresenceChannel < ApplicationCable::Channel
       conversation = Conversation.find_by(id: conversation_id)
       return unless conversation
 
+      # If current user is staff and it's a peer-to-peer conversation, do NOT mark as read
+      current_u = connection.current_user
+      if current_u.is_a?(Admin) || current_u.is_a?(SalesUser) || (defined?(MarketingUser) && current_u.is_a?(MarketingUser))
+        is_peer_to_peer = (conversation.buyer_id.present? && conversation.seller_id.present?) ||
+                           (conversation.seller_id.present? && conversation.inquirer_seller_id.present?)
+        return if is_peer_to_peer
+      end
+
       # Mark all unread messages in this conversation as read
       unread_messages = conversation.messages.unread.where.not(sender: connection.current_user)
       
@@ -318,6 +326,9 @@ class PresenceChannel < ApplicationCable::Channel
         message.mark_as_read!
         broadcast_read_receipt(message)
       end
+
+      # Cancel unread message reminders for this recipient
+      UnreadMessageReminderService.cancel_reminders(conversation.id, connection.current_user.id) if unread_messages.any?
     rescue => e
     end
   end
@@ -331,12 +342,24 @@ class PresenceChannel < ApplicationCable::Channel
       
       # Don't mark your own messages as read
       return if message.sender == connection.current_user
+
+      # If current user is staff and it's a peer-to-peer conversation, do NOT mark as read
+      current_u = connection.current_user
+      if current_u.is_a?(Admin) || current_u.is_a?(SalesUser) || (defined?(MarketingUser) && current_u.is_a?(MarketingUser))
+        conv = message.conversation
+        is_peer_to_peer = conv && ((conv.buyer_id.present? && conv.seller_id.present?) ||
+                                   (conv.seller_id.present? && conv.inquirer_seller_id.present?))
+        return if is_peer_to_peer
+      end
       
       # Update message read status
       message.mark_as_read!
       
       # Broadcast read receipt to sender
       broadcast_read_receipt(message)
+
+      # Cancel unread message reminders for this recipient
+      UnreadMessageReminderService.cancel_reminders(message.conversation_id, connection.current_user.id)
     rescue => e
     end
   end

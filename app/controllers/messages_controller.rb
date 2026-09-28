@@ -24,6 +24,23 @@ class MessagesController < ApplicationController
       message = find_message_for_status_update(message_id)
       
       if message && message.sender != @current_user
+        # Staff (Admin, SalesUser, MarketingUser) can only mark support messages as read.
+        # For peer-to-peer messages (buyer <-> seller or seller <-> seller), staff is merely observing.
+        if %w[Admin SalesUser MarketingUser].include?(@current_user.class.name)
+          conv = message.conversation || @conversation
+          is_peer_to_peer = conv && ((conv.buyer_id.present? && conv.seller_id.present?) ||
+                                     (conv.seller_id.present? && conv.inquirer_seller_id.present?))
+          if is_peer_to_peer
+            render json: { 
+              success: true, 
+              message_id: message.id, 
+              status: message.status_text,
+              note: 'Staff viewing peer-to-peer conversation; read receipt skipped' 
+            }
+            return
+          end
+        end
+
         message.mark_as_read!
         
         # Broadcast read receipt via WebSocket
@@ -31,6 +48,9 @@ class MessagesController < ApplicationController
         
         # Update unread counts for all participants after marking as read
         UpdateUnreadCountsJob.perform_later(@conversation.id, message.id)
+        
+        # Cancel any pending unread message reminders for this conversation & user
+        UnreadMessageReminderService.cancel_reminders(@conversation.id, @current_user.id)
         
         render json: { 
           success: true, 

@@ -119,12 +119,14 @@ class Sales::ConversationsController < ApplicationController
         related_conv_ids.concat(admin_buyer_convs)
       end
       
-      # Mark messages as read when conversation is opened
-      # Only mark messages from sellers/buyers as read
-      Message.where(conversation_id: related_conv_ids.uniq)
-             .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-             .where(read_at: nil)
-             .update_all(read_at: Time.current)
+      # Mark messages as read when support conversation is opened by sales staff
+      # Only mark messages from sellers/buyers as read in support threads, never in peer-to-peer deals
+      if is_support_thread || is_buyer_support
+        Message.where(conversation_id: related_conv_ids.uniq)
+               .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
+               .where(read_at: nil)
+               .update_all(read_at: Time.current)
+      end
       
       # Get all messages from all conversations in this set
       all_messages = Message.where(conversation_id: related_conv_ids.uniq).order(created_at: :asc)
