@@ -203,8 +203,8 @@ class ImageAnalysisService
       'chair' => 'Hardware',
       'table' => 'Hardware',
       'sofa' => 'Hardware',
-      'tv' => 'TVs & Home Entertainment',
-      'television' => 'TVs & Home Entertainment',
+      'tv' => 'TVs & Audio and Electronics',
+      'television' => 'TVs & Audio and Electronics',
       'camera' => 'Computers, Phones and Accessories',
       'watch' => 'Computers, Phones and Accessories'
     }

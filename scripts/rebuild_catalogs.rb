@@ -58,7 +58,10 @@ phones = []
 
 tablet_keywords = %w[tab pad tablet slate note-pro notepro]
 watch_keywords = %w[watch band fit tracker w1 w2 w3 w4 w5] 
-laptop_keywords = %w[book laptop macbook chromebook envy x360 pavilion ideapad thinkpad inspire precision alienware]
+laptop_keywords = %w[book laptop macbook chromebook envy x360 pavilion ideapad thinkpad inspiron precision alienware
+                     latitude vostro xps aspire nitro swift predator travelmate extensa victus omen legion yoga
+                     rog tuf strix aorus aero gram matebook katana stealth prestige modern vector raider creator
+                     summit titan thin cyborg vivobook zenbook]
 tv_keywords = %w[tv vision viera bravia aquos qled oled crystal]
 
 data.each do |device|
@@ -70,12 +73,15 @@ data.each do |device|
     ipads << device
   elsif ['Lubricants', 'Rims', 'Spare Parts', 'Accessories', 'Tyres', 'Batteries'].include?(device['subcategory'])
     automotive << device
-  elsif laptop_keywords.any? { |kw| title.include?(kw) }
-    laptops << device
-  elsif device['category'] == 'TVs & Home Entertainment'
-    tvs << device
-  elsif device['category'] == 'Computers, Phones and Accessories' && device['specifications'] && device['specifications']['Form Factor']
+  elsif device['category'] == 'Computers, Phones and Accessories' && device['specifications'].is_a?(Hash) && device['specifications']['Form Factor']
+    # Check desktops first: XPS/Vostro also name desktop lines
     computers << device
+  elsif laptop_keywords.any? { |kw| title.include?(kw) } ||
+        (device['specifications'].is_a?(Hash) && device['specifications'].key?('Model Name'))
+    # Laptop-schema rows (Model Name spec key) must never fall through to phones
+    laptops << device
+  elsif ['TVs & Home Entertainment', 'TVs & Audio and Electronics'].include?(device['category'])
+    tvs << device
   elsif device['subcategory'] == 'computers' && brand == 'apple'
     computers << device
   elsif device['category'] == 'Automotive Parts & Accessories'

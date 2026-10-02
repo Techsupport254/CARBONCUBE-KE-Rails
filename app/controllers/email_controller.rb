@@ -147,6 +147,37 @@ class EmailController < ApplicationController
     render json: { exists: false, error: 'Internal server error' }, status: :internal_server_error
   end
 
+  # POST /carbon_code/check
+  # Public pre-check so signup forms can validate a sales/carbon code before
+  # submitting. Mirrors the validation in Seller::SellersController#create.
+  def carbon_code_check
+    code = params[:carbon_code]&.to_s&.strip
+
+    if code.blank?
+      return render json: { valid: false, error: 'Carbon code is required' }, status: :bad_request
+    end
+
+    carbon_code = CarbonCode.find_by('UPPER(TRIM(code)) = ?', code.upcase)
+
+    if carbon_code.nil?
+      return render json: { valid: false, error: 'Carbon code is invalid.' }, status: :ok
+    end
+
+    unless carbon_code.valid_for_use?
+      message = if carbon_code.expired?
+                  'This Carbon code has expired.'
+                else
+                  'This Carbon code has reached its usage limit.'
+                end
+      return render json: { valid: false, error: message }, status: :ok
+    end
+
+    render json: { valid: true }, status: :ok
+  rescue => e
+    Rails.logger.error "Carbon code check error: #{e.message}"
+    render json: { valid: false, error: 'Internal server error' }, status: :internal_server_error
+  end
+
   # POST /business_number/exists
   def business_number_exists
     business_number = params[:business_number]&.strip

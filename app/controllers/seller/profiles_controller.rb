@@ -271,7 +271,10 @@ class Seller::ProfilesController < ApplicationController
 
   def pending_registration
     pending_token = params[:pending_token].to_s
-    pending_data = Rails.cache.read("pending_google_registration_#{pending_token}") if pending_token.present?
+    if pending_token.present?
+      pending_data = Rails.cache.read("pending_google_registration_#{pending_token}") ||
+                     Rails.cache.read("pending_seller_registration_#{pending_token}")
+    end
 
     unless pending_data.is_a?(Hash) && pending_data[:role].to_s.casecmp?("seller")
       return render json: { error: "Pending registration not found or expired" }, status: :not_found
@@ -308,6 +311,13 @@ class Seller::ProfilesController < ApplicationController
         # A pending token is a 64-character hex string without dots (unlike JWT which has dots)
         cache_key = "pending_google_registration_#{token_val}"
         pending_data = Rails.cache.read(cache_key)
+
+        unless pending_data.is_a?(Hash) && pending_data[:role].to_s.casecmp?("seller")
+          # Password signups stash their deferred registration under a
+          # dedicated key — no account exists until onboarding completes.
+          cache_key = "pending_seller_registration_#{token_val}"
+          pending_data = Rails.cache.read(cache_key)
+        end
 
         if pending_data.present? && pending_data.is_a?(Hash) && pending_data[:role].to_s.casecmp?("seller")
           cached_data = pending_data.with_indifferent_access
@@ -372,6 +382,21 @@ class Seller::ProfilesController < ApplicationController
       params[:profile][:carbon_code_id] = carbon_code_record.id
     end
 
+    # A pending registration can go stale if someone else claims the email
+    # between signup and onboarding completion — re-check before creating.
+    if seller.nil? && cached_data.present?
+      conflict_email = cached_data[:email].to_s.downcase.strip
+      if Buyer.exists?(email: conflict_email) || Seller.exists?(email: conflict_email)
+        return render json: { success: false, errors: ['Email is already in use'] }, status: :unprocessable_entity
+      end
+    end
+
+    # Password signups may have validated a carbon code during signup — fall
+    # back to it when the onboarding profile didn't supply one.
+    if params[:profile][:carbon_code_id].blank? && cached_data.present? && cached_data[:carbon_code_id].present?
+      params[:profile][:carbon_code_id] = cached_data[:carbon_code_id]
+    end
+
     @seller = nil
     @ad = nil
 
@@ -381,27 +406,40 @@ class Seller::ProfilesController < ApplicationController
         # This happens inside the transaction so a failure later on (e.g. ad
         # creation) rolls the seller creation back too, instead of leaving an
         # orphaned/incomplete seller record and burning the pending token.
-        base_name = cached_data[:name] || cached_data[:email].split('@').first
-        base_username = base_name.to_s.downcase.gsub(/[^a-z0-9]/, '').first(15)
-        username = base_username
-        counter = 1
-        while Seller.exists?(username: username) || Buyer.exists?(username: username)
-          username = "#{base_username}#{counter}"
-          counter += 1
+        username = cached_data[:username].to_s.strip.presence
+        if username.nil?
+          base_name = cached_data[:name] || cached_data[:email].split('@').first
+          base_username = base_name.to_s.downcase.gsub(/[^a-z0-9]/, '').first(15)
+          username = base_username
+          counter = 1
+          while Seller.exists?(username: username) || Buyer.exists?(username: username)
+            username = "#{base_username}#{counter}"
+            counter += 1
+          end
         end
 
-        seller = Seller.create!(
+        seller = Seller.new(
           fullname: cached_data[:name],
           email: cached_data[:email],
           username: username,
-          provider: cached_data[:provider] || 'google',
+          provider: cached_data[:provider],
           uid: cached_data[:uid],
           oauth_token: cached_data[:oauth_token],
           oauth_refresh_token: cached_data[:oauth_refresh_token],
           oauth_expires_at: cached_data[:oauth_expires_at],
           profile_picture: cached_data[:picture],
-          phone_number: params[:profile][:phone_number]
+          phone_number: params[:profile][:phone_number],
+          secondary_phone_number: cached_data[:secondary_phone_number],
+          document_url: cached_data[:document_url]
         )
+        # Password signups cached a bcrypt digest (verified at signup) instead
+        # of a raw password — apply it directly so the model's password
+        # validation doesn't reject the record.
+        seller.password_digest = cached_data[:password_digest] if cached_data[:password_digest].present?
+        seller.device_hash_for_association = cached_data[:device_hash] if cached_data[:device_hash].present?
+        # Not saved yet — @seller.assign_attributes + @seller.save below
+        # persists it once, with the onboarding profile fields already filled
+        # (password signups must satisfy the non-OAuth validations).
       end
 
       @seller = seller

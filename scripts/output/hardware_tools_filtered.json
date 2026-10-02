@@ -12,7 +12,8 @@
       "Speed": "0-2000 RPM",
       "Hammer Mode": "Yes",
       "Brand": "DeWalt"
-    }
+    },
+    "slug": "dewalt_dcd996b_20v_max_hammer_drill"
   },
   {
     "title": "DeWalt DCF887B 20V Max Impact Driver",
@@ -27,7 +28,8 @@
       "Speed": "0-3250 RPM",
       "Impacts": "0-3600 BPM",
       "Brand": "DeWalt"
-    }
+    },
+    "slug": "dewalt_dcf887b_20v_max_impact_driver"
   },
   {
     "title": "DeWalt DCS577B 7-1/4\" Circular Saw",
@@ -42,7 +44,8 @@
       "Speed": "5800 RPM",
       "Bevel": "0-57 degrees",
       "Brand": "DeWalt"
-    }
+    },
+    "slug": "dewalt_dcs577b_7_1_4_circular_saw"
   },
   {
     "title": "Makita XPH14Z 18V LXT Hammer Driver-Drill",
@@ -57,7 +60,8 @@
       "Speed": "0-2100 RPM",
       "Hammer Mode": "Yes",
       "Brand": "Makita"
-    }
+    },
+    "slug": "makita_xph14z_18v_lxt_hammer_driver_drill"
   },
   {
     "title": "Makita XDT16Z 18V LXT Impact Driver",
@@ -72,7 +76,8 @@
       "Speed": "0-3600 RPM",
       "Impacts": "0-4400 BPM",
       "Brand": "Makita"
-    }
+    },
+    "slug": "makita_xdt16z_18v_lxt_impact_driver"
   },
   {
     "title": "Makita XSS02Z 18V LXT Circular Saw 6-1/2\"",
@@ -87,7 +92,8 @@
       "Speed": "5000 RPM",
       "Bevel": "0-50 degrees",
       "Brand": "Makita"
-    }
+    },
+    "slug": "makita_xss02z_18v_lxt_circular_saw_6_1_2"
   },
   {
     "title": "Bosch GSR 18V-60 C 18V Brushless Drill",
@@ -102,7 +108,8 @@
       "Speed": "0-2100 RPM",
       "Motor": "Brushless",
       "Brand": "Bosch"
-    }
+    },
+    "slug": "bosch_gsr_18v_60_c_18v_brushless_drill"
   },
   {
     "title": "Bosch GKS 18V-57 G 18V Circular Saw",
@@ -117,7 +124,8 @@
       "Speed": "5500 RPM",
       "Motor": "Brushless",
       "Brand": "Bosch"
-    }
+    },
+    "slug": "bosch_gks_18v_57_g_18v_circular_saw"
   },
   {
     "title": "Milwaukee 2904-20 M18 Fuel Hammer Drill",
@@ -132,7 +140,8 @@
       "Speed": "0-2000 RPM",
       "Motor": "Brushless",
       "Brand": "Milwaukee"
-    }
+    },
+    "slug": "milwaukee_2904_20_m18_fuel_hammer_drill"
   },
   {
     "title": "Milwaukee 2953-20 M18 Fuel Impact Driver",
@@ -147,7 +156,8 @@
       "Speed": "0-3700 RPM",
       "Motor": "Brushless",
       "Brand": "Milwaukee"
-    }
+    },
+    "slug": "milwaukee_2953_20_m18_fuel_impact_driver"
   },
   {
     "title": "Stanley FatMax 25ft Tape Measure",
@@ -162,7 +172,8 @@
       "Standout": "11 feet",
       "Mylar Coating": "Yes",
       "Brand": "Stanley"
-    }
+    },
+    "slug": "stanley_fatmax_25ft_tape_measure"
   },
   {
     "title": "Stanley FatMax Hammer 20oz",
@@ -176,7 +187,8 @@
       "Head": "Forged Steel",
       "Grip": "Rubber",
       "Brand": "Stanley"
-    }
+    },
+    "slug": "stanley_fatmax_hammer_20oz"
   },
   {
     "title": "Irwin Vise-Grip 10\" Locking Pliers",
@@ -190,7 +202,8 @@
       "Adjustment": "Screw",
       "Material": "Nickel-Plated Steel",
       "Brand": "Irwin"
-    }
+    },
+    "slug": "irwin_vise_grip_10_locking_pliers"
   },
   {
     "title": "Irwin 18V Cordless Multi-Tool",
@@ -204,7 +217,8 @@
       "Angle": "3.2 degrees",
       "Accessories": "Sanding, Cutting, Scraping",
       "Brand": "Irwin"
-    }
+    },
+    "slug": "irwin_18v_cordless_multi_tool"
   },
   {
     "title": "Bosch GSB 13 RE Impact Drill 600W",
@@ -219,7 +233,8 @@
       "Speed": "0-2800 RPM",
       "Impact Rate": "44800 BPM",
       "Brand": "Bosch"
-    }
+    },
+    "slug": "bosch_gsb_13_re_impact_drill_600w"
   },
   {
     "title": "Bosch GCO 220 220W Cut-Off Saw",
@@ -233,243 +248,8 @@
       "Max Depth": "68mm",
       "Speed": "3500 RPM",
       "Brand": "Bosch"
-    }
-  },
-  {
-    "title": "DeWalt DCD996B 20V Max Hammer Drill",
-    "brand": "DeWalt",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Hammer Drill",
-      "Power": "20V Max Battery",
-      "Chuck": "1/2\" Keyless",
-      "Max Torque": "820 in-lbs",
-      "Speed": "0-2000 RPM",
-      "Hammer Mode": "Yes",
-      "Brand": "DeWalt"
-    }
-  },
-  {
-    "title": "DeWalt DCF887B 20V Max Impact Driver",
-    "brand": "DeWalt",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Impact Driver",
-      "Power": "20V Max Battery",
-      "Chuck": "1/4\" Hex",
-      "Max Torque": "1825 in-lbs",
-      "Speed": "0-3250 RPM",
-      "Impacts": "0-3600 BPM",
-      "Brand": "DeWalt"
-    }
-  },
-  {
-    "title": "DeWalt DCS577B 7-1/4\" Circular Saw",
-    "brand": "DeWalt",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Circular Saw",
-      "Power": "20V Max Battery",
-      "Blade Size": "7-1/4\"",
-      "Max Depth": "2-9/16\" at 90 degrees",
-      "Speed": "5800 RPM",
-      "Bevel": "0-57 degrees",
-      "Brand": "DeWalt"
-    }
-  },
-  {
-    "title": "Makita XPH14Z 18V LXT Hammer Driver-Drill",
-    "brand": "Makita",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Hammer Drill",
-      "Power": "18V LXT Battery",
-      "Chuck": "1/2\" Keyless",
-      "Max Torque": "1,250 in-lbs",
-      "Speed": "0-2100 RPM",
-      "Hammer Mode": "Yes",
-      "Brand": "Makita"
-    }
-  },
-  {
-    "title": "Makita XDT16Z 18V LXT Impact Driver",
-    "brand": "Makita",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Impact Driver",
-      "Power": "18V LXT Battery",
-      "Chuck": "1/4\" Hex",
-      "Max Torque": "1,800 in-lbs",
-      "Speed": "0-3600 RPM",
-      "Impacts": "0-4400 BPM",
-      "Brand": "Makita"
-    }
-  },
-  {
-    "title": "Makita XSS02Z 18V LXT Circular Saw 6-1/2\"",
-    "brand": "Makita",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Circular Saw",
-      "Power": "18V LXT Battery",
-      "Blade Size": "6-1/2\"",
-      "Max Depth": "2-1/4\" at 90 degrees",
-      "Speed": "5000 RPM",
-      "Bevel": "0-50 degrees",
-      "Brand": "Makita"
-    }
-  },
-  {
-    "title": "Bosch GSR 18V-60 C 18V Brushless Drill",
-    "brand": "Bosch",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Drill Driver",
-      "Power": "18V Battery",
-      "Chuck": "1/2\" Keyless",
-      "Max Torque": "60 Nm",
-      "Speed": "0-2100 RPM",
-      "Motor": "Brushless",
-      "Brand": "Bosch"
-    }
-  },
-  {
-    "title": "Bosch GKS 18V-57 G 18V Circular Saw",
-    "brand": "Bosch",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Circular Saw",
-      "Power": "18V Battery",
-      "Blade Size": "6-1/2\"",
-      "Max Depth": "2-1/4\" at 90 degrees",
-      "Speed": "5500 RPM",
-      "Motor": "Brushless",
-      "Brand": "Bosch"
-    }
-  },
-  {
-    "title": "Milwaukee 2904-20 M18 Fuel Hammer Drill",
-    "brand": "Milwaukee",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Hammer Drill",
-      "Power": "18V M18 Battery",
-      "Chuck": "1/2\" Keyless",
-      "Max Torque": "1,400 in-lbs",
-      "Speed": "0-2000 RPM",
-      "Motor": "Brushless",
-      "Brand": "Milwaukee"
-    }
-  },
-  {
-    "title": "Milwaukee 2953-20 M18 Fuel Impact Driver",
-    "brand": "Milwaukee",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Impact Driver",
-      "Power": "18V M18 Battery",
-      "Chuck": "1/4\" Hex",
-      "Max Torque": "2,000 in-lbs",
-      "Speed": "0-3700 RPM",
-      "Motor": "Brushless",
-      "Brand": "Milwaukee"
-    }
-  },
-  {
-    "title": "Stanley FatMax 25ft Tape Measure",
-    "brand": "Stanley",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Tape Measure",
-      "Length": "25 feet (7.5m)",
-      "Blade Width": "1-1/4\"",
-      "Case": "High Impact ABS",
-      "Standout": "11 feet",
-      "Mylar Coating": "Yes",
-      "Brand": "Stanley"
-    }
-  },
-  {
-    "title": "Stanley FatMax Hammer 20oz",
-    "brand": "Stanley",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Claw Hammer",
-      "Weight": "20 oz",
-      "Handle": "Anti-Vibe Fiberglass",
-      "Head": "Forged Steel",
-      "Grip": "Rubber",
-      "Brand": "Stanley"
-    }
-  },
-  {
-    "title": "Irwin Vise-Grip 10\" Locking Pliers",
-    "brand": "Irwin",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Locking Pliers",
-      "Size": "10 inches",
-      "Jaw Capacity": "2 inches",
-      "Adjustment": "Screw",
-      "Material": "Nickel-Plated Steel",
-      "Brand": "Irwin"
-    }
-  },
-  {
-    "title": "Irwin 18V Cordless Multi-Tool",
-    "brand": "Irwin",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Multi-Tool (Oscillating)",
-      "Power": "18V Battery",
-      "Oscillation": "10,000-22,000 OPM",
-      "Angle": "3.2 degrees",
-      "Accessories": "Sanding, Cutting, Scraping",
-      "Brand": "Irwin"
-    }
-  },
-  {
-    "title": "Bosch GSB 13 RE Impact Drill 600W",
-    "brand": "Bosch",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Impact Drill",
-      "Power": "600W Corded",
-      "Chuck": "13mm Keyless",
-      "Max Torque": "28 Nm",
-      "Speed": "0-2800 RPM",
-      "Impact Rate": "44800 BPM",
-      "Brand": "Bosch"
-    }
-  },
-  {
-    "title": "Bosch GCO 220 220W Cut-Off Saw",
-    "brand": "Bosch",
-    "subcategory": "Hand & Power Tools",
-    "source": "manufacturer",
-    "specifications": {
-      "Type": "Cut-Off Saw",
-      "Power": "2200W Corded",
-      "Wheel Size": "230mm",
-      "Max Depth": "68mm",
-      "Speed": "3500 RPM",
-      "Brand": "Bosch"
-    }
+    },
+    "slug": "bosch_gco_220_220w_cut_off_saw"
   },
   {
     "title": "3M H-701R Safety Helmet Hard Hat",
@@ -484,7 +264,8 @@
       "Color": "White",
       "Standard": "ANSI Z89.1",
       "Brand": "3M"
-    }
+    },
+    "slug": "3m_h_701r_safety_helmet_hard_hat"
   },
   {
     "title": "3M H-702R Safety Helmet with Visor",
@@ -499,7 +280,8 @@
       "Class": "Class E",
       "Standard": "ANSI Z89.1",
       "Brand": "3M"
-    }
+    },
+    "slug": "3m_h_702r_safety_helmet_with_visor"
   },
   {
     "title": "Uvex Stealth Safety Goggles",
@@ -514,7 +296,8 @@
       "UV Protection": "99.9%",
       "Standard": "ANSI Z87.1",
       "Brand": "Uvex"
-    }
+    },
+    "slug": "uvex_stealth_safety_goggles"
   },
   {
     "title": "3M Secure Fit Safety Glasses",
@@ -529,7 +312,8 @@
       "Anti-Fog": "Yes",
       "Standard": "ANSI Z87.1+",
       "Brand": "3M"
-    }
+    },
+    "slug": "3m_secure_fit_safety_glasses"
   },
   {
     "title": "Honeywell Rig Dog Impact Gloves",
@@ -543,7 +327,8 @@
       "Grip": "Reinforced Palm",
       "Size": "Large",
       "Brand": "Honeywell"
-    }
+    },
+    "slug": "honeywell_rig_dog_impact_gloves"
   },
   {
     "title": "3M Disposable Nitrile Gloves Box of 100",
@@ -558,7 +343,8 @@
       "Powder-Free": "Yes",
       "Chemical Resistant": "Yes",
       "Brand": "3M"
-    }
+    },
+    "slug": "3m_disposable_nitrile_gloves_box_of_100"
   },
   {
     "title": "MSA V-Gard Safety Helmet",
@@ -572,7 +358,8 @@
       "Class": "Class E (Electrical)",
       "Standard": "ANSI Z89.1 Type I",
       "Brand": "MSA"
-    }
+    },
+    "slug": "msa_v_gard_safety_helmet"
   },
   {
     "title": "Honeywell Steel Toe Safety Boots",
@@ -587,7 +374,8 @@
       "Standard": "ASTM F2413",
       "Size": "42 EU",
       "Brand": "Honeywell"
-    }
+    },
+    "slug": "honeywell_steel_toe_safety_boots"
   },
   {
     "title": "3M Half Face Respirator 6200",
@@ -602,7 +390,8 @@
       "Cartridge": "Replaceable (P100/Organic Vapor)",
       "Standard": "NIOSH",
       "Brand": "3M"
-    }
+    },
+    "slug": "3m_half_face_respirator_6200"
   },
   {
     "title": "3M Full Face Respirator 6800",
@@ -617,7 +406,8 @@
       "Cartridge": "Replaceable (P100/Organic Vapor)",
       "Standard": "NIOSH",
       "Brand": "3M"
-    }
+    },
+    "slug": "3m_full_face_respirator_6800"
   },
   {
     "title": "High-Vis Safety Vest Class 2",
@@ -631,7 +421,8 @@
       "Material": "Polyester Mesh",
       "Reflective Strips": "2-inch Silver",
       "Brand": "Ergodyne"
-    }
+    },
+    "slug": "high_vis_safety_vest_class_2"
   },
   {
     "title": "Honda EU2200i 2200W Inverter Generator",
@@ -648,7 +439,8 @@
       "Noise": "48-57 dB",
       "Weight": "21 kg",
       "Brand": "Honda"
-    }
+    },
+    "slug": "honda_eu2200i_2200w_inverter_generator"
   },
   {
     "title": "Briggs & Stratton P4500 4500W Generator",
@@ -664,7 +456,8 @@
       "Run Time": "12 hours at 50% load",
       "Weight": "45 kg",
       "Brand": "Briggs & Stratton"
-    }
+    },
+    "slug": "briggs_stratton_p4500_4500w_generator"
   },
   {
     "title": "Generac GP8000E 8000W Generator",
@@ -680,7 +473,8 @@
       "Run Time": "11 hours at 50% load",
       "Electric Start": "Yes",
       "Brand": "Generac"
-    }
+    },
+    "slug": "generac_gp8000e_8000w_generator"
   },
   {
     "title": "Lincoln Electric Weld Pak 180 HD MIG Welder",
@@ -695,7 +489,8 @@
       "Wire Size": "0.023-0.035\"",
       "Weight": "29 kg",
       "Brand": "Lincoln Electric"
-    }
+    },
+    "slug": "lincoln_electric_weld_pak_180_hd_mig_welder"
   },
   {
     "title": "Hobart Handler 210 MIG Welder",
@@ -710,7 +505,8 @@
       "Wire Size": "0.024-0.035\"",
       "Weight": "31 kg",
       "Brand": "Hobart"
-    }
+    },
+    "slug": "hobart_handler_210_mig_welder"
   },
   {
     "title": "Multimeter Digital Auto-Range",
@@ -726,7 +522,8 @@
       "Resistance": "60 MOhm",
       "CAT Rating": "CAT IV 600V",
       "Brand": "Fluke"
-    }
+    },
+    "slug": "multimeter_digital_auto_range"
   },
   {
     "title": "Extension Cord 25m 13A Heavy Duty",
@@ -741,7 +538,8 @@
       "Sockets": "4 Gang",
       "Reel": "Yes",
       "Brand": "Masterplug"
-    }
+    },
+    "slug": "extension_cord_25m_13a_heavy_duty"
   },
   {
     "title": "Circuit Breaker 32A Type C",
@@ -756,7 +554,8 @@
       "Breaking Capacity": "6kA",
       "Standard": "IEC 60898",
       "Brand": "Schneider"
-    }
+    },
+    "slug": "circuit_breaker_32a_type_c"
   },
   {
     "title": "PVC Pipe 110mm 6m Length",
@@ -772,7 +571,8 @@
       "Standard": "KS 150",
       "Application": "Drainage/Sewer",
       "Brand": "Generic"
-    }
+    },
+    "slug": "pvc_pipe_110mm_6m_length"
   },
   {
     "title": "PPR Pipe 25mm 4m Length",
@@ -787,7 +587,8 @@
       "Material": "Polypropylene Random Copolymer",
       "Application": "Hot/Cold Water",
       "Brand": "Generic"
-    }
+    },
+    "slug": "ppr_pipe_25mm_4m_length"
   },
   {
     "title": "CPVC Pipe 1/2\" 6m Length",
@@ -802,7 +603,8 @@
       "Material": "Chlorinated PVC",
       "Application": "Hot/Cold Water",
       "Brand": "Generic"
-    }
+    },
+    "slug": "cpvc_pipe_1_2_6m_length"
   },
   {
     "title": "PVC Elbow 110mm 90 Degree",
@@ -816,7 +618,8 @@
       "Material": "uPVC",
       "Connection": "Solvent Weld",
       "Brand": "Generic"
-    }
+    },
+    "slug": "pvc_elbow_110mm_90_degree"
   },
   {
     "title": "PVC T-Junction 110mm",
@@ -830,7 +633,8 @@
       "Material": "uPVC",
       "Connection": "Solvent Weld",
       "Brand": "Generic"
-    }
+    },
+    "slug": "pvc_t_junction_110mm"
   },
   {
     "title": "Brass Ball Valve 1/2\"",
@@ -844,7 +648,8 @@
       "Connection": "Threaded",
       "Pressure Rating": "16 bar",
       "Brand": "Generic"
-    }
+    },
+    "slug": "brass_ball_valve_1_2"
   },
   {
     "title": "Water Pump 0.5HP Single Phase",
@@ -860,7 +665,8 @@
       "Max Head": "35m",
       "Inlet/Outlet": "1\"x1\"",
       "Brand": "Pedrollo"
-    }
+    },
+    "slug": "water_pump_0_5hp_single_phase"
   },
   {
     "title": "Water Pump 1HP Single Phase",
@@ -876,7 +682,8 @@
       "Max Head": "50m",
       "Inlet/Outlet": "1.25\"x1\"",
       "Brand": "Grundfos"
-    }
+    },
+    "slug": "water_pump_1hp_single_phase"
   },
   {
     "title": "PVC Solvent Cement 500ml",
@@ -889,7 +696,8 @@
       "Application": "PVC/CPVC Pipes",
       "Setting Time": "24 hours",
       "Brand": "Georg Fischer"
-    }
+    },
+    "slug": "pvc_solvent_cement_500ml"
   },
   {
     "title": "PTFE Teflon Tape Roll",
@@ -904,7 +712,8 @@
       "Thickness": "0.1mm",
       "Temperature": "-180 to 260°C",
       "Brand": "Generic"
-    }
+    },
+    "slug": "ptfe_teflon_tape_roll"
   },
   {
     "title": "Portland Cement 50kg Bag",
@@ -918,7 +727,8 @@
       "Standard": "KS EAS 148-1",
       "Application": "General Construction",
       "Brand": "Bamburi"
-    }
+    },
+    "slug": "portland_cement_50kg_bag"
   },
   {
     "title": "Portland Cement 50kg Bag",
@@ -932,7 +742,8 @@
       "Standard": "KS EAS 148-1",
       "Application": "General Construction",
       "Brand": "Savanna"
-    }
+    },
+    "slug": "portland_cement_50kg_bag_2"
   },
   {
     "title": "Cement Blocks 6\" Hollow",
@@ -946,7 +757,8 @@
       "Compressive Strength": "3.5 N/mm²",
       "Application": "Wall Construction",
       "Brand": "Generic"
-    }
+    },
+    "slug": "cement_blocks_6_hollow"
   },
   {
     "title": "Cement Blocks 8\" Hollow",
@@ -960,7 +772,8 @@
       "Compressive Strength": "3.5 N/mm²",
       "Application": "Wall Construction",
       "Brand": "Generic"
-    }
+    },
+    "slug": "cement_blocks_8_hollow"
   },
   {
     "title": "Building Sand 7 Tonnes",
@@ -973,7 +786,8 @@
       "Material": "River Sand",
       "Application": "Mortar/Plastering/Concrete",
       "Brand": "Generic"
-    }
+    },
+    "slug": "building_sand_7_tonnes"
   },
   {
     "title": "Ballast 3/4\" 7 Tonnes",
@@ -987,7 +801,8 @@
       "Material": "Crushed Stone",
       "Application": "Concrete",
       "Brand": "Generic"
-    }
+    },
+    "slug": "ballast_3_4_7_tonnes"
   },
   {
     "title": "BRC Mesh A142 4.8m x 2.4m",
@@ -1001,7 +816,8 @@
       "Mesh Size": "200x200mm",
       "Application": "Slab Reinforcement",
       "Brand": "Generic"
-    }
+    },
+    "slug": "brc_mesh_a142_4_8m_x_2_4m"
   },
   {
     "title": "Deformed Steel Bars Y12 12mm",
@@ -1016,7 +832,8 @@
       "Standard": "KS 573",
       "Application": "Concrete Reinforcement",
       "Brand": "Generic"
-    }
+    },
+    "slug": "deformed_steel_bars_y12_12mm"
   },
   {
     "title": "Deformed Steel Bars Y16 16mm",
@@ -1031,7 +848,8 @@
       "Standard": "KS 573",
       "Application": "Concrete Reinforcement",
       "Brand": "Generic"
-    }
+    },
+    "slug": "deformed_steel_bars_y16_16mm"
   },
   {
     "title": "Roofing Sheets Box Profile 0.5mm 3m",
@@ -1046,7 +864,8 @@
       "Material": "Galvanized Steel",
       "Coating": "Aluzinc",
       "Brand": "Mabati"
-    }
+    },
+    "slug": "roofing_sheets_box_profile_0_5mm_3m"
   },
   {
     "title": "Roofing Sheets Corrugated 0.4mm 3m",
@@ -1061,6 +880,4177 @@
       "Material": "Galvanized Steel",
       "Coating": "Aluzinc",
       "Brand": "Mabati"
+    },
+    "slug": "roofing_sheets_corrugated_0_4mm_3m"
+  },
+  {
+    "title": "Bosch GWS 850 Angle Grinder 4.5 Inch",
+    "slug": "bosch_gws_850_angle_grinder_4_5_inch",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "850 W",
+      "Voltage": "220-240 V",
+      "Disc Size": "115 mm (4.5 in)",
+      "Speed": "11,000 rpm",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Makita GA4530 Angle Grinder",
+    "slug": "makita_ga4530_angle_grinder",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "720 W",
+      "Voltage": "220-240 V",
+      "Disc Size": "115 mm (4.5 in)",
+      "Speed": "11,000 rpm",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Ingco AG8508 Angle Grinder",
+    "slug": "ingco_ag8508_angle_grinder",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "950 W",
+      "Voltage": "220-240 V",
+      "Disc Size": "115 mm (4.5 in)",
+      "Speed": "11,000 rpm",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Dongcheng DCA S1M-FF03-100A Angle Grinder",
+    "slug": "dongcheng_dca_s1m_ff03_100a_angle_grinder",
+    "brand": "Dongcheng",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "710 W",
+      "Voltage": "220-240 V",
+      "Disc Size": "100 mm (4 in)",
+      "Speed": "13,000 rpm",
+      "Brand": "Dongcheng (DCA)"
+    }
+  },
+  {
+    "title": "Bosch GBH 2-26 DRE SDS-Plus Rotary Hammer",
+    "slug": "bosch_gbh_2_26_dre_sds_plus_rotary_hammer",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Rotary Hammer",
+      "Power": "800 W",
+      "Chuck": "SDS-Plus",
+      "Speed": "0-900 rpm",
+      "Impacts": "0-4,000 bpm (3.0 J)",
+      "Max Drilling": "26 mm concrete",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Ingco RGH9028 SDS-Plus Rotary Hammer",
+    "slug": "ingco_rgh9028_sds_plus_rotary_hammer",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Rotary Hammer",
+      "Power": "800 W",
+      "Chuck": "SDS-Plus",
+      "Speed": "0-1,100 rpm",
+      "Impacts": "0-4,000 bpm (2.5 J)",
+      "Max Drilling": "26 mm concrete",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Jasic ARC-200 Inverter Welder",
+    "slug": "jasic_arc_200_inverter_welder",
+    "brand": "Jasic",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Inverter Welder (MMA)",
+      "Input": "220-240 V",
+      "Output Range": "20-200 A",
+      "Duty Cycle": "60% @ 200 A",
+      "Electrode Size": "1.6-4.0 mm",
+      "Weight": "8 kg",
+      "Brand": "Jasic"
+    }
+  },
+  {
+    "title": "Ingco 200A MMA Inverter Welder",
+    "slug": "ingco_200a_mma_inverter_welder",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Inverter Welder (MMA)",
+      "Input": "220-240 V",
+      "Output Range": "20-200 A",
+      "Duty Cycle": "60% @ 160 A",
+      "Electrode Size": "1.6-4.0 mm",
+      "Weight": "6 kg",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Telwin Force 165 Inverter Welder",
+    "slug": "telwin_force_165_inverter_welder",
+    "brand": "Telwin",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Inverter Welder (MMA)",
+      "Input": "230 V",
+      "Output Range": "10-150 A",
+      "Duty Cycle": "60% @ 110 A",
+      "Electrode Size": "1.6-4.0 mm",
+      "Weight": "4.5 kg",
+      "Brand": "Telwin"
+    }
+  },
+  {
+    "title": "Ingco CDLI12428 12V Cordless Drill",
+    "slug": "ingco_cdli12428_12v_cordless_drill",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cordless Drill",
+      "Power": "12 V Li-ion",
+      "Chuck": "10 mm keyless",
+      "Max Torque": "20 Nm",
+      "Speed": "0-750 rpm",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco CDLI20028 20V Cordless Drill",
+    "slug": "ingco_cdli20028_20v_cordless_drill",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cordless Drill",
+      "Power": "20 V Li-ion",
+      "Chuck": "10 mm keyless",
+      "Max Torque": "45 Nm",
+      "Speed": "0-400/0-1,500 rpm",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Total TDLI2002 20V Cordless Drill",
+    "slug": "total_tdli2002_20v_cordless_drill",
+    "brand": "Total",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cordless Drill",
+      "Power": "20 V Li-ion",
+      "Chuck": "10 mm keyless",
+      "Max Torque": "45 Nm",
+      "Speed": "0-400/0-1,500 rpm",
+      "Brand": "Total"
+    }
+  },
+  {
+    "title": "Makita DHP453 18V Cordless Hammer Drill",
+    "slug": "makita_dhp453_18v_cordless_hammer_drill",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cordless Hammer Drill",
+      "Power": "18 V Li-ion",
+      "Chuck": "13 mm keyless",
+      "Max Torque": "42 Nm",
+      "Speed": "0-400/0-1,300 rpm",
+      "Hammer Mode": "Yes",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Bosch GST 650 Jigsaw",
+    "slug": "bosch_gst_650_jigsaw",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Jigsaw",
+      "Power": "450 W",
+      "Speed": "500-3,100 SPM",
+      "Max Depth": "65 mm wood",
+      "Bevel": "0-45 deg",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Makita M5801B Circular Saw 185mm",
+    "slug": "makita_m5801b_circular_saw_185mm",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circular Saw",
+      "Power": "1,050 W",
+      "Blade Size": "185 mm",
+      "Max Depth": "66 mm",
+      "Speed": "4,900 rpm",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita M1902B Electric Planer",
+    "slug": "makita_m1902b_electric_planer",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Electric Planer",
+      "Power": "500 W",
+      "Blade Size": "82 mm",
+      "Max Depth": "1 mm per pass",
+      "Speed": "16,000 rpm",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "6-Inch Bench Grinder 370W",
+    "slug": "6_inch_bench_grinder_370w",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Bench Grinder",
+      "Power": "370 W",
+      "Disc Size": "150 mm (6 in)",
+      "Speed": "2,850 rpm",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Manual Tile Cutter 600mm",
+    "slug": "manual_tile_cutter_600mm",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tile Cutter",
+      "Length": "600 mm",
+      "Material": "Steel frame, tungsten wheel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Toptul 24-Piece 1/2 Inch Socket Set",
+    "slug": "toptul_24_piece_1_2_inch_socket_set",
+    "brand": "Toptul",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Socket Set",
+      "Size": "24 pcs, 1/2 in drive",
+      "Material": "Chrome vanadium",
+      "Case": "Blow-moulded case",
+      "Brand": "Toptul"
+    }
+  },
+  {
+    "title": "Ingco Combination Spanner Set 8-24mm",
+    "slug": "ingco_combination_spanner_set_8_24mm",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spanner Set",
+      "Size": "12 pcs, 8-24 mm",
+      "Material": "Chrome vanadium",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Stanley PowerLock Tape Measure 5m",
+    "slug": "stanley_powerlock_tape_measure_5m",
+    "brand": "Stanley",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Tape Measure",
+      "Length": "5 m",
+      "Blade Width": "19 mm",
+      "Case": "ABS",
+      "Standout": "~2.4 m",
+      "Mylar Coating": "Yes",
+      "Brand": "Stanley"
+    }
+  },
+  {
+    "title": "Spirit Level 600mm Aluminium",
+    "slug": "spirit_level_600mm_aluminium",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Spirit Level",
+      "Length": "600 mm",
+      "Material": "Aluminium",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Pipe Wrench 14 Inch",
+    "slug": "pipe_wrench_14_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Pipe Wrench",
+      "Size": "14 in",
+      "Jaw Capacity": "50 mm",
+      "Adjustment": "Knurled nut",
+      "Material": "Ductile iron",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Karcher K2 Compact Pressure Washer",
+    "slug": "karcher_k2_compact_pressure_washer",
+    "brand": "Karcher",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Pressure Washer",
+      "Power": "1,400 W",
+      "Voltage": "220-240 V",
+      "Pressure": "110 bar max",
+      "Flow Rate": "360 L/h",
+      "Brand": "Karcher"
+    }
+  },
+  {
+    "title": "Ingco High Pressure Washer 1800W",
+    "slug": "ingco_high_pressure_washer_1800w",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Pressure Washer",
+      "Power": "1,800 W",
+      "Voltage": "220-240 V",
+      "Pressure": "140 bar max",
+      "Flow Rate": "390 L/h",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Hacksaw Frame 12 Inch",
+    "slug": "hacksaw_frame_12_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hacksaw",
+      "Blade Size": "12 in (300 mm)",
+      "Material": "Steel frame",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Rocklander Steel Toe Safety Boots",
+    "slug": "rocklander_steel_toe_safety_boots",
+    "brand": "Rocklander",
+    "subcategory": "Safety Wear",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Safety Boots",
+      "Material": "Leather upper",
+      "Toe Protection": "Steel toe cap",
+      "Sole": "Dual-density PU",
+      "Standard": "EN ISO 20345 S1P",
+      "Size": "39-46",
+      "Brand": "Rocklander"
+    }
+  },
+  {
+    "title": "Vaultex Steel Toe Safety Boots",
+    "slug": "vaultex_steel_toe_safety_boots",
+    "brand": "Vaultex",
+    "subcategory": "Safety Wear",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Safety Boots",
+      "Material": "Leather upper",
+      "Toe Protection": "Steel toe cap",
+      "Sole": "Dual-density PU, oil resistant",
+      "Standard": "EN ISO 20345 S3",
+      "Size": "39-46",
+      "Brand": "Vaultex"
+    }
+  },
+  {
+    "title": "Safety Jogger Bestrun S3 Safety Boots",
+    "slug": "safety_jogger_bestrun_s3_safety_boots",
+    "brand": "Safety Jogger",
+    "subcategory": "Safety Wear",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Safety Boots",
+      "Material": "Leather upper",
+      "Toe Protection": "Steel toe cap",
+      "Sole": "PU/PU, slip resistant",
+      "Standard": "EN ISO 20345 S3",
+      "Size": "38-47",
+      "Brand": "Safety Jogger"
+    }
+  },
+  {
+    "title": "Hi-Vis Reflective Safety Vest",
+    "slug": "hi_vis_reflective_safety_vest",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hi-Vis Vest",
+      "Material": "Polyester mesh",
+      "Class": "Class 2",
+      "Standard": "EN ISO 20471",
+      "Size": "XL",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Cotton Safety Overall",
+    "slug": "cotton_safety_overall",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Coverall",
+      "Material": "Cotton twill",
+      "Size": "M-XXL",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "FFP2 Dust Masks Pack of 20",
+    "slug": "ffp2_dust_masks_pack_of_20",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Respirator Mask",
+      "Facepiece": "Disposable cup",
+      "Standard": "EN 149 FFP2",
+      "Material": "Non-woven fabric",
+      "Quantity": "20",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Ear Muffs SNR 27dB",
+    "slug": "ear_muffs_snr_27db",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hearing Protection",
+      "Material": "ABS cups, foam cushions",
+      "Class": "SNR 27 dB",
+      "Standard": "EN 352-1",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Auto-Darkening Welding Helmet",
+    "slug": "auto_darkening_welding_helmet",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Welding Helmet",
+      "Lens": "Auto-darkening DIN 9-13",
+      "Material": "PP shell",
+      "Standard": "EN 379",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Leather Welding Gloves 14 Inch",
+    "slug": "leather_welding_gloves_14_inch",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Welding Gloves",
+      "Material": "Split leather, lined",
+      "Size": "14 in",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Full Body Safety Harness",
+    "slug": "full_body_safety_harness",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Fall Arrest Harness",
+      "Material": "Polyester webbing",
+      "Standard": "EN 361",
+      "Size": "Universal",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Steel Toe Safety Gumboots",
+    "slug": "steel_toe_safety_gumboots",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Safety Gumboots",
+      "Material": "PVC",
+      "Toe Protection": "Steel toe cap",
+      "Sole": "PVC, oil resistant",
+      "Standard": "EN ISO 20345 S5",
+      "Size": "39-46",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Crabtree 20A Single Pole MCB",
+    "slug": "crabtree_20a_single_pole_mcb",
+    "brand": "Crabtree",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circuit Breaker (MCB)",
+      "Current Rating": "20 A",
+      "Tripping Curve": "C",
+      "Poles": "1",
+      "Breaking Capacity": "6 kA",
+      "Standard": "IEC 60898",
+      "Brand": "Crabtree"
+    }
+  },
+  {
+    "title": "Crabtree 32A Single Pole MCB",
+    "slug": "crabtree_32a_single_pole_mcb",
+    "brand": "Crabtree",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circuit Breaker (MCB)",
+      "Current Rating": "32 A",
+      "Tripping Curve": "C",
+      "Poles": "1",
+      "Breaking Capacity": "6 kA",
+      "Standard": "IEC 60898",
+      "Brand": "Crabtree"
+    }
+  },
+  {
+    "title": "Crabtree 63A Double Pole MCB",
+    "slug": "crabtree_63a_double_pole_mcb",
+    "brand": "Crabtree",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circuit Breaker (MCB)",
+      "Current Rating": "63 A",
+      "Tripping Curve": "C",
+      "Poles": "2",
+      "Breaking Capacity": "6 kA",
+      "Standard": "IEC 60898",
+      "Brand": "Crabtree"
+    }
+  },
+  {
+    "title": "Crabtree 8-Way Consumer Unit",
+    "slug": "crabtree_8_way_consumer_unit",
+    "brand": "Crabtree",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Consumer Unit",
+      "Current Rating": "100 A main switch",
+      "Voltage": "230 V",
+      "Standard": "IEC 61439-3",
+      "Brand": "Crabtree"
+    }
+  },
+  {
+    "title": "East African Cables 2.5mm Twin & Earth Cable 100m",
+    "slug": "east_african_cables_2_5mm_twin_earth_cable_100m",
+    "brand": "East African Cables",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Electrical Cable",
+      "Size": "2.5 mm2, 2 core + earth",
+      "Length": "100 m roll",
+      "Material": "Copper conductor, PVC insulated",
+      "Standard": "BS 6004",
+      "Voltage": "300/500 V",
+      "Brand": "East African Cables"
+    }
+  },
+  {
+    "title": "Aico 2.5kVA Petrol Generator",
+    "slug": "aico_2_5kva_petrol_generator",
+    "brand": "Aico",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Petrol Generator",
+      "Rated Power": "2.2 kW",
+      "Max Power": "2.5 kW",
+      "Fuel": "Petrol",
+      "Tank Capacity": "15 L",
+      "Run Time": "~10 hrs",
+      "Weight": "42 kg",
+      "Brand": "Aico"
+    }
+  },
+  {
+    "title": "Loncin LC6500 5kVA Petrol Generator",
+    "slug": "loncin_lc6500_5kva_petrol_generator",
+    "brand": "Loncin",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Petrol Generator",
+      "Rated Power": "4.5 kW",
+      "Max Power": "5.0 kW",
+      "Fuel": "Petrol",
+      "Tank Capacity": "25 L",
+      "Run Time": "~8 hrs",
+      "Electric Start": "Optional",
+      "Brand": "Loncin"
+    }
+  },
+  {
+    "title": "Firman SPG3800E2 Petrol Generator",
+    "slug": "firman_spg3800e2_petrol_generator",
+    "brand": "Firman",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Petrol Generator",
+      "Rated Power": "2.8 kW",
+      "Max Power": "3.1 kW",
+      "Fuel": "Petrol",
+      "Tank Capacity": "25 L",
+      "Run Time": "~15.5 hrs",
+      "Electric Start": "Yes (key start)",
+      "Noise": "69 dB(A) @ 7 m",
+      "Brand": "Firman"
+    }
+  },
+  {
+    "title": "Jinko Tiger Neo 550W Solar Panel",
+    "slug": "jinko_tiger_neo_550w_solar_panel",
+    "brand": "Jinko",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monocrystalline Solar Panel",
+      "Rated Power": "550 W",
+      "Voltage": "41.9 V (Vmp)",
+      "Current Rating": "13.1 A (Imp)",
+      "Standard": "IEC 61215",
+      "Brand": "Jinko"
+    }
+  },
+  {
+    "title": "Growatt SPF 5000 ES Hybrid Inverter",
+    "slug": "growatt_spf_5000_es_hybrid_inverter",
+    "brand": "Growatt",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Off-Grid Hybrid Inverter",
+      "Rated Power": "5 kW",
+      "Voltage": "48 V DC battery / 230 V AC",
+      "Current Rating": "80 A MPPT charger",
+      "Standard": "IEC 62109",
+      "Brand": "Growatt"
+    }
+  },
+  {
+    "title": "Ritar DG12-200 12V 200Ah Gel Battery",
+    "slug": "ritar_dg12_200_12v_200ah_gel_battery",
+    "brand": "Ritar",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Gel Deep-Cycle Battery",
+      "Voltage": "12 V",
+      "Current Rating": "200 Ah",
+      "Standard": "IEC 60896",
+      "Brand": "Ritar"
+    }
+  },
+  {
+    "title": "Philips LED Bulb 9W E27",
+    "slug": "philips_led_bulb_9w_e27",
+    "brand": "Philips",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "LED Bulb",
+      "Rated Power": "9 W (60 W equivalent)",
+      "Voltage": "220-240 V",
+      "Brand": "Philips"
+    }
+  },
+  {
+    "title": "Philips LED Floodlight 50W",
+    "slug": "philips_led_floodlight_50w",
+    "brand": "Philips",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "LED Floodlight",
+      "Rated Power": "50 W",
+      "Voltage": "220-240 V",
+      "Standard": "IP65",
+      "Brand": "Philips"
+    }
+  },
+  {
+    "title": "4-Way Extension Socket 13A",
+    "slug": "4_way_extension_socket_13a",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Extension Socket",
+      "Current Rating": "13 A",
+      "Sockets": "4",
+      "Cable": "2 m",
+      "Standard": "BS 1363",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Techno Plast PPR Pipe 25mm x 4m PN16",
+    "slug": "techno_plast_ppr_pipe_25mm_x_4m_pn16",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "PPR Pipe",
+      "Diameter": "25 mm",
+      "Length": "4 m",
+      "Pressure Rating": "PN16",
+      "Material": "PPR",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Techno Plast PPR Elbow 25mm",
+    "slug": "techno_plast_ppr_elbow_25mm",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "PPR Elbow 90 deg",
+      "Diameter": "25 mm",
+      "Material": "PPR",
+      "Connection": "Socket fusion",
+      "Pressure Rating": "PN16",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Techno Plast PPR Tee 20mm",
+    "slug": "techno_plast_ppr_tee_20mm",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "PPR Tee",
+      "Diameter": "20 mm",
+      "Material": "PPR",
+      "Connection": "Socket fusion",
+      "Pressure Rating": "PN16",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Kenpoly HDPE Compression Coupling 32mm",
+    "slug": "kenpoly_hdpe_compression_coupling_32mm",
+    "brand": "Kenpoly",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Compression Coupling",
+      "Diameter": "32 mm",
+      "Material": "Polypropylene",
+      "Connection": "Compression",
+      "Pressure Rating": "PN16",
+      "Brand": "Kenpoly"
+    }
+  },
+  {
+    "title": "GI Pipe Class B 3/4 Inch x 6m",
+    "slug": "gi_pipe_class_b_3_4_inch_x_6m",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Galvanized Iron Pipe",
+      "Diameter": "3/4 in (20 mm)",
+      "Length": "6 m",
+      "Material": "Galvanized steel",
+      "Standard": "BS 1387 Class B",
+      "Application": "Water supply",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Kenpoly Water Tank 1000L",
+    "slug": "kenpoly_water_tank_1000l",
+    "brand": "Kenpoly",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Storage Tank",
+      "Capacity": "1,000 L",
+      "Material": "Food-grade polyethylene",
+      "Connection": "1.25 in outlet",
+      "Brand": "Kenpoly"
+    }
+  },
+  {
+    "title": "Roto Moulders Water Tank 5000L",
+    "slug": "roto_moulders_water_tank_5000l",
+    "brand": "Roto Moulders",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Storage Tank",
+      "Capacity": "5,000 L",
+      "Material": "Food-grade polyethylene",
+      "Connection": "2 in outlet",
+      "Brand": "Roto Moulders"
+    }
+  },
+  {
+    "title": "Brass Gate Valve 1 Inch",
+    "slug": "brass_gate_valve_1_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Gate Valve",
+      "Diameter": "1 in",
+      "Material": "Brass",
+      "Connection": "Threaded BSP",
+      "Pressure Rating": "PN16",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Float Valve 3/4 Inch",
+    "slug": "float_valve_3_4_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Float (Ball) Valve",
+      "Diameter": "3/4 in",
+      "Material": "Brass body, plastic float",
+      "Connection": "Threaded BSP",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PPR Ball Valve 25mm",
+    "slug": "ppr_ball_valve_25mm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Ball Valve",
+      "Diameter": "25 mm",
+      "Material": "PPR",
+      "Connection": "Socket fusion",
+      "Pressure Rating": "PN16",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Flexible Hose Connector 1/2 Inch 45cm",
+    "slug": "flexible_hose_connector_1_2_inch_45cm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Flexible Connector Hose",
+      "Diameter": "1/2 in",
+      "Length": "45 cm",
+      "Material": "Stainless braided / EPDM",
+      "Connection": "BSP nuts",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "uPVC Rain Gutter 4m with Downpipe",
+    "slug": "upvc_rain_gutter_4m_with_downpipe",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Rain Gutter",
+      "Diameter": "125 mm half-round",
+      "Length": "4 m",
+      "Material": "uPVC",
+      "Application": "Roof drainage",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Manhole Cover Heavy Duty 600x450mm",
+    "slug": "manhole_cover_heavy_duty_600x450mm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Manhole Cover",
+      "Size": "600 x 450 mm",
+      "Material": "Composite/ductile iron",
+      "Application": "Driveway, inspection chamber",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC Waste Pipe 40mm x 4m",
+    "slug": "pvc_waste_pipe_40mm_x_4m",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "PVC Waste Pipe",
+      "Diameter": "40 mm",
+      "Length": "4 m",
+      "Material": "uPVC",
+      "Application": "Waste drainage",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Simba Cement 32.5R 50kg",
+    "slug": "simba_cement_32_5r_50kg",
+    "brand": "Simba",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cement",
+      "Grade": "32.5R (CEM II)",
+      "Standard": "KS EAS 18-1",
+      "Application": "General construction",
+      "Weight": "50 kg",
+      "Brand": "Simba"
+    }
+  },
+  {
+    "title": "Mombasa Nyumba Cement 32.5N 50kg",
+    "slug": "mombasa_nyumba_cement_32_5n_50kg",
+    "brand": "Mombasa Cement",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cement",
+      "Grade": "32.5N (CEM II)",
+      "Standard": "KS EAS 18-1",
+      "Application": "General construction, plastering",
+      "Weight": "50 kg",
+      "Brand": "Mombasa Cement (Nyumba)"
+    }
+  },
+  {
+    "title": "Blue Triangle Cement 32.5R 50kg",
+    "slug": "blue_triangle_cement_32_5r_50kg",
+    "brand": "Blue Triangle",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cement",
+      "Grade": "32.5R (CEM II)",
+      "Standard": "KS EAS 18-1",
+      "Application": "General construction",
+      "Weight": "50 kg",
+      "Brand": "Blue Triangle"
+    }
+  },
+  {
+    "title": "Ndovu Cement 32.5N 50kg",
+    "slug": "ndovu_cement_32_5n_50kg",
+    "brand": "Ndovu",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cement",
+      "Grade": "32.5N",
+      "Standard": "KS EAS 18-1",
+      "Application": "General construction, masonry",
+      "Weight": "50 kg",
+      "Brand": "Ndovu"
+    }
+  },
+  {
+    "title": "Apex Y8 Reinforcement Bar 12m",
+    "slug": "apex_y8_reinforcement_bar_12m",
+    "brand": "Apex Steel",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Reinforcement Bar (Rebar)",
+      "Diameter": "8 mm",
+      "Grade": "460",
+      "Length": "12 m",
+      "Standard": "KS ISO 6935",
+      "Application": "Reinforced concrete",
+      "Brand": "Apex Steel"
+    }
+  },
+  {
+    "title": "Apex Y10 Reinforcement Bar 12m",
+    "slug": "apex_y10_reinforcement_bar_12m",
+    "brand": "Apex Steel",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Reinforcement Bar (Rebar)",
+      "Diameter": "10 mm",
+      "Grade": "460",
+      "Length": "12 m",
+      "Standard": "KS ISO 6935",
+      "Application": "Reinforced concrete",
+      "Brand": "Apex Steel"
+    }
+  },
+  {
+    "title": "Devki Y16 Reinforcement Bar 12m",
+    "slug": "devki_y16_reinforcement_bar_12m",
+    "brand": "Devki Steel",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Reinforcement Bar (Rebar)",
+      "Diameter": "16 mm",
+      "Grade": "460",
+      "Length": "12 m",
+      "Standard": "KS ISO 6935",
+      "Application": "Reinforced concrete",
+      "Brand": "Devki Steel"
+    }
+  },
+  {
+    "title": "Steel Square Tube 25x25x1.2mm 6m",
+    "slug": "steel_square_tube_25x25x1_2mm_6m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Square Hollow Section",
+      "Size": "25 x 25 x 1.2 mm",
+      "Length": "6 m",
+      "Material": "Mild steel",
+      "Application": "Fabrication, framing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "MRM Box Profile Roofing Sheet 30G 2m",
+    "slug": "mrm_box_profile_roofing_sheet_30g_2m",
+    "brand": "Mabati Rolling Mills",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Roofing Sheet",
+      "Profile": "Box profile",
+      "Thickness": "30 gauge (0.30 mm)",
+      "Length": "2 m",
+      "Material": "Pre-painted steel",
+      "Coating": "Aluzinc",
+      "Brand": "Mabati Rolling Mills"
+    }
+  },
+  {
+    "title": "MRM Versatile Roofing Sheet 30G 2m",
+    "slug": "mrm_versatile_roofing_sheet_30g_2m",
+    "brand": "Mabati Rolling Mills",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Roofing Sheet",
+      "Profile": "Tile (Versatile)",
+      "Thickness": "30 gauge (0.30 mm)",
+      "Length": "2 m",
+      "Material": "Pre-painted steel",
+      "Coating": "Aluzinc",
+      "Brand": "Mabati Rolling Mills"
+    }
+  },
+  {
+    "title": "Roofing Nails 1kg",
+    "slug": "roofing_nails_1kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Nails",
+      "Quantity": "1 kg",
+      "Material": "Galvanized steel",
+      "Application": "Roofing sheet fixing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Binding Wire 25kg Roll",
+    "slug": "binding_wire_25kg_roll",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Binding Wire",
+      "Quantity": "25 kg roll",
+      "Wire Diameter": "16 gauge",
+      "Material": "Black annealed steel",
+      "Application": "Rebar tying",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Hoop Iron Roll 20kg",
+    "slug": "hoop_iron_roll_20kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hoop Iron",
+      "Size": "25 mm x 1 mm",
+      "Quantity": "20 kg roll",
+      "Material": "Galvanized steel",
+      "Application": "Wall reinforcement",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Machine Cut Stones 9x9 Inch",
+    "slug": "machine_cut_stones_9x9_inch",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Building Stone",
+      "Size": "9 x 9 in (230 mm)",
+      "Material": "Ndarugo machine-cut stone",
+      "Application": "Walling",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Cypress Timber 2x2 Inch 3.6m",
+    "slug": "cypress_timber_2x2_inch_3_6m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Timber",
+      "Size": "50 x 50 mm x 3.6 m",
+      "Material": "Cypress",
+      "Application": "Framing, roofing battens",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "DPC Damp Proof Membrane 150mm x 30m",
+    "slug": "dpc_damp_proof_membrane_150mm_x_30m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "DPC Membrane",
+      "Size": "150 mm x 30 m roll",
+      "Material": "Polythene",
+      "Application": "Damp-proof course",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Crown Permacryl Emulsion Paint 20L",
+    "slug": "crown_permacryl_emulsion_paint_20l",
+    "brand": "Crown Paints",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Paint",
+      "Quantity": "20 L",
+      "Material": "Water-based vinyl emulsion",
+      "Application": "Interior/exterior walls",
+      "Brand": "Crown Paints"
+    }
+  },
+  {
+    "title": "Sadolin Silk Emulsion Paint 4L",
+    "slug": "sadolin_silk_emulsion_paint_4l",
+    "brand": "Sadolin",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Paint",
+      "Quantity": "4 L",
+      "Material": "Water-based silk emulsion",
+      "Application": "Interior walls",
+      "Brand": "Sadolin"
+    }
+  },
+  {
+    "title": "Gypsum Board 9mm 1.2x2.4m",
+    "slug": "gypsum_board_9mm_1_2x2_4m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Gypsum Board",
+      "Size": "1.2 x 2.4 m x 9 mm",
+      "Material": "Gypsum plasterboard",
+      "Application": "Ceilings, partitions",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Sika-1 Waterproofing Admixture 5L",
+    "slug": "sika_1_waterproofing_admixture_5l",
+    "brand": "Sika",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Waterproofing Admixture",
+      "Quantity": "5 L",
+      "Material": "Liquid admixture",
+      "Application": "Concrete & mortar waterproofing",
+      "Brand": "Sika"
+    }
+  },
+  {
+    "title": "Contractor Wheelbarrow Heavy Duty 90L",
+    "slug": "contractor_wheelbarrow_heavy_duty_90l",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Wheelbarrow",
+      "Material": "Steel tray, pneumatic wheel",
+      "Size": "90 L",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Aluminium Step Ladder 6-Step",
+    "slug": "aluminium_step_ladder_6_step",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Step Ladder",
+      "Material": "Aluminium",
+      "Size": "6 steps (~1.5 m)",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Plastic Toolbox 19 Inch",
+    "slug": "plastic_toolbox_19_inch",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Toolbox",
+      "Material": "Polypropylene",
+      "Size": "19 in",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Bench Vice 4 Inch",
+    "slug": "bench_vice_4_inch",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Bench Vice",
+      "Material": "Cast iron",
+      "Size": "4 in (100 mm) jaws",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Ingco ID6808 Impact Drill 680W",
+    "slug": "ingco_id6808_impact_drill_680w",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Impact Drill",
+      "Power": "680W",
+      "Chuck": "13mm Keyless",
+      "Speed": "0-3000 RPM",
+      "Hammer Mode": "Yes",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco AG235018 Angle Grinder 9 Inch",
+    "slug": "ingco_ag235018_angle_grinder_9_inch",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "2350W",
+      "Voltage": "220-240V",
+      "Disc Size": "230mm",
+      "Speed": "6500 RPM",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco HPWR20008 High Pressure Washer 2000W",
+    "slug": "ingco_hpwr20008_high_pressure_washer_2000w",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Pressure Washer",
+      "Power": "2000W",
+      "Voltage": "220-240V",
+      "Pressure": "140 bar",
+      "Flow Rate": "6.5 L/min",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco 250A MMA Inverter Welder",
+    "slug": "ingco_250a_mma_inverter_welder",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MMA Inverter Welder",
+      "Input": "220V",
+      "Output Range": "20-250A",
+      "Duty Cycle": "60% @ 250A",
+      "Electrode Size": "1.6-5.0mm",
+      "Weight": "5.5 kg",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco 200A MIG Inverter Welder",
+    "slug": "ingco_200a_mig_inverter_welder",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MIG Inverter Welder",
+      "Input": "220V",
+      "Output Range": "30-200A",
+      "Duty Cycle": "60% @ 200A",
+      "Wire Size": "0.8-1.0mm",
+      "Weight": "15 kg",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco 200A TIG/MMA Inverter Welder",
+    "slug": "ingco_200a_tig_mma_inverter_welder",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "TIG/MMA Inverter Welder",
+      "Input": "220V",
+      "Output Range": "10-200A",
+      "Duty Cycle": "60% @ 200A",
+      "Electrode Size": "1.6-4.0mm",
+      "Weight": "6 kg",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco HG20008 Heat Gun 2000W",
+    "slug": "ingco_hg20008_heat_gun_2000w",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Heat Gun",
+      "Power": "2000W",
+      "Voltage": "220-240V",
+      "Speed": "2 air-flow settings",
+      "Max Depth": "N/A",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco 50L Belt Drive Air Compressor 2HP",
+    "slug": "ingco_50l_belt_drive_air_compressor_2hp",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Air Compressor",
+      "Power": "2 HP",
+      "Voltage": "220-240V",
+      "Speed": "8 bar max",
+      "Size": "50 L tank",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Ingco HG200038 Glue Gun 100W",
+    "slug": "ingco_hg200038_glue_gun_100w",
+    "brand": "Ingco",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Glue Gun",
+      "Power": "100W",
+      "Voltage": "220-240V",
+      "Size": "11.2mm glue sticks",
+      "Brand": "Ingco"
+    }
+  },
+  {
+    "title": "Total TG1071156 Angle Grinder 750W",
+    "slug": "total_tg1071156_angle_grinder_750w",
+    "brand": "Total",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "750W",
+      "Voltage": "220-240V",
+      "Disc Size": "115mm",
+      "Speed": "11000 RPM",
+      "Brand": "Total"
+    }
+  },
+  {
+    "title": "Total TD200256 Impact Drill 750W",
+    "slug": "total_td200256_impact_drill_750w",
+    "brand": "Total",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Impact Drill",
+      "Power": "750W",
+      "Chuck": "13mm Keyless",
+      "Speed": "0-3000 RPM",
+      "Hammer Mode": "Yes",
+      "Brand": "Total"
+    }
+  },
+  {
+    "title": "DCA Z1G-FF-15 Demolition Hammer 1240W",
+    "slug": "dca_z1g_ff_15_demolition_hammer_1240w",
+    "brand": "DCA",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Demolition Hammer",
+      "Power": "1240W",
+      "Voltage": "220-240V",
+      "Speed": "1400 BPM",
+      "Chuck": "Hex 17mm",
+      "Brand": "DCA"
+    }
+  },
+  {
+    "title": "DCA Z1E-FF-110 Marble Cutter 1200W",
+    "slug": "dca_z1e_ff_110_marble_cutter_1200w",
+    "brand": "DCA",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Marble Cutter",
+      "Power": "1200W",
+      "Voltage": "220-240V",
+      "Blade Size": "110mm",
+      "Speed": "13000 RPM",
+      "Max Depth": "34mm",
+      "Brand": "DCA"
+    }
+  },
+  {
+    "title": "Bosch GWS 750-100 Angle Grinder",
+    "slug": "bosch_gws_750_100_angle_grinder",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "750W",
+      "Voltage": "220-240V",
+      "Disc Size": "100mm",
+      "Speed": "11000 RPM",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Bosch GSB 450 RE Impact Drill 450W",
+    "slug": "bosch_gsb_450_re_impact_drill_450w",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Impact Drill",
+      "Power": "450W",
+      "Chuck": "10mm Keyless",
+      "Speed": "0-2800 RPM",
+      "Hammer Mode": "Yes",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Bosch GKS 190 Circular Saw 1400W",
+    "slug": "bosch_gks_190_circular_saw_1400w",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circular Saw",
+      "Power": "1400W",
+      "Blade Size": "190mm",
+      "Max Depth": "70mm",
+      "Speed": "5500 RPM",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Bosch GHO 6500 Planer 650W",
+    "slug": "bosch_gho_6500_planer_650w",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Electric Planer",
+      "Power": "650W",
+      "Voltage": "220-240V",
+      "Blade Size": "82mm",
+      "Speed": "16500 RPM",
+      "Max Depth": "2.6mm",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Bosch GEX 125-1 AE Random Orbit Sander",
+    "slug": "bosch_gex_125_1_ae_random_orbit_sander",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Random Orbit Sander",
+      "Power": "250W",
+      "Voltage": "220-240V",
+      "Disc Size": "125mm",
+      "Speed": "7500-12000 RPM",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Bosch GCM 10M Mitre Saw 1700W",
+    "slug": "bosch_gcm_10m_mitre_saw_1700w",
+    "brand": "Bosch",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mitre Saw",
+      "Power": "1700W",
+      "Voltage": "220-240V",
+      "Blade Size": "254mm",
+      "Speed": "4800 RPM",
+      "Bevel": "0-45 deg",
+      "Brand": "Bosch"
+    }
+  },
+  {
+    "title": "Makita GA9020 9 Inch Angle Grinder",
+    "slug": "makita_ga9020_9_inch_angle_grinder",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Angle Grinder",
+      "Power": "2000W",
+      "Voltage": "220-240V",
+      "Disc Size": "230mm",
+      "Speed": "6600 RPM",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita HP1630 Hammer Drill 710W",
+    "slug": "makita_hp1630_hammer_drill_710w",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Hammer Drill",
+      "Power": "710W",
+      "Chuck": "13mm Keyless",
+      "Speed": "0-3200 RPM",
+      "Hammer Mode": "Yes",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita 6408 Rotary Drill 530W",
+    "slug": "makita_6408_rotary_drill_530w",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Rotary Drill",
+      "Power": "530W",
+      "Chuck": "10mm Keyed",
+      "Speed": "0-2500 RPM",
+      "Hammer Mode": "No",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita 5704R Circular Saw 190mm",
+    "slug": "makita_5704r_circular_saw_190mm",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circular Saw",
+      "Power": "1900W",
+      "Blade Size": "190mm",
+      "Max Depth": "66mm",
+      "Speed": "4900 RPM",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita BO3710 Finishing Sander 190W",
+    "slug": "makita_bo3710_finishing_sander_190w",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Finishing Sander",
+      "Power": "190W",
+      "Voltage": "220-240V",
+      "Speed": "11000 OPM",
+      "Size": "93 x 228mm pad",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita BO5041 Random Orbit Sander 125mm",
+    "slug": "makita_bo5041_random_orbit_sander_125mm",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Random Orbit Sander",
+      "Power": "300W",
+      "Voltage": "220-240V",
+      "Disc Size": "125mm",
+      "Speed": "4000-12000 OPM",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita JV0600K Jigsaw 650W",
+    "slug": "makita_jv0600k_jigsaw_650w",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Jigsaw",
+      "Power": "650W",
+      "Voltage": "220-240V",
+      "Speed": "500-3100 SPM",
+      "Max Depth": "90mm wood",
+      "Bevel": "0-45 deg",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita RT0700C Laminate Trimmer",
+    "slug": "makita_rt0700c_laminate_trimmer",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Laminate Trimmer",
+      "Power": "710W",
+      "Voltage": "220-240V",
+      "Chuck": "6.35mm (1/4 in)",
+      "Speed": "10000-30000 RPM",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita KP0800K Planer 82mm",
+    "slug": "makita_kp0800k_planer_82mm",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Electric Planer",
+      "Power": "620W",
+      "Voltage": "220-240V",
+      "Blade Size": "82mm",
+      "Speed": "17000 RPM",
+      "Max Depth": "2mm",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "Makita HR2470 SDS-Plus Rotary Hammer",
+    "slug": "makita_hr2470_sds_plus_rotary_hammer",
+    "brand": "Makita",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Rotary Hammer",
+      "Power": "780W",
+      "Chuck": "SDS-Plus",
+      "Speed": "0-1100 RPM",
+      "Impacts": "0-4500 BPM",
+      "Max Drilling": "24mm concrete",
+      "Brand": "Makita"
+    }
+  },
+  {
+    "title": "DeWalt DWD024 Impact Drill 650W",
+    "slug": "dewalt_dwd024_impact_drill_650w",
+    "brand": "DeWalt",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Impact Drill",
+      "Power": "650W",
+      "Chuck": "13mm Keyless",
+      "Speed": "0-2800 RPM",
+      "Hammer Mode": "Yes",
+      "Brand": "DeWalt"
+    }
+  },
+  {
+    "title": "DeWalt DWE561 Circular Saw 184mm",
+    "slug": "dewalt_dwe561_circular_saw_184mm",
+    "brand": "DeWalt",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Circular Saw",
+      "Power": "1200W",
+      "Blade Size": "184mm",
+      "Max Depth": "65mm",
+      "Speed": "5500 RPM",
+      "Bevel": "0-57 deg",
+      "Brand": "DeWalt"
+    }
+  },
+  {
+    "title": "Jasic MIG 200 Inverter Welder",
+    "slug": "jasic_mig_200_inverter_welder",
+    "brand": "Jasic",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MIG Inverter Welder",
+      "Input": "220V",
+      "Output Range": "30-200A",
+      "Duty Cycle": "60% @ 200A",
+      "Wire Size": "0.8-1.0mm",
+      "Weight": "17 kg",
+      "Brand": "Jasic"
+    }
+  },
+  {
+    "title": "Jasic TIG-200P AC/DC Inverter Welder",
+    "slug": "jasic_tig_200p_ac_dc_inverter_welder",
+    "brand": "Jasic",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "TIG Inverter Welder",
+      "Input": "220V",
+      "Output Range": "10-200A",
+      "Duty Cycle": "60% @ 200A",
+      "Weight": "9 kg",
+      "Brand": "Jasic"
+    }
+  },
+  {
+    "title": "Karcher K5 Compact Pressure Washer",
+    "slug": "karcher_k5_compact_pressure_washer",
+    "brand": "Karcher",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Pressure Washer",
+      "Power": "2100W",
+      "Voltage": "220-240V",
+      "Pressure": "145 bar",
+      "Flow Rate": "8.3 L/min",
+      "Brand": "Karcher"
+    }
+  },
+  {
+    "title": "Stanley 46-Piece 1/4 Inch Socket Set",
+    "slug": "stanley_46_piece_1_4_inch_socket_set",
+    "brand": "Stanley",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Socket Set",
+      "Size": "1/4 in drive, 4-14mm + bits",
+      "Material": "Chrome vanadium",
+      "Case": "Blow-mould case",
+      "Brand": "Stanley"
+    }
+  },
+  {
+    "title": "Combination Pliers 8 Inch",
+    "slug": "combination_pliers_8_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Pliers",
+      "Size": "8 in (200mm)",
+      "Material": "Chrome vanadium steel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Long Nose Pliers 6 Inch",
+    "slug": "long_nose_pliers_6_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Pliers",
+      "Size": "6 in (150mm)",
+      "Material": "Chrome vanadium steel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Diagonal Cutting Pliers 7 Inch",
+    "slug": "diagonal_cutting_pliers_7_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Pliers",
+      "Size": "7 in (180mm)",
+      "Material": "Chrome vanadium steel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Water Pump Pliers 10 Inch",
+    "slug": "water_pump_pliers_10_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Pliers",
+      "Size": "10 in (250mm)",
+      "Material": "Chrome vanadium",
+      "Adjustment": "Slip-joint, 7 positions",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Adjustable Wrench 12 Inch",
+    "slug": "adjustable_wrench_12_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Adjustable Wrench",
+      "Size": "12 in (300mm)",
+      "Jaw Capacity": "38mm",
+      "Material": "Chrome vanadium",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Hex Key Set 9-Piece Ball End",
+    "slug": "hex_key_set_9_piece_ball_end",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hex Key Set",
+      "Size": "1.5-10mm, 9 pieces",
+      "Material": "Chrome vanadium",
+      "Case": "Folding holder",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "G-Clamp 6 Inch Heavy Duty",
+    "slug": "g_clamp_6_inch_heavy_duty",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "G-Clamp",
+      "Size": "6 in (150mm) opening",
+      "Material": "Malleable cast iron",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Spirit Level 1200mm Aluminium",
+    "slug": "spirit_level_1200mm_aluminium",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Spirit Level",
+      "Length": "1200mm",
+      "Material": "Aluminium box section",
+      "Case": "3 vials",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Fibreglass Tape Measure 30m",
+    "slug": "fibreglass_tape_measure_30m",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tape Measure",
+      "Length": "30m",
+      "Material": "Fibreglass blade",
+      "Case": "Open reel ABS",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Stanley Chalk Line Reel 30m",
+    "slug": "stanley_chalk_line_reel_30m",
+    "brand": "Stanley",
+    "subcategory": "Hand & Power Tools",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Chalk Line",
+      "Length": "30m",
+      "Case": "Die-cast body",
+      "Material": "Polyester line",
+      "Brand": "Stanley"
+    }
+  },
+  {
+    "title": "Cold Chisel Set 5-Piece",
+    "slug": "cold_chisel_set_5_piece",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Chisel Set",
+      "Size": "10-25mm flat chisels",
+      "Material": "Chrome vanadium steel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Claw Hammer 16oz Fibreglass Handle",
+    "slug": "claw_hammer_16oz_fibreglass_handle",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Claw Hammer",
+      "Size": "16 oz",
+      "Material": "Forged steel head",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Rubber Mallet 16oz",
+    "slug": "rubber_mallet_16oz",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Rubber Mallet",
+      "Size": "16 oz",
+      "Material": "Rubber head, wooden handle",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Bolt Cutter 24 Inch",
+    "slug": "bolt_cutter_24_inch",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Bolt Cutter",
+      "Size": "24 in (600mm)",
+      "Material": "Chrome molybdenum jaws",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Automatic Wire Stripper",
+    "slug": "automatic_wire_stripper",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Wire Stripper",
+      "Size": "0.5-6mm2",
+      "Material": "Steel, plastic grips",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Hand Riveter with 60 Rivets",
+    "slug": "hand_riveter_with_60_rivets",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hand Riveter",
+      "Size": "2.4-4.8mm rivets",
+      "Material": "Steel, aluminium body",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Soldering Iron 60W",
+    "slug": "soldering_iron_60w",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Soldering Iron",
+      "Power": "60W",
+      "Voltage": "220-240V",
+      "Size": "Fine point tip",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Wire Brush Set 3-Piece",
+    "slug": "wire_brush_set_3_piece",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Wire Brush",
+      "Size": "Steel/brass/nylon set",
+      "Material": "Steel bristles",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Magnetic Pick-Up Tool Telescopic",
+    "slug": "magnetic_pick_up_tool_telescopic",
+    "brand": "Generic",
+    "subcategory": "Hand & Power Tools",
+    "source": "generic",
+    "specifications": {
+      "Type": "Pick-Up Tool",
+      "Size": "Extends to 650mm",
+      "Material": "Steel, neodymium magnet",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC Gumboots Black Knee Length",
+    "slug": "pvc_gumboots_black_knee_length",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Gumboots",
+      "Material": "PVC",
+      "Size": "UK 6-11",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Fall Arrest Harness with 2m Lanyard",
+    "slug": "fall_arrest_harness_with_2m_lanyard",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Safety Harness",
+      "Material": "Polyester webbing",
+      "Standard": "EN 361",
+      "Size": "Universal",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Leather Welding Apron",
+    "slug": "leather_welding_apron",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Welding Apron",
+      "Material": "Split cowhide leather",
+      "Standard": "EN 470",
+      "Size": "90 x 60cm",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Flip-Up Welding Helmet",
+    "slug": "flip_up_welding_helmet",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Welding Helmet",
+      "Lens": "Shade 11 flip-up",
+      "Material": "PP shell",
+      "Standard": "EN 175",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "3M 1100 Foam Ear Plugs Pack of 50",
+    "slug": "3m_1100_foam_ear_plugs_pack_of_50",
+    "brand": "3M",
+    "subcategory": "Safety Wear",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Ear Plugs",
+      "Material": "PU foam",
+      "Class": "SNR 37dB",
+      "Standard": "EN 352-2",
+      "Quantity": "50 pairs",
+      "Brand": "3M"
+    }
+  },
+  {
+    "title": "Polycarbonate Face Shield",
+    "slug": "polycarbonate_face_shield",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Face Shield",
+      "Lens": "Clear polycarbonate",
+      "Material": "PC visor, PP browguard",
+      "Standard": "EN 166",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Welding Goggles Shade 5",
+    "slug": "welding_goggles_shade_5",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Welding Goggles",
+      "Lens": "Shade 5 green",
+      "Material": "PVC frame",
+      "Standard": "EN 175",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Traffic Cone 750mm Reflective",
+    "slug": "traffic_cone_750mm_reflective",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Traffic Cone",
+      "Material": "PVC",
+      "Size": "750mm",
+      "Class": "Reflective collar",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Caution Tape 72mm x 500m",
+    "slug": "caution_tape_72mm_x_500m",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Barrier Tape",
+      "Material": "PE film",
+      "Size": "72mm x 500m",
+      "Color": "Yellow/black CAUTION print",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Knee Pads Gel Cushion",
+    "slug": "knee_pads_gel_cushion",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Knee Pads",
+      "Material": "EVA + gel cushion",
+      "Size": "Universal, velcro straps",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Hi-Vis Executive Vest with Pockets",
+    "slug": "hi_vis_executive_vest_with_pockets",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Safety Vest",
+      "Material": "Polyester mesh",
+      "Class": "Class 2",
+      "Standard": "EN ISO 20471",
+      "Size": "M-XXL",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Insulated Electrician Gloves 1000V",
+    "slug": "insulated_electrician_gloves_1000v",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Insulated Gloves",
+      "Material": "Natural rubber latex",
+      "Class": "Class 0, 1000V AC",
+      "Standard": "IEC 60903",
+      "Size": "10",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Navy Blue Dust Coat",
+    "slug": "navy_blue_dust_coat",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Dust Coat",
+      "Material": "Polycotton drill",
+      "Size": "M-XXL",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "First Aid Kit Industrial 50-Person",
+    "slug": "first_aid_kit_industrial_50_person",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "First Aid Kit",
+      "Material": "ABS case",
+      "Standard": "DOSHS-compliant",
+      "Quantity": "50-person contents",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Dry Powder Fire Extinguisher 9kg",
+    "slug": "dry_powder_fire_extinguisher_9kg",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Fire Extinguisher",
+      "Material": "ABC dry powder, steel cylinder",
+      "Class": "ABC rated",
+      "Standard": "EN 3 / KEBS",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Respirator Half Mask with P3 Filters",
+    "slug": "respirator_half_mask_with_p3_filters",
+    "brand": "Generic",
+    "subcategory": "Safety Wear",
+    "source": "generic",
+    "specifications": {
+      "Type": "Respirator",
+      "Facepiece": "Half mask, twin filters",
+      "Standard": "EN 140 / EN 143 P3",
+      "Material": "TPE",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Kipor KDE6500E 5kVA Diesel Generator",
+    "slug": "kipor_kde6500e_5kva_diesel_generator",
+    "brand": "Kipor",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Diesel Generator",
+      "Rated Power": "5.0 kVA",
+      "Max Power": "5.5 kVA",
+      "Fuel": "Diesel",
+      "Tank Capacity": "16 L",
+      "Run Time": "~8 hrs",
+      "Electric Start": "Yes",
+      "Weight": "160 kg",
+      "Brand": "Kipor"
+    }
+  },
+  {
+    "title": "Loncin LC8000D-AS 6kVA Diesel Generator",
+    "slug": "loncin_lc8000d_as_6kva_diesel_generator",
+    "brand": "Loncin",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Diesel Generator",
+      "Rated Power": "6.0 kVA",
+      "Max Power": "6.5 kVA",
+      "Fuel": "Diesel",
+      "Tank Capacity": "16 L",
+      "Run Time": "~9 hrs",
+      "Electric Start": "Yes",
+      "Weight": "165 kg",
+      "Brand": "Loncin"
+    }
+  },
+  {
+    "title": "Honda EU30iS 3kVA Inverter Generator",
+    "slug": "honda_eu30is_3kva_inverter_generator",
+    "brand": "Honda",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Inverter Generator",
+      "Rated Power": "2.8 kVA",
+      "Max Power": "3.0 kVA",
+      "Fuel": "Petrol",
+      "Tank Capacity": "13 L",
+      "Run Time": "~20 hrs eco",
+      "Noise": "57 dB(A) @ 7m",
+      "Weight": "61 kg",
+      "Brand": "Honda"
+    }
+  },
+  {
+    "title": "Firman SPG8800E2 6kVA Petrol Generator",
+    "slug": "firman_spg8800e2_6kva_petrol_generator",
+    "brand": "Firman",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Petrol Generator",
+      "Rated Power": "6.0 kVA",
+      "Max Power": "6.5 kVA",
+      "Fuel": "Petrol",
+      "Tank Capacity": "25 L",
+      "Run Time": "~12 hrs",
+      "Electric Start": "Yes",
+      "Weight": "98 kg",
+      "Brand": "Firman"
+    }
+  },
+  {
+    "title": "Schneider Acti9 32A Single Pole MCB",
+    "slug": "schneider_acti9_32a_single_pole_mcb",
+    "brand": "Schneider Electric",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MCB",
+      "Current Rating": "32A",
+      "Tripping Curve": "C",
+      "Poles": "1",
+      "Breaking Capacity": "6kA",
+      "Standard": "IEC 60898",
+      "Brand": "Schneider Electric"
+    }
+  },
+  {
+    "title": "Schneider Acti9 63A 30mA RCCB 2-Pole",
+    "slug": "schneider_acti9_63a_30ma_rccb_2_pole",
+    "brand": "Schneider Electric",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "RCCB",
+      "Current Rating": "63A",
+      "Voltage": "230V",
+      "Poles": "2",
+      "Standard": "IEC 61008",
+      "Brand": "Schneider Electric"
+    }
+  },
+  {
+    "title": "Hager 20A Single Pole MCB",
+    "slug": "hager_20a_single_pole_mcb",
+    "brand": "Hager",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MCB",
+      "Current Rating": "20A",
+      "Tripping Curve": "C",
+      "Poles": "1",
+      "Breaking Capacity": "6kA",
+      "Standard": "IEC 60898",
+      "Brand": "Hager"
+    }
+  },
+  {
+    "title": "ABB 40A Triple Pole MCB",
+    "slug": "abb_40a_triple_pole_mcb",
+    "brand": "ABB",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MCB",
+      "Current Rating": "40A",
+      "Tripping Curve": "C",
+      "Poles": "3",
+      "Breaking Capacity": "6kA",
+      "Standard": "IEC 60898",
+      "Brand": "ABB"
+    }
+  },
+  {
+    "title": "Chint NXB-63 32A Single Pole MCB",
+    "slug": "chint_nxb_63_32a_single_pole_mcb",
+    "brand": "Chint",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "MCB",
+      "Current Rating": "32A",
+      "Tripping Curve": "C",
+      "Poles": "1",
+      "Breaking Capacity": "6kA",
+      "Standard": "IEC 60898",
+      "Brand": "Chint"
+    }
+  },
+  {
+    "title": "Hager 6-Way Consumer Unit",
+    "slug": "hager_6_way_consumer_unit",
+    "brand": "Hager",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Consumer Unit",
+      "Current Rating": "63A main switch",
+      "Voltage": "230V",
+      "Standard": "IEC 61439-3",
+      "Brand": "Hager"
+    }
+  },
+  {
+    "title": "Schneider Resi9 12-Way Distribution Board",
+    "slug": "schneider_resi9_12_way_distribution_board",
+    "brand": "Schneider Electric",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Distribution Board",
+      "Current Rating": "100A",
+      "Voltage": "230/400V",
+      "Standard": "IEC 61439-3",
+      "Brand": "Schneider Electric"
+    }
+  },
+  {
+    "title": "East African Cables 1.5mm Single Core 100m",
+    "slug": "east_african_cables_1_5mm_single_core_100m",
+    "brand": "East African Cables",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Single Core Cable",
+      "Size": "1.5 mm2",
+      "Length": "100m",
+      "Material": "Copper, PVC insulated",
+      "Standard": "KEBS/BS 6004",
+      "Voltage": "450/750V",
+      "Brand": "East African Cables"
+    }
+  },
+  {
+    "title": "East African Cables 4mm Twin & Earth Cable 100m",
+    "slug": "east_african_cables_4mm_twin_earth_cable_100m",
+    "brand": "East African Cables",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Twin & Earth Cable",
+      "Size": "4 mm2",
+      "Length": "100m",
+      "Material": "Copper, PVC insulated",
+      "Standard": "KEBS/BS 6004",
+      "Voltage": "300/500V",
+      "Brand": "East African Cables"
+    }
+  },
+  {
+    "title": "East African Cables 6mm Twin & Earth Cable 100m",
+    "slug": "east_african_cables_6mm_twin_earth_cable_100m",
+    "brand": "East African Cables",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Twin & Earth Cable",
+      "Size": "6 mm2",
+      "Length": "100m",
+      "Material": "Copper, PVC insulated",
+      "Standard": "KEBS/BS 6004",
+      "Voltage": "300/500V",
+      "Brand": "East African Cables"
+    }
+  },
+  {
+    "title": "East African Cables 16mm 4-Core Armoured Cable",
+    "slug": "east_african_cables_16mm_4_core_armoured_cable",
+    "brand": "East African Cables",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Armoured Cable",
+      "Size": "16 mm2 x 4-core",
+      "Material": "Copper, XLPE/SWA/PVC",
+      "Standard": "BS 5467",
+      "Voltage": "600/1000V",
+      "Brand": "East African Cables"
+    }
+  },
+  {
+    "title": "Crabtree 13A Double Switched Socket",
+    "slug": "crabtree_13a_double_switched_socket",
+    "brand": "Crabtree",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Socket Outlet",
+      "Current Rating": "13A",
+      "Sockets": "2-gang",
+      "Standard": "BS 1363",
+      "Brand": "Crabtree"
+    }
+  },
+  {
+    "title": "Crabtree 2-Gang Light Switch",
+    "slug": "crabtree_2_gang_light_switch",
+    "brand": "Crabtree",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Light Switch",
+      "Current Rating": "10A",
+      "Voltage": "250V",
+      "Standard": "BS 3676",
+      "Brand": "Crabtree"
+    }
+  },
+  {
+    "title": "Philips LED Floodlight 100W",
+    "slug": "philips_led_floodlight_100w",
+    "brand": "Philips",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "LED Floodlight",
+      "Rated Power": "100W",
+      "Voltage": "220-240V",
+      "Standard": "IP65",
+      "Brand": "Philips"
+    }
+  },
+  {
+    "title": "Integrated Solar Street Light 60W",
+    "slug": "integrated_solar_street_light_60w",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Solar Street Light",
+      "Rated Power": "60W LED",
+      "Voltage": "3.2V LiFePO4 battery",
+      "Standard": "IP65",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Solar Street Light 100W with Pole",
+    "slug": "solar_street_light_100w_with_pole",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Solar Street Light",
+      "Rated Power": "100W LED",
+      "Voltage": "12V solar system",
+      "Standard": "IP66",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Suntech Solar Water Heater 200L Pressurized",
+    "slug": "suntech_solar_water_heater_200l_pressurized",
+    "brand": "Suntech",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Solar Water Heater",
+      "Size": "200 L",
+      "Material": "Stainless steel inner tank",
+      "Standard": "Pressurized, flat-plate collector",
+      "Brand": "Suntech"
+    }
+  },
+  {
+    "title": "Non-Pressurized Solar Water Heater 300L",
+    "slug": "non_pressurized_solar_water_heater_300l",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Solar Water Heater",
+      "Size": "300 L",
+      "Material": "Stainless steel inner tank, vacuum tubes",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Must 5kVA Hybrid Solar Inverter 48V",
+    "slug": "must_5kva_hybrid_solar_inverter_48v",
+    "brand": "Must",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Hybrid Inverter",
+      "Rated Power": "5 kVA / 4 kW",
+      "Voltage": "48V DC, 230V AC",
+      "Standard": "MPPT 80A built-in",
+      "Brand": "Must"
+    }
+  },
+  {
+    "title": "Chloride Exide Solar Battery 12V 200Ah",
+    "slug": "chloride_exide_solar_battery_12v_200ah",
+    "brand": "Chloride Exide",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Solar Battery",
+      "Voltage": "12V",
+      "Current Rating": "200Ah",
+      "Standard": "Deep cycle maintenance-free",
+      "Brand": "Chloride Exide"
+    }
+  },
+  {
+    "title": "Felicity 24V 100Ah LiFePO4 Battery",
+    "slug": "felicity_24v_100ah_lifepo4_battery",
+    "brand": "Felicity Solar",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Lithium Battery",
+      "Voltage": "25.6V",
+      "Current Rating": "100Ah",
+      "Standard": "LiFePO4, 6000 cycles, BMS",
+      "Brand": "Felicity Solar"
+    }
+  },
+  {
+    "title": "Ritar 12V 100Ah Gel Battery",
+    "slug": "ritar_12v_100ah_gel_battery",
+    "brand": "Ritar",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Gel Battery",
+      "Voltage": "12V",
+      "Current Rating": "100Ah",
+      "Standard": "Deep cycle gel, maintenance-free",
+      "Brand": "Ritar"
+    }
+  },
+  {
+    "title": "Midea 50L Storage Water Heater",
+    "slug": "midea_50l_storage_water_heater",
+    "brand": "Midea",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Storage Water Heater",
+      "Rated Power": "2000W",
+      "Size": "50 L",
+      "Voltage": "220-240V",
+      "Material": "Enamel-lined tank",
+      "Brand": "Midea"
+    }
+  },
+  {
+    "title": "Ariston 100L Storage Water Heater",
+    "slug": "ariston_100l_storage_water_heater",
+    "brand": "Ariston",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Storage Water Heater",
+      "Rated Power": "1500W",
+      "Size": "100 L",
+      "Voltage": "220-240V",
+      "Material": "Enamel-lined tank",
+      "Brand": "Ariston"
+    }
+  },
+  {
+    "title": "Lorenzetti Instant Shower Heater",
+    "slug": "lorenzetti_instant_shower_heater",
+    "brand": "Lorenzetti",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Instant Shower Heater",
+      "Rated Power": "5.5 kW",
+      "Voltage": "220-240V",
+      "Standard": "IPX4",
+      "Brand": "Lorenzetti"
+    }
+  },
+  {
+    "title": "Sollatek TV Guard 13A",
+    "slug": "sollatek_tv_guard_13a",
+    "brand": "Sollatek",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Voltage Guard",
+      "Current Rating": "13A",
+      "Voltage": "230V",
+      "Standard": "Over/under voltage protection",
+      "Brand": "Sollatek"
+    }
+  },
+  {
+    "title": "Sollatek Fridge Guard 13A",
+    "slug": "sollatek_fridge_guard_13a",
+    "brand": "Sollatek",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Voltage Guard",
+      "Current Rating": "13A",
+      "Voltage": "230V",
+      "Standard": "Over/under voltage + surge protection",
+      "Brand": "Sollatek"
+    }
+  },
+  {
+    "title": "Changeover Switch 63A 3-Phase",
+    "slug": "changeover_switch_63a_3_phase",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Changeover Switch",
+      "Current Rating": "63A",
+      "Voltage": "415V",
+      "Poles": "4",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Automatic Voltage Regulator 2000VA",
+    "slug": "automatic_voltage_regulator_2000va",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Voltage Stabilizer",
+      "Rated Power": "2000VA",
+      "Voltage": "140-260V in / 220V out",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Copper Bonded Earth Rod 1.2m",
+    "slug": "copper_bonded_earth_rod_1_2m",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Earth Rod",
+      "Size": "5/8 in x 1.2m",
+      "Material": "Copper bonded steel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC Trunking 40x25mm x 3m",
+    "slug": "pvc_trunking_40x25mm_x_3m",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Cable Trunking",
+      "Size": "40 x 25mm x 3m",
+      "Material": "PVC",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Cable Ties 300mm Pack of 100",
+    "slug": "cable_ties_300mm_pack_of_100",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Cable Ties",
+      "Size": "4.8 x 300mm",
+      "Material": "Nylon 66",
+      "Quantity": "100",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "6-Way Extension Socket with Surge Protection",
+    "slug": "6_way_extension_socket_with_surge_protection",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Extension Socket",
+      "Current Rating": "13A",
+      "Sockets": "6-way",
+      "Cable": "3m",
+      "Standard": "BS 1363",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Philips LED Bulb 12W E27",
+    "slug": "philips_led_bulb_12w_e27",
+    "brand": "Philips",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "LED Bulb",
+      "Rated Power": "12W",
+      "Voltage": "220-240V",
+      "Sockets": "E27 base",
+      "Brand": "Philips"
+    }
+  },
+  {
+    "title": "Rechargeable LED Emergency Light",
+    "slug": "rechargeable_led_emergency_light",
+    "brand": "Generic",
+    "subcategory": "Power & Electrical Equipment",
+    "source": "generic",
+    "specifications": {
+      "Type": "Emergency Light",
+      "Rated Power": "2 x 6W LED",
+      "Voltage": "220-240V charging, battery backup 4 hrs",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Kenpoly Water Tank 250L",
+    "slug": "kenpoly_water_tank_250l",
+    "brand": "Kenpoly",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Tank",
+      "Capacity": "250 L",
+      "Material": "Food-grade LLDPE",
+      "Connection": "1 in outlet",
+      "Brand": "Kenpoly"
+    }
+  },
+  {
+    "title": "Kenpoly Water Tank 5000L",
+    "slug": "kenpoly_water_tank_5000l",
+    "brand": "Kenpoly",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Tank",
+      "Capacity": "5,000 L",
+      "Material": "Food-grade LLDPE",
+      "Connection": "2 in outlet",
+      "Brand": "Kenpoly"
+    }
+  },
+  {
+    "title": "Roto Moulders Water Tank 2000L",
+    "slug": "roto_moulders_water_tank_2000l",
+    "brand": "Roto Moulders",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Tank",
+      "Capacity": "2,000 L",
+      "Material": "Food-grade LLDPE",
+      "Connection": "1.5 in outlet",
+      "Brand": "Roto Moulders"
+    }
+  },
+  {
+    "title": "Techno Plast Water Tank 500L",
+    "slug": "techno_plast_water_tank_500l",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Tank",
+      "Capacity": "500 L",
+      "Material": "Food-grade LLDPE",
+      "Connection": "1 in outlet",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Techno Plast Water Tank 10000L",
+    "slug": "techno_plast_water_tank_10000l",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Tank",
+      "Capacity": "10,000 L",
+      "Material": "Food-grade LLDPE",
+      "Connection": "2 in outlet",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Underground Water Tank 5000L",
+    "slug": "underground_water_tank_5000l",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Underground Tank",
+      "Capacity": "5,000 L",
+      "Material": "Ribbed LLDPE",
+      "Connection": "2 in outlet, manhole access",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Galvanized Rain Gutter 6 Inch x 3m",
+    "slug": "galvanized_rain_gutter_6_inch_x_3m",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Rain Gutter",
+      "Diameter": "6 in half-round",
+      "Length": "3m",
+      "Material": "Galvanized steel 0.4mm",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Techno Plast PPR Pipe 20mm x 4m PN16",
+    "slug": "techno_plast_ppr_pipe_20mm_x_4m_pn16",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "PPR Pipe",
+      "Diameter": "20mm",
+      "Length": "4m",
+      "Pressure Rating": "PN16",
+      "Material": "PPR",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Techno Plast PPR Socket 25mm",
+    "slug": "techno_plast_ppr_socket_25mm",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "PPR Socket",
+      "Diameter": "25mm",
+      "Material": "PPR",
+      "Connection": "Socket fusion",
+      "Pressure Rating": "PN16",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "Techno Plast PPR Female Adapter 25mm x 1/2 Inch",
+    "slug": "techno_plast_ppr_female_adapter_25mm_x_1_2_inch",
+    "brand": "Techno Plast",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "PPR Adapter",
+      "Diameter": "25mm x 1/2 in",
+      "Material": "PPR/brass insert",
+      "Connection": "Socket fusion x BSP",
+      "Brand": "Techno Plast"
+    }
+  },
+  {
+    "title": "PPR Gate Valve 25mm",
+    "slug": "ppr_gate_valve_25mm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "PPR Gate Valve",
+      "Diameter": "25mm",
+      "Material": "PPR/brass",
+      "Connection": "Socket fusion",
+      "Pressure Rating": "PN16",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "HDPE Pipe 20mm PN16 100m Roll",
+    "slug": "hdpe_pipe_20mm_pn16_100m_roll",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "HDPE Pipe",
+      "Diameter": "20mm",
+      "Length": "100m",
+      "Pressure Rating": "PN16",
+      "Material": "HDPE PE100",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Kenpoly HDPE Compression Tee 32mm",
+    "slug": "kenpoly_hdpe_compression_tee_32mm",
+    "brand": "Kenpoly",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "HDPE Fitting",
+      "Diameter": "32mm",
+      "Material": "PP compression",
+      "Connection": "Compression x 3",
+      "Pressure Rating": "PN16",
+      "Brand": "Kenpoly"
+    }
+  },
+  {
+    "title": "PVC Pipe 50mm 6m Length",
+    "slug": "pvc_pipe_50mm_6m_length",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "PVC Pipe",
+      "Diameter": "50mm",
+      "Length": "6m",
+      "Pressure Rating": "PN10",
+      "Material": "uPVC",
+      "Application": "Soil/waste",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC Waste Pipe 32mm x 4m",
+    "slug": "pvc_waste_pipe_32mm_x_4m",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Waste Pipe",
+      "Diameter": "32mm",
+      "Length": "4m",
+      "Material": "uPVC",
+      "Application": "Basin/sink waste",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC Bend 110mm 90 Degree",
+    "slug": "pvc_bend_110mm_90_degree",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "PVC Bend",
+      "Diameter": "110mm",
+      "Material": "uPVC",
+      "Connection": "Rubber ring/socket",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC P-Trap 40mm",
+    "slug": "pvc_p_trap_40mm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "P-Trap",
+      "Diameter": "40mm",
+      "Material": "uPVC",
+      "Connection": "Compression",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC End Cap 110mm",
+    "slug": "pvc_end_cap_110mm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "PVC End Cap",
+      "Diameter": "110mm",
+      "Material": "uPVC",
+      "Connection": "Socket",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "GI Pipe Class C 1 Inch x 6m",
+    "slug": "gi_pipe_class_c_1_inch_x_6m",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "GI Pipe",
+      "Diameter": "1 in (25mm)",
+      "Length": "6m",
+      "Material": "Galvanized steel",
+      "Standard": "BS 1387 Class C",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "GI Tee 3/4 Inch",
+    "slug": "gi_tee_3_4_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "GI Tee",
+      "Diameter": "3/4 in",
+      "Material": "Malleable iron, galvanized",
+      "Connection": "BSP threaded",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Brass Gate Valve 3/4 Inch",
+    "slug": "brass_gate_valve_3_4_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Gate Valve",
+      "Diameter": "3/4 in",
+      "Material": "Brass",
+      "Connection": "BSP threaded",
+      "Pressure Rating": "PN16",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Brass Bib Tap 1/2 Inch",
+    "slug": "brass_bib_tap_1_2_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Bib Tap",
+      "Diameter": "1/2 in",
+      "Material": "Brass",
+      "Connection": "BSP threaded",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Kitchen Sink Mixer Tap Deck Mount",
+    "slug": "kitchen_sink_mixer_tap_deck_mount",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Sink Mixer",
+      "Material": "Brass, chrome plated",
+      "Connection": "1/2 in flexible tails",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Basin Mixer Tap Chrome",
+    "slug": "basin_mixer_tap_chrome",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Basin Mixer",
+      "Material": "Brass, chrome plated",
+      "Connection": "1/2 in flexible tails",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Shower Head Set with Arm",
+    "slug": "shower_head_set_with_arm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Shower Set",
+      "Material": "ABS chrome head, brass arm",
+      "Connection": "1/2 in BSP",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Twyford Close Coupled Toilet Set",
+    "slug": "twyford_close_coupled_toilet_set",
+    "brand": "Twyford",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "WC Toilet",
+      "Material": "Vitreous china",
+      "Connection": "P-trap, bottom inlet cistern",
+      "Brand": "Twyford"
+    }
+  },
+  {
+    "title": "Ceramic Wash Basin with Pedestal",
+    "slug": "ceramic_wash_basin_with_pedestal",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Wash Basin",
+      "Size": "560mm",
+      "Material": "Vitreous china",
+      "Connection": "1 tap hole",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Shower Enclosure 900x900mm",
+    "slug": "shower_enclosure_900x900mm",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Shower Enclosure",
+      "Size": "900 x 900 x 1850mm",
+      "Material": "6mm tempered glass, aluminium frame",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Kent Water Meter 15mm",
+    "slug": "kent_water_meter_15mm",
+    "brand": "Kent",
+    "subcategory": "Plumbing Supplies",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Water Meter",
+      "Diameter": "15mm (1/2 in)",
+      "Material": "Brass body",
+      "Connection": "BSP threaded",
+      "Standard": "Class B",
+      "Brand": "Kent"
+    }
+  },
+  {
+    "title": "Brass Float Valve 1 Inch",
+    "slug": "brass_float_valve_1_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Float Valve",
+      "Diameter": "1 in",
+      "Material": "Brass",
+      "Connection": "BSP threaded",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Cistern Flush Valve Mechanism",
+    "slug": "cistern_flush_valve_mechanism",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Flush Valve",
+      "Material": "ABS/plastic",
+      "Connection": "Universal WC cistern",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Stainless Steel Kitchen Sink Single Bowl",
+    "slug": "stainless_steel_kitchen_sink_single_bowl",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Kitchen Sink",
+      "Size": "800 x 500mm",
+      "Material": "Stainless steel 201, single bowl + drainer",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Angle Valve 1/2 Inch",
+    "slug": "angle_valve_1_2_inch",
+    "brand": "Generic",
+    "subcategory": "Plumbing Supplies",
+    "source": "generic",
+    "specifications": {
+      "Type": "Angle Valve",
+      "Diameter": "1/2 in",
+      "Material": "Brass, chrome plated",
+      "Connection": "BSP threaded",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Dangote Cement 32.5N 50kg",
+    "slug": "dangote_cement_32_5n_50kg",
+    "brand": "Dangote",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Portland Cement",
+      "Grade": "32.5N",
+      "Standard": "KS EAS 18-1",
+      "Application": "General construction, masonry",
+      "Weight": "50kg",
+      "Brand": "Dangote"
+    }
+  },
+  {
+    "title": "Rhino Cement 32.5R 50kg",
+    "slug": "rhino_cement_32_5r_50kg",
+    "brand": "Rhino",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Portland Cement",
+      "Grade": "32.5R",
+      "Standard": "KS EAS 18-1",
+      "Application": "General construction, plastering",
+      "Weight": "50kg",
+      "Brand": "Rhino"
+    }
+  },
+  {
+    "title": "Savannah Cement 42.5N 50kg",
+    "slug": "savannah_cement_42_5n_50kg",
+    "brand": "Savannah",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Portland Cement",
+      "Grade": "42.5N",
+      "Standard": "KS EAS 18-1",
+      "Application": "Structural concrete, precast",
+      "Weight": "50kg",
+      "Brand": "Savannah"
+    }
+  },
+  {
+    "title": "Hydrated Lime 25kg Bag",
+    "slug": "hydrated_lime_25kg_bag",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Hydrated Lime",
+      "Grade": "CL90",
+      "Application": "Plastering, soil stabilization",
+      "Weight": "25kg",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Agricultural Lime 50kg",
+    "slug": "agricultural_lime_50kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Agricultural Lime",
+      "Grade": "Calcitic",
+      "Application": "Soil pH correction",
+      "Weight": "50kg",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Gypsum Board 12mm 1.2x2.4m",
+    "slug": "gypsum_board_12mm_1_2x2_4m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Gypsum Board",
+      "Size": "1.2 x 2.4m x 12mm",
+      "Material": "Gypsum core, paper faced",
+      "Application": "Ceiling, drywall partitions",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Gypsum Corner Bead 3m",
+    "slug": "gypsum_corner_bead_3m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Corner Bead",
+      "Size": "3m",
+      "Material": "Galvanized steel",
+      "Application": "Drywall edge protection",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Common Wire Nails 3 Inch 1kg",
+    "slug": "common_wire_nails_3_inch_1kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Wire Nails",
+      "Size": "3 in (75mm)",
+      "Quantity": "1kg",
+      "Material": "Steel",
+      "Application": "Timber construction",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Umbrella Head Roofing Nails 25kg",
+    "slug": "umbrella_head_roofing_nails_25kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Roofing Nails",
+      "Size": "2.5 in, umbrella head",
+      "Quantity": "25kg carton",
+      "Material": "Galvanized steel",
+      "Application": "Roofing sheets",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Barbed Wire 12.5G 610m Roll",
+    "slug": "barbed_wire_12_5g_610m_roll",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Barbed Wire",
+      "Wire Diameter": "12.5 gauge",
+      "Quantity": "610m roll (~25kg)",
+      "Material": "Galvanized steel",
+      "Application": "Fencing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Chain Link Fence 2m x 18m 18G",
+    "slug": "chain_link_fence_2m_x_18m_18g",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Chain Link",
+      "Size": "2m x 18m, 50mm mesh",
+      "Wire Diameter": "18 gauge",
+      "Material": "Galvanized steel",
+      "Application": "Perimeter fencing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "BRC Mesh A98 4.8m x 2.4m",
+    "slug": "brc_mesh_a98_4_8m_x_2_4m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "BRC Mesh",
+      "Size": "A98, 4.8 x 2.4m",
+      "Wire Diameter": "5mm",
+      "Material": "Welded steel mesh",
+      "Standard": "BS 4483",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "DPC Damp Proof Membrane 225mm x 30m",
+    "slug": "dpc_damp_proof_membrane_225mm_x_30m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Damp Proof Course",
+      "Size": "225mm x 30m roll",
+      "Material": "Embossed polythene 500g",
+      "Application": "Wall damp-proofing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "APP Waterproofing Membrane 4mm x 10m",
+    "slug": "app_waterproofing_membrane_4mm_x_10m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Waterproofing Membrane",
+      "Size": "4mm x 1m x 10m",
+      "Material": "APP-modified bitumen",
+      "Application": "Flat roof waterproofing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Tile Adhesive 20kg",
+    "slug": "tile_adhesive_20kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tile Adhesive",
+      "Weight": "20kg",
+      "Material": "Cement-based polymer modified",
+      "Application": "Ceramic/porcelain tiles",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Tile Grout White 5kg",
+    "slug": "tile_grout_white_5kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tile Grout",
+      "Weight": "5kg",
+      "Material": "Cement-based, white",
+      "Application": "Tile joints 2-8mm",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Silicone Sealant Clear 280ml",
+    "slug": "silicone_sealant_clear_280ml",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Silicone Sealant",
+      "Quantity": "280ml cartridge",
+      "Material": "Acetic silicone",
+      "Application": "Glazing, sanitary sealing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PU Expansion Foam 750ml",
+    "slug": "pu_expansion_foam_750ml",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "PU Foam",
+      "Quantity": "750ml can",
+      "Material": "Polyurethane",
+      "Application": "Gap filling, insulation",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Crown Undercoat Paint 20L",
+    "slug": "crown_undercoat_paint_20l",
+    "brand": "Crown",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Undercoat Paint",
+      "Quantity": "20L",
+      "Material": "Alkyd-based",
+      "Application": "Interior/exterior undercoat",
+      "Brand": "Crown"
+    }
+  },
+  {
+    "title": "Sadolin Supergloss Paint 4L",
+    "slug": "sadolin_supergloss_paint_4l",
+    "brand": "Sadolin",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Gloss Paint",
+      "Quantity": "4L",
+      "Material": "Alkyd high gloss",
+      "Application": "Wood and metal finish",
+      "Brand": "Sadolin"
+    }
+  },
+  {
+    "title": "Crown Roof Paint 20L",
+    "slug": "crown_roof_paint_20l",
+    "brand": "Crown",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Roof Paint",
+      "Quantity": "20L",
+      "Material": "Acrylic, weatherproof",
+      "Application": "Iron sheet roofing",
+      "Brand": "Crown"
+    }
+  },
+  {
+    "title": "Basco Duracoat Silk Emulsion 20L",
+    "slug": "basco_duracoat_silk_emulsion_20l",
+    "brand": "Basco",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Silk Emulsion Paint",
+      "Quantity": "20L",
+      "Material": "Vinyl acrylic silk",
+      "Application": "Interior walls",
+      "Brand": "Basco"
+    }
+  },
+  {
+    "title": "White Spirit Thinner 5L",
+    "slug": "white_spirit_thinner_5l",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Thinner",
+      "Quantity": "5L",
+      "Material": "White spirit",
+      "Application": "Gloss paint thinning, brush cleaning",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Sandpaper P120 Pack of 10",
+    "slug": "sandpaper_p120_pack_of_10",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Sandpaper",
+      "Size": "230 x 280mm",
+      "Quantity": "10 sheets",
+      "Material": "Aluminium oxide, P120 grit",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Masking Tape 48mm x 40m",
+    "slug": "masking_tape_48mm_x_40m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Masking Tape",
+      "Size": "48mm x 40m",
+      "Material": "Crepe paper",
+      "Application": "Painting masking",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Welding Electrodes E6013 3.2mm 5kg",
+    "slug": "welding_electrodes_e6013_3_2mm_5kg",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Welding Electrodes",
+      "Size": "3.2mm x 350mm",
+      "Quantity": "5kg pack",
+      "Material": "E6013 rutile coated",
+      "Application": "General-purpose MMA welding",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Deformed Steel Bars Y10 10mm",
+    "slug": "deformed_steel_bars_y10_10mm",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Reinforcement Bar",
+      "Diameter": "10mm",
+      "Grade": "500W (Y10)",
+      "Length": "12m",
+      "Standard": "KS ISO 6935",
+      "Application": "Concrete reinforcement",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Deformed Steel Bars Y20 20mm",
+    "slug": "deformed_steel_bars_y20_20mm",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Reinforcement Bar",
+      "Diameter": "20mm",
+      "Grade": "500W (Y20)",
+      "Length": "12m",
+      "Standard": "KS ISO 6935",
+      "Application": "Concrete reinforcement",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "MRM DumuZas Corrugated Sheet 0.25mm 3m",
+    "slug": "mrm_dumuzas_corrugated_sheet_0_25mm_3m",
+    "brand": "MRM",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Roofing Sheet",
+      "Profile": "Corrugated",
+      "Thickness": "0.25mm (32G)",
+      "Length": "3m",
+      "Material": "Aluzinc coated steel",
+      "Coating": "AZ100",
+      "Brand": "MRM"
+    }
+  },
+  {
+    "title": "MRM Ridge Cap 30G 2.5m",
+    "slug": "mrm_ridge_cap_30g_2_5m",
+    "brand": "MRM",
+    "subcategory": "Construction Materials",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Ridge Cap",
+      "Profile": "Roll-top ridge",
+      "Thickness": "0.3mm (30G)",
+      "Length": "2.5m",
+      "Material": "Prepainted Aluzinc steel",
+      "Brand": "MRM"
+    }
+  },
+  {
+    "title": "Cabro Paving Blocks 50mm Grey",
+    "slug": "cabro_paving_blocks_50mm_grey",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Paving Blocks",
+      "Size": "200 x 100 x 50mm",
+      "Material": "Concrete",
+      "Compressive Strength": "25 N/mm2",
+      "Application": "Driveways, walkways",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Cypress Timber 4x2 Inch 3.6m",
+    "slug": "cypress_timber_4x2_inch_3_6m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Sawn Timber",
+      "Size": "4 x 2 in x 3.6m",
+      "Material": "Cypress",
+      "Application": "Roofing, framing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Marine Plywood 18mm 8x4ft",
+    "slug": "marine_plywood_18mm_8x4ft",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Marine Plywood",
+      "Size": "2440 x 1220 x 18mm",
+      "Material": "Hardwood veneers, WBP glue",
+      "Application": "Formwork, furniture",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "MDF Board 18mm 8x4ft",
+    "slug": "mdf_board_18mm_8x4ft",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "MDF Board",
+      "Size": "2440 x 1220 x 18mm",
+      "Material": "Medium density fibreboard",
+      "Application": "Furniture, cabinetry",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "PVC Ceiling Panel 250mm x 3m",
+    "slug": "pvc_ceiling_panel_250mm_x_3m",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "PVC Ceiling Panel",
+      "Size": "250mm x 8mm x 3m",
+      "Material": "PVC tongue & groove",
+      "Application": "Ceiling cladding",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Quarry Dust 7 Tonnes",
+    "slug": "quarry_dust_7_tonnes",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Quarry Dust",
+      "Quantity": "7 tonnes lorry load",
+      "Material": "Crushed stone fines",
+      "Application": "Concrete mixing, block laying",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "SBR Bonding Agent 5L",
+    "slug": "sbr_bonding_agent_5l",
+    "brand": "Generic",
+    "subcategory": "Construction Materials",
+    "source": "generic",
+    "specifications": {
+      "Type": "Bonding Agent",
+      "Quantity": "5L",
+      "Material": "Styrene butadiene latex",
+      "Application": "Screeds, render bonding",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Aluminium Extension Ladder 12ft",
+    "slug": "aluminium_extension_ladder_12ft",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Extension Ladder",
+      "Material": "Aluminium",
+      "Size": "12ft (3.6m) double extension",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Telescopic Ladder 3.8m",
+    "slug": "telescopic_ladder_3_8m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Telescopic Ladder",
+      "Material": "Aluminium",
+      "Size": "3.8m, 13 steps",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Scaffolding H-Frame 1.2m x 1.8m",
+    "slug": "scaffolding_h_frame_1_2m_x_1_8m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Scaffolding Frame",
+      "Material": "Painted steel",
+      "Size": "1.2m x 1.8m H-frame",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Scaffolding Steel Plank 3m",
+    "slug": "scaffolding_steel_plank_3m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Scaffolding Plank",
+      "Material": "Galvanized steel",
+      "Size": "3m x 250mm",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Adjustable Steel Prop 3m",
+    "slug": "adjustable_steel_prop_3m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Acrow Prop",
+      "Material": "Painted steel",
+      "Size": "1.8-3.1m adjustable",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Galvanized Wheelbarrow 65L",
+    "slug": "galvanized_wheelbarrow_65l",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Wheelbarrow",
+      "Material": "Galvanized steel tray",
+      "Size": "65L, pneumatic wheel",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Metal Toolbox 5-Tray 21 Inch",
+    "slug": "metal_toolbox_5_tray_21_inch",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Toolbox",
+      "Material": "Steel",
+      "Size": "21 in, 5 cantilever trays",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Tool Cabinet 5-Drawer Roller",
+    "slug": "tool_cabinet_5_drawer_roller",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tool Cabinet",
+      "Material": "Steel, powder coated",
+      "Size": "5 drawers, castor wheels",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Heavy Duty Tarpaulin 4m x 5m",
+    "slug": "heavy_duty_tarpaulin_4m_x_5m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tarpaulin",
+      "Material": "HDPE woven, 180gsm",
+      "Size": "4m x 5m",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Plastic Jerrican 20L",
+    "slug": "plastic_jerrican_20l",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Jerrican",
+      "Material": "HDPE",
+      "Size": "20L",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Crowbar 1.5m Hexagonal",
+    "slug": "crowbar_1_5m_hexagonal",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Crowbar",
+      "Material": "Hexagonal steel",
+      "Size": "1.5m",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Sledge Hammer 7lb",
+    "slug": "sledge_hammer_7lb",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Sledge Hammer",
+      "Material": "Forged steel head, wooden handle",
+      "Size": "7lb (3.2kg)",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Chain Pulley Block 2 Tonne",
+    "slug": "chain_pulley_block_2_tonne",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Chain Block",
+      "Material": "Alloy steel G80 chain",
+      "Size": "2 tonne x 3m lift",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Ratchet Tie Down Strap 50mm x 10m",
+    "slug": "ratchet_tie_down_strap_50mm_x_10m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tie Down Strap",
+      "Material": "Polyester webbing, steel ratchet",
+      "Size": "50mm x 10m, 5T",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Polypropylene Rope 12mm x 50m",
+    "slug": "polypropylene_rope_12mm_x_50m",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Rope",
+      "Material": "Polypropylene 3-strand",
+      "Size": "12mm x 50m",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Brass Padlock 63mm",
+    "slug": "brass_padlock_63mm",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Padlock",
+      "Material": "Brass body, hardened shackle",
+      "Size": "63mm",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Tower Bolt 8 Inch",
+    "slug": "tower_bolt_8_inch",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tower Bolt",
+      "Material": "Steel, zinc plated",
+      "Size": "8 in (200mm)",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Butt Hinges 4 Inch Pair",
+    "slug": "butt_hinges_4_inch_pair",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Butt Hinges",
+      "Material": "Steel, brass plated",
+      "Size": "4 in, pair",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Masonry Trowel 11 Inch",
+    "slug": "masonry_trowel_11_inch",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Brick Trowel",
+      "Material": "Carbon steel blade, wooden handle",
+      "Size": "11 in (280mm)",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Plastering Float 280mm",
+    "slug": "plastering_float_280mm",
+    "brand": "Generic",
+    "subcategory": "Other Hardware",
+    "source": "generic",
+    "specifications": {
+      "Type": "Plastering Float",
+      "Material": "Steel/plastic blade",
+      "Size": "280 x 140mm",
+      "Brand": "Generic"
     }
   }
 ]

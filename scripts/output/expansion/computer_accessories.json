@@ -1,0 +1,861 @@
+[
+  {
+    "title": "Kingston A400 480GB SATA SSD",
+    "slug": "kingston_a400_480gb_sata_ssd",
+    "brand": "Kingston",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Internal SSD",
+      "Capacity": "480GB",
+      "Form Factor": "2.5\"",
+      "Interface": "SATA III 6Gb/s",
+      "Read Speed": "500 MB/s",
+      "Write Speed": "450 MB/s",
+      "Brand": "Kingston"
+    }
+  },
+  {
+    "title": "Kingston NV3 1TB NVMe SSD",
+    "slug": "kingston_nv3_1tb_nvme_ssd",
+    "brand": "Kingston",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Internal SSD",
+      "Capacity": "1TB",
+      "Form Factor": "M.2 2280",
+      "Interface": "PCIe 4.0 x4 NVMe",
+      "Read Speed": "6,000 MB/s",
+      "Write Speed": "4,000 MB/s",
+      "Brand": "Kingston"
+    }
+  },
+  {
+    "title": "Samsung 980 1TB NVMe SSD",
+    "slug": "samsung_980_1tb_nvme_ssd",
+    "brand": "Samsung",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Internal SSD",
+      "Capacity": "1TB",
+      "Form Factor": "M.2 2280",
+      "Interface": "PCIe 3.0 x4 NVMe",
+      "Read Speed": "3,500 MB/s",
+      "Write Speed": "3,000 MB/s",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "Crucial MX500 500GB SATA SSD",
+    "slug": "crucial_mx500_500gb_sata_ssd",
+    "brand": "Crucial",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Internal SSD",
+      "Capacity": "500GB",
+      "Form Factor": "2.5\"",
+      "Interface": "SATA III 6Gb/s",
+      "Read Speed": "560 MB/s",
+      "Write Speed": "510 MB/s",
+      "Brand": "Crucial"
+    }
+  },
+  {
+    "title": "Seagate Barracuda 1TB Internal HDD",
+    "slug": "seagate_barracuda_1tb_internal_hdd",
+    "brand": "Seagate",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Internal HDD",
+      "Capacity": "1TB",
+      "Form Factor": "3.5\"",
+      "Interface": "SATA III 6Gb/s",
+      "RPM": "7200 RPM",
+      "Cache": "64MB",
+      "Brand": "Seagate"
+    }
+  },
+  {
+    "title": "WD Blue 500GB Internal HDD",
+    "slug": "wd_blue_500gb_internal_hdd",
+    "brand": "WD",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Internal HDD",
+      "Capacity": "500GB",
+      "Form Factor": "3.5\"",
+      "Interface": "SATA III 6Gb/s",
+      "RPM": "7200 RPM",
+      "Cache": "32MB",
+      "Brand": "WD"
+    }
+  },
+  {
+    "title": "SanDisk Ultra 128GB USB 3.0 Flash Drive",
+    "slug": "sandisk_ultra_128gb_usb_3_0_flash_drive",
+    "brand": "SanDisk",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "USB Flash Drive",
+      "Capacity": "128GB",
+      "Form Factor": "USB-A",
+      "Interface": "USB 3.0",
+      "Read Speed": "Up to 130 MB/s",
+      "Write Speed": "Up to 30 MB/s",
+      "Brand": "SanDisk"
+    }
+  },
+  {
+    "title": "Seagate Expansion 2TB Portable External Hard Drive",
+    "slug": "seagate_expansion_2tb_portable_external_hard_drive",
+    "brand": "Seagate",
+    "subcategory": "Storage",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "External Hard Drive (HDD)",
+      "Capacity": "2TB",
+      "Form Factor": "2.5\"",
+      "Interface": "USB 3.0",
+      "RPM": "5400 RPM",
+      "Brand": "Seagate",
+      "Feature": "Plug-and-play, USB-powered"
+    }
+  },
+  {
+    "title": "Intel Core i5-12400F Processor",
+    "slug": "intel_core_i5_12400f_processor",
+    "brand": "Intel",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop Processor",
+      "Cores": "6 (P-cores)",
+      "Threads": "12",
+      "Base Clock": "2.5 GHz",
+      "Boost Clock": "4.4 GHz",
+      "Cache": "18MB Intel Smart Cache",
+      "Socket": "LGA1700",
+      "TDP": "65W",
+      "Brand": "Intel"
+    }
+  },
+  {
+    "title": "Intel Core i5-13400F Processor",
+    "slug": "intel_core_i5_13400f_processor",
+    "brand": "Intel",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop Processor",
+      "Cores": "10 (6P + 4E)",
+      "Threads": "16",
+      "Base Clock": "2.5 GHz",
+      "Boost Clock": "4.6 GHz",
+      "Cache": "20MB Intel Smart Cache",
+      "Socket": "LGA1700",
+      "TDP": "65W",
+      "Brand": "Intel"
+    }
+  },
+  {
+    "title": "Intel Core i7-12700 Processor",
+    "slug": "intel_core_i7_12700_processor",
+    "brand": "Intel",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop Processor",
+      "Cores": "12 (8P + 4E)",
+      "Threads": "20",
+      "Base Clock": "2.1 GHz",
+      "Boost Clock": "4.9 GHz",
+      "Cache": "25MB Intel Smart Cache",
+      "Socket": "LGA1700",
+      "TDP": "65W",
+      "Brand": "Intel"
+    }
+  },
+  {
+    "title": "AMD Ryzen 5 5600 Processor",
+    "slug": "amd_ryzen_5_5600_processor",
+    "brand": "AMD",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop Processor",
+      "Cores": "6",
+      "Threads": "12",
+      "Base Clock": "3.5 GHz",
+      "Boost Clock": "4.4 GHz",
+      "Cache": "32MB L3",
+      "Socket": "AM4",
+      "TDP": "65W",
+      "Brand": "AMD"
+    }
+  },
+  {
+    "title": "AMD Ryzen 5 7600 Processor",
+    "slug": "amd_ryzen_5_7600_processor",
+    "brand": "AMD",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop Processor",
+      "Cores": "6",
+      "Threads": "12",
+      "Base Clock": "3.8 GHz",
+      "Boost Clock": "5.1 GHz",
+      "Cache": "32MB L3",
+      "Socket": "AM5",
+      "TDP": "65W",
+      "Brand": "AMD"
+    }
+  },
+  {
+    "title": "NVIDIA GeForce RTX 4060 8GB Graphics Card",
+    "slug": "nvidia_geforce_rtx_4060_8gb_graphics_card",
+    "brand": "NVIDIA",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Graphics Card (GPU)",
+      "Memory": "8GB GDDR6",
+      "CUDA Cores": "3072",
+      "Boost Clock": "2.46 GHz",
+      "Memory Bus": "128-bit",
+      "TDP": "115W",
+      "Interface": "PCIe 4.0 x8",
+      "Brand": "NVIDIA"
+    }
+  },
+  {
+    "title": "NVIDIA GeForce RTX 3060 12GB Graphics Card",
+    "slug": "nvidia_geforce_rtx_3060_12gb_graphics_card",
+    "brand": "NVIDIA",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Graphics Card (GPU)",
+      "Memory": "12GB GDDR6",
+      "CUDA Cores": "3584",
+      "Boost Clock": "1.78 GHz",
+      "Memory Bus": "192-bit",
+      "TDP": "170W",
+      "Interface": "PCIe 4.0 x16",
+      "Brand": "NVIDIA"
+    }
+  },
+  {
+    "title": "NVIDIA GeForce GTX 1650 4GB Graphics Card",
+    "slug": "nvidia_geforce_gtx_1650_4gb_graphics_card",
+    "brand": "NVIDIA",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Graphics Card (GPU)",
+      "Memory": "4GB GDDR5",
+      "CUDA Cores": "896",
+      "Boost Clock": "1.67 GHz",
+      "Memory Bus": "128-bit",
+      "TDP": "75W",
+      "Interface": "PCIe 3.0 x16",
+      "Brand": "NVIDIA"
+    }
+  },
+  {
+    "title": "Kingston Fury Beast 16GB DDR4-3200 Desktop RAM",
+    "slug": "kingston_fury_beast_16gb_ddr4_3200_desktop_ram",
+    "brand": "Kingston",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Desktop Memory (UDIMM)",
+      "Capacity": "16GB",
+      "Speed": "DDR4-3200",
+      "Latency": "CL16",
+      "Voltage": "1.35V",
+      "Brand": "Kingston"
+    }
+  },
+  {
+    "title": "Crucial 16GB DDR5-5600 SODIMM Laptop RAM",
+    "slug": "crucial_16gb_ddr5_5600_sodimm_laptop_ram",
+    "brand": "Crucial",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Laptop Memory (SODIMM)",
+      "Capacity": "16GB",
+      "Speed": "DDR5-5600",
+      "Latency": "CL46",
+      "Voltage": "1.1V",
+      "Brand": "Crucial"
+    }
+  },
+  {
+    "title": "Kingston 8GB DDR4-3200 SODIMM Laptop RAM",
+    "slug": "kingston_8gb_ddr4_3200_sodimm_laptop_ram",
+    "brand": "Kingston",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Laptop Memory (SODIMM)",
+      "Capacity": "8GB",
+      "Speed": "DDR4-3200",
+      "Latency": "CL22",
+      "Voltage": "1.2V",
+      "Brand": "Kingston"
+    }
+  },
+  {
+    "title": "Gigabyte B760M DS3H DDR4 Motherboard",
+    "slug": "gigabyte_b760m_ds3h_ddr4_motherboard",
+    "brand": "Gigabyte",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Motherboard",
+      "Chipset": "Intel B760",
+      "Socket": "LGA1700",
+      "Form Factor": "Micro-ATX",
+      "RAM Slots": "4x DDR4",
+      "M.2 Slots": "2x M.2",
+      "PCIe": "1x PCIe 4.0 x16",
+      "Brand": "Gigabyte"
+    }
+  },
+  {
+    "title": "Asus PRIME H610M-K DDR4 Motherboard",
+    "slug": "asus_prime_h610m_k_ddr4_motherboard",
+    "brand": "Asus",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Motherboard",
+      "Chipset": "Intel H610",
+      "Socket": "LGA1700",
+      "Form Factor": "Micro-ATX",
+      "RAM Slots": "2x DDR4",
+      "M.2 Slots": "1x M.2",
+      "PCIe": "1x PCIe 4.0 x16",
+      "Brand": "Asus"
+    }
+  },
+  {
+    "title": "Corsair CV650 650W Power Supply",
+    "slug": "corsair_cv650_650w_power_supply",
+    "brand": "Corsair",
+    "subcategory": "Internal Components",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Power Supply (PSU)",
+      "Wattage": "650W",
+      "Efficiency": "80+ Bronze",
+      "Modular": "Non-modular",
+      "Fan Size": "120mm",
+      "ATX Standard": "ATX12V v2.4",
+      "Brand": "Corsair"
+    }
+  },
+  {
+    "title": "Logitech M185 Wireless Mouse",
+    "slug": "logitech_m185_wireless_mouse",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wireless Mouse",
+      "Connectivity": "2.4GHz USB Nano Receiver",
+      "Sensor": "Optical",
+      "DPI": "1000 DPI",
+      "Buttons": "3",
+      "Weight": "75 g",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Logitech M220 Silent Wireless Mouse",
+    "slug": "logitech_m220_silent_wireless_mouse",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wireless Mouse",
+      "Connectivity": "2.4GHz USB Nano Receiver",
+      "Sensor": "Optical",
+      "DPI": "1000 DPI",
+      "Buttons": "3 (Silent Click)",
+      "Weight": "75 g",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Logitech K120 Wired Keyboard",
+    "slug": "logitech_k120_wired_keyboard",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wired Keyboard",
+      "Connectivity": "USB 2.0",
+      "Switch Type": "Membrane",
+      "Backlight": "No",
+      "Key Rollover": "Standard",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Logitech MK270 Wireless Keyboard and Mouse Combo",
+    "slug": "logitech_mk270_wireless_keyboard_and_mouse_combo",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Keyboard and Mouse Combo",
+      "Connectivity": "2.4GHz USB Receiver",
+      "Switch Type": "Membrane",
+      "Backlight": "No",
+      "Key Rollover": "Standard",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Logitech C270 HD Webcam",
+    "slug": "logitech_c270_hd_webcam",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Webcam",
+      "Resolution": "720p HD",
+      "Frame Rate": "30 fps",
+      "Field of View": "60\u00b0",
+      "Microphone": "Built-in Mono",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Logitech C920 HD Pro Webcam",
+    "slug": "logitech_c920_hd_pro_webcam",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Webcam",
+      "Resolution": "1080p Full HD",
+      "Frame Rate": "30 fps",
+      "Field of View": "78\u00b0",
+      "Microphone": "Built-in Dual Stereo",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Logitech H390 USB Headset",
+    "slug": "logitech_h390_usb_headset",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "USB Headset",
+      "Connectivity": "USB-A (Wired)",
+      "Driver": "30mm",
+      "Frequency Response": "20Hz - 20kHz",
+      "Microphone": "Noise-Cancelling Boom Mic",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "Redragon S101 Gaming Keyboard and Mouse Combo",
+    "slug": "redragon_s101_gaming_keyboard_and_mouse_combo",
+    "brand": "Redragon",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Gaming Keyboard and Mouse Combo",
+      "Connectivity": "USB Wired",
+      "Switch Type": "Membrane",
+      "Backlight": "RGB Backlit",
+      "Key Rollover": "25-key Anti-ghosting",
+      "Brand": "Redragon"
+    }
+  },
+  {
+    "title": "Dell P2422H 24\" Monitor",
+    "slug": "dell_p2422h_24_monitor",
+    "brand": "Dell",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "23.8\"",
+      "Resolution": "1920x1080 (Full HD)",
+      "Panel Type": "IPS",
+      "Refresh Rate": "60Hz",
+      "Ports": "HDMI, DisplayPort, VGA, USB Hub",
+      "Brand": "Dell"
+    }
+  },
+  {
+    "title": "HP M24f 24\" Monitor",
+    "slug": "hp_m24f_24_monitor",
+    "brand": "HP",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "23.8\"",
+      "Resolution": "1920x1080 (Full HD)",
+      "Panel Type": "IPS",
+      "Refresh Rate": "75Hz",
+      "Ports": "HDMI, VGA",
+      "Brand": "HP"
+    }
+  },
+  {
+    "title": "Samsung 24\" FHD Monitor (LF24T350)",
+    "slug": "samsung_24_fhd_monitor_lf24t350",
+    "brand": "Samsung",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Monitor",
+      "Screen Size": "24\"",
+      "Resolution": "1920x1080 (Full HD)",
+      "Panel Type": "IPS",
+      "Refresh Rate": "75Hz",
+      "Ports": "HDMI, VGA",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "HP 65W Replacement Laptop Charger",
+    "slug": "hp_65w_replacement_laptop_charger",
+    "brand": "HP",
+    "subcategory": "Peripherals",
+    "source": "generic",
+    "specifications": {
+      "Type": "Laptop Charger (AC Adapter)",
+      "Power": "65W",
+      "Output": "19.5V / 3.33A",
+      "Connector": "4.5mm x 3.0mm Blue Pin",
+      "Compatibility": "HP Pavilion, EliteBook, ProBook",
+      "Brand": "HP"
+    }
+  },
+  {
+    "title": "Dell 65W Replacement Laptop Charger",
+    "slug": "dell_65w_replacement_laptop_charger",
+    "brand": "Dell",
+    "subcategory": "Peripherals",
+    "source": "generic",
+    "specifications": {
+      "Type": "Laptop Charger (AC Adapter)",
+      "Power": "65W",
+      "Output": "19.5V / 3.34A",
+      "Connector": "7.4mm x 5.0mm Barrel",
+      "Compatibility": "Dell Inspiron, Latitude, Vostro",
+      "Brand": "Dell"
+    }
+  },
+  {
+    "title": "Logitech M330 Silent Plus Wireless Mouse",
+    "slug": "logitech_m330_silent_plus_wireless_mouse",
+    "brand": "Logitech",
+    "subcategory": "Peripherals",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wireless Mouse",
+      "Connectivity": "2.4GHz USB Nano Receiver",
+      "Sensor": "Optical",
+      "DPI": "1000 DPI",
+      "Buttons": "3 (Silent Click)",
+      "Weight": "91 g",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "TP-Link Archer C6 AC1200 Gigabit Router",
+    "slug": "tp_link_archer_c6_ac1200_gigabit_router",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11ac (Wi-Fi 5)",
+      "Speed": "AC1200 (300 + 867 Mbps)",
+      "Bands": "Dual Band (2.4GHz + 5GHz)",
+      "Ports": "4x Gigabit LAN, 1x Gigabit WAN",
+      "Antennas": "5 External",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link Archer AX23 AX1800 Wi-Fi 6 Router",
+    "slug": "tp_link_archer_ax23_ax1800_wi_fi_6_router",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11ax (Wi-Fi 6)",
+      "Speed": "AX1800 (574 + 1201 Mbps)",
+      "Bands": "Dual Band (2.4GHz + 5GHz)",
+      "Ports": "4x Gigabit LAN, 1x Gigabit WAN",
+      "Antennas": "4 External",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link Deco M4 AC1200 Mesh Wi-Fi System (2-Pack)",
+    "slug": "tp_link_deco_m4_ac1200_mesh_wi_fi_system_2_pack",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Mesh Wi-Fi System",
+      "Wi-Fi Standard": "802.11ac (Wi-Fi 5)",
+      "Speed": "AC1200 (300 + 867 Mbps)",
+      "Coverage": "Up to 380 sqm (2-Pack)",
+      "Bands": "Dual Band",
+      "Ports": "2x Gigabit Ethernet per unit",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link TL-WR940N 450Mbps Wireless N Router",
+    "slug": "tp_link_tl_wr940n_450mbps_wireless_n_router",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11n (Wi-Fi 4)",
+      "Speed": "450 Mbps",
+      "Bands": "Single Band (2.4GHz)",
+      "Ports": "4x 10/100 LAN, 1x 10/100 WAN",
+      "Antennas": "3 External",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link M7200 4G LTE Mobile Wi-Fi (MiFi)",
+    "slug": "tp_link_m7200_4g_lte_mobile_wi_fi_mifi",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "4G LTE Mobile Wi-Fi (MiFi)",
+      "Wi-Fi Standard": "802.11n",
+      "Speed": "150 Mbps LTE / 300 Mbps Wi-Fi",
+      "Bands": "Single Band (2.4GHz)",
+      "Ports": "1x Micro-USB",
+      "Battery": "2000mAh",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "TP-Link M7350 4G LTE Mobile Wi-Fi (MiFi)",
+    "slug": "tp_link_m7350_4g_lte_mobile_wi_fi_mifi",
+    "brand": "TP-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "4G LTE Mobile Wi-Fi (MiFi)",
+      "Wi-Fi Standard": "802.11a/b/g/n",
+      "Speed": "150 Mbps LTE / 300 Mbps Wi-Fi",
+      "Bands": "Selectable 2.4GHz / 5GHz",
+      "Ports": "1x Micro-USB, microSD Slot",
+      "Battery": "2550mAh",
+      "Brand": "TP-Link"
+    }
+  },
+  {
+    "title": "Tenda F3 300Mbps Wireless Router",
+    "slug": "tenda_f3_300mbps_wireless_router",
+    "brand": "Tenda",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11n (Wi-Fi 4)",
+      "Speed": "300 Mbps",
+      "Bands": "Single Band (2.4GHz)",
+      "Ports": "3x 10/100 LAN, 1x 10/100 WAN",
+      "Antennas": "3 External (5dBi)",
+      "Brand": "Tenda"
+    }
+  },
+  {
+    "title": "Tenda N301 300Mbps Wireless Router",
+    "slug": "tenda_n301_300mbps_wireless_router",
+    "brand": "Tenda",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11n (Wi-Fi 4)",
+      "Speed": "300 Mbps",
+      "Bands": "Single Band (2.4GHz)",
+      "Ports": "3x 10/100 LAN, 1x 10/100 WAN",
+      "Antennas": "2 External (5dBi)",
+      "Brand": "Tenda"
+    }
+  },
+  {
+    "title": "Tenda AC10 AC1200 Gigabit Router",
+    "slug": "tenda_ac10_ac1200_gigabit_router",
+    "brand": "Tenda",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11ac (Wi-Fi 5)",
+      "Speed": "AC1200 (300 + 867 Mbps)",
+      "Bands": "Dual Band (2.4GHz + 5GHz)",
+      "Ports": "3x Gigabit LAN, 1x Gigabit WAN",
+      "Antennas": "4 External (5dBi)",
+      "Brand": "Tenda"
+    }
+  },
+  {
+    "title": "Mercusys MW325R 300Mbps Wireless Router",
+    "slug": "mercusys_mw325r_300mbps_wireless_router",
+    "brand": "Mercusys",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11n (Wi-Fi 4)",
+      "Speed": "300 Mbps",
+      "Bands": "Single Band (2.4GHz)",
+      "Ports": "3x 10/100 LAN, 1x 10/100 WAN",
+      "Antennas": "4 External",
+      "Brand": "Mercusys"
+    }
+  },
+  {
+    "title": "D-Link DIR-615 Wireless N300 Router",
+    "slug": "d_link_dir_615_wireless_n300_router",
+    "brand": "D-Link",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wi-Fi Router",
+      "Wi-Fi Standard": "802.11n (Wi-Fi 4)",
+      "Speed": "300 Mbps",
+      "Bands": "Single Band (2.4GHz)",
+      "Ports": "4x 10/100 LAN, 1x 10/100 WAN",
+      "Antennas": "2 External",
+      "Brand": "D-Link"
+    }
+  },
+  {
+    "title": "Ubiquiti UniFi AC Lite Access Point (UAP-AC-LITE)",
+    "slug": "ubiquiti_unifi_ac_lite_access_point_uap_ac_lite",
+    "brand": "Ubiquiti",
+    "subcategory": "Networking Equipment",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Wireless Access Point",
+      "Wi-Fi Standard": "802.11ac (Wi-Fi 5)",
+      "Speed": "AC1200 (300 + 867 Mbps)",
+      "Bands": "Dual Band",
+      "Ports": "1x Gigabit Ethernet (PoE)",
+      "Brand": "Ubiquiti"
+    }
+  },
+  {
+    "title": "Arctic MX-4 Thermal Paste (4g)",
+    "slug": "arctic_mx_4_thermal_paste_4g",
+    "brand": "Arctic",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Paste",
+      "Thermal Conductivity": "8.5 W/(mK)",
+      "Net Weight": "4g",
+      "Temperature Range": "-50\u00b0C to 150\u00b0C",
+      "Brand": "Arctic"
+    }
+  },
+  {
+    "title": "Havit HV-F2056 Laptop Cooling Pad",
+    "slug": "havit_hv_f2056_laptop_cooling_pad",
+    "brand": "Havit",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Laptop Cooling Pad",
+      "Size": "Fits up to 17\" Laptops",
+      "Fans": "3x 110mm Fans",
+      "Speed": "Approx. 1000 RPM",
+      "Noise Level": "Ultra-quiet",
+      "Brand": "Havit"
+    }
+  },
+  {
+    "title": "Laptop CPU Cooling Fan (Replacement)",
+    "slug": "laptop_cpu_cooling_fan_replacement",
+    "brand": "Generic",
+    "subcategory": "Cooling & Maintenance",
+    "source": "generic",
+    "specifications": {
+      "Type": "Laptop Cooling Fan",
+      "Size": "Universal (Model-specific fit)",
+      "Speed": "2800 - 4500 RPM",
+      "Noise Level": "Low-noise",
+      "Bearing": "Sleeve Bearing",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "USB Mini Keyboard Vacuum Cleaner Kit",
+    "slug": "usb_mini_keyboard_vacuum_cleaner_kit",
+    "brand": "Generic",
+    "subcategory": "Cooling & Maintenance",
+    "source": "generic",
+    "specifications": {
+      "Type": "USB Mini Vacuum Cleaner",
+      "Power Source": "USB 5V",
+      "Includes": "Brush + Crevice Nozzle Attachments",
+      "Use": "Keyboard, Laptop & Desk Cleaning",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "APC Back-UPS 650VA UPS",
+    "slug": "apc_back_ups_650va_ups",
+    "brand": "APC",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Line-Interactive UPS",
+      "Capacity": "650VA / 360W",
+      "Output": "230V",
+      "Battery Backup": "AVR with Battery Backup",
+      "Outlets": "4x Universal Sockets",
+      "Brand": "APC"
+    }
+  },
+  {
+    "title": "Mercury 1KVA UPS",
+    "slug": "mercury_1kva_ups",
+    "brand": "Mercury",
+    "subcategory": "Cooling & Maintenance",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Line-Interactive UPS",
+      "Capacity": "1000VA / 600W",
+      "Output": "230V",
+      "Battery Backup": "AVR with Battery Backup",
+      "Outlets": "3x Universal Sockets",
+      "Brand": "Mercury"
+    }
+  }
+]

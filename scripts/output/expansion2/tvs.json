@@ -1,0 +1,781 @@
+[
+  {
+    "title": "Vitron 24-inch HTC2446 LED HD (720p) TV",
+    "slug": "vitron_24_inch_htc2446_led_hd_720p_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "24 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vitron 32-inch HTC3200S LED HD (720p) Smart Android TV",
+    "slug": "vitron_32_inch_htc3200s_led_hd_720p_smart_android_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vitron 40-inch HTC4068FS LED FHD (1080p) Smart Android TV",
+    "slug": "vitron_40_inch_htc4068fs_led_fhd_1080p_smart_android_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vitron 43-inch HTC4368FS LED FHD (1080p) Smart Android TV",
+    "slug": "vitron_43_inch_htc4368fs_led_fhd_1080p_smart_android_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vitron 50-inch HTC5068US LED 4K (2160p) Smart Android TV",
+    "slug": "vitron_50_inch_htc5068us_led_4k_2160p_smart_android_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vitron 55-inch HTC55Q4K QLED 4K (2160p) Smart Android TV",
+    "slug": "vitron_55_inch_htc55q4k_qled_4k_2160p_smart_android_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "Vitron 65-inch HTC6568US LED 4K (2160p) Smart Android TV",
+    "slug": "vitron_65_inch_htc6568us_led_4k_2160p_smart_android_tv",
+    "brand": "Vitron",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vision Plus 32-inch VP8832D LED HD (720p) Digital TV",
+    "slug": "vision_plus_32_inch_vp8832d_led_hd_720p_digital_tv",
+    "brand": "Vision Plus",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vision Plus 40-inch VP8840SF Frameless LED FHD (1080p) Smart TV",
+    "slug": "vision_plus_40_inch_vp8840sf_frameless_led_fhd_1080p_smart_tv",
+    "brand": "Vision Plus",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vision Plus 55-inch VP8855QV Frameless QLED 4K (2160p) Smart TV",
+    "slug": "vision_plus_55_inch_vp8855qv_frameless_qled_4k_2160p_smart_tv",
+    "brand": "Vision Plus",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "Vision Plus 65-inch VP8865KV Frameless LED 4K (2160p) Smart TV",
+    "slug": "vision_plus_65_inch_vp8865kv_frameless_led_4k_2160p_smart_tv",
+    "brand": "Vision Plus",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Vision Plus 75-inch VP8875KV Frameless LED 4K (2160p) Smart TV",
+    "slug": "vision_plus_75_inch_vp8875kv_frameless_led_4k_2160p_smart_tv",
+    "brand": "Vision Plus",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "75 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Amtec 24-inch LED HD (720p) Digital TV",
+    "slug": "amtec_24_inch_led_hd_720p_digital_tv",
+    "brand": "Amtec",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "24 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Amtec 32-inch 32L12 LED HD (720p) Digital TV",
+    "slug": "amtec_32_inch_32l12_led_hd_720p_digital_tv",
+    "brand": "Amtec",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Amtec 43-inch 43R1S LED FHD (1080p) Smart Android TV",
+    "slug": "amtec_43_inch_43r1s_led_fhd_1080p_smart_android_tv",
+    "brand": "Amtec",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Bruhm 32-inch LED HD (720p) Digital TV",
+    "slug": "bruhm_32_inch_led_hd_720p_digital_tv",
+    "brand": "Bruhm",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Bruhm 50-inch LED 4K (2160p) Smart Android TV",
+    "slug": "bruhm_50_inch_led_4k_2160p_smart_android_tv",
+    "brand": "Bruhm",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Bruhm 65-inch LED 4K (2160p) Smart Android TV",
+    "slug": "bruhm_65_inch_led_4k_2160p_smart_android_tv",
+    "brand": "Bruhm",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Skyworth 32-inch 32TB5000 LED HD (720p) Digital TV",
+    "slug": "skyworth_32_inch_32tb5000_led_hd_720p_digital_tv",
+    "brand": "Skyworth",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Skyworth 40-inch 40S3A31G LED FHD (1080p) Smart Google TV",
+    "slug": "skyworth_40_inch_40s3a31g_led_fhd_1080p_smart_google_tv",
+    "brand": "Skyworth",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "40 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Skyworth 55-inch 55SUC6500 LED 4K (2160p) Smart Google TV",
+    "slug": "skyworth_55_inch_55suc6500_led_4k_2160p_smart_google_tv",
+    "brand": "Skyworth",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Skyworth 65-inch 65Q6500G QLED 4K (2160p) Smart Google TV",
+    "slug": "skyworth_65_inch_65q6500g_qled_4k_2160p_smart_google_tv",
+    "brand": "Skyworth",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "Nobel 32-inch LED HD (720p) Smart Android TV",
+    "slug": "nobel_32_inch_led_hd_720p_smart_android_tv",
+    "brand": "Nobel",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Nobel 55-inch LED 4K (2160p) Smart Android TV",
+    "slug": "nobel_55_inch_led_4k_2160p_smart_android_tv",
+    "brand": "Nobel",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Syinix 32-inch 32A1S LED HD (720p) Smart Android TV",
+    "slug": "syinix_32_inch_32a1s_led_hd_720p_smart_android_tv",
+    "brand": "Syinix",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Syinix 50-inch 50U51 LED 4K (2160p) Smart Android TV",
+    "slug": "syinix_50_inch_50u51_led_4k_2160p_smart_android_tv",
+    "brand": "Syinix",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "50 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Syinix 55-inch 55Q61 QLED 4K (2160p) Smart Android TV",
+    "slug": "syinix_55_inch_55q61_qled_4k_2160p_smart_android_tv",
+    "brand": "Syinix",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "Sayona 24-inch LED HD (720p) Digital TV",
+    "slug": "sayona_24_inch_led_hd_720p_digital_tv",
+    "brand": "Sayona",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "24 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Sayona 43-inch LED FHD (1080p) Smart Android TV",
+    "slug": "sayona_43_inch_led_fhd_1080p_smart_android_tv",
+    "brand": "Sayona",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Hotpoint 32-inch LED HD (720p) Digital TV",
+    "slug": "hotpoint_32_inch_led_hd_720p_digital_tv",
+    "brand": "Hotpoint",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "No",
+      "Operating System": "None",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Hotpoint 55-inch LED 4K (2160p) Smart Android TV",
+    "slug": "hotpoint_55_inch_led_4k_2160p_smart_android_tv",
+    "brand": "Hotpoint",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Von 32-inch VEL32HSD LED HD (720p) Smart Android TV",
+    "slug": "von_32_inch_vel32hsd_led_hd_720p_smart_android_tv",
+    "brand": "Von",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Von 55-inch VEL55USD LED 4K (2160p) Smart Android TV",
+    "slug": "von_55_inch_vel55usd_led_4k_2160p_smart_android_tv",
+    "brand": "Von",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Von 65-inch VEL65USD LED 4K (2160p) Smart Android TV",
+    "slug": "von_65_inch_vel65usd_led_4k_2160p_smart_android_tv",
+    "brand": "Von",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "65 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Android TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Samsung 32-inch T5300 LED FHD (1080p) Smart TV",
+    "slug": "samsung_32_inch_t5300_led_fhd_1080p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "FHD (1080p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Samsung 43-inch DU7000 Crystal UHD LED 4K (2160p) Smart TV",
+    "slug": "samsung_43_inch_du7000_crystal_uhd_led_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Samsung 55-inch Q60D QLED 4K (2160p) Smart TV",
+    "slug": "samsung_55_inch_q60d_qled_4k_2160p_smart_tv",
+    "brand": "Samsung",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Tizen",
+      "Refresh Rate": "60Hz",
+      "HDR": "Quantum HDR"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "LG 32-inch LQ570B LED HD (720p) Smart TV",
+    "slug": "lg_32_inch_lq570b_led_hd_720p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "LG 43-inch UT73 LED 4K (2160p) Smart TV",
+    "slug": "lg_43_inch_ut73_led_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10 Pro"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "LG 48-inch C4 OLED evo 4K (2160p) Smart TV",
+    "slug": "lg_48_inch_c4_oled_evo_4k_2160p_smart_tv",
+    "brand": "LG",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "48 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "OLED",
+      "Smart TV": "Yes",
+      "Operating System": "webOS",
+      "Refresh Rate": "120Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "Sony 55-inch Bravia X75WL LED 4K (2160p) Smart TV",
+    "slug": "sony_55_inch_bravia_x75wl_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Sony 43-inch Bravia 3 LED 4K (2160p) Smart TV",
+    "slug": "sony_43_inch_bravia_3_led_4k_2160p_smart_tv",
+    "brand": "Sony",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Hisense 32-inch A4K LED HD (720p) Smart Vidaa TV",
+    "slug": "hisense_32_inch_a4k_led_hd_720p_smart_vidaa_tv",
+    "brand": "Hisense",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "32 inches",
+      "Resolution": "HD (720p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Hisense 43-inch A6K LED 4K (2160p) Smart Vidaa TV",
+    "slug": "hisense_43_inch_a6k_led_4k_2160p_smart_vidaa_tv",
+    "brand": "Hisense",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Hisense 55-inch E7K QLED 4K (2160p) Smart TV",
+    "slug": "hisense_55_inch_e7k_qled_4k_2160p_smart_tv",
+    "brand": "Hisense",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Vidaa",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "TCL 43-inch P755 LED 4K (2160p) Smart TV",
+    "slug": "tcl_43_inch_p755_led_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "TCL 55-inch C645 QLED 4K (2160p) Smart TV",
+    "slug": "tcl_55_inch_c645_qled_4k_2160p_smart_tv",
+    "brand": "TCL",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "QLED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10+"
+    },
+    "subcategory": "OLED & QLED TVs"
+  },
+  {
+    "title": "Toshiba 43-inch 43C350NP LED 4K (2160p) Smart TV",
+    "slug": "toshiba_43_inch_43c350np_led_4k_2160p_smart_tv",
+    "brand": "Toshiba",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "Dolby Vision / HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Haier 55-inch H55K800UG LED 4K (2160p) Smart TV",
+    "slug": "haier_55_inch_h55k800ug_led_4k_2160p_smart_tv",
+    "brand": "Haier",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "55 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Google TV",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10"
+    },
+    "subcategory": "LED & LCD TVs"
+  },
+  {
+    "title": "Philips 43-inch 43PUS7000 LED 4K (2160p) Smart TV",
+    "slug": "philips_43_inch_43pus7000_led_4k_2160p_smart_tv",
+    "brand": "Philips",
+    "category": "TVs & Audio and Electronics",
+    "specifications": {
+      "Screen Size": "43 inches",
+      "Resolution": "4K (2160p)",
+      "Display Type": "LED",
+      "Smart TV": "Yes",
+      "Operating System": "Titan OS",
+      "Refresh Rate": "60Hz",
+      "HDR": "HDR10+"
+    },
+    "subcategory": "LED & LCD TVs"
+  }
+]

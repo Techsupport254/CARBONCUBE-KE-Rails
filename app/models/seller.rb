@@ -161,7 +161,10 @@ class Seller < ApplicationRecord
   def password_required?
     # OAuth users don't need passwords
     return false if provider.present? || uid.present?
-    
+    # Deferred signups (e.g. pending seller registrations) may carry a bcrypt
+    # digest that was already validated — don't re-validate a missing plaintext.
+    return false if password.blank? && password_digest.present?
+
     new_record? || password.present?
   end
 

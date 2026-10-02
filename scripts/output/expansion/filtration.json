@@ -1,0 +1,466 @@
+[
+  {
+    "title": "Sakura A-1628 Air Filter",
+    "slug": "sakura_a_1628_air_filter",
+    "brand": "Sakura",
+    "subcategory": "Air Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Panel",
+      "Material": "Paper",
+      "Height": "60mm",
+      "Width": "215mm",
+      "Length": "230mm",
+      "OE Quality": "Yes",
+      "Application": "Toyota Hilux / Hiace Diesel",
+      "Brand": "Sakura"
+    }
+  },
+  {
+    "title": "Toyota Genuine Air Filter 17801-0L040",
+    "slug": "toyota_genuine_air_filter_17801_0l040",
+    "brand": "Toyota",
+    "subcategory": "Air Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Panel",
+      "Material": "Paper",
+      "Height": "55mm",
+      "Width": "200mm",
+      "Length": "260mm",
+      "OE Quality": "Yes",
+      "Application": "Toyota Hilux / Fortuner / Innova",
+      "Brand": "Toyota"
+    }
+  },
+  {
+    "title": "Fleetguard AF25557 Air Filter",
+    "slug": "fleetguard_af25557_air_filter",
+    "brand": "Fleetguard",
+    "subcategory": "Air Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Radial Seal",
+      "Material": "Synthetic Media",
+      "Diameter": "127mm",
+      "Height": "370mm",
+      "Application": "Heavy Duty Diesel",
+      "Brand": "Fleetguard"
+    }
+  },
+  {
+    "title": "Donaldson P828889 Air Filter",
+    "slug": "donaldson_p828889_air_filter",
+    "brand": "Donaldson",
+    "subcategory": "Air Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Radial Seal",
+      "Material": "Cellulose",
+      "Diameter": "148mm",
+      "Height": "250mm",
+      "Application": "Heavy Duty",
+      "Brand": "Donaldson"
+    }
+  },
+  {
+    "title": "Isuzu Genuine Air Filter 8-98140266-0",
+    "slug": "isuzu_genuine_air_filter_8_98140266_0",
+    "brand": "Isuzu",
+    "subcategory": "Air Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Panel",
+      "Material": "Paper",
+      "Height": "50mm",
+      "Width": "210mm",
+      "Length": "250mm",
+      "OE Quality": "Yes",
+      "Application": "Isuzu D-Max / MU-X",
+      "Brand": "Isuzu"
+    }
+  },
+  {
+    "title": "Hengst E434L Air Filter",
+    "slug": "hengst_e434l_air_filter",
+    "brand": "Hengst",
+    "subcategory": "Air Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Panel",
+      "Material": "Paper",
+      "Height": "58mm",
+      "Width": "215mm",
+      "Length": "238mm",
+      "OE Quality": "Yes",
+      "Application": "VW Golf / Polo",
+      "Brand": "Hengst"
+    }
+  },
+  {
+    "title": "Sakura FC-1115 Fuel Filter",
+    "slug": "sakura_fc_1115_fuel_filter",
+    "brand": "Sakura",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "80mm",
+      "Height": "100mm",
+      "Filter Media": "Paper",
+      "Application": "Diesel",
+      "Brand": "Sakura"
+    }
+  },
+  {
+    "title": "Fleetguard FF105 Fuel Filter",
+    "slug": "fleetguard_ff105_fuel_filter",
+    "brand": "Fleetguard",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Diameter": "93mm",
+      "Height": "120mm",
+      "Filter Media": "Paper",
+      "Application": "Diesel",
+      "Brand": "Fleetguard"
+    }
+  },
+  {
+    "title": "Isuzu Genuine Fuel Filter 8-98036-654-0",
+    "slug": "isuzu_genuine_fuel_filter_8_98036_654_0",
+    "brand": "Isuzu",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "95mm",
+      "Height": "95mm",
+      "Filter Media": "Paper",
+      "Application": "Diesel - Isuzu 4JJ1",
+      "Brand": "Isuzu"
+    }
+  },
+  {
+    "title": "Racor 2010TM-OR Turbine Series Fuel Filter Element",
+    "slug": "racor_2010tm_or_turbine_series_fuel_filter_element",
+    "brand": "Racor",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "78mm",
+      "Height": "115mm",
+      "Filter Media": "Aquabloc",
+      "Application": "Diesel Fuel/Water Separation",
+      "Micron Rating": "10 micron",
+      "Brand": "Racor"
+    }
+  },
+  {
+    "title": "Caterpillar 1R-0750 Fuel Filter",
+    "slug": "caterpillar_1r_0750_fuel_filter",
+    "brand": "Caterpillar",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "1\"-14",
+      "Diameter": "105mm",
+      "Height": "178mm",
+      "Filter Media": "Synthetic",
+      "Application": "Diesel",
+      "Brand": "Caterpillar"
+    }
+  },
+  {
+    "title": "Separ SWK-2000/10 Fuel Water Separator",
+    "slug": "separ_swk_2000_10_fuel_water_separator",
+    "brand": "Separ",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Fuel/Water Separator",
+      "Filter Media": "Paper",
+      "Application": "Diesel",
+      "Water Separation": "Yes",
+      "Flow Rate": "600 L/h",
+      "Brand": "Separ"
+    }
+  },
+  {
+    "title": "Baldwin BF587-D Fuel Filter Water Separator",
+    "slug": "baldwin_bf587_d_fuel_filter_water_separator",
+    "brand": "Baldwin",
+    "subcategory": "Fuel Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "93mm",
+      "Height": "120mm",
+      "Filter Media": "Paper",
+      "Application": "Diesel",
+      "Water Separation": "Yes",
+      "Brand": "Baldwin"
+    }
+  },
+  {
+    "title": "Sakura C-1036 Oil Filter",
+    "slug": "sakura_c_1036_oil_filter",
+    "brand": "Sakura",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "M20x1.5",
+      "Diameter": "76mm",
+      "Height": "80mm",
+      "Bypass Valve": "Yes",
+      "Anti-Drainback": "Yes",
+      "Application": "Engine Oil",
+      "Brand": "Sakura"
+    }
+  },
+  {
+    "title": "Toyota Genuine Oil Filter 90915-10003",
+    "slug": "toyota_genuine_oil_filter_90915_10003",
+    "brand": "Toyota",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "3/4-16 UNF",
+      "Diameter": "66mm",
+      "Height": "70mm",
+      "Bypass Valve": "Yes",
+      "Anti-Drainback": "Yes",
+      "Application": "Engine Oil - Toyota Corolla / Starlet",
+      "Brand": "Toyota"
+    }
+  },
+  {
+    "title": "Fleetguard LF3349 Lube Oil Filter",
+    "slug": "fleetguard_lf3349_lube_oil_filter",
+    "brand": "Fleetguard",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "1\"-16 UN",
+      "Diameter": "93mm",
+      "Height": "174mm",
+      "Bypass Valve": "Yes",
+      "Application": "Engine Oil - Cummins / Trucks",
+      "Brand": "Fleetguard"
+    }
+  },
+  {
+    "title": "MAHLE OC 294 Oil Filter",
+    "slug": "mahle_oc_294_oil_filter",
+    "brand": "MAHLE",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "3/4-16 UNF",
+      "Diameter": "76mm",
+      "Height": "90mm",
+      "Bypass Valve": "Yes",
+      "Anti-Drainback": "Yes",
+      "Application": "Engine Oil",
+      "Brand": "MAHLE"
+    }
+  },
+  {
+    "title": "Baldwin B7334 Lube Oil Filter",
+    "slug": "baldwin_b7334_lube_oil_filter",
+    "brand": "Baldwin",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Diameter": "76mm",
+      "Height": "125mm",
+      "Bypass Valve": "Yes",
+      "Anti-Drainback": "Yes",
+      "Application": "Engine Oil",
+      "Brand": "Baldwin"
+    }
+  },
+  {
+    "title": "Hengst H14W27 Oil Filter",
+    "slug": "hengst_h14w27_oil_filter",
+    "brand": "Hengst",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "3/4-16 UNF",
+      "Diameter": "75mm",
+      "Height": "122mm",
+      "Bypass Valve": "Yes",
+      "Anti-Drainback": "Yes",
+      "Application": "Engine Oil",
+      "Brand": "Hengst"
+    }
+  },
+  {
+    "title": "Hiflofiltro HF303 Motorcycle Oil Filter",
+    "slug": "hiflofiltro_hf303_motorcycle_oil_filter",
+    "brand": "Hiflofiltro",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "M20x1.5",
+      "Diameter": "65mm",
+      "Height": "65mm",
+      "Bypass Valve": "Yes",
+      "Application": "Motorcycle Engine Oil",
+      "Brand": "Hiflofiltro"
+    }
+  },
+  {
+    "title": "Perkins 2654403 Oil Filter",
+    "slug": "perkins_2654403_oil_filter",
+    "brand": "Perkins",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Thread": "3/4-16 UNF",
+      "Diameter": "76mm",
+      "Height": "115mm",
+      "Bypass Valve": "Yes",
+      "Application": "Engine Oil - Perkins Engines",
+      "Brand": "Perkins"
+    }
+  },
+  {
+    "title": "Fleetguard HF6710 Hydraulic Filter",
+    "slug": "fleetguard_hf6710_hydraulic_filter",
+    "brand": "Fleetguard",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Spin-On",
+      "Diameter": "93mm",
+      "Height": "150mm",
+      "Filter Media": "Cellulose",
+      "Application": "Hydraulic Systems",
+      "Brand": "Fleetguard"
+    }
+  },
+  {
+    "title": "Baldwin BT8840-MPG Hydraulic Filter",
+    "slug": "baldwin_bt8840_mpg_hydraulic_filter",
+    "brand": "Baldwin",
+    "subcategory": "Oil & Hydraulic Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "98mm",
+      "Height": "175mm",
+      "Filter Media": "Glass Fiber",
+      "Application": "Hydraulic Systems",
+      "Beta Ratio": "1000",
+      "Brand": "Baldwin"
+    }
+  },
+  {
+    "title": "Donaldson P191280 Ultra-Web Dust Collector Cartridge",
+    "slug": "donaldson_p191280_ultra_web_dust_collector_cartridge",
+    "brand": "Donaldson",
+    "subcategory": "Industrial Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "324mm",
+      "Height": "660mm",
+      "Filter Media": "Ultra-Web Nanofiber",
+      "Application": "Dust Collection",
+      "Efficiency": "99.9%",
+      "Brand": "Donaldson"
+    }
+  },
+  {
+    "title": "Atlas Copco 1613610500 Compressor Air Filter",
+    "slug": "atlas_copco_1613610500_compressor_air_filter",
+    "brand": "Atlas Copco",
+    "subcategory": "Industrial Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "200mm",
+      "Height": "250mm",
+      "Filter Media": "Paper",
+      "Application": "Air Compressor Intake",
+      "Efficiency": "99.5%",
+      "Brand": "Atlas Copco"
+    }
+  },
+  {
+    "title": "Mann-Filter C 20500 Compressor Air Filter",
+    "slug": "mann_filter_c_20500_compressor_air_filter",
+    "brand": "Mann-Filter",
+    "subcategory": "Industrial Filters",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "205mm",
+      "Height": "350mm",
+      "Filter Media": "Cellulose",
+      "Application": "Air Compressor Intake",
+      "Efficiency": "99.9%",
+      "Brand": "Mann-Filter"
+    }
+  },
+  {
+    "title": "10-inch PP Sediment Water Filter Cartridge 5 Micron",
+    "slug": "10_inch_pp_sediment_water_filter_cartridge_5_micron",
+    "brand": "Generic",
+    "subcategory": "Other Filtration",
+    "source": "generic",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "63mm",
+      "Height": "254mm",
+      "Filter Media": "Polypropylene",
+      "Application": "Water Filtration",
+      "Micron Rating": "5 micron",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "20-inch Big Blue Sediment Water Filter Cartridge",
+    "slug": "20_inch_big_blue_sediment_water_filter_cartridge",
+    "brand": "Generic",
+    "subcategory": "Other Filtration",
+    "source": "generic",
+    "specifications": {
+      "Type": "Cartridge",
+      "Diameter": "115mm",
+      "Height": "508mm",
+      "Filter Media": "Polypropylene",
+      "Application": "Water Filtration",
+      "Micron Rating": "10 micron",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Polyester Dust Collector Filter Bag 120x2000mm",
+    "slug": "polyester_dust_collector_filter_bag_120x2000mm",
+    "brand": "Generic",
+    "subcategory": "Other Filtration",
+    "source": "generic",
+    "specifications": {
+      "Type": "Filter Bag",
+      "Diameter": "120mm",
+      "Height": "2000mm",
+      "Filter Media": "Polyester Felt",
+      "Application": "Dust Collection",
+      "Brand": "Generic"
+    }
+  }
+]

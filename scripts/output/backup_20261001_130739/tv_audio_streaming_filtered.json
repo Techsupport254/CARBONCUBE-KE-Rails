@@ -1,0 +1,646 @@
+[
+  {
+    "title": "Samsung HW-Q990C 11.1.4ch Soundbar",
+    "brand": "Samsung",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "11.1.4",
+      "Total Power": "656W",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Wireless",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "Samsung HW-Q800C 5.1.2ch Soundbar",
+    "brand": "Samsung",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "5.1.2",
+      "Total Power": "330W",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Optional",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "LG S95QR 9.1.5ch Soundbar",
+    "brand": "LG",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "9.1.5",
+      "Total Power": "810W",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Wireless",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "LG"
+    }
+  },
+  {
+    "title": "Sony HT-A7000 7.1.2ch Soundbar",
+    "brand": "Sony",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "7.1.2",
+      "Total Power": "500W",
+      "Subwoofer": "Wireless (optional)",
+      "Rear Speakers": "Optional",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Sony HT-A5000 5.1.2ch Soundbar",
+    "brand": "Sony",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "5.1.2",
+      "Total Power": "450W",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Optional",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Bose Smart Soundbar 900",
+    "brand": "Bose",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar",
+      "Channels": "5.1 (with optional surrounds)",
+      "Total Power": "300W",
+      "Subwoofer": "Optional",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Voice Assistant": "Alexa/Google",
+      "Brand": "Bose"
+    }
+  },
+  {
+    "title": "Bose Smart Soundbar 600",
+    "brand": "Bose",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar",
+      "Channels": "5.1 (with optional surrounds)",
+      "Total Power": "200W",
+      "Subwoofer": "Optional",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Voice Assistant": "Alexa/Google",
+      "Brand": "Bose"
+    }
+  },
+  {
+    "title": "JBL Bar 1300X 11.1.4ch Soundbar",
+    "brand": "JBL",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "11.1.4",
+      "Total Power": "1170W",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Wireless",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "JBL"
+    }
+  },
+  {
+    "title": "JBL Bar 500 5.1ch Soundbar",
+    "brand": "JBL",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "5.1",
+      "Total Power": "390W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "JBL"
+    }
+  },
+  {
+    "title": "Sonos Arc Ultra Soundbar",
+    "brand": "Sonos",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar",
+      "Channels": "5.1.2",
+      "Total Power": "N/A",
+      "Subwoofer": "Optional (Sonos Sub)",
+      "Connectivity": "Wi-Fi, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Voice Assistant": "Alexa/Google",
+      "Brand": "Sonos"
+    }
+  },
+  {
+    "title": "Sonos Beam Gen 2 Soundbar",
+    "brand": "Sonos",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Compact Soundbar",
+      "Channels": "5.0",
+      "Total Power": "N/A",
+      "Subwoofer": "Optional (Sonos Sub)",
+      "Connectivity": "Wi-Fi, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Voice Assistant": "Alexa/Google",
+      "Brand": "Sonos"
+    }
+  },
+  {
+    "title": "Vizio Elevate 5.1.4ch Soundbar",
+    "brand": "Vizio",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "5.1.4",
+      "Total Power": "107dB",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Wireless",
+      "Connectivity": "Bluetooth, HDMI eARC",
+      "Dolby Atmos": "Yes",
+      "Brand": "Vizio"
+    }
+  },
+  {
+    "title": "Sony DH590 5.1ch Home Theater AV Receiver",
+    "brand": "Sony",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "5.1",
+      "Power": "145W per channel",
+      "HDMI": "4 in / 1 out (4K HDR)",
+      "Decoding": "Dolby TrueHD, DTS-HD MA",
+      "Bluetooth": "Yes",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Sony STR-DH790 7.1ch AV Receiver",
+    "brand": "Sony",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "7.1",
+      "Power": "145W per channel",
+      "HDMI": "4 in / 1 out (4K HDR)",
+      "Decoding": "Dolby Atmos, DTS:X",
+      "Bluetooth": "Yes",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Denon AVR-X1800H 7.2ch AV Receiver",
+    "brand": "Denon",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "7.2",
+      "Power": "80W per channel",
+      "HDMI": "3 in / 1 out (8K HDR)",
+      "Decoding": "Dolby Atmos, DTS:X",
+      "Bluetooth": "Yes",
+      "Wi-Fi": "Yes",
+      "Brand": "Denon"
+    }
+  },
+  {
+    "title": "Denon AVR-X3800H 9.4ch AV Receiver",
+    "brand": "Denon",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "9.4",
+      "Power": "105W per channel",
+      "HDMI": "3 in / 3 out (8K HDR)",
+      "Decoding": "Dolby Atmos, DTS:X, IMAX Enhanced",
+      "Bluetooth": "Yes",
+      "Wi-Fi": "Yes",
+      "Brand": "Denon"
+    }
+  },
+  {
+    "title": "Onkyo TX-NR6100 7.2ch AV Receiver",
+    "brand": "Onkyo",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "7.2",
+      "Power": "100W per channel",
+      "HDMI": "3 in / 1 out (8K HDR)",
+      "Decoding": "Dolby Atmos, DTS:X",
+      "Bluetooth": "Yes",
+      "Wi-Fi": "Yes",
+      "Brand": "Onkyo"
+    }
+  },
+  {
+    "title": "Yamaha RX-V6A 7.2ch AV Receiver",
+    "brand": "Yamaha",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "7.2",
+      "Power": "100W per channel",
+      "HDMI": "3 in / 1 out (8K HDR)",
+      "Decoding": "Dolby Atmos, DTS:X",
+      "Bluetooth": "Yes",
+      "Wi-Fi": "Yes",
+      "Brand": "Yamaha"
+    }
+  },
+  {
+    "title": "Pioneer VSX-935 7.2ch AV Receiver",
+    "brand": "Pioneer",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "7.2",
+      "Power": "80W per channel",
+      "HDMI": "3 in / 1 out (8K HDR)",
+      "Decoding": "Dolby Atmos, DTS:X",
+      "Bluetooth": "Yes",
+      "Wi-Fi": "Yes",
+      "Brand": "Pioneer"
+    }
+  },
+  {
+    "title": "Klipsch Reference Home Theater 5.1 Speaker Set",
+    "brand": "Klipsch",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Configuration": "5.1",
+      "Front Speakers": "R-610F Floor Standing",
+      "Center": "R-52C",
+      "Surround": "R-51M Bookshelf",
+      "Subwoofer": "R-120SW 200W",
+      "Brand": "Klipsch"
+    }
+  },
+  {
+    "title": "Amazon Fire TV Stick 4K Max",
+    "brand": "Amazon",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Stick",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "16GB",
+      "RAM": "2GB",
+      "Connectivity": "Wi-Fi 6E, Bluetooth",
+      "Voice Remote": "Alexa Voice",
+      "Brand": "Amazon"
+    }
+  },
+  {
+    "title": "Amazon Fire TV Stick 4K",
+    "brand": "Amazon",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Stick",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision, HDR10",
+      "Storage": "8GB",
+      "RAM": "1.5GB",
+      "Connectivity": "Wi-Fi 6, Bluetooth",
+      "Voice Remote": "Alexa Voice",
+      "Brand": "Amazon"
+    }
+  },
+  {
+    "title": "Amazon Fire TV Stick HD",
+    "brand": "Amazon",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Stick",
+      "Resolution": "1080p Full HD",
+      "HDR": "No",
+      "Storage": "8GB",
+      "RAM": "1GB",
+      "Connectivity": "Wi-Fi 5, Bluetooth",
+      "Voice Remote": "Alexa Voice",
+      "Brand": "Amazon"
+    }
+  },
+  {
+    "title": "Roku Streaming Stick 4K+",
+    "brand": "Roku",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Stick",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "N/A",
+      "Connectivity": "Wi-Fi 6, Bluetooth",
+      "Voice Remote": "Roku Voice Pro",
+      "Brand": "Roku"
+    }
+  },
+  {
+    "title": "Roku Ultra 4K Streaming Player",
+    "brand": "Roku",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "N/A",
+      "Connectivity": "Wi-Fi 6, Ethernet, Bluetooth",
+      "Voice Remote": "Roku Voice Pro",
+      "Ports": "HDMI, Optical, USB, Ethernet",
+      "Brand": "Roku"
+    }
+  },
+  {
+    "title": "Apple TV 4K 3rd Gen 128GB",
+    "brand": "Apple",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "128GB",
+      "Chip": "A15 Bionic",
+      "Connectivity": "Wi-Fi 6, Ethernet, Bluetooth 5.0",
+      "Voice Remote": "Siri Remote (USB-C)",
+      "Brand": "Apple"
+    }
+  },
+  {
+    "title": "Google Chromecast 4K with Google TV",
+    "brand": "Google",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Dongle",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "8GB",
+      "RAM": "2GB",
+      "Connectivity": "Wi-Fi 6, Bluetooth",
+      "Voice Remote": "Google Voice",
+      "Brand": "Google"
+    }
+  },
+  {
+    "title": "NVIDIA Shield TV Pro 4K",
+    "brand": "NVIDIA",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision, Dolby Atmos",
+      "Storage": "16GB",
+      "RAM": "3GB",
+      "Chip": "Tegra X1+",
+      "Connectivity": "Wi-Fi 6, Ethernet, Bluetooth",
+      "Voice Remote": "Google Assistant",
+      "Ports": "2x USB 3.0, HDMI, Ethernet",
+      "Brand": "NVIDIA"
+    }
+  },
+  {
+    "title": "DStv Explora Ultra Decoder",
+    "brand": "DStv",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Decoder",
+      "Recording": "1TB HDD",
+      "Streams": "4 simultaneously",
+      "Resolution": "4K Ultra HD",
+      "Connectivity": "Wi-Fi, Ethernet, Bluetooth",
+      "Ports": "HDMI, USB, Optical",
+      "Brand": "DStv"
+    }
+  },
+  {
+    "title": "DStv HD Decoder Single View",
+    "brand": "DStv",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Decoder",
+      "Recording": "No",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "Ethernet",
+      "Ports": "HDMI, RCA",
+      "Brand": "DStv"
+    }
+  },
+  {
+    "title": "GOtv Decoder HD",
+    "brand": "GOtv",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital Terrestrial Decoder",
+      "Recording": "No",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA",
+      "Brand": "GOtv"
+    }
+  },
+  {
+    "title": "Zuku Decoder HD",
+    "brand": "Zuku",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Decoder",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "Ethernet",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Zuku"
+    }
+  },
+  {
+    "title": "Startimes Decoder HD",
+    "brand": "Startimes",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital Terrestrial Decoder",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Startimes"
+    }
+  },
+  {
+    "title": "Aztech Ultra HD Satellite Receiver",
+    "brand": "Aztech",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Receiver",
+      "Recording": "USB PVR Ready",
+      "Resolution": "4K Ultra HD",
+      "Connectivity": "Wi-Fi, Ethernet",
+      "Ports": "HDMI, USB, RCA",
+      "Brand": "Aztech"
+    }
+  },
+  {
+    "title": "Universal TV Wall Mount 32-70\" Full Motion",
+    "brand": "Mounting Dream",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Full Motion Wall Mount",
+      "TV Size Range": "32-70 inches",
+      "Max Weight": "45 kg",
+      "VESA": "200x200 to 600x400mm",
+      "Extension": "580mm",
+      "Tilt": "-5 to +15 degrees",
+      "Brand": "Mounting Dream"
+    }
+  },
+  {
+    "title": "Fixed TV Wall Mount 42-90\"",
+    "brand": "Sanus",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Fixed Wall Mount",
+      "TV Size Range": "42-90 inches",
+      "Max Weight": "130 kg",
+      "VESA": "200x200 to 800x600mm",
+      "Profile": "25mm from wall",
+      "Brand": "Sanus"
+    }
+  },
+  {
+    "title": "HDMI 2.1 Cable 4K@120Hz 3m",
+    "brand": "Belkin",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "HDMI Cable",
+      "Version": "HDMI 2.1",
+      "Length": "3 meters",
+      "Max Resolution": "4K@120Hz, 8K@60Hz",
+      "Bandwidth": "48 Gbps",
+      "eARC": "Yes",
+      "Brand": "Belkin"
+    }
+  },
+  {
+    "title": "HDMI 2.0 Cable 4K@60Hz 2m",
+    "brand": "AmazonBasics",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "HDMI Cable",
+      "Version": "HDMI 2.0",
+      "Length": "2 meters",
+      "Max Resolution": "4K@60Hz",
+      "Bandwidth": "18 Gbps",
+      "eARC": "No",
+      "Brand": "AmazonBasics"
+    }
+  },
+  {
+    "title": "Optical Audio Cable 3m",
+    "brand": "AmazonBasics",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "TOSLINK Optical Cable",
+      "Length": "3 meters",
+      "Connector": "TOSLINK",
+      "Jacket": "PVC",
+      "Brand": "AmazonBasics"
+    }
+  },
+  {
+    "title": "TV Antenna Indoor 4K Amplified",
+    "brand": "Mohu",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Indoor TV Antenna",
+      "Range": "80 miles",
+      "Amplifier": "Yes (Included)",
+      "Resolution": "4K Ready",
+      "Frequency": "VHF/UHF",
+      "Brand": "Mohu"
+    }
+  },
+  {
+    "title": "Universal Remote Control",
+    "brand": "Logitech",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Universal Remote",
+      "Devices Supported": "Up to 8",
+      "Display": "LCD",
+      "Connectivity": "IR/RF",
+      "Rechargeable": "Yes",
+      "Brand": "Logitech"
+    }
+  },
+  {
+    "title": "TV Stand Universal 32-65\"",
+    "brand": "Perlesmith",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "TV Stand/Base",
+      "TV Size Range": "32-65 inches",
+      "Max Weight": "40 kg",
+      "VESA": "200x200 to 400x400mm",
+      "Height Adjustable": "Yes",
+      "Brand": "Perlesmith"
+    }
+  }
+]

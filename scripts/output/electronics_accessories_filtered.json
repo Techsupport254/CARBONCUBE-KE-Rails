@@ -2,7 +2,7 @@
   {
     "title": "Epson Home Cinema 2350 Projector",
     "brand": "Epson",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "2,800 Lumens (ISO)2 / 1,900 Lumens (Eco)",
       "Color Brightness (Lumens)": "2,800 Lumens3 CLO",
@@ -23,12 +23,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/epson-home_cinema_2350.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "epson_home_cinema_2350_projector"
   },
   {
     "title": "Epson Pro Cinema LS12000 Projector",
     "brand": "Epson",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "2,700 Lumens (ISO)2",
       "Color Brightness (Lumens)": "2,700 Lumens3 CLO",
@@ -49,12 +50,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/epson-pro_cinema_ls12000.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "epson_pro_cinema_ls12000_projector"
   },
   {
     "title": "Epson PowerLite L210SF Projector",
     "brand": "Epson",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "4,000 Lumens (ISO)2",
       "Color Brightness (Lumens)": "4,000 Lumens3 CLO",
@@ -74,12 +76,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/epson-powerlite_l210sf.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "epson_powerlite_l210sf_projector"
   },
   {
     "title": "BenQ TK710STi Projector",
     "brand": "BenQ",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -97,12 +100,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/benq-tk710sti.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "benq_tk710sti_projector"
   },
   {
     "title": "BenQ TH575 Projector",
     "brand": "BenQ",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -120,12 +124,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/benq-th575.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "benq_th575_projector"
   },
   {
     "title": "BenQ W4100i Projector",
     "brand": "BenQ",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -142,12 +147,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/benq-w4100i.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "benq_w4100i_projector"
   },
   {
     "title": "BenQ AH700ST Projector",
     "brand": "BenQ",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -164,12 +170,13 @@
       "Best Used For": "Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/benq-ah700st.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "benq_ah700st_projector"
   },
   {
     "title": "Optoma HZ40HDR Projector",
     "brand": "Optoma",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -187,12 +194,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/optoma-hz40hdr.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "optoma_hz40hdr_projector"
   },
   {
     "title": "Optoma GT2400HDR Projector",
     "brand": "Optoma",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -209,12 +217,13 @@
       "Best Used For": "Home Theater Gaming Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/optoma-gt2400hdr.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "optoma_gt2400hdr_projector"
   },
   {
     "title": "Optoma Photon Life PH31 Projector",
     "brand": "Optoma",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -232,12 +241,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/optoma-photon_life_ph31.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "optoma_photon_life_ph31_projector"
   },
   {
     "title": "Optoma ZW350ST Projector",
     "brand": "Optoma",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -255,12 +265,13 @@
       "Best Used For": "K-12 Education Corporate/Business Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/optoma-zw350st.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "optoma_zw350st_projector"
   },
   {
     "title": "ViewSonic LS560WH Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -277,12 +288,13 @@
       "Best Used For": "K-12 Education Corporate/Business Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls560wh.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls560wh_projector"
   },
   {
     "title": "ViewSonic LS630W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -299,12 +311,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls630w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls630w_projector"
   },
   {
     "title": "ViewSonic LS711HD Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -321,12 +334,13 @@
       "Best Used For": "K-12 Education Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls711hd.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls711hd_projector"
   },
   {
     "title": "ViewSonic LS740W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -343,12 +357,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls740w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls740w_projector"
   },
   {
     "title": "ViewSonic LS741HD Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -365,12 +380,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls741hd.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls741hd_projector"
   },
   {
     "title": "ViewSonic LS832WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1200",
       "Aspect Ratio": "16:10 (WUXGA)",
@@ -387,12 +403,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business Museum/Exhibits"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls832wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls832wu_projector"
   },
   {
     "title": "ViewSonic LS920WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1200",
       "Aspect Ratio": "16:10 (WUXGA)",
@@ -410,12 +427,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls920wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls920wu_projector"
   },
   {
     "title": "ViewSonic LS921WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1200",
       "Aspect Ratio": "16:10 (WUXGA)",
@@ -433,12 +451,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ls921wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ls921wu_projector"
   },
   {
     "title": "ViewSonic LSC520WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "5,200 Lumens (ANSI)1",
       "Resolution": "1920x1200",
@@ -456,12 +475,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsc520wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsc520wu_projector"
   },
   {
     "title": "ViewSonic LSC600WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "6,000 Lumens (ANSI)1",
       "Resolution": "1920x1200",
@@ -479,12 +499,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsc600wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsc600wu_projector"
   },
   {
     "title": "ViewSonic LSC601WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "6,000 Lumens (ANSI)1",
       "Resolution": "1920x1200",
@@ -502,12 +523,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsc601wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsc601wu_projector"
   },
   {
     "title": "ViewSonic LSC650WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "6,000 Lumens (ANSI)1",
       "Resolution": "1920x1200",
@@ -525,12 +547,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsc650wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsc650wu_projector"
   },
   {
     "title": "ViewSonic LSC651WU Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Brightness (Lumens)": "6,000 Lumens (ANSI)1",
       "Resolution": "1920x1200",
@@ -548,12 +571,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsc651wu.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsc651wu_projector"
   },
   {
     "title": "ViewSonic LSD400W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -571,12 +595,13 @@
       "Best Used For": "K-12 Education Corporate/Business Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsd400w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsd400w_projector"
   },
   {
     "title": "ViewSonic LSD500HD Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -593,12 +618,13 @@
       "Best Used For": "House of Worship Corporate/Business Events/Staging Museum/Exhibits"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsd500hd.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsd500hd_projector"
   },
   {
     "title": "ViewSonic LSD600W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -615,12 +641,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business Digital Signage Museum/Exhibits Simulation Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lsd600w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lsd600w_projector"
   },
   {
     "title": "ViewSonic LX60HD Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -637,12 +664,13 @@
       "Best Used For": "Home Theater"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-lx60hd.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_lx60hd_projector"
   },
   {
     "title": "ViewSonic M1X Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "854x480",
       "Aspect Ratio": "16:9 (WVGA)",
@@ -660,12 +688,13 @@
       "Best Used For": "Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-m1x.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_m1x_projector"
   },
   {
     "title": "ViewSonic PA503HD Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -682,12 +711,13 @@
       "Best Used For": "Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-pa503hd.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_pa503hd_projector"
   },
   {
     "title": "ViewSonic PA503S Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "800x600",
       "Aspect Ratio": "4:3 (SVGA)",
@@ -704,12 +734,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-pa503s.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_pa503s_projector"
   },
   {
     "title": "ViewSonic PA503W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -726,12 +757,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-pa503w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_pa503w_projector"
   },
   {
     "title": "ViewSonic PA503X Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1024x768",
       "Aspect Ratio": "4:3 (XGA)",
@@ -748,12 +780,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-pa503x.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_pa503x_projector"
   },
   {
     "title": "ViewSonic PA504W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -770,12 +803,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-pa504w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_pa504w_projector"
   },
   {
     "title": "ViewSonic PS502W Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1280x800",
       "Aspect Ratio": "16:10 (WXGA)",
@@ -792,12 +826,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ps502w.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ps502w_projector"
   },
   {
     "title": "ViewSonic PS502X Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1024x768",
       "Aspect Ratio": "4:3 (XGA)",
@@ -814,12 +849,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-ps502x.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_ps502x_projector"
   },
   {
     "title": "ViewSonic PX700HDH Projector",
     "brand": "ViewSonic",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -836,12 +872,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/viewsonic-px700hdh.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "viewsonic_px700hdh_projector"
   },
   {
     "title": "LG CineBeam HU715QW Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160 w/pixel shifting",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -858,12 +895,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_hu715q.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_hu715qw_projector"
   },
   {
     "title": "LG CineBeam HU810PW Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -881,12 +919,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_hu810pw.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_hu810pw_projector"
   },
   {
     "title": "LG CineBeam HU915QB Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -905,12 +944,13 @@
       "Best Used For": "Home Theater"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_hu915qb.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_hu915qb_projector"
   },
   {
     "title": "LG CineBeam PF510Q Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -928,12 +968,13 @@
       "Best Used For": "Home Theater"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_pf510q.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_pf510q_projector"
   },
   {
     "title": "LG CineBeam PF610P Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -951,12 +992,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_pf610p.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_pf610p_projector"
   },
   {
     "title": "LG CineBeam PU700R Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -971,12 +1013,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_pu700r.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_pu700r_projector"
   },
   {
     "title": "LG CineBeam S Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -994,12 +1037,13 @@
       "Best Used For": "Home Theater"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-cinebeam_s.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_cinebeam_s_projector"
   },
   {
     "title": "LG HU70LA Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1017,12 +1061,13 @@
       "Best Used For": "Home Theater Gaming"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-hu70la.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_hu70la_projector"
   },
   {
     "title": "LG HU70LAB Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1040,12 +1085,13 @@
       "Best Used For": "Home Theater"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-hu70lab.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_hu70lab_projector"
   },
   {
     "title": "LG HU85LA Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1063,12 +1109,13 @@
       "Best Used For": "Home Theater"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-hu85la.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_hu85la_projector"
   },
   {
     "title": "LG PF510Qc Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1080",
       "Aspect Ratio": "16:9 (HD)",
@@ -1086,12 +1133,13 @@
       "Best Used For": "K-12 Education Corporate/Business"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-pf510qc.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_pf510qc_projector"
   },
   {
     "title": "LG ProBeam BF50RG Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1200",
       "Aspect Ratio": "16:10 (WUXGA)",
@@ -1109,12 +1157,13 @@
       "Best Used For": "Higher Education Corporate/Business Digital Signage"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-probeam_bf50rg.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_probeam_bf50rg_projector"
   },
   {
     "title": "LG ProBeam BF60RG Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "1920x1200",
       "Aspect Ratio": "16:10 (WUXGA)",
@@ -1132,12 +1181,13 @@
       "Best Used For": "Higher Education Corporate/Business Digital Signage"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-probeam_bf60rg.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_probeam_bf60rg_projector"
   },
   {
     "title": "LG ProBeam BU50RG Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1155,12 +1205,13 @@
       "Best Used For": "Corporate/Business Digital Signage"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-probeam_bu50rg.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_probeam_bu50rg_projector"
   },
   {
     "title": "LG ProBeam BU53RG Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1178,12 +1229,13 @@
       "Best Used For": "Higher Education House of Worship Corporate/Business Digital Signage Golf Simulator"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-bu53rg.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_probeam_bu53rg_projector"
   },
   {
     "title": "LG ProBeam BU60RG Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1201,12 +1253,13 @@
       "Best Used For": "Corporate/Business Digital Signage"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-probeam_bu60rg.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_probeam_bu60rg_projector"
   },
   {
     "title": "LG ProBeam BU70QGA Projector",
     "brand": "LG",
-    "subcategory": "projectors",
+    "subcategory": "Projectors & Screens",
     "specifications": {
       "Resolution": "3840x2160",
       "Aspect Ratio": "16:9 (4K HD)",
@@ -1224,12 +1277,13 @@
       "Best Used For": "Higher Education House of Worship Digital Signage"
     },
     "projectorcentral_url": "https://www.projectorcentral.com/lg-probeam_bu70qga.htm",
-    "source": "projectorcentral.com"
+    "source": "projectorcentral.com",
+    "slug": "lg_probeam_bu70qga_projector"
   },
   {
     "title": "Brother MFC-J5110DW INKvestment Wireless Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ5110DW",
@@ -1237,12 +1291,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j5110dw_inkvestment_wireless_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother MFC-J5010DW INKvestment Wireless Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ5010DW",
@@ -1250,12 +1305,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j5010dw_inkvestment_wireless_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother MFC-J1355DW INKvestment Wireless Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ1355DW",
@@ -1263,12 +1319,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j1355dw_inkvestment_wireless_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother Workhorse MFC-J5115DW Wireless Color Inkjet All-in-One Printer ",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ5115DW",
@@ -1276,12 +1333,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_workhorse_mfc_j5115dw_wireless_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother MFC-J1260W Wireless Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ1260W",
@@ -1289,12 +1347,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j1260w_wireless_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother MFC-J1360DWF Wireless Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ1360DWF",
@@ -1302,48 +1361,52 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j1360dwf_wireless_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother HL-L8430CDW Business Color Laser Printer Bundle",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "HLL8430635XXL4PBD",
       "Print Technology": "Color Laser",
       "Function": "Printer Only"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_hl_l8430cdw_business_color_laser_printer_bundle"
   },
   {
     "title": "Brother MFC-L8930CDW Business Color Laser All-in-One Printer Bundle",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCL8930635XXL4PBD",
       "Print Technology": "Color Laser",
       "Function": "All-in-One (Print, Scan, Copy, Fax)"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_l8930cdw_business_color_laser_all_in_one_printer_bundle"
   },
   {
     "title": "Brother MFC-L8730CDW Business Color Laser All-in-One Printer Bundle",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCL8730635XL4PBD",
       "Print Technology": "Color Laser",
       "Function": "All-in-One (Print, Scan, Copy, Fax)"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_l8730cdw_business_color_laser_all_in_one_printer_bundle"
   },
   {
     "title": "Brother MFC-J6560DW Wireless INKvestment Tank Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ6560DW",
@@ -1351,24 +1414,26 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j6560dw_wireless_inkvestment_tank_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother Workhorse MFC-J6975DW Business Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ6975DW",
       "Print Technology": "Inkjet",
       "Function": "All-in-One (Print, Scan, Copy, Fax)"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_workhorse_mfc_j6975dw_business_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother HL-L8430CDWT Business Wireless Color Laser Printer with Ethernet",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "HLL8430CDWT",
@@ -1376,12 +1441,13 @@
       "Function": "Printer Only",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_hl_l8430cdwt_business_wireless_color_laser_printer_with_ethernet"
   },
   {
     "title": "Brother MFC-L8730CDW Business Wireless Color Laser All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCL8730CDW",
@@ -1389,12 +1455,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_l8730cdw_business_wireless_color_laser_all_in_one_printer"
   },
   {
     "title": "Brother MFC-J6960DW Wireless INKvestment Tank Color Inkjet All-in-One Printer",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "MFCJ6960DW",
@@ -1402,12 +1469,13 @@
       "Function": "All-in-One (Print, Scan, Copy, Fax)",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_mfc_j6960dw_wireless_inkvestment_tank_color_inkjet_all_in_one_printer"
   },
   {
     "title": "Brother HL-L8430CDW Business Wireless Color Laser Printer with Duplex Printing",
     "brand": "Brother",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Brother",
       "Model": "HLL8430CDW",
@@ -1415,12 +1483,13 @@
       "Function": "Printer Only",
       "Connectivity": "Wi-Fi"
     },
-    "source": "brother-usa.com"
+    "source": "brother-usa.com",
+    "slug": "brother_hl_l8430cdw_business_wireless_color_laser_printer_with_duplex_printing"
   },
   {
     "title": "HP printer",
     "brand": "HP",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "HP",
       "Type": "Printer",
@@ -1428,12 +1497,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "hp_printer"
   },
   {
     "title": "Canon printer",
     "brand": "Canon",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Canon",
       "Type": "Printer",
@@ -1441,12 +1511,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "canon_printer"
   },
   {
     "title": "Epson printer",
     "brand": "Epson",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Epson",
       "Type": "Printer",
@@ -1454,12 +1525,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "epson_printer"
   },
   {
     "title": "Lexmark printer",
     "brand": "Lexmark",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Lexmark",
       "Type": "Printer",
@@ -1467,12 +1539,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "lexmark_printer"
   },
   {
     "title": "Samsung printer",
     "brand": "Samsung",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Samsung",
       "Type": "Printer",
@@ -1480,12 +1553,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "samsung_printer"
   },
   {
     "title": "Xerox printer",
     "brand": "Xerox",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Xerox",
       "Type": "Printer",
@@ -1493,12 +1567,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "xerox_printer"
   },
   {
     "title": "Ricoh printer",
     "brand": "Ricoh",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Ricoh",
       "Type": "Printer",
@@ -1506,12 +1581,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "ricoh_printer"
   },
   {
     "title": "Dell printer",
     "brand": "Dell",
-    "subcategory": "printers",
+    "subcategory": "Printers",
     "specifications": {
       "Brand": "Dell",
       "Type": "Printer",
@@ -1519,12 +1595,13 @@
       "Function": "Printer / All-in-One",
       "Connectivity": "USB, Wi-Fi, Ethernet"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "dell_printer"
   },
   {
     "title": "Canon copier",
     "brand": "Canon",
-    "subcategory": "copiers",
+    "subcategory": "Copiers",
     "specifications": {
       "Brand": "Canon",
       "Type": "Copier",
@@ -1533,12 +1610,13 @@
       "Duplex Copying": "Yes / No",
       "Connectivity": "USB, Network"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "canon_copier"
   },
   {
     "title": "Xerox copier",
     "brand": "Xerox",
-    "subcategory": "copiers",
+    "subcategory": "Copiers",
     "specifications": {
       "Brand": "Xerox",
       "Type": "Copier",
@@ -1547,12 +1625,13 @@
       "Duplex Copying": "Yes / No",
       "Connectivity": "USB, Network"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "xerox_copier"
   },
   {
     "title": "Ricoh copier",
     "brand": "Ricoh",
-    "subcategory": "copiers",
+    "subcategory": "Copiers",
     "specifications": {
       "Brand": "Ricoh",
       "Type": "Copier",
@@ -1561,12 +1640,13 @@
       "Duplex Copying": "Yes / No",
       "Connectivity": "USB, Network"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "ricoh_copier"
   },
   {
     "title": "Sharp copier",
     "brand": "Sharp",
-    "subcategory": "copiers",
+    "subcategory": "Copiers",
     "specifications": {
       "Brand": "Sharp",
       "Type": "Copier",
@@ -1575,12 +1655,13 @@
       "Duplex Copying": "Yes / No",
       "Connectivity": "USB, Network"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "sharp_copier"
   },
   {
     "title": "Konica copier",
     "brand": "Konica",
-    "subcategory": "copiers",
+    "subcategory": "Copiers",
     "specifications": {
       "Brand": "Konica",
       "Type": "Copier",
@@ -1589,12 +1670,13 @@
       "Duplex Copying": "Yes / No",
       "Connectivity": "USB, Network"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "konica_copier"
   },
   {
     "title": "Toshiba copier",
     "brand": "Toshiba",
-    "subcategory": "copiers",
+    "subcategory": "Copiers",
     "specifications": {
       "Brand": "Toshiba",
       "Type": "Copier",
@@ -1603,12 +1685,13 @@
       "Duplex Copying": "Yes / No",
       "Connectivity": "USB, Network"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "toshiba_copier"
   },
   {
     "title": "Canon scanner",
     "brand": "Canon",
-    "subcategory": "scanners",
+    "subcategory": "Scanners",
     "specifications": {
       "Brand": "Canon",
       "Type": "Scanner",
@@ -1617,12 +1700,13 @@
       "Scan Speed": "",
       "Connectivity": "USB, Wi-Fi"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "canon_scanner"
   },
   {
     "title": "Epson scanner",
     "brand": "Epson",
-    "subcategory": "scanners",
+    "subcategory": "Scanners",
     "specifications": {
       "Brand": "Epson",
       "Type": "Scanner",
@@ -1631,12 +1715,13 @@
       "Scan Speed": "",
       "Connectivity": "USB, Wi-Fi"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "epson_scanner"
   },
   {
     "title": "HP scanner",
     "brand": "HP",
-    "subcategory": "scanners",
+    "subcategory": "Scanners",
     "specifications": {
       "Brand": "HP",
       "Type": "Scanner",
@@ -1645,12 +1730,13 @@
       "Scan Speed": "",
       "Connectivity": "USB, Wi-Fi"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "hp_scanner"
   },
   {
     "title": "Fujitsu scanner",
     "brand": "Fujitsu",
-    "subcategory": "scanners",
+    "subcategory": "Scanners",
     "specifications": {
       "Brand": "Fujitsu",
       "Type": "Scanner",
@@ -1659,12 +1745,13 @@
       "Scan Speed": "",
       "Connectivity": "USB, Wi-Fi"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "fujitsu_scanner"
   },
   {
     "title": "Brother scanner",
     "brand": "Brother",
-    "subcategory": "scanners",
+    "subcategory": "Scanners",
     "specifications": {
       "Brand": "Brother",
       "Type": "Scanner",
@@ -1673,12 +1760,13 @@
       "Scan Speed": "",
       "Connectivity": "USB, Wi-Fi"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "brother_scanner"
   },
   {
     "title": "Plustek scanner",
     "brand": "Plustek",
-    "subcategory": "scanners",
+    "subcategory": "Scanners",
     "specifications": {
       "Brand": "Plustek",
       "Type": "Scanner",
@@ -1687,12 +1775,13 @@
       "Scan Speed": "",
       "Connectivity": "USB, Wi-Fi"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "plustek_scanner"
   },
   {
     "title": "Square pos system",
     "brand": "Square",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "Square",
       "Type": "Pos system",
@@ -1701,12 +1790,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "square_pos_system"
   },
   {
     "title": "Clover pos system",
     "brand": "Clover",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "Clover",
       "Type": "Pos system",
@@ -1715,12 +1805,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "clover_pos_system"
   },
   {
     "title": "Toshiba pos system",
     "brand": "Toshiba",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "Toshiba",
       "Type": "Pos system",
@@ -1729,12 +1820,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "toshiba_pos_system"
   },
   {
     "title": "NCR pos system",
     "brand": "NCR",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "NCR",
       "Type": "Pos system",
@@ -1743,12 +1835,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "ncr_pos_system"
   },
   {
     "title": "HP pos system",
     "brand": "HP",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "HP",
       "Type": "Pos system",
@@ -1757,12 +1850,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "hp_pos_system"
   },
   {
     "title": "Epson pos system",
     "brand": "Epson",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "Epson",
       "Type": "Pos system",
@@ -1771,12 +1865,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "epson_pos_system"
   },
   {
     "title": "Star pos system",
     "brand": "Star",
-    "subcategory": "pos systems",
+    "subcategory": "POS Systems",
     "specifications": {
       "Brand": "Star",
       "Type": "Pos system",
@@ -1785,12 +1880,13 @@
       "Connectivity": "Wi-Fi, Bluetooth, Ethernet",
       "Payment Methods": "Card, Cash, Mobile Money"
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "star_pos_system"
   },
   {
     "title": "Fellowes shredder",
     "brand": "Fellowes",
-    "subcategory": "shredders",
+    "subcategory": "Shredders",
     "specifications": {
       "Brand": "Fellowes",
       "Type": "Shredder",
@@ -1799,12 +1895,13 @@
       "Security Level": "",
       "Bin Capacity (Litres)": ""
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "fellowes_shredder"
   },
   {
     "title": "AmazonBasics shredder",
     "brand": "AmazonBasics",
-    "subcategory": "shredders",
+    "subcategory": "Shredders",
     "specifications": {
       "Brand": "AmazonBasics",
       "Type": "Shredder",
@@ -1813,12 +1910,13 @@
       "Security Level": "",
       "Bin Capacity (Litres)": ""
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "amazonbasics_shredder"
   },
   {
     "title": "Swingline shredder",
     "brand": "Swingline",
-    "subcategory": "shredders",
+    "subcategory": "Shredders",
     "specifications": {
       "Brand": "Swingline",
       "Type": "Shredder",
@@ -1827,12 +1925,13 @@
       "Security Level": "",
       "Bin Capacity (Litres)": ""
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "swingline_shredder"
   },
   {
     "title": "Aurora shredder",
     "brand": "Aurora",
-    "subcategory": "shredders",
+    "subcategory": "Shredders",
     "specifications": {
       "Brand": "Aurora",
       "Type": "Shredder",
@@ -1841,12 +1940,13 @@
       "Security Level": "",
       "Bin Capacity (Litres)": ""
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "aurora_shredder"
   },
   {
     "title": "Bonsaii shredder",
     "brand": "Bonsaii",
-    "subcategory": "shredders",
+    "subcategory": "Shredders",
     "specifications": {
       "Brand": "Bonsaii",
       "Type": "Shredder",
@@ -1855,6 +1955,1449 @@
       "Security Level": "",
       "Bin Capacity (Litres)": ""
     },
-    "source": "generic"
+    "source": "generic",
+    "slug": "bonsaii_shredder"
+  },
+  {
+    "title": "HP LaserJet Pro M404n Printer",
+    "slug": "hp_laserjet_pro_m404n_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "LaserJet Pro M404n",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "HP LaserJet MFP M236dw Printer",
+    "slug": "hp_laserjet_mfp_m236dw_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "LaserJet MFP M236dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "HP DeskJet 2330 All-in-One Printer",
+    "slug": "hp_deskjet_2330_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "DeskJet 2330",
+      "Print Technology": "Inkjet",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "HP Smart Tank 580 All-in-One Printer",
+    "slug": "hp_smart_tank_580_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "Smart Tank 580",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Bluetooth LE"
+    }
+  },
+  {
+    "title": "Epson EcoTank L3210 All-in-One Printer",
+    "slug": "epson_ecotank_l3210_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L3210",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "Epson EcoTank L3250 All-in-One Printer",
+    "slug": "epson_ecotank_l3250_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L3250",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "Epson EcoTank L5290 All-in-One Printer",
+    "slug": "epson_ecotank_l5290_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L5290",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, Fax) with ADF",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct, Ethernet"
+    }
+  },
+  {
+    "title": "Canon PIXMA G3420 All-in-One Printer",
+    "slug": "canon_pixma_g3420_all_in_one_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G3420",
+      "Print Technology": "Refillable Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Canon imageCLASS LBP226dw Printer",
+    "slug": "canon_imageclass_lbp226dw_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "imageCLASS LBP226dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother HL-L2321D Printer",
+    "slug": "brother_hl_l2321d_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "HL-L2321D",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "Kyocera ECOSYS P2040dw Printer",
+    "slug": "kyocera_ecosys_p2040dw_printer",
+    "brand": "Kyocera",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Kyocera",
+      "Model": "ECOSYS P2040dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi"
+    }
+  },
+  {
+    "title": "Pantum P2500W Printer",
+    "slug": "pantum_p2500w_printer",
+    "brand": "Pantum",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Pantum",
+      "Model": "P2500W",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Kyocera ECOSYS M2540dn Multifunction Copier",
+    "slug": "kyocera_ecosys_m2540dn_multifunction_copier",
+    "brand": "Kyocera",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Kyocera",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "40 cpm (A4)",
+      "Paper Size": "A4, A5, A6",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Kyocera TASKalfa 2020 A3 Multifunction Copier",
+    "slug": "kyocera_taskalfa_2020_a3_multifunction_copier",
+    "brand": "Kyocera",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Kyocera",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "20 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Optional",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Canon imageRUNNER 2425 A3 Multifunction Copier",
+    "slug": "canon_imagerunner_2425_a3_multifunction_copier",
+    "brand": "Canon",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "25 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi (optional)"
+    }
+  },
+  {
+    "title": "Ricoh MP 2014 A3 Multifunction Copier",
+    "slug": "ricoh_mp_2014_a3_multifunction_copier",
+    "brand": "Ricoh",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Ricoh",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "20 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Optional",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Konica Minolta bizhub 205i A3 Multifunction Copier",
+    "slug": "konica_minolta_bizhub_205i_a3_multifunction_copier",
+    "brand": "Konica Minolta",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Konica Minolta",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "20 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Sharp BP-20M24 A3 Multifunction Copier",
+    "slug": "sharp_bp_20m24_a3_multifunction_copier",
+    "brand": "Sharp",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sharp",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "24 cpm (A4)",
+      "Paper Size": "A3, A4, A6",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi (optional)"
+    }
+  },
+  {
+    "title": "Canon CanoScan LiDE 300 Flatbed Scanner",
+    "slug": "canon_canoscan_lide_300_flatbed_scanner",
+    "brand": "Canon",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Type": "Scanner",
+      "Scanner Type": "Flatbed",
+      "Resolution (dpi)": "2400 x 2400 dpi",
+      "Scan Speed": "Approx. 10 sec (A4 colour, 300 dpi)",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "Epson WorkForce DS-530II Document Scanner",
+    "slug": "epson_workforce_ds_530ii_document_scanner",
+    "brand": "Epson",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed, Duplex (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "35 ppm / 70 ipm",
+      "Connectivity": "USB 3.0"
+    }
+  },
+  {
+    "title": "HP ScanJet Pro 2000 s2 Document Scanner",
+    "slug": "hp_scanjet_pro_2000_s2_document_scanner",
+    "brand": "HP",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed, Duplex (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "35 ppm / 70 ipm",
+      "Connectivity": "USB 3.0"
+    }
+  },
+  {
+    "title": "Brother ADS-1700W Compact Document Scanner",
+    "slug": "brother_ads_1700w_compact_document_scanner",
+    "brand": "Brother",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed, Duplex (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "25 ppm / 50 ipm",
+      "Connectivity": "USB 3.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "Fujitsu ScanSnap iX1600 Document Scanner",
+    "slug": "fujitsu_scansnap_ix1600_document_scanner",
+    "brand": "Fujitsu",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Fujitsu",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed, Duplex (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "40 ppm / 80 ipm",
+      "Connectivity": "USB 3.2, Wi-Fi"
+    }
+  },
+  {
+    "title": "Plustek ePhoto Z300 Photo Scanner",
+    "slug": "plustek_ephoto_z300_photo_scanner",
+    "brand": "Plustek",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Plustek",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed Photo Scanner",
+      "Resolution (dpi)": "600 dpi",
+      "Scan Speed": "4x6\" photo in approx. 2 sec",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "PAX A920 Smart POS Terminal",
+    "slug": "pax_a920_smart_pos_terminal",
+    "brand": "PAX",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "PAX",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld, All-in-one)",
+      "Display Size": "5.0\" HD (720x1280)",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "PAX A920 Pro Smart POS Terminal",
+    "slug": "pax_a920_pro_smart_pos_terminal",
+    "brand": "PAX",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "PAX",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld, All-in-one)",
+      "Display Size": "5.5\" HD+",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "PAX A80 Smart POS Terminal",
+    "slug": "pax_a80_smart_pos_terminal",
+    "brand": "PAX",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "PAX",
+      "Type": "Pos system",
+      "System Type": "Android Countertop Smart POS",
+      "Display Size": "4.0\" Touchscreen",
+      "Connectivity": "Ethernet, 4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code"
+    }
+  },
+  {
+    "title": "Sunmi V2s Smart POS Terminal",
+    "slug": "sunmi_v2s_smart_pos_terminal",
+    "brand": "Sunmi",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sunmi",
+      "Type": "Pos system",
+      "System Type": "Android Handheld POS with Built-in Printer",
+      "Display Size": "5.45\" HD+",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC (optional)"
+    }
+  },
+  {
+    "title": "Sunmi P3 Smart Payment Terminal",
+    "slug": "sunmi_p3_smart_payment_terminal",
+    "brand": "Sunmi",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sunmi",
+      "Type": "Pos system",
+      "System Type": "Android Smart Payment Terminal (Handheld)",
+      "Display Size": "6.75\" HD+ (720x1600) IPS",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code"
+    }
+  },
+  {
+    "title": "Ingenico Move/5000 Payment Terminal",
+    "slug": "ingenico_move_5000_payment_terminal",
+    "brand": "Ingenico",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Ingenico",
+      "Type": "Pos system",
+      "System Type": "Mobile Payment Terminal (Telium Tetra)",
+      "Display Size": "3.2\" Colour Display",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, Mobile Money"
+    }
+  },
+  {
+    "title": "Verifone VX520 Payment Terminal",
+    "slug": "verifone_vx520_payment_terminal",
+    "brand": "Verifone",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Verifone",
+      "Type": "Pos system",
+      "System Type": "Countertop Payment Terminal",
+      "Display Size": "2.8\" Colour Display",
+      "Connectivity": "Ethernet, Dial-up",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC"
+    }
+  },
+  {
+    "title": "MoreFun MF919 Pro Smart POS Terminal",
+    "slug": "morefun_mf919_pro_smart_pos_terminal",
+    "brand": "MoreFun",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "MoreFun",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld, All-in-one)",
+      "Display Size": "6.5\" HD (720x1600) IPS",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "Fellowes Powershred 60Cs Cross-Cut Shredder",
+    "slug": "fellowes_powershred_60cs_cross_cut_shredder",
+    "brand": "Fellowes",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Fellowes",
+      "Type": "Shredder",
+      "Sheet Capacity": "10 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "22 L"
+    }
+  },
+  {
+    "title": "Fellowes Powershred 79Ci Cross-Cut Shredder",
+    "slug": "fellowes_powershred_79ci_cross_cut_shredder",
+    "brand": "Fellowes",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Fellowes",
+      "Type": "Shredder",
+      "Sheet Capacity": "16 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "23 L"
+    }
+  },
+  {
+    "title": "GBC Auto+ 60X Auto Feed Shredder",
+    "slug": "gbc_auto_60x_auto_feed_shredder",
+    "brand": "GBC",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "GBC",
+      "Type": "Shredder",
+      "Sheet Capacity": "60 sheets (auto-feed), 6 sheets (manual)",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "15 L"
+    }
+  },
+  {
+    "title": "Deli 9912 Paper Shredder",
+    "slug": "deli_9912_paper_shredder",
+    "brand": "Deli",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Deli",
+      "Type": "Shredder",
+      "Sheet Capacity": "10 sheets",
+      "Cut Type": "Micro-cut",
+      "Security Level": "P-5",
+      "Bin Capacity (Litres)": "20 L"
+    }
+  },
+  {
+    "title": "Epson EB-E01 XGA 3LCD Projector",
+    "slug": "epson_eb_e01_xga_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,300 Lumens",
+      "Resolution": "1024x768 (XGA)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "4:3",
+      "Light Source": "210W UHE Lamp",
+      "Connectivity": "HDMI, VGA, USB 2.0",
+      "Weight": "2.4 kg",
+      "Warranty": "2 Years"
+    }
+  },
+  {
+    "title": "Epson EB-X06 XGA 3LCD Projector",
+    "slug": "epson_eb_x06_xga_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,600 Lumens",
+      "Resolution": "1024x768 (XGA)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "4:3",
+      "Light Source": "210W UHE Lamp",
+      "Connectivity": "HDMI, VGA, USB 2.0, Wi-Fi (optional)",
+      "Weight": "2.4 kg",
+      "Warranty": "2 Years"
+    }
+  },
+  {
+    "title": "Epson EB-FH06 Full HD 3LCD Projector",
+    "slug": "epson_eb_fh06_full_hd_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,500 Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "16:9",
+      "Light Source": "210W UHE Lamp",
+      "Connectivity": "HDMI x2, VGA, USB, Wi-Fi (optional)",
+      "Weight": "2.6 kg",
+      "Warranty": "2 Years"
+    }
+  },
+  {
+    "title": "BenQ MS560 SVGA Business Projector",
+    "slug": "benq_ms560_svga_business_projector",
+    "brand": "BenQ",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,000 Lumens",
+      "Resolution": "800x600 (SVGA)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "4:3",
+      "Light Source": "Lamp (240W)",
+      "Connectivity": "HDMI x2, VGA, USB",
+      "Weight": "2.3 kg",
+      "Warranty": "2 Years"
+    }
+  },
+  {
+    "title": "BenQ MX560 XGA Business Projector",
+    "slug": "benq_mx560_xga_business_projector",
+    "brand": "BenQ",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,000 Lumens",
+      "Resolution": "1024x768 (XGA)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "4:3",
+      "Light Source": "Lamp (240W)",
+      "Connectivity": "HDMI x2, VGA, USB",
+      "Weight": "2.3 kg",
+      "Warranty": "2 Years"
+    }
+  },
+  {
+    "title": "XGIMI MoGo 2 Pro Portable Projector",
+    "slug": "xgimi_mogo_2_pro_portable_projector",
+    "brand": "XGIMI",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "400 ISO Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (LED)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "LED",
+      "Connectivity": "HDMI, USB-C, Wi-Fi, Bluetooth, Android TV 11",
+      "Weight": "1.1 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Anker Nebula Capsule 3 Portable Projector",
+    "slug": "anker_nebula_capsule_3_portable_projector",
+    "brand": "Anker",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "200 ANSI Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (Laser)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "Laser",
+      "Connectivity": "HDMI, USB-C, Wi-Fi, Bluetooth, Google TV",
+      "Weight": "0.84 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Xiaomi Mi Smart Projector 2",
+    "slug": "xiaomi_mi_smart_projector_2",
+    "brand": "Xiaomi",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "500 ANSI Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (LED)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "LED",
+      "Connectivity": "HDMI, USB 2.0, Wi-Fi, Bluetooth, Android TV",
+      "Weight": "1.3 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "72-Inch Tripod Projection Screen",
+    "slug": "72_inch_tripod_projection_screen",
+    "brand": "Generic",
+    "subcategory": "Projectors & Screens",
+    "source": "generic",
+    "specifications": {
+      "Type": "Tripod Projection Screen",
+      "Screen Size": "72\" (Diagonal)",
+      "Aspect Ratio": "1:1",
+      "Material": "Matte White Fabric",
+      "Mount Type": "Tripod Stand (Portable)",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "100-Inch Wall-Mount Projection Screen",
+    "slug": "100_inch_wall_mount_projection_screen",
+    "brand": "Generic",
+    "subcategory": "Projectors & Screens",
+    "source": "generic",
+    "specifications": {
+      "Type": "Manual Pull-Down Projection Screen",
+      "Screen Size": "100\" (Diagonal)",
+      "Aspect Ratio": "16:9",
+      "Material": "Matte White Fabric",
+      "Mount Type": "Wall/Ceiling Mount",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Epson EcoTank L3256 All-in-One Printer",
+    "slug": "epson_ecotank_l3256_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L3256 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "Epson EcoTank L3550 All-in-One Printer",
+    "slug": "epson_ecotank_l3550_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L3550 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "Epson EcoTank L6270 All-in-One Printer",
+    "slug": "epson_ecotank_l6270_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L6270 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, ADF)",
+      "Connectivity": "USB 2.0, Wi-Fi, Ethernet"
+    }
+  },
+  {
+    "title": "Epson EcoTank L8050 Photo Printer",
+    "slug": "epson_ecotank_l8050_photo_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L8050 Photo",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "Print Only (A4 Photo, 6-colour)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "HP Smart Tank 525 All-in-One Printer",
+    "slug": "hp_smart_tank_525_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "Smart Tank 525 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Bluetooth LE"
+    }
+  },
+  {
+    "title": "HP Smart Tank 670 All-in-One Printer",
+    "slug": "hp_smart_tank_670_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "Smart Tank 670 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, ADF)",
+      "Connectivity": "USB 2.0, Wi-Fi, Bluetooth LE"
+    }
+  },
+  {
+    "title": "HP LaserJet Pro 4003dw Printer",
+    "slug": "hp_laserjet_pro_4003dw_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "LaserJet Pro 4003dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi"
+    }
+  },
+  {
+    "title": "HP LaserJet MFP 4103dw Printer",
+    "slug": "hp_laserjet_mfp_4103dw_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "LaserJet MFP 4103dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi"
+    }
+  },
+  {
+    "title": "HP DeskJet 2720e All-in-One Printer",
+    "slug": "hp_deskjet_2720e_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "DeskJet 2720e All-in-One",
+      "Print Technology": "Inkjet",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Canon PIXMA G2411 All-in-One Printer",
+    "slug": "canon_pixma_g2411_all_in_one_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G2411 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "Canon PIXMA G3411 All-in-One Printer",
+    "slug": "canon_pixma_g3411_all_in_one_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G3411 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Canon PIXMA G640 Photo Printer",
+    "slug": "canon_pixma_g640_photo_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G640 Photo",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "Print Only (6-colour Photo)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother DCP-T520W Ink Tank All-in-One Printer",
+    "slug": "brother_dcp_t520w_ink_tank_all_in_one_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "DCP-T520W Ink Tank All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother DCP-T720DW Ink Tank All-in-One Printer",
+    "slug": "brother_dcp_t720dw_ink_tank_all_in_one_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "DCP-T720DW Ink Tank All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, Auto Duplex)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother HL-L2370DN Printer",
+    "slug": "brother_hl_l2370dn_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "HL-L2370DN",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Canon imageRUNNER 2206N A3 Multifunction Copier",
+    "slug": "canon_imagerunner_2206n_a3_multifunction_copier",
+    "brand": "Canon",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "22 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Kyocera TASKalfa 2321 A3 Multifunction Copier",
+    "slug": "kyocera_taskalfa_2321_a3_multifunction_copier",
+    "brand": "Kyocera",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Kyocera",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "23 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Optional",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Toshiba e-STUDIO 2523A A3 Multifunction Copier",
+    "slug": "toshiba_e_studio_2523a_a3_multifunction_copier",
+    "brand": "Toshiba",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Toshiba",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "25 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Optional",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Sharp BP-20M28 A3 Multifunction Copier",
+    "slug": "sharp_bp_20m28_a3_multifunction_copier",
+    "brand": "Sharp",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sharp",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "28 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Canon CanoScan LiDE 400 Flatbed Scanner",
+    "slug": "canon_canoscan_lide_400_flatbed_scanner",
+    "brand": "Canon",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Type": "Scanner",
+      "Scanner Type": "Flatbed",
+      "Resolution (dpi)": "4800 x 4800 dpi",
+      "Scan Speed": "Approx. 8 sec (A4 colour, 300 dpi)",
+      "Connectivity": "USB Type-C"
+    }
+  },
+  {
+    "title": "Epson WorkForce DS-410 Document Scanner",
+    "slug": "epson_workforce_ds_410_document_scanner",
+    "brand": "Epson",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "26 ppm (A4, 300 dpi)",
+      "Connectivity": "USB 3.0"
+    }
+  },
+  {
+    "title": "HP ScanJet Pro 3000 s4 Document Scanner",
+    "slug": "hp_scanjet_pro_3000_s4_document_scanner",
+    "brand": "HP",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "40 ppm (A4, 300 dpi)",
+      "Connectivity": "USB 3.0"
+    }
+  },
+  {
+    "title": "Honeywell Voyager 1470g Barcode Scanner",
+    "slug": "honeywell_voyager_1470g_barcode_scanner",
+    "brand": "Honeywell",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Honeywell",
+      "Type": "Scanner",
+      "Scanner Type": "Handheld 2D Imager Barcode Scanner",
+      "Resolution (dpi)": "1D/2D barcodes",
+      "Scan Speed": "N/A",
+      "Connectivity": "USB"
+    }
+  },
+  {
+    "title": "Zebra DS2208 Barcode Scanner",
+    "slug": "zebra_ds2208_barcode_scanner",
+    "brand": "Zebra",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Zebra",
+      "Type": "Scanner",
+      "Scanner Type": "Handheld 2D Imager Barcode Scanner",
+      "Resolution (dpi)": "1D/2D barcodes",
+      "Scan Speed": "N/A",
+      "Connectivity": "USB"
+    }
+  },
+  {
+    "title": "Sunmi T2s Desktop Smart POS Terminal",
+    "slug": "sunmi_t2s_desktop_smart_pos_terminal",
+    "brand": "Sunmi",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sunmi",
+      "Type": "Pos system",
+      "System Type": "Android Desktop POS (Dual Display)",
+      "Display Size": "15.6\" FHD + 10.1\" Customer Display",
+      "Connectivity": "4G, Wi-Fi, Bluetooth, Ethernet",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC (optional)"
+    }
+  },
+  {
+    "title": "Sunmi D2s Desktop Smart POS Terminal",
+    "slug": "sunmi_d2s_desktop_smart_pos_terminal",
+    "brand": "Sunmi",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sunmi",
+      "Type": "Pos system",
+      "System Type": "Android Desktop POS with Built-in Printer",
+      "Display Size": "15.6\" FHD Touchscreen",
+      "Connectivity": "4G, Wi-Fi, Bluetooth, Ethernet",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC (optional)"
+    }
+  },
+  {
+    "title": "PAX A910 Smart POS Terminal",
+    "slug": "pax_a910_smart_pos_terminal",
+    "brand": "PAX",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "PAX",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld)",
+      "Display Size": "5.5\" HD",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "Newland N910 Pro Smart POS Terminal",
+    "slug": "newland_n910_pro_smart_pos_terminal",
+    "brand": "Newland",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Newland",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld)",
+      "Display Size": "5.5\" HD",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "MoreFun MF960 Smart POS Terminal",
+    "slug": "morefun_mf960_smart_pos_terminal",
+    "brand": "MoreFun",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "MoreFun",
+      "Type": "Pos system",
+      "System Type": "Android Handheld POS with Built-in Printer",
+      "Display Size": "5.5\" HD",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC"
+    }
+  },
+  {
+    "title": "Xprinter XP-58IIH Thermal Receipt Printer",
+    "slug": "xprinter_xp_58iih_thermal_receipt_printer",
+    "brand": "Xprinter",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Xprinter",
+      "Type": "Pos system",
+      "System Type": "Thermal Receipt Printer (58mm)",
+      "Display Size": "None",
+      "Connectivity": "USB, Bluetooth",
+      "Payment Methods": "N/A"
+    }
+  },
+  {
+    "title": "Epson TM-T20III Thermal Receipt Printer",
+    "slug": "epson_tm_t20iii_thermal_receipt_printer",
+    "brand": "Epson",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Type": "Pos system",
+      "System Type": "Thermal Receipt Printer (80mm)",
+      "Display Size": "None",
+      "Connectivity": "USB, Serial",
+      "Payment Methods": "N/A"
+    }
+  },
+  {
+    "title": "Generic RJ11 Cash Drawer 5-Note 8-Coin",
+    "slug": "generic_rj11_cash_drawer_5_note_8_coin",
+    "brand": "Generic",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Generic",
+      "Type": "Pos system",
+      "System Type": "Cash Drawer (RJ11 Printer-Kick)",
+      "Display Size": "None",
+      "Connectivity": "RJ11 (receipt printer trigger)",
+      "Payment Methods": "Cash"
+    }
+  },
+  {
+    "title": "Fellowes Powershred 8Cd Cross-Cut Shredder",
+    "slug": "fellowes_powershred_8cd_cross_cut_shredder",
+    "brand": "Fellowes",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Fellowes",
+      "Type": "Shredder",
+      "Sheet Capacity": "8 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "14 L"
+    }
+  },
+  {
+    "title": "Deli 9904 Paper Shredder",
+    "slug": "deli_9904_paper_shredder",
+    "brand": "Deli",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Deli",
+      "Type": "Shredder",
+      "Sheet Capacity": "8 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "15 L"
+    }
+  },
+  {
+    "title": "GBC ShredMaster X308 Cross-Cut Shredder",
+    "slug": "gbc_shredmaster_x308_cross_cut_shredder",
+    "brand": "GBC",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "GBC",
+      "Type": "Shredder",
+      "Sheet Capacity": "8 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "15 L"
+    }
+  },
+  {
+    "title": "Epson EB-E10 XGA 3LCD Projector",
+    "slug": "epson_eb_e10_xga_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,600 Lumens",
+      "Resolution": "1024x768 (XGA)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "4:3",
+      "Light Source": "UHE Lamp",
+      "Connectivity": "HDMI, USB, VGA",
+      "Weight": "2.4 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Epson EB-FH52 Full HD 3LCD Projector",
+    "slug": "epson_eb_fh52_full_hd_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,000 Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "16:9",
+      "Light Source": "UHE Lamp",
+      "Connectivity": "HDMI, USB, VGA, Wi-Fi (optional)",
+      "Weight": "2.6 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "BenQ MW560 WXGA Business Projector",
+    "slug": "benq_mw560_wxga_business_projector",
+    "brand": "BenQ",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,000 ANSI Lumens",
+      "Resolution": "1280x800 (WXGA)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "16:10",
+      "Light Source": "Lamp",
+      "Connectivity": "HDMI, VGA, USB",
+      "Weight": "2.3 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "ViewSonic M2e Portable Projector",
+    "slug": "viewsonic_m2e_portable_projector",
+    "brand": "ViewSonic",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "1,000 LED Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (LED)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "LED",
+      "Connectivity": "HDMI, USB-C, Wi-Fi, Bluetooth",
+      "Weight": "1.0 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Acer X1128i SVGA Wireless Projector",
+    "slug": "acer_x1128i_svga_wireless_projector",
+    "brand": "Acer",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,500 ANSI Lumens",
+      "Resolution": "800x600 (SVGA)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "4:3",
+      "Light Source": "Lamp",
+      "Connectivity": "HDMI, VGA, Wi-Fi",
+      "Weight": "2.6 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Optoma HD146X Home Theater Projector",
+    "slug": "optoma_hd146x_home_theater_projector",
+    "brand": "Optoma",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,600 ANSI Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "16:9",
+      "Light Source": "Lamp",
+      "Connectivity": "HDMI, USB",
+      "Weight": "2.8 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "XGIMI Halo+ Portable Projector",
+    "slug": "xgimi_halo_portable_projector",
+    "brand": "XGIMI",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "900 ANSI Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (LED)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "LED",
+      "Connectivity": "HDMI, USB, Wi-Fi, Bluetooth, Android TV",
+      "Weight": "1.6 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "84-Inch Tripod Projection Screen",
+    "slug": "84_inch_tripod_projection_screen",
+    "brand": "Generic",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Tripod Projection Screen",
+      "Screen Size": "84\" (Diagonal)",
+      "Aspect Ratio": "4:3",
+      "Material": "Matte White Fabric",
+      "Mount Type": "Tripod Stand",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "100-Inch Motorized Projection Screen",
+    "slug": "100_inch_motorized_projection_screen",
+    "brand": "Generic",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Motorized Projection Screen",
+      "Screen Size": "100\" (Diagonal)",
+      "Aspect Ratio": "16:9",
+      "Material": "Matte White Fabric",
+      "Mount Type": "Wall/Ceiling Mount",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "GBC Fusion 3000L A4 Laminator",
+    "slug": "gbc_fusion_3000l_a4_laminator",
+    "brand": "GBC",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Laminator",
+      "Max Width": "A4 (230mm)",
+      "Pouch Thickness": "75-125 micron",
+      "Warm-up Time": "1.5 minutes",
+      "Anti-Jam": "Yes",
+      "Brand": "GBC"
+    }
+  },
+  {
+    "title": "Deli E3894-EU A4 Laminator",
+    "slug": "deli_e3894_eu_a4_laminator",
+    "brand": "Deli",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Laminator",
+      "Max Width": "A4 (230mm)",
+      "Pouch Thickness": "80-125 micron",
+      "Warm-up Time": "3-5 minutes",
+      "Anti-Jam": "No",
+      "Brand": "Deli"
+    }
+  },
+  {
+    "title": "Fellowes Pulsar+ Comb Binding Machine",
+    "slug": "fellowes_pulsar_comb_binding_machine",
+    "brand": "Fellowes",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Comb Binding Machine",
+      "Punch Capacity": "15 sheets",
+      "Bind Capacity": "300 sheets (38mm comb)",
+      "Paper Size": "A4",
+      "Brand": "Fellowes"
+    }
+  },
+  {
+    "title": "Deli 2109 Bill Counter with UV/MG Detection",
+    "slug": "deli_2109_bill_counter_with_uv_mg_detection",
+    "brand": "Deli",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Money Counting Machine",
+      "Counting Speed": "1000 notes/min",
+      "Detection": "UV, MG",
+      "Hopper Capacity": "200 notes",
+      "Display": "LCD",
+      "Brand": "Deli"
+    }
+  },
+  {
+    "title": "APC Back-UPS 700VA BV700I-MS",
+    "slug": "apc_back_ups_700va_bv700i_ms",
+    "brand": "APC",
+    "subcategory": "Other Electronics",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Line-Interactive UPS",
+      "Capacity": "700VA / 360W",
+      "Outlets": "4x Universal",
+      "Battery": "12V 7Ah",
+      "AVR": "Yes",
+      "Brand": "APC"
+    }
+  },
+  {
+    "title": "Mercury Elite 1200VA UPS",
+    "slug": "mercury_elite_1200va_ups",
+    "brand": "Mercury",
+    "subcategory": "Other Electronics",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Line-Interactive UPS",
+      "Capacity": "1200VA / 720W",
+      "Outlets": "3x Universal",
+      "Battery": "12V 9Ah",
+      "AVR": "Yes",
+      "Brand": "Mercury"
+    }
   }
 ]

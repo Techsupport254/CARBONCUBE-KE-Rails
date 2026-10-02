@@ -1,0 +1,3496 @@
+[
+ {
+  "title": "Bridgestone Dueler A/T 697 265/65 R17 112T Tyre",
+  "slug": "bridgestone_dueler_a_t_697_265_65_r17_112t_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Bridgestone Dueler A/T 697 265/70 R16 112T Tyre",
+  "slug": "bridgestone_dueler_a_t_697_265_70_r16_112t_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Bridgestone Dueler A/T 697 285/70 R17 121Q Tyre",
+  "slug": "bridgestone_dueler_a_t_697_285_70_r17_121q_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Bridgestone Dueler A/T 697 31x10.5 R15 109S Tyre",
+  "slug": "bridgestone_dueler_a_t_697_31x10_5_r15_109s_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Bridgestone Dueler A/T 697 235/85 R16 120/116Q Tyre",
+  "slug": "bridgestone_dueler_a_t_697_235_85_r16_120_116q_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120/116",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "BFGoodrich All-Terrain T/A KO2 265/65 R17 120S Tyre",
+  "slug": "bfgoodrich_all_terrain_t_a_ko2_265_65_r17_120s_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "120",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "BFGoodrich All-Terrain T/A KO2 265/70 R16 121S Tyre",
+  "slug": "bfgoodrich_all_terrain_t_a_ko2_265_70_r16_121s_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "121",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "BFGoodrich All-Terrain T/A KO2 285/70 R17 121Q Tyre",
+  "slug": "bfgoodrich_all_terrain_t_a_ko2_285_70_r17_121q_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "BFGoodrich All-Terrain T/A KO2 235/85 R16 120/116Q Tyre",
+  "slug": "bfgoodrich_all_terrain_t_a_ko2_235_85_r16_120_116q_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120/116",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "BFGoodrich Mud-Terrain T/A KM3 285/70 R17 121Q Tyre",
+  "slug": "bfgoodrich_mud_terrain_t_a_km3_285_70_r17_121q_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "BFGoodrich Mud-Terrain T/A KM3 265/70 R16 121Q Tyre",
+  "slug": "bfgoodrich_mud_terrain_t_a_km3_265_70_r16_121q_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "BFGoodrich Mud-Terrain T/A KM3 31x10.5 R15 109Q Tyre",
+  "slug": "bfgoodrich_mud_terrain_t_a_km3_31x10_5_r15_109q_tyre",
+  "brand": "BFGoodrich",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Falken Wildpeak A/T3W 265/65 R17 112T Tyre",
+  "slug": "falken_wildpeak_a_t3w_265_65_r17_112t_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Falken Wildpeak A/T3W 31x10.5 R15 109S Tyre",
+  "slug": "falken_wildpeak_a_t3w_31x10_5_r15_109s_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Falken Wildpeak A/T3W 285/70 R17 117T Tyre",
+  "slug": "falken_wildpeak_a_t3w_285_70_r17_117t_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "117",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Toyo Open Country A/T III 265/65 R17 116T Tyre",
+  "slug": "toyo_open_country_a_t_iii_265_65_r17_116t_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "116",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Toyo Open Country A/T III 285/70 R17 121T Tyre",
+  "slug": "toyo_open_country_a_t_iii_285_70_r17_121t_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Toyo Open Country A/T III 31x10.5 R15 109S Tyre",
+  "slug": "toyo_open_country_a_t_iii_31x10_5_r15_109s_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Toyo Open Country M/T 285/70 R17 121Q Tyre",
+  "slug": "toyo_open_country_m_t_285_70_r17_121q_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Toyo Open Country M/T 31x10.5 R15 109Q Tyre",
+  "slug": "toyo_open_country_m_t_31x10_5_r15_109q_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Yokohama Geolandar A/T G015 265/65 R17 112H Tyre",
+  "slug": "yokohama_geolandar_a_t_g015_265_65_r17_112h_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Yokohama Geolandar A/T G015 265/70 R16 112T Tyre",
+  "slug": "yokohama_geolandar_a_t_g015_265_70_r16_112t_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Yokohama Geolandar A/T G015 31x10.5 R15 109S Tyre",
+  "slug": "yokohama_geolandar_a_t_g015_31x10_5_r15_109s_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Goodyear Wrangler AT SilentTrac 265/65 R17 112T Tyre",
+  "slug": "goodyear_wrangler_at_silenttrac_265_65_r17_112t_tyre",
+  "brand": "Goodyear",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Goodyear Wrangler AT SilentTrac 265/70 R16 112T Tyre",
+  "slug": "goodyear_wrangler_at_silenttrac_265_70_r16_112t_tyre",
+  "brand": "Goodyear",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Goodyear Wrangler AT SilentTrac 235/85 R16 120S Tyre",
+  "slug": "goodyear_wrangler_at_silenttrac_235_85_r16_120s_tyre",
+  "brand": "Goodyear",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Dunlop Grandtrek AT5 265/65 R17 112T Tyre",
+  "slug": "dunlop_grandtrek_at5_265_65_r17_112t_tyre",
+  "brand": "Dunlop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Dunlop Grandtrek AT5 245/70 R16 111T Tyre",
+  "slug": "dunlop_grandtrek_at5_245_70_r16_111t_tyre",
+  "brand": "Dunlop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "245/70 R16",
+   "Width": "245 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "111",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Dunlop Grandtrek AT5 235/85 R16 120S Tyre",
+  "slug": "dunlop_grandtrek_at5_235_85_r16_120s_tyre",
+  "brand": "Dunlop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Hankook Dynapro AT2 RF11 265/65 R17 112T Tyre",
+  "slug": "hankook_dynapro_at2_rf11_265_65_r17_112t_tyre",
+  "brand": "Hankook",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Hankook Dynapro AT2 RF11 265/70 R16 112T Tyre",
+  "slug": "hankook_dynapro_at2_rf11_265_70_r16_112t_tyre",
+  "brand": "Hankook",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Cooper Discoverer AT3 LT 265/70 R16 121S Tyre",
+  "slug": "cooper_discoverer_at3_lt_265_70_r16_121s_tyre",
+  "brand": "Cooper",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "121",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Cooper Discoverer AT3 LT 285/70 R17 121S Tyre",
+  "slug": "cooper_discoverer_at3_lt_285_70_r17_121s_tyre",
+  "brand": "Cooper",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "General Grabber AT3 265/65 R17 112T Tyre",
+  "slug": "general_grabber_at3_265_65_r17_112t_tyre",
+  "brand": "General",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "General Grabber AT3 235/85 R16 120S Tyre",
+  "slug": "general_grabber_at3_235_85_r16_120s_tyre",
+  "brand": "General",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "General Grabber AT3 245/70 R16 111T Tyre",
+  "slug": "general_grabber_at3_245_70_r16_111t_tyre",
+  "brand": "General",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "245/70 R16",
+   "Width": "245 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "111",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Kumho Road Venture AT52 265/65 R17 112T Tyre",
+  "slug": "kumho_road_venture_at52_265_65_r17_112t_tyre",
+  "brand": "Kumho",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Kumho Road Venture AT52 265/70 R16 112T Tyre",
+  "slug": "kumho_road_venture_at52_265_70_r16_112t_tyre",
+  "brand": "Kumho",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Maxxis Bravo AT-771 31x10.5 R15 109S Tyre",
+  "slug": "maxxis_bravo_at_771_31x10_5_r15_109s_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Maxxis Bravo AT-771 285/70 R17 121Q Tyre",
+  "slug": "maxxis_bravo_at_771_285_70_r17_121q_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Maxxis Bighorn MT-764 31x10.5 R15 109Q Tyre",
+  "slug": "maxxis_bighorn_mt_764_31x10_5_r15_109q_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Maxxis Bighorn MT-764 285/70 R17 121Q Tyre",
+  "slug": "maxxis_bighorn_mt_764_285_70_r17_121q_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "285/70 R17",
+   "Width": "285 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "121",
+   "Speed Rating": "Q"
+  }
+ },
+ {
+  "title": "Nexen Roadian AT Pro RA8 265/70 R16 112T Tyre",
+  "slug": "nexen_roadian_at_pro_ra8_265_70_r16_112t_tyre",
+  "brand": "Nexen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/70 R16",
+   "Width": "265 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Nexen Roadian AT Pro RA8 265/65 R17 112T Tyre",
+  "slug": "nexen_roadian_at_pro_ra8_265_65_r17_112t_tyre",
+  "brand": "Nexen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Continental CrossContact ATR 265/65 R17 112H Tyre",
+  "slug": "continental_crosscontact_atr_265_65_r17_112h_tyre",
+  "brand": "Continental",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Continental CrossContact ATR 235/85 R16 120S Tyre",
+  "slug": "continental_crosscontact_atr_235_85_r16_120s_tyre",
+  "brand": "Continental",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Michelin LTX Force 265/65 R17 112T Tyre",
+  "slug": "michelin_ltx_force_265_65_r17_112t_tyre",
+  "brand": "Michelin",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Michelin LTX Force 235/85 R16 120S Tyre",
+  "slug": "michelin_ltx_force_235_85_r16_120s_tyre",
+  "brand": "Michelin",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "235/85 R16",
+   "Width": "235 mm",
+   "Aspect Ratio": "85%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "120",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Kapsen PracticalMax A/T RS23 265/65 R17 112T Tyre",
+  "slug": "kapsen_practicalmax_a_t_rs23_265_65_r17_112t_tyre",
+  "brand": "Kapsen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Kapsen PracticalMax A/T RS23 31x10.5 R15 109S Tyre",
+  "slug": "kapsen_practicalmax_a_t_rs23_31x10_5_r15_109s_tyre",
+  "brand": "Kapsen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Linglong Crosswind A/T 265/65 R17 112T Tyre",
+  "slug": "linglong_crosswind_a_t_265_65_r17_112t_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "265/65 R17",
+   "Width": "265 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "17 inches",
+   "Load Index": "112",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Linglong Crosswind A/T 31x10.5 R15 109S Tyre",
+  "slug": "linglong_crosswind_a_t_31x10_5_r15_109s_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "31x10.5 R15",
+   "Width": "10.5 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "109",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Giti Van 600 195R15C 106/104S Tyre",
+  "slug": "giti_van_600_195r15c_106_104s_tyre",
+  "brand": "Giti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Giti Van 600 185R14C 102/100S Tyre",
+  "slug": "giti_van_600_185r14c_102_100s_tyre",
+  "brand": "Giti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185R14C",
+   "Width": "185 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "14 inches",
+   "Load Index": "102/100",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Giti Van 600 195/70 R15C 104/102S Tyre",
+  "slug": "giti_van_600_195_70_r15c_104_102s_tyre",
+  "brand": "Giti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/70 R15C",
+   "Width": "195 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "104/102",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Maxxis UE168 195R15C 106/104S Tyre",
+  "slug": "maxxis_ue168_195r15c_106_104s_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Maxxis UE168 185R14C 102/100S Tyre",
+  "slug": "maxxis_ue168_185r14c_102_100s_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185R14C",
+   "Width": "185 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "14 inches",
+   "Load Index": "102/100",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Dunlop SP LT5 195R15C 106/104S Tyre",
+  "slug": "dunlop_sp_lt5_195r15c_106_104s_tyre",
+  "brand": "Dunlop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Dunlop SP LT5 7.50 R16 122/118L Tyre",
+  "slug": "dunlop_sp_lt5_7_50_r16_122_118l_tyre",
+  "brand": "Dunlop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Triangle TR652 195R15C 106/104S Tyre",
+  "slug": "triangle_tr652_195r15c_106_104s_tyre",
+  "brand": "Triangle",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Triangle TR652 185R14C 102/100S Tyre",
+  "slug": "triangle_tr652_185r14c_102_100s_tyre",
+  "brand": "Triangle",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185R14C",
+   "Width": "185 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "14 inches",
+   "Load Index": "102/100",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Falken Linam R51 195R15C 106/104S Tyre",
+  "slug": "falken_linam_r51_195r15c_106_104s_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Falken Linam R51 185R14C 102/100S Tyre",
+  "slug": "falken_linam_r51_185r14c_102_100s_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185R14C",
+   "Width": "185 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "14 inches",
+   "Load Index": "102/100",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Toyo H08 195R15C 106/104S Tyre",
+  "slug": "toyo_h08_195r15c_106_104s_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Toyo H08 195/70 R15C 104/102S Tyre",
+  "slug": "toyo_h08_195_70_r15c_104_102s_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/70 R15C",
+   "Width": "195 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "104/102",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Yokohama Y354 195R15C 106/104S Tyre",
+  "slug": "yokohama_y354_195r15c_106_104s_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195R15C",
+   "Width": "195 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Yokohama Y354 185R14C 102/100S Tyre",
+  "slug": "yokohama_y354_185r14c_102_100s_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185R14C",
+   "Width": "185 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "14 inches",
+   "Load Index": "102/100",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Hankook Vantra LT RA18 195/70 R15C 104/102S Tyre",
+  "slug": "hankook_vantra_lt_ra18_195_70_r15c_104_102s_tyre",
+  "brand": "Hankook",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/70 R15C",
+   "Width": "195 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "104/102",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Hankook Vantra LT RA18 205/70 R15C 106/104S Tyre",
+  "slug": "hankook_vantra_lt_ra18_205_70_r15c_106_104s_tyre",
+  "brand": "Hankook",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/70 R15C",
+   "Width": "205 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "106/104",
+   "Speed Rating": "S"
+  }
+ },
+ {
+  "title": "Bridgestone M840 7.50 R16 122/118L Tyre",
+  "slug": "bridgestone_m840_7_50_r16_122_118l_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Bridgestone M840 8.25 R16 128/124L Tyre",
+  "slug": "bridgestone_m840_8_25_r16_128_124l_tyre",
+  "brand": "Bridgestone",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "8.25 R16",
+   "Width": "8.25 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "128/124",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "MRF Super Lug 99 7.50 R16 122/118L Tyre",
+  "slug": "mrf_super_lug_99_7_50_r16_122_118l_tyre",
+  "brand": "MRF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "MRF Super Lug 99 8.25 R16 128/124L Tyre",
+  "slug": "mrf_super_lug_99_8_25_r16_128_124l_tyre",
+  "brand": "MRF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "8.25 R16",
+   "Width": "8.25 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "128/124",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Linglong LL850 7.50 R16 122/118L Tyre",
+  "slug": "linglong_ll850_7_50_r16_122_118l_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Linglong LL850 700 R16 118/114L Tyre",
+  "slug": "linglong_ll850_700_r16_118_114l_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "700 R16",
+   "Width": "700 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "118/114",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Otani OH-107 7.50 R16 122/118L Tyre",
+  "slug": "otani_oh_107_7_50_r16_122_118l_tyre",
+  "brand": "Otani",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Otani OH-107 700 R16 118/114L Tyre",
+  "slug": "otani_oh_107_700_r16_118_114l_tyre",
+  "brand": "Otani",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "700 R16",
+   "Width": "700 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "118/114",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Giti GSW226 7.50 R16 122/118L Tyre",
+  "slug": "giti_gsw226_7_50_r16_122_118l_tyre",
+  "brand": "Giti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Giti GSW226 8.25 R16 128/124L Tyre",
+  "slug": "giti_gsw226_8_25_r16_128_124l_tyre",
+  "brand": "Giti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "8.25 R16",
+   "Width": "8.25 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "128/124",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "JK Jet R Xtra 7.50 R16 122/118L Tyre",
+  "slug": "jk_jet_r_xtra_7_50_r16_122_118l_tyre",
+  "brand": "JK",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "7.50 R16",
+   "Width": "7.50 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "122/118",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "JK Jet R Xtra 700 R16 118/114L Tyre",
+  "slug": "jk_jet_r_xtra_700_r16_118_114l_tyre",
+  "brand": "JK",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "700 R16",
+   "Width": "700 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "118/114",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Triangle TR668 700 R16 118/114L Tyre",
+  "slug": "triangle_tr668_700_r16_118_114l_tyre",
+  "brand": "Triangle",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "700 R16",
+   "Width": "700 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "118/114",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Double Coin RR202 700 R16 118/114L Tyre",
+  "slug": "double_coin_rr202_700_r16_118_114l_tyre",
+  "brand": "Double",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "700 R16",
+   "Width": "700 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "118/114",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Double Coin RR202 8.25 R16 128/124L Tyre",
+  "slug": "double_coin_rr202_8_25_r16_128_124l_tyre",
+  "brand": "Double",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "8.25 R16",
+   "Width": "8.25 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "128/124",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Dunlop SP471 8.25 R16 128/124L Tyre",
+  "slug": "dunlop_sp471_8_25_r16_128_124l_tyre",
+  "brand": "Dunlop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "8.25 R16",
+   "Width": "8.25 inches",
+   "Aspect Ratio": "N/A",
+   "Rim Diameter": "16 inches",
+   "Load Index": "128/124",
+   "Speed Rating": "L"
+  }
+ },
+ {
+  "title": "Kumho Ecsta PS31 205/55 R16 91V Tyre",
+  "slug": "kumho_ecsta_ps31_205_55_r16_91v_tyre",
+  "brand": "Kumho",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "Kumho Ecsta PS31 195/65 R15 91H Tyre",
+  "slug": "kumho_ecsta_ps31_195_65_r15_91h_tyre",
+  "brand": "Kumho",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Nexen CP671 205/55 R16 91H Tyre",
+  "slug": "nexen_cp671_205_55_r16_91h_tyre",
+  "brand": "Nexen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Nexen CP671 195/65 R15 91H Tyre",
+  "slug": "nexen_cp671_195_65_r15_91h_tyre",
+  "brand": "Nexen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Sailun Atrezzo Elite 185/65 R15 88H Tyre",
+  "slug": "sailun_atrezzo_elite_185_65_r15_88h_tyre",
+  "brand": "Sailun",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Maxxis MA-P1 185/65 R15 88H Tyre",
+  "slug": "maxxis_ma_p1_185_65_r15_88h_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Maxxis MA-P1 205/55 R16 91V Tyre",
+  "slug": "maxxis_ma_p1_205_55_r16_91v_tyre",
+  "brand": "Maxxis",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "Triangle TR928 185/70 R14 88H Tyre",
+  "slug": "triangle_tr928_185_70_r14_88h_tyre",
+  "brand": "Triangle",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/70 R14",
+   "Width": "185 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "14 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Linglong Comfort Master 195/65 R15 91H Tyre",
+  "slug": "linglong_comfort_master_195_65_r15_91h_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Linglong Comfort Master 205/55 R16 91V Tyre",
+  "slug": "linglong_comfort_master_205_55_r16_91v_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "Linglong Comfort Master 185/65 R15 88H Tyre",
+  "slug": "linglong_comfort_master_185_65_r15_88h_tyre",
+  "brand": "Linglong",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Falken Sincera SN832i 195/65 R15 91H Tyre",
+  "slug": "falken_sincera_sn832i_195_65_r15_91h_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Falken Sincera SN832i 185/70 R14 88H Tyre",
+  "slug": "falken_sincera_sn832i_185_70_r14_88h_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/70 R14",
+   "Width": "185 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "14 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Falken Sincera SN832i 205/55 R16 91V Tyre",
+  "slug": "falken_sincera_sn832i_205_55_r16_91v_tyre",
+  "brand": "Falken",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "Apollo Amazer 4G Eco 185/70 R14 88T Tyre",
+  "slug": "apollo_amazer_4g_eco_185_70_r14_88t_tyre",
+  "brand": "Apollo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/70 R14",
+   "Width": "185 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "14 inches",
+   "Load Index": "88",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Apollo Amazer 4G Eco 195/65 R15 91H Tyre",
+  "slug": "apollo_amazer_4g_eco_195_65_r15_91h_tyre",
+  "brand": "Apollo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Apollo Amazer 4G Eco 185/65 R15 88H Tyre",
+  "slug": "apollo_amazer_4g_eco_185_65_r15_88h_tyre",
+  "brand": "Apollo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "MRF ZLX 195/65 R15 91H Tyre",
+  "slug": "mrf_zlx_195_65_r15_91h_tyre",
+  "brand": "MRF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "MRF ZLX 205/55 R16 91V Tyre",
+  "slug": "mrf_zlx_205_55_r16_91v_tyre",
+  "brand": "MRF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "CEAT SecuraDrive 205/55 R16 91V Tyre",
+  "slug": "ceat_securadrive_205_55_r16_91v_tyre",
+  "brand": "CEAT",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "CEAT SecuraDrive 185/65 R15 88H Tyre",
+  "slug": "ceat_securadrive_185_65_r15_88h_tyre",
+  "brand": "CEAT",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Toyo Proxes CF2 195/65 R15 91V Tyre",
+  "slug": "toyo_proxes_cf2_195_65_r15_91v_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "Toyo Proxes CF2 205/55 R16 94V Tyre",
+  "slug": "toyo_proxes_cf2_205_55_r16_94v_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "205/55 R16",
+   "Width": "205 mm",
+   "Aspect Ratio": "55%",
+   "Rim Diameter": "16 inches",
+   "Load Index": "94",
+   "Speed Rating": "V"
+  }
+ },
+ {
+  "title": "Toyo Proxes CF2 185/65 R15 88H Tyre",
+  "slug": "toyo_proxes_cf2_185_65_r15_88h_tyre",
+  "brand": "Toyo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Yokohama BluEarth ES32 195/65 R15 91H Tyre",
+  "slug": "yokohama_bluearth_es32_195_65_r15_91h_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/65 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "91",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Yokohama BluEarth ES32 185/65 R15 88H Tyre",
+  "slug": "yokohama_bluearth_es32_185_65_r15_88h_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/65 R15",
+   "Width": "185 mm",
+   "Aspect Ratio": "65%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Yokohama BluEarth ES32 185/70 R14 88H Tyre",
+  "slug": "yokohama_bluearth_es32_185_70_r14_88h_tyre",
+  "brand": "Yokohama",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "185/70 R14",
+   "Width": "185 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "14 inches",
+   "Load Index": "88",
+   "Speed Rating": "H"
+  }
+ },
+ {
+  "title": "Hankook Kinergy Eco 2 195/70 R15 97T Tyre",
+  "slug": "hankook_kinergy_eco_2_195_70_r15_97t_tyre",
+  "brand": "Hankook",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Tyres",
+  "source": "manufacturer",
+  "specifications": {
+   "Size": "195/70 R15",
+   "Width": "195 mm",
+   "Aspect Ratio": "70%",
+   "Rim Diameter": "15 inches",
+   "Load Index": "97",
+   "Speed Rating": "T"
+  }
+ },
+ {
+  "title": "Chloride Exide Powerlast NS40 Car Battery - 36Ah, 280 CCA",
+  "slug": "chloride_exide_powerlast_ns40_car_battery_36ah_280_cca",
+  "brand": "Chloride Exide Powerlast",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "36 Ah",
+   "Cold Cranking Amps (CCA)": "280 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "NS40"
+  }
+ },
+ {
+  "title": "Chloride Exide Powerlast N100 Truck Battery - 100Ah, 780 CCA",
+  "slug": "chloride_exide_powerlast_n100_truck_battery_100ah_780_cca",
+  "brand": "Chloride Exide Powerlast",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "780 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N100"
+  }
+ },
+ {
+  "title": "Chloride Exide Powerlast N120 Truck Battery - 120Ah, 850 CCA",
+  "slug": "chloride_exide_powerlast_n120_truck_battery_120ah_850_cca",
+  "brand": "Chloride Exide Powerlast",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "120 Ah",
+   "Cold Cranking Amps (CCA)": "850 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N120"
+  }
+ },
+ {
+  "title": "Chloride Exide Powerlast N150 Truck Battery - 150Ah, 1000 CCA",
+  "slug": "chloride_exide_powerlast_n150_truck_battery_150ah_1000_cca",
+  "brand": "Chloride Exide Powerlast",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "150 Ah",
+   "Cold Cranking Amps (CCA)": "1000 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N150"
+  }
+ },
+ {
+  "title": "Chloride Exide Powerlast N200 Truck Battery - 200Ah, 1150 CCA",
+  "slug": "chloride_exide_powerlast_n200_truck_battery_200ah_1150_cca",
+  "brand": "Chloride Exide Powerlast",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "200 Ah",
+   "Cold Cranking Amps (CCA)": "1150 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N200"
+  }
+ },
+ {
+  "title": "Rocket SMF NS70 Car Battery - 65Ah, 550 CCA",
+  "slug": "rocket_smf_ns70_car_battery_65ah_550_cca",
+  "brand": "Rocket SMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "65 Ah",
+   "Cold Cranking Amps (CCA)": "550 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "NS70"
+  }
+ },
+ {
+  "title": "Rocket SMF N70 Car Battery - 70Ah, 600 CCA",
+  "slug": "rocket_smf_n70_car_battery_70ah_600_cca",
+  "brand": "Rocket SMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "70 Ah",
+   "Cold Cranking Amps (CCA)": "600 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N70"
+  }
+ },
+ {
+  "title": "Rocket SMF N100 Truck Battery - 100Ah, 780 CCA",
+  "slug": "rocket_smf_n100_truck_battery_100ah_780_cca",
+  "brand": "Rocket SMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "780 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N100"
+  }
+ },
+ {
+  "title": "Rocket SMF N150 Truck Battery - 150Ah, 1000 CCA",
+  "slug": "rocket_smf_n150_truck_battery_150ah_1000_cca",
+  "brand": "Rocket SMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "150 Ah",
+   "Cold Cranking Amps (CCA)": "1000 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N150"
+  }
+ },
+ {
+  "title": "Solite CMF NS60 Car Battery - 45Ah, 350 CCA",
+  "slug": "solite_cmf_ns60_car_battery_45ah_350_cca",
+  "brand": "Solite CMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "45 Ah",
+   "Cold Cranking Amps (CCA)": "350 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "NS60"
+  }
+ },
+ {
+  "title": "Solite CMF N70 Car Battery - 70Ah, 600 CCA",
+  "slug": "solite_cmf_n70_car_battery_70ah_600_cca",
+  "brand": "Solite CMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "70 Ah",
+   "Cold Cranking Amps (CCA)": "600 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N70"
+  }
+ },
+ {
+  "title": "Solite CMF N100 Truck Battery - 100Ah, 750 CCA",
+  "slug": "solite_cmf_n100_truck_battery_100ah_750_cca",
+  "brand": "Solite CMF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "750 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N100"
+  }
+ },
+ {
+  "title": "Willard 646 Car Battery - 60Ah, 480 CCA",
+  "slug": "willard_646_car_battery_60ah_480_cca",
+  "brand": "Willard",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "60 Ah",
+   "Cold Cranking Amps (CCA)": "480 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "646"
+  }
+ },
+ {
+  "title": "Willard 658 Car Battery - 75Ah, 640 CCA",
+  "slug": "willard_658_car_battery_75ah_640_cca",
+  "brand": "Willard",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "75 Ah",
+   "Cold Cranking Amps (CCA)": "640 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "658"
+  }
+ },
+ {
+  "title": "Willard 689 Truck Battery - 100Ah, 800 CCA",
+  "slug": "willard_689_truck_battery_100ah_800_cca",
+  "brand": "Willard",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "800 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "689"
+  }
+ },
+ {
+  "title": "AtlasBX N70 MF Car Battery - 70Ah, 600 CCA",
+  "slug": "atlasbx_n70_mf_car_battery_70ah_600_cca",
+  "brand": "AtlasBX",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "70 Ah",
+   "Cold Cranking Amps (CCA)": "600 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N70 MF"
+  }
+ },
+ {
+  "title": "AtlasBX N100 MF Truck Battery - 100Ah, 800 CCA",
+  "slug": "atlasbx_n100_mf_truck_battery_100ah_800_cca",
+  "brand": "AtlasBX",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "800 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N100 MF"
+  }
+ },
+ {
+  "title": "AtlasBX NS40 MF Car Battery - 36Ah, 280 CCA",
+  "slug": "atlasbx_ns40_mf_car_battery_36ah_280_cca",
+  "brand": "AtlasBX",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "36 Ah",
+   "Cold Cranking Amps (CCA)": "280 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "NS40 MF"
+  }
+ },
+ {
+  "title": "Delkor Calcium N100 Truck Battery - 100Ah, 800 CCA",
+  "slug": "delkor_calcium_n100_truck_battery_100ah_800_cca",
+  "brand": "Delkor Calcium",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "800 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N100"
+  }
+ },
+ {
+  "title": "MNB MF N120 Truck Battery - 120Ah, 850 CCA",
+  "slug": "mnb_mf_n120_truck_battery_120ah_850_cca",
+  "brand": "MNB MF",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "120 Ah",
+   "Cold Cranking Amps (CCA)": "850 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N120"
+  }
+ },
+ {
+  "title": "Union NX150-9L Truck Battery - 150Ah, 1000 CCA",
+  "slug": "union_nx150_9l_truck_battery_150ah_1000_cca",
+  "brand": "Union",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "150 Ah",
+   "Cold Cranking Amps (CCA)": "1000 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "NX150-9L"
+  }
+ },
+ {
+  "title": "Amaron Pro N100 Truck Battery - 100Ah, 800 CCA",
+  "slug": "amaron_pro_n100_truck_battery_100ah_800_cca",
+  "brand": "Amaron Pro",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Batteries",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Capacity (Ah)": "100 Ah",
+   "Cold Cranking Amps (CCA)": "800 A",
+   "Terminal Type": "Standard",
+   "Size/Group Code": "N100"
+  }
+ },
+ {
+  "title": "Shell Helix HX8 5W-40",
+  "slug": "shell_helix_hx8_5w_40",
+  "brand": "Shell",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "5W-40",
+   "Oil Type": "Fully Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Shell",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "4L",
+   "Technology": "PurePlus Technology"
+  }
+ },
+ {
+  "title": "Shell Helix HX7 5W-30",
+  "slug": "shell_helix_hx7_5w_30",
+  "brand": "Shell",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "5W-30",
+   "Oil Type": "Semi-Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Shell",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "4L",
+   "Technology": "Flexi Molecule Technology"
+  }
+ },
+ {
+  "title": "Shell Rimula R4 X 15W-40",
+  "slug": "shell_rimula_r4_x_15w_40",
+  "brand": "Shell",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "15W-40",
+   "Oil Type": "Mineral",
+   "Application": "Heavy Duty Diesel",
+   "Brand": "Shell",
+   "API Rating": "CI-4/SL",
+   "ACEA Rating": "E7",
+   "Capacity": "20L",
+   "Technology": "Triple Protection"
+  }
+ },
+ {
+  "title": "Castrol GTX 20W-50",
+  "slug": "castrol_gtx_20w_50",
+  "brand": "Castrol",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "20W-50",
+   "Oil Type": "Mineral",
+   "Application": "Passenger Car",
+   "Brand": "Castrol",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B3",
+   "Capacity": "4L",
+   "Technology": "Double Action Formula"
+  }
+ },
+ {
+  "title": "Castrol Magnatec 10W-40",
+  "slug": "castrol_magnatec_10w_40",
+  "brand": "Castrol",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "10W-40",
+   "Oil Type": "Semi-Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Castrol",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "4L",
+   "Technology": "Intelligent Molecules"
+  }
+ },
+ {
+  "title": "Mobil Super 2000 X2 10W-40",
+  "slug": "mobil_super_2000_x2_10w_40",
+  "brand": "Mobil",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "10W-40",
+   "Oil Type": "Semi-Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Mobil",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "4L",
+   "Technology": "Engine Protection Plus"
+  }
+ },
+ {
+  "title": "Mobil Super 3000 X1 5W-40",
+  "slug": "mobil_super_3000_x1_5w_40",
+  "brand": "Mobil",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "5W-40",
+   "Oil Type": "Fully Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Mobil",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "5L",
+   "Technology": "Synthetic Protection"
+  }
+ },
+ {
+  "title": "Total Quartz 8000 Future 5W-30",
+  "slug": "total_quartz_8000_future_5w_30",
+  "brand": "Total",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "5W-30",
+   "Oil Type": "Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Total",
+   "API Rating": "SN",
+   "ACEA Rating": "A5/B5",
+   "Capacity": "4L",
+   "Technology": "Fuel Economy"
+  }
+ },
+ {
+  "title": "Total Quartz 5000 15W-40",
+  "slug": "total_quartz_5000_15w_40",
+  "brand": "Total",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "15W-40",
+   "Oil Type": "Mineral",
+   "Application": "Passenger Car",
+   "Brand": "Total",
+   "API Rating": "SN/CF",
+   "ACEA Rating": "A3/B3",
+   "Capacity": "4L",
+   "Technology": "Clean-Shield"
+  }
+ },
+ {
+  "title": "Total Rubia TIR 8600 10W-40",
+  "slug": "total_rubia_tir_8600_10w_40",
+  "brand": "Total",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "10W-40",
+   "Oil Type": "Synthetic",
+   "Application": "Heavy Duty Diesel",
+   "Brand": "Total",
+   "API Rating": "CI-4",
+   "ACEA Rating": "E7",
+   "Capacity": "20L",
+   "Technology": "Pro-Tech"
+  }
+ },
+ {
+  "title": "Engen Dieselube 700 Super 15W-40",
+  "slug": "engen_dieselube_700_super_15w_40",
+  "brand": "Engen",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "15W-40",
+   "Oil Type": "Mineral",
+   "Application": "Heavy Duty Diesel",
+   "Brand": "Engen",
+   "API Rating": "CI-4/SL",
+   "ACEA Rating": "E7",
+   "Capacity": "20L",
+   "Technology": "DuraShield"
+  }
+ },
+ {
+  "title": "Caltex Delo 400 MGX 15W-40",
+  "slug": "caltex_delo_400_mgx_15w_40",
+  "brand": "Caltex",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "15W-40",
+   "Oil Type": "Mineral",
+   "Application": "Heavy Duty Diesel",
+   "Brand": "Caltex",
+   "API Rating": "CI-4 PLUS",
+   "ACEA Rating": "E7",
+   "Capacity": "20L",
+   "Technology": "ISOSYN Technology"
+  }
+ },
+ {
+  "title": "Havoline Extra 10W-40",
+  "slug": "havoline_extra_10w_40",
+  "brand": "Havoline",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "10W-40",
+   "Oil Type": "Semi-Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Havoline",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "4L",
+   "Technology": "Deposit Shield"
+  }
+ },
+ {
+  "title": "Valvoline All-Climate 20W-50",
+  "slug": "valvoline_all_climate_20w_50",
+  "brand": "Valvoline",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "20W-50",
+   "Oil Type": "Mineral",
+   "Application": "Passenger Car",
+   "Brand": "Valvoline",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B3",
+   "Capacity": "4L",
+   "Technology": "Cling-Tec Protection"
+  }
+ },
+ {
+  "title": "Toyota Genuine Motor Oil 5W-30",
+  "slug": "toyota_genuine_motor_oil_5w_30",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "5W-30",
+   "Oil Type": "Fully Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Toyota",
+   "API Rating": "SN",
+   "ACEA Rating": "A1/B1",
+   "Capacity": "4L",
+   "Technology": "Genuine OEM"
+  }
+ },
+ {
+  "title": "Toyota Genuine ATF WS 4L",
+  "slug": "toyota_genuine_atf_ws_4l",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "ATF WS",
+   "Oil Type": "Fully Synthetic",
+   "Application": "Automatic Transmission",
+   "Brand": "Toyota",
+   "API Rating": "ATF WS",
+   "ACEA Rating": "N/A",
+   "Capacity": "4L",
+   "Technology": "Genuine OEM"
+  }
+ },
+ {
+  "title": "Liqui Moly Top Tec 4100 5W-40",
+  "slug": "liqui_moly_top_tec_4100_5w_40",
+  "brand": "Liqui Moly",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "5W-40",
+   "Oil Type": "Fully Synthetic",
+   "Application": "Passenger Car",
+   "Brand": "Liqui Moly",
+   "API Rating": "SN",
+   "ACEA Rating": "A3/B4",
+   "Capacity": "5L",
+   "Technology": "Low Friction"
+  }
+ },
+ {
+  "title": "Motul 7100 4T 10W-40",
+  "slug": "motul_7100_4t_10w_40",
+  "brand": "Motul",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "10W-40",
+   "Oil Type": "Fully Synthetic",
+   "Application": "Motorcycle",
+   "Brand": "Motul",
+   "API Rating": "SN",
+   "ACEA Rating": "N/A",
+   "Capacity": "1L",
+   "Technology": "Ester Core"
+  }
+ },
+ {
+  "title": "Gulf Superfleet LE 15W-40",
+  "slug": "gulf_superfleet_le_15w_40",
+  "brand": "Gulf",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Lubricants",
+  "source": "manufacturer",
+  "specifications": {
+   "Viscosity Grade": "15W-40",
+   "Oil Type": "Mineral",
+   "Application": "Heavy Duty Diesel",
+   "Brand": "Gulf",
+   "API Rating": "CI-4",
+   "ACEA Rating": "E7",
+   "Capacity": "20L",
+   "Technology": "Fleet Protection"
+  }
+ },
+ {
+  "title": "Advanti Racing 17\" 8J 5x114.3 Hyper Black",
+  "slug": "advanti_racing_17_8j_5x114_3_hyper_black",
+  "brand": "Advanti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "17 inches",
+   "Width": "8J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "35mm",
+   "Finish": "Hyper Black",
+   "Material": "Aluminum Alloy",
+   "Brand": "Advanti",
+   "Type": "Cast",
+   "Weight": "9.2 kg",
+   "Center Bore": "73.1mm"
+  }
+ },
+ {
+  "title": "Advanti Storm S1 16\" 7J 5x114.3 Hyper Silver",
+  "slug": "advanti_storm_s1_16_7j_5x114_3_hyper_silver",
+  "brand": "Advanti",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "16 inches",
+   "Width": "7J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "38mm",
+   "Finish": "Hyper Silver",
+   "Material": "Aluminum Alloy",
+   "Brand": "Advanti",
+   "Type": "Cast",
+   "Weight": "8.4 kg",
+   "Center Bore": "73.1mm"
+  }
+ },
+ {
+  "title": "MAK Target 16\" 7J 5x114.3 Silver",
+  "slug": "mak_target_16_7j_5x114_3_silver",
+  "brand": "MAK",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "16 inches",
+   "Width": "7J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "40mm",
+   "Finish": "Silver",
+   "Material": "Aluminum Alloy",
+   "Brand": "MAK",
+   "Type": "Cast",
+   "Weight": "8.8 kg",
+   "Center Bore": "66.1mm"
+  }
+ },
+ {
+  "title": "MSW 15\" 6.5J 4x100 Gloss Black",
+  "slug": "msw_15_6_5j_4x100_gloss_black",
+  "brand": "MSW",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "15 inches",
+   "Width": "6.5J",
+   "Bolt Pattern": "4x100",
+   "Offset": "35mm",
+   "Finish": "Gloss Black",
+   "Material": "Aluminum Alloy",
+   "Brand": "MSW",
+   "Type": "Cast",
+   "Weight": "7.8 kg",
+   "Center Bore": "60.1mm"
+  }
+ },
+ {
+  "title": "Momo Hyperstar 17\" 7.5J 5x114.3 Hyper Silver",
+  "slug": "momo_hyperstar_17_7_5j_5x114_3_hyper_silver",
+  "brand": "Momo",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "17 inches",
+   "Width": "7.5J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "40mm",
+   "Finish": "Hyper Silver",
+   "Material": "Aluminum Alloy",
+   "Brand": "Momo",
+   "Type": "Cast",
+   "Weight": "9.0 kg",
+   "Center Bore": "73.1mm"
+  }
+ },
+ {
+  "title": "Dezent TI 16\" 7J 5x114.3 Silver",
+  "slug": "dezent_ti_16_7j_5x114_3_silver",
+  "brand": "Dezent",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "16 inches",
+   "Width": "7J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "40mm",
+   "Finish": "Silver",
+   "Material": "Aluminum Alloy",
+   "Brand": "Dezent",
+   "Type": "Cast",
+   "Weight": "8.6 kg",
+   "Center Bore": "71.6mm"
+  }
+ },
+ {
+  "title": "Lenso Conquista 7 18\" 9J 6x139.7 Matte Black",
+  "slug": "lenso_conquista_7_18_9j_6x139_7_matte_black",
+  "brand": "Lenso",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "18 inches",
+   "Width": "9J",
+   "Bolt Pattern": "6x139.7",
+   "Offset": "20mm",
+   "Finish": "Matte Black",
+   "Material": "Aluminum Alloy",
+   "Brand": "Lenso",
+   "Type": "Cast",
+   "Weight": "11.5 kg",
+   "Center Bore": "106.1mm"
+  }
+ },
+ {
+  "title": "Fuel Off-Road Beast D564 18\" 9J 6x139.7 Black Machined",
+  "slug": "fuel_off_road_beast_d564_18_9j_6x139_7_black_machined",
+  "brand": "Fuel Off-Road",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "18 inches",
+   "Width": "9J",
+   "Bolt Pattern": "6x139.7",
+   "Offset": "20mm",
+   "Finish": "Black Machined",
+   "Material": "Aluminum Alloy",
+   "Brand": "Fuel Off-Road",
+   "Type": "Cast",
+   "Weight": "12.0 kg",
+   "Center Bore": "106.1mm"
+  }
+ },
+ {
+  "title": "Lenso Max 6 16\" 8J 6x139.7 Hyper Black",
+  "slug": "lenso_max_6_16_8j_6x139_7_hyper_black",
+  "brand": "Lenso",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "16 inches",
+   "Width": "8J",
+   "Bolt Pattern": "6x139.7",
+   "Offset": "10mm",
+   "Finish": "Hyper Black",
+   "Material": "Aluminum Alloy",
+   "Brand": "Lenso",
+   "Type": "Cast",
+   "Weight": "10.2 kg",
+   "Center Bore": "106.1mm"
+  }
+ },
+ {
+  "title": "K&K Modena 17\" 7.5J 5x114.3 Silver Machined",
+  "slug": "k_k_modena_17_7_5j_5x114_3_silver_machined",
+  "brand": "K&K",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "17 inches",
+   "Width": "7.5J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "38mm",
+   "Finish": "Silver Machined",
+   "Material": "Aluminum Alloy",
+   "Brand": "K&K",
+   "Type": "Cast",
+   "Weight": "9.1 kg",
+   "Center Bore": "73.1mm"
+  }
+ },
+ {
+  "title": "OEM Steel Rim 14\" 5.5J 4x100 Black (Probox/Axio)",
+  "slug": "oem_steel_rim_14_5_5j_4x100_black_probox_axio",
+  "brand": "OEM",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "14 inches",
+   "Width": "5.5J",
+   "Bolt Pattern": "4x100",
+   "Offset": "30mm",
+   "Finish": "Black",
+   "Material": "Steel",
+   "Brand": "OEM",
+   "Type": "Steel",
+   "Weight": "11.0 kg",
+   "Center Bore": "N/A",
+   "Compatible Models": "Toyota Probox / Axio / Fielder"
+  }
+ },
+ {
+  "title": "OEM Steel Rim 15\" 6J 5x114.3 Silver (Hiace)",
+  "slug": "oem_steel_rim_15_6j_5x114_3_silver_hiace",
+  "brand": "OEM",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "15 inches",
+   "Width": "6J",
+   "Bolt Pattern": "5x114.3",
+   "Offset": "30mm",
+   "Finish": "Silver",
+   "Material": "Steel",
+   "Brand": "OEM",
+   "Type": "Steel",
+   "Weight": "11.0 kg",
+   "Center Bore": "N/A",
+   "Compatible Models": "Toyota Hiace / Regius"
+  }
+ },
+ {
+  "title": "OEM Steel Rim 16\" 7J 5x150 Silver (Land Cruiser 80)",
+  "slug": "oem_steel_rim_16_7j_5x150_silver_land_cruiser_80",
+  "brand": "OEM",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "16 inches",
+   "Width": "7J",
+   "Bolt Pattern": "5x150",
+   "Offset": "30mm",
+   "Finish": "Silver",
+   "Material": "Steel",
+   "Brand": "OEM",
+   "Type": "Steel",
+   "Weight": "11.0 kg",
+   "Center Bore": "N/A",
+   "Compatible Models": "Toyota Land Cruiser 80 Series"
+  }
+ },
+ {
+  "title": "OEM Alloy Rim 17\" 7.5J 6x139.7 Silver (Prado)",
+  "slug": "oem_alloy_rim_17_7_5j_6x139_7_silver_prado",
+  "brand": "OEM",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Rims",
+  "source": "manufacturer",
+  "specifications": {
+   "Diameter": "17 inches",
+   "Width": "7.5J",
+   "Bolt Pattern": "6x139.7",
+   "Offset": "30mm",
+   "Finish": "Silver",
+   "Material": "Aluminum Alloy",
+   "Brand": "OEM",
+   "Type": "Cast",
+   "Weight": "10.5 kg",
+   "Center Bore": "106.1mm",
+   "Compatible Models": "Toyota Land Cruiser Prado / Fortuner / Hilux"
+  }
+ },
+ {
+  "title": "Toyota Genuine Fuel Filter 23390-0L070",
+  "slug": "toyota_genuine_fuel_filter_23390_0l070",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Fuel Filter",
+   "Brand": "Toyota",
+   "OEM Part Number": "23390-0L070",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hilux / Fortuner / Innova 1KD-2KD",
+   "Type": "Cartridge Element"
+  }
+ },
+ {
+  "title": "Toyota Genuine Air Filter 17801-30070",
+  "slug": "toyota_genuine_air_filter_17801_30070",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Air Filter",
+   "Brand": "Toyota",
+   "OEM Part Number": "17801-30070",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hiace / Quantum / Commuter",
+   "Type": "Panel"
+  }
+ },
+ {
+  "title": "Toyota Genuine Front Brake Pads 04465-0K340",
+  "slug": "toyota_genuine_front_brake_pads_04465_0k340",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Brake Pads",
+   "Brand": "Toyota",
+   "OEM Part Number": "04465-0K340",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hilux (KUN26) / Fortuner",
+   "Position": "Front"
+  }
+ },
+ {
+  "title": "Toyota Genuine Rear Brake Shoe Kit 04495-0K160",
+  "slug": "toyota_genuine_rear_brake_shoe_kit_04495_0k160",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Brake Shoes",
+   "Brand": "Toyota",
+   "OEM Part Number": "04495-0K160",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hilux (KUN26)",
+   "Position": "Rear"
+  }
+ },
+ {
+  "title": "Toyota Genuine Timing Belt 13568-67010",
+  "slug": "toyota_genuine_timing_belt_13568_67010",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Timing Belt",
+   "Brand": "Toyota",
+   "OEM Part Number": "13568-67010",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Land Cruiser Prado 1KZ-TE",
+   "Teeth": "187"
+  }
+ },
+ {
+  "title": "Toyota Genuine Spark Plug SK20R11",
+  "slug": "toyota_genuine_spark_plug_sk20r11",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Spark Plug",
+   "Brand": "Toyota",
+   "OEM Part Number": "SK20R11",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Camry / RAV4 / Harrier",
+   "Electrode Material": "Iridium",
+   "Gap": "1.1mm"
+  }
+ },
+ {
+  "title": "Toyota Genuine Oil Filter 90915-TD004",
+  "slug": "toyota_genuine_oil_filter_90915_td004",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Oil Filter",
+   "Brand": "Toyota",
+   "OEM Part Number": "90915-TD004",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Land Cruiser Prado 1KD-FTV",
+   "Type": "Cartridge Element"
+  }
+ },
+ {
+  "title": "Toyota Genuine Front Brake Pads 04465-B1070",
+  "slug": "toyota_genuine_front_brake_pads_04465_b1070",
+  "brand": "Toyota",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Brake Pads",
+   "Brand": "Toyota",
+   "OEM Part Number": "04465-B1070",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Vitz / Passo / Belta",
+   "Position": "Front"
+  }
+ },
+ {
+  "title": "Isuzu Genuine Front Brake Pads 8-98154-966-0",
+  "slug": "isuzu_genuine_front_brake_pads_8_98154_966_0",
+  "brand": "Isuzu",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Brake Pads",
+   "Brand": "Isuzu",
+   "OEM Part Number": "8-98154-966-0",
+   "Compatible Make": "Isuzu",
+   "Compatible Model": "D-Max / MU-X",
+   "Position": "Front"
+  }
+ },
+ {
+  "title": "Nissan Genuine Oil Filter 15208-65F0A",
+  "slug": "nissan_genuine_oil_filter_15208_65f0a",
+  "brand": "Nissan",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Oil Filter",
+   "Brand": "Nissan",
+   "OEM Part Number": "15208-65F0A",
+   "Compatible Make": "Nissan",
+   "Compatible Model": "Navara / Note / X-Trail",
+   "Type": "Spin-On"
+  }
+ },
+ {
+  "title": "Mitsubishi Genuine Oil Filter 1230A186",
+  "slug": "mitsubishi_genuine_oil_filter_1230a186",
+  "brand": "Mitsubishi",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Oil Filter",
+   "Brand": "Mitsubishi",
+   "OEM Part Number": "1230A186",
+   "Compatible Make": "Mitsubishi",
+   "Compatible Model": "L200 / Pajero Sport",
+   "Type": "Spin-On"
+  }
+ },
+ {
+  "title": "Honda Genuine Oil Filter 15400-RTA-003",
+  "slug": "honda_genuine_oil_filter_15400_rta_003",
+  "brand": "Honda",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Oil Filter",
+   "Brand": "Honda",
+   "OEM Part Number": "15400-RTA-003",
+   "Compatible Make": "Honda",
+   "Compatible Model": "CR-V / Civic / Fit",
+   "Type": "Spin-On"
+  }
+ },
+ {
+  "title": "Mazda Genuine Oil Filter PE01-14-302",
+  "slug": "mazda_genuine_oil_filter_pe01_14_302",
+  "brand": "Mazda",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Oil Filter",
+   "Brand": "Mazda",
+   "OEM Part Number": "PE01-14-302",
+   "Compatible Make": "Mazda",
+   "Compatible Model": "Mazda 3 / CX-5 / Demio SkyActiv",
+   "Type": "Cartridge Element"
+  }
+ },
+ {
+  "title": "KYB Excel-G Front Shock Absorber 333338",
+  "slug": "kyb_excel_g_front_shock_absorber_333338",
+  "brand": "KYB",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Shock Absorber",
+   "Brand": "KYB",
+   "OEM Part Number": "333338",
+   "Position": "Front",
+   "Type": "Gas-Charged Twin-Tube",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Premio / Allion"
+  }
+ },
+ {
+  "title": "KYB Gas-A-Just Rear Shock Absorber 551132",
+  "slug": "kyb_gas_a_just_rear_shock_absorber_551132",
+  "brand": "KYB",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Shock Absorber",
+   "Brand": "KYB",
+   "OEM Part Number": "551132",
+   "Position": "Rear",
+   "Type": "Mono-Tube High Pressure Gas",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hilux (KUN26)"
+  }
+ },
+ {
+  "title": "Exedy Clutch Kit TYK-7690",
+  "slug": "exedy_clutch_kit_tyk_7690",
+  "brand": "Exedy",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Clutch Kit",
+   "Brand": "Exedy",
+   "OEM Part Number": "TYK-7690",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Corolla / Fielder 1NZ-FE",
+   "Includes": "Clutch Disc, Pressure Plate, Release Bearing",
+   "Diameter": "212mm"
+  }
+ },
+ {
+  "title": "Gates Timing Belt Kit K015487XS",
+  "slug": "gates_timing_belt_kit_k015487xs",
+  "brand": "Gates",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Timing Belt Kit",
+   "Brand": "Gates",
+   "OEM Part Number": "K015487XS",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hilux 2KD-FTV",
+   "Includes": "Timing Belt, Tensioner, Idler Pulleys",
+   "Teeth": "141"
+  }
+ },
+ {
+  "title": "NGK Iridium Spark Plug BKR6EIX-11",
+  "slug": "ngk_iridium_spark_plug_bkr6eix_11",
+  "brand": "NGK",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Spark Plug",
+   "Brand": "NGK",
+   "OEM Part Number": "BKR6EIX-11",
+   "Compatible Make": "Toyota / Nissan / Honda",
+   "Compatible Model": "Universal 1.5-2.0L Petrol",
+   "Electrode Material": "Iridium",
+   "Gap": "1.1mm"
+  }
+ },
+ {
+  "title": "Philips H4 12V 60/55W VisionPlus Bulb",
+  "slug": "philips_h4_12v_60_55w_visionplus_bulb",
+  "brand": "Philips",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Headlight Bulb",
+   "Brand": "Philips",
+   "Bulb Type": "H4",
+   "Voltage": "12V",
+   "Wattage": "60/55W",
+   "Base": "P43t"
+  }
+ },
+ {
+  "title": "Osram H1 12V 55W Night Breaker Laser Bulb",
+  "slug": "osram_h1_12v_55w_night_breaker_laser_bulb",
+  "brand": "Osram",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Headlight Bulb",
+   "Brand": "Osram",
+   "Bulb Type": "H1",
+   "Voltage": "12V",
+   "Wattage": "55W",
+   "Base": "P14.5s"
+  }
+ },
+ {
+  "title": "Bosch H3 12V 55W Fog Light Bulb",
+  "slug": "bosch_h3_12v_55w_fog_light_bulb",
+  "brand": "Bosch",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Fog Light Bulb",
+   "Brand": "Bosch",
+   "Bulb Type": "H3",
+   "Voltage": "12V",
+   "Wattage": "55W",
+   "Base": "PK22s"
+  }
+ },
+ {
+  "title": "Philips H11 12V 55W Vision Bulb",
+  "slug": "philips_h11_12v_55w_vision_bulb",
+  "brand": "Philips",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Headlight Bulb",
+   "Brand": "Philips",
+   "Bulb Type": "H11",
+   "Voltage": "12V",
+   "Wattage": "55W",
+   "Base": "PGJ19-2"
+  }
+ },
+ {
+  "title": "Asimco Brake Pads Front KD-3728",
+  "slug": "asimco_brake_pads_front_kd_3728",
+  "brand": "Asimco",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Brake Pads",
+   "Brand": "Asimco",
+   "OEM Part Number": "KD-3728",
+   "Position": "Front",
+   "Material": "Ceramic",
+   "Wear Sensor": "No",
+   "Min Thickness": "3mm",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hilux / Fortuner"
+  }
+ },
+ {
+  "title": "Asimco Brake Pads Rear KD-3396",
+  "slug": "asimco_brake_pads_rear_kd_3396",
+  "brand": "Asimco",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Brake Pads",
+   "Brand": "Asimco",
+   "OEM Part Number": "KD-3396",
+   "Position": "Rear",
+   "Material": "Semi-Metallic",
+   "Wear Sensor": "No",
+   "Min Thickness": "3mm",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Corolla / Fielder"
+  }
+ },
+ {
+  "title": "555 Sankei Lower Ball Joint SB-3902",
+  "slug": "555_sankei_lower_ball_joint_sb_3902",
+  "brand": "555 Sankei",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Ball Joint",
+   "Brand": "555 Sankei",
+   "OEM Part Number": "SB-3902",
+   "Position": "Front Lower",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Hiace / Quantum",
+   "Material": "Forged Steel"
+  }
+ },
+ {
+  "title": "Denso Fuel Pump Module (Toyota Fielder)",
+  "slug": "denso_fuel_pump_module_toyota_fielder",
+  "brand": "Denso",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Fuel Pump",
+   "Brand": "Denso",
+   "Position": "In-Tank",
+   "Voltage": "12V",
+   "Flow Rate": "120 L/h",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Fielder / Axio"
+  }
+ },
+ {
+  "title": "Bosch Aerotwin Wiper Blade Set 550/450mm",
+  "slug": "bosch_aerotwin_wiper_blade_set_550_450mm",
+  "brand": "Bosch",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Wiper Blade",
+   "Brand": "Bosch",
+   "Position": "Front",
+   "Type": "Flat Blade",
+   "Length": "550mm / 450mm",
+   "Compatible Make": "Universal"
+  }
+ },
+ {
+  "title": "GMB Front Wheel Bearing Kit (Toyota Corolla)",
+  "slug": "gmb_front_wheel_bearing_kit_toyota_corolla",
+  "brand": "GMB",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Wheel Bearing Kit",
+   "Brand": "GMB",
+   "Position": "Front",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Corolla / Fielder / Axio",
+   "Includes": "Bearing, Hub Seal, Circlip"
+  }
+ },
+ {
+  "title": "Monroe OESpectrum Front Shock Absorber (Toyota Vitz)",
+  "slug": "monroe_oespectrum_front_shock_absorber_toyota_vitz",
+  "brand": "Monroe",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Part Type": "Shock Absorber",
+   "Brand": "Monroe",
+   "Position": "Front",
+   "Type": "Gas-Charged",
+   "Compatible Make": "Toyota",
+   "Compatible Model": "Vitz / Belta"
+  }
+ },
+ {
+  "title": "Car Seat Covers Canvas Grey Full Set",
+  "slug": "car_seat_covers_canvas_grey_full_set",
+  "brand": "CanvasTop",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Material": "Heavy Duty Canvas",
+   "Quantity": "Full Set",
+   "Type": "Custom Fit",
+   "Color": "Grey",
+   "Airbag Compatible": "Yes",
+   "Brand": "CanvasTop"
+  }
+ },
+ {
+  "title": "Universal Car Seat Covers Fabric Black",
+  "slug": "universal_car_seat_covers_fabric_black",
+  "brand": "AutoX",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Material": "Polyester Fabric",
+   "Quantity": "5 Seats",
+   "Type": "Universal Fit",
+   "Color": "Black",
+   "Airbag Compatible": "Yes",
+   "Brand": "AutoX"
+  }
+ },
+ {
+  "title": "Car Phone Holder Dashboard Suction Mount",
+  "slug": "car_phone_holder_dashboard_suction_mount",
+  "brand": "Baseus",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Material": "ABS Plastic",
+   "Mount Type": "Dashboard/Windscreen Suction",
+   "Adjustable": "360 Degree",
+   "Compatibility": "4.7-6.7 inch Phones",
+   "Brand": "Baseus"
+  }
+ },
+ {
+  "title": "Anker PowerDrive 2 Car Charger Dual USB 24W",
+  "slug": "anker_powerdrive_2_car_charger_dual_usb_24w",
+  "brand": "Anker",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Ports": "2",
+   "Output": "4.8A Total (24W)",
+   "Input": "12-24V",
+   "Technology": "PowerIQ",
+   "Cable Length": "N/A",
+   "Brand": "Anker"
+  }
+ },
+ {
+  "title": "Xiaomi Car Charger Fast Charge QC3.0",
+  "slug": "xiaomi_car_charger_fast_charge_qc3_0",
+  "brand": "Xiaomi",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Ports": "2",
+   "Output": "36W",
+   "Input": "12-24V",
+   "Technology": "Quick Charge 3.0",
+   "Cable Length": "N/A",
+   "Brand": "Xiaomi"
+  }
+ },
+ {
+  "title": "Double Cylinder Portable Air Compressor 12V",
+  "slug": "double_cylinder_portable_air_compressor_12v",
+  "brand": "Generic",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "generic",
+  "specifications": {
+   "Type": "Tyre Inflator",
+   "Max Pressure": "150 PSI",
+   "Power": "12V DC",
+   "Display": "Analog Gauge",
+   "Features": "Double Cylinder, Carry Bag, LED Light",
+   "Brand": "Generic"
+  }
+ },
+ {
+  "title": "Jump Starter 1200A 12800mAh",
+  "slug": "jump_starter_1200a_12800mah",
+  "brand": "GOOLOO",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Peak Current": "1200A",
+   "Battery Capacity": "12800mAh",
+   "USB Output": "5V/2.1A",
+   "Type": "Lithium",
+   "Weight": "0.9 kg",
+   "Brand": "GOOLOO"
+  }
+ },
+ {
+  "title": "Car Toolkit 46-Piece Socket Set",
+  "slug": "car_toolkit_46_piece_socket_set",
+  "brand": "Ingco",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Pieces": "46",
+   "Drive Size": "1/4 inch",
+   "Material": "Chrome Vanadium Steel",
+   "Case": "Hard Plastic Case",
+   "Includes": "Sockets, Ratchet, Extensions, Bits",
+   "Brand": "Ingco"
+  }
+ },
+ {
+  "title": "Smart Car Battery Charger 12V 6A",
+  "slug": "smart_car_battery_charger_12v_6a",
+  "brand": "CTEK",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Voltage": "12V",
+   "Output": "6A",
+   "Charging Stages": "8-Step Automatic",
+   "Compatibility": "Wet/AGM/GEL Batteries",
+   "Display": "LED Indicators",
+   "Brand": "CTEK"
+  }
+ },
+ {
+  "title": "Wheel Lock Nuts Set M12x1.5 Chrome",
+  "slug": "wheel_lock_nuts_set_m12x1_5_chrome",
+  "brand": "McGard",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Thread Size": "M12x1.5",
+   "Quantity": "4 Locks + Key",
+   "Material": "Chrome Plated Steel",
+   "Seat Type": "60 Degree Conical",
+   "Brand": "McGard"
+  }
+ },
+ {
+  "title": "Car Mud Flaps Universal Set of 4",
+  "slug": "car_mud_flaps_universal_set_of_4",
+  "brand": "Generic",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "generic",
+  "specifications": {
+   "Material": "Rubber",
+   "Quantity": "4 Pieces",
+   "Type": "Universal Fit",
+   "Color": "Black",
+   "Brand": "Generic"
+  }
+ },
+ {
+  "title": "Universal Android Car Stereo 9-inch Touchscreen",
+  "slug": "universal_android_car_stereo_9_inch_touchscreen",
+  "brand": "Generic",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "generic",
+  "specifications": {
+   "Screen Size": "9 inches",
+   "OS": "Android 12",
+   "RAM": "2GB",
+   "Storage": "32GB",
+   "Features": "Bluetooth, GPS, WiFi, Reverse Camera Input",
+   "Brand": "Generic"
+  }
+ },
+ {
+  "title": "Car Reversing Camera Kit Night Vision",
+  "slug": "car_reversing_camera_kit_night_vision",
+  "brand": "Generic",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "generic",
+  "specifications": {
+   "Camera Type": "Rear View",
+   "Resolution": "720p HD",
+   "Night Vision": "Yes (IR LEDs)",
+   "Waterproof": "IP67",
+   "Includes": "Camera, Cable, Monitor Optional",
+   "Brand": "Generic"
+  }
+ },
+ {
+  "title": "Car Alarm System with Central Locking",
+  "slug": "car_alarm_system_with_central_locking",
+  "brand": "Prestige",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Type": "2-Way Alarm",
+   "Remotes": "2",
+   "Range": "1000m",
+   "Features": "Central Locking, Shock Sensor, Immobilizer",
+   "Brand": "Prestige"
+  }
+ },
+ {
+  "title": "LED Headlight Bulbs H4 6000K 50W Pair",
+  "slug": "led_headlight_bulbs_h4_6000k_50w_pair",
+  "brand": "Auxito",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "manufacturer",
+  "specifications": {
+   "Bulb Type": "H4",
+   "Power": "50W per Pair",
+   "Color Temperature": "6000K White",
+   "Lumens": "10000 LM",
+   "Cooling": "Fan-Cooled",
+   "Brand": "Auxito"
+  }
+ },
+ {
+  "title": "Portable Car Wash Pressure Pump 12V",
+  "slug": "portable_car_wash_pressure_pump_12v",
+  "brand": "Generic",
+  "category": "Automotive Parts & Accessories",
+  "subcategory": "Automotive Accessories",
+  "source": "generic",
+  "specifications": {
+   "Type": "Pressure Washer",
+   "Power": "12V DC",
+   "Max Pressure": "130 PSI",
+   "Flow Rate": "6 L/min",
+   "Includes": "Pump, Hose, Spray Gun",
+   "Brand": "Generic"
+  }
+ }
+]

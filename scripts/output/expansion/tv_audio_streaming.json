@@ -1,0 +1,622 @@
+[
+  {
+    "title": "Hisense HS218 2.1ch Soundbar with Wireless Subwoofer",
+    "slug": "hisense_hs218_2_1ch_soundbar_with_wireless_subwoofer",
+    "brand": "Hisense",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "200W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Hisense"
+    }
+  },
+  {
+    "title": "TCL TS6110 2.1ch Soundbar with Wireless Subwoofer",
+    "slug": "tcl_ts6110_2_1ch_soundbar_with_wireless_subwoofer",
+    "brand": "TCL",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "240W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "TCL"
+    }
+  },
+  {
+    "title": "Sony HT-S400 2.1ch Soundbar with Wireless Subwoofer",
+    "slug": "sony_ht_s400_2_1ch_soundbar_with_wireless_subwoofer",
+    "brand": "Sony",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "330W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Sony HT-S2000 3.1ch Soundbar",
+    "slug": "sony_ht_s2000_3_1ch_soundbar",
+    "brand": "Sony",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar",
+      "Channels": "3.1",
+      "Total Power": "250W",
+      "Subwoofer": "Built-in",
+      "Connectivity": "Bluetooth, HDMI eARC, Optical, USB",
+      "Dolby Atmos": "Yes",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Samsung HW-B650 3.1ch Soundbar with Wireless Subwoofer",
+    "slug": "samsung_hw_b650_3_1ch_soundbar_with_wireless_subwoofer",
+    "brand": "Samsung",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "3.1",
+      "Total Power": "430W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "LG S40T 2.1ch Soundbar with Wireless Subwoofer",
+    "slug": "lg_s40t_2_1ch_soundbar_with_wireless_subwoofer",
+    "brand": "LG",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "300W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "LG"
+    }
+  },
+  {
+    "title": "JBL Bar 2.1 Deep Bass Soundbar with Wireless Subwoofer",
+    "slug": "jbl_bar_2_1_deep_bass_soundbar_with_wireless_subwoofer",
+    "brand": "JBL",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "300W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "JBL"
+    }
+  },
+  {
+    "title": "Vitron V836 3.1ch Bluetooth Multimedia Speaker System",
+    "slug": "vitron_v836_3_1ch_bluetooth_multimedia_speaker_system",
+    "brand": "Vitron",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Channels": "3.1",
+      "Total Power": "120W",
+      "Subwoofer": "Yes",
+      "Connectivity": "Bluetooth, USB, SD, FM, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Vitron"
+    }
+  },
+  {
+    "title": "Amtec 5.1ch Bluetooth Multimedia Speaker System",
+    "slug": "amtec_5_1ch_bluetooth_multimedia_speaker_system",
+    "brand": "Amtec",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Channels": "5.1",
+      "Total Power": "200W",
+      "Subwoofer": "Yes",
+      "Connectivity": "Bluetooth, USB, SD, FM, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Amtec"
+    }
+  },
+  {
+    "title": "Sayona SHT-1254BT 3.1ch Bluetooth Subwoofer Speaker System",
+    "slug": "sayona_sht_1254bt_3_1ch_bluetooth_subwoofer_speaker_system",
+    "brand": "Sayona",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Channels": "3.1",
+      "Total Power": "9000W PMPO",
+      "Subwoofer": "Yes",
+      "Connectivity": "Bluetooth, USB, SD, FM, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Sayona"
+    }
+  },
+  {
+    "title": "Bruhm 2.1ch Bluetooth Soundbar with Subwoofer",
+    "slug": "bruhm_2_1ch_bluetooth_soundbar_with_subwoofer",
+    "brand": "Bruhm",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "120W",
+      "Subwoofer": "Wired",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Bruhm"
+    }
+  },
+  {
+    "title": "Sony DAV-DZ650 5.1ch DVD Home Theater System",
+    "slug": "sony_dav_dz650_5_1ch_dvd_home_theater_system",
+    "brand": "Sony",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "1000W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital, DTS",
+      "Bluetooth": "Yes",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Sony HT-S40R 5.1ch Home Theater System",
+    "slug": "sony_ht_s40r_5_1ch_home_theater_system",
+    "brand": "Sony",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "600W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "Yes",
+      "Rear Speakers": "Wireless",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "LG LHD657 5.1ch DVD Home Theater System",
+    "slug": "lg_lhd657_5_1ch_dvd_home_theater_system",
+    "brand": "LG",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "1000W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital, DTS",
+      "Bluetooth": "Yes",
+      "Brand": "LG"
+    }
+  },
+  {
+    "title": "Samsung HT-J4500K 5.1ch Blu-ray Home Theater System",
+    "slug": "samsung_ht_j4500k_5_1ch_blu_ray_home_theater_system",
+    "brand": "Samsung",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "500W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital, DTS",
+      "Bluetooth": "Yes",
+      "Brand": "Samsung"
+    }
+  },
+  {
+    "title": "JBL Cinema SB590 3.1ch Soundbar Home Theater System",
+    "slug": "jbl_cinema_sb590_3_1ch_soundbar_home_theater_system",
+    "brand": "JBL",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "3.1",
+      "Power": "440W total",
+      "HDMI": "1 out (eARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "Yes",
+      "Brand": "JBL"
+    }
+  },
+  {
+    "title": "Vitron 5.1 Channel Bluetooth Home Theater System",
+    "slug": "vitron_5_1_channel_bluetooth_home_theater_system",
+    "brand": "Vitron",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "450W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "Yes",
+      "Brand": "Vitron"
+    }
+  },
+  {
+    "title": "Vision Plus 5.1 Channel Bluetooth Home Theater System",
+    "slug": "vision_plus_5_1_channel_bluetooth_home_theater_system",
+    "brand": "Vision Plus",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "350W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "Yes",
+      "Brand": "Vision Plus"
+    }
+  },
+  {
+    "title": "Xiaomi TV Box S 2nd Gen 4K Streaming Player",
+    "slug": "xiaomi_tv_box_s_2nd_gen_4k_streaming_player",
+    "brand": "Xiaomi",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "Dolby Vision, HDR10+",
+      "Storage": "8GB",
+      "RAM": "2GB",
+      "Connectivity": "Wi-Fi 5, Bluetooth 5.2",
+      "Voice Remote": "Google Assistant",
+      "Brand": "Xiaomi"
+    }
+  },
+  {
+    "title": "Xiaomi Mi TV Stick FHD Streaming Stick",
+    "slug": "xiaomi_mi_tv_stick_fhd_streaming_stick",
+    "brand": "Xiaomi",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Stick",
+      "Resolution": "1080p Full HD",
+      "HDR": "HDR10",
+      "Storage": "8GB",
+      "RAM": "1GB",
+      "Connectivity": "Wi-Fi 5, Bluetooth 4.2",
+      "Voice Remote": "Google Assistant",
+      "Brand": "Xiaomi"
+    }
+  },
+  {
+    "title": "Google Chromecast HD with Google TV",
+    "slug": "google_chromecast_hd_with_google_tv",
+    "brand": "Google",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Dongle",
+      "Resolution": "1080p Full HD",
+      "HDR": "HDR10, HDR10+",
+      "Storage": "8GB",
+      "RAM": "1.5GB",
+      "Connectivity": "Wi-Fi 5, Bluetooth",
+      "Voice Remote": "Google Voice",
+      "Brand": "Google"
+    }
+  },
+  {
+    "title": "Amazon Fire TV Stick Lite",
+    "slug": "amazon_fire_tv_stick_lite",
+    "brand": "Amazon",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Stick",
+      "Resolution": "1080p Full HD",
+      "HDR": "HDR10, HDR10+, HLG",
+      "Storage": "8GB",
+      "RAM": "1GB",
+      "Connectivity": "Wi-Fi 5, Bluetooth",
+      "Voice Remote": "Alexa Voice Lite",
+      "Brand": "Amazon"
+    }
+  },
+  {
+    "title": "Apple TV 4K 3rd Gen 64GB Wi-Fi",
+    "slug": "apple_tv_4k_3rd_gen_64gb_wi_fi",
+    "brand": "Apple",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "64GB",
+      "Chip": "A15 Bionic",
+      "Connectivity": "Wi-Fi 6, Bluetooth 5.0",
+      "Voice Remote": "Siri Remote (USB-C)",
+      "Brand": "Apple"
+    }
+  },
+  {
+    "title": "X96 Max+ Android TV Box 4GB/64GB",
+    "slug": "x96_max_android_tv_box_4gb_64gb",
+    "brand": "X96",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Android TV Box",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10",
+      "Storage": "64GB",
+      "RAM": "4GB",
+      "Chip": "Amlogic S905X3",
+      "Connectivity": "Wi-Fi 5, Ethernet, Bluetooth",
+      "Ports": "HDMI, USB 3.0, USB 2.0, AV, Ethernet",
+      "Brand": "X96"
+    }
+  },
+  {
+    "title": "T95 Android TV Box 4GB/32GB",
+    "slug": "t95_android_tv_box_4gb_32gb",
+    "brand": "T95",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Android TV Box",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10",
+      "Storage": "32GB",
+      "RAM": "4GB",
+      "Chip": "Allwinner H616",
+      "Connectivity": "Wi-Fi 5, Ethernet",
+      "Ports": "HDMI, USB 2.0, AV, Ethernet",
+      "Brand": "T95"
+    }
+  },
+  {
+    "title": "DStv Streama 4K Streaming Decoder",
+    "slug": "dstv_streama_4k_streaming_decoder",
+    "brand": "DStv",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Decoder",
+      "Recording": "No",
+      "Resolution": "4K Ultra HD",
+      "Connectivity": "Wi-Fi, Ethernet, Bluetooth",
+      "Ports": "HDMI, USB, SPDIF",
+      "Brand": "DStv"
+    }
+  },
+  {
+    "title": "Azam TV HD Satellite Decoder",
+    "slug": "azam_tv_hd_satellite_decoder",
+    "brand": "Azam TV",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Decoder",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Azam TV"
+    }
+  },
+  {
+    "title": "Startimes ON DVB-T2 Digital Decoder",
+    "slug": "startimes_on_dvb_t2_digital_decoder",
+    "brand": "Startimes",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital Terrestrial Decoder",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Startimes"
+    }
+  },
+  {
+    "title": "Star X DVB-T2 Free-to-Air Decoder",
+    "slug": "star_x_dvb_t2_free_to_air_decoder",
+    "brand": "Star X",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital Terrestrial Decoder",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Star X"
+    }
+  },
+  {
+    "title": "GOtv Supa Digital Decoder",
+    "slug": "gotv_supa_digital_decoder",
+    "brand": "GOtv",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital Terrestrial Decoder",
+      "Recording": "No",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA",
+      "Brand": "GOtv"
+    }
+  },
+  {
+    "title": "Solatek TV Guard Voltage and Surge Protector",
+    "slug": "solatek_tv_guard_voltage_and_surge_protector",
+    "brand": "Solatek",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "TV Guard Surge Protector",
+      "Max Load": "6A (1400W)",
+      "Protection": "Over/Under Voltage, Surge, Spikes, Power-back Delay",
+      "Delay": "30 seconds",
+      "Voltage": "230V AC",
+      "Brand": "Solatek"
+    }
+  },
+  {
+    "title": "DVB-T2 Indoor Digital TV Antenna",
+    "slug": "dvb_t2_indoor_digital_tv_antenna",
+    "brand": "Generic",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Indoor TV Antenna",
+      "Range": "50 km",
+      "Amplifier": "Yes (Included)",
+      "Resolution": "1080p Full HD Ready",
+      "Frequency": "VHF/UHF",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "Tilting TV Wall Bracket 14-42 Inches",
+    "slug": "tilting_tv_wall_bracket_14_42_inches",
+    "brand": "Skilltech",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Tilting Wall Mount",
+      "TV Size Range": "14-42 inches",
+      "Max Weight": "25 kg",
+      "VESA": "75x75 to 200x200mm",
+      "Tilt": "-5 to +12 degrees",
+      "Brand": "Skilltech"
+    }
+  },
+  {
+    "title": "Star X 60cm Satellite Dish Kit with LNB",
+    "slug": "star_x_60cm_satellite_dish_kit_with_lnb",
+    "brand": "Star X",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Dish Kit",
+      "Dish Size": "60 cm",
+      "Material": "Galvanized Steel",
+      "LNB": "Universal Single LNB (Included)",
+      "Includes": "Wall mount, bolts, LNB holder",
+      "Brand": "Star X"
+    }
+  },
+  {
+    "title": "USB LED TV Backlight Strip RGB 5V",
+    "slug": "usb_led_tv_backlight_strip_rgb_5v",
+    "brand": "Generic",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "LED Backlight Strip",
+      "Length": "3 meters",
+      "Power": "5V USB",
+      "Colors": "RGB Multi-color",
+      "Control": "Remote Control",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "JBL Flip 6 Portable Bluetooth Speaker",
+    "slug": "jbl_flip_6_portable_bluetooth_speaker",
+    "brand": "JBL",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Bluetooth Speaker",
+      "Driver": "Racetrack woofer + tweeter",
+      "Battery Life": "12 hours",
+      "Connectivity": "Bluetooth 5.1",
+      "Water Resistance": "IP67",
+      "Brand": "JBL"
+    }
+  },
+  {
+    "title": "JBL Tune 510BT On-Ear Wireless Headphones",
+    "slug": "jbl_tune_510bt_on_ear_wireless_headphones",
+    "brand": "JBL",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "On-Ear Wireless Headphones",
+      "Driver": "32mm",
+      "Battery Life": "40 hours",
+      "Connectivity": "Bluetooth 5.0",
+      "Charging": "USB-C",
+      "Brand": "JBL"
+    }
+  },
+  {
+    "title": "Sony WH-CH520 On-Ear Wireless Headphones",
+    "slug": "sony_wh_ch520_on_ear_wireless_headphones",
+    "brand": "Sony",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "On-Ear Wireless Headphones",
+      "Driver": "30mm",
+      "Battery Life": "50 hours",
+      "Connectivity": "Bluetooth 5.2",
+      "Charging": "USB-C",
+      "Brand": "Sony"
+    }
+  },
+  {
+    "title": "Oraimo FreePods 4 True Wireless Earbuds",
+    "slug": "oraimo_freepods_4_true_wireless_earbuds",
+    "brand": "Oraimo",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "True Wireless Earbuds",
+      "Driver": "10mm",
+      "Battery Life": "35.5 hours (with case)",
+      "Connectivity": "Bluetooth 5.2",
+      "ANC": "Yes",
+      "Brand": "Oraimo"
+    }
+  }
+]

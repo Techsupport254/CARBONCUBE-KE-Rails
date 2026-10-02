@@ -8,10 +8,10 @@ class WhatsappAiPrefillService
     normalized_title = title.to_s.strip
     category_name = category&.name
     
-    # Try to find matching device in catalog
+    # Try to find matching device in catalog (nil subcategory = search all catalog files for the category)
     device_match = nil
     if category
-      device_match = DeviceCatalogService.search(normalized_title, category.subcategories&.first&.name, category_name).first
+      device_match = DeviceCatalogService.search(normalized_title, nil, category_name).first
     end
     
     # Fallback to phones if no category specified
@@ -52,8 +52,7 @@ class WhatsappAiPrefillService
       'Filtration' => %w[filter water air oil fuel filtration hvac engine diesel hydraulic industrial purifier],
       'Hardware' => %w[tool drill hammer screw wrench saw hardware electrical plumbing generator welding cable pipe fitting cement sand construction building safety boots helmet gloves protective],
       'Services' => %w[service repair maintenance installation cleaning electrician plumber plumbing welder welding mason masonry painter painting carpenter carpentry appliance electronics specialist borehole drilling mechanic mechanics equipment leasing rental hire technician emergency],
-      'TVs & Home Entertainment' => %w[tv television monitor display sound audio speaker smart android google led lcd oled qled 4k uhd hd samsung lg hisense tcl skyworth vitron sony soundbar home theater surround streaming fire stick chromecast apple decoder dstv gotv zuku startimes projector screen mount stand hdmi antenna satellite remote accessories],
-      'Electronics and Accessories' => %w[printer copier scanner pos shredder projector office machine hp canon epson brother kyocera laser inkjet thermal barcode receipt cash register terminal toner cartridge document photocopy],
+      'TVs & Audio and Electronics' => %w[tv television monitor display sound audio speaker smart android google led lcd oled qled 4k uhd hd samsung lg hisense tcl skyworth vitron sony soundbar home theater surround streaming fire stick chromecast apple decoder dstv gotv zuku startimes projector screen mount stand hdmi antenna satellite remote accessories printer copier scanner pos shredder office machine hp canon epson brother kyocera laser inkjet thermal barcode receipt cash register terminal toner cartridge document photocopy],
       'Agriculture' => %w[farm tractor irrigation tiller harvester plough seeder hoe panga slasher sprinkler machete fork shovel water pump pipe tank drip agriculture agricultural machinery equipment implement parts accessories]
     }
     
@@ -129,8 +128,8 @@ class WhatsappAiPrefillService
     category_name = category&.name
     subcategory = category&.subcategories&.first
     
-    # Try DeviceCatalogService for all categories (it maps subcategories to catalog files)
-    device_specs = DeviceCatalogService.search(title, subcategory&.name, category&.name).first
+    # Try DeviceCatalogService for all categories (nil subcategory searches every catalog file for the category)
+    device_specs = DeviceCatalogService.search(title, nil, category&.name).first
     if device_specs && device_specs['specifications']
       return device_specs['specifications']
     end

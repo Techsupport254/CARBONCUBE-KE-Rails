@@ -66,7 +66,10 @@ class Seller::SellersController < ApplicationController
       }, status: :ok
     end
 
-    # OTP is provided - verify and create account
+    # OTP is provided - verify and issue a pending registration token.
+    # No account is created here: the seller record is only persisted inside
+    # complete_onboarding's transaction, together with the first ad. If the
+    # user abandons onboarding, nothing is left behind.
     if Buyer.exists?(email: seller_email)
       return render json: { errors: ['Email is already in use'] }, status: :unprocessable_entity
     end
@@ -86,24 +89,19 @@ class Seller::SellersController < ApplicationController
       return render json: { errors: ['OTP has expired'] }, status: :unauthorized
     end
 
-    # Create buyer account with pending seller data
-    buyer = Buyer.new(
-      email: seller_email,
-      fullname: params[:seller][:fullname],
-      username: params[:seller][:username],
-      phone_number: params[:seller][:phone_number],
-      secondary_phone_number: params[:seller][:secondary_phone_number],
-      password: params[:seller][:password],
-      password_confirmation: params[:seller][:password_confirmation]
-    )
+    # Validate the password now — it is never validated later because only its
+    # bcrypt digest is cached for the deferred Seller creation.
+    password = params[:seller][:password].to_s
+    password_confirmation = params[:seller][:password_confirmation].to_s
+    if password.blank?
+      return render json: { errors: ['Password is required'] }, status: :unprocessable_entity
+    elsif password.length < 8
+      return render json: { errors: ['Password must be at least 8 characters'] }, status: :unprocessable_entity
+    elsif password != password_confirmation
+      return render json: { errors: ['Passwords do not match'] }, status: :unprocessable_entity
+    end
 
-    # Store pending seller profile data (only fields collected during signup)
-    buyer.pending_seller_fullname = params[:seller][:fullname]
-    buyer.pending_seller_phone_number = params[:seller][:phone_number]
-    buyer.pending_seller_secondary_phone_number = params[:seller][:secondary_phone_number]
-    # Location, enterprise_name, county_id, sub_county_id, and description are collected during onboarding
-
-    # Handle carbon code
+    # Handle carbon code (validated now, applied when the seller is created)
     carbon_code = nil
     if params[:carbon_code].present?
       carbon_code = CarbonCode.find_by("UPPER(TRIM(code)) = ?", params[:carbon_code].to_s.strip.upcase)
@@ -114,7 +112,6 @@ class Seller::SellersController < ApplicationController
         msg = carbon_code.expired? ? "This Carbon code has expired." : "This Carbon code has reached its usage limit."
         return render json: { errors: { carbon_code: [msg] } }, status: :unprocessable_entity
       end
-      buyer.pending_seller_carbon_code_id = carbon_code.id
     end
 
     # Handle document upload
@@ -155,47 +152,40 @@ class Seller::SellersController < ApplicationController
       end
     end
 
-    buyer.profile_picture = uploaded_profile_picture_url if uploaded_profile_picture_url
+    # OTP is consumed now — the pending token becomes the credential.
+    otp_record.update!(verified: true)
 
-    # Auto-generate username if not provided
-    if buyer.username.blank? && buyer.fullname.present?
-      base_username = buyer.fullname.strip.split(/\s+/).first.downcase.gsub(/[^a-z0-9]/, '')
-      unique_username = generate_unique_username(base_username)
-      buyer.username = unique_username
-    end
+    # Stash the signup under a pending token (same deferred-registration
+    # mechanism as Google OAuth). The raw password is never stored — only its
+    # bcrypt digest.
+    pending_token = SecureRandom.hex(32)
+    cache_key = "pending_seller_registration_#{pending_token}"
+    pending_data = {
+      role: 'seller',
+      provider: nil,
+      name: params[:seller][:fullname],
+      email: seller_email,
+      username: params[:seller][:username],
+      phone_number: params[:seller][:phone_number],
+      secondary_phone_number: params[:seller][:secondary_phone_number],
+      password_digest: BCrypt::Password.create(password).to_s,
+      carbon_code_id: carbon_code&.id,
+      document_url: uploaded_document_url,
+      picture: uploaded_profile_picture_url,
+      device_hash: params[:device_hash],
+      created_at: Time.current.to_s
+    }
+    Rails.cache.write(cache_key, pending_data, expires_in: 1.hour)
 
-    # Capture device hash for guest click association
-    if params[:device_hash].present?
-      buyer.device_hash_for_association = params[:device_hash]
-    end
-
-    if buyer.save
-      # Mark OTP as verified if provided
-      if otp_code.present? && otp_record
-        otp_record.update!(verified: true)
-      end
-
-      # Generate JWT token
-      token_payload = { user_id: buyer.id, email: buyer.email, role: 'buyer' }
-      token = JsonWebToken.encode(token_payload)
-
-      render json: {
-        success: true,
-        message: "Account created successfully. Please add your first ad to complete seller registration.",
-        user: {
-          id: buyer.id,
-          email: buyer.email,
-          role: 'buyer',
-          fullname: buyer.fullname,
-          username: buyer.username,
-          phone_number: buyer.phone_number,
-          profile_picture: buyer.profile_picture
-        },
-        token: token
-      }, status: :created
-    else
-      render json: { errors: buyer.errors.full_messages }, status: :unprocessable_entity
-    end
+    render json: {
+      success: true,
+      pending_registration: true,
+      pending_token: pending_token,
+      email: seller_email,
+      name: pending_data[:name],
+      phone_number: pending_data[:phone_number],
+      message: "Pending registration - complete onboarding to create your account."
+    }, status: :ok
   rescue => e
     render json: { errors: ["An error occurred during registration"] }, status: :internal_server_error
   end
@@ -316,28 +306,6 @@ class Seller::SellersController < ApplicationController
   def upload_file_only(file)
     uploaded = Cloudinary::Uploader.upload(file.tempfile.path, resource_type: "image", upload_preset: ENV['UPLOAD_PRESET'], folder: "business_permits")
     uploaded["secure_url"]
-  end
-
-  # Generate a unique username from base username
-  def generate_unique_username(base_username)
-    # Start with base username
-    username = base_username
-    counter = 1
-    
-    # If username already exists, append a number
-    while Seller.exists?(username: username) || Buyer.exists?(username: username)
-      username = "#{base_username}#{counter}"
-      counter += 1
-      
-      # Add random suffix if counter gets too high (avoid sequential numbers)
-      if counter > 100
-        random_suffix = SecureRandom.random_number(9999)
-        username = "#{base_username}#{random_suffix}"
-        break unless Seller.exists?(username: username) || Buyer.exists?(username: username)
-      end
-    end
-    
-    username
   end
 
 end

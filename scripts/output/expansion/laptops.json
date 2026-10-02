@@ -1,0 +1,809 @@
+[
+  {
+    "title": "Apple MacBook Air 13-inch (M4, 2025) Apple M4/16GB/256GB SSD/13.6\"",
+    "slug": "apple_macbook_air_13_inch_m4_2025_apple_m4_16gb_256gb_ssd_13_6",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Air",
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "256GB SSD",
+      "Screen Size": "13.6-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Air 13-inch (M4, 2025) Apple M4/16GB/512GB SSD/13.6\"",
+    "slug": "apple_macbook_air_13_inch_m4_2025_apple_m4_16gb_512gb_ssd_13_6",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Air",
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "13.6-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Air 15-inch (M4, 2025) Apple M4/16GB/512GB SSD/15.3\"",
+    "slug": "apple_macbook_air_15_inch_m4_2025_apple_m4_16gb_512gb_ssd_15_3",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Air",
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.3-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Pro 14-inch (M4 Pro, 2024) Apple M4 Pro/24GB/512GB SSD/14.2\"",
+    "slug": "apple_macbook_pro_14_inch_m4_pro_2024_apple_m4_pro_24gb_512gb_ssd_14_2",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Pro",
+      "Processor": "Apple M4 Pro",
+      "RAM": "24GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.2-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Pro 14-inch (M4 Max, 2024) Apple M4 Max/36GB/1TB SSD/14.2\"",
+    "slug": "apple_macbook_pro_14_inch_m4_max_2024_apple_m4_max_36gb_1tb_ssd_14_2",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Pro",
+      "Processor": "Apple M4 Max",
+      "RAM": "36GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "14.2-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Pro 16-inch (M4 Max, 2024) Apple M4 Max/36GB/1TB SSD/16.2\"",
+    "slug": "apple_macbook_pro_16_inch_m4_max_2024_apple_m4_max_36gb_1tb_ssd_16_2",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Pro",
+      "Processor": "Apple M4 Max",
+      "RAM": "36GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.2-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Pro 14-inch (M5, 2025) Apple M5/16GB/512GB SSD/14.2\"",
+    "slug": "apple_macbook_pro_14_inch_m5_2025_apple_m5_16gb_512gb_ssd_14_2",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Pro",
+      "Processor": "Apple M5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.2-inch"
+    }
+  },
+  {
+    "title": "Apple MacBook Pro 14-inch (M5, 2025) Apple M5/24GB/1TB SSD/14.2\"",
+    "slug": "apple_macbook_pro_14_inch_m5_2025_apple_m5_24gb_1tb_ssd_14_2",
+    "brand": "Apple",
+    "manufacturer": "Apple",
+    "specifications": {
+      "Model Name": "MacBook Pro",
+      "Processor": "Apple M5",
+      "RAM": "24GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "14.2-inch"
+    }
+  },
+  {
+    "title": "HP 250 G10 Intel Core i5-1335U/8GB/512GB SSD/15.6\"",
+    "slug": "hp_250_g10_intel_core_i5_1335u_8gb_512gb_ssd_15_6",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "250",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "HP 255 G10 AMD Ryzen 5 7530U/8GB/512GB SSD/15.6\"",
+    "slug": "hp_255_g10_amd_ryzen_5_7530u_8gb_512gb_ssd_15_6",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "255",
+      "Processor": "AMD Ryzen 5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "HP 15-fd Intel Core i3-1315U/8GB/256GB SSD/15.6\"",
+    "slug": "hp_15_fd_intel_core_i3_1315u_8gb_256gb_ssd_15_6",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "15",
+      "Processor": "Intel Core i3",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "HP 15-fd Intel Core i5-1335U/16GB/512GB SSD/15.6\"",
+    "slug": "hp_15_fd_intel_core_i5_1335u_16gb_512gb_ssd_15_6",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "15",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "HP EliteBook 840 G11 Intel Core Ultra 5 125U/16GB/512GB SSD/14\"",
+    "slug": "hp_elitebook_840_g11_intel_core_ultra_5_125u_16gb_512gb_ssd_14",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "EliteBook",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "HP EliteBook 8 G1i 14 Intel Core Ultra 7 255U/16GB/512GB SSD/14\"",
+    "slug": "hp_elitebook_8_g1i_14_intel_core_ultra_7_255u_16gb_512gb_ssd_14",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "EliteBook",
+      "Processor": "Intel Core Ultra 7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "HP ProBook 460 G11 Intel Core Ultra 5 125U/16GB/512GB SSD/16\"",
+    "slug": "hp_probook_460_g11_intel_core_ultra_5_125u_16gb_512gb_ssd_16",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "ProBook",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "16.0-inch"
+    }
+  },
+  {
+    "title": "HP Victus 15-fa1000 Intel Core i5-12450H/16GB/512GB SSD/RTX 3050/15.6\"",
+    "slug": "hp_victus_15_fa1000_intel_core_i5_12450h_16gb_512gb_ssd_rtx_3050_15_6",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "Victus",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 3050"
+    }
+  },
+  {
+    "title": "HP Victus 16-r1000 Intel Core i5-14450HX/16GB/512GB SSD/RTX 4050/16.1\"",
+    "slug": "hp_victus_16_r1000_intel_core_i5_14450hx_16gb_512gb_ssd_rtx_4050_16_1",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "Victus",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "16.1-inch",
+      "GPU": "RTX 4050"
+    }
+  },
+  {
+    "title": "HP OMEN 16 Intel Core i7-14650HX/16GB/1TB SSD/RTX 4060/16.1\"",
+    "slug": "hp_omen_16_intel_core_i7_14650hx_16gb_1tb_ssd_rtx_4060_16_1",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "OMEN",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.1-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "HP Pavilion 15 Intel Core i5-1335U/8GB/512GB SSD/15.6\"",
+    "slug": "hp_pavilion_15_intel_core_i5_1335u_8gb_512gb_ssd_15_6",
+    "brand": "HP",
+    "manufacturer": "HP",
+    "specifications": {
+      "Model Name": "Pavilion",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Dell Latitude 7450 Intel Core Ultra 7 155U/16GB/512GB SSD/14\"",
+    "slug": "dell_latitude_7450_intel_core_ultra_7_155u_16gb_512gb_ssd_14",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Latitude",
+      "Processor": "Intel Core Ultra 7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Dell Latitude 5550 Intel Core Ultra 5 125U/16GB/512GB SSD/15.6\"",
+    "slug": "dell_latitude_5550_intel_core_ultra_5_125u_16gb_512gb_ssd_15_6",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Latitude",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Dell Latitude 3450 Intel Core i5-1335U/8GB/512GB SSD/14\"",
+    "slug": "dell_latitude_3450_intel_core_i5_1335u_8gb_512gb_ssd_14",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Latitude",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Dell Inspiron 15 3530 Intel Core i5-1334U/8GB/512GB SSD/15.6\"",
+    "slug": "dell_inspiron_15_3530_intel_core_i5_1334u_8gb_512gb_ssd_15_6",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Inspiron",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Dell Inspiron 15 3535 AMD Ryzen 5 7520U/8GB/512GB SSD/15.6\"",
+    "slug": "dell_inspiron_15_3535_amd_ryzen_5_7520u_8gb_512gb_ssd_15_6",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Inspiron",
+      "Processor": "AMD Ryzen 5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Dell Inspiron 14 5440 Intel Core i5-1334U/16GB/512GB SSD/14\"",
+    "slug": "dell_inspiron_14_5440_intel_core_i5_1334u_16gb_512gb_ssd_14",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Inspiron",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Dell Vostro 15 3530 Intel Core i5-1334U/8GB/256GB SSD/15.6\"",
+    "slug": "dell_vostro_15_3530_intel_core_i5_1334u_8gb_256gb_ssd_15_6",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Vostro",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Dell XPS 13 9345 Snapdragon X Elite/16GB/512GB SSD/13.4\"",
+    "slug": "dell_xps_13_9345_snapdragon_x_elite_16gb_512gb_ssd_13_4",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "XPS",
+      "Processor": "Snapdragon X Elite",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "13.4-inch"
+    }
+  },
+  {
+    "title": "Dell Pro 14 PC14250 Intel Core Ultra 5 225U/16GB/512GB SSD/14\"",
+    "slug": "dell_pro_14_pc14250_intel_core_ultra_5_225u_16gb_512gb_ssd_14",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Pro",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Dell Pro 16 PC16250 Intel Core Ultra 5 235U/16GB/512GB SSD/16\"",
+    "slug": "dell_pro_16_pc16250_intel_core_ultra_5_235u_16gb_512gb_ssd_16",
+    "brand": "Dell",
+    "manufacturer": "Dell",
+    "specifications": {
+      "Model Name": "Pro",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "16.0-inch"
+    }
+  },
+  {
+    "title": "Lenovo ThinkPad X1 Carbon Gen 13 Aura Edition Intel Core Ultra 7 258V/32GB/1TB SSD/14\"",
+    "slug": "lenovo_thinkpad_x1_carbon_gen_13_aura_edition_intel_core_ultra_7_258v_32gb_1tb_ssd_14",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "ThinkPad",
+      "Processor": "Intel Core Ultra 7",
+      "RAM": "32GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Lenovo ThinkPad T14 Gen 5 Intel Core Ultra 5 125U/16GB/512GB SSD/14\"",
+    "slug": "lenovo_thinkpad_t14_gen_5_intel_core_ultra_5_125u_16gb_512gb_ssd_14",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "ThinkPad",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Lenovo ThinkPad E14 Gen 6 Intel Core Ultra 5 125U/16GB/512GB SSD/14\"",
+    "slug": "lenovo_thinkpad_e14_gen_6_intel_core_ultra_5_125u_16gb_512gb_ssd_14",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "ThinkPad",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Lenovo IdeaPad Slim 3 15IAU7 Intel Core i5-1235U/8GB/512GB SSD/15.6\"",
+    "slug": "lenovo_ideapad_slim_3_15iau7_intel_core_i5_1235u_8gb_512gb_ssd_15_6",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "IdeaPad",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Lenovo IdeaPad Slim 5 14IAH8 Intel Core i5-12450H/16GB/512GB SSD/14\"",
+    "slug": "lenovo_ideapad_slim_5_14iah8_intel_core_i5_12450h_16gb_512gb_ssd_14",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "IdeaPad",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Lenovo LOQ 15IAX9 Intel Core i5-12450HX/16GB/512GB SSD/RTX 4050/15.6\"",
+    "slug": "lenovo_loq_15iax9_intel_core_i5_12450hx_16gb_512gb_ssd_rtx_4050_15_6",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "LOQ",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 4050"
+    }
+  },
+  {
+    "title": "Lenovo Legion 5 16IRX9 Intel Core i7-14650HX/16GB/1TB SSD/RTX 4060/16\"",
+    "slug": "lenovo_legion_5_16irx9_intel_core_i7_14650hx_16gb_1tb_ssd_rtx_4060_16",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "Legion",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.0-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "Lenovo Yoga Slim 7 14IMH9 Intel Core Ultra 5 125H/16GB/512GB SSD/14\"",
+    "slug": "lenovo_yoga_slim_7_14imh9_intel_core_ultra_5_125h_16gb_512gb_ssd_14",
+    "brand": "Lenovo",
+    "manufacturer": "Lenovo",
+    "specifications": {
+      "Model Name": "Yoga",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "ASUS VivoBook 15 X1504VA Intel Core i5-1335U/8GB/512GB SSD/15.6\"",
+    "slug": "asus_vivobook_15_x1504va_intel_core_i5_1335u_8gb_512gb_ssd_15_6",
+    "brand": "Asus",
+    "manufacturer": "Asus",
+    "specifications": {
+      "Model Name": "VivoBook",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "ASUS VivoBook 15 X1502ZA Intel Core i5-1240P/8GB/512GB SSD/15.6\"",
+    "slug": "asus_vivobook_15_x1502za_intel_core_i5_1240p_8gb_512gb_ssd_15_6",
+    "brand": "Asus",
+    "manufacturer": "Asus",
+    "specifications": {
+      "Model Name": "VivoBook",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "ASUS Zenbook 14 OLED UX3405 Intel Core Ultra 7 155H/16GB/512GB SSD/14\"",
+    "slug": "asus_zenbook_14_oled_ux3405_intel_core_ultra_7_155h_16gb_512gb_ssd_14",
+    "brand": "Asus",
+    "manufacturer": "Asus",
+    "specifications": {
+      "Model Name": "Zenbook",
+      "Processor": "Intel Core Ultra 7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "ASUS TUF Gaming A15 FA507NU AMD Ryzen 7 7735HS/16GB/512GB SSD/RTX 4050/15.6\"",
+    "slug": "asus_tuf_gaming_a15_fa507nu_amd_ryzen_7_7735hs_16gb_512gb_ssd_rtx_4050_15_6",
+    "brand": "Asus",
+    "manufacturer": "Asus",
+    "specifications": {
+      "Model Name": "TUF Gaming",
+      "Processor": "AMD Ryzen 7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 4050"
+    }
+  },
+  {
+    "title": "ASUS TUF Gaming F16 FX607JV Intel Core i7-13650HX/16GB/1TB SSD/RTX 4060/16\"",
+    "slug": "asus_tuf_gaming_f16_fx607jv_intel_core_i7_13650hx_16gb_1tb_ssd_rtx_4060_16",
+    "brand": "Asus",
+    "manufacturer": "Asus",
+    "specifications": {
+      "Model Name": "TUF Gaming",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.0-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "ASUS ROG Strix G16 G614JIR Intel Core i9-14900HX/16GB/1TB SSD/RTX 4070/16\"",
+    "slug": "asus_rog_strix_g16_g614jir_intel_core_i9_14900hx_16gb_1tb_ssd_rtx_4070_16",
+    "brand": "Asus",
+    "manufacturer": "Asus",
+    "specifications": {
+      "Model Name": "ROG Strix",
+      "Processor": "Intel Core i9",
+      "RAM": "16GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.0-inch",
+      "GPU": "RTX 4070"
+    }
+  },
+  {
+    "title": "Acer Aspire 3 A315-59 Intel Core i5-1235U/8GB/512GB SSD/15.6\"",
+    "slug": "acer_aspire_3_a315_59_intel_core_i5_1235u_8gb_512gb_ssd_15_6",
+    "brand": "Acer",
+    "manufacturer": "Acer",
+    "specifications": {
+      "Model Name": "Aspire",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Acer Aspire 5 A515-58 Intel Core i5-1335U/8GB/512GB SSD/15.6\"",
+    "slug": "acer_aspire_5_a515_58_intel_core_i5_1335u_8gb_512gb_ssd_15_6",
+    "brand": "Acer",
+    "manufacturer": "Acer",
+    "specifications": {
+      "Model Name": "Aspire",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Acer Aspire Go 15 AG15-31P Intel Core i3-N305/8GB/256GB SSD/15.6\"",
+    "slug": "acer_aspire_go_15_ag15_31p_intel_core_i3_n305_8gb_256gb_ssd_15_6",
+    "brand": "Acer",
+    "manufacturer": "Acer",
+    "specifications": {
+      "Model Name": "Aspire Go",
+      "Processor": "Intel Core i3",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Acer Swift Go 14 SFG14-73 Intel Core Ultra 5 125H/16GB/512GB SSD/14\"",
+    "slug": "acer_swift_go_14_sfg14_73_intel_core_ultra_5_125h_16gb_512gb_ssd_14",
+    "brand": "Acer",
+    "manufacturer": "Acer",
+    "specifications": {
+      "Model Name": "Swift",
+      "Processor": "Intel Core Ultra 5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Acer Nitro V 15 ANV15-51 Intel Core i5-13420H/16GB/512GB SSD/RTX 4050/15.6\"",
+    "slug": "acer_nitro_v_15_anv15_51_intel_core_i5_13420h_16gb_512gb_ssd_rtx_4050_15_6",
+    "brand": "Acer",
+    "manufacturer": "Acer",
+    "specifications": {
+      "Model Name": "Nitro",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 4050"
+    }
+  },
+  {
+    "title": "Acer Predator Helios Neo 16 PHN16-72 Intel Core i7-14700HX/16GB/1TB SSD/RTX 4060/16\"",
+    "slug": "acer_predator_helios_neo_16_phn16_72_intel_core_i7_14700hx_16gb_1tb_ssd_rtx_4060_16",
+    "brand": "Acer",
+    "manufacturer": "Acer",
+    "specifications": {
+      "Model Name": "Predator",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.0-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "MSI Katana 15 B13VFK Intel Core i7-13620H/16GB/512GB SSD/RTX 4060/15.6\"",
+    "slug": "msi_katana_15_b13vfk_intel_core_i7_13620h_16gb_512gb_ssd_rtx_4060_15_6",
+    "brand": "MSI",
+    "manufacturer": "MSI",
+    "specifications": {
+      "Model Name": "Katana",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "MSI Thin GF63 12VF Intel Core i7-12650H/16GB/512GB SSD/RTX 4060/15.6\"",
+    "slug": "msi_thin_gf63_12vf_intel_core_i7_12650h_16gb_512gb_ssd_rtx_4060_15_6",
+    "brand": "MSI",
+    "manufacturer": "MSI",
+    "specifications": {
+      "Model Name": "GF63",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "MSI Cyborg 15 A13VF Intel Core i7-13620H/16GB/512GB SSD/RTX 4060/15.6\"",
+    "slug": "msi_cyborg_15_a13vf_intel_core_i7_13620h_16gb_512gb_ssd_rtx_4060_15_6",
+    "brand": "MSI",
+    "manufacturer": "MSI",
+    "specifications": {
+      "Model Name": "Cyborg",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch",
+      "GPU": "RTX 4060"
+    }
+  },
+  {
+    "title": "MSI Modern 15 B13M Intel Core i5-1335U/8GB/512GB SSD/15.6\"",
+    "slug": "msi_modern_15_b13m_intel_core_i5_1335u_8gb_512gb_ssd_15_6",
+    "brand": "MSI",
+    "manufacturer": "MSI",
+    "specifications": {
+      "Model Name": "Modern",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "MSI Prestige 13 AI+ Evo A2VMG Intel Core Ultra 7 258V/32GB/1TB SSD/13.3\"",
+    "slug": "msi_prestige_13_ai_evo_a2vmg_intel_core_ultra_7_258v_32gb_1tb_ssd_13_3",
+    "brand": "MSI",
+    "manufacturer": "MSI",
+    "specifications": {
+      "Model Name": "Prestige",
+      "Processor": "Intel Core Ultra 7",
+      "RAM": "32GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "13.3-inch"
+    }
+  },
+  {
+    "title": "MSI Stealth 16 AI Studio Intel Core Ultra 9 185H/32GB/2TB SSD/RTX 4070/16\"",
+    "slug": "msi_stealth_16_ai_studio_intel_core_ultra_9_185h_32gb_2tb_ssd_rtx_4070_16",
+    "brand": "MSI",
+    "manufacturer": "MSI",
+    "specifications": {
+      "Model Name": "Stealth",
+      "Processor": "Intel Core Ultra 9",
+      "RAM": "32GB",
+      "Storage": "2TB SSD",
+      "Screen Size": "16.0-inch",
+      "GPU": "RTX 4070"
+    }
+  },
+  {
+    "title": "Huawei MateBook D 14 2024 Intel Core i5-13420H/16GB/512GB SSD/14\"",
+    "slug": "huawei_matebook_d_14_2024_intel_core_i5_13420h_16gb_512gb_ssd_14",
+    "brand": "Huawei",
+    "manufacturer": "Huawei",
+    "specifications": {
+      "Model Name": "MateBook",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "14.0-inch"
+    }
+  },
+  {
+    "title": "Huawei MateBook D 16 2024 Intel Core i5-13420H/16GB/1TB SSD/16\"",
+    "slug": "huawei_matebook_d_16_2024_intel_core_i5_13420h_16gb_1tb_ssd_16",
+    "brand": "Huawei",
+    "manufacturer": "Huawei",
+    "specifications": {
+      "Model Name": "MateBook",
+      "Processor": "Intel Core i5",
+      "RAM": "16GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "16.0-inch"
+    }
+  },
+  {
+    "title": "Huawei MateBook X Pro 2024 Intel Core Ultra 9 185H/32GB/1TB SSD/14.2\"",
+    "slug": "huawei_matebook_x_pro_2024_intel_core_ultra_9_185h_32gb_1tb_ssd_14_2",
+    "brand": "Huawei",
+    "manufacturer": "Huawei",
+    "specifications": {
+      "Model Name": "MateBook",
+      "Processor": "Intel Core Ultra 9",
+      "RAM": "32GB",
+      "Storage": "1TB SSD",
+      "Screen Size": "14.2-inch"
+    }
+  },
+  {
+    "title": "Samsung Galaxy Book4 NP750XGK Intel Core i5-1335U/8GB/256GB SSD/15.6\"",
+    "slug": "samsung_galaxy_book4_np750xgk_intel_core_i5_1335u_8gb_256gb_ssd_15_6",
+    "brand": "Samsung",
+    "manufacturer": "Samsung",
+    "specifications": {
+      "Model Name": "Galaxy Book",
+      "Processor": "Intel Core i5",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Samsung Galaxy Book4 NP750XGK Intel Core i7-1355U/16GB/512GB SSD/15.6\"",
+    "slug": "samsung_galaxy_book4_np750xgk_intel_core_i7_1355u_16gb_512gb_ssd_15_6",
+    "brand": "Samsung",
+    "manufacturer": "Samsung",
+    "specifications": {
+      "Model Name": "Galaxy Book",
+      "Processor": "Intel Core i7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "15.6-inch"
+    }
+  },
+  {
+    "title": "Samsung Galaxy Book5 Pro NP960XHA Intel Core Ultra 7 256V/16GB/512GB SSD/16\"",
+    "slug": "samsung_galaxy_book5_pro_np960xha_intel_core_ultra_7_256v_16gb_512gb_ssd_16",
+    "brand": "Samsung",
+    "manufacturer": "Samsung",
+    "specifications": {
+      "Model Name": "Galaxy Book",
+      "Processor": "Intel Core Ultra 7",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Screen Size": "16.0-inch"
+    }
+  }
+]

@@ -1,0 +1,2009 @@
+[
+ {
+  "title": "Massey Ferguson 135",
+  "slug": "massey_ferguson_135",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Perkins AD3.152 2.5L 3-cyl diesel",
+   "Engine Power (gross)": "45.5 hp (33.9 kW)",
+   "PTO Power (claimed)": "38 hp (28.3 kW)",
+   "Drive": "2WD",
+   "Transmission": "6-speed sliding gear (6F/2R)",
+   "Rear Hitch Type": "I",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "1,575 kg",
+   "Years": "1964-1975",
+   "Fuel Tank": "47.7 L"
+  }
+ },
+ {
+  "title": "Massey Ferguson 165",
+  "slug": "massey_ferguson_165",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Perkins AD4.203 3.3L 4-cyl diesel",
+   "Engine Power (gross)": "58.3 hp (43.5 kW)",
+   "PTO Power (claimed)": "51 hp (38.0 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed sliding gear (8F/2R)",
+   "Rear Hitch Type": "I/II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,250 kg",
+   "Years": "1964-1975",
+   "Fuel Tank": "70 L"
+  }
+ },
+ {
+  "title": "Massey Ferguson 175",
+  "slug": "massey_ferguson_175",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Perkins A4.236 3.9L 4-cyl diesel",
+   "Engine Power (gross)": "66 hp (49.2 kW)",
+   "PTO Power (claimed)": "60 hp (44.7 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed (8F/2R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,350 kg",
+   "Years": "1965-1975",
+   "Fuel Tank": "70 L"
+  }
+ },
+ {
+  "title": "Massey Ferguson 185",
+  "slug": "massey_ferguson_185",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Perkins AD4.236 3.9L 4-cyl diesel",
+   "Engine Power (gross)": "75 hp (55.9 kW)",
+   "PTO Power (claimed)": "68 hp (50.7 kW)",
+   "Drive": "2WD",
+   "Transmission": "12-speed Multi-Power",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,400 kg",
+   "Years": "1971-1976",
+   "Fuel Tank": "79.5 L"
+  }
+ },
+ {
+  "title": "Massey Ferguson 360",
+  "slug": "massey_ferguson_360",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Perkins A4.236 3.9L 4-cyl diesel",
+   "Engine Power (gross)": "62 hp (46.2 kW)",
+   "PTO Power (claimed)": "55 hp (41.0 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed (8F/2R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,300 kg",
+   "Years": "1986-1996",
+   "Fuel Tank": "90 L"
+  }
+ },
+ {
+  "title": "Massey Ferguson 399",
+  "slug": "massey_ferguson_399",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Perkins AD6.354.4 5.8L 6-cyl diesel",
+   "Engine Power (gross)": "97 hp (72.3 kW)",
+   "PTO Power (claimed)": "89 hp (66.4 kW)",
+   "Drive": "2WD",
+   "Transmission": "12-speed synchromesh (12F/4R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540/1000",
+   "Weight": "3,500 kg",
+   "Years": "1987-1991",
+   "Fuel Tank": "140 L"
+  }
+ },
+ {
+  "title": "Massey Ferguson 4708",
+  "slug": "massey_ferguson_4708",
+  "brand": "Massey Ferguson",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "AGCO Power 33AWIC 3.3L 3-cyl diesel",
+   "Engine Power (gross)": "82 hp (61.1 kW)",
+   "PTO Power (claimed)": "66 hp (49.2 kW)",
+   "Drive": "4WD",
+   "Transmission": "12-speed power shuttle (12F/12R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540",
+   "Weight": "3,300 kg",
+   "Years": "2017-2023",
+   "Fuel Tank": "95 L"
+  }
+ },
+ {
+  "title": "Ford 3000",
+  "slug": "ford_3000",
+  "brand": "Ford",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Ford 2.9L 3-cyl diesel",
+   "Engine Power (gross)": "47 hp (35.0 kW)",
+   "PTO Power (claimed)": "38 hp (28.3 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed (8F/2R)",
+   "Rear Hitch Type": "I",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "1,900 kg",
+   "Years": "1965-1975",
+   "Fuel Tank": "49 L"
+  }
+ },
+ {
+  "title": "Ford 4000",
+  "slug": "ford_4000",
+  "brand": "Ford",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Ford 3.3L 3-cyl diesel",
+   "Engine Power (gross)": "55 hp (41.0 kW)",
+   "PTO Power (claimed)": "48 hp (35.8 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed (8F/2R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,100 kg",
+   "Years": "1965-1975",
+   "Fuel Tank": "62 L"
+  }
+ },
+ {
+  "title": "Ford 5610",
+  "slug": "ford_5610",
+  "brand": "Ford",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Ford 4.4L 4-cyl diesel",
+   "Engine Power (gross)": "72 hp (53.7 kW)",
+   "PTO Power (claimed)": "66 hp (49.2 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed Dual Power (8F/2R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540/1000",
+   "Weight": "2,700 kg",
+   "Years": "1981-1993",
+   "Fuel Tank": "87 L"
+  }
+ },
+ {
+  "title": "Ford 6610",
+  "slug": "ford_6610",
+  "brand": "Ford",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Ford 4.4L 4-cyl diesel",
+   "Engine Power (gross)": "82 hp (61.1 kW)",
+   "PTO Power (claimed)": "75 hp (55.9 kW)",
+   "Drive": "4WD",
+   "Transmission": "8-speed Dual Power (8F/2R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540/1000",
+   "Weight": "3,100 kg",
+   "Years": "1981-1993",
+   "Fuel Tank": "87 L"
+  }
+ },
+ {
+  "title": "Ford 8210",
+  "slug": "ford_8210",
+  "brand": "Ford",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Ford 6.6L 6-cyl diesel",
+   "Engine Power (gross)": "110 hp (82.0 kW)",
+   "PTO Power (claimed)": "99 hp (73.8 kW)",
+   "Drive": "4WD",
+   "Transmission": "16-speed Dual Power (16F/8R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540/1000",
+   "Weight": "4,100 kg",
+   "Years": "1982-1991",
+   "Fuel Tank": "140 L"
+  }
+ },
+ {
+  "title": "New Holland TD90",
+  "slug": "new_holland_td90",
+  "brand": "New Holland",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Iveco 3.9L 4-cyl turbo diesel",
+   "Engine Power (gross)": "90 hp (67.1 kW)",
+   "PTO Power (claimed)": "77 hp (57.4 kW)",
+   "Drive": "4WD",
+   "Transmission": "12-speed synchro shuttle (12F/12R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540",
+   "Weight": "3,200 kg",
+   "Years": "2010-2020",
+   "Fuel Tank": "90 L"
+  }
+ },
+ {
+  "title": "John Deere 5050D",
+  "slug": "john_deere_5050d",
+  "brand": "John Deere",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "John Deere 3029D 2.9L 3-cyl diesel",
+   "Engine Power (gross)": "50 hp (37.3 kW)",
+   "PTO Power (claimed)": "42 hp (31.3 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed collar shift (8F/4R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540",
+   "Weight": "2,100 kg",
+   "Years": "2015-present",
+   "Fuel Tank": "60 L"
+  }
+ },
+ {
+  "title": "Mahindra 8560",
+  "slug": "mahindra_8560",
+  "brand": "Mahindra",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Mahindra 3.5L 4-cyl turbo diesel",
+   "Engine Power (gross)": "80 hp (59.7 kW)",
+   "PTO Power (claimed)": "68 hp (50.7 kW)",
+   "Drive": "4WD",
+   "Transmission": "12-speed synchromesh (12F/3R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540",
+   "Weight": "3,000 kg",
+   "Years": "2012-present",
+   "Fuel Tank": "70 L"
+  }
+ },
+ {
+  "title": "Sonalika DI 60 RX",
+  "slug": "sonalika_di_60_rx",
+  "brand": "Sonalika",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Sonalika 3.7L 4-cyl diesel",
+   "Engine Power (gross)": "60 hp (44.7 kW)",
+   "PTO Power (claimed)": "51 hp (38.0 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed constant mesh (8F/2R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,200 kg",
+   "Years": "2010-present",
+   "Fuel Tank": "55 L"
+  }
+ },
+ {
+  "title": "Fiat 640",
+  "slug": "fiat_640",
+  "brand": "Fiat",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Fiat 8045.05 3.5L 4-cyl diesel",
+   "Engine Power (gross)": "64 hp (47.7 kW)",
+   "PTO Power (claimed)": "55 hp (41.0 kW)",
+   "Drive": "2WD",
+   "Transmission": "8-speed (8F/4R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "live",
+   "Rear PTO Type": "540",
+   "Weight": "2,650 kg",
+   "Years": "1970-1984",
+   "Fuel Tank": "70 L"
+  }
+ },
+ {
+  "title": "Case IH JX95",
+  "slug": "case_ih_jx95",
+  "brand": "Case IH",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Iveco 3.9L 4-cyl turbo diesel",
+   "Engine Power (gross)": "92 hp (68.6 kW)",
+   "PTO Power (claimed)": "80 hp (59.7 kW)",
+   "Drive": "4WD",
+   "Transmission": "12-speed synchro shuttle (12F/12R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540",
+   "Weight": "3,400 kg",
+   "Years": "2004-2012",
+   "Fuel Tank": "105 L"
+  }
+ },
+ {
+  "title": "Kubota M9540",
+  "slug": "kubota_m9540",
+  "brand": "Kubota",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Engine": "Kubota V3800-DI-T 3.8L 4-cyl turbo diesel",
+   "Engine Power (gross)": "95 hp (70.8 kW)",
+   "PTO Power (claimed)": "85 hp (63.4 kW)",
+   "Drive": "4WD",
+   "Transmission": "12-speed hydraulic shuttle (12F/12R)",
+   "Rear Hitch Type": "II",
+   "Rear PTO": "independent",
+   "Rear PTO Type": "540",
+   "Weight": "2,700 kg",
+   "Years": "2007-2014",
+   "Fuel Tank": "90 L"
+  }
+ },
+ {
+  "title": "20-Disc Offset Harrow",
+  "slug": "20_disc_offset_harrow",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Offset Disc Harrow",
+   "Condition": "New",
+   "Machinery Type": "Tillage implement",
+   "Power Source": "Tractor 3-point linkage",
+   "Capacity": "20 x 24 in notched discs",
+   "Working Width": "2.2 m",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "24-Disc Hydraulic Offset Harrow",
+  "slug": "24_disc_hydraulic_offset_harrow",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Offset Disc Harrow",
+   "Condition": "New",
+   "Machinery Type": "Tillage implement",
+   "Power Source": "Tractor 3-point linkage, hydraulic folding",
+   "Capacity": "24 x 26 in discs",
+   "Working Width": "2.6 m",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Baldan 4-Disc Plough",
+  "slug": "baldan_4_disc_plough",
+  "brand": "Baldan",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Baldan",
+   "Type": "Disc Plough",
+   "Condition": "New",
+   "Machinery Type": "Tillage implement",
+   "Power Source": "Tractor 3-point linkage",
+   "Capacity": "4 x 26 in discs",
+   "Working Width": "1.2 m",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Double Row Ridger",
+  "slug": "double_row_ridger",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Ridger",
+   "Condition": "New",
+   "Machinery Type": "Tillage implement",
+   "Power Source": "Tractor 3-point linkage",
+   "Capacity": "2 ridging bodies",
+   "Working Width": "1.5 m",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "3-Row Maize Planter",
+  "slug": "3_row_maize_planter",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Planter",
+   "Condition": "New",
+   "Machinery Type": "Planting implement",
+   "Power Source": "Tractor 3-point linkage",
+   "Capacity": "3 rows, seed + fertilizer boxes",
+   "Working Width": "1.8-2.1 m row spacing",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "6ft Tractor Slasher Mower",
+  "slug": "6ft_tractor_slasher_mower",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Slasher Mower",
+   "Condition": "New",
+   "Machinery Type": "Mowing implement",
+   "Power Source": "Tractor PTO (540 rpm)",
+   "Capacity": "3 mm deck, twin blades",
+   "Working Width": "1.8 m",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "800L Tractor Boom Sprayer",
+  "slug": "800l_tractor_boom_sprayer",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Boom Sprayer",
+   "Condition": "New",
+   "Machinery Type": "Crop sprayer",
+   "Power Source": "Tractor PTO diaphragm pump",
+   "Capacity": "800 L tank",
+   "Working Width": "12 m boom",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "5-Tonne Tipping Trailer",
+  "slug": "5_tonne_tipping_trailer",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Farm Trailer",
+   "Condition": "New",
+   "Machinery Type": "Transport implement",
+   "Power Source": "Tractor drawbar, hydraulic tipping",
+   "Capacity": "5,000 kg payload",
+   "Working Width": "No"
+  }
+ },
+ {
+  "title": "5-Tine Heavy Duty Ripper",
+  "slug": "5_tine_heavy_duty_ripper",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Ripper",
+   "Condition": "New",
+   "Machinery Type": "Tillage implement",
+   "Power Source": "Tractor 3-point linkage",
+   "Capacity": "5 tines, 600 mm working depth",
+   "Working Width": "2.0 m",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Rotary Tiller 1.8m",
+  "slug": "rotary_tiller_1_8m",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Rotary Tiller",
+   "Condition": "New",
+   "Machinery Type": "Tillage implement",
+   "Power Source": "Tractor PTO (540 rpm)",
+   "Capacity": "42 blades",
+   "Working Width": "1.8 m",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "6-Disc Drum Mower",
+  "slug": "6_disc_drum_mower",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Disc Mower",
+   "Condition": "New",
+   "Machinery Type": "Hay equipment",
+   "Power Source": "Tractor PTO (540 rpm)",
+   "Capacity": "6 discs",
+   "Working Width": "2.4 m",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "4-Wheel Finger Hay Rake",
+  "slug": "4_wheel_finger_hay_rake",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Hay Rake",
+   "Condition": "New",
+   "Machinery Type": "Hay equipment",
+   "Power Source": "Tractor 3-point linkage",
+   "Capacity": "4 finger wheels",
+   "Working Width": "3.0 m",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Single Row Potato Digger",
+  "slug": "single_row_potato_digger",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Potato Harvester",
+   "Condition": "New",
+   "Machinery Type": "Harvesting implement",
+   "Power Source": "Tractor PTO (540 rpm)",
+   "Capacity": "1 row, vibrating sieve",
+   "Working Width": "0.6 m",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "Tractor Post Hole Auger 12 Inch",
+  "slug": "tractor_post_hole_auger_12_inch",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Post Hole Borer",
+   "Condition": "New",
+   "Machinery Type": "Drilling implement",
+   "Power Source": "Tractor PTO (540 rpm)",
+   "Capacity": "12 in x 1 m auger",
+   "Working Width": "No",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "Tractor Water Bowser 2000L",
+  "slug": "tractor_water_bowser_2000l",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Water Bowser",
+   "Condition": "New",
+   "Machinery Type": "Transport implement",
+   "Power Source": "Tractor drawbar",
+   "Capacity": "2,000 L steel tank",
+   "Working Width": "No"
+  }
+ },
+ {
+  "title": "96-Egg Automatic Incubator",
+  "slug": "96_egg_automatic_incubator",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Egg Incubator",
+   "Condition": "New",
+   "Machinery Type": "Poultry equipment",
+   "Power Source": "220V AC / 12V DC battery backup",
+   "Capacity": "96 eggs, auto-turning",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "192-Egg Automatic Incubator",
+  "slug": "192_egg_automatic_incubator",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Egg Incubator",
+   "Condition": "New",
+   "Machinery Type": "Poultry equipment",
+   "Power Source": "220V AC / 12V DC battery backup",
+   "Capacity": "192 eggs, auto-turning",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "352-Egg Automatic Incubator",
+  "slug": "352_egg_automatic_incubator",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Egg Incubator",
+   "Condition": "New",
+   "Machinery Type": "Poultry equipment",
+   "Power Source": "220V AC / 12V DC battery backup",
+   "Capacity": "352 eggs, auto-turning",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Feed Mixer Vertical 250kg",
+  "slug": "feed_mixer_vertical_250kg",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Feed Mixer",
+   "Condition": "New",
+   "Machinery Type": "Feed processing",
+   "Power Source": "Electric motor, 3 kW",
+   "Capacity": "250 kg per batch",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Feed Mixer Horizontal 1-Tonne",
+  "slug": "feed_mixer_horizontal_1_tonne",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Feed Mixer",
+   "Condition": "New",
+   "Machinery Type": "Feed processing",
+   "Power Source": "Electric motor, 7.5 kW",
+   "Capacity": "1,000 kg per batch, ribbon auger",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Animal Feed Pellet Mill 200kg/h",
+  "slug": "animal_feed_pellet_mill_200kg_h",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Pellet Mill",
+   "Condition": "New",
+   "Machinery Type": "Feed processing",
+   "Power Source": "Electric motor, 7.5 kW",
+   "Capacity": "150-250 kg/h, 4-8 mm dies",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Petrol Maize Sheller",
+  "slug": "petrol_maize_sheller",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Maize Sheller",
+   "Condition": "New",
+   "Machinery Type": "Grain processing",
+   "Power Source": "6.5 HP petrol engine",
+   "Capacity": "1,500-2,000 kg/hr",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Muharata GM35 Diesel Posho Mill",
+  "slug": "muharata_gm35_diesel_posho_mill",
+  "brand": "Muharata",
+  "subcategory": "Farm Machinery",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Muharata",
+   "Type": "Posho Mill",
+   "Condition": "New",
+   "Machinery Type": "Grain milling",
+   "Power Source": "Diesel engine, 12 HP",
+   "Capacity": "6-9 bags (90kg) per hour, maize grade 1/2",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "PTO-Driven Chaff Cutter",
+  "slug": "pto_driven_chaff_cutter",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Chaff Cutter",
+   "Condition": "New",
+   "Machinery Type": "Fodder processing",
+   "Power Source": "Tractor PTO (540 rpm)",
+   "Capacity": "1,500-2,500 kg/hr",
+   "PTO Required": "Yes (540 rpm)"
+  }
+ },
+ {
+  "title": "Manual Coffee Pulper",
+  "slug": "manual_coffee_pulper",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Coffee Pulper",
+   "Condition": "New",
+   "Machinery Type": "Coffee processing",
+   "Power Source": "Hand crank",
+   "Capacity": "300-500 kg/hr cherry",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Mobile Grain Dryer 5-Tonne",
+  "slug": "mobile_grain_dryer_5_tonne",
+  "brand": "Generic",
+  "subcategory": "Farm Machinery",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Grain Dryer",
+   "Condition": "New",
+   "Machinery Type": "Grain processing",
+   "Power Source": "Diesel burner + 3-phase fan",
+   "Capacity": "5,000 kg per batch, batch recirculating",
+   "PTO Required": "No"
+  }
+ },
+ {
+  "title": "Drip Irrigation Kit 1/8 Acre",
+  "slug": "drip_irrigation_kit_1_8_acre",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Drip Kit",
+   "Condition": "New",
+   "System Type": "Drip irrigation kit",
+   "Pipe Diameter": "16 mm dripline, 32 mm mainline",
+   "Coverage Area": "1/8 acre",
+   "Material": "HDPE/PVC"
+  }
+ },
+ {
+  "title": "Drip Irrigation Kit 2 Acres",
+  "slug": "drip_irrigation_kit_2_acres",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Drip Kit",
+   "Condition": "New",
+   "System Type": "Drip irrigation kit",
+   "Pipe Diameter": "16 mm dripline, 63 mm mainline",
+   "Coverage Area": "2 acres",
+   "Material": "HDPE/PVC"
+  }
+ },
+ {
+  "title": "16mm Drip Tape Roll 2000m",
+  "slug": "16mm_drip_tape_roll_2000m",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Drip tape",
+   "Condition": "New",
+   "System Type": "Drip lateral",
+   "Pipe Diameter": "16 mm, 0.3-0.4 mm wall",
+   "Coverage Area": "2,000 m roll",
+   "Material": "PE"
+  }
+ },
+ {
+  "title": "Rain Hose Irrigation Kit 32mm x 50m",
+  "slug": "rain_hose_irrigation_kit_32mm_x_50m",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Rain hose kit",
+   "Condition": "New",
+   "System Type": "Spray irrigation",
+   "Pipe Diameter": "32 mm perforated rain hose",
+   "Coverage Area": "50 m length, 6-8 m spray width",
+   "Material": "PE"
+  }
+ },
+ {
+  "title": "Overhead Sprinkler Kit 1/2 Acre",
+  "slug": "overhead_sprinkler_kit_1_2_acre",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Sprinkler kit",
+   "Condition": "New",
+   "System Type": "Overhead sprinkler",
+   "Pipe Diameter": "50 mm mainline, 1/2 in risers",
+   "Coverage Area": "0.5 acre",
+   "Material": "HDPE/PVC"
+  }
+ },
+ {
+  "title": "Kenpoly HDPE Irrigation Pipe 40mm PN10",
+  "slug": "kenpoly_hdpe_irrigation_pipe_40mm_pn10",
+  "brand": "Kenpoly",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Kenpoly",
+   "Type": "HDPE pipe",
+   "Condition": "New",
+   "System Type": "Irrigation mainline/submain",
+   "Pipe Diameter": "40 mm, PN10",
+   "Material": "HDPE"
+  }
+ },
+ {
+  "title": "Kenpoly HDPE Irrigation Pipe 75mm PN10",
+  "slug": "kenpoly_hdpe_irrigation_pipe_75mm_pn10",
+  "brand": "Kenpoly",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Kenpoly",
+   "Type": "HDPE pipe",
+   "Condition": "New",
+   "System Type": "Irrigation mainline",
+   "Pipe Diameter": "75 mm, PN10",
+   "Material": "HDPE"
+  }
+ },
+ {
+  "title": "16mm Drip Fittings Starter Kit",
+  "slug": "16mm_drip_fittings_starter_kit",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Drip fittings",
+   "Condition": "New",
+   "System Type": "Drip lateral accessories",
+   "Pipe Diameter": "16 mm takeoffs, valves, end caps, joiners",
+   "Coverage Area": "Kit for ~1 acre",
+   "Material": "PP/PE"
+  }
+ },
+ {
+  "title": "Venturi Fertilizer Injector 3/4 Inch",
+  "slug": "venturi_fertilizer_injector_3_4_inch",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Fertigation injector",
+   "Condition": "New",
+   "System Type": "Venturi injector",
+   "Pipe Diameter": "3/4 in BSP thread",
+   "Coverage Area": "Suction up to 30 L/hr",
+   "Material": "Engineering plastic"
+  }
+ },
+ {
+  "title": "Disc Filter 2 Inch 120 Mesh",
+  "slug": "disc_filter_2_inch_120_mesh",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Water filter",
+   "Condition": "New",
+   "System Type": "Disc filtration",
+   "Pipe Diameter": "2 in BSP inlet/outlet",
+   "Coverage Area": "Up to 25 m3/hr",
+   "Material": "Polyamide discs, PP body"
+  }
+ },
+ {
+  "title": "PY50 Rain Gun Sprinkler with Trolley",
+  "slug": "py50_rain_gun_sprinkler_with_trolley",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Rain gun sprinkler",
+   "Condition": "New",
+   "System Type": "Overhead sprinkler",
+   "Pipe Diameter": "2 in inlet",
+   "Coverage Area": "Radius 26-38 m, covers ~0.4 acre per set",
+   "Material": "Brass/engineering plastic"
+  }
+ },
+ {
+  "title": "Honda WB20XT 2-Inch Petrol Water Pump",
+  "slug": "honda_wb20xt_2_inch_petrol_water_pump",
+  "brand": "Honda",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Honda",
+   "Type": "Petrol Water Pump (Honda GX120)",
+   "Condition": "New",
+   "System Type": "Surface transfer pump",
+   "Pipe Diameter": "2 in (50 mm) inlet/outlet",
+   "Coverage Area": "Max flow ~650 L/min",
+   "Material": "Cast iron volute"
+  }
+ },
+ {
+  "title": "Aico 2-Inch Petrol Water Pump",
+  "slug": "aico_2_inch_petrol_water_pump",
+  "brand": "Aico",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Aico",
+   "Type": "Petrol Water Pump (6.5 HP)",
+   "Condition": "New",
+   "System Type": "Surface transfer pump",
+   "Pipe Diameter": "2 in (50 mm) inlet/outlet",
+   "Coverage Area": "Max flow ~600 L/min",
+   "Material": "Cast iron volute"
+  }
+ },
+ {
+  "title": "Koshin SEH-50X 2-Inch Petrol Water Pump",
+  "slug": "koshin_seh_50x_2_inch_petrol_water_pump",
+  "brand": "Koshin",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Koshin",
+   "Type": "Petrol Water Pump (Honda GX160)",
+   "Condition": "New",
+   "System Type": "Surface transfer pump",
+   "Pipe Diameter": "2 in (50 mm) inlet/outlet",
+   "Coverage Area": "Max flow ~620 L/min",
+   "Material": "Cast iron volute"
+  }
+ },
+ {
+  "title": "4-Inch Diesel Water Pump",
+  "slug": "4_inch_diesel_water_pump",
+  "brand": "Generic",
+  "subcategory": "Irrigation",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Diesel Water Pump (10 HP)",
+   "Condition": "New",
+   "System Type": "Surface transfer pump",
+   "Pipe Diameter": "4 in (100 mm) inlet/outlet",
+   "Coverage Area": "Max flow ~1,800 L/min",
+   "Material": "Cast iron volute"
+  }
+ },
+ {
+  "title": "Grundfos SQFlex 11 SQF-2 Solar Pump",
+  "slug": "grundfos_sqflex_11_sqf_2_solar_pump",
+  "brand": "Grundfos",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Grundfos",
+   "Type": "Solar submersible pump",
+   "Condition": "New",
+   "System Type": "Submersible borehole pump",
+   "Pipe Diameter": "1 in outlet",
+   "Coverage Area": "Up to 2 m3/hr, 180 m head",
+   "Material": "Stainless steel AISI 304"
+  }
+ },
+ {
+  "title": "Dayliff SUNFLO-A Solar Pump Kit",
+  "slug": "dayliff_sunflo_a_solar_pump_kit",
+  "brand": "Dayliff",
+  "subcategory": "Irrigation",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Dayliff",
+   "Type": "Solar surface pump kit",
+   "Condition": "New",
+   "System Type": "Surface solar pump",
+   "Pipe Diameter": "1 in inlet/outlet",
+   "Coverage Area": "Up to 1.7 m3/hr, 30 m head",
+   "Material": "Cast iron/plastic"
+  }
+ },
+ {
+  "title": "16L Battery Knapsack Sprayer",
+  "slug": "16l_battery_knapsack_sprayer",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Knapsack sprayer",
+   "Condition": "New",
+   "Tool Type": "Knapsack sprayer",
+   "Material": "HDPE tank",
+   "Handle Type": "Rechargeable 12V battery pump"
+  }
+ },
+ {
+  "title": "20L Manual Knapsack Sprayer",
+  "slug": "20l_manual_knapsack_sprayer",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Knapsack sprayer",
+   "Condition": "New",
+   "Tool Type": "Knapsack sprayer",
+   "Material": "HDPE tank",
+   "Handle Type": "Hand lever pump"
+  }
+ },
+ {
+  "title": "Motorized Knapsack Mist Blower 2-Stroke",
+  "slug": "motorized_knapsack_mist_blower_2_stroke",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Mist blower",
+   "Condition": "New",
+   "Tool Type": "Motorized sprayer",
+   "Material": "HDPE tank, 14 L",
+   "Handle Type": "Shoulder straps, 43cc 2-stroke engine"
+  }
+ },
+ {
+  "title": "Stihl SG 51 Backpack Sprayer",
+  "slug": "stihl_sg_51_backpack_sprayer",
+  "brand": "Stihl",
+  "subcategory": "Farm Tools",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Stihl",
+   "Type": "Backpack sprayer",
+   "Condition": "New",
+   "Tool Type": "Knapsack sprayer",
+   "Material": "HDPE tank, 12 L",
+   "Handle Type": "Hand lever pump"
+  }
+ },
+ {
+  "title": "Stihl FS 235 Brush Cutter",
+  "slug": "stihl_fs_235_brush_cutter",
+  "brand": "Stihl",
+  "subcategory": "Farm Tools",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Stihl",
+   "Type": "Brush cutter",
+   "Condition": "New",
+   "Tool Type": "Brush cutter",
+   "Material": "36.3cc 2-stroke engine, 1.55 kW",
+   "Handle Type": "Bike handle"
+  }
+ },
+ {
+  "title": "Stihl MS 250 Chainsaw",
+  "slug": "stihl_ms_250_chainsaw",
+  "brand": "Stihl",
+  "subcategory": "Farm Tools",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Stihl",
+   "Type": "Chainsaw",
+   "Condition": "New",
+   "Tool Type": "Chainsaw",
+   "Material": "45.4cc 2-stroke engine, 3.0 kW, 18 in bar",
+   "Handle Type": "Front and rear handles"
+  }
+ },
+ {
+  "title": "Husqvarna 455 Rancher Chainsaw",
+  "slug": "husqvarna_455_rancher_chainsaw",
+  "brand": "Husqvarna",
+  "subcategory": "Farm Tools",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Husqvarna",
+   "Type": "Chainsaw",
+   "Condition": "New",
+   "Tool Type": "Chainsaw",
+   "Material": "55.5cc 2-stroke engine, 3.5 kW, 20 in bar",
+   "Handle Type": "Front and rear handles"
+  }
+ },
+ {
+  "title": "Husqvarna 143R-II Brush Cutter",
+  "slug": "husqvarna_143r_ii_brush_cutter",
+  "brand": "Husqvarna",
+  "subcategory": "Farm Tools",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Husqvarna",
+   "Type": "Brush cutter",
+   "Condition": "New",
+   "Tool Type": "Brush cutter",
+   "Material": "41.5cc 2-stroke engine, 1.5 kW",
+   "Handle Type": "Bike handle"
+  }
+ },
+ {
+  "title": "Tramontina Panga Machete 24 Inch",
+  "slug": "tramontina_panga_machete_24_inch",
+  "brand": "Tramontina",
+  "subcategory": "Farm Tools",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Tramontina",
+   "Type": "Machete",
+   "Condition": "New",
+   "Tool Type": "Panga/machete",
+   "Material": "Carbon steel blade, 24 in",
+   "Handle Type": "Wooden handle"
+  }
+ },
+ {
+  "title": "Digging Fork 4-Prong",
+  "slug": "digging_fork_4_prong",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Digging fork",
+   "Condition": "New",
+   "Tool Type": "Fork",
+   "Material": "Forged carbon steel tines",
+   "Handle Type": "Wooden handle"
+  }
+ },
+ {
+  "title": "Pick Axe 5lb with Handle",
+  "slug": "pick_axe_5lb_with_handle",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Pick axe",
+   "Condition": "New",
+   "Tool Type": "Pick",
+   "Material": "Forged carbon steel head, 2.3 kg",
+   "Handle Type": "Wooden handle"
+  }
+ },
+ {
+  "title": "Curved Sickle",
+  "slug": "curved_sickle",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Sickle",
+   "Condition": "New",
+   "Tool Type": "Harvesting knife",
+   "Material": "Carbon steel serrated blade",
+   "Handle Type": "Wooden handle"
+  }
+ },
+ {
+  "title": "Axe 4lb with Wooden Handle",
+  "slug": "axe_4lb_with_wooden_handle",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Axe",
+   "Condition": "New",
+   "Tool Type": "Axe",
+   "Material": "Forged carbon steel head, 1.8 kg",
+   "Handle Type": "Wooden handle"
+  }
+ },
+ {
+  "title": "Anvil Secateurs Pruner",
+  "slug": "anvil_secateurs_pruner",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Secateurs",
+   "Condition": "New",
+   "Tool Type": "Pruner",
+   "Material": "Carbon steel blade",
+   "Handle Type": "Aluminium handles"
+  }
+ },
+ {
+  "title": "Hedge Shears 10 Inch",
+  "slug": "hedge_shears_10_inch",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Hedge shears",
+   "Condition": "New",
+   "Tool Type": "Shears",
+   "Material": "Carbon steel blades, 10 in",
+   "Handle Type": "Tubular steel handles"
+  }
+ },
+ {
+  "title": "Petrol Earth Auger 52cc",
+  "slug": "petrol_earth_auger_52cc",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Earth auger",
+   "Condition": "New",
+   "Tool Type": "Post hole borer",
+   "Material": "52cc 2-stroke engine, 100/150/200mm bits",
+   "Handle Type": "Twin handles"
+  }
+ },
+ {
+  "title": "Fencing Pliers 10 Inch",
+  "slug": "fencing_pliers_10_inch",
+  "brand": "Generic",
+  "subcategory": "Farm Tools",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Fencing pliers",
+   "Condition": "New",
+   "Tool Type": "Multi-purpose pliers",
+   "Material": "Drop-forged steel",
+   "Handle Type": "Insulated grips"
+  }
+ },
+ {
+  "title": "BKT 12.4-28 Rear Tractor Tyre",
+  "slug": "bkt_12_4_28_rear_tractor_tyre",
+  "brand": "BKT",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "BKT",
+   "Type": "Tractor tyre",
+   "Condition": "New",
+   "Part Type": "Tractor tyre",
+   "Compatible Model": "Massey Ferguson 240/260/275/290 rear",
+   "OEM Reference": "BKT TR-135 12.4-28 8PR",
+   "Material": "Rubber, nylon ply"
+  }
+ },
+ {
+  "title": "BKT 6.00-16 Front Tractor Tyre",
+  "slug": "bkt_6_00_16_front_tractor_tyre",
+  "brand": "BKT",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "BKT",
+   "Type": "Tractor tyre",
+   "Condition": "New",
+   "Part Type": "Tractor tyre",
+   "Compatible Model": "Massey Ferguson/Ford 2WD front",
+   "OEM Reference": "BKT TF-9090 6.00-16 6PR",
+   "Material": "Rubber, nylon ply"
+  }
+ },
+ {
+  "title": "Mouldboard Plough Share 16 Inch",
+  "slug": "mouldboard_plough_share_16_inch",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Plough share",
+   "Condition": "New",
+   "Part Type": "Plough share",
+   "Compatible Model": "2-furrow mouldboard ploughs",
+   "OEM Reference": "Universal 16 in share",
+   "Material": "Boron steel"
+  }
+ },
+ {
+  "title": "Slasher Blade Set 5ft",
+  "slug": "slasher_blade_set_5ft",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Slasher blades",
+   "Condition": "New",
+   "Part Type": "Slasher blades",
+   "Compatible Model": "5 ft tractor slashers",
+   "OEM Reference": "Pair, 12 mm x 75 mm blades",
+   "Material": "Hardened steel"
+  }
+ },
+ {
+  "title": "Starter Motor for MF 240",
+  "slug": "starter_motor_for_mf_240",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Starter motor",
+   "Condition": "New",
+   "Part Type": "Starter motor",
+   "Compatible Model": "Massey Ferguson 240 (Perkins AD3.152)",
+   "OEM Reference": "Perkins/Lucas M50 12V",
+   "Material": "Copper/steel"
+  }
+ },
+ {
+  "title": "Alternator 12V for Massey Ferguson 200 Series",
+  "slug": "alternator_12v_for_massey_ferguson_200_series",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Alternator",
+   "Condition": "New",
+   "Part Type": "Alternator",
+   "Compatible Model": "Massey Ferguson 240/260/275/290",
+   "OEM Reference": "Lucas A127-type 12V 45A",
+   "Material": "Copper/aluminium"
+  }
+ },
+ {
+  "title": "Perkins AD3.152 Injector Nozzle Set",
+  "slug": "perkins_ad3_152_injector_nozzle_set",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Injector nozzles",
+   "Condition": "New",
+   "Part Type": "Injector nozzles",
+   "Compatible Model": "Perkins AD3.152 (MF 135/240)",
+   "OEM Reference": "Bosch-type DN0SD211",
+   "Material": "Steel"
+  }
+ },
+ {
+  "title": "Head Gasket Set Perkins A4.236",
+  "slug": "head_gasket_set_perkins_a4_236",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Head gasket kit",
+   "Condition": "New",
+   "Part Type": "Head gasket kit",
+   "Compatible Model": "Perkins A4.236/AD4.236 (MF 175/185/360)",
+   "OEM Reference": "Perkins U5LT0357-type",
+   "Material": "Composite/MLS"
+  }
+ },
+ {
+  "title": "Brake Shoe Set for MF 135/165",
+  "slug": "brake_shoe_set_for_mf_135_165",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Brake shoes",
+   "Condition": "New",
+   "Part Type": "Brake shoes",
+   "Compatible Model": "Massey Ferguson 135/165/175",
+   "OEM Reference": "MF 1860965M2-type",
+   "Material": "Steel, friction lining"
+  }
+ },
+ {
+  "title": "Clutch Kit 11 Inch for MF 375",
+  "slug": "clutch_kit_11_inch_for_mf_375",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Clutch kit",
+   "Condition": "New",
+   "Part Type": "Clutch kit",
+   "Compatible Model": "Massey Ferguson 375/390",
+   "OEM Reference": "MF 11 in dual clutch kit",
+   "Material": "Steel, organic friction"
+  }
+ },
+ {
+  "title": "Stihl Chainsaw Chain 18 Inch .325",
+  "slug": "stihl_chainsaw_chain_18_inch_325",
+  "brand": "Stihl",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "manufacturer",
+  "specifications": {
+   "Brand": "Stihl",
+   "Type": "Chainsaw chain",
+   "Condition": "New",
+   "Part Type": "Chainsaw chain",
+   "Compatible Model": "Stihl MS 250/MS 260, 18 in bar",
+   "OEM Reference": "Stihl 26RS .325 x 1.6mm, 74 links",
+   "Material": "Steel"
+  }
+ },
+ {
+  "title": "Brush Cutter Blade 3-Tooth",
+  "slug": "brush_cutter_blade_3_tooth",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Brush cutter blade",
+   "Condition": "New",
+   "Part Type": "Brush cutter blade",
+   "Compatible Model": "Stihl/Husqvarna brush cutters",
+   "OEM Reference": "255 mm 3-tooth, 25.4 mm bore",
+   "Material": "Steel"
+  }
+ },
+ {
+  "title": "Milking Machine Liner Set",
+  "slug": "milking_machine_liner_set",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Milking liners",
+   "Condition": "New",
+   "Part Type": "Milking liners",
+   "Compatible Model": "Standard cow clusters (set of 4)",
+   "OEM Reference": "Universal rubber liners",
+   "Material": "Food-grade rubber"
+  }
+ },
+ {
+  "title": "Incubator Heating Element 300W",
+  "slug": "incubator_heating_element_300w",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Heating element",
+   "Condition": "New",
+   "Part Type": "Heating element",
+   "Compatible Model": "Automatic egg incubators",
+   "OEM Reference": "300W 220V tubular element",
+   "Material": "Nickel-chrome/steel"
+  }
+ },
+ {
+  "title": "Tractor Seat Universal with Suspension",
+  "slug": "tractor_seat_universal_with_suspension",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Tractor seat",
+   "Condition": "New",
+   "Part Type": "Tractor seat",
+   "Compatible Model": "Universal tractor fitment",
+   "OEM Reference": "Mechanical suspension seat",
+   "Material": "Steel frame, PVC cushion"
+  }
+ },
+ {
+  "title": "Knapsack Sprayer Lance Assembly",
+  "slug": "knapsack_sprayer_lance_assembly",
+  "brand": "Generic",
+  "subcategory": "Agriculture Spare Parts",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Sprayer lance",
+   "Condition": "New",
+   "Part Type": "Sprayer lance",
+   "Compatible Model": "16L/20L knapsack sprayers",
+   "OEM Reference": "Universal trigger + brass nozzle",
+   "Material": "Brass/plastic"
+  }
+ },
+ {
+  "title": "30L Aluminium Milk Can",
+  "slug": "30l_aluminium_milk_can",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Milk can",
+   "Condition": "New",
+   "Accessory Type": "Milk can",
+   "Compatible With": "Dairy handling/transport",
+   "Material": "Aluminium"
+  }
+ },
+ {
+  "title": "Stainless Steel Milk Pail 20L",
+  "slug": "stainless_steel_milk_pail_20l",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Milk pail",
+   "Condition": "New",
+   "Accessory Type": "Milk pail",
+   "Compatible With": "Milking parlour/hand milking",
+   "Material": "Stainless steel 304"
+  }
+ },
+ {
+  "title": "Cattle Ear Tags Numbered Pack of 100",
+  "slug": "cattle_ear_tags_numbered_pack_of_100",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Ear tags",
+   "Condition": "New",
+   "Accessory Type": "Animal ID tags",
+   "Compatible With": "Cattle, goats (numbered 001-100)",
+   "Material": "TPU plastic"
+  }
+ },
+ {
+  "title": "Ear Tag Applicator",
+  "slug": "ear_tag_applicator",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Ear tagger",
+   "Condition": "New",
+   "Accessory Type": "Tag applicator",
+   "Compatible With": "Standard two-piece ear tags",
+   "Material": "Aluminium alloy"
+  }
+ },
+ {
+  "title": "Automatic Vaccinator Syringe 5ml",
+  "slug": "automatic_vaccinator_syringe_5ml",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Vaccinator",
+   "Condition": "New",
+   "Accessory Type": "Veterinary syringe",
+   "Compatible With": "Poultry/livestock vaccination, adjustable 0.5-5 ml",
+   "Material": "Plastic/stainless steel"
+  }
+ },
+ {
+  "title": "Drench Gun 60ml",
+  "slug": "drench_gun_60ml",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Drench gun",
+   "Condition": "New",
+   "Accessory Type": "Veterinary drencher",
+   "Compatible With": "Cattle/sheep/goat deworming",
+   "Material": "Plastic barrel, steel nozzle"
+  }
+ },
+ {
+  "title": "Poultry Drinker 20L",
+  "slug": "poultry_drinker_20l",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Poultry drinker",
+   "Condition": "New",
+   "Accessory Type": "Poultry drinker",
+   "Compatible With": "Chickens, ducks (~30-40 birds)",
+   "Material": "HDPE plastic"
+  }
+ },
+ {
+  "title": "Poultry Feeder 15kg",
+  "slug": "poultry_feeder_15kg",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Poultry feeder",
+   "Condition": "New",
+   "Accessory Type": "Poultry feeder",
+   "Compatible With": "Chickens (~30-40 birds)",
+   "Material": "HDPE plastic"
+  }
+ },
+ {
+  "title": "Infrared Brooding Lamp with Reflector",
+  "slug": "infrared_brooding_lamp_with_reflector",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Brooding lamp",
+   "Condition": "New",
+   "Accessory Type": "Chick brooder",
+   "Compatible With": "Chick brooding, 250W IR bulb",
+   "Material": "Aluminium reflector, ceramic holder"
+  }
+ },
+ {
+  "title": "Langstroth Beehive Complete",
+  "slug": "langstroth_beehive_complete",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Beehive",
+   "Condition": "New",
+   "Accessory Type": "Langstroth hive",
+   "Compatible With": "Honeybees; brood + super boxes, frames included",
+   "Material": "Cedar/pine timber"
+  }
+ },
+ {
+  "title": "Kenya Top Bar Hive",
+  "slug": "kenya_top_bar_hive",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Beehive",
+   "Condition": "New",
+   "Accessory Type": "Top bar hive",
+   "Compatible With": "Honeybees; 28 top bars",
+   "Material": "Timber"
+  }
+ },
+ {
+  "title": "Manual Honey Extractor 3-Frame",
+  "slug": "manual_honey_extractor_3_frame",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Honey extractor",
+   "Condition": "New",
+   "Accessory Type": "Honey extractor",
+   "Compatible With": "Langstroth frames, tangential 3-frame",
+   "Material": "Stainless steel"
+  }
+ },
+ {
+  "title": "Bee Smoker Stainless Steel",
+  "slug": "bee_smoker_stainless_steel",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Bee smoker",
+   "Condition": "New",
+   "Accessory Type": "Bee smoker",
+   "Compatible With": "Beekeeping hive handling",
+   "Material": "Stainless steel, leather bellows"
+  }
+ },
+ {
+  "title": "LED Egg Candler",
+  "slug": "led_egg_candler",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Egg candler",
+   "Condition": "New",
+   "Accessory Type": "Egg candler",
+   "Compatible With": "All egg types, rechargeable",
+   "Material": "ABS plastic"
+  }
+ },
+ {
+  "title": "Calf Feeding Bottle 3L",
+  "slug": "calf_feeding_bottle_3l",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Calf bottle",
+   "Condition": "New",
+   "Accessory Type": "Calf feeder",
+   "Compatible With": "Calf milk feeding, teat included",
+   "Material": "HDPE plastic"
+  }
+ },
+ {
+  "title": "Digital Crane Scale 500kg",
+  "slug": "digital_crane_scale_500kg",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Hanging scale",
+   "Condition": "New",
+   "Accessory Type": "Weighing scale",
+   "Compatible With": "Produce bags, livestock feed",
+   "Material": "Steel hook, ABS housing"
+  }
+ },
+ {
+  "title": "Electric Fence Insulators Pack of 100",
+  "slug": "electric_fence_insulators_pack_of_100",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Fence insulators",
+   "Condition": "New",
+   "Accessory Type": "Fence insulator",
+   "Compatible With": "High-tensile wire, polywire on wood/steel posts",
+   "Material": "UV-stabilized PP"
+  }
+ },
+ {
+  "title": "Milk Filter Socks Pack of 50",
+  "slug": "milk_filter_socks_pack_of_50",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Milk filters",
+   "Condition": "New",
+   "Accessory Type": "Milk strainer",
+   "Compatible With": "Milk cans/strainers",
+   "Material": "Food-grade paper"
+  }
+ },
+ {
+  "title": "Animal Ear Marking Pliers Set",
+  "slug": "animal_ear_marking_pliers_set",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Marking pliers",
+   "Condition": "New",
+   "Accessory Type": "Animal marking",
+   "Compatible With": "Cattle/goat ear notching",
+   "Material": "Steel"
+  }
+ },
+ {
+  "title": "Automatic Chicken Drinker Cups Pack of 50",
+  "slug": "automatic_chicken_drinker_cups_pack_of_50",
+  "brand": "Generic",
+  "subcategory": "Agriculture Accessories",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Drinker cups",
+   "Condition": "New",
+   "Accessory Type": "Poultry drinker",
+   "Compatible With": "PVC pipe poultry watering lines",
+   "Material": "ABS plastic"
+  }
+ },
+ {
+  "title": "Greenhouse Kit 8m x 15m",
+  "slug": "greenhouse_kit_8m_x_15m",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Greenhouse kit",
+   "Condition": "New",
+   "Material": "Galvanized steel frame, UV-treated polythene"
+  }
+ },
+ {
+  "title": "UV Greenhouse Polythene 200 Micron",
+  "slug": "uv_greenhouse_polythene_200_micron",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Greenhouse film",
+   "Condition": "New",
+   "Material": "UV-treated polythene, 200 micron, 8m width"
+  }
+ },
+ {
+  "title": "Insect Net 40 Mesh 3m x 50m",
+  "slug": "insect_net_40_mesh_3m_x_50m",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Insect net",
+   "Condition": "New",
+   "Material": "HDPE monofilament, 40 mesh"
+  }
+ },
+ {
+  "title": "Shade Net 35% 4m x 50m",
+  "slug": "shade_net_35_4m_x_50m",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Shade net",
+   "Condition": "New",
+   "Material": "HDPE knitted, 35% shade"
+  }
+ },
+ {
+  "title": "Hermetic Grain Storage Bags 90kg Pack of 10",
+  "slug": "hermetic_grain_storage_bags_90kg_pack_of_10",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Hermetic bags",
+   "Condition": "New",
+   "Material": "Triple-layer PICS-style hermetic bag, 90 kg capacity"
+  }
+ },
+ {
+  "title": "Metal Grain Silo 500kg",
+  "slug": "metal_grain_silo_500kg",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Grain silo",
+   "Condition": "New",
+   "Material": "Galvanized steel, airtight lid, 500 kg capacity"
+  }
+ },
+ {
+  "title": "Solar Tent Dryer 5m",
+  "slug": "solar_tent_dryer_5m",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Solar dryer",
+   "Condition": "New",
+   "Material": "UV polythene cover, steel frame, 5 m length"
+  }
+ },
+ {
+  "title": "Battery Chicken Cage 4-Tier 96 Birds",
+  "slug": "battery_chicken_cage_4_tier_96_birds",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Poultry cage",
+   "Condition": "New",
+   "Material": "Galvanized wire, 4 tiers, 96 layers, nipple drinkers"
+  }
+ },
+ {
+  "title": "Silage Wrap Film 750mm x 1500m",
+  "slug": "silage_wrap_film_750mm_x_1500m",
+  "brand": "Generic",
+  "subcategory": "Other Agriculture",
+  "source": "generic",
+  "specifications": {
+   "Brand": "Generic",
+   "Type": "Bale wrap",
+   "Condition": "New",
+   "Material": "LLDPE stretch film, 750 mm x 1,500 m, 25 micron"
+  }
+ }
+]

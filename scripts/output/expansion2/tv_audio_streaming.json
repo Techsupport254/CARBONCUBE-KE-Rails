@@ -1,0 +1,630 @@
+[
+  {
+    "title": "Sony DAV-TZ140 5.1ch DVD Home Theater System",
+    "brand": "Sony",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "300W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "No",
+      "Brand": "Sony"
+    },
+    "slug": "sony_dav_tz140_5_1ch_dvd_home_theater_system"
+  },
+  {
+    "title": "LG LHD457 5.1ch DVD Home Theater System",
+    "brand": "LG",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "1000W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital, DTS",
+      "Bluetooth": "Yes",
+      "Brand": "LG"
+    },
+    "slug": "lg_lhd457_5_1ch_dvd_home_theater_system"
+  },
+  {
+    "title": "Samsung HT-J5550WK 5.1ch Blu-ray Home Theater System",
+    "brand": "Samsung",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "1000W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital, DTS",
+      "Bluetooth": "Yes",
+      "Brand": "Samsung"
+    },
+    "slug": "samsung_ht_j5550wk_5_1ch_blu_ray_home_theater_system"
+  },
+  {
+    "title": "Sayona SHT-1199BT 5.1ch Bluetooth Home Theater System",
+    "brand": "Sayona",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "450W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "Yes",
+      "Brand": "Sayona"
+    },
+    "slug": "sayona_sht_1199bt_5_1ch_bluetooth_home_theater_system"
+  },
+  {
+    "title": "Vitron V535 5.1ch Bluetooth Home Theater System",
+    "brand": "Vitron",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Home Theater System",
+      "Channels": "5.1",
+      "Power": "550W total",
+      "HDMI": "1 out (ARC)",
+      "Decoding": "Dolby Digital",
+      "Bluetooth": "Yes",
+      "Brand": "Vitron"
+    },
+    "slug": "vitron_v535_5_1ch_bluetooth_home_theater_system"
+  },
+  {
+    "title": "Denon AVR-S670H 5.2ch AV Receiver",
+    "brand": "Denon",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "5.2",
+      "Power": "75W per channel",
+      "HDMI": "3 in / 1 out (8K, 4K/120Hz)",
+      "Decoding": "Dolby TrueHD, DTS-HD MA",
+      "Bluetooth": "Yes",
+      "Brand": "Denon"
+    },
+    "slug": "denon_avr_s670h_5_2ch_av_receiver"
+  },
+  {
+    "title": "Yamaha RX-V385 5.1ch AV Receiver",
+    "brand": "Yamaha",
+    "subcategory": "Home Theater Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "AV Receiver",
+      "Channels": "5.1",
+      "Power": "70W per channel",
+      "HDMI": "4 in / 1 out (4K HDR)",
+      "Decoding": "Dolby TrueHD, DTS-HD MA",
+      "Bluetooth": "Yes",
+      "Brand": "Yamaha"
+    },
+    "slug": "yamaha_rx_v385_5_1ch_av_receiver"
+  },
+  {
+    "title": "Samsung HW-B550 2.1ch Soundbar with Wireless Subwoofer",
+    "brand": "Samsung",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "410W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "Samsung"
+    },
+    "slug": "samsung_hw_b550_2_1ch_soundbar_with_wireless_subwoofer"
+  },
+  {
+    "title": "Samsung HW-Q600C 3.1.2ch Soundbar",
+    "brand": "Samsung",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "3.1.2",
+      "Total Power": "360W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Brand": "Samsung"
+    },
+    "slug": "samsung_hw_q600c_3_1_2ch_soundbar"
+  },
+  {
+    "title": "LG S60T 3.1ch Soundbar with Wireless Subwoofer",
+    "brand": "LG",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "3.1",
+      "Total Power": "340W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "LG"
+    },
+    "slug": "lg_s60t_3_1ch_soundbar_with_wireless_subwoofer"
+  },
+  {
+    "title": "LG SQC1 2.1ch Soundbar with Wireless Subwoofer",
+    "brand": "LG",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "160W",
+      "Subwoofer": "Wireless",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical",
+      "Dolby Atmos": "No",
+      "Brand": "LG"
+    },
+    "slug": "lg_sqc1_2_1ch_soundbar_with_wireless_subwoofer"
+  },
+  {
+    "title": "JBL Bar 300 5.0ch Compact Soundbar",
+    "brand": "JBL",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "5.0",
+      "Total Power": "260W",
+      "Subwoofer": "No",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Brand": "JBL"
+    },
+    "slug": "jbl_bar_300_5_0ch_compact_soundbar"
+  },
+  {
+    "title": "JBL Bar 800 5.1.2ch Soundbar with Detachable Surrounds",
+    "brand": "JBL",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "5.1.2",
+      "Total Power": "720W",
+      "Subwoofer": "Wireless",
+      "Rear Speakers": "Detachable Battery-Powered",
+      "Connectivity": "Wi-Fi, Bluetooth, HDMI eARC, Optical",
+      "Dolby Atmos": "Yes",
+      "Brand": "JBL"
+    },
+    "slug": "jbl_bar_800_5_1_2ch_soundbar_with_detachable_surrounds"
+  },
+  {
+    "title": "Sony HT-S100F 2.0ch Compact Soundbar",
+    "brand": "Sony",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.0",
+      "Total Power": "120W",
+      "Subwoofer": "No",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "Sony"
+    },
+    "slug": "sony_ht_s100f_2_0ch_compact_soundbar"
+  },
+  {
+    "title": "Hisense HS214 2.1ch Soundbar with Built-in Subwoofer",
+    "brand": "Hisense",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Soundbar System",
+      "Channels": "2.1",
+      "Total Power": "108W",
+      "Subwoofer": "Built-in",
+      "Connectivity": "Bluetooth, HDMI ARC, Optical, USB",
+      "Dolby Atmos": "No",
+      "Brand": "Hisense"
+    },
+    "slug": "hisense_hs214_2_1ch_soundbar_with_built_in_subwoofer"
+  },
+  {
+    "title": "Sayona SHT-1263BT 3.1ch Bluetooth Multimedia Speaker System",
+    "brand": "Sayona",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Channels": "3.1",
+      "Total Power": "8000W PMPO",
+      "Subwoofer": "Yes",
+      "Connectivity": "Bluetooth, USB, SD, FM, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Sayona"
+    },
+    "slug": "sayona_sht_1263bt_3_1ch_bluetooth_multimedia_speaker_system"
+  },
+  {
+    "title": "Amtec AX-850 3.1ch Bluetooth Multimedia Speaker System",
+    "brand": "Amtec",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Channels": "3.1",
+      "Total Power": "160W",
+      "Subwoofer": "Yes",
+      "Connectivity": "Bluetooth, USB, SD, FM, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Amtec"
+    },
+    "slug": "amtec_ax_850_3_1ch_bluetooth_multimedia_speaker_system"
+  },
+  {
+    "title": "Bruhm BSB-210 2.1ch Bluetooth Multimedia Speaker System",
+    "brand": "Bruhm",
+    "subcategory": "Soundbars & Speakers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Speaker System",
+      "Channels": "2.1",
+      "Total Power": "60W",
+      "Subwoofer": "Yes",
+      "Connectivity": "Bluetooth, USB, SD, FM, AUX",
+      "Dolby Atmos": "No",
+      "Brand": "Bruhm"
+    },
+    "slug": "bruhm_bsb_210_2_1ch_bluetooth_multimedia_speaker_system"
+  },
+  {
+    "title": "Amazon Fire TV Cube 3rd Gen",
+    "brand": "Amazon",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+, Dolby Vision",
+      "Storage": "16GB",
+      "RAM": "2GB",
+      "Connectivity": "Wi-Fi 6E, Ethernet, Bluetooth",
+      "Voice Remote": "Alexa Voice",
+      "Brand": "Amazon"
+    },
+    "slug": "amazon_fire_tv_cube_3rd_gen"
+  },
+  {
+    "title": "Roku Express 4K Streaming Player",
+    "brand": "Roku",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10+",
+      "Storage": "N/A",
+      "RAM": "N/A",
+      "Connectivity": "Wi-Fi, HDMI",
+      "Voice Remote": "No",
+      "Brand": "Roku"
+    },
+    "slug": "roku_express_4k_streaming_player"
+  },
+  {
+    "title": "Xiaomi TV Box S 3rd Gen 4K Streaming Player",
+    "brand": "Xiaomi",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Streaming Player",
+      "Resolution": "4K Ultra HD",
+      "HDR": "Dolby Vision, HDR10+",
+      "Storage": "32GB",
+      "RAM": "2GB",
+      "Connectivity": "Wi-Fi 6, Bluetooth",
+      "Voice Remote": "Google Assistant",
+      "Brand": "Xiaomi"
+    },
+    "slug": "xiaomi_tv_box_s_3rd_gen_4k_streaming_player"
+  },
+  {
+    "title": "H96 Max Android TV Box 4GB/64GB",
+    "brand": "H96",
+    "subcategory": "Streaming Devices",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Android TV Box",
+      "Resolution": "4K Ultra HD",
+      "HDR": "HDR10",
+      "Storage": "64GB",
+      "RAM": "4GB",
+      "Chip": "Rockchip RK3528",
+      "Connectivity": "Wi-Fi 5, Ethernet",
+      "Ports": "HDMI, USB 3.0, USB 2.0, AV, Ethernet",
+      "Brand": "H96"
+    },
+    "slug": "h96_max_android_tv_box_4gb_64gb"
+  },
+  {
+    "title": "Startimes Combo Decoder DVB-T2 + DVB-S2",
+    "brand": "Startimes",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Combo Decoder (Terrestrial + Satellite)",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Startimes"
+    },
+    "slug": "startimes_combo_decoder_dvb_t2_dvb_s2"
+  },
+  {
+    "title": "Strong SRT-4922HD Free-to-Air Satellite Decoder",
+    "brand": "Strong",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Decoder",
+      "Recording": "Optional (USB PVR)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Strong"
+    },
+    "slug": "strong_srt_4922hd_free_to_air_satellite_decoder"
+  },
+  {
+    "title": "Azam TV Max HD Satellite Decoder",
+    "brand": "Azam TV",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Decoder",
+      "Recording": "Optional (USB)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Azam TV"
+    },
+    "slug": "azam_tv_max_hd_satellite_decoder"
+  },
+  {
+    "title": "Free-to-Air DVB-T2 HD Set-Top Box",
+    "brand": "Generic",
+    "subcategory": "Decoders & Receivers",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Digital Terrestrial Decoder",
+      "Recording": "Optional (USB PVR)",
+      "Resolution": "1080p Full HD",
+      "Connectivity": "N/A",
+      "Ports": "HDMI, RCA, USB",
+      "Brand": "Generic"
+    },
+    "slug": "free_to_air_dvb_t2_hd_set_top_box"
+  },
+  {
+    "title": "Heavy Duty Tilting TV Wall Mount 40-80\"",
+    "brand": "Generic",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Tilting Wall Mount",
+      "TV Size Range": "40-80 inches",
+      "Max Weight": "60 kg",
+      "VESA": "200x200 to 600x400mm",
+      "Tilt": "-15 to +5 degrees",
+      "Brand": "Generic"
+    },
+    "slug": "heavy_duty_tilting_tv_wall_mount_40_80"
+  },
+  {
+    "title": "Outdoor UHF Digital TV Antenna Yagi",
+    "brand": "Generic",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Outdoor TV Antenna",
+      "Range": "80 km",
+      "Amplifier": "Optional",
+      "Resolution": "1080p Full HD Ready",
+      "Frequency": "UHF",
+      "Brand": "Generic"
+    },
+    "slug": "outdoor_uhf_digital_tv_antenna_yagi"
+  },
+  {
+    "title": "Star X 90cm Satellite Dish Kit with LNB",
+    "brand": "Star X",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Satellite Dish Kit",
+      "Dish Size": "90 cm",
+      "Material": "Galvanized Steel",
+      "LNB": "Universal Single LNB (Included)",
+      "Includes": "Wall mount, bolts, LNB holder",
+      "Brand": "Star X"
+    },
+    "slug": "star_x_90cm_satellite_dish_kit_with_lnb"
+  },
+  {
+    "title": "HDMI Splitter 1x4 4K Powered",
+    "brand": "Generic",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "HDMI Splitter",
+      "Version": "HDMI 1.4",
+      "Max Resolution": "4K@30Hz",
+      "Bandwidth": "10.2 Gbps",
+      "Ports": "1 in / 4 out",
+      "Brand": "Generic"
+    },
+    "slug": "hdmi_splitter_1x4_4k_powered"
+  },
+  {
+    "title": "Generic TV Guard 6A Voltage Protector",
+    "brand": "Generic",
+    "subcategory": "TV Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "TV Guard Surge Protector",
+      "Max Load": "6A (1400W)",
+      "Protection": "Over/Under Voltage, Surge, Spikes, Power-back Delay",
+      "Delay": "30 seconds",
+      "Voltage": "230V AC",
+      "Brand": "Generic"
+    },
+    "slug": "generic_tv_guard_6a_voltage_protector"
+  },
+  {
+    "title": "JBL Charge 5 Portable Bluetooth Speaker",
+    "brand": "JBL",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Bluetooth Speaker",
+      "Driver": "Racetrack woofer + tweeter",
+      "Battery Life": "20 hours",
+      "Connectivity": "Bluetooth 5.1",
+      "Water Resistance": "IP67",
+      "Brand": "JBL"
+    },
+    "slug": "jbl_charge_5_portable_bluetooth_speaker"
+  },
+  {
+    "title": "JBL Go 4 Portable Bluetooth Speaker",
+    "brand": "JBL",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Bluetooth Speaker",
+      "Driver": "45mm full-range",
+      "Battery Life": "7 hours",
+      "Connectivity": "Bluetooth 5.3",
+      "Water Resistance": "IP67",
+      "Brand": "JBL"
+    },
+    "slug": "jbl_go_4_portable_bluetooth_speaker"
+  },
+  {
+    "title": "JBL Tune 770NC Over-Ear Wireless Headphones",
+    "brand": "JBL",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Over-Ear Wireless Headphones",
+      "Driver": "40mm",
+      "Battery Life": "70 hours (ANC off)",
+      "Connectivity": "Bluetooth 5.3",
+      "ANC": "Yes",
+      "Brand": "JBL"
+    },
+    "slug": "jbl_tune_770nc_over_ear_wireless_headphones"
+  },
+  {
+    "title": "Sony WH-CH720N Noise Cancelling Wireless Headphones",
+    "brand": "Sony",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Over-Ear Wireless Headphones",
+      "Driver": "30mm",
+      "Battery Life": "35 hours",
+      "Connectivity": "Bluetooth 5.2",
+      "ANC": "Yes",
+      "Brand": "Sony"
+    },
+    "slug": "sony_wh_ch720n_noise_cancelling_wireless_headphones"
+  },
+  {
+    "title": "Anker Soundcore R50i True Wireless Earbuds",
+    "brand": "Anker",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "True Wireless Earbuds",
+      "Driver": "10mm",
+      "Battery Life": "30 hours (with case)",
+      "Connectivity": "Bluetooth 5.3",
+      "ANC": "No",
+      "Brand": "Anker"
+    },
+    "slug": "anker_soundcore_r50i_true_wireless_earbuds"
+  },
+  {
+    "title": "Anker Soundcore Liberty 4 NC True Wireless Earbuds",
+    "brand": "Anker",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "True Wireless Earbuds",
+      "Driver": "11mm",
+      "Battery Life": "50 hours (with case)",
+      "Connectivity": "Bluetooth 5.3",
+      "ANC": "Yes",
+      "Brand": "Anker"
+    },
+    "slug": "anker_soundcore_liberty_4_nc_true_wireless_earbuds"
+  },
+  {
+    "title": "Oraimo FreePods Pro True Wireless Earbuds",
+    "brand": "Oraimo",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "True Wireless Earbuds",
+      "Driver": "8mm",
+      "Battery Life": "37 hours (with case)",
+      "Connectivity": "Bluetooth 5.2",
+      "ANC": "Yes",
+      "Brand": "Oraimo"
+    },
+    "slug": "oraimo_freepods_pro_true_wireless_earbuds"
+  },
+  {
+    "title": "Oraimo Boom OBS-75D Portable Bluetooth Speaker",
+    "brand": "Oraimo",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Bluetooth Speaker",
+      "Driver": "Dual 45mm drivers",
+      "Battery Life": "8 hours",
+      "Connectivity": "Bluetooth 5.0",
+      "Water Resistance": "IPX5",
+      "Brand": "Oraimo"
+    },
+    "slug": "oraimo_boom_obs_75d_portable_bluetooth_speaker"
+  },
+  {
+    "title": "Samsung Galaxy Buds FE True Wireless Earbuds",
+    "brand": "Samsung",
+    "subcategory": "Audio Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "True Wireless Earbuds",
+      "Driver": "Two-way (woofer + tweeter)",
+      "Battery Life": "30 hours (with case)",
+      "Connectivity": "Bluetooth 5.2",
+      "ANC": "Yes",
+      "Brand": "Samsung"
+    },
+    "slug": "samsung_galaxy_buds_fe_true_wireless_earbuds"
+  }
+]

@@ -91,6 +91,7 @@ Rails.application.routes.draw do
   post 'phone/exists', to: 'email#phone_exists'
   post 'business_name/exists', to: 'email#business_name_exists'
   post 'business_number/exists', to: 'email#business_number_exists'
+  post 'carbon_code/check', to: 'email#carbon_code_check'
   
   # GET routes for easier frontend integration
   get 'check_phone', to: 'email#phone_exists'

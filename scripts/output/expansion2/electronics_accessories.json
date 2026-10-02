@@ -1,0 +1,750 @@
+[
+  {
+    "title": "Epson EcoTank L3256 All-in-One Printer",
+    "slug": "epson_ecotank_l3256_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L3256 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "Epson EcoTank L3550 All-in-One Printer",
+    "slug": "epson_ecotank_l3550_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L3550 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Wi-Fi Direct"
+    }
+  },
+  {
+    "title": "Epson EcoTank L6270 All-in-One Printer",
+    "slug": "epson_ecotank_l6270_all_in_one_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L6270 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, ADF)",
+      "Connectivity": "USB 2.0, Wi-Fi, Ethernet"
+    }
+  },
+  {
+    "title": "Epson EcoTank L8050 Photo Printer",
+    "slug": "epson_ecotank_l8050_photo_printer",
+    "brand": "Epson",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Model": "EcoTank L8050 Photo",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "Print Only (A4 Photo, 6-colour)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "HP Smart Tank 525 All-in-One Printer",
+    "slug": "hp_smart_tank_525_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "Smart Tank 525 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi, Bluetooth LE"
+    }
+  },
+  {
+    "title": "HP Smart Tank 670 All-in-One Printer",
+    "slug": "hp_smart_tank_670_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "Smart Tank 670 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, ADF)",
+      "Connectivity": "USB 2.0, Wi-Fi, Bluetooth LE"
+    }
+  },
+  {
+    "title": "HP LaserJet Pro 4003dw Printer",
+    "slug": "hp_laserjet_pro_4003dw_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "LaserJet Pro 4003dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi"
+    }
+  },
+  {
+    "title": "HP LaserJet MFP 4103dw Printer",
+    "slug": "hp_laserjet_mfp_4103dw_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "LaserJet MFP 4103dw",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Ethernet, Wi-Fi"
+    }
+  },
+  {
+    "title": "HP DeskJet 2720e All-in-One Printer",
+    "slug": "hp_deskjet_2720e_all_in_one_printer",
+    "brand": "HP",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Model": "DeskJet 2720e All-in-One",
+      "Print Technology": "Inkjet",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Canon PIXMA G2411 All-in-One Printer",
+    "slug": "canon_pixma_g2411_all_in_one_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G2411 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0"
+    }
+  },
+  {
+    "title": "Canon PIXMA G3411 All-in-One Printer",
+    "slug": "canon_pixma_g3411_all_in_one_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G3411 All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Canon PIXMA G640 Photo Printer",
+    "slug": "canon_pixma_g640_photo_printer",
+    "brand": "Canon",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Model": "PIXMA G640 Photo",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "Print Only (6-colour Photo)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother DCP-T520W Ink Tank All-in-One Printer",
+    "slug": "brother_dcp_t520w_ink_tank_all_in_one_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "DCP-T520W Ink Tank All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother DCP-T720DW Ink Tank All-in-One Printer",
+    "slug": "brother_dcp_t720dw_ink_tank_all_in_one_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "DCP-T720DW Ink Tank All-in-One",
+      "Print Technology": "Ink Tank (Inkjet)",
+      "Function": "All-in-One (Print, Scan, Copy, Auto Duplex)",
+      "Connectivity": "USB 2.0, Wi-Fi"
+    }
+  },
+  {
+    "title": "Brother HL-L2370DN Printer",
+    "slug": "brother_hl_l2370dn_printer",
+    "brand": "Brother",
+    "subcategory": "Printers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Brother",
+      "Model": "HL-L2370DN",
+      "Print Technology": "Laser (Monochrome)",
+      "Function": "Print Only (Auto Duplex)",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Canon imageRUNNER 2206N A3 Multifunction Copier",
+    "slug": "canon_imagerunner_2206n_a3_multifunction_copier",
+    "brand": "Canon",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "22 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Kyocera TASKalfa 2321 A3 Multifunction Copier",
+    "slug": "kyocera_taskalfa_2321_a3_multifunction_copier",
+    "brand": "Kyocera",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Kyocera",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "23 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Optional",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Toshiba e-STUDIO 2523A A3 Multifunction Copier",
+    "slug": "toshiba_e_studio_2523a_a3_multifunction_copier",
+    "brand": "Toshiba",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Toshiba",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "25 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Optional",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Sharp BP-20M28 A3 Multifunction Copier",
+    "slug": "sharp_bp_20m28_a3_multifunction_copier",
+    "brand": "Sharp",
+    "subcategory": "Copiers",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sharp",
+      "Type": "Copier",
+      "Copy Speed (cpm)": "28 cpm (A4)",
+      "Paper Size": "A3, A4, A5",
+      "Duplex Copying": "Yes",
+      "Connectivity": "USB 2.0, Ethernet"
+    }
+  },
+  {
+    "title": "Canon CanoScan LiDE 400 Flatbed Scanner",
+    "slug": "canon_canoscan_lide_400_flatbed_scanner",
+    "brand": "Canon",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Canon",
+      "Type": "Scanner",
+      "Scanner Type": "Flatbed",
+      "Resolution (dpi)": "4800 x 4800 dpi",
+      "Scan Speed": "Approx. 8 sec (A4 colour, 300 dpi)",
+      "Connectivity": "USB Type-C"
+    }
+  },
+  {
+    "title": "Epson WorkForce DS-410 Document Scanner",
+    "slug": "epson_workforce_ds_410_document_scanner",
+    "brand": "Epson",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "26 ppm (A4, 300 dpi)",
+      "Connectivity": "USB 3.0"
+    }
+  },
+  {
+    "title": "HP ScanJet Pro 3000 s4 Document Scanner",
+    "slug": "hp_scanjet_pro_3000_s4_document_scanner",
+    "brand": "HP",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "HP",
+      "Type": "Scanner",
+      "Scanner Type": "Sheet-fed (ADF)",
+      "Resolution (dpi)": "600 x 600 dpi",
+      "Scan Speed": "40 ppm (A4, 300 dpi)",
+      "Connectivity": "USB 3.0"
+    }
+  },
+  {
+    "title": "Honeywell Voyager 1470g Barcode Scanner",
+    "slug": "honeywell_voyager_1470g_barcode_scanner",
+    "brand": "Honeywell",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Honeywell",
+      "Type": "Scanner",
+      "Scanner Type": "Handheld 2D Imager Barcode Scanner",
+      "Resolution (dpi)": "1D/2D barcodes",
+      "Scan Speed": "N/A",
+      "Connectivity": "USB"
+    }
+  },
+  {
+    "title": "Zebra DS2208 Barcode Scanner",
+    "slug": "zebra_ds2208_barcode_scanner",
+    "brand": "Zebra",
+    "subcategory": "Scanners",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Zebra",
+      "Type": "Scanner",
+      "Scanner Type": "Handheld 2D Imager Barcode Scanner",
+      "Resolution (dpi)": "1D/2D barcodes",
+      "Scan Speed": "N/A",
+      "Connectivity": "USB"
+    }
+  },
+  {
+    "title": "Sunmi T2s Desktop Smart POS Terminal",
+    "slug": "sunmi_t2s_desktop_smart_pos_terminal",
+    "brand": "Sunmi",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sunmi",
+      "Type": "Pos system",
+      "System Type": "Android Desktop POS (Dual Display)",
+      "Display Size": "15.6\" FHD + 10.1\" Customer Display",
+      "Connectivity": "4G, Wi-Fi, Bluetooth, Ethernet",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC (optional)"
+    }
+  },
+  {
+    "title": "Sunmi D2s Desktop Smart POS Terminal",
+    "slug": "sunmi_d2s_desktop_smart_pos_terminal",
+    "brand": "Sunmi",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Sunmi",
+      "Type": "Pos system",
+      "System Type": "Android Desktop POS with Built-in Printer",
+      "Display Size": "15.6\" FHD Touchscreen",
+      "Connectivity": "4G, Wi-Fi, Bluetooth, Ethernet",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC (optional)"
+    }
+  },
+  {
+    "title": "PAX A910 Smart POS Terminal",
+    "slug": "pax_a910_smart_pos_terminal",
+    "brand": "PAX",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "PAX",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld)",
+      "Display Size": "5.5\" HD",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "Newland N910 Pro Smart POS Terminal",
+    "slug": "newland_n910_pro_smart_pos_terminal",
+    "brand": "Newland",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Newland",
+      "Type": "Pos system",
+      "System Type": "Android Smart POS (Handheld)",
+      "Display Size": "5.5\" HD",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card (Chip & PIN, Magnetic Stripe), Contactless/NFC, QR Code, Mobile Money"
+    }
+  },
+  {
+    "title": "MoreFun MF960 Smart POS Terminal",
+    "slug": "morefun_mf960_smart_pos_terminal",
+    "brand": "MoreFun",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "MoreFun",
+      "Type": "Pos system",
+      "System Type": "Android Handheld POS with Built-in Printer",
+      "Display Size": "5.5\" HD",
+      "Connectivity": "4G, Wi-Fi, Bluetooth",
+      "Payment Methods": "Card, QR Code, Mobile Money, NFC"
+    }
+  },
+  {
+    "title": "Xprinter XP-58IIH Thermal Receipt Printer",
+    "slug": "xprinter_xp_58iih_thermal_receipt_printer",
+    "brand": "Xprinter",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Xprinter",
+      "Type": "Pos system",
+      "System Type": "Thermal Receipt Printer (58mm)",
+      "Display Size": "None",
+      "Connectivity": "USB, Bluetooth",
+      "Payment Methods": "N/A"
+    }
+  },
+  {
+    "title": "Epson TM-T20III Thermal Receipt Printer",
+    "slug": "epson_tm_t20iii_thermal_receipt_printer",
+    "brand": "Epson",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Epson",
+      "Type": "Pos system",
+      "System Type": "Thermal Receipt Printer (80mm)",
+      "Display Size": "None",
+      "Connectivity": "USB, Serial",
+      "Payment Methods": "N/A"
+    }
+  },
+  {
+    "title": "Generic RJ11 Cash Drawer 5-Note 8-Coin",
+    "slug": "generic_rj11_cash_drawer_5_note_8_coin",
+    "brand": "Generic",
+    "subcategory": "POS Systems",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Generic",
+      "Type": "Pos system",
+      "System Type": "Cash Drawer (RJ11 Printer-Kick)",
+      "Display Size": "None",
+      "Connectivity": "RJ11 (receipt printer trigger)",
+      "Payment Methods": "Cash"
+    }
+  },
+  {
+    "title": "Fellowes Powershred 8Cd Cross-Cut Shredder",
+    "slug": "fellowes_powershred_8cd_cross_cut_shredder",
+    "brand": "Fellowes",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Fellowes",
+      "Type": "Shredder",
+      "Sheet Capacity": "8 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "14 L"
+    }
+  },
+  {
+    "title": "Deli 9904 Paper Shredder",
+    "slug": "deli_9904_paper_shredder",
+    "brand": "Deli",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "Deli",
+      "Type": "Shredder",
+      "Sheet Capacity": "8 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "15 L"
+    }
+  },
+  {
+    "title": "GBC ShredMaster X308 Cross-Cut Shredder",
+    "slug": "gbc_shredmaster_x308_cross_cut_shredder",
+    "brand": "GBC",
+    "subcategory": "Shredders",
+    "source": "manufacturer",
+    "specifications": {
+      "Brand": "GBC",
+      "Type": "Shredder",
+      "Sheet Capacity": "8 sheets",
+      "Cut Type": "Cross-cut",
+      "Security Level": "P-4",
+      "Bin Capacity (Litres)": "15 L"
+    }
+  },
+  {
+    "title": "Epson EB-E10 XGA 3LCD Projector",
+    "slug": "epson_eb_e10_xga_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,600 Lumens",
+      "Resolution": "1024x768 (XGA)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "4:3",
+      "Light Source": "UHE Lamp",
+      "Connectivity": "HDMI, USB, VGA",
+      "Weight": "2.4 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Epson EB-FH52 Full HD 3LCD Projector",
+    "slug": "epson_eb_fh52_full_hd_3lcd_projector",
+    "brand": "Epson",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,000 Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "3LCD",
+      "Aspect Ratio": "16:9",
+      "Light Source": "UHE Lamp",
+      "Connectivity": "HDMI, USB, VGA, Wi-Fi (optional)",
+      "Weight": "2.6 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "BenQ MW560 WXGA Business Projector",
+    "slug": "benq_mw560_wxga_business_projector",
+    "brand": "BenQ",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,000 ANSI Lumens",
+      "Resolution": "1280x800 (WXGA)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "16:10",
+      "Light Source": "Lamp",
+      "Connectivity": "HDMI, VGA, USB",
+      "Weight": "2.3 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "ViewSonic M2e Portable Projector",
+    "slug": "viewsonic_m2e_portable_projector",
+    "brand": "ViewSonic",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "1,000 LED Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (LED)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "LED",
+      "Connectivity": "HDMI, USB-C, Wi-Fi, Bluetooth",
+      "Weight": "1.0 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Acer X1128i SVGA Wireless Projector",
+    "slug": "acer_x1128i_svga_wireless_projector",
+    "brand": "Acer",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "4,500 ANSI Lumens",
+      "Resolution": "800x600 (SVGA)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "4:3",
+      "Light Source": "Lamp",
+      "Connectivity": "HDMI, VGA, Wi-Fi",
+      "Weight": "2.6 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "Optoma HD146X Home Theater Projector",
+    "slug": "optoma_hd146x_home_theater_projector",
+    "brand": "Optoma",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "3,600 ANSI Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP",
+      "Aspect Ratio": "16:9",
+      "Light Source": "Lamp",
+      "Connectivity": "HDMI, USB",
+      "Weight": "2.8 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "XGIMI Halo+ Portable Projector",
+    "slug": "xgimi_halo_portable_projector",
+    "brand": "XGIMI",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Brightness (Lumens)": "900 ANSI Lumens",
+      "Resolution": "1920x1080 (Full HD)",
+      "Display Type": "DLP (LED)",
+      "Aspect Ratio": "16:9",
+      "Light Source": "LED",
+      "Connectivity": "HDMI, USB, Wi-Fi, Bluetooth, Android TV",
+      "Weight": "1.6 kg",
+      "Warranty": "1 Year"
+    }
+  },
+  {
+    "title": "84-Inch Tripod Projection Screen",
+    "slug": "84_inch_tripod_projection_screen",
+    "brand": "Generic",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Tripod Projection Screen",
+      "Screen Size": "84\" (Diagonal)",
+      "Aspect Ratio": "4:3",
+      "Material": "Matte White Fabric",
+      "Mount Type": "Tripod Stand",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "100-Inch Motorized Projection Screen",
+    "slug": "100_inch_motorized_projection_screen",
+    "brand": "Generic",
+    "subcategory": "Projectors & Screens",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Motorized Projection Screen",
+      "Screen Size": "100\" (Diagonal)",
+      "Aspect Ratio": "16:9",
+      "Material": "Matte White Fabric",
+      "Mount Type": "Wall/Ceiling Mount",
+      "Brand": "Generic"
+    }
+  },
+  {
+    "title": "GBC Fusion 3000L A4 Laminator",
+    "slug": "gbc_fusion_3000l_a4_laminator",
+    "brand": "GBC",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Laminator",
+      "Max Width": "A4 (230mm)",
+      "Pouch Thickness": "75-125 micron",
+      "Warm-up Time": "1.5 minutes",
+      "Anti-Jam": "Yes",
+      "Brand": "GBC"
+    }
+  },
+  {
+    "title": "Deli E3894-EU A4 Laminator",
+    "slug": "deli_e3894_eu_a4_laminator",
+    "brand": "Deli",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Thermal Laminator",
+      "Max Width": "A4 (230mm)",
+      "Pouch Thickness": "80-125 micron",
+      "Warm-up Time": "3-5 minutes",
+      "Anti-Jam": "No",
+      "Brand": "Deli"
+    }
+  },
+  {
+    "title": "Fellowes Pulsar+ Comb Binding Machine",
+    "slug": "fellowes_pulsar_comb_binding_machine",
+    "brand": "Fellowes",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Comb Binding Machine",
+      "Punch Capacity": "15 sheets",
+      "Bind Capacity": "300 sheets (38mm comb)",
+      "Paper Size": "A4",
+      "Brand": "Fellowes"
+    }
+  },
+  {
+    "title": "Deli 2109 Bill Counter with UV/MG Detection",
+    "slug": "deli_2109_bill_counter_with_uv_mg_detection",
+    "brand": "Deli",
+    "subcategory": "Electronics Accessories",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Money Counting Machine",
+      "Counting Speed": "1000 notes/min",
+      "Detection": "UV, MG",
+      "Hopper Capacity": "200 notes",
+      "Display": "LCD",
+      "Brand": "Deli"
+    }
+  },
+  {
+    "title": "APC Back-UPS 700VA BV700I-MS",
+    "slug": "apc_back_ups_700va_bv700i_ms",
+    "brand": "APC",
+    "subcategory": "Other Electronics",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Line-Interactive UPS",
+      "Capacity": "700VA / 360W",
+      "Outlets": "4x Universal",
+      "Battery": "12V 7Ah",
+      "AVR": "Yes",
+      "Brand": "APC"
+    }
+  },
+  {
+    "title": "Mercury Elite 1200VA UPS",
+    "slug": "mercury_elite_1200va_ups",
+    "brand": "Mercury",
+    "subcategory": "Other Electronics",
+    "source": "manufacturer",
+    "specifications": {
+      "Type": "Line-Interactive UPS",
+      "Capacity": "1200VA / 720W",
+      "Outlets": "3x Universal",
+      "Battery": "12V 9Ah",
+      "AVR": "Yes",
+      "Brand": "Mercury"
+    }
+  }
+]

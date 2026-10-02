@@ -1,0 +1,323 @@
+[
+  {
+    "title": "Apple iMac 24-inch (M4, 2024) - Apple M4 / 16GB / 256GB SSD",
+    "slug": "apple_imac_24_inch_m4_2024_apple_m4_16gb_256gb_ssd",
+    "brand": "Apple",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "All-in-One",
+      "Display": "24-inch 4.5K Retina"
+    }
+  },
+  {
+    "title": "Apple iMac 24-inch (M4, 2024) - Apple M4 / 16GB / 512GB SSD",
+    "slug": "apple_imac_24_inch_m4_2024_apple_m4_16gb_512gb_ssd",
+    "brand": "Apple",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "All-in-One",
+      "Display": "24-inch 4.5K Retina"
+    }
+  },
+  {
+    "title": "Apple Mac mini (2024) - Apple M4 / 16GB / 256GB SSD",
+    "slug": "apple_mac_mini_2024_apple_m4_16gb_256gb_ssd",
+    "brand": "Apple",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "Mini PC"
+    }
+  },
+  {
+    "title": "Apple Mac mini (2024) - Apple M4 / 16GB / 512GB SSD",
+    "slug": "apple_mac_mini_2024_apple_m4_16gb_512gb_ssd",
+    "brand": "Apple",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Apple M4",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Mini PC"
+    }
+  },
+  {
+    "title": "Apple Mac mini (2024) - Apple M4 Pro / 24GB / 512GB SSD",
+    "slug": "apple_mac_mini_2024_apple_m4_pro_24gb_512gb_ssd",
+    "brand": "Apple",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Apple M4 Pro",
+      "RAM": "24GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Mini PC"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 7010 Tower - Intel Core i5-13500 / 16GB / 512GB SSD",
+    "slug": "dell_optiplex_7010_tower_intel_core_i5_13500_16gb_512gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-13500",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Tower",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 7010 Micro - Intel Core i5-13500T / 16GB / 512GB SSD",
+    "slug": "dell_optiplex_7010_micro_intel_core_i5_13500t_16gb_512gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-13500T",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Micro PC"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 7010 SFF - Intel Core i5-13500 / 8GB / 256GB SSD",
+    "slug": "dell_optiplex_7010_sff_intel_core_i5_13500_8gb_256gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-13500",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "SFF",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 7020 Tower - Intel Core i5-14500 / 16GB / 512GB SSD",
+    "slug": "dell_optiplex_7020_tower_intel_core_i5_14500_16gb_512gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-14500",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Tower",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 7020 SFF - Intel Core i5-14500 / 16GB / 512GB SSD",
+    "slug": "dell_optiplex_7020_sff_intel_core_i5_14500_16gb_512gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-14500",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "SFF",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "Dell Inspiron 3030 Desktop - Intel Core i5-14400 / 8GB / 512GB SSD",
+    "slug": "dell_inspiron_3030_desktop_intel_core_i5_14400_8gb_512gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-14400",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Tower",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "Dell Inspiron 24 7420 All-in-One - Intel Core i5-1334U / 8GB / 512GB SSD",
+    "slug": "dell_inspiron_24_7420_all_in_one_intel_core_i5_1334u_8gb_512gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-1334U",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "All-in-One"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 3060 SFF - Intel Core i5-8500 / 8GB / 256GB SSD",
+    "slug": "dell_optiplex_3060_sff_intel_core_i5_8500_8gb_256gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-8500",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "SFF",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "Dell OptiPlex 7040 SFF - Intel Core i5-6500 / 8GB / 256GB SSD",
+    "slug": "dell_optiplex_7040_sff_intel_core_i5_6500_8gb_256gb_ssd",
+    "brand": "Dell",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-6500",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "SFF",
+      "GPU": "Intel UHD Graphics"
+    }
+  },
+  {
+    "title": "HP ProDesk 400 G9 SFF - Intel Core i5-12500 / 8GB / 512GB SSD",
+    "slug": "hp_prodesk_400_g9_sff_intel_core_i5_12500_8gb_512gb_ssd",
+    "brand": "HP",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-12500",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "SFF"
+    }
+  },
+  {
+    "title": "HP ProDesk 400 G9 Mini - Intel Core i5-12500T / 8GB / 256GB SSD",
+    "slug": "hp_prodesk_400_g9_mini_intel_core_i5_12500t_8gb_256gb_ssd",
+    "brand": "HP",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-12500T",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "Mini PC"
+    }
+  },
+  {
+    "title": "HP ProOne 440 G9 All-in-One - Intel Core i5-12500 / 8GB / 512GB SSD",
+    "slug": "hp_proone_440_g9_all_in_one_intel_core_i5_12500_8gb_512gb_ssd",
+    "brand": "HP",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-12500",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "All-in-One"
+    }
+  },
+  {
+    "title": "HP Pavilion TP01 Tower - Intel Core i5-13400 / 8GB / 512GB SSD",
+    "slug": "hp_pavilion_tp01_tower_intel_core_i5_13400_8gb_512gb_ssd",
+    "brand": "HP",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-13400",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Tower"
+    }
+  },
+  {
+    "title": "HP EliteDesk 800 G4 SFF - Intel Core i5-8500 / 8GB / 256GB SSD",
+    "slug": "hp_elitedesk_800_g4_sff_intel_core_i5_8500_8gb_256gb_ssd",
+    "brand": "HP",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-8500",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "SFF"
+    }
+  },
+  {
+    "title": "HP EliteDesk 800 G5 SFF - Intel Core i5-9500 / 8GB / 256GB SSD",
+    "slug": "hp_elitedesk_800_g5_sff_intel_core_i5_9500_8gb_256gb_ssd",
+    "brand": "HP",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-9500",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "SFF"
+    }
+  },
+  {
+    "title": "Lenovo ThinkCentre M70s Gen 5 SFF - Intel Core i5-14400 / 16GB / 512GB SSD",
+    "slug": "lenovo_thinkcentre_m70s_gen_5_sff_intel_core_i5_14400_16gb_512gb_ssd",
+    "brand": "Lenovo",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-14400",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "SFF"
+    }
+  },
+  {
+    "title": "Lenovo ThinkCentre M90t Gen 5 Tower - Intel Core i7-14700 / 16GB / 512GB SSD",
+    "slug": "lenovo_thinkcentre_m90t_gen_5_tower_intel_core_i7_14700_16gb_512gb_ssd",
+    "brand": "Lenovo",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i7-14700",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Tower"
+    }
+  },
+  {
+    "title": "Lenovo ThinkCentre Neo 50s Gen 5 SFF - Intel Core i5-14400 / 8GB / 512GB SSD",
+    "slug": "lenovo_thinkcentre_neo_50s_gen_5_sff_intel_core_i5_14400_8gb_512gb_ssd",
+    "brand": "Lenovo",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-14400",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "SFF"
+    }
+  },
+  {
+    "title": "Lenovo IdeaCentre AIO 3 24IRH9 - Intel Core i5-13420H / 8GB / 512GB SSD",
+    "slug": "lenovo_ideacentre_aio_3_24irh9_intel_core_i5_13420h_8gb_512gb_ssd",
+    "brand": "Lenovo",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-13420H",
+      "RAM": "8GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "All-in-One"
+    }
+  },
+  {
+    "title": "Lenovo ThinkCentre M720q Tiny - Intel Core i5-8400T / 8GB / 256GB SSD",
+    "slug": "lenovo_thinkcentre_m720q_tiny_intel_core_i5_8400t_8gb_256gb_ssd",
+    "brand": "Lenovo",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i5-8400T",
+      "RAM": "8GB",
+      "Storage": "256GB SSD",
+      "Form Factor": "Mini PC"
+    }
+  },
+  {
+    "title": "Lenovo ThinkCentre M920q Tiny - Intel Core i7-8700T / 16GB / 512GB SSD",
+    "slug": "lenovo_thinkcentre_m920q_tiny_intel_core_i7_8700t_16gb_512gb_ssd",
+    "brand": "Lenovo",
+    "category": "Computers, Phones and Accessories",
+    "specifications": {
+      "Processor": "Intel Core i7-8700T",
+      "RAM": "16GB",
+      "Storage": "512GB SSD",
+      "Form Factor": "Mini PC"
+    }
+  }
+]

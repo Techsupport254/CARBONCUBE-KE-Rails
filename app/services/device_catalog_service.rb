@@ -20,9 +20,12 @@ class DeviceCatalogService
       'internal components' => 'computer_accessories_filtered.json',
       'accessories' => 'computer_accessories_filtered.json',
       'computer accessories' => 'computer_accessories_filtered.json',
-      'computer spare parts' => 'computer_accessories_filtered.json'
+      'computer spare parts' => 'computer_accessories_filtered.json',
+      'other computer' => 'computer_accessories_filtered.json'
     },
-    'tvsandhomeentertainment' => {
+    # Category renamed to "TVs & Audio and Electronics" by migration
+    # 20260805000000 (absorbed "Electronics and Accessories").
+    'tvsaudioandelectronics' => {
       'smart tvs' => 'tvs_filtered.json',
       'led & lcd tvs' => 'tvs_filtered.json',
       'oled & qled tvs' => 'tvs_filtered.json',
@@ -31,16 +34,16 @@ class DeviceCatalogService
       'streaming devices' => 'tv_audio_streaming_filtered.json',
       'decoders & receivers' => 'tv_audio_streaming_filtered.json',
       'tv accessories' => 'tv_audio_streaming_filtered.json',
+      'audio accessories' => 'tv_audio_streaming_filtered.json',
       'projectors & screens' => 'electronics_accessories_filtered.json',
-      'projectors' => 'electronics_accessories_filtered.json'
-    },
-    'electronicsandaccessories' => {
+      'projectors' => 'electronics_accessories_filtered.json',
+      'electronics accessories' => 'electronics_accessories_filtered.json',
       'printers' => 'electronics_accessories_filtered.json',
       'copiers' => 'electronics_accessories_filtered.json',
       'scanners' => 'electronics_accessories_filtered.json',
       'pos systems' => 'electronics_accessories_filtered.json',
       'shredders' => 'electronics_accessories_filtered.json',
-      'projectors' => 'electronics_accessories_filtered.json'
+      'other electronics' => 'electronics_accessories_filtered.json'
     },
     'agriculture' => {
       'farm tools' => 'agriculture_filtered.json',
@@ -49,7 +52,8 @@ class DeviceCatalogService
       'spare parts' => 'agriculture_filtered.json',
       'agriculture spare parts' => 'agriculture_filtered.json',
       'accessories' => 'agriculture_filtered.json',
-      'agriculture accessories' => 'agriculture_filtered.json'
+      'agriculture accessories' => 'agriculture_filtered.json',
+      'other agriculture' => 'agriculture_filtered.json'
     },
     'automotivepartsaccessories' => {
       'tyres' => 'automotive_filtered.json',
@@ -59,25 +63,32 @@ class DeviceCatalogService
       'spare parts' => 'automotive_filtered.json',
       'automotive spare parts' => 'automotive_filtered.json',
       'accessories' => 'automotive_filtered.json',
-      'automotive accessories' => 'automotive_filtered.json'
+      'automotive accessories' => 'automotive_filtered.json',
+      'other automotive' => 'automotive_filtered.json'
     },
     'filtration' => {
       'air filters' => 'filtration_filtered.json',
       'fuel filters' => 'filtration_filtered.json',
       'industrial filters' => 'filtration_filtered.json',
-      'oil & hydraulic filters' => 'filtration_filtered.json'
+      'oil & hydraulic filters' => 'filtration_filtered.json',
+      'other filtration' => 'filtration_filtered.json'
     },
     'hardware' => {
       'safety wear' => 'hardware_tools_filtered.json',
       'hand & power tools' => 'hardware_tools_filtered.json',
       'power & electrical equipment' => 'hardware_tools_filtered.json',
       'plumbing supplies' => 'hardware_tools_filtered.json',
-      'construction materials' => 'hardware_tools_filtered.json'
+      'construction materials' => 'hardware_tools_filtered.json',
+      'other hardware' => 'hardware_tools_filtered.json'
     }
   }.freeze
 
   def self.search(query, subcategory = 'phones', category = nil)
-    data = load_data(category, subcategory)
+    data = if category.present? && subcategory.to_s.strip.empty?
+             files_for_category(category).flat_map { |file| load_file(Rails.root.join('scripts', 'output', file)) }
+           else
+             load_data(category, subcategory)
+           end
     return [] if query.blank? || data.empty?
     
     normalized_query = query.to_s.downcase.strip
@@ -146,6 +157,28 @@ class DeviceCatalogService
 
   private
 
+  # Unique filenames backing a whole category (all of its mapped subcategories)
+  def self.files_for_category(category)
+    cat_key = category.to_s.downcase.gsub(/[^a-z0-9]+/, '')
+    CATEGORY_FILES[cat_key]&.values&.uniq || []
+  end
+
+  def self.load_file(path)
+    return [] unless File.exist?(path)
+
+    current_mtime = File.mtime(path)
+    if @cached_data[path].nil? || @last_mtimes[path] != current_mtime
+      begin
+        @cached_data[path] = JSON.parse(File.read(path))
+        @last_mtimes[path] = current_mtime
+      rescue => e
+        Rails.logger.error "DeviceCatalogService Error parsing #{path}: #{e.message}"
+        @cached_data[path] = []
+      end
+    end
+    @cached_data[path]
+  end
+
   def self.file_path_for(category, subcategory = 'phones')
     sub = (subcategory || 'phones').to_s.downcase.strip
 
@@ -172,48 +205,43 @@ class DeviceCatalogService
     # --- Computers/Laptops ---
     when 'laptops' then 'laptops_filtered.json'
     when 'computers', 'computers ' then 'computers_filtered.json'
-    # --- TVs & Home Entertainment ---
+    # --- TVs & Audio and Electronics (category renamed from TVs & Home Entertainment) ---
     when 'smart tvs', 'led & lcd tvs', 'oled & qled tvs' then 'tvs_filtered.json'
     when 'home theater systems', 'soundbars & speakers',
-         'streaming devices', 'decoders & receivers', 'tv accessories' then 'tv_audio_streaming_filtered.json'
+         'streaming devices', 'decoders & receivers', 'tv accessories',
+         'audio accessories' then 'tv_audio_streaming_filtered.json'
     when 'projectors & screens', 'projectors' then 'electronics_accessories_filtered.json'
     # --- Electronics and Accessories ---
     when 'printers', 'copiers', 'scanners', 'pos systems',
-         'shredders', 'others' then 'electronics_accessories_filtered.json'
+         'shredders', 'others', 'other electronics',
+         'electronics accessories' then 'electronics_accessories_filtered.json'
     # --- Agriculture ---
     when 'farm tools', 'irrigation', 'farm machinery',
-         'spare parts', 'accessories' then 'agriculture_filtered.json'
+         'spare parts', 'agriculture spare parts',
+         'agriculture accessories', 'other agriculture' then 'agriculture_filtered.json'
     # --- Computer Accessories ---
     when 'peripherals', 'storage', 'networking equipment',
          'cooling & maintenance', 'internal components',
-         'computer accessories' then 'computer_accessories_filtered.json'
+         'computer accessories', 'computer spare parts',
+         'other computer' then 'computer_accessories_filtered.json'
     # --- Automotive Parts & Accessories ---
     when 'tyres', 'batteries', 'lubricants', 'rims',
-         'spare parts', 'accessories', 'others' then 'automotive_filtered.json'
+         'automotive spare parts', 'automotive accessories',
+         'other automotive' then 'automotive_filtered.json'
     # --- Filtration ---
     when 'air filters', 'fuel filters', 'industrial filters',
-         'oil & hydraulic filters' then 'filtration_filtered.json'
+         'oil & hydraulic filters', 'other filtration' then 'filtration_filtered.json'
     # --- Hardware ---
     when 'safety wear', 'hand & power tools', 'power & electrical equipment',
-         'plumbing supplies', 'construction materials' then 'hardware_tools_filtered.json'
+         'plumbing supplies', 'construction materials',
+         'other hardware' then 'hardware_tools_filtered.json'
     else nil
     end
   end
 
   def self.load_data(category, subcategory = 'phones')
     path = file_path_for(category, subcategory)
-    return [] if path.nil? || !File.exist?(path)
-    
-    current_mtime = File.mtime(path)
-    if @cached_data[path].nil? || @last_mtimes[path] != current_mtime
-      begin
-        @cached_data[path] = JSON.parse(File.read(path))
-        @last_mtimes[path] = current_mtime
-      rescue => e
-        Rails.logger.error "DeviceCatalogService Error parsing #{path}: #{e.message}"
-        @cached_data[path] = []
-      end
-    end
-    @cached_data[path]
+    return [] if path.nil?
+    load_file(path)
   end
 end
