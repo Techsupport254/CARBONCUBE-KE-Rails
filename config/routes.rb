@@ -155,6 +155,7 @@ Rails.application.routes.draw do
     collection do
       get :unread_count
       get :unread_counts
+      post :mark_all_read
       post :online_status
       post :online_ping
     end

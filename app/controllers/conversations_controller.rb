@@ -261,6 +261,63 @@ class ConversationsController < ApplicationController
     }
   end
 
+  # POST /conversations/mark_all_read
+  # Marks every unread incoming message across the current user's own
+  # conversations. Only messages the user did not send are touched, and —
+  # as with mark_read — staff never mark peer-to-peer conversations
+  # (buyer↔seller or seller↔seller) since those belong to the participants.
+  def mark_all_read
+    scope = case @current_user.class.name
+            when 'Buyer'
+              Conversation.where(buyer_id: @current_user.id)
+            when 'Seller'
+              Conversation.where(
+                'seller_id = :id OR inquirer_seller_id = :id OR buyer_id = :id',
+                id: @current_user.id
+              )
+            when 'Admin', 'SalesUser', 'MarketingUser'
+              # Staff only mark their own support conversations — visible
+              # peer-to-peer or other staff's conversations are never touched.
+              Conversation.where(admin_id: @current_user.id)
+            else
+              Conversation.none
+            end
+
+    is_staff = %w[Admin SalesUser MarketingUser].include?(@current_user.class.name)
+    now = Time.current
+    marked_total = 0
+    touched_conversations = 0
+
+    scope.active_participants.find_each do |conversation|
+      if is_staff
+        is_peer_to_peer = (conversation.buyer_id.present? && conversation.seller_id.present?) ||
+                           (conversation.seller_id.present? && conversation.inquirer_seller_id.present?)
+        next if is_peer_to_peer
+      end
+
+      unread = conversation.messages.unread.where.not(sender: @current_user)
+      next unless unread.exists?
+
+      last_message = unread.order(:id).last
+      marked = unread.update_all([
+        "status = ?, read_at = COALESCE(read_at, ?), delivered_at = COALESCE(delivered_at, ?)",
+        Message::STATUS_READ, now, now,
+      ])
+      marked_total += marked
+      touched_conversations += 1
+      broadcast_read_receipt(last_message) if last_message
+      UpdateUnreadCountsJob.perform_later(conversation.id, last_message.id) if last_message
+      UnreadMessageReminderService.cancel_reminders(conversation.id, @current_user.id)
+    end
+
+    render json: {
+      success: true,
+      processed_count: marked_total,
+      conversations_count: touched_conversations,
+      message: "Marked #{marked_total} messages as read"
+    }
+  end
+
   def ping_client
     # Only allow admins and sales users to ping sellers
     unless @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser)
