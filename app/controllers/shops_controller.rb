@@ -114,7 +114,8 @@ class ShopsController < ApplicationController
                            .round(1)
     
     shop_categories = @shop.categories.map(&:name).join(', ')
-    
+    main_branch = @shop.branches.order(is_main_branch: :desc, id: :asc).first
+
     render json: {
       shop: {
         id: @shop.id,
@@ -123,7 +124,12 @@ class ShopsController < ApplicationController
         description: @shop.description,
         email: @shop.email,
         address: @shop.location,
+        building: @shop.building,
+        room: @shop.room,
+        latitude: main_branch&.latitude&.to_f,
+        longitude: main_branch&.longitude&.to_f,
         profile_picture: @shop.profile_picture,
+        banner_url: @shop.banner_url,
         tier: @shop.seller_tier&.tier&.name || 'Free',
         tier_id: @shop.seller_tier&.tier&.id || 1,
         product_count: @total_count,

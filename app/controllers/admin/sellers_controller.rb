@@ -1,18 +1,13 @@
 class Admin::SellersController < ApplicationController
-  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics, :verify_document, :send_reminder, :updates, :promote_to_partner]
-  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics, :verify_document, :send_reminder, :updates, :promote_to_partner]
+  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics, :update, :verify_document, :send_reminder, :updates, :promote_to_partner]
+  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics, :update, :verify_document, :send_reminder, :updates, :promote_to_partner]
   before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews, :verify_document, :send_reminder, :updates, :promote_to_partner]
 
   def index
-    cache_scope = sales_scoped_rep? ? "sales_user_#{@current_user.id}" : "admin_global"
+    cache_scope = "admin_global"
     cache_key = "admin_sellers/index_v4/#{cache_scope}/#{Digest::SHA1.hexdigest(params.to_unsafe_h.slice('query', 'status', 'sort_by', 'sort_order', 'page', 'per_page').compact.to_json)}"
     sellers_response = Rails.cache.fetch(cache_key, expires_in: 2.minutes, race_condition_ttl: 10.seconds) do
       sellers_query = Seller.unscoped
-      
-      if sales_scoped_rep?
-        user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_user.id).pluck(:id)
-        sellers_query = sellers_query.where(carbon_code_id: user_carbon_code_ids)
-      end
       
       if params[:query].present?
         search_term = params[:query].strip
@@ -128,7 +123,7 @@ class Admin::SellersController < ApplicationController
       carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
 
       @sellers_data = @sellers.map do |seller|
-        row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
+        row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :county_id, :sub_county_id, :field_verified_at, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
         row['total_ads'] = seller[:total_ads_count] || 0
         row['local_reviews_count'] = seller[:local_reviews_count] || 0
         row['google_reviews_count'] = seller[:google_reviews_count] || 0
@@ -172,40 +167,20 @@ class Admin::SellersController < ApplicationController
       }
     end
 
-    if commission_sales?
-      user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_user.id).pluck(:id)
-      sellers_response = sellers_response.deep_dup
-      sellers_response[:sellers] = sellers_response[:sellers].map do |seller_row|
-        seller_row = seller_row.dup
-        carbon_code_id = seller_row[:carbon_code_id] || seller_row['carbon_code_id']
-        unless carbon_code_id.present? && user_carbon_code_ids.include?(carbon_code_id)
-          seller_row[:phone_number] = mask_phone(seller_row[:phone_number]) if seller_row.key?(:phone_number)
-          seller_row['phone_number'] = mask_phone(seller_row['phone_number']) if seller_row.key?('phone_number')
-          seller_row[:email] = mask_email(seller_row[:email]) if seller_row.key?(:email)
-          seller_row['email'] = mask_email(seller_row['email']) if seller_row.key?('email')
-        end
-        seller_row
-      end
-    end
-
     render json: sellers_response
   end
 
   def show
-    if sales_scoped_rep?
-      user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_user.id).pluck(:id)
-      if @seller.carbon_code_id.blank? || !user_carbon_code_ids.include?(@seller.carbon_code_id)
-        render json: { error: 'Access restricted to your onboarded sellers' }, status: :forbidden
-        return
-      end
-    end
-
-    cache_key = "admin_seller_show_v3/#{@seller.id}_#{@seller.updated_at.to_i}"
+    cache_key = "admin_seller_show_v4/#{@seller.id}_#{@seller.updated_at.to_i}"
     seller_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes, race_condition_ttl: 10.seconds) do
       data = @seller.as_json(
         only: [
-          :id, :fullname, :username, :description, :phone_number, :email, 
-          :enterprise_name, :location, :blocked, :profile_picture, :zipcode, 
+          :id, :fullname, :username, :slug, :description, :phone_number, :email,
+          :secondary_phone_number, :county_id, :sub_county_id, :tier_id,
+          :enterprise_name, :location, :building, :room, :banner_url, :blocked,
+          :profile_picture, :zipcode,
+          :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url,
+          :twitter_url, :linkedin_url, :website, :google_business_profile_url,
           :city, :gender, :business_registration_number, :document_url,
           :document_verified, :document_expiry_date, :created_at, :updated_at,
           :last_active_at, :deleted, :provider, :uid, :ads_count, :carbon_code_id
@@ -230,27 +205,6 @@ class Admin::SellersController < ApplicationController
       partner_status: @seller.partner&.status
     )
 
-    if commission_sales?
-      seller_data = seller_data.deep_dup
-      seller_data[:document_url] = nil
-      seller_data[:business_registration_number] = nil
-      seller_data[:document_expiry_date] = nil
-      seller_data['document_url'] = nil
-      seller_data['business_registration_number'] = nil
-      seller_data['document_expiry_date'] = nil
-
-      user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_user.id).pluck(:id)
-      carbon_code_id = seller_data[:carbon_code_id] || seller_data['carbon_code_id']
-      unless carbon_code_id.present? && user_carbon_code_ids.include?(carbon_code_id)
-        seller_data[:phone_number] = mask_phone(seller_data[:phone_number]) if seller_data.key?(:phone_number)
-        seller_data['phone_number'] = mask_phone(seller_data['phone_number']) if seller_data.key?('phone_number')
-        seller_data[:secondary_phone_number] = mask_phone(seller_data[:secondary_phone_number]) if seller_data.key?(:secondary_phone_number)
-        seller_data['secondary_phone_number'] = mask_phone(seller_data['secondary_phone_number']) if seller_data.key?('secondary_phone_number')
-        seller_data[:email] = mask_email(seller_data[:email]) if seller_data.key?(:email)
-        seller_data['email'] = mask_email(seller_data['email']) if seller_data.key?('email')
-      end
-    end
-
     render json: seller_data
   end
 
@@ -266,8 +220,21 @@ class Admin::SellersController < ApplicationController
   end
 
   def update
-    if @seller.update(seller_params)
-      render json: @seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :blocked])
+    permitted = seller_params.to_h
+    permitted.delete('password') if @current_user.is_a?(SalesUser)
+
+    # Image uploads arrive as multipart files outside the seller envelope
+    if params[:profile_picture].respond_to?(:original_filename)
+      url = upload_seller_image(params[:profile_picture], folder: 'profile_pictures')
+      permitted['profile_picture'] = url if url.present?
+    end
+    if params[:banner].respond_to?(:original_filename)
+      url = upload_seller_image(params[:banner], folder: 'seller_banners')
+      permitted['banner_url'] = url if url.present?
+    end
+
+    if @seller.update(permitted)
+      render json: SellerSerializer.new(@seller).as_json
     else
       render json: @seller.errors, status: :unprocessable_entity
     end
@@ -752,28 +719,8 @@ class Admin::SellersController < ApplicationController
 
   private
 
-  def sales_scoped_rep?
-    @current_user.is_a?(SalesUser) && !@current_user.is_manager && !@current_user.is_lead
-  end
-
   def commission_sales?
     @current_user.is_a?(SalesUser) && @current_user.compensation_type == 'commission' && !@current_user.is_manager
-  end
-
-  def mask_email(email)
-    return nil if email.blank?
-    parts = email.to_s.strip.split('@')
-    return email if parts.length != 2
-    name, domain = parts
-    masked_name = name.length > 2 ? "#{name[0]}***#{name[-1]}" : "#{name[0]}***"
-    "#{masked_name}@#{domain}"
-  end
-
-  def mask_phone(phone)
-    return nil if phone.blank?
-    clean = phone.to_s.strip
-    return clean if clean.length < 5
-    "#{clean[0..3]}****#{clean[-2..]}"
   end
 
   def assign_default_tier_for_seller(seller)
@@ -806,7 +753,27 @@ class Admin::SellersController < ApplicationController
   end
 
   def seller_params
-    params.require(:seller).permit(:fullname, :phone_number, :email, :enterprise_name, :location, :password, :business_registration_number, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, category_ids: [])
+    params.require(:seller).permit(
+      :fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name,
+      :username, :description, :location, :building, :room, :city, :zipcode,
+      :county_id, :sub_county_id, :password, :business_registration_number,
+      :profile_picture, :banner_url,
+      :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url,
+      :linkedin_url, :website, :google_business_profile_url,
+      category_ids: []
+    )
+  end
+
+  def upload_seller_image(file, folder:)
+    uploaded = Cloudinary::Uploader.upload(
+      file.tempfile.path,
+      upload_preset: ENV['UPLOAD_PRESET'],
+      folder: folder
+    )
+    uploaded['secure_url']
+  rescue => e
+    Rails.logger.error "Seller image upload failed (#{folder}): #{e.message}"
+    nil
   end
 
   def authenticate_admin_or_sales
