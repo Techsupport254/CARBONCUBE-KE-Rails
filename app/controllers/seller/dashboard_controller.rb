@@ -22,6 +22,7 @@ class Seller::DashboardController < ApplicationController
           slug: seller.url_slug,
           description: seller.description,
           profile_picture: get_profile_picture(seller),
+          banner_url: seller.banner_url,
           flagged: seller.flagged || false,
           seller_tier_name: get_tier_name(tier_id),
           document_verified: seller.document_verified || false,
@@ -31,7 +32,16 @@ class Seller::DashboardController < ApplicationController
           tiktok_url: seller.tiktok_url,
           twitter_url: seller.twitter_url,
           linkedin_url: seller.linkedin_url,
-          website: seller.website
+          website: seller.website,
+          google_business_profile_url: seller.google_business_profile_url,
+          address: branch&.location.presence || seller.location,
+          building: branch&.building.presence || seller.building,
+          room: branch&.room.presence || seller.room,
+          city: seller.city || seller.sub_county&.name || seller.county&.name,
+          county: seller.county&.name,
+          sub_county: seller.sub_county&.name,
+          latitude: (branch || seller.branches.order(is_main_branch: :desc, id: :asc).first)&.latitude&.to_f,
+          longitude: (branch || seller.branches.order(is_main_branch: :desc, id: :asc).first)&.longitude&.to_f
         },
         
         # Quick stats

@@ -2,7 +2,8 @@ class SellerSerializer < ActiveModel::Serializer
   attributes :id, :fullname, :slug, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location,
              :building, :room, :banner_url,
              :business_registration_number, :description, :username, :profile_picture,
-             :age_group_id, :zipcode, :city, :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
+             :age_group_id, :zipcode, :city, :county, :sub_county, :latitude, :longitude,
+             :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
              :carbon_code, :created_at, :updated_at, :partner_status, :partner_type,
              :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url
@@ -32,6 +33,22 @@ class SellerSerializer < ActiveModel::Serializer
     object.partner&.partner_type
   end
 
+  def county
+    object.county&.name
+  end
+
+  def sub_county
+    object.sub_county&.name
+  end
+
+  def latitude
+    main_branch&.latitude&.to_f
+  end
+
+  def longitude
+    main_branch&.longitude&.to_f
+  end
+
   def include_google_place_reviews?
     return false unless object.class.column_names.include?("google_place_reviews")
 
@@ -47,6 +64,10 @@ class SellerSerializer < ActiveModel::Serializer
     cc = object.carbon_code
     return nil unless cc
     { id: cc.id, code: cc.code, label: cc.label }
+  end
+
+  def main_branch
+    @main_branch ||= object.branches.order(is_main_branch: :desc, id: :asc).first
   end
 
   # Avoid using cached profile pictures - always return nil for cached URLs

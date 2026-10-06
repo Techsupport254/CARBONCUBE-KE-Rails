@@ -134,6 +134,8 @@ class Seller::BranchesController < ApplicationController
       :name,
       :description,
       :location,
+      :building,
+      :room,
       :latitude,
       :longitude,
       :phone,
