@@ -446,9 +446,11 @@ class ClickEventsAnalyticsService
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wish_list_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
+        "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' IN ('seller_contact_interaction', 'click_contact_seller_button', 'conversation_call')) as contact_clicks",
         "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_click_timestamps_array",
         "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_timestamps_array",
-        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wishlist_timestamps_array"
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wishlist_timestamps_array",
+        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' IN ('seller_contact_interaction', 'click_contact_seller_button', 'conversation_call')) as contact_timestamps_array"
       )
       .order('categories.name')
       .map do |row|
@@ -459,10 +461,12 @@ class ClickEventsAnalyticsService
           ad_clicks: row.ad_clicks.to_i,
           wish_list_clicks: row.wish_list_clicks.to_i,
           reveal_clicks: row.reveal_clicks.to_i,
+          contact_clicks: row.contact_clicks.to_i,
           timestamps: parse_ts.call(row.respond_to?(:ad_click_timestamps_array) ? row.ad_click_timestamps_array : nil),
           ad_click_timestamps: parse_ts.call(row.respond_to?(:ad_click_timestamps_array) ? row.ad_click_timestamps_array : nil),
           reveal_timestamps: parse_ts.call(row.respond_to?(:reveal_timestamps_array) ? row.reveal_timestamps_array : nil),
-          wishlist_timestamps: parse_ts.call(row.respond_to?(:wishlist_timestamps_array) ? row.wishlist_timestamps_array : nil)
+          wishlist_timestamps: parse_ts.call(row.respond_to?(:wishlist_timestamps_array) ? row.wishlist_timestamps_array : nil),
+          contact_timestamps: parse_ts.call(row.respond_to?(:contact_timestamps_array) ? row.contact_timestamps_array : nil)
         }
       end
   end

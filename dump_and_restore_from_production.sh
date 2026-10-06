@@ -23,7 +23,7 @@ if [ -z "${PRODUCTION_DB:-}" ]; then
 fi
 
 # Local database URL
-LOCAL_DB="postgresql://postgres:postgres@localhost:5432/carbon_development"
+LOCAL_DB="postgresql://postgres@localhost:5434/carbon_development"
 
 # The restore may place pg_trgm in either 'public' or 'extensions'. Ensure
 # pg_restore, psql and other PostgreSQL clients can resolve operator classes
@@ -92,11 +92,11 @@ echo ""
 
 # Drop and recreate the database for a clean restore
 echo "Terminating active connections to carbon_development..."
-psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'carbon_development' AND pid <> pg_backend_pid();" 2>/dev/null || true
+psql -d "postgresql://postgres@localhost:5434/postgres" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'carbon_development' AND pid <> pg_backend_pid();" 2>/dev/null || true
 echo "Dropping existing database for clean restore..."
-psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
+psql -d "postgresql://postgres@localhost:5434/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
 echo "Creating fresh database..."
-psql -d "postgresql://postgres:3323@localhost:5432/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
+psql -d "postgresql://postgres@localhost:5434/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
 
 # The production dump keeps some extensions in 'extensions' (Supabase-style), but
 # pg_trgm lives in 'public' in production. Pre-create the extensions in the same

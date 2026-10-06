@@ -290,15 +290,17 @@ class Seller::DashboardController < ApplicationController
       wishlist_score = [wishlist_count * 4, 60].min # Max 60 points
       comprehensive_score = rating_score + review_score + click_score + reveal_score + wishlist_score
 
-      # Parse media
-      media_urls = []
-      if ad.media.present?
+      media_urls = if ad.media.is_a?(Array)
+        ad.media
+      elsif ad.media.is_a?(String) && ad.media.present?
         begin
           media_data = JSON.parse(ad.media)
-          media_urls = media_data.is_a?(Array) ? media_data : [media_data]
+          media_data.is_a?(Array) ? media_data : [media_data]
         rescue
-          media_urls = []
+          []
         end
+      else
+        []
       end
 
       {

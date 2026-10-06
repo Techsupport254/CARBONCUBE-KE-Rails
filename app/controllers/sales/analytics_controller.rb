@@ -8,7 +8,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v7_#{device_hash}"
+    cache_key = "sales_analytics_index_v8_#{device_hash}"
     response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
@@ -68,7 +68,7 @@ class Sales::AnalyticsController < ApplicationController
                               .select(
                                 "COUNT(CASE WHEN event_type = 'Ad-Click' THEN 1 END) as ad_clicks",
                                 "COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' THEN 1 END) as reveal_clicks",
-                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' THEN 1 END) as contact_interactions"),
+                                Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' IN ('seller_contact_interaction', 'click_contact_seller_button', 'conversation_call') THEN 1 END) as contact_interactions"),
                                 Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' = 'whatsapp' THEN 1 END) as whatsapp_clicks"),
                                 Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' = 'call_phone' THEN 1 END) as call_clicks"),
                                 Arel.sql("COUNT(CASE WHEN event_type = 'Reveal-Seller-Details' AND metadata->>'action' = 'seller_contact_interaction' AND metadata->>'action_type' IN ('copy_phone', 'copy_email') THEN 1 END) as copy_clicks"),
@@ -95,7 +95,7 @@ class Sales::AnalyticsController < ApplicationController
 
       ad_clicks_with_timestamps = compact_count_series(click_events.where(event_type: 'Ad-Click'), 'click_events.created_at')
       reveal_clicks_with_timestamps = compact_count_series(click_events.where(event_type: 'Reveal-Seller-Details'), 'click_events.created_at')
-      contact_interactions_with_timestamps = compact_count_series(click_events.where(event_type: 'Reveal-Seller-Details').where("metadata->>'action' = ?", 'seller_contact_interaction'), 'click_events.created_at')
+      contact_interactions_with_timestamps = compact_count_series(click_events.where(event_type: 'Reveal-Seller-Details').where("metadata->>'action' IN (?)", %w[seller_contact_interaction click_contact_seller_button conversation_call]), 'click_events.created_at')
       callback_requests_with_timestamps = compact_count_series(click_events.where(event_type: 'Callback-Request'), 'click_events.created_at')
 
       # Quarterly targets
@@ -250,7 +250,7 @@ class Sales::AnalyticsController < ApplicationController
       # Get device_hash from params or headers if available for excluding seller own clicks
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
       
-      cache_key = "sales_analytics_categories_v5_#{device_hash.presence || 'all'}"
+      cache_key = "sales_analytics_categories_v6_#{device_hash.presence || 'all'}"
       response_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
         # Use unified service for category click events
         click_events_service = ClickEventsAnalyticsService.new(
@@ -439,21 +439,11 @@ class Sales::AnalyticsController < ApplicationController
     internal_exclusions = InternalUserExclusion.active.by_type('email_domain').pluck(:identifier_value)
     excluded_email_patterns = (hardcoded_excluded_emails + hardcoded_excluded_domains + internal_exclusions).uniq
 
-    if sales_scoped_rep? && user_type == 'buyers'
-      render json: { users: [], type: 'buyers', count: 0 }
-      return
-    end
-
     if user_type == 'sellers'
       # 1. Fetch sellers with basic associations
       users_scope = Seller.where(deleted: false)
                           .includes({ seller_tier: :tier }, :carbon_code)
                           .order(created_at: :desc)
-      
-      if sales_scoped_rep?
-        user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_sales_user.id).pluck(:id)
-        users_scope = users_scope.where(carbon_code_id: user_carbon_code_ids)
-      end
 
       # Apply exclusion filtering
       if excluded_email_patterns.any?
@@ -553,20 +543,10 @@ class Sales::AnalyticsController < ApplicationController
       end
     end
     
-    if commission_sales?
-      if user_type == 'buyers'
-        users_data.each do |u|
-          u[:email] = mask_email(u[:email])
-          u[:phone] = mask_phone(u[:phone])
-        end
-      else
-        user_carbon_code_ids = CarbonCode.where(associable_type: 'SalesUser', associable_id: @current_sales_user.id).pluck(:id)
-        users.each_with_index do |seller, idx|
-          unless seller.carbon_code_id.present? && user_carbon_code_ids.include?(seller.carbon_code_id)
-            users_data[idx][:email] = mask_email(users_data[idx][:email])
-            users_data[idx][:phone] = mask_phone(users_data[idx][:phone])
-          end
-        end
+    if commission_sales? && user_type == 'buyers'
+      users_data.each do |u|
+        u[:email] = mask_email(u[:email])
+        u[:phone] = mask_phone(u[:phone])
       end
     end
 
@@ -1228,10 +1208,6 @@ class Sales::AnalyticsController < ApplicationController
     end
     
     query
-  end
-
-  def sales_scoped_rep?
-    !@current_sales_user&.team_sales_dashboard_access?
   end
 
   def commission_sales?
