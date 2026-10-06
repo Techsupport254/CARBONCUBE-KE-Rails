@@ -40,12 +40,13 @@ class Seller::ProfilesController < ApplicationController
   def update
     begin
       uploaded_profile_picture_url = nil
+      uploaded_banner_url = nil
       uploaded_document_url = nil
-      
+
       # Handle profile picture upload if present
       if params[:profile_picture].present?
         pic = params[:profile_picture]
-        
+
         # Check if it's actually a file object
         unless pic.respond_to?(:original_filename)
           return render json: { error: "Invalid file format" }, status: :unprocessable_entity
@@ -61,6 +62,27 @@ class Seller::ProfilesController < ApplicationController
 
         if uploaded_profile_picture_url.nil?
           return render json: { error: "Failed to upload profile picture" }, status: :unprocessable_entity
+        end
+      end
+
+      # Handle shop banner upload if present
+      if params[:banner].present?
+        banner = params[:banner]
+
+        unless banner.respond_to?(:original_filename)
+          return render json: { error: "Invalid file format" }, status: :unprocessable_entity
+        end
+
+        uploaded_banner_url = handle_upload(
+          file: banner,
+          type: :banner,
+          max_size: 5.megabytes,
+          accepted_types: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+          processing_method: :process_and_upload_banner
+        )
+
+        if uploaded_banner_url.nil?
+          return render json: { error: "Failed to upload banner" }, status: :unprocessable_entity
         end
       end
 
@@ -103,6 +125,7 @@ class Seller::ProfilesController < ApplicationController
 
       # Add the uploaded URLs if available
       update_params[:profile_picture] = uploaded_profile_picture_url if uploaded_profile_picture_url
+      update_params[:banner_url] = uploaded_banner_url if uploaded_banner_url
       update_params[:document_url] = uploaded_document_url if uploaded_document_url
       
       # Resolve carbon_code string to carbon_code_id (for OAuth completion modal)
@@ -600,6 +623,23 @@ private
       uploaded["secure_url"]
     rescue => e
       Rails.logger.error "Error uploading profile picture: #{e.message}"
+      nil
+    end
+  end
+
+  # Shop Banner Upload (direct upload, no processing)
+  def process_and_upload_banner(image)
+    begin
+      uploaded = Cloudinary::Uploader.upload(image.tempfile.path,
+        upload_preset: ENV['UPLOAD_PRESET'],
+        folder: "seller_banners",
+        transformation: [
+          { quality: "auto", fetch_format: "auto" }
+        ]
+      )
+      uploaded["secure_url"]
+    rescue => e
+      Rails.logger.error "Error uploading shop banner: #{e.message}"
       nil
     end
   end
