@@ -12,16 +12,42 @@ class Sales::SellersController < ApplicationController
     if params[:query].present?
       search_term = params[:query].strip
       sellers_query = sellers_query.where(
-        "fullname ILIKE :search OR 
-         phone_number ILIKE :search OR 
-         email ILIKE :search OR 
+        "fullname ILIKE :search OR
+         phone_number ILIKE :search OR
+         email ILIKE :search OR
          enterprise_name ILIKE :search",
         search: "%#{search_term}%"
       )
     end
-    
+
     total_count = sellers_query.count
-    @sellers = sellers_query.includes(:tier, :carbon_code).order(created_at: :desc).limit(per_page).offset((page - 1) * per_page)
+
+    # Optional "near me" ordering — when the app passes its GPS coords, order by
+    # Haversine distance (km) to the seller's nearest geocoded branch and expose
+    # it as `distance_km` on each serialized seller. Float() sanitizes params,
+    # so the interpolation below cannot be injected.
+    lat = Float(params[:lat], exception: false)
+    lng = Float(params[:lng], exception: false)
+    if lat&.between?(-90, 90) && lng&.between?(-180, 180)
+      distance_sql = <<~SQL.squish
+        (SELECT MIN(6371 * 2 * ASIN(SQRT(
+           POWER(SIN(RADIANS(#{lat} - branches.latitude) / 2), 2) +
+           COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat})) *
+           POWER(SIN(RADIANS(#{lng} - branches.longitude) / 2), 2))))
+         FROM branches
+         WHERE branches.seller_id = sellers.id
+           AND branches.latitude IS NOT NULL
+           AND branches.longitude IS NOT NULL)
+      SQL
+      @sellers = sellers_query
+        .select("sellers.*, #{distance_sql} AS distance_km")
+        .includes(:tier, :carbon_code)
+        .order(Arel.sql('distance_km ASC NULLS LAST'))
+        .limit(per_page)
+        .offset((page - 1) * per_page)
+    else
+      @sellers = sellers_query.includes(:tier, :carbon_code).order(created_at: :desc).limit(per_page).offset((page - 1) * per_page)
+    end
     
     render json: {
       sellers: @sellers,

@@ -399,6 +399,10 @@ class PresenceChannel < ApplicationCable::Channel
     when 'admin'
       # Admins can see all conversations, but we need to find conversations where they participate
       Conversation.where("buyer_id = ? OR seller_id = ? OR admin_id = ?", user_id, user_id, user_id)
+    when 'sales', 'marketing'
+      # Staff participate via the assigned admin_id slot — without this their
+      # online/offline/typing events never reached the other participant.
+      Conversation.where(admin_id: user_id)
     else
       []
     end
@@ -417,9 +421,12 @@ class PresenceChannel < ApplicationCable::Channel
       broadcast_with_retry("presence_seller_#{conversation.seller_id}", data)
     end
 
-    # Broadcast to admin (but not to self)
+    # Broadcast to admin and sales user if assigned — mirrors
+    # ConversationsChannel#broadcast_to_conversation_participants, where
+    # admin_id is the assigned staff member and may be a sales user.
     if conversation.admin_id && conversation.admin_id.to_s != user_id
       broadcast_with_retry("presence_admin_#{conversation.admin_id}", data)
+      broadcast_with_retry("presence_sales_#{conversation.admin_id}", data)
     end
   end
   

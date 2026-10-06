@@ -70,7 +70,7 @@ class Sales::AdsController < ApplicationController
     offset = (page - 1) * per_page
     @ads = base_query
          .order('ads.created_at DESC')  # Sort by latest first
-         .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
+         .select("ads.*, seller_tiers.tier_id AS seller_tier, COALESCE(NULLIF(sellers.enterprise_name, ''), sellers.fullname) AS seller_name, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
          .limit(per_page)
          .offset(offset)
     
@@ -541,7 +541,7 @@ end
     offset = (page - 1) * per_page
     @ads = base_query
              .order('ads.created_at DESC')
-             .select("ads.*, seller_tiers.tier_id AS seller_tier, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
+             .select("ads.*, seller_tiers.tier_id AS seller_tier, COALESCE(NULLIF(sellers.enterprise_name, ''), sellers.fullname) AS seller_name, #{EFFECTIVE_IS_ADDED_BY_SALES_SQL} AS derived_is_added_by_sales")
              .limit(per_page)
              .offset(offset)
     
