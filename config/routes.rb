@@ -998,6 +998,14 @@ Rails.application.routes.draw do
       member do
         patch :assign_carbon_code
       end
+      resources :verifications, only: [:create], controller: 'seller_verifications'
+    end
+
+    # Field verifications log + manager stats
+    resources :seller_verifications, only: [:index] do
+      collection do
+        get :stats
+      end
     end
     resources :buyers, only: [:index, :show, :destroy]
     resources :conversations, only: [:index, :show, :create] do

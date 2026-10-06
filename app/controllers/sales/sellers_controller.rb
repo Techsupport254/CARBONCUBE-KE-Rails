@@ -36,7 +36,12 @@ class Sales::SellersController < ApplicationController
 
   # GET /sales/sellers/:id
   def show
-    render json: @seller.as_json(include: { tier: { only: [:name] } })
+    render json: @seller.as_json(include: {
+      tier: { only: [:name] },
+      county: { only: [:id, :name] },
+      sub_county: { only: [:id, :name] },
+      carbon_code: { only: [:code, :label] }
+    })
   end
 
   # PATCH /sales/sellers/:id/assign_carbon_code

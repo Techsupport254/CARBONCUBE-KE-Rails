@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_24_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_08_120000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -1399,6 +1399,38 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_130000) do
     t.index ["tier_id"], name: "index_seller_tiers_on_tier_id"
   end
 
+  create_table "seller_verifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.uuid "sales_user_id", null: false
+    t.string "outcome", default: "verified", null: false
+    t.boolean "location_confirmed", default: false, null: false
+    t.boolean "phone_confirmed", default: false, null: false
+    t.boolean "business_name_confirmed", default: false, null: false
+    t.boolean "documents_confirmed", default: false, null: false
+    t.jsonb "corrections", default: {}, null: false
+    t.text "notes"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "display_name"
+    t.decimal "accuracy_m", precision: 8, scale: 2
+    t.decimal "distance_to_shop_km", precision: 8, scale: 2
+    t.decimal "nearest_ping_distance_km", precision: 8, scale: 2
+    t.datetime "nearest_ping_at"
+    t.string "gps_verdict", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "photo_url"
+    t.string "building"
+    t.string "room"
+    t.index ["created_at"], name: "index_seller_verifications_on_created_at"
+    t.index ["gps_verdict"], name: "index_seller_verifications_on_gps_verdict"
+    t.index ["outcome"], name: "index_seller_verifications_on_outcome"
+    t.index ["sales_user_id", "created_at"], name: "index_seller_verifications_on_sales_user_id_and_created_at"
+    t.index ["sales_user_id"], name: "index_seller_verifications_on_sales_user_id"
+    t.index ["seller_id", "created_at"], name: "index_seller_verifications_on_seller_id_and_created_at"
+    t.index ["seller_id"], name: "index_seller_verifications_on_seller_id"
+  end
+
   create_table "sellers", id: :uuid, default: nil, force: :cascade do |t|
     t.string "fullname"
     t.string "username"
@@ -1450,6 +1482,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_130000) do
     t.datetime "google_place_id_fetched_at"
     t.string "google_business_profile_url"
     t.string "slug"
+    t.datetime "field_verified_at"
+    t.string "building"
+    t.string "room"
+    t.string "banner_url"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"
@@ -1464,6 +1500,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_130000) do
     t.index ["deleted", "blocked", "created_at"], name: "index_sellers_on_status_created_at"
     t.index ["document_type_id"], name: "index_sellers_on_document_type_id"
     t.index ["enterprise_name"], name: "index_sellers_on_enterprise_name_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["field_verified_at"], name: "index_sellers_on_field_verified_at"
     t.index ["fullname"], name: "index_sellers_on_fullname_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["google_place_id"], name: "index_sellers_on_google_place_id"
     t.index ["id"], name: "index_sellers_on_uuid", unique: true
@@ -1685,6 +1722,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_130000) do
   add_foreign_key "seller_pricing_templates", "subcategories"
   add_foreign_key "seller_tiers", "sellers", on_delete: :cascade
   add_foreign_key "seller_tiers", "tiers"
+  add_foreign_key "seller_verifications", "sales_users"
+  add_foreign_key "seller_verifications", "sellers"
   add_foreign_key "sellers", "age_groups"
   add_foreign_key "sellers", "carbon_codes"
   add_foreign_key "sellers", "counties"

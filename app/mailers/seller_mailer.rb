@@ -42,6 +42,29 @@ class SellerMailer < ApplicationMailer
   end
 
 
+  def field_verification_notice(seller, verification)
+    recipient_name = seller.enterprise_name.presence || seller.fullname.presence || "Seller"
+
+    corrections = verification.corrected_fields.map do |field|
+      {
+        field: SellerVerification.field_label(field),
+        oldValue: verification.corrections.dig(field, 'old'),
+        newValue: verification.corrections.dig(field, 'new')
+      }
+    end
+
+    mail(
+      to: seller.email,
+      subject: verification.corrected? ? "We updated your shop details — #{recipient_name}" : "Your shop was verified — #{recipient_name}",
+      react: {
+        sellerName: recipient_name,
+        corrected: verification.corrected?,
+        corrections: corrections,
+        verifiedAt: verification.created_at&.strftime("%d %b %Y")
+      }
+    )
+  end
+
   def reactivation_confirmation(seller, to_email = nil)
     fullname = seller.fullname.presence || seller.enterprise_name.presence || "Seller"
     first_name = fullname.to_s.split(" ").first.presence || "Partner"

@@ -43,6 +43,7 @@ class Seller < ApplicationRecord
   has_many :email_communication_logs, dependent: :destroy
   has_many :whatsapp_product_sessions, dependent: :destroy
   has_many :click_events, dependent: :nullify
+  has_many :seller_verifications, dependent: :destroy
   has_many :sales_brands, dependent: :nullify
   has_one :partner, dependent: :nullify
   has_one :partner_distributor, dependent: :nullify
