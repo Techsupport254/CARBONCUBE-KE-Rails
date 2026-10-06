@@ -107,6 +107,8 @@ class BrandKenyaController < ApplicationController
       subcategories: brand.subcategories,
       scope: brand.scope,
       location: brand.location.presence || seller&.location,
+      building: seller&.building,
+      room: seller&.room,
       website: partner&.website.presence || brand.website.presence || seller&.website,
       phone: brand.phone.presence || seller&.phone_number,
       email: brand.email.presence || seller&.email,
