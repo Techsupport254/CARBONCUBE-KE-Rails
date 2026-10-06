@@ -56,6 +56,22 @@ class Sales::SellerVerificationsController < ApplicationController
       return render json: { error: 'Photo must be an image' }, status: :unprocessable_entity
     end
 
+    # Idempotency — the mobile queue replays a submission when its response is
+    # lost to a timeout/disconnect. A matching client_token means the row (and
+    # its photo, corrections, and notifications) already went through; return
+    # it instead of creating a duplicate.
+    if params[:client_token].present?
+      existing = SellerVerification.find_by(client_token: params[:client_token])
+      if existing
+        return render json: {
+          message: 'Verification logged',
+          verification: serialize_verification(existing),
+          seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :field_verified_at]),
+          deduplicated: true
+        }, status: :ok
+      end
+    end
+
     diff, updates = SellerVerification.build_corrections(@seller, params[:corrections])
     outcome = params[:outcome].presence_in(SellerVerification::OUTCOMES) ||
               (diff.any? ? 'corrected' : 'verified')
@@ -87,7 +103,8 @@ class Sales::SellerVerificationsController < ApplicationController
         latitude: params[:latitude],
         longitude: params[:longitude],
         display_name: params[:display_name],
-        accuracy_m: params[:accuracy_m]
+        accuracy_m: params[:accuracy_m],
+        client_token: params[:client_token]
       )
 
       if verification.successful?
@@ -108,6 +125,20 @@ class Sales::SellerVerificationsController < ApplicationController
     }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: 'Verification failed', details: e.record.errors.full_messages }, status: :unprocessable_entity
+  rescue ActiveRecord::RecordNotUnique
+    # Two submissions raced with the same client_token — the unique index
+    # guarantees only one row exists; return whichever committed.
+    existing = SellerVerification.find_by(client_token: params[:client_token])
+    if existing
+      render json: {
+        message: 'Verification logged',
+        verification: serialize_verification(existing),
+        seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :field_verified_at]),
+        deduplicated: true
+      }, status: :ok
+    else
+      render json: { error: 'Verification failed' }, status: :unprocessable_entity
+    end
   end
 
 

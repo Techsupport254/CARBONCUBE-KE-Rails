@@ -222,18 +222,20 @@ class ConversationsController < ApplicationController
       return
     end
 
-    # Staff (Admin, SalesUser, MarketingUser) can only mark support conversations as read.
-    # When observing peer-to-peer conversations (between buyer and seller, or two sellers),
-    # staff must NOT mark messages as read.
+    # Staff (Admin, SalesUser, MarketingUser) must not change read state on
+    # conversations they are only observing — participants' read receipts
+    # belong to them. Staff "read" is a per-viewer mark instead: it clears
+    # their own unread badge without touching the messages.
     staff_types = %w[Admin SalesUser MarketingUser]
     if staff_types.include?(@current_user.class.name)
       is_peer_to_peer = (@conversation.buyer_id.present? && @conversation.seller_id.present?) ||
                          (@conversation.seller_id.present? && @conversation.inquirer_seller_id.present?)
       if is_peer_to_peer
-        render json: { 
-          success: true, 
+        ConversationReadMark.mark!(reader: @current_user, conversation_id: @conversation.id)
+        render json: {
+          success: true,
           processed_count: 0,
-          message: "Staff viewing peer-to-peer conversation; messages not marked as read" 
+          message: "Marked conversation as read for your view"
         }
         return
       end
@@ -253,6 +255,12 @@ class ConversationsController < ApplicationController
 
     # Cancel any pending unread message reminders for this conversation & user
     UnreadMessageReminderService.cancel_reminders(@conversation.id, @current_user.id) if processed_count > 0
+
+    # Keep the staff view cursor in sync — marked conversations count only
+    # messages newer than the mark for that viewer.
+    if staff_types.include?(@current_user.class.name)
+      ConversationReadMark.mark!(reader: @current_user, conversation_id: @conversation.id)
+    end
 
     render json: { 
       success: true, 
@@ -288,6 +296,18 @@ class ConversationsController < ApplicationController
     marked_total = 0
     touched_conversations = 0
 
+    # Per-viewer marks cover every conversation the staff member can see —
+    # including peer-to-peer threads the message loop below deliberately
+    # skips. This clears their own badges without touching participants'
+    # read state.
+    if is_staff
+      ConversationReadMark.mark_all!(
+        reader: @current_user,
+        conversation_ids: staff_visible_conversations.pluck(:id),
+        at: now
+      )
+    end
+
     scope.active_participants.find_each do |conversation|
       if is_staff
         is_peer_to_peer = (conversation.buyer_id.present? && conversation.seller_id.present?) ||
@@ -301,7 +321,7 @@ class ConversationsController < ApplicationController
       last_message = unread.order(:id).last
       marked = unread.update_all([
         "status = ?, read_at = COALESCE(read_at, ?), delivered_at = COALESCE(delivered_at, ?)",
-        Message::STATUS_READ, now, now,
+        Message::STATUS_READ, now, now
       ])
       marked_total += marked
       touched_conversations += 1
@@ -1074,14 +1094,7 @@ class ConversationsController < ApplicationController
   end
 
   def fetch_admin_unread_counts
-    # For Sales users, show all conversations (they can see all conversations like admins)
-    # For Admins, show conversations where they are the admin_id
-    if @current_user.is_a?(SalesUser)
-      conversations = Conversation.active_participants
-    else
-      conversations = Conversation.where("conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true", @current_user.id)
-                                  .active_participants
-    end
+    conversations = staff_visible_conversations
 
     grouped_conversations = conversations.group_by do |conversation|
       admin_group_key_for(conversation)
@@ -1089,6 +1102,9 @@ class ConversationsController < ApplicationController
 
     all_conv_ids = conversations.map(&:id)
     unread_by_conv = batch_unread_counts(all_conv_ids, ['Seller', 'Buyer', 'Purchaser'])
+    # Per-viewer marks override: once the staff member marks a conversation,
+    # only messages newer than their mark count as unread for them.
+    unread_by_conv.merge!(batch_staff_unread_since_marks(['Seller', 'Buyer', 'Purchaser']))
     last_msg_times = batch_last_message_times(all_conv_ids)
 
     unread_counts = grouped_conversations.values.map do |conversation_group|
@@ -1278,25 +1294,41 @@ class ConversationsController < ApplicationController
   end
 
   def fetch_admin_unread_count
-    # For Sales users, show all conversations (they can see all conversations like admins)
-    # For Admins, show conversations where they are the admin_id
+    conv_ids = staff_visible_conversations.pluck(:id)
+
+    unread_by_conv = batch_unread_counts(conv_ids, ['Seller', 'Buyer', 'Purchaser'])
+    unread_by_conv.merge!(batch_staff_unread_since_marks(['Seller', 'Buyer', 'Purchaser']))
+
+    render json: { count: unread_by_conv.values.sum }
+  end
+
+  # Conversations a staff member can see. Sales users see everything (like
+  # admins do); admins see their assigned, unassigned, and WhatsApp threads.
+  def staff_visible_conversations
     if @current_user.is_a?(SalesUser)
-      conversations = Conversation.active_participants
+      Conversation.active_participants
     else
-      # For Admin, conversations are stored with admin_id
-      conversations = Conversation.where(admin_id: @current_user.id)
-                                  .active_participants
+      Conversation.where(
+        "conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true",
+        @current_user.id
+      ).active_participants
     end
+  end
 
-    # Batch fetch total unread count in a single query instead of N+1 per conversation
-    conv_ids = conversations.map(&:id)
-    total_unread = conv_ids.any? ?
-      Message.where(conversation_id: conv_ids)
-             .where(sender_type: ['Seller', 'Buyer', 'Purchaser'])
-             .where(read_at: nil)
-             .count : 0
-
-    render json: { count: total_unread }
+  # Unread counts for conversations where this staff member placed a
+  # per-viewer mark: messages newer than last_read_at, from non-staff senders.
+  def batch_staff_unread_since_marks(sender_types)
+    quoted_type = Message.connection.quote(@current_user.class.name)
+    quoted_id = Message.connection.quote(@current_user.id.to_s)
+    Message.joins(
+      "INNER JOIN conversation_read_marks crm " \
+      "ON crm.conversation_id = messages.conversation_id " \
+      "AND crm.reader_type = #{quoted_type} AND crm.reader_id = #{quoted_id}"
+    )
+      .where(sender_type: sender_types)
+      .where("messages.created_at > crm.last_read_at")
+      .group(:conversation_id)
+      .count
   end
 
   def broadcast_read_receipt(message)
