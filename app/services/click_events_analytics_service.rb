@@ -436,39 +436,110 @@ class ClickEventsAnalyticsService
       ad_ids = Ad.where(seller_id: filters[:seller_id]).pluck(:id)
       category_query = category_query.where(click_events: { ad_id: ad_ids })
     end
-    
+
+    # Listing volume per category, scoped to the same seller filter. Queried
+    # separately so categories with listings but no clicks still surface.
+    ads_scope = Ad.where(deleted: false).where.not(category_id: nil)
+    ads_scope = ads_scope.where(seller_id: filters[:seller_id]) if filters[:seller_id].present?
+    ads_counts = ads_scope.group(:category_id).count
+
+    parse_ts = ->(arr) { arr&.first(1000)&.map { |ts| ts&.iso8601 }&.compact || [] }
+
+    # Bookmarks come from wish_lists rows (unique buyer–ad saves), matching the
+    # dashboard "Bookmarks" KPI scope — counting Add-to-Wish-List click events
+    # instead would count taps that were later un-bookmarked and can exceed
+    # the KPI total. Date filters apply to when the save was created.
+    wishlist_scope = WishList
+      .joins(:buyer, ad: [:seller, :category])
+      .where(buyers: { deleted: false })
+      .where(sellers: { deleted: false, blocked: false, flagged: false })
+      .where(ads: { deleted: false })
+    if filters[:seller_id].present?
+      wishlist_scope = wishlist_scope.where(ads: { seller_id: filters[:seller_id] })
+    end
+    if filters[:start_date].present?
+      wishlist_start = begin
+        Time.parse(filters[:start_date])
+      rescue StandardError
+        nil
+      end
+      wishlist_scope = wishlist_scope.where('wish_lists.created_at >= ?', wishlist_start) if wishlist_start
+    end
+    if filters[:end_date].present?
+      wishlist_end = begin
+        Time.parse(filters[:end_date])
+      rescue StandardError
+        nil
+      end
+      wishlist_scope = wishlist_scope.where('wish_lists.created_at <= ?', wishlist_end) if wishlist_end
+    end
+    wishlist_data = wishlist_scope
+      .group('categories.id')
+      .select(
+        'categories.id AS category_id',
+        'COUNT(*) AS wishlist_count',
+        'ARRAY_AGG(wish_lists.created_at ORDER BY wish_lists.created_at DESC) AS wishlist_timestamps_array'
+      )
+      .index_by(&:category_id)
+
     # Use SQL aggregations to get counts with per-event-type timestamps
-    category_query
+    rows = category_query
       .group('categories.id', 'categories.name')
       .select(
         'categories.id AS category_id',
         'categories.name AS category_name',
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_clicks",
-        "COUNT(*) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wish_list_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' IN ('seller_contact_interaction', 'click_contact_seller_button', 'conversation_call')) as contact_clicks",
         "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Ad-Click') as ad_click_timestamps_array",
         "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') as reveal_timestamps_array",
-        "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Add-to-Wish-List') as wishlist_timestamps_array",
         "ARRAY_AGG(click_events.created_at ORDER BY click_events.created_at DESC) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' IN ('seller_contact_interaction', 'click_contact_seller_button', 'conversation_call')) as contact_timestamps_array"
       )
       .order('categories.name')
       .map do |row|
-        parse_ts = ->(arr) { arr&.first(1000)&.map { |ts| ts&.iso8601 }&.compact || [] }
-        
+        wl = wishlist_data[row.category_id]
         {
+          category_id: row.category_id,
           category_name: row.category_name,
+          ads_count: ads_counts[row.category_id].to_i,
           ad_clicks: row.ad_clicks.to_i,
-          wish_list_clicks: row.wish_list_clicks.to_i,
+          wish_list_clicks: wl ? wl.wishlist_count.to_i : 0,
           reveal_clicks: row.reveal_clicks.to_i,
           contact_clicks: row.contact_clicks.to_i,
           timestamps: parse_ts.call(row.respond_to?(:ad_click_timestamps_array) ? row.ad_click_timestamps_array : nil),
           ad_click_timestamps: parse_ts.call(row.respond_to?(:ad_click_timestamps_array) ? row.ad_click_timestamps_array : nil),
           reveal_timestamps: parse_ts.call(row.respond_to?(:reveal_timestamps_array) ? row.reveal_timestamps_array : nil),
-          wishlist_timestamps: parse_ts.call(row.respond_to?(:wishlist_timestamps_array) ? row.wishlist_timestamps_array : nil),
+          wishlist_timestamps: parse_ts.call(wl ? wl.wishlist_timestamps_array : nil),
           contact_timestamps: parse_ts.call(row.respond_to?(:contact_timestamps_array) ? row.contact_timestamps_array : nil)
         }
       end
+
+    # Categories with live listings or saved wishlists but no click events in
+    # the range — volume/saves without engagement is part of the story this
+    # data answers.
+    missing_ids = (ads_counts.keys | wishlist_data.keys) - rows.map { |r| r[:category_id] }
+    if missing_ids.any?
+      names = Category.where(id: missing_ids).pluck(:id, :name).to_h
+      missing_ids.each do |cid|
+        wl = wishlist_data[cid]
+        rows << {
+          category_id: cid,
+          category_name: names[cid],
+          ads_count: ads_counts[cid].to_i,
+          ad_clicks: 0,
+          wish_list_clicks: wl ? wl.wishlist_count.to_i : 0,
+          reveal_clicks: 0,
+          contact_clicks: 0,
+          timestamps: [],
+          ad_click_timestamps: [],
+          reveal_timestamps: [],
+          wishlist_timestamps: parse_ts.call(wl ? wl.wishlist_timestamps_array : nil),
+          contact_timestamps: []
+        }
+      end
+    end
+
+    rows.sort_by { |r| r[:category_name].to_s }
   end
 
   # Get subcategory click events - optimized to use SQL aggregations

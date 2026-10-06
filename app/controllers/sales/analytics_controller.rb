@@ -8,7 +8,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v8_#{device_hash}"
+    cache_key = "sales_analytics_index_v9_#{device_hash}"
     response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
@@ -144,6 +144,9 @@ class Sales::AnalyticsController < ApplicationController
         active_ads_valuation: all_ads.sum(:price) || 0,
         total_reviews: all_reviews.count,
         total_ads_wish_listed: all_wishlists.count,
+        # Every Add-to-Wish-List tap (incl. later-removed saves) — the saved
+        # rows above are the surviving subset of these attempts.
+        total_bookmark_attempts: click_events.where(event_type: 'Add-to-Wish-List').count,
         subscription_countdowns: all_paid_seller_tiers.count,
         without_subscription: all_unpaid_seller_tiers.count,
         seller_tier_distribution: seller_tier_distribution,
@@ -250,7 +253,7 @@ class Sales::AnalyticsController < ApplicationController
       # Get device_hash from params or headers if available for excluding seller own clicks
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
       
-      cache_key = "sales_analytics_categories_v6_#{device_hash.presence || 'all'}"
+      cache_key = "sales_analytics_categories_v7_#{device_hash.presence || 'all'}"
       response_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
         # Use unified service for category click events
         click_events_service = ClickEventsAnalyticsService.new(
