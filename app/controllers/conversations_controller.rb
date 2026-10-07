@@ -1104,7 +1104,9 @@ class ConversationsController < ApplicationController
     unread_by_conv = batch_unread_counts(all_conv_ids, ['Seller', 'Buyer', 'Purchaser'])
     # Per-viewer marks override: once the staff member marks a conversation,
     # only messages newer than their mark count as unread for them.
-    unread_by_conv.merge!(batch_staff_unread_since_marks(['Seller', 'Buyer', 'Purchaser']))
+    unread_by_conv.merge!(
+      staff_unread_overrides(all_conv_ids, ['Seller', 'Buyer', 'Purchaser'])
+    )
     last_msg_times = batch_last_message_times(all_conv_ids)
 
     unread_counts = grouped_conversations.values.map do |conversation_group|
@@ -1297,7 +1299,9 @@ class ConversationsController < ApplicationController
     conv_ids = staff_visible_conversations.pluck(:id)
 
     unread_by_conv = batch_unread_counts(conv_ids, ['Seller', 'Buyer', 'Purchaser'])
-    unread_by_conv.merge!(batch_staff_unread_since_marks(['Seller', 'Buyer', 'Purchaser']))
+    unread_by_conv.merge!(
+      staff_unread_overrides(conv_ids, ['Seller', 'Buyer', 'Purchaser'])
+    )
 
     render json: { count: unread_by_conv.values.sum }
   end
@@ -1317,7 +1321,7 @@ class ConversationsController < ApplicationController
 
   # Unread counts for conversations where this staff member placed a
   # per-viewer mark: messages newer than last_read_at, from non-staff senders.
-  def batch_staff_unread_since_marks(sender_types)
+  def batch_staff_unread_since_marks(conversation_ids, sender_types)
     quoted_type = Message.connection.quote(@current_user.class.name)
     quoted_id = Message.connection.quote(@current_user.id.to_s)
     Message.joins(
@@ -1325,10 +1329,25 @@ class ConversationsController < ApplicationController
       "ON crm.conversation_id = messages.conversation_id " \
       "AND crm.reader_type = #{quoted_type} AND crm.reader_id = #{quoted_id}"
     )
+      .where(conversation_id: conversation_ids)
       .where(sender_type: sender_types)
       .where("messages.created_at > crm.last_read_at")
       .group(:conversation_id)
       .count
+  end
+
+  # Builds {conversation_id => unread_count} overrides for conversations the
+  # staff member has marked. The marked set — not the since-mark result —
+  # drives the override: a marked conversation with no newer messages must
+  # resolve to 0, otherwise merge! leaves the raw read_at count in place.
+  def staff_unread_overrides(conversation_ids, sender_types)
+    marked_ids = ConversationReadMark
+                 .where(reader: @current_user, conversation_id: conversation_ids)
+                 .pluck(:conversation_id)
+    return {} if marked_ids.empty?
+
+    since_marks = batch_staff_unread_since_marks(marked_ids, sender_types)
+    marked_ids.index_with { |conversation_id| since_marks[conversation_id] || 0 }
   end
 
   def broadcast_read_receipt(message)
