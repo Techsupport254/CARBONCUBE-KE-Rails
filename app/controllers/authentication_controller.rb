@@ -625,6 +625,12 @@ class AuthenticationController < ApplicationController
     role = params[:role] || 'buyer'
     callback_scheme = params[:callback_scheme]&.strip.presence
     carbon_code = params[:carbon_code]&.to_s&.strip.presence
+    # Mobile login-CSRF binding: the app generates a nonce before initiating,
+    # we embed it in the signed state and echo it in the callback redirect —
+    # the app only accepts credential-bearing callbacks whose echoed nonce
+    # matches the one it stored.
+    client_nonce = params[:client_nonce]&.to_s&.strip
+    client_nonce = nil unless client_nonce&.match?(/\A[A-Za-z0-9\-_]{8,128}\z/)
 
     # Clear any stale auth cookies before starting a fresh OAuth flow.
     # If the cross-domain redirect later fails to set the new cookie, this
@@ -659,6 +665,7 @@ class AuthenticationController < ApplicationController
     }
     state_data[:callback_scheme] = callback_scheme if callback_scheme.present?
     state_data[:carbon_code] = carbon_code if carbon_code.present? && role.to_s.downcase == 'seller'
+    state_data[:client_nonce] = client_nonce if client_nonce.present?
     
     # Sign the state data using Rails message verifier
     verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
@@ -834,6 +841,8 @@ class AuthenticationController < ApplicationController
       role = (state_data[:role] || state_data['role'] || 'buyer').to_s
       callback_scheme = (state_data[:callback_scheme] || state_data['callback_scheme']).to_s.strip.presence
       carbon_code_from_state = (state_data[:carbon_code] || state_data['carbon_code']).to_s.strip.presence
+      # Signed client nonce echoed back to the app for login-CSRF binding
+      client_nonce = (state_data[:client_nonce] || state_data['client_nonce']).to_s.strip.presence
     rescue ActiveSupport::MessageVerifier::InvalidSignature => e
       redirect_to "#{frontend_url}/auth/google/callback?error=#{CGI.escape('Invalid state parameter')}", allow_other_host: true, status: 302
       return
@@ -842,13 +851,16 @@ class AuthenticationController < ApplicationController
       return
     end
 
-    # Base URL for OAuth redirect (web frontend or app deep link for mobile)
+    # Base URL for OAuth redirect (web frontend or app deep link for mobile).
+    # Query params are joined with the nonce prefix so credential-bearing
+    # callbacks carry the client_nonce back to the app that initiated the flow.
     oauth_redirect_base = callback_scheme.present? ? "#{callback_scheme}://auth/google/callback" : "#{frontend_url}/auth/google/callback"
+    nonce_prefix = client_nonce.present? ? "client_nonce=#{CGI.escape(client_nonce)}&" : ''
 
     # Exchange authorization code for tokens
     code = params[:code]
     unless code.present?
-      redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Authorization code missing')}", allow_other_host: true, status: 302
+      redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape('Authorization code missing')}", allow_other_host: true, status: 302
       return
     end
     
@@ -857,7 +869,7 @@ class AuthenticationController < ApplicationController
       token_response = exchange_code_for_tokens(code)
 
       unless token_response && token_response['access_token']
-        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Failed to authenticate with Google')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape('Failed to authenticate with Google')}", allow_other_host: true, status: 302
         return
       end
       
@@ -869,7 +881,7 @@ class AuthenticationController < ApplicationController
       user_info = get_google_user_info(access_token)
 
       unless user_info && user_info['email']
-        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Failed to retrieve user information')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape('Failed to retrieve user information')}", allow_other_host: true, status: 302
         return
       end
       
@@ -977,7 +989,7 @@ class AuthenticationController < ApplicationController
             redirect_params[:role] = result[:role]
           end
 
-          redirect_url = "#{oauth_redirect_base}?#{redirect_params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')}"
+          redirect_url = "#{oauth_redirect_base}?#{nonce_prefix}#{redirect_params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')}"
         else
           # Production: use secure server-side cookies with subdomain sharing
           cookie_options = {
@@ -1007,7 +1019,7 @@ class AuthenticationController < ApplicationController
           if result[:phone_number].present?
             redirect_params[:phone_number] = result[:phone_number]
           end
-          redirect_url = "#{oauth_redirect_base}?#{redirect_params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')}"
+          redirect_url = "#{oauth_redirect_base}?#{nonce_prefix}#{redirect_params.map { |k, v| "#{k}=#{CGI.escape(v.to_s)}" }.join('&')}"
         end
 
         # Include state parameter if it was provided for CSRF validation
@@ -1040,9 +1052,9 @@ class AuthenticationController < ApplicationController
           }
           mismatch_params[:picture] = CGI.escape(user_info['picture'].to_s) if user_info['picture'].present?
           mismatch_qs = mismatch_params.map { |k, v| "#{k}=#{v}" }.join('&')
-          redirect_to "#{oauth_redirect_base}?#{mismatch_qs}", allow_other_host: true, status: 302
+          redirect_to "#{oauth_redirect_base}?#{nonce_prefix}#{mismatch_qs}", allow_other_host: true, status: 302
         else
-          redirect_to "#{oauth_redirect_base}?error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
+          redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape(result[:error] || 'Failed to create or link account')}", allow_other_host: true, status: 302
         end
         return
       end
@@ -1053,13 +1065,13 @@ class AuthenticationController < ApplicationController
       
       # Block login if the user is soft-deleted
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.deleted?
-        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Your account has been deleted. Please check your email for a reactivation link or request a new one.')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape('Your account has been deleted. Please check your email for a reactivation link or request a new one.')}", allow_other_host: true, status: 302
         return
       end
 
       # Block login if the user is blocked
       if (user.is_a?(Buyer) || user.is_a?(Seller)) && user.blocked?
-        redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Your account has been blocked. Please contact support.')}", allow_other_host: true, status: 302
+        redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape('Your account has been blocked. Please contact support.')}", allow_other_host: true, status: 302
         return
       end
       
@@ -1121,7 +1133,7 @@ class AuthenticationController < ApplicationController
           auth_data[:missing_fields] = missing_fields
         end
         encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
-        redirect_url = "#{oauth_redirect_base}?token=#{CGI.escape(encoded_data)}"
+        redirect_url = "#{oauth_redirect_base}?#{nonce_prefix}token=#{CGI.escape(encoded_data)}"
       else
         # Production: use secure server-side cookies with subdomain sharing
         Rails.logger.info "🍪 [GoogleOAuth] Production mode - using secure cookies with subdomain sharing"
@@ -1155,13 +1167,16 @@ class AuthenticationController < ApplicationController
         auth_data[:missing_fields] = missing_fields if missing_fields.any?
         encoded_data = Base64.urlsafe_encode64(auth_data.to_json)
 
-        redirect_url = "#{oauth_redirect_base}?success=true&token=#{CGI.escape(encoded_data)}"
+        redirect_url = "#{oauth_redirect_base}?#{nonce_prefix}success=true&token=#{CGI.escape(encoded_data)}"
       end
 
       # Store auth data in cache for the mobile two-step flow (state is the lookup key)
       if params[:state].present?
         auth_data_for_cache = { token: token, user: user_response }
         auth_data_for_cache[:missing_fields] = missing_fields if missing_fields.any?
+        # Bind the code exchange to the app's client_nonce — retrieval then
+        # requires the same nonce, so a captured state alone can't redeem it.
+        auth_data_for_cache[:client_nonce] = client_nonce if client_nonce.present?
         Rails.cache.write("oauth_auth_#{params[:state]}", auth_data_for_cache.to_json, expires_in: 5.minutes)
       end
 
@@ -1172,7 +1187,7 @@ class AuthenticationController < ApplicationController
       redirect_to redirect_url, allow_other_host: true, status: 302
 
     rescue => e
-      redirect_to "#{oauth_redirect_base}?error=#{CGI.escape('Authentication failed: ' + e.message)}", allow_other_host: true, status: 302
+      redirect_to "#{oauth_redirect_base}?#{nonce_prefix}error=#{CGI.escape('Authentication failed: ' + e.message)}", allow_other_host: true, status: 302
     end
   end
   
@@ -1198,6 +1213,15 @@ class AuthenticationController < ApplicationController
     if cached_data
       begin
         auth_data = JSON.parse(cached_data)
+
+        # When the flow was initiated by the app with a client_nonce, redeeming
+        # the code requires presenting the same nonce — a state captured from a
+        # deep link or logs can't be exchanged without it.
+        stored_nonce = auth_data['client_nonce'].to_s
+        if stored_nonce.present? && stored_nonce != params[:client_nonce].to_s
+          render json: { success: false, error: 'Invalid or expired authorization code' }, status: :forbidden
+          return
+        end
 
         # Delete from cache after retrieval (one-time use)
         Rails.cache.delete(cache_key)
