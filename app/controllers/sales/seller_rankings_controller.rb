@@ -10,8 +10,7 @@ class Sales::SellerRankingsController < ApplicationController
         category_id: params[:category_id]
       }.compact
 
-      limit = params[:limit].to_i
-      limit = 100 if limit < 1 || limit > 500
+      limit = (params[:limit].presence || 100).to_i.clamp(1, 2000)
 
       cache_key = "sales_seller_rankings_index_v1_#{filters.to_param}_#{limit}"
       ranked_sellers = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
@@ -61,8 +60,7 @@ class Sales::SellerRankingsController < ApplicationController
         category_id: params[:category_id]
       }.compact
 
-      limit = params[:limit].to_i
-      limit = 100 if limit < 1 || limit > 500
+      limit = (params[:limit].presence || 100).to_i.clamp(1, 2000)
 
       cache_key = "sales_seller_rankings_metric_v1_#{metric_type}_#{filters.to_param}_#{limit}"
       ranked_sellers = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do

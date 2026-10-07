@@ -442,6 +442,7 @@ class ClickEventsAnalyticsService
     ads_scope = Ad.where(deleted: false).where.not(category_id: nil)
     ads_scope = ads_scope.where(seller_id: filters[:seller_id]) if filters[:seller_id].present?
     ads_counts = ads_scope.group(:category_id).count
+    sellers_counts = ads_scope.group(:category_id).distinct.count(:seller_id)
 
     parse_ts = ->(arr) { arr&.first(1000)&.map { |ts| ts&.iso8601 }&.compact || [] }
 
@@ -502,6 +503,7 @@ class ClickEventsAnalyticsService
           category_id: row.category_id,
           category_name: row.category_name,
           ads_count: ads_counts[row.category_id].to_i,
+          sellers_count: sellers_counts[row.category_id].to_i,
           ad_clicks: row.ad_clicks.to_i,
           wish_list_clicks: wl ? wl.wishlist_count.to_i : 0,
           reveal_clicks: row.reveal_clicks.to_i,
@@ -526,6 +528,7 @@ class ClickEventsAnalyticsService
           category_id: cid,
           category_name: names[cid],
           ads_count: ads_counts[cid].to_i,
+          sellers_count: sellers_counts[cid].to_i,
           ad_clicks: 0,
           wish_list_clicks: wl ? wl.wishlist_count.to_i : 0,
           reveal_clicks: 0,
