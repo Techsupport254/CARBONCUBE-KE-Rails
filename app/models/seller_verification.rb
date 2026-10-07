@@ -1,6 +1,7 @@
 class SellerVerification < ApplicationRecord
   belongs_to :seller
   belongs_to :sales_user
+  has_many :seller_follow_ups, dependent: :nullify
 
   OUTCOMES = %w[verified corrected not_found unreachable].freeze
   GPS_VERDICTS = %w[verified suspicious pending].freeze

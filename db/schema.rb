@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_13_090000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -64,6 +64,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
     t.bigint "sub_county_id"
     t.boolean "active", default: true, null: false
     t.datetime "deactivated_at"
+    t.datetime "last_active_at"
     t.index ["active"], name: "index_admins_on_active"
     t.index ["id"], name: "index_admins_on_uuid", unique: true
   end
@@ -394,6 +395,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
     t.index ["comment_id"], name: "index_comment_votes_on_comment_id"
   end
 
+  create_table "conversation_read_marks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "conversation_id", null: false
+    t.string "reader_type", null: false
+    t.uuid "reader_id", null: false
+    t.datetime "last_read_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "reader_type", "reader_id"], name: "index_conversation_read_marks_unique", unique: true
+    t.index ["conversation_id"], name: "index_conversation_read_marks_on_conversation_id"
+    t.index ["reader_type", "reader_id"], name: "index_conversation_read_marks_on_reader_type_and_reader_id"
+  end
+
   create_table "conversations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.bigint "ad_id"
     t.datetime "created_at", null: false
@@ -679,6 +692,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
     t.bigint "sub_county_id"
     t.boolean "active", default: true, null: false
     t.datetime "deactivated_at"
+    t.datetime "last_active_at"
     t.index ["active"], name: "index_marketing_users_on_active"
     t.index ["id"], name: "index_marketing_users_on_uuid", unique: true
   end
@@ -1295,6 +1309,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
     t.datetime "deactivated_at"
     t.integer "paid_commission_batches", default: 0, null: false
     t.datetime "last_commission_paid_at"
+    t.datetime "last_active_at"
     t.index ["active"], name: "index_sales_users_on_active"
     t.index ["id"], name: "index_sales_users_on_uuid", unique: true
     t.index ["lead_id"], name: "index_sales_users_on_lead_id"
@@ -1370,6 +1385,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
     t.index ["seller_id"], name: "index_seller_documents_on_seller_id"
   end
 
+  create_table "seller_follow_ups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "seller_id", null: false
+    t.uuid "seller_verification_id"
+    t.uuid "sales_user_id"
+    t.string "actor_name"
+    t.integer "follow_up_type", default: 0, null: false
+    t.text "notes"
+    t.string "status", default: "open", null: false
+    t.date "follow_up_date"
+    t.datetime "occurred_at", null: false
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["follow_up_date"], name: "index_seller_follow_ups_on_follow_up_date"
+    t.index ["occurred_at"], name: "index_seller_follow_ups_on_occurred_at"
+    t.index ["sales_user_id"], name: "index_seller_follow_ups_on_sales_user_id"
+    t.index ["seller_id", "status"], name: "index_seller_follow_ups_on_seller_id_and_status"
+    t.index ["seller_id"], name: "index_seller_follow_ups_on_seller_id"
+    t.index ["seller_verification_id"], name: "index_seller_follow_ups_on_seller_verification_id"
+    t.index ["status"], name: "index_seller_follow_ups_on_status"
+  end
+
   create_table "seller_pricing_templates", force: :cascade do |t|
     t.uuid "seller_id", null: false
     t.bigint "category_id"
@@ -1424,6 +1461,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
     t.string "photo_url"
     t.string "building"
     t.string "room"
+    t.string "client_token"
+    t.index ["client_token"], name: "index_seller_verifications_on_client_token", unique: true
     t.index ["created_at"], name: "index_seller_verifications_on_created_at"
     t.index ["gps_verdict"], name: "index_seller_verifications_on_gps_verdict"
     t.index ["outcome"], name: "index_seller_verifications_on_outcome"
@@ -1665,6 +1704,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
   add_foreign_key "click_events", "ads"
   add_foreign_key "click_events", "buyers", on_delete: :cascade
   add_foreign_key "comment_votes", "issue_comments", column: "comment_id"
+  add_foreign_key "conversation_read_marks", "conversations"
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers", on_delete: :cascade
@@ -1719,6 +1759,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_130000) do
   add_foreign_key "seller_carbon_code_assignments", "sellers", on_delete: :cascade
   add_foreign_key "seller_documents", "document_types"
   add_foreign_key "seller_documents", "sellers", on_delete: :cascade
+  add_foreign_key "seller_follow_ups", "sales_users"
+  add_foreign_key "seller_follow_ups", "seller_verifications"
+  add_foreign_key "seller_follow_ups", "sellers"
   add_foreign_key "seller_pricing_templates", "categories"
   add_foreign_key "seller_pricing_templates", "sellers"
   add_foreign_key "seller_pricing_templates", "subcategories"

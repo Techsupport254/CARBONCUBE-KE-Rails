@@ -112,6 +112,11 @@ class Sales::SellerVerificationsController < ApplicationController
         # The verified shop-front photo doubles as the public shop banner.
         @seller.update_column(:banner_url, photo_url) if photo_url.present?
       end
+
+      # Optional follow-up/issue captured at visit time — e.g. "seller needs
+      # help uploading ads, call back Friday". Lives on the seller with a link
+      # back to this visit so it survives beyond the verification row.
+      create_follow_up!(verification)
     end
 
     verification.assess_gps!
@@ -248,6 +253,29 @@ class Sales::SellerVerificationsController < ApplicationController
 
   def truthy?(value)
     ActiveModel::Type::Boolean.new.cast(value)
+  end
+
+  # Nested under params[:follow_up]: {notes, follow_up_date, follow_up_type}.
+  # Skipped silently when absent; a blank-notes issue/note is dropped rather
+  # than failing the whole verification.
+  def create_follow_up!(verification)
+    fu = params[:follow_up]
+    return if fu.blank?
+
+    follow_up = @seller.seller_follow_ups.new(
+      seller_verification: verification,
+      sales_user: @current_sales_user,
+      actor_name: @current_sales_user.fullname.presence || @current_sales_user.email,
+      follow_up_type: fu[:follow_up_type].presence_in(SellerFollowUp.follow_up_types.keys) || 'note',
+      notes: fu[:notes]&.strip&.presence,
+      follow_up_date: (Date.parse(fu[:follow_up_date].to_s) rescue nil),
+      occurred_at: verification.created_at
+    )
+    follow_up.save!
+  rescue ActiveRecord::RecordInvalid
+    # A follow-up that can't save (e.g. issue without notes) never fails the
+    # verification itself — the visit record is more important.
+    Rails.logger.warn "Seller verification #{verification.id} follow-up skipped: #{follow_up.errors.full_messages}"
   end
 
   # Shop-front photo evidence. Uploads to Cloudinary like other seller images;

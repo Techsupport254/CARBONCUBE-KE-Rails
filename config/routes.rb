@@ -1000,6 +1000,7 @@ Rails.application.routes.draw do
         patch :assign_carbon_code
       end
       resources :verifications, only: [:create], controller: 'seller_verifications'
+      resources :follow_ups, only: [:index, :create], controller: 'seller_follow_ups'
     end
 
     # Field verifications log + manager stats
@@ -1008,6 +1009,9 @@ Rails.application.routes.draw do
         get :stats
       end
     end
+
+    # Shop follow-ups & issues raised during/after field verifications
+    resources :seller_follow_ups, only: [:index, :update, :destroy]
     resources :buyers, only: [:index, :show, :destroy]
     resources :conversations, only: [:index, :show, :create] do
       resources :messages, only: [:index, :create]
