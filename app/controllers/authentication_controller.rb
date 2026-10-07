@@ -2227,15 +2227,6 @@ class AuthenticationController < ApplicationController
     username
   end
 
-  def generate_placeholder_phone
-    # Generate a placeholder phone number that won't conflict
-    loop do
-      phone = "0#{rand(100000000..999999999)}"
-      break phone unless Buyer.exists?(phone_number: phone) || Seller.exists?(phone_number: phone)
-    end
-  end
-
-
   def calculate_age(birth_date)
     today = Date.current
     age = today.year - birth_date.year

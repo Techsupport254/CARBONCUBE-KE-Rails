@@ -29,7 +29,10 @@ class Admin::SellerCommunicationsController < ApplicationController
   end
 
   def send_to_test_seller
-    test_seller = Seller.find_by(id: 114) || Seller.first
+    # Pick the target explicitly — never silently fall back to an arbitrary
+    # production seller.
+    test_seller = Seller.find_by(id: params[:seller_id].presence || -1) ||
+                  (params[:email].present? ? Seller.find_by(email: params[:email].to_s.strip.downcase) : nil)
 
     if test_seller
       # Use the job for background processing
@@ -213,12 +216,14 @@ class Admin::SellerCommunicationsController < ApplicationController
     end
   end
 
-  def authenticate_admin!
-    # This method should be implemented to check if the current user is an admin
-    # For now, we'll assume it's handled by application controller or other middleware
-  end
-
   private
+
+  def authenticate_admin!
+    @current_user = AdminAuthorizeApiRequest.new(request.headers).result
+    unless @current_user && @current_user.is_a?(Admin)
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
+  end
 
   def permitted_communication_params
     params.permit(

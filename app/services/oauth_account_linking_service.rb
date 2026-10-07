@@ -498,14 +498,6 @@ class OauthAccountLinkingService
   end
 
 
-  def generate_placeholder_phone
-    # Generate a placeholder phone number that won't conflict
-    loop do
-      phone = "0#{rand(100000000..999999999)}"
-      break phone unless Buyer.exists?(phone_number: phone) || Seller.exists?(phone_number: phone)
-    end
-  end
-
   def extract_phone_number
     # Try to extract phone number from OAuth auth hash
     phone_number = nil

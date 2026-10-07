@@ -113,7 +113,11 @@ class SendProfileCompletionCampaignJob < ApplicationJob
       return
     end
 
-    call_center_url = ENV['CALL_CENTER_API_URL'] || 'http://localhost:3000'
+    call_center_url = ENV['CALL_CENTER_API_URL'].presence
+    unless call_center_url
+      Rails.logger.warn "[ProfileCompletionCampaign] CALL_CENTER_API_URL not set — skipping send for seller #{seller.id}"
+      return
+    end
     uri = URI.parse("#{call_center_url}/api/send-profile-completion")
 
     http = Net::HTTP.new(uri.host, uri.port)

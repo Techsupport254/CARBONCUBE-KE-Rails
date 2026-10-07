@@ -455,7 +455,9 @@ class GoogleMerchantService
       return mock_response if Rails.env.development? && !Rails.application.config.google_merchant_sync[:enabled]
       
       account_id = Rails.application.config.google_merchant_account_id
-      return mock_response unless account_id.present?
+      unless account_id.present?
+        return OpenStruct.new(success?: false, body: 'Google Merchant account not configured')
+      end
       
       begin
         # Set up authentication

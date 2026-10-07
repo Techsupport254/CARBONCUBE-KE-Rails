@@ -658,11 +658,6 @@ class Admin::SellersController < ApplicationController
     target_phone = params[:phone]
     target_email = params[:email]
 
-    if Rails.env.development?
-      target_phone = '0716404137'
-      target_email = 'kiruivictor097@gmail.com'
-    end
-
     SendComplianceReminderSequenceJob.perform_later(
       @seller.id,
       reminder_type,

@@ -4,13 +4,6 @@ class SendProductDetailsWhatSappJob < ApplicationJob
   def perform(seller_email)
     Rails.logger.info "=== PRODUCT DETAILS WHATSAPP JOB START ==="
     Rails.logger.info "Target Email: #{seller_email}"
-    
-    # TEST MODE: Only send to optisoftkenya@gmail.com
-    unless seller_email == 'optisoftkenya@gmail.com'
-      Rails.logger.warn "TEST MODE: Skipping seller #{seller_email} - only optisoftkenya@gmail.com allowed"
-      Rails.logger.info "=== PRODUCT DETAILS WHATSAPP JOB SKIPPED ==="
-      return
-    end
 
     # Find the seller by email
     seller = Seller.find_by(email: seller_email)

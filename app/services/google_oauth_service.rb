@@ -2028,15 +2028,6 @@ class GoogleOauthService
     enterprise_name
   end
 
-  def generate_placeholder_phone
-    # Generate a placeholder phone number that won't conflict
-    # Use 10-digit format (Kenya mobile format: 07XXXXXXXX)
-    loop do
-      phone = "07#{rand(10000000..99999999)}"
-      break phone unless Buyer.exists?(phone_number: phone) || Seller.exists?(phone_number: phone)
-    end
-  end
-
   def extract_phone_number(user_info)
     # Try multiple sources for phone number
     phone_number = nil

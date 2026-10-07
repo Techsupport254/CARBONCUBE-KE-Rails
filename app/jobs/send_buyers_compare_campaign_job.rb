@@ -25,15 +25,7 @@ class SendBuyersCompareCampaignJob < ApplicationJob
       if db_seller
         sellers_to_process = [db_seller]
       else
-        Rails.logger.info "[SendBuyersCompareCampaignJob] Target email #{target_email} not in DB. Using test mock seller object..."
-        sellers_to_process = [
-          OpenStruct.new(
-            id: "optisoft-test",
-            email: target_email,
-            fullname: "Optisoft Kenya Team",
-            enterprise_name: "Optisoft Kenya"
-          )
-        ]
+        Rails.logger.warn "[SendBuyersCompareCampaignJob] Target email #{target_email} not in DB — nothing sent."
       end
       total_eligible = sellers_to_process.size
     else

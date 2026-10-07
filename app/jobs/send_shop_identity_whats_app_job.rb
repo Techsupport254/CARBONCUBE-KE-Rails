@@ -2,11 +2,6 @@ class SendShopIdentityWhatsAppJob < ApplicationJob
   queue_as :default
 
   def perform(seller_email)
-    unless seller_email == 'optisoftkenya@gmail.com'
-      Rails.logger.warn "TEST MODE: Skipping seller #{seller_email} - only optisoftkenya@gmail.com allowed"
-      return
-    end
-
     seller = Seller.find_by(email: seller_email)
     
     if seller.nil?

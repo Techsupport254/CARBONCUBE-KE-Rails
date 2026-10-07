@@ -143,11 +143,14 @@ class Admin::MonitoringController < ApplicationController
   end
 
   def authenticate_for_automation
-    # Check for simple API token first (for n8n automation)
-    token = request.headers['Authorization']&.split(' ')&.last
-    expected_token = ENV['ADMIN_API_TOKEN']
+    # Check for simple API token first (for n8n automation). Blank checks
+    # matter: with ADMIN_API_TOKEN unset, token == expected_token was
+    # nil == nil and let every unauthenticated request through.
+    token = request.headers['Authorization']&.split(' ')&.last.to_s
+    expected_token = ENV['ADMIN_API_TOKEN'].to_s
 
-    if token == expected_token
+    if token.present? && expected_token.present? &&
+       ActiveSupport::SecurityUtils.secure_compare(token, expected_token)
       # Allow access with valid API token without database lookup
       @current_user = OpenStruct.new(id: 0, email: 'automation@carboncube-ke.com')
       return

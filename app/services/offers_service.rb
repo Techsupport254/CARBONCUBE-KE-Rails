@@ -81,19 +81,6 @@ class OffersService
     end
   end
   
-  # Create flash sale offers
-  def self.create_flash_sale_offers
-    # Create random flash sales throughout the day
-    if rand(1..10) == 1 # 10% chance every time this is called
-      Offer.create_flash_sale_offer(
-        start_time: Time.current,
-        end_time: Time.current + rand(2..6).hours,
-        discount_percentage: rand(20..50),
-        target_categories: Category.pluck(:id).sample(rand(1..3))
-      )
-    end
-  end
-  
   # Get trending offers based on performance
   def self.trending_offers(limit: 5)
     Offer.active_now

@@ -1,7 +1,8 @@
 class JsonWebToken
-    SECRET_KEY = Rails.application.credentials.secret_key_base&.to_s || 
-                 Rails.application.secret_key_base || 
-                 'development_secret_key_change_in_production'
+    # Fail loudly when the signing secret is missing — a committed fallback
+    # would let anyone forge tokens.
+    SECRET_KEY = Rails.application.secret_key_base.presence ||
+                 raise('secret_key_base is not configured')
     
     ALGORITHM = 'HS256'
 

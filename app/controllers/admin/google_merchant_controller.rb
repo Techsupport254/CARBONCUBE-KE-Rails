@@ -287,8 +287,9 @@ class Admin::GoogleMerchantController < ApplicationController
   end
   
   def authenticate_admin!
-    # Add your admin authentication logic here
-    # This is a placeholder - implement based on your admin authentication
-    true
+    @current_user = AdminAuthorizeApiRequest.new(request.headers).result
+    unless @current_user && @current_user.is_a?(Admin)
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+    end
   end
 end

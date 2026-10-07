@@ -1,8 +1,19 @@
 class SendShareShopFeatureOptimizedJob < ApplicationJob
   queue_as :default
 
-  def perform(test_mode = true)
-    all_sellers = test_mode ? Seller.where(email: 'optisoftkenya@gmail.com') : Seller.where(deleted: [false, nil], blocked: [false, nil])
+  # target: an email for a single-seller test send, or :all for the full
+  # campaign. Defaults to a no-op so an accidental bare perform_later can't
+  # mass-message every seller.
+  def perform(target = nil)
+    all_sellers = case target
+                  when :all, 'all'
+                    Seller.where(deleted: [false, nil], blocked: [false, nil])
+                  when String
+                    Seller.where(email: target)
+                  else
+                    Rails.logger.warn "#{self.class.name}: pass an email for a test send or :all for the full campaign"
+                    return
+                  end
     email_type = 'share_shop_feature'
     
     processed_seller_ids = EmailCommunicationLog.for_type(email_type).pluck(:seller_id)

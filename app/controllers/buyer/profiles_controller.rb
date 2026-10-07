@@ -425,7 +425,8 @@ class Buyer::ProfilesController < ApplicationController
       unless @seller.branches.exists?
         branch = @seller.branches.create(
           name: @seller.enterprise_name || "Main Branch",
-          location: params[:profile][:location] || "Nairobi",
+          location: params[:profile][:location].presence ||
+                    @seller.location.presence || @seller.county&.name,
           is_main_branch: true
         )
         unless branch.persisted?

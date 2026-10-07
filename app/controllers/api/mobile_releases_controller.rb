@@ -26,11 +26,13 @@ module Api
 
     # POST /api/mobile_releases
     def create
-      # Basic secret check for the deployment script
-      auth_token = request.headers['X-Release-Token']
-      expected_token = ENV['MOBILE_RELEASE_TOKEN'] || 'temporary-secret-token'
-      
-      if auth_token != expected_token
+      # Basic secret check for the deployment script. Fails closed when the
+      # token isn't configured; constant-time compare to avoid leaking it.
+      auth_token = request.headers['X-Release-Token'].to_s
+      expected_token = ENV['MOBILE_RELEASE_TOKEN'].to_s
+
+      if expected_token.blank? || auth_token.blank? ||
+         !ActiveSupport::SecurityUtils.secure_compare(auth_token, expected_token)
         return render json: { error: 'Unauthorized' }, status: :unauthorized
       end
 

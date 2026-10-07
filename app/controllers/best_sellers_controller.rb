@@ -213,7 +213,8 @@ class BestSellersController < ApplicationController
   end
 
   def current_admin
-    # Simple admin check - you can implement proper admin authentication here
-    @current_admin ||= Admin.first if Rails.env.development?
+    @current_admin ||= AdminAuthorizeApiRequest.new(request.headers).result
+  rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+    nil
   end
 end

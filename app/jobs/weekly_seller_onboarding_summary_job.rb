@@ -673,8 +673,8 @@ class WeeklySellerOnboardingSummaryJob < ApplicationJob
       end
     end
 
-    # Fallback summary if AI call fails
-    "WEEKLY SUMMARY: #{metrics_line}\n\nKEY FIELD FRICTION:\n• Merchant hesitation in hardware/electrical sectors regarding platform credibility\n• Smartphone access friction and app initialization loading times\n• Data bundle & airtime limitations during field outreach\n\nRECOMMENDED ACTIONS:\n• Provide physical verification collateral & offline pitch materials\n• Optimize mobile onboarding speed and ad upload flows"
+    # AI call failed — ship the real metrics only rather than invented findings.
+    "WEEKLY SUMMARY: #{metrics_line}"
   end
 end
 
