@@ -702,6 +702,9 @@ Rails.application.routes.draw do
   resources :device_tokens, only: [:create] do
     collection do
       post :ping_push
+      # DELETE /device_tokens/destroy — token comes from params, not the path
+      # (FCM tokens contain characters unsuitable for URL path segments)
+      delete :destroy
     end
   end
   

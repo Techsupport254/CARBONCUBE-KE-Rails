@@ -52,8 +52,22 @@ class PushNotificationService
 
     success_count = 0
     failures = []
-    
+    badge_counts = {}
+
     tokens.each do |token|
+      # iOS badge = the recipient's real unread notification count (same source
+      # the app's badge sync uses: /notifications unread_count). +1 for the
+      # notification being delivered — its Notification row is written after
+      # this send. Memoized per user since a user's tokens share the badge.
+      user = DeviceToken.includes(:user).find_by(token: token)&.user
+      badge = if user
+        key = "#{user.class.name}:#{user.id}"
+        badge_counts[key] ||= Notification.unread.where(recipient: user).count
+        badge_counts[key] + 1
+      else
+        1
+      end
+
       body = {
         message: {
           token: token,
@@ -77,7 +91,7 @@ class PushNotificationService
             payload: {
               aps: {
                 sound: 'default',
-                badge: 1
+                badge: badge
               }
             },
             headers: {

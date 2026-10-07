@@ -27,6 +27,23 @@ class DeviceTokensController < ApplicationController
     end
   end
 
+  # DELETE /device_tokens
+  # Removes a device token, scoped to the current user — deleting another
+  # user's token is impossible. Accepts { token: "fcm_token_string" } in the
+  # body or query string. Idempotent: returns 204 whether or not the token
+  # existed for this user (never reveals other users' tokens).
+  def destroy
+    token = params[:token]
+
+    if token.blank?
+      render json: { error: 'Token is required' }, status: :unprocessable_entity
+      return
+    end
+
+    DeviceToken.where(user: @current_user, token: token).destroy_all
+    head :no_content
+  end
+
   # POST /device_tokens/ping_push
   # Sends a real FCM push notification to the given token to verify the pipeline.
   # Accepts { token: "fcm_token_string" } in the request body.
