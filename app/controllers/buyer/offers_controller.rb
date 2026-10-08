@@ -422,7 +422,9 @@ class Buyer::OffersController < ApplicationController
         AND sellers.blocked = false
         AND sellers.deleted = false
         AND sellers.flagged = false
-      GROUP BY offers.id, sellers.id, seller_tiers.id, tiers.id
+      GROUP BY offers.id, sellers.id, seller_tiers.id, tiers.id,
+        cover.cover_ad_id, cover.cover_ad_title, cover.cover_media,
+        cover.cover_original_price, cover.cover_discounted_price
       ORDER BY offers.priority DESC, RANDOM(), offers.created_at DESC
       LIMIT 10
     SQL
