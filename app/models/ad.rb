@@ -206,6 +206,11 @@ class Ad < ApplicationRecord
   # Partner price-drop alerts → distributor network
   after_commit :enqueue_partner_price_drop, on: :update, if: :price_dropped_for_partner?
 
+  # IndexNow: tell Bing/Yandex the product URL changed so new/updated ads get
+  # crawled within minutes (sitemap cycle alone can lag by days).
+  after_commit :enqueue_index_now_ping, on: [:create, :destroy]
+  after_commit :enqueue_index_now_ping, on: :update, if: :indexable_content_changed?
+
   # Soft delete
   def flag
     update(flagged: true)
@@ -778,6 +783,18 @@ class Ad < ApplicationRecord
 
   def should_recheck_content_moderation?
     saved_change_to_title? || saved_change_to_description? || saved_change_to_price? || saved_change_to_media?
+  end
+
+  # IndexNow ping is only worth firing when something a crawler or the SERP
+  # actually sees changed — not on stock ticks or analytics writes.
+  def indexable_content_changed?
+    saved_change_to_title? || saved_change_to_description? || saved_change_to_price? ||
+      saved_change_to_media? || saved_change_to_slug? || saved_change_to_deleted? ||
+      saved_change_to_flagged? || saved_change_to_category_id? || saved_change_to_subcategory_id?
+  end
+
+  def enqueue_index_now_ping
+    SearchIndexPingJob.perform_later(product_url, deleted: destroyed?)
   end
 
   def should_sync_to_google_merchant?
