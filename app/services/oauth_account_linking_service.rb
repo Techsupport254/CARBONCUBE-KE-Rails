@@ -746,10 +746,11 @@ class OauthAccountLinkingService
     return unless email.present?
     
     # Remove any existing unverified OTPs for this email
-    EmailOtp.where(email: email, verified: false).delete_all
-    
+    EmailOtp.for_email(email).where(verified: false).delete_all
+
     # Create or update EmailOtp record with verified: true
-    email_otp = EmailOtp.find_or_initialize_by(email: email)
+    email_otp = EmailOtp.for_email(email).first_or_initialize
+    email_otp.email = email
     email_otp.update!(
       verified: true,
       otp_code: nil, # No OTP needed for Google OAuth users

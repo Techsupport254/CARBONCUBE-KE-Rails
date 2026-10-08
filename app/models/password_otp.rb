@@ -5,7 +5,7 @@ class PasswordOtp < ApplicationRecord
   OTP_VALIDITY_DURATION = 10.minutes
 
   def self.generate_and_send_otp(user)
-    otp = rand(100000..999999).to_s
+    otp = SecureRandom.random_number(100_000..999_999).to_s
     otp_digest = BCrypt::Password.create(otp)
 
     # Use first_or_initialize to either reuse or create new OTP record

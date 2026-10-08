@@ -365,6 +365,14 @@ class ConversationsController < ApplicationController
       return
     end
 
+    unless seller.whatsapp_notifications
+      render json: {
+        error: 'This seller has opted out of WhatsApp notifications',
+        error_type: 'whatsapp_opted_out'
+      }, status: :unprocessable_entity
+      return
+    end
+
     # Count unread messages for the seller (messages not sent by the seller)
     # Use read_at: nil to match the same logic used in unread_counts endpoint
     unread_count = conversation.messages

@@ -23,7 +23,7 @@ class MarketingAuthorizeApiRequest
       marketing_id = payload[:marketing_id] || payload[:user_id] # Support both for backward compatibility
       MarketingUser.find_by(id: marketing_id)
     else
-      Rails.logger.warn("JWT validation failed: #{decoded_result[:error]}")
+      Rails.logger.debug("JWT validation failed: #{decoded_result[:error]}")
       nil
     end
   rescue => e

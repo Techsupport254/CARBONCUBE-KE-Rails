@@ -77,6 +77,8 @@ class Buyer < ApplicationRecord
   scope :active, -> { where(deleted: false, blocked: false) }
   scope :not_deleted, -> { where(deleted: false) }
   scope :not_blocked, -> { where(blocked: false) }
+  # Buyers who haven't switched off WhatsApp notifications in Settings.
+  scope :whatsapp_opted_in, -> { where(whatsapp_notifications: true) }
 
 
   def wish_list_ad(ad)

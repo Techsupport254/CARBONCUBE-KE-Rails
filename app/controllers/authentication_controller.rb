@@ -1960,9 +1960,10 @@ class AuthenticationController < ApplicationController
   def mark_email_as_verified(email)
     return unless email.present?
     
-    EmailOtp.where(email: email, verified: false).delete_all
-    
-    email_otp = EmailOtp.find_or_initialize_by(email: email)
+    EmailOtp.for_email(email).where(verified: false).delete_all
+
+    email_otp = EmailOtp.for_email(email).first_or_initialize
+    email_otp.email = email
     email_otp.update!(
       verified: true,
       otp_code: nil,

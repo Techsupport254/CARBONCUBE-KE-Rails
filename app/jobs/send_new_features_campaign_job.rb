@@ -12,6 +12,8 @@ class SendNewFeaturesCampaignJob < ApplicationJob
       return
     end
 
+
+
     if seller.deleted || seller.blocked
       Rails.logger.warn "[SendNewFeaturesCampaignJob] Seller #{seller_id} is deleted or blocked, skipping"
       return
@@ -32,7 +34,9 @@ class SendNewFeaturesCampaignJob < ApplicationJob
     end
 
     # WhatsApp
-    if seller.phone_number.present?
+    if !seller.whatsapp_notifications
+      Rails.logger.info "[SendNewFeaturesCampaignJob] Seller #{seller.id} opted out of WhatsApp notifications — skipping WhatsApp channel"
+    elsif seller.phone_number.present?
       begin
         if dry_run
           Rails.logger.info "[SendNewFeaturesCampaignJob] DRY RUN: would send new_features WhatsApp to #{seller.phone_number}"

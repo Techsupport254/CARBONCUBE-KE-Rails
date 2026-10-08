@@ -18,8 +18,10 @@ class SendDocumentComplianceReminderJob < ApplicationJob
 
     results = { whatsapp: nil, in_app: nil, email: nil }
 
-    # 1. WhatsApp Delivery (approved templates only)
-    if channel.in?(['whatsapp', 'all']) && phone.present?
+    # 1. WhatsApp Delivery (approved templates only) — honors the seller's
+    # WhatsApp notification preference unless an override phone was passed.
+    whatsapp_opted_out = target_phone.blank? && !seller.whatsapp_notifications
+    if channel.in?(['whatsapp', 'all']) && phone.present? && !whatsapp_opted_out
       template_name, body_params = whatsapp_template_for(seller, reminder_type, recipient_name)
 
       components = [

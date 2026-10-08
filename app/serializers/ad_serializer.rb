@@ -32,7 +32,17 @@ class AdSerializer < ActiveModel::Serializer
   def seller_is_online
     return false if object.seller_id.blank?
 
+    # List endpoints pass :seller_online_ids (one MGET for all sellers) via
+    # instance_options; single renders fall back to a per-seller EXISTS.
+    batched = instance_options[:seller_online_ids]
+    return batched.include?(object.seller_id) if batched
+
     RedisConnection.exists?("online_user_seller_#{object.seller_id}") == true
+  rescue StandardError => e
+    # Presence is non-critical — an unreachable Redis shows sellers offline.
+    # debug: a dead Redis would otherwise emit one warn per serialized card.
+    Rails.logger.debug { "seller_is_online check failed: #{e.message}" }
+    false
   end
 
   has_one :seller, serializer: SellerSerializer
@@ -207,10 +217,14 @@ class AdSerializer < ActiveModel::Serializer
     object.seller&.document_verified?
   end
 
-  # [avg_rating, reviews_count] per seller — cached briefly because the
-  # through-association would otherwise run JOIN COUNT + JOIN AVG per card.
+  # [avg_rating, reviews_count] per seller. List endpoints pass a batched
+  # :seller_rating_stats_map (one grouped query for all sellers) via
+  # instance_options; the per-seller cache path remains for single renders.
   def seller_rating_stats
     return [0.0, 0] unless object.seller
+
+    batched = instance_options[:seller_rating_stats_map]
+    return batched[object.seller_id] || [0.0, 0] if batched
 
     Rails.cache.fetch("seller_rating_stats/#{object.seller_id}", expires_in: 5.minutes) do
       [

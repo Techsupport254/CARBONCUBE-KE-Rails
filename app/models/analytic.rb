@@ -37,6 +37,10 @@ class Analytic < ApplicationRecord
         user_agent_exclusions: InternalUserExclusion.active.by_type('user_agent').pluck(:identifier_value)
       }
     end
+  rescue StandardError => e
+    # Degrade to no extra exclusions when cache or DB are unavailable
+    Rails.logger.warn "Analytic exclusion lists degraded: #{e.class}: #{e.message}"
+    { device_hash_exclusions: [], email_domain_exclusions: [], user_agent_exclusions: [] }
   end
 
   # Scope to exclude internal users from analytics

@@ -95,7 +95,13 @@ class ApplicationController < ActionController::Base
     duration = Time.current - start_time
     # Enqueue rather than MonitoringMetric.create! inline — a synchronous
     # INSERT on every request adds latency and pool contention.
-    MonitoringMetricJob.perform_later(controller_name, action_name, duration)
+    # Rescue: when Redis/Sidekiq are down, enqueue failure must not mask the
+    # request's own response (an exception in `ensure` would turn a 200 into a 500).
+    begin
+      MonitoringMetricJob.perform_later(controller_name, action_name, duration)
+    rescue StandardError => e
+      Rails.logger.warn "MonitoringMetricJob enqueue failed: #{e.message}"
+    end
   end
 
   def track_error(exception)

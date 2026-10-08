@@ -60,7 +60,7 @@ class SellersController < ApplicationController
         carbon_code&.increment!(:times_used)
         seller_data = SellerSerializer.new(seller.reload).as_json
         # Check if email is verified
-        email_verified = EmailOtp.exists?(email: seller.email, verified: true)
+        email_verified = EmailOtp.for_email(seller.email).exists?(verified: true)
         seller_data[:email_verified] = email_verified
         render json: seller_data, status: :ok
       else

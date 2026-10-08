@@ -52,6 +52,10 @@ module CarbonecomRails
     
     # Background job configuration
     config.active_job.queue_adapter = :sidekiq
+
+    # Route all mailer deliveries to the dedicated 'mailers' Sidekiq queue
+    # (see config/sidekiq.yml) instead of mixing into 'default'.
+    config.action_mailer.deliver_later_queue_name = 'mailers'
     
     # Time zone
     config.time_zone = 'UTC'

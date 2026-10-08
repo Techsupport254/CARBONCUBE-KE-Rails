@@ -74,7 +74,15 @@ Rails.application.configure do
   # Enable caching and use Redis cache store in development
   config.action_controller.perform_caching = true
   config.action_controller.enable_fragment_cache_logging = true
-  config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0") }
+  config.cache_store = :redis_cache_store, {
+    url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"),
+    connect_timeout: 1,
+    read_timeout: 1,
+    write_timeout: 1,
+    error_handler: lambda { |method:, returning:, exception:|
+      Rails.logger.warn "Rails.cache #{method} failed: #{exception.class}: #{exception.message}"
+    }
+  }
   config.public_file_server.headers = {
     "Cache-Control" => "public, max-age=#{2.days.to_i}"
   }

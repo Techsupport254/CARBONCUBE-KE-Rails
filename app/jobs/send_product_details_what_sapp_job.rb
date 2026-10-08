@@ -14,6 +14,11 @@ class SendProductDetailsWhatSappJob < ApplicationJob
       return
     end
 
+    unless seller.whatsapp_notifications
+      Rails.logger.info "SendProductDetailsWhatsAppJob: Seller #{seller.id} opted out of WhatsApp notifications — skipping"
+      return
+    end
+
     Rails.logger.info "Seller found: #{seller.fullname || seller.enterprise_name || 'Unnamed'}"
     Rails.logger.info "Seller Email: #{seller.email}"
     Rails.logger.info "Seller Phone: #{seller.phone_number}"

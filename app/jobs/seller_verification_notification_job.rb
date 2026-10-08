@@ -77,6 +77,7 @@ class SellerVerificationNotificationJob < ApplicationJob
 
   def send_whatsapp(seller, body)
     return if seller.phone_number.blank?
+    return unless seller.whatsapp_notifications
 
     seller_name = seller.enterprise_name.presence || seller.fullname.presence || 'Seller'
 

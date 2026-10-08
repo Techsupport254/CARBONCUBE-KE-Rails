@@ -9,6 +9,11 @@ class SendAccurateListingsWhatsappJob < ApplicationJob
       return
     end
 
+    unless seller.whatsapp_notifications
+      Rails.logger.info "SendAccurateListingsWhatsappJob: Seller #{seller.id} opted out of WhatsApp notifications — skipping"
+      return
+    end
+
     begin
       sent_channels = []
 

@@ -18,6 +18,11 @@ class SendWhatsappTemplateJob < ApplicationJob
       return
     end
 
+    if user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications
+      Rails.logger.info "[SendWhatsappTemplateJob] #{user_type.capitalize} #{user_id} opted out of WhatsApp notifications — skipping"
+      return
+    end
+
     result = WhatsAppCloudService.send_template(user.phone_number, template_name, language_code, components)
 
     if result[:success]

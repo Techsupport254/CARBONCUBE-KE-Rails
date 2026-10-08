@@ -8,7 +8,8 @@ class SendSellerMarketingBroadcastJob < ApplicationJob
       return { success: false, error: "Admin not found" }
     end
 
-    sellers = Seller.where(deleted: [false, nil], blocked: [false, nil])
+    sellers = Seller.whatsapp_opted_in
+                    .where(deleted: [false, nil], blocked: [false, nil])
                     .where.not(phone_number: [nil, ""])
 
     sent = 0

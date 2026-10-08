@@ -2,7 +2,7 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
   queue_as :default
 
   def perform
-    sellers_to_process = Seller.where.not(phone_number: [nil, ''])
+    sellers_to_process = Seller.whatsapp_opted_in.where.not(phone_number: [nil, ''])
     
     if sellers_to_process.none?
       Rails.logger.warn "No sellers found to process"

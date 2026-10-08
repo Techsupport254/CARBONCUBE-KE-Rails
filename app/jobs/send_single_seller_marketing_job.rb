@@ -6,6 +6,11 @@ class SendSingleSellerMarketingJob < ApplicationJob
     admin = Admin.find_by(id: admin_id)
     return unless seller && admin
 
+    unless seller.whatsapp_notifications
+      Rails.logger.info "[SendSingleSellerMarketingJob] Seller #{seller.id} opted out of WhatsApp notifications — skipping"
+      return
+    end
+
     # Build personalization components
     components = [
       {

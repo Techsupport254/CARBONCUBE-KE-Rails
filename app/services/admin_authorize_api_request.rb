@@ -17,7 +17,7 @@ class AdminAuthorizeApiRequest
       if decoded_result[:missing_token]
         Rails.logger.debug "AdminAuthorizeApiRequest: No token provided"
       else
-        Rails.logger.error "AdminAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+        Rails.logger.debug { "AdminAuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}" }
       end
       raise ExceptionHandler::InvalidToken, decoded_result[:error]
     end

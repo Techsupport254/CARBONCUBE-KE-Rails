@@ -144,6 +144,12 @@ class UnreadMessageReminderService
         return
       end
 
+      # Respect the recipient's WhatsApp notification preference (default: on)
+      if recipient.respond_to?(:whatsapp_notifications) && recipient.whatsapp_notifications == false
+        Rails.logger.info "[UnreadMessageReminderService] Skipping reminder #{reminder_number} for #{recipient_type} #{recipient_id} — WhatsApp notifications disabled."
+        return
+      end
+
       # Send the WhatsApp reminder
       sent = send_whatsapp_template(conversation, recipient, unread_messages)
 

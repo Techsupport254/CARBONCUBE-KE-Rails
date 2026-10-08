@@ -91,6 +91,8 @@ class Seller < ApplicationRecord
   scope :active, -> { where(deleted: false, blocked: false) }
   scope :not_deleted, -> { where(deleted: false) }
   scope :not_blocked, -> { where(blocked: false) }
+  # Sellers who haven't switched off WhatsApp notifications in Settings.
+  scope :whatsapp_opted_in, -> { where(whatsapp_notifications: true) }
 
   # Callbacks for cache invalidation
   after_save :invalidate_caches

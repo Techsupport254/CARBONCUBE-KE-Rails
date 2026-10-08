@@ -2,7 +2,7 @@ class SendListingUpdateOptimizedJob < ApplicationJob
   queue_as :default
 
   def perform
-    all_sellers = Seller.where(deleted: [false, nil], blocked: [false, nil]).where.not(phone_number: [nil, ''])
+    all_sellers = Seller.whatsapp_opted_in.where(deleted: [false, nil], blocked: [false, nil]).where.not(phone_number: [nil, ''])
     template_name = 'seller_listing_update'
     language_code = 'en'
     

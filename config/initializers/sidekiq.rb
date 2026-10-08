@@ -26,9 +26,11 @@ Sidekiq.configure_client do |config|
   config.redis = redis_options.merge(size: 5)
 end
 
-# Use Sidekiq as the Active Job adapter in all environments.
+# Use Sidekiq as the Active Job adapter where a worker runs. Development uses
+# :async (see environments/development.rb) so jobs run in-process without a
+# Sidekiq server — otherwise they pile up in Redis and never execute.
 Rails.application.configure do
-  config.active_job.queue_adapter = :sidekiq
+  config.active_job.queue_adapter = Rails.env.development? ? :async : :sidekiq
 
   # Map Rails Active Job queue names to Sidekiq queues.
   # Jobs that don't declare queue_as will land in :default.

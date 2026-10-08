@@ -30,7 +30,7 @@ class Buyer::BuyersController < ApplicationController
       # Users can verify their email later if they choose
       otp_record = nil
       if otp_code.present?
-        otp_record = EmailOtp.find_by(email: buyer_email, otp_code: otp_code)
+        otp_record = EmailOtp.for_email(buyer_email).find_by(otp_code: otp_code.to_s.strip)
         
         if otp_record.nil?
           logger.error "Invalid OTP for email: #{buyer_email}"
@@ -57,7 +57,7 @@ class Buyer::BuyersController < ApplicationController
 
         # Send welcome email
         begin
-          WelcomeMailer.welcome_email(@buyer).deliver_now
+          WelcomeMailer.welcome_email(@buyer).deliver_later
         rescue => e
           Rails.logger.error "Failed to send welcome email: #{e.message}"
         end

@@ -2,7 +2,7 @@ class SendAccurateListingsOptimizedJob < ApplicationJob
   queue_as :default
 
   def perform(dry_run = true)
-    all_sellers = Seller.where(deleted: [false, nil], blocked: [false, nil]).where.not(phone_number: [nil, ''])
+    all_sellers = Seller.whatsapp_opted_in.where(deleted: [false, nil], blocked: [false, nil]).where.not(phone_number: [nil, ''])
     
     template_name = 'accurate_listings'
     language_code = 'en'

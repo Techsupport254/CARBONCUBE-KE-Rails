@@ -72,11 +72,17 @@ class Marketing::ProfilesController < ApplicationController
       return
     end
 
-    otp_code = rand.to_s[2..7]
+    otp_code = SecureRandom.random_number(100_000..999_999).to_s
     expires_at = 10.minutes.from_now
 
-    # Remove old OTPs for this email
-    EmailOtp.where(email: email).delete_all
+    # Anti-spam cooldown — must run before delete_all wipes the previous row.
+    wait = EmailOtp.resend_wait_seconds(email)
+    if wait.positive?
+      render json: { error: "Please wait #{wait}s before requesting another code.", retry_after: wait }, status: :too_many_requests
+      return
+    end
+
+    EmailOtp.for_email(email).delete_all
 
     # Create new OTP
     EmailOtp.create!(
@@ -88,7 +94,7 @@ class Marketing::ProfilesController < ApplicationController
 
     # Send email
     begin
-      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_now
+      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_later(queue: 'critical')
     rescue => e
       # Don't fail the request if email fails
       Rails.logger.warn "Failed to send verification email: #{e.message}"
@@ -109,7 +115,7 @@ class Marketing::ProfilesController < ApplicationController
 
     otp_code = params[:otp_code]
 
-    record = EmailOtp.find_by(email: email, otp_code: otp_code)
+    record = EmailOtp.for_email(email).find_by(otp_code: otp_code.to_s.strip)
 
     if record.nil?
       render json: { verified: false, error: 'Invalid verification code' }, status: :unprocessable_entity
@@ -148,7 +154,7 @@ class Marketing::ProfilesController < ApplicationController
   def email_verified?(marketing_user)
     return true if marketing_user.respond_to?(:provider) && marketing_user.provider.to_s.downcase == 'google'
 
-    EmailOtp.exists?(email: marketing_user.email, verified: true)
+    EmailOtp.for_email(marketing_user.email).exists?(verified: true)
   end
 
   def process_and_upload_profile_picture

@@ -6,7 +6,8 @@ class SellerSerializer < ActiveModel::Serializer
              :gender, :blocked, :flagged, :tier, :county_id, :sub_county_id,
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
              :carbon_code, :created_at, :updated_at, :partner_status, :partner_type,
-             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url
+             :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url,
+             :whatsapp_notifications
   attribute :google_place_reviews, if: :include_google_place_reviews?
   attribute :google_reviews_fetched_at, if: :include_google_place_reviews?
 
@@ -67,7 +68,11 @@ class SellerSerializer < ActiveModel::Serializer
   end
 
   def main_branch
-    @main_branch ||= object.branches.order(is_main_branch: :desc, id: :asc).first
+    @main_branch ||= if object.branches.loaded?
+                       object.branches.min_by { |b| [b.is_main_branch ? 0 : 1, b.id] }
+                     else
+                       object.branches.order(is_main_branch: :desc, id: :asc).first
+                     end
   end
 
   # Avoid using cached profile pictures - always return nil for cached URLs

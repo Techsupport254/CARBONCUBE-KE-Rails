@@ -120,7 +120,15 @@ Rails.application.configure do
   # Use file store if Redis is not available, otherwise use Redis
   if ENV['REDIS_URL'].present?
     config.cache_store = :redis_cache_store, {
-      url: ENV['REDIS_URL']
+      url: ENV['REDIS_URL'],
+      connect_timeout: 1,
+      read_timeout: 1,
+      write_timeout: 1,
+      # Fail open: on Redis errors warn once per call and behave as a cache
+      # miss rather than raising into every request (incl. Rack::Attack).
+      error_handler: lambda { |method:, returning:, exception:|
+        Rails.logger.warn "Rails.cache #{method} failed: #{exception.class}: #{exception.message}"
+      }
     }
   else
     config.cache_store = :file_store, Rails.root.join("tmp", "cache")

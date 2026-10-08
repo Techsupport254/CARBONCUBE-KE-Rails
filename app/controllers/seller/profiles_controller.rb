@@ -25,7 +25,7 @@ class Seller::ProfilesController < ApplicationController
     if @seller.respond_to?(:provider) && @seller.provider.to_s.downcase == 'google'
       email_verified = true
     else
-      email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+      email_verified = EmailOtp.for_email(@seller.email).exists?(verified: true)
     end
     seller_data[:email_verified] = email_verified
     # Check if user has a password set
@@ -151,7 +151,7 @@ class Seller::ProfilesController < ApplicationController
         if @seller.respond_to?(:provider) && @seller.provider.to_s.downcase == 'google'
           email_verified = true
         else
-          email_verified = EmailOtp.exists?(email: @seller.email, verified: true)
+          email_verified = EmailOtp.for_email(@seller.email).exists?(verified: true)
         end
         seller_data[:email_verified] = email_verified
         # Check if user has a password set
@@ -218,11 +218,17 @@ class Seller::ProfilesController < ApplicationController
       return
     end
 
-    otp_code = rand.to_s[2..7] # 6-digit code
+    otp_code = SecureRandom.random_number(100_000..999_999).to_s # 6-digit code
     expires_at = 10.minutes.from_now
 
-    # Remove old OTPs for this email
-    EmailOtp.where(email: email).delete_all
+    # Anti-spam cooldown — must run before delete_all wipes the previous row.
+    wait = EmailOtp.resend_wait_seconds(email)
+    if wait.positive?
+      render json: { error: "Please wait #{wait}s before requesting another code.", retry_after: wait }, status: :too_many_requests
+      return
+    end
+
+    EmailOtp.for_email(email).delete_all
 
     # Create new OTP
     EmailOtp.create!(
@@ -234,7 +240,7 @@ class Seller::ProfilesController < ApplicationController
 
     # Send email
     begin
-      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_now
+      OtpMailer.with(email: email, code: otp_code, fullname: fullname).send_otp.deliver_later(queue: 'critical')
     rescue => e
       # Don't fail the request if email fails
     end
@@ -255,7 +261,7 @@ class Seller::ProfilesController < ApplicationController
 
     otp_code = params[:otp_code]
 
-    record = EmailOtp.find_by(email: email, otp_code: otp_code)
+    record = EmailOtp.for_email(email).find_by(otp_code: otp_code.to_s.strip)
 
     if record.nil?
       render json: { verified: false, error: "Invalid verification code" }, status: :unprocessable_entity
@@ -276,7 +282,7 @@ class Seller::ProfilesController < ApplicationController
   end
 
   def seller_params
-    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :building, :room, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url)
+    params.permit(:fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name, :location, :building, :room, :password, :password_confirmation, :business_registration_number, :gender, :city, :zipcode, :username, :description, :county_id, :sub_county_id, :age_group_id, :profile_picture, :document_url, :document_type_id, :document_expiry_date, :phone_provided_by_oauth, :carbon_code, :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url, :whatsapp_notifications)
   end
 
   def authenticate_seller
@@ -521,6 +527,9 @@ class Seller::ProfilesController < ApplicationController
       uploaded_media = []
       if params[:ad][:media].present?
         uploaded_media = process_and_upload_ad_images(params[:ad][:media])
+        if uploaded_media.empty?
+          raise "Image upload failed. Please try again."
+        end
       end
 
       # Create the first ad
@@ -591,6 +600,8 @@ class Seller::ProfilesController < ApplicationController
     }
   rescue ActiveRecord::Rollback => e
     render json: { success: false, error: e.message.presence || "Onboarding failed. Please try again." }, status: :unprocessable_entity
+  rescue ExceptionHandler::MissingToken, ExceptionHandler::InvalidToken => e
+    render json: { success: false, error: e.message }, status: :unauthorized
   rescue => e
     render json: { success: false, error: "Onboarding failed: #{e.message}" }, status: :internal_server_error
   end
@@ -661,29 +672,33 @@ private
   end
 
   def process_and_upload_ad_images(images)
-    uploaded_urls = []
-    begin
-      Array(images).each do |image|
+    # Uploads are IO-bound — run them in parallel threads so N images take
+    # ~1x upload time instead of Nx inside the transaction. Strings are
+    # already-hosted Cloudinary URLs sent by clients that direct-upload.
+    Array(images).map do |image|
+      Thread.new do
         begin
-          unless image.tempfile && File.exist?(image.tempfile.path)
-            next
+          if image.is_a?(String)
+            url = image.strip
+            url.start_with?('https://res.cloudinary.com/') ? url : nil
+          elsif image.respond_to?(:tempfile) && image.tempfile && File.exist?(image.tempfile.path)
+            unless ENV['UPLOAD_PRESET'].present?
+              raise "UPLOAD_PRESET not configured"
+            end
+            uploaded_image = Cloudinary::Uploader.upload(
+              image.tempfile.path,
+              upload_preset: ENV['UPLOAD_PRESET'],
+              format: nil,
+              background: "transparent"
+            )
+            uploaded_image["secure_url"]
           end
-          unless ENV['UPLOAD_PRESET'].present?
-            raise "UPLOAD_PRESET not configured"
-          end
-          uploaded_image = Cloudinary::Uploader.upload(
-            image.tempfile.path,
-            upload_preset: ENV['UPLOAD_PRESET'],
-            format: nil,
-            background: "transparent"
-          )
-          uploaded_urls << uploaded_image["secure_url"]
         rescue => e
+          Rails.logger.warn "Onboarding ad image upload failed: #{e.message}"
+          nil
         end
       end
-    rescue => e
-    end
-    uploaded_urls
+    end.map(&:value).compact
   end
 
   def record_carbon_code_assignment(seller, carbon_code_id)

@@ -246,7 +246,7 @@ class Message < ApplicationRecord
     end
     
     begin
-      MessageNotificationMailer.new_message_notification(self, recipient).deliver_now
+      MessageNotificationMailer.new_message_notification(self, recipient).deliver_later
     rescue => e
       Rails.logger.error "Failed to send email notification for message #{id}: #{e.message}"
     end

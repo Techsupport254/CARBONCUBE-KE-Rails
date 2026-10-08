@@ -1866,11 +1866,21 @@ class Buyer::AdsController < ApplicationController
     # Preload essential associations for AdSerializer to avoid N+1 queries
     ads_to_preload = ads.to_a
     if ads_to_preload.any?
-      ActiveRecord::Associations::Preloader.new(records: ads_to_preload, associations: [:category, :subcategory, :reviews, { seller: { seller_tier: :tier } }, { offer_ads: :offer }]).call
+      ActiveRecord::Associations::Preloader.new(records: ads_to_preload, associations: [
+        :category, :subcategory, :reviews, { offer_ads: :offer },
+        { seller: [
+          { seller_tier: :tier }, { seller_documents: :document_type },
+          :partner, :categories, :county, :sub_county, :branches,
+          :carbon_code, :google_business_profile_connection
+        ] }
+      ]).call
     end
 
+    seller_stats = seller_rating_stats_map(ads_to_preload)
+    online_sellers = seller_online_ids(ads_to_preload)
+    serializer_opts = { seller_rating_stats_map: seller_stats, seller_online_ids: online_sellers }
     response = {
-      ads: ads_to_preload.map { |ad| AdSerializer.new(ad).as_json },
+      ads: ads_to_preload.map { |ad| AdSerializer.new(ad, serializer_opts).as_json },
       grok_insights: grok_insights,
       shops: paginated_shops.map do |shop_data|
         shop = shop_data[:shop]
@@ -2017,7 +2027,10 @@ class Buyer::AdsController < ApplicationController
   # Get personalized recommendations based on user's engagement
   def recommendations
     begin
-      device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      # Canonical key is device_hash; accept the alias names other surfaces use
+      device_hash = params[:device_hash] || params[:device_id] || params[:visitor_id] ||
+                    request.headers['X-Device-Hash'] || request.headers['X-Device-Id'] ||
+                    request.headers['X-Visitor-Id']
 
       # Optionally authenticate buyer if token is present (not required for guests)
       buyer_id = nil
@@ -2070,9 +2083,15 @@ class Buyer::AdsController < ApplicationController
       Rails.logger.error "Error in recommendations: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       fallback_limit = limit || 100
-      best_sellers = calculate_best_sellers_fast(fallback_limit)
-      Rails.logger.info "Recommendations error-fallback: count=#{(best_sellers || []).length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
-      render json: best_sellers || []
+      begin
+        best_sellers = calculate_best_sellers_fast(fallback_limit)
+        Rails.logger.info "Recommendations error-fallback: count=#{(best_sellers || []).length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: best_sellers || []
+      rescue StandardError => fallback_error
+        # DB/cache are both unreachable — degrade to an empty list, not a 500
+        Rails.logger.error "Recommendations fallback also failed: #{fallback_error.message}"
+        render json: []
+      end
     end
   end
 
@@ -2381,13 +2400,19 @@ class Buyer::AdsController < ApplicationController
                       :subcategory,
                       :reviews,
                       offer_ads: :offer,
-                      seller: { seller_tier: :tier, categories: [], seller_documents: :document_type }
+                      seller: [
+                        { seller_tier: :tier }, { seller_documents: :document_type },
+                        :categories, :partner, :county, :sub_county, :branches,
+                        :carbon_code, :google_business_profile_connection
+                      ]
                     )
                     .index_by(&:id)
                     .values_at(*related_ids)
                     .compact
 
-    render json: related_ads, each_serializer: AdSerializer
+    render json: related_ads, each_serializer: AdSerializer,
+           seller_rating_stats_map: seller_rating_stats_map(related_ads),
+           seller_online_ids: seller_online_ids(related_ads)
   end
 
 
@@ -2533,7 +2558,7 @@ class Buyer::AdsController < ApplicationController
 
     # Require any authenticated user (buyer, seller, admin, sales, or marketing)
     unless @current_user.is_a?(Buyer) || @current_user.is_a?(Seller) || @current_user.is_a?(Admin) || @current_user.is_a?(SalesUser) || @current_user.is_a?(MarketingUser)
-      Rails.logger.warn "Buyer::AdsController#alternatives: Authentication failed - no valid user found"
+      Rails.logger.debug "Buyer::AdsController#alternatives: Authentication failed - no valid user found"
       render json: { error: 'Authentication required to view alternative sellers' }, status: :unauthorized
     end
   end
@@ -3036,7 +3061,7 @@ class Buyer::AdsController < ApplicationController
       ""
     end
 
-    Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
+    best_sellers = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
       sql = <<~SQL.squish
         SELECT * FROM (
           SELECT
@@ -3209,6 +3234,80 @@ class Buyer::AdsController < ApplicationController
         }
       end
     end
+
+    # Offer data is attached after the cache fetch so the cached payload stays
+    # offer-agnostic and discount badges reflect live offer state.
+    attach_offer_info(best_sellers)
+  end
+
+  # Merges flash_sale_info (all offer types — AdSerializer parity) into the
+  # lightweight best-sellers hashes so cards can render offer badges/pricing.
+  def attach_offer_info(scored_ads)
+    return scored_ads if scored_ads.empty?
+
+    ads_by_id = Ad.includes(offer_ads: :offer)
+                  .where(id: scored_ads.filter_map { |ad| ad[:id] })
+                  .index_by(&:id)
+
+    scored_ads.each do |ad|
+      offer_ad = ads_by_id[ad[:id]]&.current_offer_ad
+      next unless offer_ad
+
+      offer = offer_ad.offer
+      ad[:flash_sale_info] = {
+        active: offer.status == 'active',
+        scheduled: offer.status == 'scheduled',
+        offer_id: offer.id,
+        offer_name: offer.name,
+        offer_type: offer.offer_type,
+        discount_type: offer.discount_type,
+        original_price: offer_ad.original_price,
+        discounted_price: offer_ad.discounted_price,
+        discount_percentage: offer_ad.discount_percentage,
+        savings_amount: offer_ad.savings_amount,
+        seller_notes: offer_ad.seller_notes,
+        start_time: offer.start_time,
+        end_time: offer.end_time,
+        time_remaining: offer.time_remaining,
+        badge_color: offer.badge_color,
+        banner_color: offer.banner_color,
+        minimum_order_amount: offer.minimum_order_amount
+      }
+    end
+    scored_ads
+  end
+
+  # { seller_id => [avg_rating, reviews_count] } for a set of ads in one
+  # grouped query — AdSerializer's per-card seller_rating_stats otherwise
+  # runs a through-association AVG + COUNT for every card.
+  def seller_rating_stats_map(ads)
+    seller_ids = ads.filter_map(&:seller_id).uniq
+    return {} if seller_ids.empty?
+
+    Review.joins(:ad)
+          .where(ads: { seller_id: seller_ids })
+          .group('ads.seller_id')
+          .pluck('ads.seller_id',
+                 Arel.sql('AVG(reviews.rating)'),
+                 Arel.sql('COUNT(reviews.id)'))
+          .to_h { |seller_id, avg, count| [seller_id, [avg.to_f.round(1), count.to_i]] }
+  end
+
+  # Set of seller_ids currently online — one MGET replaces the per-card
+  # Redis EXISTS AdSerializer would otherwise issue for every card.
+  def seller_online_ids(ads)
+    seller_ids = ads.filter_map(&:seller_id).uniq
+    return Set.new if seller_ids.empty?
+
+    keys = seller_ids.map { |id| "online_user_seller_#{id}" }
+    values = RedisConnection.mget(keys)
+    seller_ids.each_with_index.with_object(Set.new) do |(id, i), set|
+      set << id if values[i].present?
+    end
+  rescue StandardError => e
+    # Presence is non-critical — an unreachable Redis shows everyone offline.
+    Rails.logger.debug { "seller_online_ids lookup failed: #{e.message}" }
+    Set.new
   end
 
   def calculate_tier_bonus(seller_tier_id)

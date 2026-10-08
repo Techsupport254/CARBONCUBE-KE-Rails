@@ -79,7 +79,7 @@ class Seller::SellersController < ApplicationController
     end
 
     # Verify OTP
-    otp_record = EmailOtp.find_by(email: seller_email, otp_code: otp_code)
+    otp_record = EmailOtp.for_email(seller_email).find_by(otp_code: otp_code.to_s.strip)
 
     if otp_record.nil?
       return render json: { errors: ['Invalid OTP'] }, status: :unauthorized

@@ -2,7 +2,7 @@ class SendShopIdentityOptimizedJob < ApplicationJob
   queue_as :default
 
   def perform
-    all_sellers = Seller.active.where.not(phone_number: [nil, ''])
+    all_sellers = Seller.active.whatsapp_opted_in.where.not(phone_number: [nil, ''])
     template_name = 'shop_identity_v4'
     
     processed_seller_ids = WhatsappMessageLog.for_template(template_name).sent_successfully.pluck(:seller_id)
