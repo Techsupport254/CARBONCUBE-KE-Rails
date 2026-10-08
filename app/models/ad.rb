@@ -42,6 +42,9 @@ class Ad < ApplicationRecord
   has_many :offer_ads, dependent: :destroy
   has_many :offers, through: :offer_ads
   has_many :conversations, dependent: :destroy
+  # Partner broadcasts may reference an ad; keep the broadcast history when
+  # the ad is deleted (FK partner_updates.ad_id has no cascade).
+  has_many :partner_updates, dependent: :nullify
 
   delegate :name, to: :category, prefix: true, allow_nil: true
   delegate :name, to: :subcategory, prefix: true, allow_nil: true
