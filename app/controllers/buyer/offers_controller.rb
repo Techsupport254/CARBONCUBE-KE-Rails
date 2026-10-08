@@ -381,6 +381,13 @@ class Buyer::OffersController < ApplicationController
         offers.cta_text,
         offers.view_count,
         offers.click_count,
+        offers.banner_image_url,
+        offers.hero_image_url,
+        cover.cover_media as cover_image_media,
+        cover.cover_ad_id,
+        cover.cover_ad_title,
+        cover.cover_original_price,
+        cover.cover_discounted_price,
         sellers.id as seller_id,
         sellers.enterprise_name as seller_name,
         sellers.fullname as seller_fullname,
@@ -392,6 +399,22 @@ class Buyer::OffersController < ApplicationController
       LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
       LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
       LEFT JOIN offer_ads ON offer_ads.offer_id = offers.id
+      LEFT JOIN LATERAL (
+        SELECT
+          ads.id as cover_ad_id,
+          ads.title as cover_ad_title,
+          ads.media as cover_media,
+          oa.original_price as cover_original_price,
+          oa.discounted_price as cover_discounted_price
+        FROM offer_ads oa
+        JOIN ads ON ads.id = oa.ad_id
+        WHERE oa.offer_id = offers.id
+          AND oa.is_active = true
+          AND ads.deleted = false
+          AND ads.flagged = false
+          AND ads.media IS NOT NULL AND ads.media != '' AND ads.media != '[]'
+        ORDER BY oa.id LIMIT 1
+      ) cover ON true
       WHERE offers.status = 'active'
         AND offers.start_time <= ?
         AND offers.end_time >= ?
@@ -427,6 +450,13 @@ class Buyer::OffersController < ApplicationController
         icon_name: row['icon_name'],
         badge_text: row['badge_text'],
         cta_text: row['cta_text'],
+        banner_image_url: row['banner_image_url'],
+        hero_image_url: row['hero_image_url'],
+        cover_image_media: row['cover_image_media'],
+        cover_ad_id: row['cover_ad_id'],
+        cover_ad_title: row['cover_ad_title'],
+        cover_original_price: row['cover_original_price'],
+        cover_discounted_price: row['cover_discounted_price'],
         view_count: row['view_count'],
         click_count: row['click_count'],
         seller: {
