@@ -121,3 +121,12 @@ monitoring_cleanup:
   class: "MonitoringCleanupJob"
   queue: low
   description: "Delete monitoring_metrics/monitoring_errors rows older than 7 days"
+
+# --- CATALOG UPLOAD REQUEST (NEW SELLERS) ---
+# Nudge sellers to send us their catalog roughly 1–2 days after they register.
+# Picks up sellers created 24–48h ago, once per day, all four channels.
+catalog_upload_new_sellers:
+  cron: "0 6 * * *"
+  class: "SendCatalogUploadToNewSellersJob"
+  queue: broadcast
+  description: "Daily catalog upload request to sellers registered 24–48h ago"

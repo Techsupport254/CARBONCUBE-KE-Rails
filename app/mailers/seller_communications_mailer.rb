@@ -328,6 +328,48 @@ class SellerCommunicationsMailer < ApplicationMailer
     )
   end
 
+  def catalog_upload_request
+    user = params[:seller] || params[:user]
+    to_email = params[:to_email]
+
+    fullname = user.respond_to?(:fullname) && user.fullname.present? ? user.fullname : (user.respond_to?(:enterprise_name) && user.enterprise_name.present? ? user.enterprise_name : 'Seller')
+    first_name = fullname.to_s.split(' ').first.presence || "Partner"
+    enterprise_name = user.respond_to?(:enterprise_name) ? user.enterprise_name : nil
+
+    dashboard_url = UtmUrlHelper.append_utm(
+      "https://carboncube-ke.com/seller/ads",
+      source: "seller_communication",
+      medium: "email",
+      campaign: "catalog_upload_request",
+      content: "upload_catalog_cta"
+    )
+
+    whatsapp_url = "https://wa.me/254712990524?text=#{CGI.escape('Hi Carbon Cube, here is my product catalog:')}"
+
+    subject_text = "Send us your product catalog — we'll upload it for you"
+
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['Auto-Submitted'] = 'auto-generated'
+    headers['X-Auto-Response-Suppress'] = 'All'
+
+    mail(
+      to: to_email || user.email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        enterprise_name: enterprise_name,
+        dashboard_url: dashboard_url,
+        whatsapp_url: whatsapp_url,
+        support_email: ENV['BREVO_EMAIL'],
+        support_phone: '+254 712 990 524'
+      }
+    )
+  end
+
   def buyers_compare_before_contact
     user = params[:seller] || params[:user]
 
