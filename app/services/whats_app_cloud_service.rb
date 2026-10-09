@@ -3,6 +3,7 @@
 require 'net/http'
 require 'uri'
 require 'json'
+require 'tmpdir'
 
 class WhatsAppCloudService
   GRAPH_URL = 'https://graph.facebook.com/v22.0'
@@ -479,9 +480,9 @@ class WhatsAppCloudService
                 media_data = msg_data[msg_data['type']]
                 media_id = media_data['id']
                 caption = media_data['caption']&.strip
-                
+
                 # Download and upload to Cloudinary once
-                url = download_and_upload_media(media_id, msg_data['type'])
+                url = download_and_upload_media(media_id)
                 media_urls << url if url
                 if url
                   clean_caption = caption.present? ? caption.tr('[]', '()').gsub(/\r?\n+/, ' - ').strip : nil
@@ -494,26 +495,75 @@ class WhatsAppCloudService
                   "[Message type: #{msg_data['type']}]"
                 end
               when 'document'
-                doc_data = msg_data['document']
-                "[Document: #{doc_data['filename'] || 'File'}]"
+                doc_data = msg_data['document'] || {}
+                filename = doc_data['filename'].presence || 'document'
+                url = download_and_upload_media(doc_data['id'], filename)
+                media_urls << url if url
+                safe_name = filename.tr('[]()', '____')
+                if url
+                  caption = doc_data['caption']&.strip
+                  caption.present? ? "[Document: #{safe_name}](#{url})\n#{caption}" : "[Document: #{safe_name}](#{url})"
+                else
+                  "[Document: #{safe_name}]"
+                end
               when 'audio'
-                "[Audio Message]"
+                audio_data = msg_data['audio'] || {}
+                url = download_and_upload_media(audio_data['id'])
+                media_urls << url if url
+                if url
+                  audio_data['voice'] ? "[Voice Message](#{url})" : "[Audio](#{url})"
+                else
+                  "[Audio Message]"
+                end
               when 'sticker'
-                sticker_url = download_and_upload_media(msg_data.dig('sticker', 'id'), 'image')
+                sticker_url = download_and_upload_media(msg_data.dig('sticker', 'id'))
                 media_urls << sticker_url if sticker_url
                 sticker_url ? "![Sticker](#{sticker_url})" : "[Sticker]"
+              when 'location'
+                loc = msg_data['location'] || {}
+                label = [loc['name'], loc['address']]
+                        .map { |v| v.to_s.strip }.reject(&:empty?).join(' — ')
+                if loc['latitude'].present? && loc['longitude'].present?
+                  maps_url = "https://maps.google.com/?q=#{loc['latitude']},#{loc['longitude']}"
+                  label.present? ? "[Location: #{label.tr('[]()', '____')}](#{maps_url})" : "[Location](#{maps_url})"
+                else
+                  "[Location]"
+                end
+              when 'contacts'
+                contact_list = Array(msg_data['contacts'])
+                first = contact_list.first || {}
+                name = first.dig('name', 'formatted_name').presence || first.dig('name', 'first_name').presence
+                phone = Array(first['phones']).first&.dig('phone')
+                label = name.presence || phone.presence || 'Contact'
+                label = "#{label} — #{phone}" if name.present? && phone.present?
+                label = "#{label} (+#{contact_list.size - 1} more)" if contact_list.size > 1
+                url = nil
+                if (vcard = contact_list.filter_map { |c| c['vcard'].presence }.first)
+                  url = upload_to_cloudinary(vcard, "#{(name || 'contact').parameterize.presence || 'contact'}.vcf")
+                  media_urls << url if url
+                end
+                safe_label = label.tr('[]()', '____')
+                url ? "[Contact: #{safe_label}](#{url})" : "[Contact: #{safe_label}]"
+              when 'button'
+                msg_data.dig('button', 'text').presence ||
+                  msg_data.dig('button', 'payload').presence ||
+                  '[Message type: button]'
+              when 'order'
+                '[Message type: order]'
               when 'system'
                 msg_data.dig('system', 'body') || '[System message]'
               else
-                nil
+                # Capture unknown/future message types as a notice instead of
+                # silently dropping the message.
+                "[Message type: #{msg_data['type'].presence || 'unknown'}]"
               end
 
     [content, media_urls]
   end
 
-  def self.download_and_upload_media(media_id, type)
+  def self.download_and_upload_media(media_id, filename = nil)
     access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
-    return nil if access_token.blank?
+    return nil if access_token.blank? || media_id.blank?
 
     begin
       # 1. Get the media URL from Meta
@@ -545,28 +595,40 @@ class WhatsAppCloudService
       return nil unless file_response.code.to_i == 200
 
       # 3. Upload to Cloudinary
-      # We create a temp file to pass to Cloudinary
-      temp_file = Tempfile.new(['whatsapp_media', ".#{media_info['mime_type'].split('/').last}"])
-      temp_file.binmode
-      temp_file.write(file_response.body)
-      temp_file.rewind
+      # Meta reports mime types like "audio/ogg; codecs=opus" — take only the
+      # subtype as the fallback extension. Documents keep their original
+      # filename so downloads are sensibly named (e.g. catalog.pdf).
+      mime_ext = media_info['mime_type'].to_s.split('/').last.to_s.split(';').first.to_s.strip.presence || 'bin'
+      safe_name = filename.present? ? File.basename(filename.to_s).gsub(/[^\w.-]+/, '_') : nil
+      safe_name = "whatsapp_media.#{mime_ext}" if safe_name.blank? || safe_name.start_with?('.')
 
-      resource_type = ['video', 'audio'].include?(type) ? 'video' : 'image'
-      
-      uploaded = Cloudinary::Uploader.upload(temp_file.path,
-        upload_preset: ENV['UPLOAD_PRESET'],
-        folder: "whatsapp_media",
-        resource_type: resource_type
-      )
-      
-      temp_file.close
-      temp_file.unlink
-
-      uploaded['secure_url']
+      upload_to_cloudinary(file_response.body, safe_name)
     rescue => e
       Rails.logger.error "[WhatsAppCloudService] Media processing failed: #{e.message}"
       nil
     end
+  end
+
+  # Upload raw file content to Cloudinary, preserving the filename for
+  # sensible downloads. Returns the secure URL or nil on failure.
+  def self.upload_to_cloudinary(data, filename)
+    uploaded = nil
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, filename)
+      File.binwrite(path, data)
+      uploaded = Cloudinary::Uploader.upload(path,
+        upload_preset: ENV['UPLOAD_PRESET'],
+        folder: 'whatsapp_media',
+        resource_type: 'auto',
+        use_filename: true,
+        unique_filename: true
+      )
+    end
+
+    uploaded&.dig('secure_url')
+  rescue => e
+    Rails.logger.error "[WhatsAppCloudService] Cloudinary upload failed: #{e.message}"
+    nil
   end
 
   def self.find_or_create_whatsapp_buyer(from_number, local_number, contact_name = "WhatsApp User", email: nil)
