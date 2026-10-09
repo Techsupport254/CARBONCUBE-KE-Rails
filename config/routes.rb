@@ -702,13 +702,13 @@ Rails.application.routes.draw do
   resources :device_tokens, only: [:create] do
     collection do
       post :ping_push
-      # DELETE /device_tokens/destroy — token comes from params, not the path
-      # (FCM tokens contain characters unsuitable for URL path segments)
-      delete :destroy
     end
   end
-  # Older app builds call DELETE /device_tokens?token=... — keep working.
+  # Token arrives as a param, not a path segment (FCM tokens are URL-unsafe).
+  # Both paths live: older app builds call /device_tokens, newer call
+  # /device_tokens/destroy.
   delete 'device_tokens', to: 'device_tokens#destroy'
+  delete 'device_tokens/destroy', to: 'device_tokens#destroy'
   
   # Notifications
   resources :notifications, only: [:index] do
