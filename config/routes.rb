@@ -707,6 +707,8 @@ Rails.application.routes.draw do
       delete :destroy
     end
   end
+  # Older app builds call DELETE /device_tokens?token=... — keep working.
+  delete 'device_tokens', to: 'device_tokens#destroy'
   
   # Notifications
   resources :notifications, only: [:index] do

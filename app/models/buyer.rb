@@ -25,6 +25,7 @@ class Buyer < ApplicationRecord
   has_many :click_events, dependent: :destroy
   has_many :ad_searches, dependent: :destroy
   has_many :password_otps, as: :otpable, dependent: :destroy
+  has_many :device_tokens, as: :user, dependent: :destroy
 
   # Store pending seller profile data for conversion when first ad is created
   attribute :pending_seller_fullname, :string

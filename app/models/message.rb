@@ -12,7 +12,7 @@ class Message < ApplicationRecord
   after_create :update_conversation_timestamp
   after_create :broadcast_new_message
   after_create :schedule_delivery_receipt
-  after_create :send_push_notification
+  after_create_commit :send_push_notification
   after_create :send_message_notification_email, unless: -> { conversation.is_whatsapp? }
   after_create :send_message_notification_whatsapp, unless: -> { conversation.is_whatsapp? }
 
@@ -84,9 +84,7 @@ class Message < ApplicationRecord
       mark_as_delivered!
     else
       begin
-        MessageDeliveryJob.perform_in(2.seconds, id)
-      rescue NoMethodError => e
-        mark_as_delivered!
+        MessageDeliveryJob.set(wait: 2.seconds).perform_later(id)
       rescue => e
         Rails.logger.error "Failed to schedule delivery receipt: #{e.message}"
       end
@@ -218,6 +216,18 @@ class Message < ApplicationRecord
     end
   end
 
+  # All conversation participants other than the sender — covers buyer-seller,
+  # seller-seller and staff/support (admin) threads so pushes reach staff too.
+  def get_recipients
+    participants = []
+    participants << Buyer.find_by(id: conversation.buyer_id) if conversation.buyer_id
+    participants << Seller.find_by(id: conversation.seller_id) if conversation.seller_id
+    participants << Seller.find_by(id: conversation.inquirer_seller_id) if conversation.inquirer_seller_id
+    participants << Admin.find_by(id: conversation.admin_id) if conversation.admin_id
+
+    participants.compact.uniq.reject { |participant| participant == sender }
+  end
+
   # Check if the recipient is currently online
   def is_recipient_online?(recipient)
     return false unless recipient
@@ -291,44 +301,39 @@ class Message < ApplicationRecord
   end
 
   def send_push_notification
-    begin
-      recipient = get_recipient
-      return unless recipient
-
-      # Retrieve tokens for the recipient
+    get_recipients.each do |recipient|
       tokens = DeviceToken.where(user: recipient).pluck(:token)
+      next if tokens.empty?
 
-      if tokens.any?
-        sender_name = get_sender_display_name(sender)
-        
-        payload = {
-          title: "New Message from #{sender_name}",
-          body: content.truncate(100),
-          data: {
-            conversation_id: conversation_id,
-            message_id: id,
-            type: 'chat_message'
-          }
+      payload = {
+        title: "New Message from #{get_sender_display_name(sender)}",
+        body: content.truncate(100),
+        data: {
+          conversation_id: conversation_id,
+          message_id: id,
+          type: 'chat_message'
         }
-        
-        PushNotificationService.send_notification(tokens, payload, self)
-      end
-    rescue => e
-      Rails.logger.error "Failed to send push notification: #{e.message}"
+      }
+
+      # notifications.notifiable_id is uuid — pass the conversation, not this
+      # bigint-keyed message, or the history row insert fails in Postgres.
+      PushNotificationService.send_notification(tokens, payload, conversation)
     end
+  rescue => e
+    Rails.logger.error "Failed to send push notification for message #{id}: #{e.message}"
   end
 
   # Get display name for sender
   def get_sender_display_name(sender)
     case sender.class.name
     when 'Buyer'
-      sender.username.present? ? sender.username : sender.email.split('@').first
+      sender.username.presence || sender.email.to_s.split('@').first.presence || 'Buyer'
     when 'Seller'
-      sender.fullname.present? ? sender.fullname : sender.enterprise_name
+      sender.fullname.presence || sender.enterprise_name.presence || 'Seller'
     when 'Admin', 'SalesUser', 'MarketingUser'
       'Carbon Cube Support'
     else
-      sender.email.split('@').first
+      sender.email.to_s.split('@').first.presence || 'Someone'
     end
   end
 end

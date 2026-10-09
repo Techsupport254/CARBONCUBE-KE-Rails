@@ -26,8 +26,7 @@ class ProcessWebsocketMessageJob < ApplicationJob
       sender_type: sender_type,
       sender_id: sender_id,
       ad_id: message_data['ad_id'],
-      product_context: message_data['product_context'],
-      message_type: message_data['message_type'] || 'text'
+      product_context: message_data['product_context']
     })
     
     return unless message
@@ -153,7 +152,6 @@ class ProcessWebsocketMessageJob < ApplicationJob
       sender_id: message.sender_id,
       ad_id: message.ad_id,
       product_context: message.product_context,
-      message_type: message.message_type,
       created_at: message.created_at.iso8601,
       status: status,
       read_at: message.read_at,
@@ -181,7 +179,6 @@ class ProcessWebsocketMessageJob < ApplicationJob
     # Track total messages using WebSocket service
     WebsocketService.track_metric("websocket.messages.created.total")
     WebsocketService.track_metric("websocket.messages.created.#{message.sender_type.downcase}")
-    WebsocketService.track_metric("websocket.messages.created.type.#{message.message_type}")
     
     # Track daily metrics
     WebsocketService.track_metric("websocket.messages.daily.#{date_key}")
@@ -189,9 +186,6 @@ class ProcessWebsocketMessageJob < ApplicationJob
   
   def post_message_processing(conversation, message)
     begin
-      # Queue notification job for offline participants
-      NotifyOfflineParticipantsJob.perform_later(conversation.id, message.id)
-      
       # Update conversation participants' unread counts
       # Try to perform immediately first, fallback to queue if Sidekiq is not available
       begin
