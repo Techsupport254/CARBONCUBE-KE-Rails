@@ -21,17 +21,37 @@ class SitemapController < ApplicationController
   end
 
   # GET /sitemap/ads
-  # Dedicated endpoint for sitemap generation - returns all active ads
+  # Dedicated endpoint for sitemap generation - optimized cached pluck
   def ads
-    # Get all active ads without pagination limits for sitemap generation
-    @ads = Ad.active.with_valid_images
-             .joins(:seller)
-             .where(sellers: { blocked: false, deleted: false, flagged: false })
-             .where(flagged: false)
-             .includes(:category, :subcategory, seller: { seller_tier: :tier })
-             .order(Arel.sql('RANDOM()'))
+    ads_data = Rails.cache.fetch('sitemap_ads_data', expires_in: 6.hours) do
+      Ad.active
+        .where(deleted: false, flagged: false)
+        .joins(:seller)
+        .where(sellers: { blocked: false, deleted: false, flagged: false })
+        .order(updated_at: :desc)
+        .limit(10000)
+        .pluck(:id, :title, :slug, :media, :updated_at, :created_at)
+        .map do |id, title, slug, media, updated_at, created_at|
+          first_media = if media.is_a?(Array)
+                          media.first
+                        elsif media.is_a?(String)
+                          (JSON.parse(media) rescue []).first
+                        else
+                          nil
+                        end
 
-    render json: @ads
+          {
+            id: id,
+            title: title,
+            slug: slug,
+            first_media_url: first_media,
+            updated_at: updated_at,
+            created_at: created_at
+          }
+        end
+    end
+
+    render json: ads_data
   end
 
   # GET /sitemap/sellers
