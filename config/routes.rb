@@ -949,6 +949,7 @@ Rails.application.routes.draw do
         get :searches
       end
     end
+    resources :app_installs, only: [:index]
     get 'online', to: 'online#index'
 
     resources :ad_searches, only: [:index] do

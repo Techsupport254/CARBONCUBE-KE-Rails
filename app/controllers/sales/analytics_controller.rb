@@ -8,7 +8,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v9_#{device_hash}"
+    cache_key = "sales_analytics_index_v10_#{device_hash}"
     response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
@@ -160,7 +160,22 @@ class Sales::AnalyticsController < ApplicationController
         copy_clicks: click_counts&.copy_clicks || 0,
         location_clicks: click_counts&.location_clicks || 0,
         verified_sellers: all_sellers.where(document_verified: true).count,
-        total_callback_requests: click_counts&.callback_requests || 0
+        total_callback_requests: click_counts&.callback_requests || 0,
+        mobile_app_installs: {
+          total_devices: DeviceToken.where(platform: %w[android ios]).count,
+          total_installed_users: DeviceToken.where(user_type: %w[Seller Buyer SalesUser], platform: %w[android ios]).select(:user_id).distinct.count,
+          sellers_with_app: DeviceToken.where(user_type: 'Seller', platform: %w[android ios]).select(:user_id).distinct.count,
+          seller_adoption_rate: (seller_counts&.total || 0).positive? ? (DeviceToken.where(user_type: 'Seller', platform: %w[android ios]).select(:user_id).distinct.count.to_f / (seller_counts&.total || 1) * 100).round(1) : 0,
+          buyers_with_app: DeviceToken.where(user_type: 'Buyer', platform: %w[android ios]).select(:user_id).distinct.count,
+          buyer_adoption_rate: all_buyers.count.positive? ? (DeviceToken.where(user_type: 'Buyer', platform: %w[android ios]).select(:user_id).distinct.count.to_f / all_buyers.count * 100).round(1) : 0,
+          sales_with_app: DeviceToken.where(user_type: 'SalesUser', platform: %w[android ios]).select(:user_id).distinct.count,
+          guests_with_app: DeviceToken.where(user_id: nil, platform: %w[android ios]).count,
+          platform_breakdown: {
+            android: DeviceToken.where(platform: 'android').count,
+            ios: DeviceToken.where(platform: 'ios').count
+          }
+        },
+        mobile_app_installs_with_timestamps: DeviceToken.where(platform: %w[android ios]).pluck(:created_at).compact.map(&:iso8601)
       }
     end
 
