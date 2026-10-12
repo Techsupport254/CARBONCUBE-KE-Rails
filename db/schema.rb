@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_14_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_14_110000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -474,12 +474,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_100000) do
   end
 
   create_table "device_tokens", force: :cascade do |t|
-    t.string "user_type", null: false
+    t.string "user_type"
     t.string "token"
     t.string "platform"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.uuid "user_id", null: false
+    t.uuid "user_id"
     t.index ["token"], name: "index_device_tokens_on_token"
     t.index ["user_type", "user_id"], name: "index_device_tokens_on_user"
   end

@@ -13,6 +13,106 @@ class PushNotificationService
     result[:success]
   end
 
+  # Sends push notification to all device tokens associated with a given user
+  def self.send_to_user(user, notification_payload, notifiable = nil)
+    return { success: false, error: 'NO_USER' } unless user
+    tokens = DeviceToken.where(user: user).pluck(:token)
+    return { success: false, error: 'NO_TOKENS' } if tokens.empty?
+    send_notification_with_details(tokens, notification_payload, notifiable)
+  end
+
+  # Broadcasts a push notification to an FCM topic (e.g. 'all_devices', 'promotions', 'deals')
+  def self.send_to_topic(topic, notification_payload)
+    project_id = get_project_id
+    unless project_id.present?
+      Rails.logger.error "PushNotificationService: Missing Firebase project_id for topic #{topic}."
+      return { success: false, error: 'MISSING_PROJECT_ID' }
+    end
+
+    access_token = get_access_token
+    unless access_token
+      Rails.logger.error "PushNotificationService: Failed to get access token for topic #{topic}."
+      return { success: false, error: 'ACCESS_TOKEN_FAILED' }
+    end
+
+    headers = {
+      'Content-Type' => 'application/json',
+      'Authorization' => "Bearer #{access_token}"
+    }
+
+    body = {
+      message: {
+        topic: topic.to_s.sub(/^\/topics\//, ''),
+        notification: {
+          title: notification_payload[:title],
+          body:  notification_payload[:body]
+        },
+        data: notification_payload[:data]&.transform_values(&:to_s) || {},
+        android: {
+          priority: 'high',
+          notification: {
+            channel_id: 'default',
+            icon:       'ic_launcher',
+            color:      '#FACC15',
+            sound:      'default',
+            default_sound: true,
+            default_vibrate_timings: true
+          }
+        },
+        apns: {
+          payload: {
+            aps: {
+              alert: {
+                title: notification_payload[:title],
+                body:  notification_payload[:body]
+              },
+              sound: 'default'
+            }
+          },
+          headers: {
+            'apns-push-type' => 'alert',
+            'apns-priority'  => '10'
+          }
+        }
+      }
+    }
+
+    response = post("/v1/projects/#{project_id}/messages:send", headers: headers, body: body.to_json)
+    if response&.success?
+      Rails.logger.info "PushNotificationService: Topic notification sent to #{topic}. Response: #{response.body}"
+      { success: true, topic: topic }
+    else
+      parsed = parse_fcm_error(response)
+      Rails.logger.error "PushNotificationService: Failed to send to topic #{topic}. Status: #{response&.code}, message: #{parsed[:message]}"
+      { success: false, topic: topic, error: parsed }
+    end
+  rescue => e
+    Rails.logger.error "PushNotificationService#send_to_topic exception: #{e.message}"
+    { success: false, error: e.message }
+  end
+
+  # Broadcasts a push notification to ALL known devices (both registered users and guest devices)
+  # via the 'all_devices' topic AND direct device tokens fallback
+  def self.broadcast_to_all(notification_payload)
+    # 1. Send via topic
+    topic_result = send_to_topic('all_devices', notification_payload)
+
+    # 2. Also send to all registered device tokens directly in batches
+    all_tokens = DeviceToken.distinct.pluck(:token)
+    token_results = { total: all_tokens.size, success: 0 }
+
+    all_tokens.each_slice(100) do |batch|
+      res = send_notification_with_details(batch, notification_payload)
+      token_results[:success] += res[:success_count].to_i if res[:success]
+    end
+
+    {
+      topic_sent: topic_result[:success],
+      tokens_contacted: token_results[:total],
+      tokens_delivered: token_results[:success]
+    }
+  end
+
   def self.send_notification_with_details(tokens, notification_payload, notifiable = nil)
     # tokens: array of strings or a single string
     tokens = Array(tokens).compact.uniq
@@ -55,10 +155,7 @@ class PushNotificationService
     badge_counts = {}
 
     tokens.each do |token|
-      # iOS badge = the recipient's real unread notification count (same source
-      # the app's badge sync uses: /notifications unread_count). +1 for the
-      # notification being delivered — its Notification row is written after
-      # this send. Memoized per user since a user's tokens share the badge.
+      # iOS badge = the recipient's real unread notification count
       user = DeviceToken.includes(:user).find_by(token: token)&.user
       badge = if user
         key = "#{user.class.name}:#{user.id}"
@@ -73,7 +170,7 @@ class PushNotificationService
           token: token,
           notification: {
             title: notification_payload[:title],
-            body: notification_payload[:body]
+            body:  notification_payload[:body]
           },
           data: notification_payload[:data]&.transform_values(&:to_s) || {},
           # Android: must specify channel_id for Android 8+, otherwise notification is silently dropped.
@@ -83,19 +180,27 @@ class PushNotificationService
             notification: {
               channel_id: 'default',
               icon:       'ic_launcher',
-              color:      '#FACC15'
+              color:      '#FACC15',
+              sound:      'default',
+              default_sound: true,
+              default_vibrate_timings: true
             }
           },
-          # iOS: ensure alert is shown even in foreground
+          # iOS: ensure alert is shown even in foreground and background
           apns: {
             payload: {
               aps: {
+                alert: {
+                  title: notification_payload[:title],
+                  body:  notification_payload[:body]
+                },
                 sound: 'default',
                 badge: badge
               }
             },
             headers: {
-              'apns-priority' => '10'
+              'apns-push-type' => 'alert',
+              'apns-priority'  => '10'
             }
           }
         }
@@ -129,11 +234,11 @@ class PushNotificationService
       end
     end
 
-    # Persist the notification in the database for history (using first token for recipient info)
+    # Persist the notification in the database for history if recipient is an authenticated user
     first_token = tokens.first
     device_token = DeviceToken.find_by(token: first_token)
     
-    if device_token&.user
+    if device_token&.user.present?
       begin
         Notification.create!(
           recipient: device_token.user,

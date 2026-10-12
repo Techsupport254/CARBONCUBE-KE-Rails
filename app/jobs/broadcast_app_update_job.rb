@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# Broadcasts a one-off "what's new" announcement to every buyer and seller:
+# Broadcasts a "what's new" announcement to every buyer, seller, staff, and guest device:
 #   - persists an in-app Notification row for each user
 #   - sends an FCM push when the user has registered device tokens
+#   - broadcasts to the 'all_devices' FCM topic and guest device tokens
 #
 # Idempotent: users that already received this broadcast (matched by title)
 # are skipped on re-runs. Triggered via `rake broadcast:app_update[dry_run]`.
@@ -16,7 +17,7 @@ class BroadcastAppUpdateJob < ApplicationJob
   DATA  = { 'type' => 'app_update', 'version' => '1.0.7' }.freeze
 
   def perform(dry_run: true)
-    stats = { eligible: 0, notified: 0, pushed: 0, skipped_duplicate: 0, failed: 0 }
+    stats = { eligible: 0, notified: 0, pushed: 0, skipped_duplicate: 0, failed: 0, guests_pushed: 0 }
 
     [Buyer, Seller, SalesUser].each do |klass|
       klass.find_each do |user|
@@ -33,6 +34,20 @@ class BroadcastAppUpdateJob < ApplicationJob
       rescue StandardError => e
         stats[:failed] += 1
         Rails.logger.error "[BroadcastAppUpdateJob] #{klass.name}##{user.id} failed: #{e.message}"
+      end
+    end
+
+    unless dry_run
+      # Broadcast to topic 'all_devices'
+      PushNotificationService.send_to_topic('all_devices', payload)
+
+      # Also push to guest devices directly
+      guest_tokens = DeviceToken.guest.pluck(:token)
+      if guest_tokens.any?
+        guest_tokens.each_slice(100) do |slice|
+          res = PushNotificationService.send_notification_with_details(slice, payload)
+          stats[:guests_pushed] += res[:success_count].to_i if res[:success]
+        end
       end
     end
 
