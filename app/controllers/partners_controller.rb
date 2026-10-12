@@ -9,8 +9,9 @@ class PartnersController < ApplicationController
   def index
     partners = Partner.where(status: 'active')
                       .selling
+                      .left_joins(:seller)
                       .includes(:seller)
-                      .where.not(logo_url: [nil, ''])
+                      .where("partners.logo_url IS NOT NULL AND partners.logo_url != '' OR sellers.profile_picture IS NOT NULL AND sellers.profile_picture != ''")
                       .order(:name)
 
     render json: {
@@ -24,10 +25,14 @@ class PartnersController < ApplicationController
     seller = partner.seller
     return nil if seller.nil? || seller.deleted? || seller.blocked?
 
+    logo = partner.logo_url.presence || seller.profile_picture.presence
+    return nil if logo.blank?
+
     {
       name: partner.name,
-      logo_url: partner.logo_url,
+      logo_url: logo,
       shop_path: "/shop/#{seller.url_slug}"
     }
   end
 end
+

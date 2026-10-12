@@ -211,6 +211,10 @@ class PartnerInvite < ApplicationRecord
     updates[:website] = invitee.try(:website) if seller.website.blank? && invitee.try(:website).present?
     seller.update!(updates) if updates.any?
     seller.assign_username_and_slug!
+
+    if invitee.is_a?(Partner) && invitee.logo_url.blank? && seller.profile_picture.present?
+      invitee.update!(logo_url: seller.profile_picture)
+    end
   rescue StandardError => e
     Rails.logger.error "PartnerInvite##{id}: storefront profile sync failed — #{e.message}"
   end
