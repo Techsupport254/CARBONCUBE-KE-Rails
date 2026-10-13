@@ -181,7 +181,7 @@ class ConversationsController < ApplicationController
 
     RedisConnection.setex("#{cache_key}:page", 300, current_page) if current_page.present?
 
-    referrer = params[:referrer].to_s
+    referrer = sanitize_referrer(params[:referrer].to_s)
     RedisConnection.setex("#{cache_key}:referrer", 300, referrer) if referrer.present?
 
     location = location_from_request
@@ -200,11 +200,31 @@ class ConversationsController < ApplicationController
 
     RedisConnection.setex("#{cache_key}:page", 300, current_page) if current_page.present?
 
-    referrer = params[:referrer].to_s
+    referrer = sanitize_referrer(params[:referrer].to_s)
     RedisConnection.setex("#{cache_key}:referrer", 300, referrer) if referrer.present?
 
     location = location_from_request
     RedisConnection.setex("#{cache_key}:location", 300, location) if location.present?
+  end
+
+  def sanitize_referrer(referrer_str)
+    return '' if referrer_str.blank?
+
+    uri = URI.parse(referrer_str)
+    if uri.query.present?
+      q_params = CGI.parse(uri.query)
+      q_params.delete('token')
+      q_params.delete('state')
+      q_params.delete('code')
+      q_params.delete('password')
+      q_params.delete('secret')
+      q_params.delete('pending_token')
+      q_params.delete('convert_token')
+      uri.query = q_params.empty? ? nil : URI.encode_www_form(q_params)
+    end
+    uri.to_s
+  rescue StandardError
+    referrer_str.split('?').first.to_s
   end
 
   def mark_read
