@@ -252,8 +252,13 @@ class Admin::SellersController < ApplicationController
   end
 
   def destroy
-    @seller.destroy
+    @seller.destroy!
     head :no_content
+  rescue ActiveRecord::RecordNotDestroyed => e
+    render json: { error: @seller.errors.full_messages.to_sentence.presence || e.message }, status: :unprocessable_entity
+  rescue StandardError => e
+    Rails.logger.error("Failed to delete seller #{@seller.id}: #{e.message}\n#{e.backtrace&.first(10)&.join("\n")}")
+    render json: { error: "Failed to delete seller: #{e.message}" }, status: :internal_server_error
   end
 
   def reviews

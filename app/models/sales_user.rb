@@ -2,6 +2,7 @@ class SalesUser < ApplicationRecord
   has_many :carbon_codes, as: :associable, dependent: :nullify
   has_many :seller_carbon_code_assignments, dependent: :nullify
   has_many :sales_daily_reports, dependent: :destroy
+  has_many :conversation_read_marks, as: :reader, dependent: :delete_all
   belongs_to :lead, class_name: 'SalesUser', optional: true
   has_many :team_members, class_name: 'SalesUser', foreign_key: 'lead_id', dependent: :nullify, inverse_of: :lead
 

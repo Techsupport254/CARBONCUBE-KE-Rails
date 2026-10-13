@@ -1,6 +1,7 @@
 class MarketingUser < ApplicationRecord
   has_secure_password
   has_many :password_otps, as: :otpable, dependent: :destroy
+  has_many :conversation_read_marks, as: :reader, dependent: :delete_all
   validates :email, presence: true, uniqueness: true
   validates :phone_number, length: { is: 10 },
             format: { with: /\A\d{10}\z/ },

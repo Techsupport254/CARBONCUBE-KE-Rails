@@ -9,6 +9,7 @@ class Conversation < ApplicationRecord
   belongs_to :ad, optional: true
 
   has_many :messages, dependent: :destroy
+  has_many :conversation_read_marks, dependent: :delete_all
 
   after_create_commit :refresh_ad_stats
 
