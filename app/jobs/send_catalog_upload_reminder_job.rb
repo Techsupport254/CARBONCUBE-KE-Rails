@@ -39,9 +39,14 @@ class SendCatalogUploadReminderJob < ApplicationJob
     • **Just a text message** — a simple typed list of items & prices
 
     Example:
-    • `HP ZBOOK 15 G8 i7 16-512 — 70k Only`
-    • `X1 CARBON i7 16-512 11th Gen — 64k Only`
-    • `Dell Precision 7550 i7 16-512 — 71k Only`
+    • `Phones: Samsung Galaxy A15 128GB / 6GB — 19.5k`
+    • `Laptops: HP EliteBook 840 G6 i5 16-256 — 32k`
+    • `Hardware: Simba Cement 32.5R 50kg — 775/=`
+    • `Construction: Deformed Steel Rebar D12 (12m) — 1,115/=`
+    • `Auto Parts: Chloride Exide N70 Battery — 14.5k`
+    • `TVs & Audio: TCL 55" 4K Smart Google TV — 46k`
+    • `Agriculture: Automatic 64-Egg Incubator — 12k`
+    • `Services: Workshop Repair & Overhaul Service — 800/=`
 
     All categories are welcome — computers, phones, auto parts, hardware, electronics, farm equipment, and services. Simply reply right here with your catalog and we'll take care of the rest.
   MARKDOWN
@@ -157,9 +162,14 @@ class SendCatalogUploadReminderJob < ApplicationJob
       You don't need to spend time listing them manually. Just send us your price list, product photos, documents, or a simple text list right here on WhatsApp, and our team will upload and categorize everything for you at *no cost*.
 
       A simple typed list like this works too:
-      • HP ZBOOK 15 G8 i7 16-512 — 70k Only
-      • X1 CARBON i7 16-512 11th Gen — 64k Only
-      • Dell Precision 7550 i7 16-512 — 71k Only
+      • Phones: Samsung Galaxy A15 128GB / 6GB — 19.5k
+      • Laptops: HP EliteBook 840 G6 i5 16-256 — 32k
+      • Hardware: Simba Cement 32.5R 50kg — 775/=
+      • Construction: Deformed Steel Rebar D12 (12m) — 1,115/=
+      • Auto Parts: Chloride Exide N70 Battery — 14.5k
+      • TVs & Audio: TCL 55" 4K Smart Google TV — 46k
+      • Agriculture: Automatic 64-Egg Incubator — 12k
+      • Services: Workshop Repair & Overhaul Service — 800/=
 
       Phones, laptops, auto parts, hardware, electronics, farm equipment, services — every category is welcome.
 
@@ -253,9 +263,14 @@ class SendCatalogUploadReminderJob < ApplicationJob
       You don't need to spend time adding them manually. Send us whatever catalog, price list, documents, or photos you have right here, and our operations team will upload and categorize everything for you at **no cost**.
 
       Here's an example of a simple typed list:
-      • HP ZBOOK 15 G8 i7 16-512 — 70k Only
-      • X1 CARBON i7 16-512 11th Gen — 64k Only
-      • Dell Precision 7550 i7 16-512 — 71k Only
+      • Phones: Samsung Galaxy A15 128GB / 6GB — 19.5k
+      • Laptops: HP EliteBook 840 G6 i5 16-256 — 32k
+      • Hardware: Simba Cement 32.5R 50kg — 775/=
+      • Construction: Deformed Steel Rebar D12 (12m) — 1,115/=
+      • Auto Parts: Chloride Exide N70 Battery — 14.5k
+      • TVs & Audio: TCL 55" 4K Smart Google TV — 46k
+      • Agriculture: Automatic 64-Egg Incubator — 12k
+      • Services: Workshop Repair & Overhaul Service — 800/=
 
       All categories are welcome — computers & phones, auto parts, hardware, electronics, agriculture, and services.
 

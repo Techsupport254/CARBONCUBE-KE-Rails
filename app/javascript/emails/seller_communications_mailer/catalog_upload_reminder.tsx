@@ -16,13 +16,14 @@ type CatalogUploadReminderProps = {
 }
 
 const SAMPLE_LINES = [
-	"HP ZBOOK 15 G8 i7 16-512 — 70k Only",
-	"HP ZBOOK 14 G8 i7 32-512 — 75k Only",
-	"HP 1040 G8 i7 32-512 X360 — 72k Only",
-	"HP 1030 G8 i5 16-512 Touch — 56.5k Only",
-	"X1 CARBON i7 16-512 11th Gen — 64k Only",
-	"Dell Precision 7550 i7 16-512 — 71k Only",
-	"Dell XPS 13 7390 i7 16-512 — 54k Only",
+	"Phones: Samsung Galaxy A15 128GB / 6GB RAM — 19.5k",
+	"Laptops: HP EliteBook 840 G6 Core i5 16-256 SSD — 32k",
+	"Hardware: Simba Cement 32.5R (50kg Bag) — 775/=",
+	"Construction: Deformed Steel Rebar D12 (12m) — 1,115/=",
+	"Auto Parts: Chloride Exide N70 Heavy Duty Battery — 14.5k",
+	"TVs & Audio: TCL 55\" 4K UHD Smart Google TV — 46k",
+	"Agriculture: Automatic 64-Egg Poultry Incubator — 12k",
+	"Services: Workshop / Equipment Repair & Service — 800/=",
 ]
 
 export default function CatalogUploadReminder({
