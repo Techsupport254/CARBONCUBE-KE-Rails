@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
-# Fans out the catalog upload reminder across all 4 channels to sellers who
-# have NOT yet submitted their catalog (excluding any seller whose ads were
-# uploaded in the last 7 days).
+# Fans out the catalog upload reminder across all 4 channels to all active sellers
+# who have NOT uploaded ads in the last 7 days.
 #
-# Strictly excludes any seller whose ads were uploaded in the last 7 days
-# or who has already received this reminder.
+# Even if a seller previously received a reminder, if no ads have been uploaded in the
+# last 7 days, they are reminded again.
+#
+# Strictly excludes: any seller whose ads were uploaded in the last 7 days.
 #
 # Usage:
 #   SendCatalogUploadReminderBroadcastJob.perform_later(dry_run: true)   # counts only
@@ -20,8 +21,6 @@ class SendCatalogUploadReminderBroadcastJob < ApplicationJob
   EXCLUSION_WINDOW = 7.days
 
   def perform(dry_run: true)
-    title = SendCatalogUploadReminderJob::NOTIFICATION_TITLE
-
     # Eligible: active sellers excluding those whose ads were uploaded in the last 7 days
     active_sellers = Seller.where(deleted: [false, nil], blocked: [false, nil])
     sellers_with_recent_ads_ids = Ad.where("created_at >= ?", EXCLUSION_WINDOW.ago).select(:seller_id).distinct
@@ -32,20 +31,13 @@ class SendCatalogUploadReminderBroadcastJob < ApplicationJob
       total_eligible: eligible_sellers.count,
       queued: 0,
       skipped_recent_ads: 0,
-      skipped_duplicate: 0,
       failed: 0
     }
 
     eligible_sellers.find_each(batch_size: 50) do |seller|
-      # Double check: strictly exclude anyone whose ads were uploaded in the last 7 days
+      # Strictly exclude anyone whose ads were uploaded in the last 7 days
       if seller.ads.where("created_at >= ?", EXCLUSION_WINDOW.ago).exists?
         stats[:skipped_recent_ads] += 1
-        next
-      end
-
-      # Idempotent: do not re-send if already notified for this reminder
-      if Notification.exists?(recipient: seller, title: title)
-        stats[:skipped_duplicate] += 1
         next
       end
 
@@ -60,7 +52,7 @@ class SendCatalogUploadReminderBroadcastJob < ApplicationJob
     Rails.logger.info "[SendCatalogUploadReminderBroadcastJob] dry_run=#{dry_run} " \
                       "total_eligible=#{stats[:total_eligible]} " \
                       "queued=#{stats[:queued]} skipped_recent_ads=#{stats[:skipped_recent_ads]} " \
-                      "skipped_duplicate=#{stats[:skipped_duplicate]} failed=#{stats[:failed]}"
+                      "failed=#{stats[:failed]}"
 
     stats.merge(dry_run: dry_run)
   end

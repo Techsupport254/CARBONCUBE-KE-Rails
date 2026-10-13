@@ -258,7 +258,7 @@ class SendCatalogUploadReminderJob < ApplicationJob
 
       Greetings **#{name}**,
 
-      Following up on our earlier message — your shop **#{shop_name}** is live and visible on Carbon Cube Kenya, but you don't have active products listed yet.
+      Following up on our earlier message — your shop **#{shop_name}** is live and visible on Carbon Cube Kenya, but we haven't received your latest product catalog yet.
 
       You don't need to spend time adding them manually. Send us whatever catalog, price list, documents, or photos you have right here, and our operations team will upload and categorize everything for you at **no cost**.
 
