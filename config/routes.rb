@@ -198,6 +198,9 @@ Rails.application.routes.draw do
   post 'auth/google/callback', to: 'authentication#google_oauth_callback'
   # Buyer-to-Seller conversion (for buyers who sign up via Google with seller role)
   post 'auth/convert_buyer_to_seller', to: 'authentication#convert_buyer_to_seller'
+  # App Store / Play Store native review prompt (mobile app only)
+  get  'app_store_review_prompt',            to: 'app_store_review_prompt#index'
+  post 'app_store_review_prompt/mark_shown', to: 'app_store_review_prompt#mark_shown'
   resources :banners, only: [:index]
   resources :categories, only: [:index, :show] do
     member do

@@ -81,6 +81,50 @@ class MarketingMailer < ApplicationMailer
     )
   end
 
+  # Nudge a user who has never installed the mobile app.
+  # recipient: a Buyer or Seller instance
+  # reminder_number: 0 (initial), 1 (reminder 1), 2 (final reminder)
+  def app_install_nudge(recipient:, reminder_number: 0)
+    fullname   = recipient.fullname.presence || recipient.try(:enterprise_name).presence || "there"
+    first_name = fullname.split(" ").first.presence || fullname
+    role       = recipient.is_a?(Seller) ? "seller" : "buyer"
+
+    campaign_stage = reminder_number == 0 ? "initial" : "reminder_#{reminder_number}"
+    utm = "utm_source=email&utm_medium=app_install_nudge&utm_campaign=app_install_#{campaign_stage}&utm_content=#{role}"
+
+    subject = case reminder_number
+              when 0
+                "#{first_name}, have you tried the Carbon Cube Kenya app?"
+              when 1
+                "Reminder: Get faster updates with the Carbon Cube Kenya app"
+              else
+                "Final reminder: Take Carbon Cube Kenya on the go"
+              end
+
+    headers["Precedence"]              = nil
+    headers["List-Unsubscribe"]        = nil
+    headers["List-Unsubscribe-Post"]   = nil
+    headers["X-Auto-Response-Suppress"] = nil
+    headers["X-Priority"]              = reminder_number > 0 ? "2" : "3"
+    headers["Feedback-ID"]             = "app_install_nudge:carboncube"
+    headers["Message-ID"]              = "<#{Time.current.to_f}-app-nudge-#{recipient.class.name.downcase}-#{recipient.id}-#{reminder_number}@carboncube-ke.com>"
+
+    mail(
+      to:      recipient.email,
+      subject: subject,
+      from:    "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      react: {
+        firstName:      first_name,
+        fullname:       fullname,
+        role:           role,
+        reminderNumber: reminder_number,
+        playStoreUrl:   "https://play.google.com/store/apps/details?id=com.carboncubeke&#{utm}",
+        appStoreUrl:    "https://apps.apple.com/app/carbon-cube-kenya/id000000000?#{utm}",
+        appPageUrl:     "https://carboncube-ke.com/app?#{utm}",
+      }
+    )
+  end
+
   def self.review_url_for(ad)
     slug = ad.url_slug
     "https://carboncube-ke.com/ads/#{slug}/review?utm_source=email&utm_medium=review_request&utm_campaign=product_review&utm_content=#{slug}"

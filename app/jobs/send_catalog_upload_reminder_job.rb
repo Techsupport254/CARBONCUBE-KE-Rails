@@ -64,10 +64,10 @@ class SendCatalogUploadReminderJob < ApplicationJob
       return
     end
 
-    # Guard: do not send if seller already has active ads
-    if target_phone.blank? && seller.ads.where(deleted: false).exists?
-      Rails.logger.info "[SendCatalogUploadReminderJob] Skipping seller #{seller.id} — already has active ads"
-      return { skipped: true, reason: 'has_active_ads' }
+    # Guard: do not send if seller had ads uploaded in the last 7 days
+    if target_phone.blank? && seller.ads.where("created_at >= ?", 7.days.ago).exists?
+      Rails.logger.info "[SendCatalogUploadReminderJob] Skipping seller #{seller.id} — ads uploaded in last 7 days"
+      return { skipped: true, reason: 'ads_uploaded_in_last_7_days' }
     end
 
     name  = seller.enterprise_name.presence || seller.fullname.presence || 'Partner'
@@ -157,7 +157,7 @@ class SendCatalogUploadReminderJob < ApplicationJob
 
       Hi *#{name}*, a quick follow-up from Carbon Cube Kenya.
 
-      Your storefront *#{shop_name}* is live and ready for buyers, but you don't have active products listed yet. Active buyers are browsing daily — let's make sure they can find and buy from you!
+      Your storefront *#{shop_name}* is live and ready for buyers, but we haven't received your latest product catalog yet. Active buyers are browsing daily — let's make sure they can find and buy from you!
 
       You don't need to spend time listing them manually. Just send us your price list, product photos, documents, or a simple text list right here on WhatsApp, and our team will upload and categorize everything for you at *no cost*.
 

@@ -130,3 +130,25 @@ catalog_upload_new_sellers:
   class: "SendCatalogUploadToNewSellersJob"
   queue: broadcast
   description: "Daily catalog upload request to sellers registered 24–48h ago"
+
+# --- APP STORE / PLAY STORE IN-APP REVIEW ---
+# Identify users who have been active for at least 7 days with 3+ sessions
+# and schedule them for the native in-app review dialog.
+# Runs once a day at 3:00 AM EAT (00:00 UTC). Users who have already been
+# prompted (or shown the dialog) are automatically excluded.
+schedule_app_store_review_prompts:
+  cron: "0 0 * * *"
+  class: "ScheduleAppStoreReviewPromptsJob"
+  queue: low
+  description: "Schedule qualifying users for the native App Store / Play Store review dialog"
+
+# --- APP INSTALL NUDGE ---
+# Email buyers and sellers who registered 3–90 days ago but have never opened
+# the mobile app (no iOS/Android DeviceToken). Each user receives the email
+# exactly once thanks to a Notification title guard in the job.
+# Runs daily at 8:00 AM EAT (05:00 UTC).
+send_app_install_nudge:
+  cron: "0 5 * * *"
+  class: "SendAppInstallNudgeJob"
+  queue: broadcast
+  description: "Daily email nudge to registered users who have never installed the mobile app"

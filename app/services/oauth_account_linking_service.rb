@@ -6,7 +6,7 @@ class OauthAccountLinkingService
     @role = role.to_s.strip
     @provider = auth_hash[:provider]
     @uid = auth_hash[:uid]
-    @email = auth_hash.dig(:info, :email)
+    @email = auth_hash.dig(:info, :email)&.to_s&.strip&.downcase
     @name = auth_hash.dig(:info, :name)
     @picture = auth_hash.dig(:info, :image)
     @user_ip = user_ip
@@ -104,11 +104,13 @@ class OauthAccountLinkingService
   end
 
   def find_user_by_email(email)
-    Buyer.find_by(email: email) ||
-    Seller.find_by(email: email) ||
-    Admin.find_by(email: email) ||
-    SalesUser.find_by(email: email) ||
-    MarketingUser.find_by(email: email)
+    return nil if email.blank?
+    normalized_email = email.to_s.strip.downcase
+    Seller.find_by('LOWER(email) = ?', normalized_email) ||
+    Buyer.find_by('LOWER(email) = ?', normalized_email) ||
+    Admin.find_by('LOWER(email) = ?', normalized_email) ||
+    SalesUser.find_by('LOWER(email) = ?', normalized_email) ||
+    MarketingUser.find_by('LOWER(email) = ?', normalized_email)
   end
 
   def find_user_by_oauth(provider, uid)
@@ -189,8 +191,17 @@ class OauthAccountLinkingService
       end
     end
 
-    # Update user if there are any changes (profile picture stored in DB as URL, no file cache)
-    user.update!(update_attributes) if update_attributes.any?
+    # Update user if there are any changes (tokens/profile picture)
+    # Use update_columns or save(validate: false) so stale/unrelated validation errors
+    # (like legacy username conflicts or missing profile fields) don't block existing users from logging in.
+    if update_attributes.any?
+      begin
+        user.update!(update_attributes)
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn "⚠️ [OauthAccountLinkingService] Validation warning during account link: #{e.message}. Updating attributes directly."
+        user.update_columns(update_attributes.slice(*user.class.column_names.map(&:to_sym)))
+      end
+    end
     
     # Auto-verify email for Google OAuth users (email is already verified by Google)
     mark_email_as_verified(@email)
@@ -438,17 +449,29 @@ class OauthAccountLinkingService
   end
 
   def generate_unique_username(name)
-    base_username = name.downcase.gsub(/[^a-z0-9]/, '').first(15)
+    raw_name = name.to_s.strip.presence || @email.to_s.split('@').first
+    base_username = raw_name.to_s.downcase.gsub(/[^a-z0-9_-]/, '')
+    base_username = "user#{rand(100..999)}" if base_username.length < 3
+    base_username = base_username.first(14)
+
     username = base_username
     counter = 1
     
-    while Buyer.exists?(username: username) || Seller.exists?(username: username) || 
-          Admin.exists?(username: username)
-      username = "#{base_username}#{counter}"
+    while username_taken?(username)
+      suffix = counter.to_s
+      max_base_len = 20 - suffix.length - 1
+      username = "#{base_username.first(max_base_len)}-#{suffix}"
       counter += 1
     end
     
     username
+  end
+
+  def username_taken?(uname)
+    normalized = uname.to_s.downcase
+    Buyer.where('LOWER(username) = ?', normalized).exists? ||
+    Seller.where('LOWER(username) = ?', normalized).exists? ||
+    Admin.where('LOWER(username) = ?', normalized).exists?
   end
 
   def store_pending_registration

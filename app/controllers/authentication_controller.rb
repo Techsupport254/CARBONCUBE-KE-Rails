@@ -2199,11 +2199,11 @@ class AuthenticationController < ApplicationController
     normalized_email = email.to_s.strip.downcase
     # Priority: Seller -> Buyer -> Admin -> others
     # Sellers take priority — upgraded buyers no longer have a buyer record (it was destroyed).
-    Seller.find_by(email: normalized_email) ||
-    Buyer.find_by(email: normalized_email) ||
-    Admin.find_by(email: normalized_email) ||
-    SalesUser.find_by(email: normalized_email) ||
-    MarketingUser.find_by(email: normalized_email)
+    Seller.find_by('LOWER(email) = ?', normalized_email) ||
+    Buyer.find_by('LOWER(email) = ?', normalized_email) ||
+    Admin.find_by('LOWER(email) = ?', normalized_email) ||
+    SalesUser.find_by('LOWER(email) = ?', normalized_email) ||
+    MarketingUser.find_by('LOWER(email) = ?', normalized_email)
   end
 
 

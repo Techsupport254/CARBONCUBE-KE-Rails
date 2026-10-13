@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 # Fans out the catalog upload reminder across all 4 channels to sellers who
-# have NOT yet submitted their catalog (i.e. sellers with ZERO active ads).
+# have NOT yet submitted their catalog (excluding any seller whose ads were
+# uploaded in the last 7 days).
 #
-# Strictly excludes any seller who has active ads or has already received this reminder.
+# Strictly excludes any seller whose ads were uploaded in the last 7 days
+# or who has already received this reminder.
 #
 # Usage:
 #   SendCatalogUploadReminderBroadcastJob.perform_later(dry_run: true)   # counts only
@@ -15,27 +17,29 @@
 class SendCatalogUploadReminderBroadcastJob < ApplicationJob
   queue_as :broadcast
 
+  EXCLUSION_WINDOW = 7.days
+
   def perform(dry_run: true)
     title = SendCatalogUploadReminderJob::NOTIFICATION_TITLE
 
-    # Eligible: active sellers who currently have ZERO active ads
+    # Eligible: active sellers excluding those whose ads were uploaded in the last 7 days
     active_sellers = Seller.where(deleted: [false, nil], blocked: [false, nil])
-    sellers_with_active_ads_ids = Ad.where(deleted: false).select(:seller_id).distinct
+    sellers_with_recent_ads_ids = Ad.where("created_at >= ?", EXCLUSION_WINDOW.ago).select(:seller_id).distinct
 
-    eligible_sellers = active_sellers.where.not(id: sellers_with_active_ads_ids)
+    eligible_sellers = active_sellers.where.not(id: sellers_with_recent_ads_ids)
 
     stats = {
-      total_sellers_without_ads: eligible_sellers.count,
+      total_eligible: eligible_sellers.count,
       queued: 0,
-      skipped_has_ads: 0,
+      skipped_recent_ads: 0,
       skipped_duplicate: 0,
       failed: 0
     }
 
     eligible_sellers.find_each(batch_size: 50) do |seller|
-      # Double check: strictly exclude anyone who has active ads
-      if seller.ads.where(deleted: false).exists?
-        stats[:skipped_has_ads] += 1
+      # Double check: strictly exclude anyone whose ads were uploaded in the last 7 days
+      if seller.ads.where("created_at >= ?", EXCLUSION_WINDOW.ago).exists?
+        stats[:skipped_recent_ads] += 1
         next
       end
 
@@ -54,8 +58,8 @@ class SendCatalogUploadReminderBroadcastJob < ApplicationJob
     end
 
     Rails.logger.info "[SendCatalogUploadReminderBroadcastJob] dry_run=#{dry_run} " \
-                      "total_without_ads=#{stats[:total_sellers_without_ads]} " \
-                      "queued=#{stats[:queued]} skipped_has_ads=#{stats[:skipped_has_ads]} " \
+                      "total_eligible=#{stats[:total_eligible]} " \
+                      "queued=#{stats[:queued]} skipped_recent_ads=#{stats[:skipped_recent_ads]} " \
                       "skipped_duplicate=#{stats[:skipped_duplicate]} failed=#{stats[:failed]}"
 
     stats.merge(dry_run: dry_run)
