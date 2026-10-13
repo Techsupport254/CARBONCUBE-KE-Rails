@@ -738,7 +738,7 @@ class ConversationsController < ApplicationController
   def fetch_buyer_conversations
     conversations = Conversation.where("conversations.buyer_id = ?", @current_user.id)
                                 .active_participants
-                                .includes(:admin, :buyer, :seller, :ad, :messages)
+                                .includes(:admin, :buyer, :seller, :ad)
                                 .joins(:messages)
                                 .distinct
                                 .order("conversations.updated_at DESC")
@@ -847,7 +847,7 @@ class ConversationsController < ApplicationController
       @current_user.id,
       @current_user.id
     ).active_participants
-     .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+     .includes(:admin, :buyer, :seller, :inquirer_seller, :ad)
      .joins(:messages)
      .distinct
      .order("conversations.updated_at DESC")
@@ -958,7 +958,7 @@ class ConversationsController < ApplicationController
     if @current_user.is_a?(SalesUser)
       # Sales users can see all conversations
       conversations = Conversation.active_participants
-                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad)
                                   .joins(:messages)
                                   .distinct
                                   .order("conversations.updated_at DESC")
@@ -966,7 +966,7 @@ class ConversationsController < ApplicationController
       # Admins see assigned conversations, unassigned support, and WhatsApp conversations
       conversations = Conversation.where("conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true", @current_user.id)
                                   .active_participants
-                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad, :messages)
+                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad)
                                   .joins(:messages)
                                   .distinct
                                   .order("conversations.updated_at DESC")
@@ -1230,9 +1230,10 @@ class ConversationsController < ApplicationController
     end
   end
 
-  def representative_conversation_for_batched(conversations, last_msg_times)
+  def representative_conversation_for_batched(conversations, last_msg_records)
     conversations.max_by do |conversation|
-      last_msg_times[conversation.id] || conversation.updated_at
+      record = last_msg_records[conversation.id]
+      record.try(:created_at) || conversation.updated_at
     end
   end
 
@@ -1262,10 +1263,33 @@ class ConversationsController < ApplicationController
   end
 
   def serialize_grouped_conversations(grouped_conversations)
+    return [] if grouped_conversations.blank?
+
+    all_conv_ids = grouped_conversations.values.flat_map { |group| group.map(&:id) }.uniq
+    return [] if all_conv_ids.blank?
+
+    # Single fast query for latest message across all conversations
+    last_messages = Message.find_by_sql([<<-SQL.squish, all_conv_ids]).index_by(&:conversation_id)
+      SELECT DISTINCT ON (conversation_id) id, conversation_id, content, created_at, sender_type, sender_id, status, read_at, delivered_at
+      FROM messages
+      WHERE conversation_id IN (?)
+      ORDER BY conversation_id, created_at DESC, id DESC
+    SQL
+
+    staff_lookup = Rails.cache.fetch("staff_users_lookup_v1", expires_in: 5.minutes) do
+      lookup = {}
+      Admin.all.each { |a| lookup[a.id] = a }
+      SalesUser.all.each { |s| lookup[s.id] = s }
+      MarketingUser.all.each { |m| lookup[m.id] = m }
+      lookup
+    end
+
+    serializer_scope = { staff_lookup: staff_lookup, last_messages: last_messages }
+
     grouped_conversations.values.map do |conversation_group|
-      representative = representative_conversation_for(conversation_group)
-      serialized = ConversationSerializer.new(representative).as_json
-      last_message = conversation_group.flat_map(&:messages).max_by(&:created_at)
+      representative = representative_conversation_for_batched(conversation_group, last_messages)
+      last_message = conversation_group.map { |conv| last_messages[conv.id] }.compact.max_by(&:created_at)
+      serialized = ConversationSerializer.new(representative, scope: serializer_scope).as_json
 
       serialized.merge(
         id: representative.id,

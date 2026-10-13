@@ -696,7 +696,7 @@ class WhatsAppCloudService
                  
     # 1. Prefer existing conversation with an admin (Support/Marketing)
     # This ensures replies to broadcasts stay in the support thread
-    existing_support = Conversation.where(conv_attrs).where.not(admin_id: nil).order(updated_at: :desc).first
+    existing_support = Conversation.where(conv_attrs).where(partner_condition).where.not(admin_id: nil).order(updated_at: :desc).first
     if existing_support
       existing_support.update(is_whatsapp: true) unless existing_support.is_whatsapp?
       return existing_support

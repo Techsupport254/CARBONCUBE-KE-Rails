@@ -3,9 +3,15 @@ class ConversationSerializer < ActiveModel::Serializer
              :admin, :buyer, :seller, :inquirer_seller, :ad, :is_whatsapp
 
   def admin
-    admin_user = object.admin || 
-                 SalesUser.find_by(id: object.admin_id) ||
-                 MarketingUser.find_by(id: object.admin_id)
+    admin_user = object.admin
+    if admin_user.nil? && object.admin_id.present?
+      if scope.is_a?(Hash) && scope[:staff_lookup]
+        admin_user = scope[:staff_lookup][object.admin_id]
+      else
+        admin_user = SalesUser.find_by(id: object.admin_id) ||
+                     MarketingUser.find_by(id: object.admin_id)
+      end
+    end
     return nil unless admin_user
 
     user_role =
@@ -93,7 +99,11 @@ class ConversationSerializer < ActiveModel::Serializer
   end
 
   def last_message
-    message = object.messages.order(created_at: :desc).first
+    message = if scope.is_a?(Hash) && scope[:last_messages]
+      scope[:last_messages][object.id]
+    else
+      object.messages.order(created_at: :desc).first
+    end
     return nil unless message
     
     # Determine status based on read_at/delivered_at (prioritize over existing status field)
