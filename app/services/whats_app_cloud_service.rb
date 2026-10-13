@@ -348,14 +348,15 @@ class WhatsAppCloudService
     Rails.logger.info "[WhatsAppCloudService] Incoming message from: #{from_number} (local: #{local_number}), type: #{msg_data['type']}"
 
     # Try to find a user (Buyer, Seller, or SalesUser)
-    user = Buyer.find_by(phone_number: local_number) ||
-           Buyer.find_by(phone_number: from_number) ||
-           Seller.find_by(phone_number: local_number) ||
-           Seller.find_by(phone_number: from_number)
+    user = (local_number.present? ? Buyer.find_by(phone_number: local_number) : nil) ||
+           (from_number.present? ? Buyer.find_by(phone_number: from_number) : nil) ||
+           (local_number.present? ? Seller.find_by(phone_number: local_number) : nil) ||
+           (from_number.present? ? Seller.find_by(phone_number: from_number) : nil)
 
     # If the phone belongs to a SalesUser, resolve to their linked Buyer/Seller account or create one
     if !user
-      sales_user = SalesUser.find_by(phone_number: local_number) || SalesUser.find_by(phone_number: from_number)
+      sales_user = (local_number.present? ? SalesUser.find_by(phone_number: local_number) : nil) ||
+                   (from_number.present? ? SalesUser.find_by(phone_number: from_number) : nil)
       if sales_user
         user = Seller.find_by(email: sales_user.email) ||
                Buyer.find_by(email: sales_user.email) ||
