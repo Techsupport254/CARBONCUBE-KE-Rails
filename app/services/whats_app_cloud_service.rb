@@ -498,7 +498,8 @@ class WhatsAppCloudService
               when 'document'
                 doc_data = msg_data['document'] || {}
                 filename = doc_data['filename'].presence || 'document'
-                url = download_and_upload_media(doc_data['id'], filename)
+                mime_type = doc_data['mime_type'].presence
+                url = download_and_upload_document(doc_data['id'], filename, mime_type: mime_type)
                 media_urls << url if url
                 safe_name = filename.tr('[]()', '____')
                 if url
@@ -603,9 +604,57 @@ class WhatsAppCloudService
       safe_name = filename.present? ? File.basename(filename.to_s).gsub(/[^\w.-]+/, '_') : nil
       safe_name = "whatsapp_media.#{mime_ext}" if safe_name.blank? || safe_name.start_with?('.')
 
-      upload_to_cloudinary(file_response.body, safe_name)
+      url = upload_to_cloudinary(file_response.body, safe_name)
+      # Fallback to Cloudflare R2 if Cloudinary fails (e.g. exceeds 20MB limit)
+      url ||= CloudflareR2Service.upload(file_response.body, safe_name, content_type: media_info['mime_type'], folder: 'whatsapp_media')
+      url
     rescue => e
       Rails.logger.error "[WhatsAppCloudService] Media processing failed: #{e.message}"
+      nil
+    end
+  end
+
+  # Download document from Meta WhatsApp and upload to Cloudflare R2
+  def self.download_and_upload_document(media_id, filename = nil, mime_type: nil)
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+    return nil if access_token.blank? || media_id.blank?
+
+    begin
+      # 1. Get media URL from Meta Graph API
+      uri = URI("#{GRAPH_URL}/#{media_id}")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+      request = Net::HTTP::Get.new(uri)
+      request['Authorization'] = "Bearer #{access_token}"
+
+      response = http.request(request)
+      return nil unless response.code.to_i == 200
+
+      media_info = JSON.parse(response.body)
+      download_url = media_info['url']
+      return nil unless download_url
+
+      # 2. Download binary content
+      download_uri = URI(download_url)
+      download_http = Net::HTTP.new(download_uri.host, download_uri.port)
+      download_http.use_ssl = true
+      download_http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+      download_request = Net::HTTP::Get.new(download_uri)
+      download_request['Authorization'] = "Bearer #{access_token}"
+
+      file_response = download_http.request(download_request)
+      return nil unless file_response.code.to_i == 200
+
+      # 3. Store in Cloudflare R2
+      doc_mime = mime_type.presence || media_info['mime_type'].presence
+      safe_name = filename.present? ? File.basename(filename.to_s) : 'document.bin'
+
+      CloudflareR2Service.upload(file_response.body, safe_name, content_type: doc_mime, folder: 'whatsapp_docs')
+    rescue => e
+      Rails.logger.error "[WhatsAppCloudService] Document R2 processing failed: #{e.message}"
       nil
     end
   end
