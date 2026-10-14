@@ -10,6 +10,7 @@ require 'securerandom'
 class CloudflareR2Service
   DEFAULT_ACCOUNT_ID = '19a90b1197c3c02c78fd4eca7667c64e'
   DEFAULT_BUCKET = 'carbon-docs'
+  DEFAULT_PUBLIC_URL = 'https://pub-d7ce8d4b684a4beea0fe5fe6fac61b63.r2.dev'
 
   def self.account_id
     ENV['R2_ACCOUNT_ID'].presence || DEFAULT_ACCOUNT_ID
@@ -28,7 +29,7 @@ class CloudflareR2Service
   end
 
   def self.public_url_base
-    ENV['R2_PUBLIC_URL'].presence
+    ENV['R2_PUBLIC_URL'].presence || DEFAULT_PUBLIC_URL
   end
 
   def self.host
