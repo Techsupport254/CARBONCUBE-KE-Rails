@@ -134,8 +134,63 @@ class MessagesController < ApplicationController
   end
 
   def create
+    idempotency_key = params[:idempotency_key].presence || 
+                      request.headers['X-Idempotency-Key'].presence || 
+                      params.dig(:message, :idempotency_key).presence
+
+    if idempotency_key.present?
+      existing = @conversation.messages.find_by(idempotency_key: idempotency_key)
+      if existing
+        message_data = build_message_data(existing)
+        add_ad_information(message_data, existing)
+        message_data[:sender] = @current_user.as_json
+        render json: message_data, status: :ok
+        return
+      end
+    end
+
     @message = @conversation.messages.build(message_params)
     @message.sender = @current_user
+    @message.idempotency_key = idempotency_key if idempotency_key.present?
+
+    # Reply to another message in conversation
+    reply_to_id = params[:reply_to_message_id].presence || params.dig(:message, :reply_to_message_id).presence
+    if reply_to_id.present?
+      target_parent = @conversation.messages.find_by(id: reply_to_id)
+      @message.reply_to_message = target_parent if target_parent
+    end
+
+    # Media attachments (file upload or pre-uploaded URLs)
+    uploaded_files = params[:files] || params.dig(:message, :files)
+    if uploaded_files.present?
+      attachment_urls = []
+      Array(uploaded_files).each do |file|
+        next unless file.respond_to?(:tempfile)
+        begin
+          res = Cloudinary::Uploader.upload(
+            file.tempfile.path,
+            upload_preset: ENV['UPLOAD_PRESET'],
+            folder: "chat_attachments",
+            resource_type: "auto"
+          )
+          if res['secure_url'].present?
+            attachment_urls << {
+              url: res['secure_url'],
+              format: res['format'],
+              resource_type: res['resource_type'],
+              bytes: res['bytes'],
+              original_filename: file.original_filename
+            }
+          end
+        rescue => e
+          Rails.logger.error "Chat file upload failed: #{e.message}"
+        end
+      end
+      @message.media_urls = attachment_urls if attachment_urls.any?
+    elsif params[:media_urls].present? || params.dig(:message, :media_urls).present?
+      raw_urls = params[:media_urls] || params.dig(:message, :media_urls)
+      @message.media_urls = raw_urls if raw_urls.is_a?(Array)
+    end
     
     # Set appropriate status based on user type
     if @current_user.is_a?(Buyer) || @current_user.is_a?(Seller)
@@ -159,6 +214,74 @@ class MessagesController < ApplicationController
       render json: message_data, status: :created
     else
       render json: @message.errors, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    message = @conversation.messages.find_by(id: params[:id])
+    return render json: { error: 'Message not found' }, status: :not_found unless message
+
+    unless message.sender == @current_user
+      return render json: { error: 'Unauthorized to edit this message' }, status: :forbidden
+    end
+
+    unless message.editable_by?(@current_user)
+      return render json: { error: 'Messages can only be edited within 15 minutes of sending' }, status: :unprocessable_entity
+    end
+
+    new_content = params.dig(:message, :content) || params[:content]
+    if new_content.blank?
+      return render json: { error: 'Message content cannot be blank' }, status: :unprocessable_entity
+    end
+
+    message.update(content: new_content, edited_at: Time.current)
+
+    message_data = build_message_data(message)
+    add_ad_information(message_data, message)
+    message_data[:sender] = @current_user.as_json
+
+    message.broadcast_to_conversation({
+      type: 'message_edited',
+      conversation_id: @conversation.id,
+      message: message_data
+    })
+
+    render json: message_data
+  end
+
+  def destroy
+    message = @conversation.messages.find_by(id: params[:id])
+    return render json: { error: 'Message not found' }, status: :not_found unless message
+
+    mode = params[:mode].presence || 'for_everyone'
+
+    if mode == 'for_everyone'
+      unless message.sender == @current_user
+        return render json: { error: 'Unauthorized to delete for everyone' }, status: :forbidden
+      end
+
+      unless message.deletable_for_everyone_by?(@current_user)
+        return render json: { error: 'Messages can only be deleted for everyone within 1 hour of sending' }, status: :unprocessable_entity
+      end
+
+      message.update(deleted_for_everyone: true)
+
+      message.broadcast_to_conversation({
+        type: 'message_deleted',
+        conversation_id: @conversation.id,
+        message_id: message.id,
+        mode: 'for_everyone'
+      })
+
+      render json: { success: true, message_id: message.id, mode: 'for_everyone' }
+    else
+      # Delete for me
+      user_ids = Array(message.deleted_by_user_ids)
+      user_id_str = @current_user.id.to_s
+      user_ids << user_id_str unless user_ids.include?(user_id_str)
+      message.update_column(:deleted_by_user_ids, user_ids)
+
+      render json: { success: true, message_id: message.id, mode: 'for_me' }
     end
   end
 
@@ -346,13 +469,13 @@ class MessagesController < ApplicationController
       recipient_conv_ids.concat(seller_conv_ids)
     end
     
-    # Get all messages from related conversations with preloaded ads
+    # Get all messages from related conversations with preloaded ads & replies
     all_messages = Message.where(conversation_id: recipient_conv_ids.uniq)
-                          .includes(ad: [:category, :subcategory])
+                          .includes(:reply_to_message, ad: [:category, :subcategory])
                           .order(created_at: :asc)
     
-    # Include ad information for each message
-    messages_with_ads = all_messages.map do |message|
+    # Include ad information for each message, filtering out messages deleted for current user
+    messages_with_ads = all_messages.reject { |msg| msg.deleted_for?(@current_user) }.map do |message|
       message_data = build_message_data(message)
       add_ad_information(message_data, message)
       message_data
@@ -392,13 +515,13 @@ class MessagesController < ApplicationController
       recipient_conv_ids.concat(s2s_conv_ids)
     end
     
-    # Get all messages from related conversations with preloaded ads
+    # Get all messages from related conversations with preloaded ads & replies
     all_messages = Message.where(conversation_id: recipient_conv_ids.uniq)
-                          .includes(ad: [:category, :subcategory])
+                          .includes(:reply_to_message, ad: [:category, :subcategory])
                           .order(created_at: :asc)
     
-    # Include ad information for each message
-    messages_with_ads = all_messages.map do |message|
+    # Include ad information for each message, filtering out messages deleted for current user
+    messages_with_ads = all_messages.reject { |msg| msg.deleted_for?(@current_user) }.map do |message|
       message_data = build_message_data(message)
       add_ad_information(message_data, message)
       message_data
@@ -452,13 +575,13 @@ class MessagesController < ApplicationController
       related_conv_ids.concat(exact_convs)
     end
 
-    # Get all messages from these conversations with preloaded ads
+    # Get all messages from these conversations with preloaded ads & replies
     all_messages = Message.where(conversation_id: related_conv_ids.uniq)
-                          .includes(ad: [:category, :subcategory])
+                          .includes(:reply_to_message, ad: [:category, :subcategory])
                           .order(created_at: :asc)
     
-    # Include ad information for each message
-    messages_with_ads = all_messages.map do |message|
+    # Include ad information for each message, filtering out messages deleted for current user
+    messages_with_ads = all_messages.reject { |msg| msg.deleted_for?(@current_user) }.map do |message|
       message_data = build_message_data(message)
       add_ad_information(message_data, message)
       message_data
@@ -471,9 +594,18 @@ class MessagesController < ApplicationController
   end
 
   def build_message_data(message)
+    reply_snippet = if message.reply_to_message_id.present? && message.reply_to_message
+      {
+        id: message.reply_to_message.id,
+        content: message.reply_to_message.content&.truncate(100),
+        sender_name: message.get_sender_display_name(message.reply_to_message.sender),
+        sender_type: message.reply_to_message.sender_type
+      }
+    end
+
     {
       id: message.id,
-      content: message.content,
+      content: message.deleted_for_everyone? ? "This message was deleted" : message.content,
       created_at: message.created_at,
       sender_type: message.sender_type,
       sender_id: message.sender_id,
@@ -481,7 +613,14 @@ class MessagesController < ApplicationController
       product_context: message.product_context,
       status: message.status_text,
       read_at: message.read_at,
-      delivered_at: message.delivered_at
+      delivered_at: message.delivered_at,
+      edited_at: message.edited_at,
+      deleted_for_everyone: message.deleted_for_everyone?,
+      deleted_by_user_ids: message.deleted_by_user_ids || [],
+      idempotency_key: message.idempotency_key,
+      media_urls: message.media_urls || [],
+      reply_to_message_id: message.reply_to_message_id,
+      reply_to_message: reply_snippet
     }
   end
 
@@ -501,7 +640,7 @@ class MessagesController < ApplicationController
   end
 
   def message_params
-    permitted = params.require(:message).permit(:content, :ad_id)
+    permitted = params.require(:message).permit(:content, :ad_id, :reply_to_message_id, :idempotency_key, { media_urls: [] })
     # ad_id may arrive as a canonical slug — resolve it to the numeric id so
     # the integer column doesn't end up with a garbage 0/nil cast.
     if permitted[:ad_id].present?
@@ -562,34 +701,38 @@ class MessagesController < ApplicationController
   end
 
   def broadcast_read_receipt(message)
-    sender_type = message.sender_type.downcase
+    sender_type = message.sender_type.to_s.downcase
     sender_id = message.sender_id
     
-    ActionCable.server.broadcast(
-      "presence_#{sender_type}_#{sender_id}",
-      {
-        type: 'message_read',
-        message_id: message.id,
-        conversation_id: message.conversation_id,
-        read_at: message.read_at,
-        status: 'read'
-      }
-    )
+    payload = {
+      type: 'message_read',
+      message_id: message.id,
+      conversation_id: message.conversation_id,
+      read_at: message.read_at,
+      status: 'read'
+    }
+
+    ActionCable.server.broadcast("presence_#{sender_type}_#{sender_id}", payload)
+    ActionCable.server.broadcast("conversations_#{sender_type}_#{sender_id}", payload)
+  rescue => e
+    Rails.logger.warn "Failed to broadcast read receipt for message #{message.id}: #{e.message}"
   end
 
   def broadcast_delivery_receipt(message)
-    sender_type = message.sender_type.downcase
+    sender_type = message.sender_type.to_s.downcase
     sender_id = message.sender_id
     
-    ActionCable.server.broadcast(
-      "presence_#{sender_type}_#{sender_id}",
-      {
-        type: 'message_delivered',
-        message_id: message.id,
-        conversation_id: message.conversation_id,
-        delivered_at: message.delivered_at,
-        status: 'delivered'
-      }
-    )
+    payload = {
+      type: 'message_delivered',
+      message_id: message.id,
+      conversation_id: message.conversation_id,
+      delivered_at: message.delivered_at,
+      status: 'delivered'
+    }
+
+    ActionCable.server.broadcast("presence_#{sender_type}_#{sender_id}", payload)
+    ActionCable.server.broadcast("conversations_#{sender_type}_#{sender_id}", payload)
+  rescue => e
+    Rails.logger.warn "Failed to broadcast delivery receipt for message #{message.id}: #{e.message}"
   end
 end

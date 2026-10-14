@@ -137,7 +137,7 @@ Rails.application.routes.draw do
   
   # Unified conversations and messages endpoints for all user types
   resources :conversations, only: [:index, :show, :create] do
-    resources :messages, only: [:index, :create] do
+    resources :messages, only: [:index, :create, :update, :destroy] do
       member do
         patch :mark_as_read
         patch :mark_as_delivered
@@ -456,6 +456,8 @@ Rails.application.routes.draw do
         post :verify_document
         post :send_reminder
         post :promote_to_partner
+        post :make_brand_kenya
+        post :remove_brand_kenya
       end
       collection do
         post 'bulk_actions'

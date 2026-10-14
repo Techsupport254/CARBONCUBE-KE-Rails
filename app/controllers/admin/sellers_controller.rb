@@ -1,7 +1,7 @@
 class Admin::SellersController < ApplicationController
-  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics, :update, :verify_document, :send_reminder, :updates, :promote_to_partner]
-  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics, :update, :verify_document, :send_reminder, :updates, :promote_to_partner]
-  before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews, :verify_document, :send_reminder, :updates, :promote_to_partner]
+  before_action :authenticate_admin_or_sales, only: [:index, :show, :ads, :reviews, :analytics, :update, :verify_document, :send_reminder, :updates, :promote_to_partner, :make_brand_kenya, :remove_brand_kenya]
+  before_action :authenticate_admin, except: [:index, :show, :ads, :reviews, :analytics, :update, :verify_document, :send_reminder, :updates, :promote_to_partner, :make_brand_kenya, :remove_brand_kenya]
+  before_action :set_seller, only: [:block, :unblock, :flag, :unflag, :show, :update, :destroy, :analytics, :orders, :ads, :reviews, :verify_document, :send_reminder, :updates, :promote_to_partner, :make_brand_kenya, :remove_brand_kenya]
 
   def index
     cache_scope = "admin_global"
@@ -183,7 +183,8 @@ class Admin::SellersController < ApplicationController
           :twitter_url, :linkedin_url, :website, :google_business_profile_url,
           :city, :gender, :business_registration_number, :document_url,
           :document_verified, :document_expiry_date, :created_at, :updated_at,
-          :last_active_at, :deleted, :provider, :uid, :ads_count, :carbon_code_id
+          :last_active_at, :deleted, :provider, :uid, :ads_count, :carbon_code_id,
+          :flagged, :flag_notes, :field_verified_at, :whatsapp_notifications
         ],
         methods: [:category_names],
         include: {
@@ -199,10 +200,12 @@ class Admin::SellersController < ApplicationController
       data.merge(analytics: analytics_data)
     end
 
-    # Partner linkage stays outside the cache — it's cheap and must be fresh.
+    # Partner & Brand Kenya linkage stays outside the cache — cheap and must be fresh.
     seller_data = seller_data.merge(
       partner_id: @seller.partner&.id,
-      partner_status: @seller.partner&.status
+      partner_status: @seller.partner&.status,
+      is_brand_kenya: @seller.brand_kenya?,
+      brand_kenya_brand_id: @seller.sales_brands.find_by(status: :onboarded)&.id || @seller.sales_brands.first&.id
     )
 
     render json: seller_data
@@ -715,6 +718,72 @@ class Admin::SellersController < ApplicationController
       partner: PartnerPresenter.partner(partner.reload),
       invite: PartnerPresenter.invite(invite)
     }, status: :created
+  end
+
+  # POST /admin/sellers/:id/make_brand_kenya
+  # Onboard this seller into the Brand Kenya directory and flag their ads.
+  def make_brand_kenya
+    brand = @seller.sales_brands.find_by(status: :onboarded) ||
+            @seller.sales_brands.first ||
+            SalesBrand.find_by(phone: @seller.phone_number) ||
+            SalesBrand.find_by(name: @seller.enterprise_name) ||
+            SalesBrand.new(
+              name: @seller.enterprise_name.presence || @seller.fullname,
+              source: 'field',
+              sales_user: (@current_user if @current_user.is_a?(SalesUser)),
+              phone: @seller.phone_number,
+              email: @seller.email,
+              location: @seller.location,
+              category: @seller.category&.name || @seller.categories_seller&.category&.name,
+              part: 2
+            )
+
+    brand.seller = @seller
+    brand.registered_at ||= @seller.created_at || Time.current
+    brand.status = :onboarded
+    brand.last_contacted_at ||= Time.current
+
+    unless brand.save
+      render json: { error: brand.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      return
+    end
+
+    # Sync all ads with Brand Kenya ribbon
+    @seller.ads.update_all(is_brand_kenya: true)
+
+    # Log activity on the brand
+    brand.activities.create(
+      activity_type: 'registered',
+      sales_user: (@current_user if @current_user.is_a?(SalesUser)),
+      actor_name: @current_user&.try(:fullname) || @current_user&.try(:email) || 'Admin',
+      occurred_at: Time.current,
+      outcome: 'onboarded',
+      notes: "Onboarded as Brand Kenya partner from seller profile"
+    )
+
+    render json: {
+      success: true,
+      message: "#{@seller.enterprise_name || @seller.fullname} is now an official Brand Kenya partner",
+      is_brand_kenya: true,
+      brand_id: brand.id
+    }
+  end
+
+  # POST /admin/sellers/:id/remove_brand_kenya
+  def remove_brand_kenya
+    brands = @seller.sales_brands
+    if brands.any?
+      brands.each do |b|
+        b.update(status: :contacted)
+      end
+    end
+    @seller.ads.update_all(is_brand_kenya: false)
+
+    render json: {
+      success: true,
+      message: "Removed Brand Kenya status from #{@seller.enterprise_name || @seller.fullname}",
+      is_brand_kenya: false
+    }
   end
 
   private

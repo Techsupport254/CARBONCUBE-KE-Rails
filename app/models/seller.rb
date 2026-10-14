@@ -57,6 +57,14 @@ class Seller < ApplicationRecord
   has_one :subcategory, through: :categories_seller
   has_one :seller_tier, dependent: :destroy
   has_one :tier, through: :seller_tier
+
+  def tier_id
+    seller_tier&.tier_id || tier&.id || 1
+  end
+
+  def tier_name
+    tier&.name || 'Free'
+  end
   
   belongs_to :county, optional: true
   belongs_to :sub_county, optional: true

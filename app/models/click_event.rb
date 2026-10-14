@@ -17,6 +17,8 @@ class ClickEvent < ApplicationRecord
     Share-Ad
     View-Shop
     Message-Seller
+    Directions-Click
+    Navigate-Storefront
   ].freeze
 
   validates :event_type, presence: true, inclusion: { in: EVENT_TYPES }

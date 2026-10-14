@@ -4,9 +4,12 @@ class MessageDeliveryJob < ApplicationJob
   retry_on StandardError, wait: 10.seconds, attempts: 3
   discard_on ActiveRecord::RecordNotFound
 
-  def perform(message_id)
+  MAX_ATTEMPTS = 3
+
+  def perform(message_id, attempt = 1)
     message = Message.find_by(id: message_id)
     return unless message
+    return if message.delivered? || message.read?
 
     # Check if recipient is online before marking as delivered
     recipient = message.get_recipient
@@ -15,10 +18,12 @@ class MessageDeliveryJob < ApplicationJob
       message.mark_as_delivered!
       broadcast_delivery_receipt(message)
       Rails.logger.info "Message #{message_id} marked as delivered - recipient is online"
+    elsif attempt < MAX_ATTEMPTS
+      # Recipient is still offline - retry with backoff up to MAX_ATTEMPTS
+      self.class.set(wait: (attempt * 15).seconds).perform_later(message_id, attempt + 1)
     else
-      # Recipient is still offline - reschedule for later
-      Rails.logger.info "Message #{message_id} recipient still offline, rescheduling delivery"
-      self.class.set(wait: 30.seconds).perform_later(message_id)
+      # Reached max attempts - stop polling. PresenceChannel will mark delivered when recipient connects.
+      Rails.logger.info "Message #{message_id} recipient offline after #{MAX_ATTEMPTS} attempts, waiting for next connect"
     end
   rescue => e
     Rails.logger.error "MessageDeliveryJob failed for message #{message_id}: #{e.message}"

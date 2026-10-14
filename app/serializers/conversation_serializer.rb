@@ -1,6 +1,21 @@
 class ConversationSerializer < ActiveModel::Serializer
   attributes :id, :admin_id, :buyer_id, :seller_id, :ad_id, :created_at, :updated_at, :inquirer_seller_id, :last_message,
-             :admin, :buyer, :seller, :inquirer_seller, :ad, :is_whatsapp
+             :admin, :buyer, :seller, :inquirer_seller, :ad, :is_whatsapp,
+             :whatsapp_window_open, :whatsapp_window_expires_at
+
+  def whatsapp_window_open
+    return true unless object.is_whatsapp?
+    expires_at = whatsapp_window_expires_at
+    return false unless expires_at
+    Time.zone.parse(expires_at) > Time.current
+  end
+
+  def whatsapp_window_expires_at
+    return nil unless object.is_whatsapp?
+    last_customer_msg = object.messages.where(sender_type: %w[Buyer Seller]).order(created_at: :desc).first
+    return nil unless last_customer_msg
+    (last_customer_msg.created_at + 24.hours).iso8601
+  end
 
   def admin
     admin_user = object.admin
@@ -50,34 +65,48 @@ class ConversationSerializer < ActiveModel::Serializer
   end
 
   def seller
-    return nil unless object.seller
-    {
-      id: object.seller.id,
-      fullname: object.seller.fullname,
-      username: object.seller.username,
-      slug: object.seller.url_slug,
-      enterprise_name: object.seller.enterprise_name,
-      email: object.seller.email,
-      phone_number: object.seller.phone_number,
-      profile_picture: resolve_profile_picture(object.seller.profile_picture),
-      last_active_at: object.seller.last_active_at
-    }
+    serialize_seller(object.seller)
   end
 
   def inquirer_seller
-    return nil unless object.inquirer_seller
+    serialize_seller(object.inquirer_seller)
+  end
+
+  private
+
+  def serialize_seller(seller_obj)
+    return nil unless seller_obj
+
+    main_branch = if seller_obj.association(:branches).loaded?
+                    seller_obj.branches.min_by { |b| [b.is_main_branch ? 0 : 1, b.id] }
+                  else
+                    seller_obj.branches.order(is_main_branch: :desc, id: :asc).first
+                  end
+
     {
-      id: object.inquirer_seller.id,
-      fullname: object.inquirer_seller.fullname,
-      username: object.inquirer_seller.username,
-      slug: object.inquirer_seller.url_slug,
-      enterprise_name: object.inquirer_seller.enterprise_name,
-      email: object.inquirer_seller.email,
-      phone_number: object.inquirer_seller.phone_number,
-      profile_picture: resolve_profile_picture(object.inquirer_seller.profile_picture),
-      last_active_at: object.inquirer_seller.last_active_at
+      id: seller_obj.id,
+      fullname: seller_obj.fullname,
+      username: seller_obj.username,
+      slug: seller_obj.url_slug,
+      enterprise_name: seller_obj.enterprise_name,
+      email: seller_obj.email,
+      phone_number: seller_obj.phone_number,
+      profile_picture: resolve_profile_picture(seller_obj.profile_picture),
+      last_active_at: seller_obj.last_active_at,
+      location: seller_obj.location,
+      building: seller_obj.building,
+      room: seller_obj.room,
+      document_verified: seller_obj.document_verified,
+      tier_id: seller_obj.try(:tier_id) || seller_obj.seller_tier&.tier_id || 1,
+      tier_name: seller_obj.try(:tier_name) || seller_obj.tier&.name || 'Free',
+      latitude: main_branch&.latitude&.to_f,
+      longitude: main_branch&.longitude&.to_f,
+      primary_branch_name: main_branch&.name,
+      primary_branch_address: main_branch&.try(:location) || main_branch&.try(:address)
     }
   end
+
+  public
 
   def ad
     return nil unless object.ad

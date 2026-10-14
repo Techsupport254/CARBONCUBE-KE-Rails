@@ -20,14 +20,33 @@ class ProcessWebsocketMessageJob < ApplicationJob
     conversation = find_and_validate_conversation(conversation_id, sender_user)
     return unless conversation
     
+    # Resolve sender model and type
+    resolved_sender = sender_user if sender_user.is_a?(ActiveRecord::Base)
+    resolved_sender_type = if resolved_sender
+                             resolved_sender.class.name
+                           else
+                             case sender_type.to_s.downcase
+                             when 'buyer' then 'Buyer'
+                             when 'seller' then 'Seller'
+                             when 'admin' then 'Admin'
+                             when 'sales', 'salesuser', 'sales_user' then 'SalesUser'
+                             when 'marketing', 'marketinguser', 'marketing_user' then 'MarketingUser'
+                             else sender_type.to_s.classify
+                             end
+                           end
+    resolved_sender_id = resolved_sender&.id || sender_id
+
     # Create message with optimistic locking
-    message = create_message_with_retry(conversation, {
+    attrs = {
       content: content,
-      sender_type: sender_type,
-      sender_id: sender_id,
+      sender_type: resolved_sender_type,
+      sender_id: resolved_sender_id,
       ad_id: message_data['ad_id'],
       product_context: message_data['product_context']
-    })
+    }
+    attrs[:sender] = resolved_sender if resolved_sender
+
+    message = create_message_with_retry(conversation, attrs)
     
     return unless message
     

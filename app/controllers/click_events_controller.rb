@@ -59,6 +59,23 @@ class ClickEventsController < ApplicationController
       # Resolve ad_id safely; invalid/non-existent IDs become nil to avoid FK violations
       ad_id = normalize_ad_id(click_event_params[:ad_id])
 
+      # If seller_id is not already set from the current user, associate the target seller:
+      # 1. From the target ad (if present)
+      # 2. Or from params[:seller_id] / metadata[:seller_id] (e.g. shop page or direct navigation)
+      if seller_id.nil?
+        if ad_id.present?
+          target_ad = Ad.find_by(id: ad_id)
+          seller_id = target_ad.seller_id if target_ad
+        end
+        if seller_id.nil?
+          raw_target_seller = click_event_params[:seller_id] || metadata[:seller_id] || metadata['seller_id']
+          if raw_target_seller.present?
+            matched_seller = Seller.find_by(id: raw_target_seller) || Seller.find_by_id_or_slug(raw_target_seller)
+            seller_id = matched_seller.id if matched_seller
+          end
+        end
+      end
+
       click_event_attributes = {
         event_type: click_event_params[:event_type],
         ad_id: ad_id,
@@ -160,7 +177,7 @@ class ClickEventsController < ApplicationController
   def click_event_params
     # We permit the top level fields, and for metadata we explicitly permit all keys
     # to prevent stripping of nested hashes like device_fingerprint.
-    permitted = params.permit(:event_type, :ad_id, :device_hash, :user_agent, click_event: {})
+    permitted = params.permit(:event_type, :ad_id, :seller_id, :device_hash, :user_agent, click_event: {})
     if params[:metadata].present? && params[:metadata].is_a?(ActionController::Parameters)
       permitted[:metadata] = params.require(:metadata).permit!
     elsif params[:metadata].is_a?(Hash)

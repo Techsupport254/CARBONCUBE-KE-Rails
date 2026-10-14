@@ -7,9 +7,10 @@ class SellerSerializer < ActiveModel::Serializer
              :document_url, :document_type_id, :document_expiry_date, :document_verified, :ads_count, :provider,
              :carbon_code, :created_at, :updated_at, :partner_status, :partner_type,
              :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url, :linkedin_url, :website, :google_business_profile_url,
-             :whatsapp_notifications
+             :whatsapp_notifications, :is_brand_kenya, :brand_kenya_brand_id
   attribute :google_place_reviews, if: :include_google_place_reviews?
   attribute :google_reviews_fetched_at, if: :include_google_place_reviews?
+  attribute :distance_km, if: :has_distance_km?
 
   has_many :categories
   has_many :seller_documents, serializer: SellerDocumentSerializer
@@ -32,6 +33,14 @@ class SellerSerializer < ActiveModel::Serializer
 
   def partner_type
     object.partner&.partner_type
+  end
+
+  def is_brand_kenya
+    object.brand_kenya?
+  end
+
+  def brand_kenya_brand_id
+    object.sales_brands.find_by(status: :onboarded)&.id || object.sales_brands.first&.id
   end
 
   def county
@@ -85,5 +94,13 @@ class SellerSerializer < ActiveModel::Serializer
     
     # Return original Google URL or other valid URLs (but not cached ones)
     url
+  end
+
+  def has_distance_km?
+    object.respond_to?(:distance_km) && object.distance_km.present?
+  end
+
+  def distance_km
+    object.distance_km.to_f.round(2)
   end
 end

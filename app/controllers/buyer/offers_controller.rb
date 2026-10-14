@@ -36,6 +36,25 @@ class Buyer::OffersController < ApplicationController
     per_page = (params[:per_page] || 100).to_i
     per_page = [per_page, 100].min # Max 100 per page
     offset = (page - 1) * per_page
+    lat = Float(params[:lat] || params[:latitude], exception: false)
+    lng = Float(params[:lng] || params[:longitude], exception: false)
+    has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+
+    order_by_clause = if has_coords
+      <<~SQL.squish
+        (SELECT MIN(6371 * 2 * ASIN(SQRT(
+           POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+           COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+           POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))))
+         FROM branches
+         WHERE branches.seller_id = offers.seller_id
+           AND branches.latitude IS NOT NULL
+           AND branches.longitude IS NOT NULL) ASC NULLS LAST,
+        offers.priority DESC, offers.created_at DESC
+      SQL
+    else
+      "offers.priority DESC, RANDOM(), offers.created_at DESC"
+    end
 
     # OPTIMIZATION: Use raw SQL for better performance
     # Get offers with essential data only (no heavy includes)
@@ -77,7 +96,7 @@ class Buyer::OffersController < ApplicationController
         AND sellers.blocked = false
         AND sellers.deleted = false
         AND sellers.flagged = false
-      ORDER BY offers.priority DESC, RANDOM(), offers.created_at DESC
+      ORDER BY #{order_by_clause}
       LIMIT ? OFFSET ?
     SQL
 

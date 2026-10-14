@@ -95,30 +95,84 @@ class SellersController < ApplicationController
       
       render json: sellers_data
     else
-      # Get all active sellers with full data
-      sellers = Seller.active
-                      .includes(:categories, :seller_documents, :seller_tier, :tier, :county, :sub_county)
-                      .order(:enterprise_name)
-      
-      # Paginate by default — serializing every seller with the full
-      # SellerSerializer is a multi-second payload. The response shape stays
-      # { sellers:, pagination: } for all callers now.
-      page = (params[:page] || 1).to_i
-      limit = [(params[:limit] || 50).to_i, 200].min
+      # Parse and validate pagination
+      page = [(params[:page] || 1).to_i, 1].max
+      limit = [[(params[:limit] || 50).to_i, 1].max, 200].min
       offset = (page - 1) * limit
 
-      total_count = sellers.count
-      sellers = sellers.offset(offset).limit(limit)
+      # Coordinate bucketing: round to 2 decimal places (~1.1 km) to maximize cache hit rates
+      lat = Float(params[:lat], exception: false)
+      lng = Float(params[:lng], exception: false)
+      has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+      lat_rounded = has_coords ? lat.round(2) : nil
+      lng_rounded = has_coords ? lng.round(2) : nil
 
-      render json: {
-        sellers: sellers.map { |seller| SellerSerializer.new(seller).as_json },
-        pagination: {
-          current_page: page,
-          per_page: limit,
-          total_count: total_count,
-          total_pages: (total_count.to_f / limit).ceil
+      cache_key = "sellers_index_v2_p#{page}_l#{limit}_q#{Digest::MD5.hexdigest(params[:query].to_s)}_c#{params[:category_id]}_lat#{lat_rounded}_lng#{lng_rounded}_#{Time.current.to_i / 300}"
+
+      response_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes, race_condition_ttl: 10.seconds) do
+        # Eager load all associations accessed by SellerSerializer to completely avoid N+1 queries
+        sellers_scope = Seller.active
+                              .includes(
+                                :categories,
+                                :seller_documents,
+                                { seller_tier: :tier },
+                                :tier,
+                                :county,
+                                :sub_county,
+                                :partner,
+                                :branches,
+                                :carbon_code
+                              )
+
+        # Optional keyword search
+        if params[:query].present?
+          q = "%#{params[:query].to_s.strip}%"
+          sellers_scope = sellers_scope.where("sellers.enterprise_name ILIKE :q OR sellers.fullname ILIKE :q OR sellers.description ILIKE :q", q: q)
+        end
+
+        # Optional category filter
+        if params[:category_id].present?
+          sellers_scope = sellers_scope.joins(:categories).where(categories: { id: params[:category_id] })
+        end
+
+        # Fast count before adding select/order to avoid running heavy distance math during COUNT
+        total_count = sellers_scope.count
+
+        # Optional "near me" ordering — when client passes GPS coords, order by
+        # Haversine distance (km) to the seller's nearest geocoded branch and expose
+        # it as `distance_km` on each serialized seller.
+        if has_coords
+          distance_sql = <<~SQL.squish
+            (SELECT MIN(6371 * 2 * ASIN(SQRT(
+               POWER(SIN(RADIANS(#{lat} - branches.latitude) / 2), 2) +
+               COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat})) *
+               POWER(SIN(RADIANS(#{lng} - branches.longitude) / 2), 2))))
+             FROM branches
+             WHERE branches.seller_id = sellers.id
+               AND branches.latitude IS NOT NULL
+               AND branches.longitude IS NOT NULL)
+          SQL
+          sellers_scope = sellers_scope
+            .select("sellers.*, #{distance_sql} AS distance_km")
+            .order(Arel.sql('distance_km ASC NULLS LAST, enterprise_name ASC'))
+        else
+          sellers_scope = sellers_scope.order(:enterprise_name)
+        end
+
+        paged_sellers = sellers_scope.offset(offset).limit(limit)
+
+        {
+          sellers: paged_sellers.map { |seller| SellerSerializer.new(seller).as_json },
+          pagination: {
+            current_page: page,
+            per_page: limit,
+            total_count: total_count,
+            total_pages: (total_count.to_f / limit).ceil
+          }
         }
-      }
+      end
+
+      render json: response_data
     end
   end
 

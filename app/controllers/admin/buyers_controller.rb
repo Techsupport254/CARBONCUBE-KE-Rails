@@ -1,7 +1,8 @@
 require 'digest'
 
 class Admin::BuyersController < ApplicationController
-  before_action :authenticate_admin
+  before_action :authenticate_admin_or_sales, only: [:index, :show]
+  before_action :authenticate_admin, except: [:index, :show]
   before_action :set_buyer, only: [:block, :unblock, :update, :destroy]
   # show loads its own record with eager associations to avoid N+1 queries
 
@@ -103,13 +104,18 @@ class Admin::BuyersController < ApplicationController
   end
 
   def show
-    buyer_updated_at = Buyer.where(id: params[:id]).pick(:updated_at).to_i
+    buyer_updated_at = Buyer.where(id: params[:id]).pick(:updated_at)
+    return render json: { error: 'Buyer not found' }, status: :not_found unless buyer_updated_at
+
+    buyer_updated_at = buyer_updated_at.to_i
     cache_key = "admin_buyer_detail_v2_#{params[:id]}_#{buyer_updated_at}"
 
     buyer_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
       buyer = Buyer.includes(
         :county, :sub_county, :age_group, :income, :employment, :education, :sector
-      ).find(params[:id])
+      ).find_by(id: params[:id])
+
+      return render json: { error: 'Buyer not found' }, status: :not_found unless buyer
 
       data = buyer.as_json(
         only: [
@@ -137,7 +143,7 @@ class Admin::BuyersController < ApplicationController
         {
           id: wish.id,
           created_at: wish.created_at,
-          ad: ad.as_json(
+          ad: ad&.as_json(
             only: [:id, :title, :price, :slug],
             methods: [:first_media_url],
             include: { seller: { only: [:id, :fullname, :enterprise_name] }, category: { only: [:id, :name] } }
@@ -153,7 +159,7 @@ class Admin::BuyersController < ApplicationController
           price: item.price,
           total_price: item.total_price,
           created_at: item.created_at,
-          ad: ad.as_json(
+          ad: ad&.as_json(
             only: [:id, :title, :price, :slug],
             methods: [:first_media_url],
             include: { seller: { only: [:id, :fullname, :enterprise_name] }, category: { only: [:id, :name] } }
@@ -189,7 +195,7 @@ class Admin::BuyersController < ApplicationController
           review: review.review,
           seller_reply: review.seller_reply,
           created_at: review.created_at,
-          ad: review.ad.as_json(
+          ad: review.ad&.as_json(
             only: [:id, :title, :price, :slug],
             methods: [:first_media_url],
             include: { seller: { only: [:id, :fullname, :enterprise_name] } }
@@ -281,6 +287,18 @@ class Admin::BuyersController < ApplicationController
 
   def buyer_params
     params.require(:buyer).permit(:fullname, :username, :phone_number, :email, :location, :password)
+  end
+
+  def authenticate_admin_or_sales
+    begin
+      @current_user = AdminAuthorizeApiRequest.new(request.headers).result
+    rescue ExceptionHandler::InvalidToken, ExceptionHandler::MissingToken
+      @current_user = SalesAuthorizeApiRequest.new(request.headers).result
+    end
+    unless @current_user && (@current_user.is_a?(Admin) || @current_user.is_a?(SalesUser))
+      render json: { error: 'Not Authorized' }, status: :unauthorized
+      return
+    end
   end
 
   def authenticate_admin

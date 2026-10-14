@@ -101,6 +101,26 @@ class ShopsController < ApplicationController
                 
     @ads.load
     
+    ad_ids = @ads.map(&:id)
+    ad_clicks_map = Hash.new(0)
+    reveal_clicks_map = Hash.new(0)
+    if ad_ids.any?
+      begin
+        event_counts = ClickEvent.where(ad_id: ad_ids, event_type: ['Ad-Click', 'Reveal-Seller-Details'])
+                                 .group(:ad_id, :event_type)
+                                 .count
+        event_counts.each do |(aid, etype), count|
+          if etype == 'Ad-Click'
+            ad_clicks_map[aid] = count
+          elsif etype == 'Reveal-Seller-Details'
+            reveal_clicks_map[aid] = count
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.warn "Failed to batch load click counts for shop ads: #{e.message}"
+      end
+    end
+    
     @total_count = ads_base.count
     
     total_reviews = Review.joins(:ad)
@@ -170,7 +190,7 @@ class ShopsController < ApplicationController
           }
         end
       },
-      ads: @ads.map { |ad| AdSerializer.new(ad, include_reviews: false).as_json },
+      ads: @ads.map { |ad| AdSerializer.new(ad, include_reviews: false, ad_clicks_map: ad_clicks_map, reveal_clicks_map: reveal_clicks_map).as_json },
       pagination: {
         current_page: page,
         per_page: per_page,

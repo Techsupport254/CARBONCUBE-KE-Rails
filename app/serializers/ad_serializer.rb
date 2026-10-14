@@ -7,7 +7,28 @@ class AdSerializer < ActiveModel::Serializer
              :seller_is_partner, :seller_partner_type,
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
-             :seller_is_online, :has_valid_images, :is_brand_kenya
+             :seller_is_online, :has_valid_images, :is_brand_kenya,
+             :views_count, :reveals_count, :views, :reveals, :ad_clicks, :reveal_clicks
+
+  def views_count
+    batched = instance_options[:ad_clicks_map]
+    return batched[object.id] || 0 if batched
+    object.ad_clicks
+  rescue StandardError
+    0
+  end
+  alias_method :views, :views_count
+  alias_method :ad_clicks, :views_count
+
+  def reveals_count
+    batched = instance_options[:reveal_clicks_map]
+    return batched[object.id] || 0 if batched
+    object.reveal_clicks
+  rescue StandardError
+    0
+  end
+  alias_method :reveals, :reveals_count
+  alias_method :reveal_clicks, :reveals_count
 
   # Canonical slug — stored slug, or the "<title>-<id>" fallback so clients
   # building /ads/<slug> links never emit a null segment.

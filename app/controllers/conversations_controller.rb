@@ -738,7 +738,7 @@ class ConversationsController < ApplicationController
   def fetch_buyer_conversations
     conversations = Conversation.where("conversations.buyer_id = ?", @current_user.id)
                                 .active_participants
-                                .includes(:admin, :buyer, :seller, :ad)
+                                .includes(:admin, :buyer, :ad, seller: :branches)
                                 .joins(:messages)
                                 .distinct
                                 .order("conversations.updated_at DESC")
@@ -847,7 +847,7 @@ class ConversationsController < ApplicationController
       @current_user.id,
       @current_user.id
     ).active_participants
-     .includes(:admin, :buyer, :seller, :inquirer_seller, :ad)
+     .includes(:admin, :buyer, :ad, seller: :branches, inquirer_seller: :branches)
      .joins(:messages)
      .distinct
      .order("conversations.updated_at DESC")

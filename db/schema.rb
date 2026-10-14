@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_14_110000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_16_120000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -161,6 +161,33 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_110000) do
     t.index "lower(user_agent) gin_trgm_ops", name: "index_analytics_on_user_agent_trgm", where: "(user_agent IS NOT NULL)", using: :gin
     t.index ["created_at"], name: "index_analytics_on_created_at"
     t.index ["referrer"], name: "index_analytics_on_referrer", where: "((referrer IS NOT NULL) AND ((referrer)::text <> ''::text))"
+  end
+
+  create_table "app_install_nudge_campaigns", force: :cascade do |t|
+    t.string "user_type", null: false
+    t.uuid "user_id", null: false
+    t.string "status", default: "enrolled", null: false
+    t.integer "sends_count", default: 0, null: false
+    t.datetime "next_send_at", null: false
+    t.datetime "last_sent_at"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status", "next_send_at"], name: "index_app_install_nudge_campaigns_on_status_and_next_send_at"
+    t.index ["user_type", "user_id"], name: "index_app_install_nudge_campaigns_on_user", unique: true
+  end
+
+  create_table "app_store_review_prompts", force: :cascade do |t|
+    t.string "user_type", null: false
+    t.uuid "user_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "scheduled_at", null: false
+    t.datetime "shown_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["scheduled_at"], name: "index_app_store_review_prompts_on_scheduled_at"
+    t.index ["status"], name: "index_app_store_review_prompts_on_status"
+    t.index ["user_type", "user_id"], name: "index_app_store_review_prompts_on_user", unique: true
   end
 
   create_table "banners", force: :cascade do |t|
@@ -711,14 +738,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_110000) do
     t.datetime "read_at"
     t.datetime "delivered_at"
     t.string "whatsapp_message_id"
+    t.datetime "edited_at"
+    t.boolean "deleted_for_everyone", default: false, null: false
+    t.jsonb "deleted_by_user_ids", default: [], null: false
+    t.string "idempotency_key"
+    t.jsonb "media_urls", default: [], null: false
+    t.bigint "reply_to_message_id"
     t.index ["ad_id"], name: "index_messages_on_ad_id"
     t.index ["conversation_id", "created_at"], name: "index_messages_on_conv_and_created_at"
+    t.index ["conversation_id", "idempotency_key"], name: "index_messages_on_conversation_id_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
     t.index ["conversation_id", "read_at"], name: "index_messages_conversation_read"
     t.index ["conversation_id", "sender_id", "created_at"], name: "index_messages_on_conv_sender_created_at"
     t.index ["conversation_id", "sender_id", "read_at"], name: "index_messages_conversation_senderid_read"
     t.index ["conversation_id", "sender_type", "read_at"], name: "index_messages_conversation_sender_read"
     t.index ["conversation_id"], name: "index_messages_on_conversation_id"
     t.index ["read_at"], name: "index_messages_read_at"
+    t.index ["reply_to_message_id"], name: "index_messages_on_reply_to_message_id"
     t.index ["sender_type", "sender_id"], name: "index_messages_on_sender"
     t.index ["sender_type"], name: "index_messages_sender_type"
     t.index ["whatsapp_message_id"], name: "index_messages_on_whatsapp_message_id"
@@ -1706,7 +1741,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_110000) do
   add_foreign_key "click_events", "ads"
   add_foreign_key "click_events", "buyers", on_delete: :cascade
   add_foreign_key "comment_votes", "issue_comments", column: "comment_id"
-  add_foreign_key "conversation_read_marks", "conversations"
+  add_foreign_key "conversation_read_marks", "conversations", on_delete: :cascade
   add_foreign_key "conversations", "admins", on_delete: :cascade
   add_foreign_key "conversations", "ads"
   add_foreign_key "conversations", "buyers", on_delete: :cascade

@@ -3,10 +3,57 @@ class Message < ApplicationRecord
   belongs_to :sender, polymorphic: true
   belongs_to :ad, optional: true
 
+  belongs_to :reply_to_message, class_name: 'Message', optional: true
+  has_many :replies, class_name: 'Message', foreign_key: :reply_to_message_id, dependent: :nullify
+
   # Encrypt message content at rest
   encrypts :content
 
-  validates :content, presence: true
+  before_validation :ensure_content_for_media
+  before_validation :normalize_sender_type
+
+  validates :content, presence: true, unless: -> { media_urls.present? && Array(media_urls).any? }
+
+  def ensure_content_for_media
+    if content.blank? && media_urls.present? && Array(media_urls).any?
+      self.content = "Attachment"
+    end
+  end
+
+  def normalize_sender_type
+    return if sender_type.blank?
+
+    self.sender_type = case sender_type.to_s.downcase
+                       when 'buyer' then 'Buyer'
+                       when 'seller' then 'Seller'
+                       when 'admin' then 'Admin'
+                       when 'sales', 'salesuser', 'sales_user' then 'SalesUser'
+                       when 'marketing', 'marketinguser', 'marketing_user' then 'MarketingUser'
+                       else sender_type.to_s.classify
+                       end
+  end
+
+  def edited?
+    edited_at.present?
+  end
+
+  def editable_by?(user)
+    return false if deleted_for_everyone?
+    return false unless sender == user
+    created_at.present? && created_at >= 15.minutes.ago
+  end
+
+  def deletable_for_everyone_by?(user)
+    return false if deleted_for_everyone?
+    return false unless sender == user
+    created_at.present? && created_at >= 1.hour.ago
+  end
+
+  def deleted_for?(user)
+    return true if deleted_for_everyone?
+    return false unless user
+    Array(deleted_by_user_ids).map(&:to_s).include?(user.id.to_s)
+  end
 
   # Callbacks
   after_create :update_conversation_timestamp
@@ -92,9 +139,18 @@ class Message < ApplicationRecord
   end
 
   def broadcast_new_message
+    reply_snippet = if reply_to_message_id.present? && reply_to_message
+      {
+        id: reply_to_message.id,
+        content: reply_to_message.content&.truncate(100),
+        sender_name: get_sender_display_name(reply_to_message.sender),
+        sender_type: reply_to_message.sender_type
+      }
+    end
+
     message_data = {
       id: id,
-      content: content,
+      content: deleted_for_everyone? ? "This message was deleted" : content,
       created_at: created_at,
       sender_type: sender_type,
       sender_id: sender_id,
@@ -116,7 +172,14 @@ class Message < ApplicationRecord
       status_text: status_text,
       status_icon: status_icon,
       read_at: read_at,
-      delivered_at: delivered_at
+      delivered_at: delivered_at,
+      edited_at: edited_at,
+      deleted_for_everyone: deleted_for_everyone?,
+      deleted_by_user_ids: deleted_by_user_ids || [],
+      idempotency_key: idempotency_key,
+      media_urls: media_urls || [],
+      reply_to_message_id: reply_to_message_id,
+      reply_to_message: reply_snippet
     }
 
     broadcast_payload = {
@@ -125,37 +188,7 @@ class Message < ApplicationRecord
       message: message_data
     }
     
-    if conversation.buyer_id
-      ActionCable.server.broadcast(
-        "conversations_buyer_#{conversation.buyer_id}",
-        broadcast_payload
-      )
-    end
-
-    if conversation.seller_id
-      ActionCable.server.broadcast(
-        "conversations_seller_#{conversation.seller_id}",
-        broadcast_payload
-      )
-    end
-
-    if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
-      ActionCable.server.broadcast(
-        "conversations_seller_#{conversation.inquirer_seller_id}",
-        broadcast_payload
-      )
-    end
-
-    if conversation.admin_id
-      ActionCable.server.broadcast(
-        "conversations_admin_#{conversation.admin_id}",
-        broadcast_payload
-      )
-      ActionCable.server.broadcast(
-        "conversations_sales_#{conversation.admin_id}",
-        broadcast_payload
-      )
-    end
+    broadcast_to_conversation(broadcast_payload)
 
     # Update unread counts for all participants
     begin
@@ -164,6 +197,40 @@ class Message < ApplicationRecord
       Rails.logger.warn "Failed to update unread counts for message #{id}: #{e.message}"
       # Fallback to queuing the job
       UpdateUnreadCountsJob.perform_later(conversation.id, id)
+    end
+  end
+
+  def broadcast_to_conversation(payload)
+    if conversation.buyer_id
+      ActionCable.server.broadcast(
+        "conversations_buyer_#{conversation.buyer_id}",
+        payload
+      )
+    end
+
+    if conversation.seller_id
+      ActionCable.server.broadcast(
+        "conversations_seller_#{conversation.seller_id}",
+        payload
+      )
+    end
+
+    if conversation.inquirer_seller_id && conversation.inquirer_seller_id != conversation.seller_id
+      ActionCable.server.broadcast(
+        "conversations_seller_#{conversation.inquirer_seller_id}",
+        payload
+      )
+    end
+
+    if conversation.admin_id
+      ActionCable.server.broadcast(
+        "conversations_admin_#{conversation.admin_id}",
+        payload
+      )
+      ActionCable.server.broadcast(
+        "conversations_sales_#{conversation.admin_id}",
+        payload
+      )
     end
   end
 

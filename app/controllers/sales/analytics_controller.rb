@@ -760,6 +760,13 @@ class Sales::AnalyticsController < ApplicationController
   def authenticate_sales_user
     @current_sales_user = SalesAuthorizeApiRequest.new(request.headers).result
     unless @current_sales_user
+      begin
+        @current_sales_user = AdminAuthorizeApiRequest.new(request.headers).result
+      rescue StandardError
+        # Token wasn't an admin token
+      end
+    end
+    unless @current_sales_user
       render json: { error: 'Not Authorized' }, status: :unauthorized
     end
   end

@@ -41,8 +41,10 @@ class AdSearchService
     # @param per_page [Integer] page size
     # @param category [String, Integer, nil] explicit user-selected category (id or exact name)
     # @param subcategory [String, Integer, nil] explicit user-selected subcategory (id or exact name)
+    # @param lat [Float, nil] user latitude for near-me proximity boost
+    # @param lng [Float, nil] user longitude for near-me proximity boost
     # @return [Hash] { ads: [Ad], total: Integer } — total is the filtered pool size before pagination
-    def search_ads(query:, search_intent: nil, page: 1, per_page: 24, category: nil, subcategory: nil)
+    def search_ads(query:, search_intent: nil, page: 1, per_page: 24, category: nil, subcategory: nil, lat: nil, lng: nil)
       query = query.to_s.strip
       page = [page.to_i, 1].max
       per_page = per_page.to_i
@@ -50,19 +52,19 @@ class AdSearchService
 
       base = base_scope
 
-      # Blank query: replicate the tier-priority randomized browse ordering.
+      # Blank query: replicate the tier-priority randomized browse ordering (or nearest when coords provided).
       if query.blank?
         scope = apply_explicit_filters(base, category, subcategory)
-        return { ads: browse_page(scope, page, per_page), total: scope.count }
+        return { ads: browse_page(scope, page, per_page, lat, lng), total: scope.count }
       end
 
       normalized_query = normalize_query(query)
       tokens = significant_tokens(normalized_query)
-      pool_ids = candidate_pool_ids(base, normalized_query, tokens, per_page)
+      pool_ids = candidate_pool_ids(base, normalized_query, tokens, per_page, lat, lng)
 
       pool = apply_explicit_filters(base.where(id: pool_ids), category, subcategory)
 
-      ranked = ranked_candidates(pool, normalized_query, tokens, search_intent)
+      ranked = ranked_candidates(pool, normalized_query, tokens, search_intent, lat, lng)
       { ads: ranked.slice((page - 1) * per_page, per_page) || [], total: ranked.size }
     end
 
@@ -76,45 +78,69 @@ class AdSearchService
         .where(flagged: false)
     end
 
-    # Blank-query ordering: seller tier priority, then random. Results are
-    # identical for every visitor, so cache per minute — ORDER BY RANDOM()
-    # otherwise sorts the whole ads table on every browse request.
-    def browse_page(scope, page, per_page)
+    # Blank-query ordering: seller tier priority, then random (or distance when coords provided).
+    # Results are cached per minute to avoid re-sorting on every browse request.
+    def browse_page(scope, page, per_page, lat = nil, lng = nil)
+      coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""
       Rails.cache.fetch(
-        "search_browse_#{page}_#{per_page}_#{Time.current.to_i / 60}",
+        "search_browse_#{page}_#{per_page}#{coords_key}_#{Time.current.to_i / 60}",
         expires_in: 2.minutes
       ) do
-        browse_page_uncached(scope, page, per_page)
+        browse_page_uncached(scope, page, per_page, lat, lng)
       end
     end
 
-    def browse_page_uncached(scope, page, per_page)
-      scope
-        .joins(:seller, seller: { seller_tier: :tier })
-        .select('ads.*,
-                 CASE tiers.id
-                   WHEN 4 THEN 1
-                   WHEN 3 THEN 2
-                   WHEN 2 THEN 3
-                   WHEN 1 THEN 4
-                   ELSE 5
-                 END AS tier_priority')
-        .includes(
-          :category,
-          :subcategory,
-          :reviews,
-          seller: { seller_tier: :tier }
-        )
-        .order(Arel.sql('CASE tiers.id
-                          WHEN 4 THEN 1
-                          WHEN 3 THEN 2
-                          WHEN 2 THEN 3
-                          WHEN 1 THEN 4
-                          ELSE 5
-                        END ASC, RANDOM()'))
-        .limit(per_page)
-        .offset((page - 1) * per_page)
-        .to_a # materialize — a lazy Relation can't be cached
+    def browse_page_uncached(scope, page, per_page, lat = nil, lng = nil)
+      if lat.present? && lng.present?
+        distance_sql = <<~SQL.squish
+          (SELECT MIN(6371 * 2 * ASIN(SQRT(
+             POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+             COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+             POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))))
+           FROM branches
+           WHERE branches.seller_id = ads.seller_id
+             AND branches.latitude IS NOT NULL
+             AND branches.longitude IS NOT NULL)
+        SQL
+        scope
+          .includes(
+            :category,
+            :subcategory,
+            :reviews,
+            seller: { seller_tier: :tier }
+          )
+          .order(Arel.sql("#{distance_sql} ASC NULLS LAST, ads.created_at DESC"))
+          .limit(per_page)
+          .offset((page - 1) * per_page)
+          .to_a
+      else
+        scope
+          .joins(:seller, seller: { seller_tier: :tier })
+          .select('ads.*,
+                   CASE tiers.id
+                     WHEN 4 THEN 1
+                     WHEN 3 THEN 2
+                     WHEN 2 THEN 3
+                     WHEN 1 THEN 4
+                     ELSE 5
+                   END AS tier_priority')
+          .includes(
+            :category,
+            :subcategory,
+            :reviews,
+            seller: { seller_tier: :tier }
+          )
+          .order(Arel.sql('CASE tiers.id
+                            WHEN 4 THEN 1
+                            WHEN 3 THEN 2
+                            WHEN 2 THEN 3
+                            WHEN 1 THEN 4
+                            ELSE 5
+                          END ASC, RANDOM()'))
+          .limit(per_page)
+          .offset((page - 1) * per_page)
+          .to_a # materialize — a lazy Relation can't be cached
+      end
     end
 
     # === Candidate pool (recall) ==========================================
@@ -122,10 +148,10 @@ class AdSearchService
     # Tiered fill: strict first; if fewer than per_page candidates, union
     # relaxed; still fewer, union fuzzy/synonym/shop. Tiers never remove
     # candidates — ranking decides order.
-    def candidate_pool_ids(base, normalized_query, tokens, per_page)
-      pool_ids = strict_tier_ids(base, tokens)
+    def candidate_pool_ids(base, normalized_query, tokens, per_page, lat = nil, lng = nil)
+      pool_ids = strict_tier_ids(base, tokens, lat, lng)
 
-      pool_ids |= relaxed_tier_ids(base, normalized_query, tokens) if pool_ids.size < per_page
+      pool_ids |= relaxed_tier_ids(base, normalized_query, tokens, lat, lng) if pool_ids.size < per_page
 
       if pool_ids.size < per_page
         pool_ids |= fuzzy_tier_ids(base, normalized_query, tokens)
@@ -137,7 +163,7 @@ class AdSearchService
     end
 
     # Ads where ALL significant query words match one of the searched fields.
-    def strict_tier_ids(base, tokens)
+    def strict_tier_ids(base, tokens, lat = nil, lng = nil)
       return [] if tokens.empty?
 
       scope = base
@@ -147,21 +173,43 @@ class AdSearchService
           p: "%#{escape_like(token)}%"
         )
       end
+      if lat.present? && lng.present?
+        dist_sql = distance_sql_fragment(lat, lng)
+        scope = scope.order(Arel.sql("#{dist_sql} ASC NULLS LAST, ads.created_at DESC"))
+      end
       scope.limit(CANDIDATE_CAP).pluck(:id)
     end
 
     # Ads where ANY significant query word matches (ORed), plus pg_search
     # tsearch ids which handle stemming/plurals.
-    def relaxed_tier_ids(base, normalized_query, tokens)
+    def relaxed_tier_ids(base, normalized_query, tokens, lat = nil, lng = nil)
       ids = []
       if tokens.any?
         clause = tokens.map do
           "(ads.title ILIKE ? OR ads.brand ILIKE ? OR ads.model ILIKE ? OR ads.description ILIKE ?)"
         end.join(" OR ")
         binds = tokens.flat_map { |t| Array.new(4, "%#{escape_like(t)}%") }
-        ids = base.where(clause, *binds).limit(CANDIDATE_CAP).pluck(:id)
+        scope = base.where(clause, *binds)
+        if lat.present? && lng.present?
+          dist_sql = distance_sql_fragment(lat, lng)
+          scope = scope.order(Arel.sql("#{dist_sql} ASC NULLS LAST, ads.created_at DESC"))
+        end
+        ids = scope.limit(CANDIDATE_CAP).pluck(:id)
       end
       ids | tsearch_ids(base, normalized_query)
+    end
+
+    def distance_sql_fragment(lat, lng)
+      <<~SQL.squish
+        (SELECT MIN(6371 * 2 * ASIN(SQRT(
+           POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+           COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+           POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))))
+         FROM branches
+         WHERE branches.seller_id = ads.seller_id
+           AND branches.latitude IS NOT NULL
+           AND branches.longitude IS NOT NULL)
+      SQL
     end
 
     def tsearch_ids(base, normalized_query)
@@ -216,7 +264,7 @@ class AdSearchService
 
     # === Ranking ===========================================================
 
-    def ranked_candidates(pool, normalized_query, tokens, search_intent)
+    def ranked_candidates(pool, normalized_query, tokens, search_intent, lat = nil, lng = nil)
       quoted_query = Ad.connection.quote(normalized_query)
       ads = pool
             .select(Arel.sql("ads.*, similarity(ads.title, #{quoted_query}) AS trigram_sim"))
@@ -227,9 +275,44 @@ class AdSearchService
       shop_scores = {}
       syn_terms = synonym_terms(normalized_query) - tokens
 
+      seller_ids = ads.map(&:seller_id).compact.uniq
+      branch_coords_by_seller = if lat.present? && lng.present? && seller_ids.any?
+        Branch.where(seller_id: seller_ids)
+              .where.not(latitude: nil)
+              .where.not(longitude: nil)
+              .group_by(&:seller_id)
+      else
+        {}
+      end
+
       scored = ads.map do |ad|
         score, relevant = deterministic_score(ad, normalized_query, tokens, syn_terms, search_intent, popularity, shop_scores)
-        { ad: ad, score: score, relevant: relevant }
+
+        # Proximity score for near-me
+        dist_km = nil
+        if lat.present? && lng.present? && branch_coords_by_seller[ad.seller_id].present?
+          dists = branch_coords_by_seller[ad.seller_id].map do |b|
+            SellerCarbonCodeAssignment.haversine_distance(lat, lng, b.latitude, b.longitude)
+          end.compact
+          dist_km = dists.min
+          if dist_km
+            prox_boost = if dist_km <= 2.0
+                           60
+                         elsif dist_km <= 5.0
+                           40
+                         elsif dist_km <= 15.0
+                           25
+                         elsif dist_km <= 30.0
+                           10
+                         else
+                           0
+                         end
+            score += prox_boost
+            relevant ||= prox_boost > 0
+          end
+        end
+
+        { ad: ad, score: score, relevant: relevant, distance: dist_km }
       end
 
       # Noise floor: when strong matches exist, drop candidates with no
@@ -239,7 +322,7 @@ class AdSearchService
         scored = scored.select { |item| item[:relevant] }
       end
 
-      scored.sort_by { |item| [-item[:score], tier_priority(item[:ad]), -item[:ad].created_at.to_i, rand] }
+      scored.sort_by { |item| [-item[:score], item[:distance] || 9999, tier_priority(item[:ad]), -item[:ad].created_at.to_i, rand] }
             .map { |item| item[:ad] }
     end
 

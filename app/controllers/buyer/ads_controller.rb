@@ -22,14 +22,19 @@ class Buyer::AdsController < ApplicationController
       per_page = [per_page, 200].min
       page = params[:page].to_i.positive? ? params[:page].to_i : 1
 
+    lat = Float(params[:lat] || params[:latitude], exception: false)
+    lng = Float(params[:lng] || params[:longitude], exception: false)
+    has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+    coords_key = has_coords ? "_#{lat.round(2)}_#{lng.round(2)}" : ""
+
     # For the home page, get a balanced distribution of ads across subcategories
     # Only use balanced distribution if explicitly requested AND no category filtering
     if params[:balanced] == 'true' && !params[:category_id].present? && !params[:subcategory_id].present?
       # Use shorter cache with randomization factor for home page balanced ads
-      cache_key = "balanced_ads_#{per_page}_#{Time.current.to_i / 900}"
+      cache_key = "balanced_ads_#{per_page}#{coords_key}_#{Time.current.to_i / 900}"
       
       result = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
-        get_balanced_ads(per_page)
+        get_balanced_ads(per_page, has_coords ? lat : nil, has_coords ? lng : nil)
       end
       @ads = result[:ads]
       @subcategory_counts = result[:subcategory_counts]
@@ -37,7 +42,7 @@ class Buyer::AdsController < ApplicationController
       # Check if randomization is explicitly requested or if we should disable caching
       if params[:randomize] == 'true' || params[:no_cache] == 'true'
         # No caching for truly randomized results on each request
-        @ads = fetch_ads_without_cache(per_page, page)
+        @ads = fetch_ads_without_cache(per_page, page, has_coords ? lat : nil, has_coords ? lng : nil)
       else
         # Use minimal caching with randomization factor. The key must include
         # every param that changes the result set — otherwise a filtered
@@ -45,7 +50,7 @@ class Buyer::AdsController < ApplicationController
         filter_fingerprint = Digest::MD5.hexdigest([
           params[:category_id], params[:subcategory_id], params[:price_range],
           params[:condition], params[:location], params[:search], params[:query],
-          params[:last_sync_at]
+          params[:last_sync_at], coords_key
         ].join('|'))
         cache_key = "buyer_ads_#{per_page}_#{page}_#{filter_fingerprint}_#{Time.current.to_i / 60}"
 
@@ -80,7 +85,7 @@ class Buyer::AdsController < ApplicationController
           # Enhanced randomization with multiple factors for better distribution.
           # Materialize — caching a lazy Relation stores the query, not the
           # results, so the cache would re-execute the SQL on every read.
-          get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page).to_a
+          get_randomized_ads(ads_query, per_page, has_coords ? lat : nil, has_coords ? lng : nil).offset((page - 1) * per_page).to_a
         end
       end
     end
@@ -116,7 +121,7 @@ class Buyer::AdsController < ApplicationController
     if params[:balanced] == 'true'
       best_category_id = params[:category_id].present? && params[:category_id] != 'All' ? params[:category_id].to_i : nil
       best_subcategory_id = params[:subcategory_id].present? && params[:subcategory_id] != 'All' ? params[:subcategory_id].to_i : nil
-      best_sellers = calculate_best_sellers_fast(20, category_id: best_category_id, subcategory_id: best_subcategory_id)
+      best_sellers = calculate_best_sellers_fast(20, category_id: best_category_id, subcategory_id: best_subcategory_id, lat: has_coords ? lat : nil, lng: has_coords ? lng : nil)
     end
 
     # Parse requested fields for sparse fieldsets
@@ -228,6 +233,7 @@ class Buyer::AdsController < ApplicationController
       seller: [
         { seller_tier: :tier },
         { seller_documents: :document_type },
+        :branches,
         :partner,
         :categories,
         :carbon_code,
@@ -924,15 +930,22 @@ class Buyer::AdsController < ApplicationController
       end
 
       # "Near me" handling - Requires frontend to pass lat/lng
-      if search_intent[:is_near_me] && params[:lat].present? && params[:lng].present?
-        lat = params[:lat].to_f
-        lng = params[:lng].to_f
-        # Simple distance ordering (square of distance for performance)
-        distance_sql = "(POW(sellers.latitude - ?, 2) + POW(sellers.longitude - ?, 2))"
-        ads_query = ads_query.joins(:seller)
-                      .reorder(Arel.sql("#{distance_sql} ASC"))
-        search_params << lat
-        search_params << lng
+      lat = Float(params[:lat], exception: false)
+      lng = Float(params[:lng], exception: false)
+      has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+
+      if (search_intent[:is_near_me] || params[:near_me] == 'true') && has_coords
+        distance_sql = <<~SQL.squish
+          (SELECT MIN(6371 * 2 * ASIN(SQRT(
+             POWER(SIN(RADIANS(#{lat} - branches.latitude) / 2), 2) +
+             COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat})) *
+             POWER(SIN(RADIANS(#{lng} - branches.longitude) / 2), 2))))
+           FROM branches
+           WHERE branches.seller_id = ads.seller_id
+             AND branches.latitude IS NOT NULL
+             AND branches.longitude IS NOT NULL)
+        SQL
+        ads_query = ads_query.reorder(Arel.sql("#{distance_sql} ASC NULLS LAST, ads.created_at DESC"))
       end
 
     else
@@ -1719,13 +1732,19 @@ class Buyer::AdsController < ApplicationController
                       nil
                     end
 
+    lat = Float(params[:lat] || params[:latitude], exception: false)
+    lng = Float(params[:lng] || params[:longitude], exception: false)
+    has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+
     result = AdSearchService.search_ads(
       query: query,
       search_intent: search_intent,
       page: ads_page,
       per_page: ads_per_page,
       category: category_param,
-      subcategory: subcategory_param
+      subcategory: subcategory_param,
+      lat: (has_coords ? lat : nil),
+      lng: (has_coords ? lng : nil)
     )
     ads = result[:ads]
     ads_total_count = result[:total]
@@ -1755,7 +1774,7 @@ class Buyer::AdsController < ApplicationController
       name_matching_shops = Seller.joins(:seller_tier)
                                  .where(blocked: false, deleted: false)
                                  .where((shop_patterns.map { 'enterprise_name ILIKE ?' } + shop_patterns.map { 'fullname ILIKE ?' }).join(' OR '), *shop_patterns, *shop_patterns)
-                                 .includes(:seller_tier)
+                                 .includes({ seller_tier: :tier }, :branches, :county)
       
       # Find shops that have products matching the search query
       # Split query into individual words for better matching
@@ -1773,7 +1792,7 @@ class Buyer::AdsController < ApplicationController
                                       .where(blocked: false, deleted: false)
                                       .where('ads.flagged = ?', false)
                                       .where(conditions, query_words.map { |word| { word: "%#{word}%" } }.reduce({}, :merge))
-                                      .includes(:seller_tier)
+                                      .includes({ seller_tier: :tier }, :branches, :county)
                                       .distinct
       else
         # For single word queries, use the original logic
@@ -1784,7 +1803,7 @@ class Buyer::AdsController < ApplicationController
                                       .where('ads.flagged = ?', false)
                                       .where('ads.title ILIKE :query OR ads.description ILIKE :query OR categories.name ILIKE :query OR subcategories.name ILIKE :query', 
                                              query: "%#{query}%")
-                                      .includes(:seller_tier)
+                                      .includes({ seller_tier: :tier }, :branches, :county)
                                       .distinct
       end
       
@@ -1805,8 +1824,8 @@ class Buyer::AdsController < ApplicationController
                     when 4 then 100  # Premium
                     when 3 then 80   # Gold
                     when 2 then 60   # Silver
-                    when 1 then 40   # Bronze
-                    else 20          # Free
+                    when 1 then 40   # Bronze / Micro
+                    else 40          # Micro
                     end
         
         # Product count score (more products = higher score)
@@ -1825,9 +1844,34 @@ class Buyer::AdsController < ApplicationController
         
         # Name match bonus (shops with name matching get extra points)
         name_match_bonus = shop.enterprise_name&.downcase&.include?(query.downcase) ? 20 : 0
+
+        # Proximity score & distance for Near Me (checking all branches in memory)
+        distance_km = nil
+        proximity_score = 0
+        if has_coords && shop.branches.present?
+          dists = shop.branches.map do |b|
+            if b.latitude.present? && b.longitude.present?
+              SellerCarbonCodeAssignment.haversine_distance(lat, lng, b.latitude, b.longitude)
+            end
+          end.compact
+          distance_km = dists.min
+          if distance_km
+            proximity_score = if distance_km <= 2.0
+                                100
+                              elsif distance_km <= 5.0
+                                75
+                              elsif distance_km <= 15.0
+                                50
+                              elsif distance_km <= 30.0
+                                25
+                              else
+                                5
+                              end
+          end
+        end
         
-        # Calculate total score
-        total_score = tier_score + product_score + rating_score + recency_score + name_match_bonus
+        # Calculate total score with proximity
+        total_score = tier_score + product_score + rating_score + recency_score + name_match_bonus + proximity_score
         
         {
           shop: shop,
@@ -1837,6 +1881,8 @@ class Buyer::AdsController < ApplicationController
           rating_score: rating_score,
           recency_score: recency_score,
           name_match_bonus: name_match_bonus,
+          proximity_score: proximity_score,
+          distance_km: distance_km,
           product_count: product_count,
           avg_rating: avg_rating
         }
@@ -1891,9 +1937,13 @@ class Buyer::AdsController < ApplicationController
           description: shop.description,
           email: shop.email,
           address: shop.location,
+          city: shop.city,
+          county: shop.county&.name,
           profile_picture: shop.profile_picture,
           tier: shop.seller_tier&.tier&.name || 'Free',
           tier_id: shop.seller_tier&.tier&.id || 1,
+          document_verified: shop.document_verified,
+          distance_km: shop_data[:distance_km]&.round(2),
           product_count: shop_data[:product_count],
           created_at: shop.created_at.is_a?(Time) ? shop.created_at : Time.parse(shop.created_at.to_s),
           # Enhanced scoring data
@@ -2045,9 +2095,15 @@ class Buyer::AdsController < ApplicationController
       limit = params[:limit]&.to_i || 100
       limit = [limit, 100].min # Cap at 100
 
+      lat = Float(params[:lat] || params[:latitude], exception: false)
+      lng = Float(params[:lng] || params[:longitude], exception: false)
+      has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+      coords_lat = has_coords ? lat : nil
+      coords_lng = has_coords ? lng : nil
+
       # If no user identity, fall back to best sellers (no personalization)
       if device_hash.blank? && buyer_id.blank?
-        best_sellers = calculate_best_sellers_fast(limit)
+        best_sellers = calculate_best_sellers_fast(limit, lat: coords_lat, lng: coords_lng)
         Rails.logger.info "Recommendations no-identity: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
         render json: best_sellers
         return
@@ -2059,19 +2115,19 @@ class Buyer::AdsController < ApplicationController
       # If no meaningful engagement, fall back to best sellers
       if profile[:ad_ids].empty?
         Rails.logger.info "No user profile for recommendations, falling back to best sellers"
-        best_sellers = calculate_best_sellers_fast(limit)
+        best_sellers = calculate_best_sellers_fast(limit, lat: coords_lat, lng: coords_lng)
         Rails.logger.info "Recommendations no-profile: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
         render json: best_sellers
         return
       end
 
       # Fetch personalized recommendations
-      recs = calculate_recommendations_fast(limit, profile)
+      recs = calculate_recommendations_fast(limit, profile, lat: coords_lat, lng: coords_lng)
 
       # Fallback to best sellers if empty
       if recs.empty?
         Rails.logger.info "No personalized recommendations found, falling back to best sellers"
-        best_sellers = calculate_best_sellers_fast(limit)
+        best_sellers = calculate_best_sellers_fast(limit, lat: coords_lat, lng: coords_lng)
         Rails.logger.info "Recommendations fallback: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
         render json: best_sellers
         return
@@ -2084,7 +2140,7 @@ class Buyer::AdsController < ApplicationController
       Rails.logger.error e.backtrace.join("\n")
       fallback_limit = limit || 100
       begin
-        best_sellers = calculate_best_sellers_fast(fallback_limit)
+        best_sellers = calculate_best_sellers_fast(fallback_limit, lat: coords_lat, lng: coords_lng)
         Rails.logger.info "Recommendations error-fallback: count=#{(best_sellers || []).length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
         render json: best_sellers || []
       rescue StandardError => fallback_error
@@ -2097,12 +2153,13 @@ class Buyer::AdsController < ApplicationController
 
   def build_user_profile(device_hash, buyer_id)
     # No identity signals means no personal profile to build.
-    return { ad_ids: [], category_ids: [], subcategory_ids: [], seller_ids: [] } if device_hash.blank? && buyer_id.blank?
+    return { ad_ids: [], category_ids: [], subcategory_ids: [], seller_ids: [], top_subcategory_ids: [], top_category_ids: [], top_seller_ids: [] } if device_hash.blank? && buyer_id.blank?
 
-    cache_key = "user_profile_#{buyer_id || 'guest'}_#{Digest::MD5.hexdigest(device_hash.to_s)}_#{Time.current.to_i / 300}"
+    cache_key = "user_profile_v3_#{buyer_id || 'guest'}_#{Digest::MD5.hexdigest(device_hash.to_s)}_#{Time.current.to_i / 300}"
 
     Rails.cache.fetch(cache_key, expires_in: 5.minutes, race_condition_ttl: 5.seconds) do
       ad_ids = Set.new
+      engaged_ad_ids = []
 
       # Recent click events (primary signal for guests and logged-in users)
       click_events_query = ClickEvent
@@ -2110,7 +2167,8 @@ class Buyer::AdsController < ApplicationController
         .where(
           event_type: [
             'Ad-Click', 'Reveal-Seller-Details', 'Add-to-Cart', 'Message-Seller',
-            'Make-Offer', 'Callback-Request', 'Quote-Request', 'Share-Ad', 'Add-to-Wish-List'
+            'Make-Offer', 'Callback-Request', 'Quote-Request', 'Share-Ad', 'Add-to-Wish-List',
+            'View-Shop', 'Shop-Directions-Click', 'Ad-Directions-Click'
           ],
           created_at: 90.days.ago..
         )
@@ -2129,56 +2187,133 @@ class Buyer::AdsController < ApplicationController
         )
       end
 
-      ad_ids.merge(click_events_query.pluck(:ad_id))
+      # Weight ads by click frequency and intent
+      clicked_ad_pairs = click_events_query.pluck(:ad_id, :event_type)
+      clicked_ad_pairs.each do |aid, event_type|
+        weight = case event_type
+                 when 'Make-Offer', 'Callback-Request', 'Quote-Request', 'Message-Seller' then 4
+                 when 'Reveal-Seller-Details', 'Add-to-Cart', 'Shop-Directions-Click', 'Ad-Directions-Click' then 3
+                 when 'Add-to-Wish-List', 'Share-Ad' then 2
+                 else 1 # 'Ad-Click', 'View-Shop'
+                 end
+        weight.times { engaged_ad_ids << aid }
+        ad_ids.add(aid)
+      end
 
       # For authenticated users, also use wishlist, cart, and conversations
       if buyer_id.present?
-        ad_ids.merge(
-          WishList.where(buyer_id: buyer_id)
-                  .where('created_at >= ?', 90.days.ago)
-                  .pluck(:ad_id)
-        )
-        ad_ids.merge(
-          CartItem.where(buyer_id: buyer_id)
-                  .where('created_at >= ?', 90.days.ago)
-                  .pluck(:ad_id)
-        )
-        ad_ids.merge(
-          Conversation.where(buyer_id: buyer_id)
-                      .where('created_at >= ?', 90.days.ago)
-                      .pluck(:ad_id)
-        )
+        WishList.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).each do |id|
+          2.times { engaged_ad_ids << id }
+          ad_ids.add(id)
+        end
+        CartItem.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).each do |id|
+          3.times { engaged_ad_ids << id }
+          ad_ids.add(id)
+        end
+        Conversation.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).each do |id|
+          4.times { engaged_ad_ids << id }
+          ad_ids.add(id)
+        end
       end
 
       # Load ad metadata for the user's engaged live ads
-      ad_data = Ad.live.where(id: ad_ids.to_a)
-                  .pluck(:category_id, :subcategory_id, :seller_id)
+      ad_metadata_map = Ad.live.where(id: ad_ids.to_a)
+                          .pluck(:id, :category_id, :subcategory_id, :seller_id)
+                          .index_by(&:first)
+
+      subcategory_click_counts = Hash.new(0)
+      category_click_counts = Hash.new(0)
+      seller_click_counts = Hash.new(0)
+
+      engaged_ad_ids.each do |aid|
+        meta = ad_metadata_map[aid]
+        next unless meta
+        _, cat_id, subcat_id, s_id = meta
+        subcategory_click_counts[subcat_id] += 1 if subcat_id
+        category_click_counts[cat_id] += 1 if cat_id
+        seller_click_counts[s_id] += 1 if s_id
+      end
+
+      # Top engaged segments from user clicks
+      top_subcats = subcategory_click_counts.sort_by { |_, count| -count }.first(3).map(&:first)
+      top_cats = category_click_counts.sort_by { |_, count| -count }.first(2).map(&:first)
+      top_sellers = seller_click_counts.sort_by { |_, count| -count }.first(2).map(&:first)
 
       {
         ad_ids: ad_ids.to_a,
-        category_ids: ad_data.map(&:first).compact.uniq,
-        subcategory_ids: ad_data.map(&:second).compact.uniq,
-        seller_ids: ad_data.map(&:third).compact.uniq
+        category_ids: category_click_counts.keys,
+        subcategory_ids: subcategory_click_counts.keys,
+        seller_ids: seller_click_counts.keys,
+        top_subcategory_ids: top_subcats,
+        top_category_ids: top_cats,
+        top_seller_ids: top_sellers
       }
     end
   end
 
-  def calculate_recommendations_fast(limit, profile)
+  def calculate_recommendations_fast(limit, profile, lat: nil, lng: nil)
     rotation_key = Time.current.to_i / 900
     profile_parts = [
       profile[:ad_ids].sort.join(','),
       profile[:category_ids].sort.join(','),
       profile[:subcategory_ids].sort.join(','),
-      profile[:seller_ids].sort.join(',')
+      profile[:seller_ids].sort.join(','),
+      (profile[:top_subcategory_ids] || []).sort.join(','),
+      (profile[:top_category_ids] || []).sort.join(',')
     ]
     profile_hash = Digest::MD5.hexdigest(profile_parts.join('|'))
-    cache_key = "recommendations_v2_#{profile_hash}_#{limit}_#{rotation_key}"
+    coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""
+    cache_key = "recommendations_v3_#{profile_hash}_#{limit}#{coords_key}_#{rotation_key}"
 
     Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
       ad_ids_sql = profile[:ad_ids].any? ? profile[:ad_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       subcategory_ids_sql = profile[:subcategory_ids].any? ? profile[:subcategory_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       category_ids_sql = profile[:category_ids].any? ? profile[:category_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       seller_ids_sql = profile[:seller_ids].any? ? profile[:seller_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+
+      top_subcategory_ids_sql = (profile[:top_subcategory_ids] || []).any? ? profile[:top_subcategory_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+      top_category_ids_sql = (profile[:top_category_ids] || []).any? ? profile[:top_category_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+      top_seller_ids_sql = (profile[:top_seller_ids] || []).any? ? profile[:top_seller_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+
+      distance_join = if lat.present? && lng.present?
+        <<~SQL.squish
+          LEFT JOIN LATERAL (
+            SELECT
+              6371 * 2 * ASIN(SQRT(
+                POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+                COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+                POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))) AS distance_km,
+              branches.name as primary_branch_name,
+              branches.location as primary_branch_address
+            FROM branches
+            WHERE branches.seller_id = ads.seller_id
+              AND branches.latitude IS NOT NULL
+              AND branches.longitude IS NOT NULL
+            ORDER BY distance_km ASC
+            LIMIT 1
+          ) branch_distance ON true
+        SQL
+      else
+        ""
+      end
+
+      proximity_boost_sql = if lat.present? && lng.present?
+        <<~SQL.squish
+          + CASE
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 2.0 THEN 45.0
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 5.0 THEN 30.0
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 15.0 THEN 18.0
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 30.0 THEN 8.0
+              ELSE 0.0
+            END
+          + CASE
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 15.0 AND sellers.document_verified = true THEN 10.0
+              ELSE 0.0
+            END
+        SQL
+      else
+        ""
+      end
 
       sql = <<~SQL.squish
         SELECT * FROM (
@@ -2195,10 +2330,12 @@ class Buyer::AdsController < ApplicationController
             ads.seller_id,
             ads.specifications,
             sellers.fullname as seller_name,
+            sellers.document_verified as document_verified,
             categories.name as category_name,
             subcategories.name as subcategory_name,
             COALESCE(tiers.id, 1) as seller_tier_id,
             COALESCE(tiers.name, 'Free') as seller_tier_name,
+            #{distance_join.present? ? 'ROUND(branch_distance.distance_km::numeric, 1) as distance_km, branch_distance.primary_branch_name, branch_distance.primary_branch_address,' : 'NULL as distance_km, NULL as primary_branch_name, NULL as primary_branch_address,'}
 
             COALESCE(ad_stats.conversations_7d, 0) as conversations_7d,
             COALESCE(ad_stats.add_to_cart_7d, 0) as add_to_cart_7d,
@@ -2215,14 +2352,14 @@ class Buyer::AdsController < ApplicationController
               LN(COALESCE(ad_stats.add_to_cart_7d, 0) + 1) * 3.0 +
               LN(COALESCE(ad_stats.add_to_cart_30d, 0) + 1) * 1.0 +
 
-              LN(COALESCE(ad_stats.message_seller_7d, 0) + 1) * 2.5 +
-              LN(COALESCE(ad_stats.make_offer_7d, 0) + 1) * 3.0 +
-              LN(COALESCE(ad_stats.callback_request_7d, 0) + 1) * 3.0 +
-              LN(COALESCE(ad_stats.quote_request_7d, 0) + 1) * 3.0 +
-              LN(COALESCE(ad_stats.reveal_details_7d, 0) + 1) * 1.0 +
-              LN(COALESCE(ad_stats.share_ad_7d, 0) + 1) * 1.0 +
+              LN(COALESCE(ad_stats.message_seller_7d, 0) + 1) * 3.5 +
+              LN(COALESCE(ad_stats.make_offer_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.callback_request_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.quote_request_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.reveal_details_7d, 0) + 1) * 3.5 +
+              LN(COALESCE(ad_stats.share_ad_7d, 0) + 1) * 2.5 +
 
-              LN(COALESCE(ad_stats.click_count, 0) + 1) * 0.3 +
+              LN(COALESCE(ad_stats.click_count, 0) + 1) * 3.5 +
 
               LN(COALESCE(ad_stats.wishlist_count, 0) + 1) * 2.0 +
 
@@ -2254,11 +2391,19 @@ class Buyer::AdsController < ApplicationController
               END +
 
               CASE
-                WHEN ads.subcategory_id IN (#{subcategory_ids_sql}) THEN 6
-                WHEN ads.category_id IN (#{category_ids_sql}) THEN 4
-                WHEN ads.seller_id IN (#{seller_ids_sql}) THEN 2
-                ELSE 0
+                WHEN ads.subcategory_id IN (#{top_subcategory_ids_sql}) THEN 22.0
+                WHEN ads.subcategory_id IN (#{subcategory_ids_sql}) THEN 12.0
+                WHEN ads.category_id IN (#{top_category_ids_sql}) THEN 14.0
+                WHEN ads.category_id IN (#{category_ids_sql}) THEN 7.0
+                ELSE 0.0
+              END +
+
+              CASE
+                WHEN ads.seller_id IN (#{top_seller_ids_sql}) THEN 12.0
+                WHEN ads.seller_id IN (#{seller_ids_sql}) THEN 5.0
+                ELSE 0.0
               END
+              #{proximity_boost_sql}
             ) as comprehensive_score
 
           FROM ads
@@ -2268,6 +2413,7 @@ class Buyer::AdsController < ApplicationController
           INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
           LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
           LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+          #{distance_join}
 
           WHERE ads.deleted = false
             AND ads.flagged = false
@@ -2283,6 +2429,7 @@ class Buyer::AdsController < ApplicationController
               ads.subcategory_id IN (#{subcategory_ids_sql})
               OR ads.category_id IN (#{category_ids_sql})
               OR ads.seller_id IN (#{seller_ids_sql})
+              #{(lat.present? && lng.present?) ? 'OR (branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 20.0)' : ''}
             )
         ) as sub
         ORDER BY (comprehensive_score * (1.0 + (RANDOM() * 0.1))) DESC
@@ -2345,6 +2492,10 @@ class Buyer::AdsController < ApplicationController
           seller_tier_name: row['seller_tier_name'],
           slug: row_url_slug(row),
           is_brand_kenya: row['is_brand_kenya'] == true,
+          distance_km: row['distance_km'] ? row['distance_km'].to_f.round(1) : nil,
+          primary_branch_name: row['primary_branch_name'],
+          primary_branch_address: row['primary_branch_address'],
+          document_verified: row['document_verified'] == true || row['document_verified'] == 't',
           metrics: {
             avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
             review_count: row['review_count']&.to_i || 0,
@@ -2442,6 +2593,25 @@ class Buyer::AdsController < ApplicationController
       .where(subcategory_id: subcategory_id)
       .count
     
+    lat = Float(params[:lat] || params[:latitude], exception: false)
+    lng = Float(params[:lng] || params[:longitude], exception: false)
+    has_coords = lat&.between?(-90, 90) && lng&.between?(-180, 180)
+
+    distance_sql = if has_coords
+      <<~SQL.squish
+        (SELECT MIN(6371 * 2 * ASIN(SQRT(
+           POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+           COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+           POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))))
+         FROM branches
+         WHERE branches.seller_id = ads.seller_id
+           AND branches.latitude IS NOT NULL
+           AND branches.longitude IS NOT NULL) ASC NULLS LAST,
+      SQL
+    else
+      ""
+    end
+
     ads = Ad.active.with_valid_images
       .joins(:seller, seller: { seller_tier: :tier })
       .where(sellers: { blocked: false, deleted: false, flagged: false })
@@ -2454,13 +2624,13 @@ class Buyer::AdsController < ApplicationController
                 WHEN 1 THEN 4
                 ELSE 5
               END AS tier_priority')
-      .order(Arel.sql('CASE tiers.id
+      .order(Arel.sql("#{distance_sql} CASE tiers.id
                 WHEN 4 THEN 1
                 WHEN 3 THEN 2
                 WHEN 2 THEN 3
                 WHEN 1 THEN 4
                 ELSE 5
-              END ASC, RANDOM()'))  # Random order within tier priority
+              END ASC, RANDOM()"))  # Proximity and random order within tier priority
       .limit(per_page)
       .offset((page - 1) * per_page)
       .includes(:category, :subcategory, :reviews, seller: { seller_tier: :tier })
@@ -2771,18 +2941,36 @@ class Buyer::AdsController < ApplicationController
     score
   end
 
-  # Enhanced randomization method that ensures different results on each request
-  def get_randomized_ads(ads_query, limit)
-    # Add multiple randomization factors for better distribution
-    ads_query.order(
-      Arel.sql('RANDOM()'),
-      Arel.sql('ads.created_at DESC'),
-      Arel.sql('ads.id')
-    ).limit(limit)
+  # Enhanced randomization method that ensures different results on each request (or proximity order when coords provided)
+  def get_randomized_ads(ads_query, limit, lat = nil, lng = nil)
+    if lat.present? && lng.present?
+      distance_sql = <<~SQL.squish
+        (SELECT MIN(6371 * 2 * ASIN(SQRT(
+           POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+           COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+           POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))))
+         FROM branches
+         WHERE branches.seller_id = ads.seller_id
+           AND branches.latitude IS NOT NULL
+           AND branches.longitude IS NOT NULL)
+      SQL
+      ads_query.order(
+        Arel.sql("#{distance_sql} ASC NULLS LAST"),
+        Arel.sql('RANDOM()'),
+        Arel.sql('ads.created_at DESC'),
+        Arel.sql('ads.id')
+      ).limit(limit)
+    else
+      ads_query.order(
+        Arel.sql('RANDOM()'),
+        Arel.sql('ads.created_at DESC'),
+        Arel.sql('ads.id')
+      ).limit(limit)
+    end
   end
 
   # Fetch ads without any caching for true randomization
-  def fetch_ads_without_cache(per_page, page)
+  def fetch_ads_without_cache(per_page, page, lat = nil, lng = nil)
     # Use optimized query with proper ActiveRecord objects
     ads_query = Ad.active.with_valid_images
                  .joins(:seller, :category, :subcategory)
@@ -2800,10 +2988,10 @@ class Buyer::AdsController < ApplicationController
     ads_query = filter_by_search(ads_query) if params[:search].present?
 
     # Enhanced randomization with multiple factors for better distribution
-    get_randomized_ads(ads_query, per_page).offset((page - 1) * per_page)
+    get_randomized_ads(ads_query, per_page, lat, lng).offset((page - 1) * per_page)
   end
 
-  def get_balanced_ads(per_page)
+  def get_balanced_ads(per_page, lat = nil, lng = nil)
     # Get subcategory counts first (fast grouped count)
     subcategory_counts = Ad.active
       .joins(:seller)
@@ -2818,6 +3006,21 @@ class Buyer::AdsController < ApplicationController
 
     ads_per_subcategory = 6
     subcategory_list = subcategory_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')
+
+    distance_order_sql = if lat.present? && lng.present?
+      <<~SQL.squish
+        (SELECT MIN(6371 * 2 * ASIN(SQRT(
+           POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+           COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+           POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))))
+         FROM branches
+         WHERE branches.seller_id = ads.seller_id
+           AND branches.latitude IS NOT NULL
+           AND branches.longitude IS NOT NULL) ASC NULLS LAST,
+      SQL
+    else
+      ""
+    end
 
     sql = <<-SQL
       WITH ranked_ads AS (
@@ -2842,18 +3045,19 @@ class Buyer::AdsController < ApplicationController
           COALESCE(review_stats.reviews_count, 0) AS reviews_count,
           COALESCE(review_stats.average_rating, 0.0) AS average_rating,
           ROW_NUMBER() OVER (
-            PARTITION BY ads.subcategory_id
+            PARTITION BY ads.subcategory_id, (CASE WHEN COALESCE(tiers.id, 1) > 1 THEN 1 ELSE 0 END)
             ORDER BY
+              #{distance_order_sql}
               CASE COALESCE(tiers.id, 1)
                 WHEN 4 THEN 1
                 WHEN 3 THEN 2
                 WHEN 2 THEN 3
-                WHEN 1 THEN 4
-                ELSE 5
+                ELSE 4
               END,
               RANDOM(),
               ads.created_at DESC
-          ) AS rn
+          ) AS group_rn,
+          CASE WHEN COALESCE(tiers.id, 1) > 1 THEN 1 ELSE 0 END AS is_paid
         FROM ads
         INNER JOIN sellers ON sellers.id = ads.seller_id
         INNER JOIN categories ON categories.id = ads.category_id
@@ -2878,8 +3082,32 @@ class Buyer::AdsController < ApplicationController
           AND sellers.flagged = false
           AND ads.flagged = false
           AND ads.subcategory_id IN (#{subcategory_list})
+      ),
+      interleaved_ads AS (
+        SELECT *,
+          ROW_NUMBER() OVER (
+            PARTITION BY subcategory_id
+            ORDER BY
+              CASE
+                WHEN is_paid = 1 THEN
+                  CASE group_rn
+                    WHEN 1 THEN 1
+                    WHEN 2 THEN 3
+                    WHEN 3 THEN 4
+                    WHEN 4 THEN 6
+                    ELSE 6 + group_rn
+                  END
+                ELSE
+                  CASE group_rn
+                    WHEN 1 THEN 2
+                    WHEN 2 THEN 5
+                    ELSE 6 + group_rn
+                  END
+              END ASC
+          ) AS rn
+        FROM ranked_ads
       )
-      SELECT * FROM ranked_ads WHERE rn <= #{ads_per_subcategory}
+      SELECT * FROM interleaved_ads WHERE rn <= #{ads_per_subcategory}
     SQL
 
     results = ActiveRecord::Base.connection.execute(sql)
@@ -3044,10 +3272,11 @@ class Buyer::AdsController < ApplicationController
     params.require(:ad).permit(:title, :description, { media: [] }, :subcategory_id, :category_id, :seller_id, :price, :brand, :manufacturer, :item_length, :item_width, :item_height, :item_weight, :weight_unit, :condition)
   end
 
-  def calculate_best_sellers_fast(limit, category_id: nil, subcategory_id: nil)
+  def calculate_best_sellers_fast(limit, category_id: nil, subcategory_id: nil, lat: nil, lng: nil)
     # OPTIMIZED: Use caching for best sellers calculation with 15-minute rotation
     rotation_key = Time.current.to_i / 900
-    cache_key = "best_sellers_dynamic_#{limit}_#{category_id}-#{subcategory_id}_#{rotation_key}"
+    coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""
+    cache_key = "best_sellers_dynamic_v3_#{limit}_#{category_id}-#{subcategory_id}#{coords_key}_#{rotation_key}"
 
     category_condition = if category_id.present?
       "AND ads.category_id = #{ActiveRecord::Base.connection.quote(category_id)}"
@@ -3057,6 +3286,46 @@ class Buyer::AdsController < ApplicationController
 
     subcategory_condition = if subcategory_id.present?
       "AND ads.subcategory_id = #{ActiveRecord::Base.connection.quote(subcategory_id)}"
+    else
+      ""
+    end
+
+    distance_join = if lat.present? && lng.present?
+      <<~SQL.squish
+        LEFT JOIN LATERAL (
+          SELECT
+            6371 * 2 * ASIN(SQRT(
+              POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+              COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+              POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))) AS distance_km,
+            branches.name as primary_branch_name,
+            branches.location as primary_branch_address
+          FROM branches
+          WHERE branches.seller_id = ads.seller_id
+            AND branches.latitude IS NOT NULL
+            AND branches.longitude IS NOT NULL
+          ORDER BY distance_km ASC
+          LIMIT 1
+        ) branch_distance ON true
+      SQL
+    else
+      ""
+    end
+
+    proximity_boost_sql = if lat.present? && lng.present?
+      <<~SQL.squish
+        + CASE
+            WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 2.0 THEN 45.0
+            WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 5.0 THEN 30.0
+            WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 15.0 THEN 18.0
+            WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 30.0 THEN 8.0
+            ELSE 0.0
+          END
+        + CASE
+            WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 15.0 AND sellers.document_verified = true THEN 10.0
+            ELSE 0.0
+          END
+      SQL
     else
       ""
     end
@@ -3077,10 +3346,12 @@ class Buyer::AdsController < ApplicationController
             ads.seller_id,
             ads.specifications,
             sellers.fullname as seller_name,
+            sellers.document_verified as document_verified,
             categories.name as category_name,
             subcategories.name as subcategory_name,
             COALESCE(tiers.id, 1) as seller_tier_id,
             COALESCE(tiers.name, 'Free') as seller_tier_name,
+            #{distance_join.present? ? 'ROUND(branch_distance.distance_km::numeric, 1) as distance_km, branch_distance.primary_branch_name, branch_distance.primary_branch_address,' : 'NULL as distance_km, NULL as primary_branch_name, NULL as primary_branch_address,'}
 
             COALESCE(ad_stats.conversations_7d, 0) as conversations_7d,
             COALESCE(ad_stats.add_to_cart_7d, 0) as add_to_cart_7d,
@@ -3097,14 +3368,14 @@ class Buyer::AdsController < ApplicationController
               LN(COALESCE(ad_stats.add_to_cart_7d, 0) + 1) * 3.0 +
               LN(COALESCE(ad_stats.add_to_cart_30d, 0) + 1) * 1.0 +
 
-              LN(COALESCE(ad_stats.message_seller_7d, 0) + 1) * 2.5 +
-              LN(COALESCE(ad_stats.make_offer_7d, 0) + 1) * 3.0 +
-              LN(COALESCE(ad_stats.callback_request_7d, 0) + 1) * 3.0 +
-              LN(COALESCE(ad_stats.quote_request_7d, 0) + 1) * 3.0 +
-              LN(COALESCE(ad_stats.reveal_details_7d, 0) + 1) * 1.0 +
-              LN(COALESCE(ad_stats.share_ad_7d, 0) + 1) * 1.0 +
+              LN(COALESCE(ad_stats.message_seller_7d, 0) + 1) * 3.5 +
+              LN(COALESCE(ad_stats.make_offer_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.callback_request_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.quote_request_7d, 0) + 1) * 4.0 +
+              LN(COALESCE(ad_stats.reveal_details_7d, 0) + 1) * 3.5 +
+              LN(COALESCE(ad_stats.share_ad_7d, 0) + 1) * 2.5 +
 
-              LN(COALESCE(ad_stats.click_count, 0) + 1) * 0.3 +
+              LN(COALESCE(ad_stats.click_count, 0) + 1) * 3.5 +
 
               LN(COALESCE(ad_stats.wishlist_count, 0) + 1) * 2.0 +
 
@@ -3134,6 +3405,7 @@ class Buyer::AdsController < ApplicationController
                 WHEN 2 THEN 0.5
                 ELSE 0
               END
+              #{proximity_boost_sql}
             ) as comprehensive_score
 
           FROM ads
@@ -3143,6 +3415,7 @@ class Buyer::AdsController < ApplicationController
           INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
           LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
           LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+          #{distance_join}
 
           WHERE ads.deleted = false
             AND ads.flagged = false
@@ -3163,8 +3436,7 @@ class Buyer::AdsController < ApplicationController
       results = ActiveRecord::Base.connection.execute(sql).to_a
 
       # OPTIMIZATION: Process media URLs for frontend compatibility
-      # Final randomization in Ruby - pick limit random items from the top pool
-      results.sample(limit).map do |row|
+      results.first(limit).map do |row|
         media_json = row['media']
 
         # Process media URLs similar to recommendations method
@@ -3223,7 +3495,11 @@ class Buyer::AdsController < ApplicationController
           seller_tier_name: row['seller_tier_name'],
           slug: row_url_slug(row),
           is_brand_kenya: row['is_brand_kenya'] == true,
-        metrics: {
+          distance_km: row['distance_km'] ? row['distance_km'].to_f.round(1) : nil,
+          primary_branch_name: row['primary_branch_name'],
+          primary_branch_address: row['primary_branch_address'],
+          document_verified: row['document_verified'] == true || row['document_verified'] == 't',
+          metrics: {
             avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
             review_count: row['review_count']&.to_i || 0,
             total_clicks: row['click_count']&.to_i || 0,
