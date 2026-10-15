@@ -24,18 +24,28 @@ class Sales::SellerVerificationsController < ApplicationController
       scope = scope.where('seller_verifications.created_at <= ?', end_date.end_of_day) if end_date
     end
 
-    verifications = scope.includes(:seller, :sales_user).recent
-
     if params[:format] == 'csv'
       return send_data(
-        build_verifications_csv(verifications),
+        build_verifications_csv(scope.includes(:seller, :sales_user).recent),
         filename: "seller-verifications-#{Date.current}.csv",
         type: 'text/csv'
       )
     end
 
-    verifications = verifications.offset((page - 1) * per_page).limit(per_page)
-    total_count = scope.count
+    # One row per shop — repeat visits stay in the database (and the CSV/audit
+    # trail), but the log surfaces only each seller's most recent visit.
+    latest_per_seller = scope
+      .select('DISTINCT ON (seller_verifications.seller_id) seller_verifications.*')
+      .order('seller_verifications.seller_id, seller_verifications.created_at DESC')
+
+    verifications = SellerVerification
+      .from(latest_per_seller, :seller_verifications)
+      .includes(:seller, :sales_user)
+      .order('seller_verifications.created_at DESC')
+      .offset((page - 1) * per_page)
+      .limit(per_page)
+
+    total_count = scope.distinct.count(:seller_id)
 
     render json: {
       verifications: verifications.map { |v| serialize_verification(v, include_relations: true) },

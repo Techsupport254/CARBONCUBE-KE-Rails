@@ -8,7 +8,7 @@ class Sales::AnalyticsController < ApplicationController
     # Get device_hash from params or headers if available for excluding seller own clicks
     device_hash = params[:device_hash] || request.headers['X-Device-Hash']
 
-    cache_key = "sales_analytics_index_v10_#{device_hash}"
+    cache_key = "sales_analytics_index_v11_#{device_hash}"
     response_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes, race_condition_ttl: 30.seconds) do
       # Get list of excluded emails/domains for filtering
       excluded_email_patterns = InternalUserExclusion.active
@@ -28,11 +28,13 @@ class Sales::AnalyticsController < ApplicationController
                           .where(ads: { deleted: false })
                           .where(sellers: { deleted: false, blocked: false, flagged: false })
                           .where("(buyers.id IS NOT NULL AND buyers.deleted = ?) OR reviews.seller_id IS NOT NULL", false)
-      # Filter wishlists to exclude deleted/blocked buyers, blocked/deleted sellers, and deleted ads
-      all_wishlists = WishList.joins(:buyer, ad: :seller)
-                              .where(buyers: { deleted: false })
+      # Wishlists from buyers and sellers — exclude deleted buyers plus
+      # blocked/deleted ad sellers and deleted ads
+      all_wishlists = WishList.joins(ad: :seller)
+                              .left_joins(:buyer)
                               .where(sellers: { deleted: false, blocked: false, flagged: false })
                               .where(ads: { deleted: false })
+                              .where("(buyers.id IS NOT NULL AND buyers.deleted = ?) OR wish_lists.seller_id IS NOT NULL", false)
       
       # Get seller tiers without time filtering for totals
       all_paid_seller_tiers = SellerTier

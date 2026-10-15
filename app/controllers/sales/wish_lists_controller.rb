@@ -4,9 +4,14 @@ class Sales::WishListsController < ApplicationController
 
   # GET /sales/wishlists
   def index
-    # Filter out deleted ads and blocked/deleted ad sellers
+    # Bookmarks by buyers and sellers — same scope as
+    # Sales::AnalyticsController#index total_ads_wish_listed so the sidebar
+    # badge and dashboard card agree. Excludes deleted buyers plus deleted
+    # ads and blocked/deleted ad sellers.
     @wishlists = WishList.joins(ad: :seller)
+                         .left_joins(:buyer)
                          .where(ads: { deleted: false })
+                         .where("(buyers.id IS NOT NULL AND buyers.deleted = ?) OR wish_lists.seller_id IS NOT NULL", false)
                          .where(sellers: { deleted: false, blocked: false, flagged: false })
                          .includes(:buyer, :seller, ad: :seller)
                          .order('wish_lists.created_at DESC')
