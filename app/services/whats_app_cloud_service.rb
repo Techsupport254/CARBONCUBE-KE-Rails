@@ -327,7 +327,7 @@ class WhatsAppCloudService
     from_number = msg_data['from']
     # official WhatsApp numbers come with country code, e.g., 254716404137
     # Our DB stores them as 0716404137 (10 digits)
-    local_number = (from_number.to_s.start_with?('254') && from_number.to_s.length == 12) ? "0#{from_number[3..]}" : from_number.to_s
+    local_number = from_number.to_s.start_with?('254') && from_number.to_s.length == 12 ? "0#{from_number[3..]}" : from_number.to_s
 
     # WhatsApp Album Header Handling:
     # When multiple images are sent as an album from WhatsApp, Meta emits an "unsupported" message
@@ -354,7 +354,7 @@ class WhatsAppCloudService
            (from_number.present? ? Seller.find_by(phone_number: from_number) : nil)
 
     # If the phone belongs to a SalesUser, resolve to their linked Buyer/Seller account or create one
-    if !user
+    unless user
       sales_user = (local_number.present? ? SalesUser.find_by(phone_number: local_number) : nil) ||
                    (from_number.present? ? SalesUser.find_by(phone_number: from_number) : nil)
       if sales_user
@@ -386,6 +386,10 @@ class WhatsAppCloudService
       Rails.logger.info "[WhatsAppCloudService] Skipping message #{msg_data['id']} with empty content"
       return
     end
+
+    # Meta compliance: honor STOP/START before anything else — the keyword must
+    # not create a conversation or a chat message.
+    return if handle_notification_opt_in_out(user, content, from_number)
 
     Rails.logger.info "[WhatsAppCloudService] Extracted content: #{content&.truncate(200)} (media_urls: #{media_urls&.length})"
     
@@ -460,6 +464,35 @@ class WhatsAppCloudService
     end
   end
   
+  # Meta requires honoring opt-out keywords for marketing/template sends.
+  # Exact-match only (e.g. "stop by the shop" must not unsubscribe anyone).
+  # Returns true when the message was consumed as an opt-in/out command.
+  OPT_OUT_KEYWORDS = %w[stop stops stopall unsubscribe cancel end quit].freeze
+  OPT_IN_KEYWORDS  = %w[start unstop resume subscribe].freeze
+  private_constant :OPT_OUT_KEYWORDS, :OPT_IN_KEYWORDS
+
+  def self.handle_notification_opt_in_out(user, content, to)
+    keyword = content.to_s.strip.downcase
+    return false unless user.respond_to?(:whatsapp_notifications)
+
+    if OPT_OUT_KEYWORDS.include?(keyword)
+      user.update_column(:whatsapp_notifications, false) if user.whatsapp_notifications
+      send_message(to, "You've been unsubscribed from Carbon Cube Kenya notifications. Reply START to resubscribe.")
+      Rails.logger.info "[WhatsAppCloudService] #{user.class.name} #{user.id} opted out of WhatsApp notifications (STOP)"
+      true
+    elsif OPT_IN_KEYWORDS.include?(keyword)
+      user.update_column(:whatsapp_notifications, true) unless user.whatsapp_notifications
+      send_message(to, "You're subscribed to Carbon Cube Kenya notifications. Reply STOP to opt out anytime.")
+      Rails.logger.info "[WhatsAppCloudService] #{user.class.name} #{user.id} resubscribed to WhatsApp notifications (START)"
+      true
+    else
+      false
+    end
+  rescue => e
+    Rails.logger.error "[WhatsAppCloudService] Opt-in/out handling failed for #{user.class.name} #{user.id}: #{e.message}"
+    false
+  end
+
   def self.extract_message_content(msg_data)
     media_urls = []
     
@@ -688,7 +721,7 @@ class WhatsAppCloudService
             Buyer.find_by(phone_number: from_number.to_s)
     return buyer if buyer
 
-    phone = (local_number.to_s =~ /\A\d{10}\z/) ? local_number.to_s : from_number.to_s
+    phone = /\A\d{10}\z/.match?(local_number.to_s) ? local_number.to_s : from_number.to_s
     safe_name = contact_name.to_s.strip.presence || "WhatsApp User"
 
     # Generate clean base username (3-20 chars)
