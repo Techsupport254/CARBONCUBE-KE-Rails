@@ -32,6 +32,10 @@ class Seller::ProfilesController < ApplicationController
     # password_digest will be nil or empty string for OAuth users who haven't set a password
     # It will be present (a bcrypt hash) for users who have set a password
     seller_data[:has_password] = @seller.password_digest.present? && !@seller.password_digest.to_s.strip.empty?
+    # WhatsApp subscription state for opt-in CTAs — 'engaged' means they have
+    # messaged us on WhatsApp before (Meta spam-policy requirement).
+    seller_data[:whatsapp_notifications] = @seller.whatsapp_notifications
+    seller_data[:whatsapp_engaged] = WhatsAppCloudService.user_whatsapp_engaged?(@seller)
 
     render json: seller_data
   end

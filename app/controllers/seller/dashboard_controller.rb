@@ -41,7 +41,9 @@ class Seller::DashboardController < ApplicationController
           county: seller.county&.name,
           sub_county: seller.sub_county&.name,
           latitude: (branch || seller.branches.order(is_main_branch: :desc, id: :asc).first)&.latitude&.to_f,
-          longitude: (branch || seller.branches.order(is_main_branch: :desc, id: :asc).first)&.longitude&.to_f
+          longitude: (branch || seller.branches.order(is_main_branch: :desc, id: :asc).first)&.longitude&.to_f,
+          whatsapp_notifications: seller.whatsapp_notifications,
+          whatsapp_engaged: WhatsAppCloudService.user_whatsapp_engaged?(seller)
         },
         
         # Quick stats
