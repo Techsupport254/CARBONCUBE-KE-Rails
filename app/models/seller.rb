@@ -46,7 +46,9 @@ class Seller < ApplicationRecord
   has_many :seller_verifications, dependent: :destroy
   has_many :seller_follow_ups, dependent: :destroy
   has_many :sales_brands, dependent: :nullify
-  has_one :partner, dependent: :nullify
+  # A linked partner record is the seller's own record — destroy it with the
+  # seller rather than leaving an unlinked row on the Partners page.
+  has_one :partner, dependent: :destroy
   has_one :partner_distributor, dependent: :nullify
   has_many :partner_invites, dependent: :nullify
   has_many :review_prompts, dependent: :destroy

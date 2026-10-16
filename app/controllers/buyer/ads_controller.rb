@@ -36,7 +36,7 @@ class Buyer::AdsController < ApplicationController
       result = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
         get_balanced_ads(per_page, has_coords ? lat : nil, has_coords ? lng : nil)
       end
-      @ads = result[:ads]
+      @ads = attach_engagement_counts(result[:ads])
       @subcategory_counts = result[:subcategory_counts]
     else
       # Check if randomization is explicitly requested or if we should disable caching
@@ -139,6 +139,8 @@ class Buyer::AdsController < ApplicationController
       end
     else
       # Regular ads - optimize serialization with media URL processing
+      engagement_counts = ad_engagement_counts(@ads.map(&:id))
+
       @ads.map do |ad|
         # Process media URLs for frontend compatibility
         media_json = ad.media
@@ -197,7 +199,10 @@ class Buyer::AdsController < ApplicationController
           category_name: ad.category&.name,
           subcategory_name: ad.subcategory&.name,
           is_brand_kenya: ad.attributes.key?('is_brand_kenya') ? ad.is_brand_kenya == true : false,
-          specifications: is_lite_mode ? nil : ad.specifications
+          specifications: is_lite_mode ? nil : ad.specifications,
+          views_count: engagement_counts[ad.id][:views],
+          reveals_count: engagement_counts[ad.id][:reveals],
+          wishlist_count: engagement_counts[ad.id][:wishlists]
         }.compact
 
         requested_fields.present? ? ad_data.slice(*requested_fields) : ad_data
@@ -2265,7 +2270,7 @@ class Buyer::AdsController < ApplicationController
     coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""
     cache_key = "recommendations_v3_#{profile_hash}_#{limit}#{coords_key}_#{rotation_key}"
 
-    Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
+    recs = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
       ad_ids_sql = profile[:ad_ids].any? ? profile[:ad_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       subcategory_ids_sql = profile[:subcategory_ids].any? ? profile[:subcategory_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       category_ids_sql = profile[:category_ids].any? ? profile[:category_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
@@ -2507,6 +2512,8 @@ class Buyer::AdsController < ApplicationController
         }
       end
     end
+
+    attach_engagement_counts(recs)
   end
 
   # GET /buyer/ads/:id/related
@@ -3514,6 +3521,45 @@ class Buyer::AdsController < ApplicationController
     # Offer data is attached after the cache fetch so the cached payload stays
     # offer-agnostic and discount badges reflect live offer state.
     attach_offer_info(best_sellers)
+    attach_engagement_counts(best_sellers)
+  end
+
+  # Lifetime engagement counters keyed by ad id — same semantics as
+  # Ad#ad_clicks / Ad#reveal_clicks / wish_lists rows, so listing cards match
+  # the numbers on the ad detail page.
+  def ad_engagement_counts(ad_ids)
+    counts = Hash.new { |h, k| h[k] = { views: 0, reveals: 0, wishlists: 0 } }
+    return counts if ad_ids.blank?
+
+    ClickEvent.where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
+              .group(:ad_id, :event_type)
+              .count
+              .each do |(ad_id, event_type), n|
+                counts[ad_id][event_type == 'Ad-Click' ? :views : :reveals] = n
+              end
+
+    WishList.where(ad_id: ad_ids).group(:ad_id).count
+            .each { |ad_id, n| counts[ad_id][:wishlists] = n }
+
+    counts
+  end
+
+  # Sets flat views_count/reveals_count/wishlist_count on lightweight ad
+  # hashes after the cache fetch (same idea as attach_offer_info — cached
+  # payloads stay stat-agnostic and counts are always live).
+  def attach_engagement_counts(ads)
+    return ads if ads.blank?
+
+    counts = ad_engagement_counts(ads.filter_map { |a| (a[:id] || a['id'])&.to_i })
+
+    ads.each do |ad|
+      id = (ad[:id] || ad['id'])&.to_i
+      ad[:views_count] = counts[id][:views]
+      ad[:reveals_count] = counts[id][:reveals]
+      ad[:wishlist_count] = counts[id][:wishlists]
+    end
+
+    ads
   end
 
   # Merges flash_sale_info (all offer types — AdSerializer parity) into the
