@@ -8,7 +8,7 @@ class Sales::BuyersController < ApplicationController
   BUYER_LIST_COLUMNS = %i[
     id fullname username email phone_number location city
     county_id sub_county_id blocked deleted profile_picture provider
-    created_at last_active_at
+    created_at last_active_at whatsapp_notifications
   ].freeze
 
   # GET /sales/buyers
@@ -39,10 +39,12 @@ class Sales::BuyersController < ApplicationController
     reveal_counts = ClickEvent.where(buyer_id: buyer_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
     review_counts = Review.where(buyer_id: buyer_ids).group(:buyer_id).count
     wishlist_counts = WishList.where(buyer_id: buyer_ids).group(:buyer_id).count
+    engaged_buyer_ids = Message.where(sender_type: 'Buyer', sender_id: buyer_ids).where.not(whatsapp_message_id: nil).distinct.pluck(:sender_id).to_set
 
     buyers_data = @buyers.map do |buyer|
       buyer.as_json(only: BUYER_LIST_COLUMNS).merge(
         county_name: buyer.county&.name,
+        whatsapp_engaged: engaged_buyer_ids.include?(buyer.id),
         sub_county_name: buyer.sub_county&.name,
         signup_method: buyer.oauth_user? ? 'google_oauth' : 'regular',
         stats: {

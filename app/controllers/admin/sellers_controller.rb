@@ -122,8 +122,11 @@ class Admin::SellersController < ApplicationController
 
       carbon_code_cutoff = Time.zone.parse('2026-02-01').beginning_of_day
 
+      engaged_seller_ids = Message.where(sender_type: 'Seller', sender_id: @sellers.map(&:id)).where.not(whatsapp_message_id: nil).distinct.pluck(:sender_id).to_set
+
       @sellers_data = @sellers.map do |seller|
-        row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :county_id, :sub_county_id, :field_verified_at, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id], include: { carbon_code: { only: [:id, :code, :label] } })
+        row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :county_id, :sub_county_id, :field_verified_at, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id, :whatsapp_notifications], include: { carbon_code: { only: [:id, :code, :label] } })
+        row['whatsapp_engaged'] = engaged_seller_ids.include?(seller.id)
         row['total_ads'] = seller[:total_ads_count] || 0
         row['local_reviews_count'] = seller[:local_reviews_count] || 0
         row['google_reviews_count'] = seller[:google_reviews_count] || 0
