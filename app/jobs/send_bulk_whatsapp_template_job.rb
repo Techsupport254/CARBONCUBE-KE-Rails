@@ -5,7 +5,14 @@ class SendBulkWhatsappTemplateJob < ApplicationJob
   discard_on ActiveJob::DeserializationError
 
   def perform(template_name, language_code = 'en', components = [])
+    # Meta spam policy: only sellers who opted in AND have interacted with us
+    # on WhatsApp before may receive proactive template messages.
+    engaged_seller_ids = Message.where(sender_type: 'Seller')
+                                .where.not(whatsapp_message_id: nil)
+                                .select(:sender_id)
     active_sellers = Seller.where(deleted: [false, nil], blocked: [false, nil])
+                           .whatsapp_opted_in
+                           .where(id: engaged_seller_ids)
     
     total_sellers = active_sellers.count
     

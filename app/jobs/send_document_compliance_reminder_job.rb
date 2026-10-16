@@ -19,9 +19,11 @@ class SendDocumentComplianceReminderJob < ApplicationJob
     results = { whatsapp: nil, in_app: nil, email: nil }
 
     # 1. WhatsApp Delivery (approved templates only) — honors the seller's
-    # WhatsApp notification preference unless an override phone was passed.
+    # WhatsApp notification preference and requires prior WhatsApp engagement
+    # (Meta spam policy) unless an override phone was passed.
     whatsapp_opted_out = target_phone.blank? && !seller.whatsapp_notifications
-    if channel.in?(['whatsapp', 'all']) && phone.present? && !whatsapp_opted_out
+    whatsapp_not_engaged = target_phone.blank? && !WhatsAppCloudService.user_whatsapp_engaged?(seller)
+    if channel.in?(['whatsapp', 'all']) && phone.present? && !whatsapp_opted_out && !whatsapp_not_engaged
       template_name, body_params = whatsapp_template_for(seller, reminder_type, recipient_name)
 
       components = [

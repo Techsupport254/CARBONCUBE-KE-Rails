@@ -23,6 +23,13 @@ class SendWhatsappTemplateJob < ApplicationJob
       return
     end
 
+    # Meta spam policy: proactive templates only go to users who have
+    # already interacted with us on WhatsApp.
+    unless WhatsAppCloudService.user_whatsapp_engaged?(user)
+      Rails.logger.info "[SendWhatsappTemplateJob] #{user_type.capitalize} #{user_id} has no WhatsApp engagement — skipping"
+      return
+    end
+
     result = WhatsAppCloudService.send_template(user.phone_number, template_name, language_code, components)
 
     if result[:success]

@@ -11,6 +11,13 @@ class SendSingleSellerMarketingJob < ApplicationJob
       return
     end
 
+    # Meta spam-policy guard: marketing templates only go to sellers who have
+    # already interacted with us on WhatsApp.
+    unless WhatsAppCloudService.user_whatsapp_engaged?(seller)
+      Rails.logger.info "[SendSingleSellerMarketingJob] Seller #{seller.id} has no WhatsApp engagement — skipping"
+      return
+    end
+
     # Build personalization components
     components = [
       {

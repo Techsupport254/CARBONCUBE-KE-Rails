@@ -150,6 +150,13 @@ class UnreadMessageReminderService
         return
       end
 
+      # Meta spam policy: never proactively template-message users who have
+      # never interacted with us on WhatsApp.
+      unless WhatsAppCloudService.user_whatsapp_engaged?(recipient)
+        Rails.logger.info "[UnreadMessageReminderService] Skipping reminder #{reminder_number} for #{recipient_type} #{recipient_id} — no WhatsApp engagement."
+        return
+      end
+
       # Send the WhatsApp reminder
       sent = send_whatsapp_template(conversation, recipient, unread_messages)
 

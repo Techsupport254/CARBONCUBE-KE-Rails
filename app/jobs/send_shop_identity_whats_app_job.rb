@@ -18,11 +18,17 @@ class SendShopIdentityWhatsAppJob < ApplicationJob
       sent_channels = []
 
       if seller.phone_number.present?
-        whatsapp_result = WhatsAppCloudService.send_template(
-          seller.phone_number,
-          'shop_identity_v4',
-          'sw'
-        )
+        # Meta spam policy: proactive templates only to WhatsApp-engaged sellers
+        whatsapp_result = if WhatsAppCloudService.user_whatsapp_engaged?(seller)
+          WhatsAppCloudService.send_template(
+            seller.phone_number,
+            'shop_identity_v4',
+            'sw'
+          )
+        else
+          Rails.logger.info "Seller #{seller.id} has no WhatsApp engagement - skipping WhatsApp message"
+          { success: false, error: 'not_engaged' }
+        end
 
         if whatsapp_result.is_a?(Hash) && whatsapp_result[:success]
           sent_channels << "whatsapp"

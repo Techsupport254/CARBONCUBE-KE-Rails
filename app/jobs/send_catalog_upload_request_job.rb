@@ -103,7 +103,7 @@ class SendCatalogUploadRequestJob < ApplicationJob
     # Meta spam-policy guard: proactive template sends only go to sellers who
     # have already messaged us on WhatsApp. Blasting unengaged numbers is what
     # triggers report/block rates and account restrictions.
-    if !override && !whatsapp_engaged?(seller)
+    if !override && !WhatsAppCloudService.user_whatsapp_engaged?(seller)
       Rails.logger.info "[SendCatalogUploadRequestJob] Seller #{seller.id} has no WhatsApp engagement - skipping"
       return { success: false, error: 'not_engaged' }
     end
@@ -137,12 +137,6 @@ class SendCatalogUploadRequestJob < ApplicationJob
     end
 
     result
-  end
-
-  # True when the seller has sent us at least one inbound WhatsApp message
-  # before — their number resolved to their Seller account on ingestion.
-  def whatsapp_engaged?(seller)
-    Message.where(sender: seller).where.not(whatsapp_message_id: nil).exists?
   end
 
   def whatsapp_fallback_text(name)

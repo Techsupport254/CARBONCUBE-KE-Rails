@@ -393,6 +393,16 @@ class ConversationsController < ApplicationController
       return
     end
 
+    # Meta spam policy: proactive templates can only go to sellers who have
+    # already interacted with us on WhatsApp.
+    unless WhatsAppCloudService.user_whatsapp_engaged?(seller)
+      render json: {
+        error: 'This seller has never messaged us on WhatsApp — proactive pings are not allowed by Meta policy',
+        error_type: 'whatsapp_not_engaged'
+      }, status: :unprocessable_entity
+      return
+    end
+
     # Count unread messages for the seller (messages not sent by the seller)
     # Use read_at: nil to match the same logic used in unread_counts endpoint
     unread_count = conversation.messages

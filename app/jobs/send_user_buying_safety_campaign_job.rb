@@ -42,7 +42,9 @@ class SendUserBuyingSafetyCampaignJob < ApplicationJob
       end
     end
 
-    if channels[:whatsapp] && phone.present? && !(user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications)
+    if channels[:whatsapp] && phone.present? &&
+       !(user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications) &&
+       WhatsAppCloudService.user_whatsapp_engaged?(user)
       already_sent_phone = RedisConnection.with { |conn| conn.sismember(phone_dedup_key, phone) }
 
       unless already_sent_phone

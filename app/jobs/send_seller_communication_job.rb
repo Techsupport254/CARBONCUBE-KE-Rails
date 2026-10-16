@@ -63,6 +63,8 @@ class SendSellerCommunicationJob < ApplicationJob
       if channels[:whatsapp] || channels['whatsapp']
         if user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications
           Rails.logger.info "#{user_type.capitalize} #{user.id} opted out of WhatsApp notifications - skipping WhatsApp channel"
+        elsif !WhatsAppCloudService.user_whatsapp_engaged?(user)
+          Rails.logger.info "#{user_type.capitalize} #{user.id} has no WhatsApp engagement - skipping WhatsApp channel"
         elsif user.phone_number.present?
           if custom_message.present?
             message_text = process_whatsapp_markdown(custom_message, user, user_type)

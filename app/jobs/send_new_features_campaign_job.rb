@@ -36,6 +36,8 @@ class SendNewFeaturesCampaignJob < ApplicationJob
     # WhatsApp
     if !seller.whatsapp_notifications
       Rails.logger.info "[SendNewFeaturesCampaignJob] Seller #{seller.id} opted out of WhatsApp notifications — skipping WhatsApp channel"
+    elsif !WhatsAppCloudService.user_whatsapp_engaged?(seller)
+      Rails.logger.info "[SendNewFeaturesCampaignJob] Seller #{seller.id} has no WhatsApp engagement — skipping WhatsApp channel"
     elsif seller.phone_number.present?
       begin
         if dry_run

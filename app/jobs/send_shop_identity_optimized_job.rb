@@ -22,7 +22,7 @@ class SendShopIdentityOptimizedJob < ApplicationJob
           next
         end
         
-        if seller.phone_number.present?
+        if seller.phone_number.present? && WhatsAppCloudService.user_whatsapp_engaged?(seller)
           whatsapp_result = WhatsAppCloudService.send_template(
             seller.phone_number,
             template_name,

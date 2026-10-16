@@ -26,16 +26,22 @@ class SendProductDetailsWhatSappJob < ApplicationJob
     begin
       sent_channels = []
 
-      # Send WhatsApp template message
+      # Send WhatsApp template message (only to WhatsApp-engaged sellers —
+      # Meta spam policy for proactive template sends)
       if seller.phone_number.present?
-        Rails.logger.info "Attempting to send WhatsApp template message..."
-        
-        # Send the product_details template (Swahili language)
-        whatsapp_result = WhatsAppCloudService.send_template(
-          seller.phone_number,
-          'product_details',
-          'sw'  # Swahili language code
-        )
+        whatsapp_result = if WhatsAppCloudService.user_whatsapp_engaged?(seller)
+          Rails.logger.info "Attempting to send WhatsApp template message..."
+
+          # Send the product_details template (Swahili language)
+          WhatsAppCloudService.send_template(
+            seller.phone_number,
+            'product_details',
+            'sw'  # Swahili language code
+          )
+        else
+          Rails.logger.info "Seller #{seller.id} has no WhatsApp engagement - skipping WhatsApp message"
+          { success: false, error: 'not_engaged' }
+        end
 
         if whatsapp_result.is_a?(Hash) && whatsapp_result[:success]
           sent_channels << "whatsapp"

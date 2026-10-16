@@ -27,7 +27,7 @@ class SendAccurateListingsOptimizedJob < ApplicationJob
         if dry_run
           success_count += 1
         else
-          if seller.phone_number.present?
+          if seller.phone_number.present? && WhatsAppCloudService.user_whatsapp_engaged?(seller)
             whatsapp_result = WhatsAppCloudService.send_template(
               seller.phone_number,
               template_name,

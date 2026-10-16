@@ -493,6 +493,15 @@ class WhatsAppCloudService
     false
   end
 
+  # Meta spam-policy guard for proactive/business-initiated sends: true only
+  # when the user has interacted with us on WhatsApp (inbound webhook message,
+  # or app messages already bridged to a WhatsApp thread).
+  def self.user_whatsapp_engaged?(user)
+    return false unless user.respond_to?(:id)
+
+    Message.where(sender: user).where.not(whatsapp_message_id: nil).exists?
+  end
+
   def self.extract_message_content(msg_data)
     media_urls = []
     

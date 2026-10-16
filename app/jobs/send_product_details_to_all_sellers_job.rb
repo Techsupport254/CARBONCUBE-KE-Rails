@@ -14,7 +14,7 @@ class SendProductDetailsToAllSellersJob < ApplicationJob
     
     sellers_to_process.find_each do |seller|
       begin
-        if seller.phone_number.present?
+        if seller.phone_number.present? && WhatsAppCloudService.user_whatsapp_engaged?(seller)
           whatsapp_result = WhatsAppCloudService.send_template(
             seller.phone_number,
             'product_details',

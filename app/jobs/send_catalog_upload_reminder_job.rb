@@ -103,6 +103,13 @@ class SendCatalogUploadReminderJob < ApplicationJob
       return { success: false, error: 'opted_out' }
     end
 
+    # Meta spam-policy guard: proactive template sends only go to sellers who
+    # have already interacted with us on WhatsApp.
+    if !override && !WhatsAppCloudService.user_whatsapp_engaged?(seller)
+      Rails.logger.info "[SendCatalogUploadReminderJob] Seller #{seller.id} has no WhatsApp engagement - skipping"
+      return { success: false, error: 'not_engaged' }
+    end
+
     if !override && WhatsappMessageLog.already_sent?(seller, WHATSAPP_TEMPLATE)
       return { success: false, error: 'already_sent' }
     end
