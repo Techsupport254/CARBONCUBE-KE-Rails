@@ -122,7 +122,8 @@ class Admin::BuyersController < ApplicationController
           :id, :fullname, :username, :description, :phone_number, :secondary_phone_number,
           :email, :location, :blocked, :profile_picture, :zipcode,
           :city, :gender, :created_at, :updated_at,
-          :last_active_at, :deleted, :provider, :uid
+          :last_active_at, :deleted, :provider, :uid, :whatsapp_notifications,
+          :whatsapp_opted_in_at, :whatsapp_opt_in_source
         ],
         include: {
           county: { only: [:id, :name, :capital, :county_code] },
@@ -223,6 +224,11 @@ class Admin::BuyersController < ApplicationController
 
       data
     end
+
+    # Engagement changes without touching buyer.updated_at, so it stays outside the cache.
+    buyer_data = buyer_data.merge(
+      whatsapp_engaged: Message.where(sender_type: 'Buyer', sender_id: params[:id]).where.not(whatsapp_message_id: nil).exists?
+    )
 
     render json: buyer_data
   end

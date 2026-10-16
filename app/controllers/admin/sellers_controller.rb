@@ -187,7 +187,8 @@ class Admin::SellersController < ApplicationController
           :city, :gender, :business_registration_number, :document_url,
           :document_verified, :document_expiry_date, :created_at, :updated_at,
           :last_active_at, :deleted, :provider, :uid, :ads_count, :carbon_code_id,
-          :flagged, :flag_notes, :field_verified_at, :whatsapp_notifications
+          :flagged, :flag_notes, :field_verified_at, :whatsapp_notifications,
+          :whatsapp_opted_in_at, :whatsapp_opt_in_source
         ],
         methods: [:category_names],
         include: {
@@ -205,6 +206,7 @@ class Admin::SellersController < ApplicationController
 
     # Partner & Brand Kenya linkage stays outside the cache — cheap and must be fresh.
     seller_data = seller_data.merge(
+      whatsapp_engaged: Message.where(sender_type: 'Seller', sender_id: @seller.id).where.not(whatsapp_message_id: nil).exists?,
       partner_id: @seller.partner&.id,
       partner_status: @seller.partner&.status,
       is_brand_kenya: @seller.brand_kenya?,

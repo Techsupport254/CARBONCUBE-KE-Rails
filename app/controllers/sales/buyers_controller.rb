@@ -69,9 +69,10 @@ class Sales::BuyersController < ApplicationController
 
   # GET /sales/buyers/:id
   def show
-    render json: @buyer.as_json(only: BUYER_LIST_COLUMNS).merge(
+    render json: @buyer.as_json(only: BUYER_LIST_COLUMNS + %i[whatsapp_opted_in_at whatsapp_opt_in_source]).merge(
       county_name: @buyer.county&.name,
-      sub_county_name: @buyer.sub_county&.name
+      sub_county_name: @buyer.sub_county&.name,
+      whatsapp_engaged: Message.where(sender_type: 'Buyer', sender_id: @buyer.id).where.not(whatsapp_message_id: nil).exists?
     )
   end
 
