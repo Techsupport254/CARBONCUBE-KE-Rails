@@ -27,6 +27,7 @@ class Buyer::ProfilesController < ApplicationController
     # Ensure timestamps are included
     buyer_data[:created_at] = current_buyer.created_at
     buyer_data[:updated_at] = current_buyer.updated_at
+    buyer_data[:whatsapp_engaged] = WhatsAppCloudService.user_whatsapp_engaged?(current_buyer)
     render json: buyer_data
   end
 
