@@ -32,7 +32,25 @@ module Sales
       when 'upcoming'  then brands = brands.follow_up_upcoming
       end
 
-      brands = brands.order(:category, :name)
+      sort_by = params[:sort_by].to_s.strip.downcase
+      sort_dir = params[:sort_dir].to_s.strip.downcase == 'asc' ? :asc : :desc
+
+      brands = case sort_by
+               when 'created_at', 'date_added', 'added'
+                 brands.order(created_at: sort_dir)
+               when 'last_contacted_at', 'last_contact', 'contacted'
+                 sort_dir == :asc ? brands.order(Arel.sql('last_contacted_at ASC NULLS LAST')) : brands.order(Arel.sql('last_contacted_at DESC NULLS LAST'))
+               when 'follow_up_date', 'follow_up'
+                 sort_dir == :asc ? brands.order(Arel.sql('follow_up_date ASC NULLS LAST')) : brands.order(Arel.sql('follow_up_date DESC NULLS LAST'))
+               when 'name'
+                 brands.order(name: sort_dir)
+               when 'status'
+                 brands.order(status: sort_dir, name: :asc)
+               when 'category'
+                 brands.order(category: sort_dir, name: :asc)
+               else
+                 brands.order(:category, :name)
+               end
       total_count = brands.count
       brands = brands.offset((page - 1) * per_page).limit(per_page)
 

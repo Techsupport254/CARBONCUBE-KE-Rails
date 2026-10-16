@@ -6,49 +6,18 @@ class Sales::AppInstallsController < ApplicationController
   # GET /sales/app_installs
   def index
     page = [params[:page].to_i, 1].max
-    per_page = params[:per_page].present? ? [params[:per_page].to_i, 100].min : 25
+    per_page = params[:per_page].present? ? [params[:per_page].to_i, 200].min : 100
     user_type_filter = params[:user_type].to_s.strip.downcase
     platform_filter = params[:platform].to_s.strip.downcase
     query = params[:query].to_s.strip
+    sort_by = params[:sort_by].to_s.strip.downcase
+    sort_dir = params[:sort_dir].to_s.strip.downcase == 'asc' ? :asc : :desc
 
     mobile_tokens = DeviceToken.where(platform: %w[android ios])
-
-    # Overall KPIs
-    total_installs = mobile_tokens.count
-    sellers_with_app = DeviceToken.where(user_type: 'Seller', platform: %w[android ios]).select(:user_id).distinct.count
-    total_sellers = Seller.where(deleted: false).count
-    seller_adoption_pct = total_sellers.positive? ? (sellers_with_app.to_f / total_sellers * 100).round(1) : 0
-
-    buyers_with_app = DeviceToken.where(user_type: 'Buyer', platform: %w[android ios]).select(:user_id).distinct.count
-    total_buyers = Buyer.where(deleted: false).count
-    buyer_adoption_pct = total_buyers.positive? ? (buyers_with_app.to_f / [total_buyers, 1].max * 100).round(1) : 0
-
-    sales_staff_with_app = DeviceToken.where(user_type: 'SalesUser', platform: %w[android ios]).select(:user_id).distinct.count
-    guests_count = DeviceToken.where(user_id: nil, platform: %w[android ios]).count
-    android_count = mobile_tokens.where(platform: 'android').count
-    ios_count = mobile_tokens.where(platform: 'ios').count
-    active_7d = mobile_tokens.where('updated_at >= ?', 7.days.ago).count
-    active_30d = mobile_tokens.where('updated_at >= ?', 30.days.ago).count
-
-    kpis = {
-      total_installs: total_installs,
-      unique_users: sellers_with_app + buyers_with_app + sales_staff_with_app,
-      sellers_count: sellers_with_app,
-      total_sellers: total_sellers,
-      seller_adoption_pct: seller_adoption_pct,
-      buyers_count: buyers_with_app,
-      total_buyers: total_buyers,
-      buyer_adoption_pct: buyer_adoption_pct,
-      sales_staff_count: sales_staff_with_app,
-      guests_count: guests_count,
-      android_count: android_count,
-      ios_count: ios_count,
-      active_7d: active_7d,
-      active_30d: active_30d
-    }
+    kpis = DeviceToken.mobile_app_kpis
 
     # Build filtered tokens query
-    tokens_query = mobile_tokens.order(updated_at: :desc)
+    tokens_query = mobile_tokens
 
     case user_type_filter
     when 'seller', 'sellers'
@@ -92,8 +61,22 @@ class Sales::AppInstallsController < ApplicationController
       )
     end
 
+    # Apply ordering - default to date installed (created_at: :desc)
+    ordered_tokens_query = case sort_by
+                           when 'last_active', 'last_active_at', 'updated_at'
+                             tokens_query.order(updated_at: sort_dir)
+                           when 'platform'
+                             tokens_query.order(platform: sort_dir, created_at: :desc)
+                           when 'user_type', 'account_type'
+                             tokens_query.order(user_type: sort_dir, created_at: :desc)
+                           when 'created_at', 'installed_at', 'date_installed'
+                             tokens_query.order(created_at: sort_dir)
+                           else
+                             tokens_query.order(created_at: :desc)
+                           end
+
     total_count = tokens_query.count
-    paginated_tokens = tokens_query.limit(per_page).offset((page - 1) * per_page).includes(:user).to_a
+    paginated_tokens = ordered_tokens_query.limit(per_page).offset((page - 1) * per_page).includes(:user).to_a
 
     records = paginated_tokens.map do |dt|
       user = dt.user

@@ -93,7 +93,7 @@ class Sales::AdsController < ApplicationController
   def duplicates
     page = [params[:page].to_i, 1].max
     per_page = params[:per_page].present? ? [params[:per_page].to_i, 1].max : 15
-    filter_type = params[:filter_type].presence || 'all' # 'all', 'cross_seller', 'same_seller'
+    filter_type = params[:filter_type].presence || 'cross_seller' # default to similar images different sellers ('cross_seller', 'same_seller', 'all')
     search_query = params[:query].to_s.strip.downcase
 
     data_file = Rails.root.join('data', 'duplicate_images_audit_report.json')
