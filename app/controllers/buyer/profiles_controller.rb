@@ -395,6 +395,25 @@ class Buyer::ProfilesController < ApplicationController
 
       @seller.carbon_code_id = params[:profile][:carbon_code_id] if params[:profile][:carbon_code_id].present?
 
+      # Carry the buyer's WhatsApp consent into the new seller account, with
+      # an explicit onboarding choice taking precedence. Meta requires
+      # evidence of the opt-in action.
+      if buyer.has_attribute?(:whatsapp_notifications)
+        @seller.whatsapp_notifications = buyer.whatsapp_notifications
+        if buyer.has_attribute?(:whatsapp_opted_in_at) && @seller.has_attribute?(:whatsapp_opted_in_at)
+          @seller.whatsapp_opted_in_at = buyer.whatsapp_opted_in_at
+          @seller.whatsapp_opt_in_source = buyer.whatsapp_opt_in_source
+        end
+      end
+      whatsapp_opt_in_param = params.dig(:profile, :whatsapp_opt_in)
+      unless whatsapp_opt_in_param.nil?
+        @seller.whatsapp_notifications = ActiveModel::Type::Boolean.new.cast(whatsapp_opt_in_param)
+        if @seller.whatsapp_notifications && @seller.has_attribute?(:whatsapp_opted_in_at)
+          @seller.whatsapp_opted_in_at ||= Time.current
+          @seller.whatsapp_opt_in_source ||= 'registration'
+        end
+      end
+
       unless @seller.save
         Rails.logger.error "Seller creation during onboarding failed: #{@seller.errors.full_messages.inspect}"
         raise @seller.errors.full_messages.join(", ")

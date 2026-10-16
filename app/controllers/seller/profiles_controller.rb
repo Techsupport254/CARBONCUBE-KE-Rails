@@ -486,7 +486,19 @@ class Seller::ProfilesController < ApplicationController
       )
       
       @seller.carbon_code_id = params[:profile][:carbon_code_id] if params[:profile][:carbon_code_id].present?
-      
+
+      # WhatsApp consent captured at signup — Meta requires an explicit
+      # opt-in action, so we record where and when it happened.
+      whatsapp_opt_in_param = params.dig(:profile, :whatsapp_opt_in)
+      whatsapp_opt_in_param = cached_data[:whatsapp_opt_in] if whatsapp_opt_in_param.nil? && cached_data.present?
+      unless whatsapp_opt_in_param.nil?
+        @seller.whatsapp_notifications = ActiveModel::Type::Boolean.new.cast(whatsapp_opt_in_param)
+        if @seller.whatsapp_notifications && @seller.has_attribute?(:whatsapp_opted_in_at)
+          @seller.whatsapp_opted_in_at = Time.current
+          @seller.whatsapp_opt_in_source = 'registration'
+        end
+      end
+
       unless @seller.save
         raise @seller.errors.full_messages.join(", ")
       end

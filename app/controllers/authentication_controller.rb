@@ -1508,7 +1508,7 @@ class AuthenticationController < ApplicationController
   def complete_registration
     begin
       # Get the form data from the request
-      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id, :age_group_id, :birthday, :given_name, :family_name, :display_name, :provider, :uid, :user_type, :enterprise_name, :business_registration_number, :document_type_id, :description)
+      form_data = params.permit(:fullname, :email, :phone_number, :location, :city, :age_group, :gender, :username, :profile_picture, :county_id, :sub_county_id, :age_group_id, :birthday, :given_name, :family_name, :display_name, :provider, :uid, :user_type, :enterprise_name, :business_registration_number, :document_type_id, :description, :whatsapp_opt_in)
 
       # Determine user type (default to buyer if not specified)
       user_type = form_data[:user_type] || 'Buyer'
@@ -1618,6 +1618,16 @@ class AuthenticationController < ApplicationController
 
         # All new accounts start as buyers; sellers are created on first ad
         user = Buyer.new(user_attributes)
+
+        # WhatsApp consent captured at registration — Meta requires an explicit
+        # opt-in action, so we record where and when it happened.
+        unless form_data[:whatsapp_opt_in].nil?
+          user.whatsapp_notifications = ActiveModel::Type::Boolean.new.cast(form_data[:whatsapp_opt_in])
+          if user.whatsapp_notifications && user.has_attribute?(:whatsapp_opted_in_at)
+            user.whatsapp_opted_in_at = Time.current
+            user.whatsapp_opt_in_source = 'registration'
+          end
+        end
         
         # Capture device hash if provided for guest click association
         if params[:device_hash].present?

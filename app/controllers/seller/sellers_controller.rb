@@ -173,6 +173,7 @@ class Seller::SellersController < ApplicationController
       document_url: uploaded_document_url,
       picture: uploaded_profile_picture_url,
       device_hash: params[:device_hash],
+      whatsapp_opt_in: ActiveModel::Type::Boolean.new.cast(params[:whatsapp_opt_in] || params.dig(:seller, :whatsapp_opt_in)),
       created_at: Time.current.to_s
     }
     Rails.cache.write(cache_key, pending_data, expires_in: 1.hour)

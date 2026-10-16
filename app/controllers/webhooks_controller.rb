@@ -15,6 +15,17 @@ class WebhooksController < ApplicationController
     end
   end
 
+  # GET /api/whatsapp/opt_in_link — public wa.me deep link for signup/profile
+  # CTAs. The user's first message (prefilled START) both opts them in and
+  # opens a 24-hour service window.
+  def whatsapp_opt_in_link
+    number = ENV['WHATSAPP_BUSINESS_NUMBER'].presence || '254727854903'
+    render json: {
+      wa_link: "https://wa.me/#{number}?text=START",
+      display_phone_number: "+#{number}"
+    }
+  end
+
   private
 
   def handle_whatsapp_verify

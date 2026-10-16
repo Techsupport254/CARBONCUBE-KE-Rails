@@ -45,7 +45,18 @@ class Buyer::BuyersController < ApplicationController
       end
 
       @buyer = Buyer.new(buyer_params)
-      
+
+      # WhatsApp consent captured at signup — Meta requires an explicit
+      # opt-in action, so we record where and when it happened.
+      whatsapp_opt_in_param = params[:whatsapp_opt_in].nil? ? params.dig(:buyer, :whatsapp_opt_in) : params[:whatsapp_opt_in]
+      unless whatsapp_opt_in_param.nil?
+        @buyer.whatsapp_notifications = ActiveModel::Type::Boolean.new.cast(whatsapp_opt_in_param)
+        if @buyer.whatsapp_notifications && @buyer.has_attribute?(:whatsapp_opted_in_at)
+          @buyer.whatsapp_opted_in_at = Time.current
+          @buyer.whatsapp_opt_in_source = 'registration'
+        end
+      end
+
       # Capture device hash if provided for guest click association
       if params[:device_hash].present?
         @buyer.device_hash_for_association = params[:device_hash]

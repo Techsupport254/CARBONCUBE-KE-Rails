@@ -476,12 +476,19 @@ class WhatsAppCloudService
     return false unless user.respond_to?(:whatsapp_notifications)
 
     if OPT_OUT_KEYWORDS.include?(keyword)
-      user.update_column(:whatsapp_notifications, false) if user.whatsapp_notifications
+      updates = { whatsapp_notifications: false }
+      updates[:whatsapp_opt_in_source] = 'whatsapp_keyword' if user.has_attribute?(:whatsapp_opt_in_source)
+      user.update_columns(updates) if user.whatsapp_notifications
       send_message(to, "You've been unsubscribed from Carbon Cube Kenya notifications. Reply START to resubscribe.")
       Rails.logger.info "[WhatsAppCloudService] #{user.class.name} #{user.id} opted out of WhatsApp notifications (STOP)"
       true
     elsif OPT_IN_KEYWORDS.include?(keyword)
-      user.update_column(:whatsapp_notifications, true) unless user.whatsapp_notifications
+      updates = { whatsapp_notifications: true }
+      if user.has_attribute?(:whatsapp_opted_in_at)
+        updates[:whatsapp_opted_in_at] = Time.current
+        updates[:whatsapp_opt_in_source] = 'whatsapp_keyword'
+      end
+      user.update_columns(updates) unless user.whatsapp_notifications
       send_message(to, "You're subscribed to Carbon Cube Kenya notifications. Reply STOP to opt out anytime.")
       Rails.logger.info "[WhatsAppCloudService] #{user.class.name} #{user.id} resubscribed to WhatsApp notifications (START)"
       true

@@ -702,6 +702,8 @@ Rails.application.routes.draw do
   # WhatsApp Cloud API webhook (Meta) — verification + events
   get 'webhooks/whatsapp', to: 'webhooks#whatsapp'
   post 'webhooks/whatsapp', to: 'webhooks#whatsapp'
+  # Public wa.me deep link for opt-in CTAs (signup, profile settings)
+  get 'whatsapp/opt_in_link', to: 'webhooks#whatsapp_opt_in_link'
 
   # Device tokens for push notifications
   resources :device_tokens, only: [:create] do
