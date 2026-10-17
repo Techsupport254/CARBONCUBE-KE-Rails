@@ -119,6 +119,7 @@ class Offer < ApplicationRecord
   before_save :set_defaults
   after_save :update_status_based_on_timing
   after_save :notify_status_change, if: :saved_change_to_status?
+  after_commit :clear_buyer_offers_cache
   
   # Methods
   def active?
@@ -517,5 +518,9 @@ class Offer < ApplicationRecord
     # Implement buy X get Y logic
     # This would depend on the discount_config JSON structure
     0
+  end
+
+  def clear_buyer_offers_cache
+    Rails.cache.delete_matched("buyer_offers_*") rescue nil
   end
 end
