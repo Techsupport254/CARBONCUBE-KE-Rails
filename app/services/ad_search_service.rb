@@ -102,7 +102,7 @@ class AdSearchService
              AND branches.latitude IS NOT NULL
              AND branches.longitude IS NOT NULL)
         SQL
-        scope
+        raw_ads = scope
           .includes(
             :category,
             :subcategory,
@@ -110,12 +110,15 @@ class AdSearchService
             seller: { seller_tier: :tier }
           )
           .order(Arel.sql("#{distance_sql} ASC NULLS LAST, ads.created_at DESC"))
-          .limit(per_page)
+          .limit([per_page * 2, 48].max)
           .offset((page - 1) * per_page)
           .to_a
+        apply_slate_diversity_to_ads(raw_ads, max_per_seller: 2).first(per_page)
       else
-        scope
-          .joins(:seller, seller: { seller_tier: :tier })
+        raw_ads = scope
+          .joins(:seller)
+          .joins('LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id')
+          .joins('LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id')
           .select('ads.*,
                    CASE tiers.id
                      WHEN 4 THEN 1
@@ -137,9 +140,10 @@ class AdSearchService
                             WHEN 1 THEN 4
                             ELSE 5
                           END ASC, RANDOM()'))
-          .limit(per_page)
+          .limit([per_page * 2, 48].max)
           .offset((page - 1) * per_page)
           .to_a # materialize — a lazy Relation can't be cached
+        apply_slate_diversity_to_ads(raw_ads, max_per_seller: 2).first(per_page)
       end
     end
 
@@ -276,6 +280,7 @@ class AdSearchService
       syn_terms = synonym_terms(normalized_query) - tokens
 
       seller_ids = ads.map(&:seller_id).compact.uniq
+      pool_seller_counts = ads.group_by(&:seller_id).transform_values(&:size)
       branch_coords_by_seller = if lat.present? && lng.present? && seller_ids.any?
         Branch.where(seller_id: seller_ids)
               .where.not(latitude: nil)
@@ -286,7 +291,7 @@ class AdSearchService
       end
 
       scored = ads.map do |ad|
-        score, relevant = deterministic_score(ad, normalized_query, tokens, syn_terms, search_intent, popularity, shop_scores)
+        score, relevant = deterministic_score(ad, normalized_query, tokens, syn_terms, search_intent, popularity, shop_scores, pool_seller_counts)
 
         # Proximity score for near-me
         dist_km = nil
@@ -322,14 +327,19 @@ class AdSearchService
         scored = scored.select { |item| item[:relevant] }
       end
 
-      scored.sort_by { |item| [-item[:score], item[:distance] || 9999, tier_priority(item[:ad]), -item[:ad].created_at.to_i, rand] }
-            .map { |item| item[:ad] }
+      sorted = scored.sort_by { |item| [-item[:score], item[:distance] || 9999, tier_priority(item[:ad]), -item[:ad].created_at.to_i, rand] }
+
+      matched_shop_ids = shop_scores.select { |_seller_id, s| s >= SHOP_MATCH_MIN_SCORE }.keys
+      diversified = apply_slate_diversity(sorted, max_per_seller: 2, exempt_seller_ids: matched_shop_ids)
+      final_ranked = inject_small_seller_exploration(diversified, pool_seller_counts)
+
+      final_ranked.map { |item| item[:ad] }
     end
 
     # Returns [score, relevant]. `relevant` is true when the ad has at least
     # one signal tying it to the query (text, synonym, shop, or intent-term
     # match) — pure quality/popularity points do not count.
-    def deterministic_score(record, normalized_query, tokens, syn_terms, search_intent, popularity, shop_scores)
+    def deterministic_score(record, normalized_query, tokens, syn_terms, search_intent, popularity, shop_scores, pool_seller_counts = nil)
       score = 0.0
       relevant = false
       title = record.title.to_s.downcase.strip
@@ -415,7 +425,7 @@ class AdSearchService
         relevant ||= shop_boost.positive?
       end
 
-      score += quality_boosts(record, title)
+      score += quality_boosts(record, title, pool_seller_counts)
       score += popularity[record.id].to_f
 
       [[score, 0].max, relevant]
@@ -468,15 +478,76 @@ class AdSearchService
       search_intent[key] || search_intent[key.to_s]
     end
 
-    # Quality boosts carried over from the previous scoring logic.
-    def quality_boosts(record, title)
+    # Quality & merchant meritocracy boosts:
+    # Rewards listing completeness (photos, specs, descriptions) and seller
+    # responsiveness, giving active small/free sellers an organic path to rank
+    # alongside established paid merchants without hurting paid monetization.
+    def quality_boosts(record, title, pool_seller_counts = nil)
       boost = 0
+
+      # Document verification trust bonus
       boost += 5 if record.seller&.document_verified?
+
+      # Premium subscription tier baseline boost (paid monetization protection)
       boost += 5 if record.seller&.seller_tier&.tier_id == 4
-      days_old = ((Time.current - record.created_at) / 1.day).to_i
-      boost += [0, RECENCY_WINDOW_DAYS - days_old].max
+
+      # 1. Media quality (authentic multi-photo listings)
+      m_count = media_count(record)
+      if m_count >= 4
+        boost += 12
+      elsif m_count >= 2
+        boost += 6
+      end
+
+      # 2. Specifications completeness (RAM, storage, specs filled in)
+      if record.specifications.is_a?(Hash) && record.specifications.present?
+        boost += 8
+      end
+
+      # 3. Description depth
+      desc_len = record.description.to_s.strip.length
+      if desc_len >= 100
+        boost += 6
+      elsif desc_len >= 40
+        boost += 3
+      end
+
+      # 4. Brand & model clarity
+      boost += 5 if record.brand.present? && record.model.present?
+
+      # 5. Seller responsiveness / active SLA
+      if record.seller&.last_active_at.present?
+        hours_since_active = ((Time.current - record.seller.last_active_at) / 1.hour).to_f
+        if hours_since_active <= 2.0
+          boost += 12 # Active right now / fast replier
+        elsif hours_since_active <= 24.0
+          boost += 6  # Active today
+        elsif hours_since_active <= 72.0
+          boost += 2
+        end
+      end
+
+      # 6. Freshness decay (cold-start discovery for new listings)
+      hours_old = ((Time.current - record.created_at) / 1.hour).to_f
+      if hours_old <= 24.0
+        boost += 15 # Brand new within 24h
+      elsif hours_old <= 48.0
+        boost += 10 # Listed within 48h
+      else
+        days_old = (hours_old / 24.0).to_i
+        boost += [0, RECENCY_WINDOW_DAYS - days_old].max
+      end
+
+      # 7. Small / emerging seller quality boost
+      # Free/basic tier or emerging sellers with <= 3 ads in this pool who provide quality listings
+      if small_or_free_seller?(record.seller, pool_seller_counts) && m_count >= 2 && desc_len >= 40
+        boost += 10
+      end
+
+      # Reasonable price reward
       boost += 2 if record.price.present? && record.price > 0 && record.price < 500_000
       boost -= 5 if title.length > 100
+
       boost
     end
 
@@ -495,6 +566,108 @@ class AdSearchService
       when 2 then 3 # Basic
       when 1 then 4 # Free
       else 5        # Unknown
+      end
+    end
+
+    # === Small Seller Visibility & Slate Diversity Helpers =================
+
+    # Anti-clumping (Maximal Marginal Relevance):
+    # Prevents any single seller from dominating the first page of search results.
+    # By default, a seller gets at most `max_per_seller` items in the primary results slate,
+    # pushing overflow items down so diverse sellers get immediate exposure.
+    def apply_slate_diversity(sorted_items, max_per_seller: 2, exempt_seller_ids: [])
+      return sorted_items if sorted_items.size <= max_per_seller
+
+      exempt_set = Array(exempt_seller_ids).to_set
+      primary = []
+      overflow = []
+      seller_counts = Hash.new(0)
+
+      sorted_items.each do |item|
+        sid = item[:ad].seller_id
+        if exempt_set.include?(sid) || seller_counts[sid] < max_per_seller
+          primary << item
+          seller_counts[sid] += 1
+        else
+          overflow << item
+        end
+      end
+
+      primary + overflow
+    end
+
+    # Same diversity logic for raw Ad records (used by browse_page_uncached).
+    def apply_slate_diversity_to_ads(ads, max_per_seller: 2)
+      return ads if ads.size <= max_per_seller
+
+      primary = []
+      overflow = []
+      seller_counts = Hash.new(0)
+
+      ads.each do |ad|
+        sid = ad.seller_id
+        if seller_counts[sid] < max_per_seller
+          primary << ad
+          seller_counts[sid] += 1
+        else
+          overflow << ad
+        end
+      end
+
+      primary + overflow
+    end
+
+    # Exploration slots (Discovery Bandits for Small/Free Sellers):
+    # Guarantees that at slots 4, 11, and 18 (1-indexed), if the top positions are
+    # dominated by commercial/paid merchants, qualified small/free seller listings
+    # are given discovery impressions.
+    EXPLORATION_SLOT_INDICES = [3, 10, 17].freeze # 0-indexed for slots 4, 11, 18
+
+    def inject_small_seller_exploration(items, pool_seller_counts = nil)
+      return items if items.size < 4
+
+      pool = items.dup
+      EXPLORATION_SLOT_INDICES.each do |slot_idx|
+        break if slot_idx >= pool.size
+
+        # If this slot already belongs to a small/free seller, keep it
+        next if small_or_free_seller?(pool[slot_idx][:ad].seller, pool_seller_counts)
+
+        # Look ahead in the remaining candidates (within next 40 items) for an eligible candidate
+        candidate_offset = pool.drop(slot_idx + 1).first(40).index do |candidate|
+          small_or_free_seller?(candidate[:ad].seller, pool_seller_counts) && candidate[:relevant]
+        end
+
+        if candidate_offset
+          candidate_abs_idx = slot_idx + 1 + candidate_offset
+          small_item = pool.delete_at(candidate_abs_idx)
+          pool.insert(slot_idx, small_item)
+        end
+      end
+
+      pool
+    end
+
+    def small_or_free_seller?(seller, pool_seller_counts = nil)
+      return true unless seller
+
+      tier_id = seller.seller_tier&.tier_id
+      return true if tier_id.nil? || tier_id <= 2
+      return true if pool_seller_counts && pool_seller_counts[seller.id].to_i <= 3
+
+      false
+    end
+
+    def media_count(record)
+      m = record.media
+      if m.is_a?(Array)
+        m.reject(&:blank?).size
+      elsif m.is_a?(String) && m.start_with?('[')
+        (JSON.parse(m) rescue []).reject(&:blank?).size
+      elsif m.present?
+        1
+      else
+        0
       end
     end
 
@@ -597,22 +770,22 @@ class AdSearchService
 
         if name_norm == query_norm ||
            (name_distinctive.any? && name_distinctive.sort == query_distinctive.sort)
-          next 150
+          next 250
         end
 
         if query_distinctive.any? && (query_distinctive - name_tokens).empty?
-          next 120
+          next 200
         end
 
         if query_distinctive.any? &&
            (name_norm.include?(query_norm) ||
             (name_distinctive.any? && query_norm.include?(name_norm)))
-          next 90
+          next 150
         end
 
         if query_distinctive.any? &&
            query_distinctive.all? { |t| name_tokens.any? { |nt| shop_tokens_close?(t, nt) } }
-          next 60
+          next 100
         end
 
         nil

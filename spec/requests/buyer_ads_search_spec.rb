@@ -124,4 +124,77 @@ RSpec.describe 'Buyer Ads Search', type: :request do
       expect(ads.map { |ad| ad['title'] }).to include('Cordless Angle Grinder')
     end
   end
+
+  describe 'small seller visibility & anti-clumping' do
+    let!(:big_seller) { create_seller(enterprise_name: 'Mega Tool Depot', uid: 'mega-uid') }
+    let!(:small_seller) { create_seller(enterprise_name: 'Solo Craft Tools', uid: 'solo-uid') }
+
+    it 'prevents a single seller from monopolizing the top results slate (anti-clumping)' do
+      # Big seller lists 4 wrenches
+      4.times { |i| create_ad(seller: big_seller, title: "Torque Wrench Pro #{i}") }
+      # Small seller lists 1 wrench
+      create_ad(seller: small_seller, title: 'Torque Wrench Essential')
+
+      ads = search_ads('torque wrench')
+
+      # The top 3 should not be all 3 from big seller; small seller should appear in top 3
+      top_sellers = ads.first(3).map { |ad| ad['enterprise_name'] }
+      expect(top_sellers).to include('Solo Craft Tools')
+      expect(top_sellers.count('Mega Tool Depot')).to be <= 2
+    end
+
+    it 'promotes responsive sellers with complete listings over inactive sparse listings' do
+      responsive_seller = create_seller(enterprise_name: 'Responsive Tech', uid: 'resp-uid')
+      responsive_seller.update!(last_active_at: 10.minutes.ago)
+
+      inactive_seller = create_seller(enterprise_name: 'Inactive Depot', uid: 'inact-uid')
+      inactive_seller.update!(last_active_at: 30.days.ago)
+
+      # Responsive seller has complete listing: 4 photos, specs, description >= 100 chars
+      ad_complete = responsive_seller.ads.create!(
+        title: 'Impact Driver Kit',
+        description: 'Comprehensive heavy-duty impact driver with brushless motor and dual lithium-ion batteries included for pro work.',
+        price: 250,
+        brand: 'DeWalt',
+        manufacturer: 'Stanley',
+        category: category,
+        subcategory: subcategory,
+        condition: 'brand_new',
+        weight_unit: 'Grams',
+        media: ['https://example.com/1.jpg', 'https://example.com/2.jpg', 'https://example.com/3.jpg', 'https://example.com/4.jpg'],
+        specifications: { 'voltage' => '20V', 'torque' => '200Nm' }
+      )
+
+      # Inactive seller has bare listing: 1 photo, short description, no specs
+      ad_bare = inactive_seller.ads.create!(
+        title: 'Impact Driver Kit',
+        description: 'Just driver',
+        price: 250,
+        brand: 'DeWalt',
+        manufacturer: 'Stanley',
+        category: category,
+        subcategory: subcategory,
+        condition: 'brand_new',
+        weight_unit: 'Grams',
+        media: ['https://example.com/1.jpg']
+      )
+
+      ads = search_ads('Impact Driver Kit')
+
+      expect(ads.first['enterprise_name']).to eq('Responsive Tech')
+    end
+
+    it 'reserves exploration slots for relevant small sellers when paid merchants fill the top positions' do
+      # Big seller has 10 items
+      10.times { |i| create_ad(seller: big_seller, title: "Precision Screwdriver Set #{i}") }
+      # Small seller has 1 item
+      create_ad(seller: small_seller, title: 'Precision Screwdriver Set Basic')
+
+      ads = search_ads('precision screwdriver set')
+
+      # Small seller should appear within the first 4 slots due to exploration / anti-clumping
+      top_4_sellers = ads.first(4).map { |ad| ad['enterprise_name'] }
+      expect(top_4_sellers).to include('Solo Craft Tools')
+    end
+  end
 end
