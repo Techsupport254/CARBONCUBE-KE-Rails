@@ -1,7 +1,8 @@
 # app/controllers/buyer/categories_controller.rb
 class Buyer::CategoriesController < ApplicationController
   def index
-    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v5', expires_in: 5.minutes) do
+    expires_in 1.hour, public: true, 'stale-while-revalidate': 1.day
+    @categories = Rails.cache.fetch('buyer_categories_with_ads_count_v5', expires_in: 1.hour) do
       # Precompute active ads count per category and subcategory using the single source of truth:
       # active undeleted ads with valid images belonging to undeleted, unblocked sellers
       active_ads = Ad.active.with_valid_images.joins(:seller).where(flagged: false, sellers: { deleted: false, blocked: false })
