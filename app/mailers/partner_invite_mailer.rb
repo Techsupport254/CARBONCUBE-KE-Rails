@@ -16,7 +16,6 @@ class PartnerInviteMailer < ApplicationMailer
 
     mail(
       to: invite.email,
-      bcc: ENV['BREVO_EMAIL'],
       subject: invite.invite_kind == 'existing_account' ?
         "You've been invited to partner with Carbon Cube Kenya" :
         "Your Carbon Cube Kenya #{role_label(invite)} account is ready",
@@ -30,7 +29,6 @@ class PartnerInviteMailer < ApplicationMailer
 
     mail(
       to: invite.email,
-      bcc: ENV['BREVO_EMAIL'],
       subject: stage == 2 ?
         "Final reminder — your Carbon Cube invite expires soon" :
         "Reminder — complete your Carbon Cube #{role_label(invite)} setup",
@@ -46,7 +44,6 @@ class PartnerInviteMailer < ApplicationMailer
     @invite = invite
     mail(
       to: recipient,
-      bcc: ENV['BREVO_EMAIL'],
       subject: "#{invitee_name(invite)} joined as #{role_label(invite)}",
       react: react_props(stage: 'joined_internal')
     )
@@ -60,7 +57,6 @@ class PartnerInviteMailer < ApplicationMailer
     @invite = invite
     mail(
       to: recipient,
-      bcc: ENV['BREVO_EMAIL'],
       subject: "Invite expired — #{invitee_name(invite)} never joined",
       react: react_props(stage: 'expired_internal')
     )

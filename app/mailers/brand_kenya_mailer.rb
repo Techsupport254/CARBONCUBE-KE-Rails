@@ -41,7 +41,6 @@ class BrandKenyaMailer < ApplicationMailer
     @brand = brand
     mail(
       to: recipient,
-      bcc: ENV['BREVO_EMAIL'],
       subject: "#{brand.name} is in Brand Kenya. Complete your profile",
       react: react_props
     )
@@ -64,7 +63,6 @@ class BrandKenyaMailer < ApplicationMailer
       end
     mail(
       to: recipient,
-      bcc: ENV['BREVO_EMAIL'],
       subject: subject,
       react: cold_outreach_props
     )

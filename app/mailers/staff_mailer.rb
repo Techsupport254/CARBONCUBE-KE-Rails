@@ -25,7 +25,6 @@ class StaffMailer < ApplicationMailer
 
     mail(
       to: user.email,
-      bcc: ENV['BREVO_EMAIL'],
       subject: "Your Carbon Cube Kenya #{@role.capitalize} account is ready",
       react: {
         name: @name,
@@ -64,7 +63,6 @@ class StaffMailer < ApplicationMailer
 
     mail(
       to: user.email,
-      bcc: ENV['BREVO_EMAIL'],
       subject: "Your Carbon Cube Kenya #{@role.capitalize} account was updated",
       react: {
         name: @name,
