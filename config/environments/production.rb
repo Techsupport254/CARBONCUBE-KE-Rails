@@ -1,4 +1,5 @@
 require "active_support/core_ext/integer/time"
+require "ipaddr"
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -107,11 +108,18 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
 
-  # Allow the public Carbon domains, their subdomains, and any extra hosts
-  # supplied via environment variables (e.g. temporary preview/staging hosts).
+  # Allow the public Carbon domains, their subdomains, internal docker networks,
+  # and any extra hosts supplied via environment variables.
   config.hosts = [
     ".carboncube-ke.com",
     "carboncube-ke.com",
+    /.*carboncube.*/,
+    /.*\.dokploy/,
+    "localhost",
+    "127.0.0.1",
+    IPAddr.new("10.0.0.0/8"),
+    IPAddr.new("172.16.0.0/12"),
+    IPAddr.new("192.168.0.0/16"),
     ENV.fetch("HOST", nil).presence,
     *ENV.fetch("RAILS_ALLOWED_HOSTS", "").split(",").map(&:strip).compact_blank
   ].compact
