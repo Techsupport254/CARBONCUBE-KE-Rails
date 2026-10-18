@@ -1760,58 +1760,45 @@ class Buyer::AdsController < ApplicationController
     # Enhanced shop search - find shops that match query OR have products matching the query
     matching_shops = []
     if query.present?
-      # Find shops that match the search query by name with broad matching
-      query_words = query.split(/\s+/)
-      shop_patterns = []
-      
-      query_words.each do |word|
-        shop_patterns += [
-          "%#{word}%",           # Exact word match
-          "%#{word[0..-2]}%",    # Remove last character
-          "%#{word[0..-3]}%",    # Remove last 2 characters
-          "%#{word}s%",          # Add 's'
-          "%#{word}er%",         # Add 'er'
-          "%#{word}ing%",        # Add 'ing'
-          "%#{word}ed%",         # Add 'ed'
-        ]
+      stop_words = Set.new(%w[and or the in on at to for of with a an & is are])
+      raw_words = query.strip.split(/\s+/).reject(&:blank?)
+      significant_words = raw_words.reject { |w| stop_words.include?(w.downcase) }
+      significant_words = raw_words if significant_words.empty?
+
+      # 1. Name matching: Exact full phrase match + significant keywords (no single-char sub-patterns!)
+      exact_name_query = "%#{query.strip}%"
+      name_conditions = ['enterprise_name ILIKE ? OR fullname ILIKE ?']
+      name_bindings = [exact_name_query, exact_name_query]
+
+      significant_words.select { |w| w.length >= 2 }.each do |w|
+        name_conditions << '(enterprise_name ILIKE ? OR fullname ILIKE ?)'
+        pat = "%#{w}%"
+        name_bindings << pat << pat
       end
-      
+
       name_matching_shops = Seller.joins(:seller_tier)
                                  .where(blocked: false, deleted: false)
-                                 .where((shop_patterns.map { 'enterprise_name ILIKE ?' } + shop_patterns.map { 'fullname ILIKE ?' }).join(' OR '), *shop_patterns, *shop_patterns)
+                                 .where(name_conditions.join(' OR '), *name_bindings)
                                  .includes({ seller_tier: :tier }, :branches, :county)
-      
-      # Find shops that have products matching the search query
-      # Split query into individual words for better matching
-      query_words = query.split(/\s+/).reject(&:blank?)
-      
-      if query_words.length > 1
-        # For multi-word queries, search for shops that have products containing ALL words
-        conditions = query_words.map do |word|
-          '(ads.title ILIKE :word OR ads.description ILIKE :word OR categories.name ILIKE :word OR subcategories.name ILIKE :word)'
-        end.join(' AND ')
-        
-        product_matching_shops = Seller.joins(:seller_tier, :ads)
-                                      .joins('JOIN categories ON ads.category_id = categories.id')
-                                      .joins('JOIN subcategories ON ads.subcategory_id = subcategories.id')
-                                      .where(blocked: false, deleted: false)
-                                      .where('ads.flagged = ?', false)
-                                      .where(conditions, query_words.map { |word| { word: "%#{word}%" } }.reduce({}, :merge))
-                                      .includes({ seller_tier: :tier }, :branches, :county)
-                                      .distinct
+
+      # 2. Product matching: Shops whose ads match the query or significant words
+      product_matching_shops = if significant_words.any?
+        bind_hash = {}
+        cond_clauses = significant_words.each_with_index.map do |word, idx|
+          key = "w#{idx}".to_sym
+          bind_hash[key] = "%#{word}%"
+          "(ads.title ILIKE :#{key} OR ads.brand ILIKE :#{key})"
+        end
+        Seller.joins(:seller_tier, :ads)
+              .where(blocked: false, deleted: false)
+              .where(ads: { flagged: false })
+              .where(cond_clauses.join(' OR '), bind_hash)
+              .includes({ seller_tier: :tier }, :branches, :county)
+              .distinct
       else
-        # For single word queries, use the original logic
-        product_matching_shops = Seller.joins(:seller_tier, :ads)
-                                      .joins('JOIN categories ON ads.category_id = categories.id')
-                                      .joins('JOIN subcategories ON ads.subcategory_id = subcategories.id')
-                                      .where(blocked: false, deleted: false)
-                                      .where('ads.flagged = ?', false)
-                                      .where('ads.title ILIKE :query OR ads.description ILIKE :query OR categories.name ILIKE :query OR subcategories.name ILIKE :query', 
-                                             query: "%#{query}%")
-                                      .includes({ seller_tier: :tier }, :branches, :county)
-                                      .distinct
+        []
       end
-      
+
       # Combine and deduplicate shops
       all_matching_shops = (name_matching_shops + product_matching_shops).uniq
 
@@ -1821,10 +1808,43 @@ class Buyer::AdsController < ApplicationController
         Ad.active.with_valid_images.where(seller_id: shop_ids, flagged: false).group(:seller_id).count : {}
       avg_ratings_by_shop = shop_ids.any? ?
         Ad.joins(:reviews).where(seller_id: shop_ids).group(:seller_id).average('reviews.rating') : {}
+      matching_ads_by_shop = shop_ids.any? ?
+        Ad.where(seller_id: shop_ids, flagged: false).where('title ILIKE ?', "%#{query.strip}%").group(:seller_id).count : {}
 
-      # Calculate shop scores for ranking
+      # Calculate shop scores for ranking (relevance to user query always comes first!)
+      query_norm = query.strip.downcase
+
       matching_shops = all_matching_shops.map do |shop|
-        # Calculate various scoring factors
+        shop_name = shop.enterprise_name.to_s.strip.downcase
+        shop_full = shop.fullname.to_s.strip.downcase
+
+        # Name Match Relevance Scoring (Heavily weighted so navigational searches rank at the very top)
+        name_match_score = 0
+        if shop_name == query_norm || shop_full == query_norm
+          # Exact full match: User typed the exact business name!
+          name_match_score = 1500
+        elsif shop_name.start_with?(query_norm) || query_norm.start_with?(shop_name)
+          name_match_score = 1000
+        elsif shop_name.include?(query_norm) || query_norm.include?(shop_name)
+          name_match_score = 800
+        else
+          # Token overlap on significant words
+          matched_count = significant_words.count do |w|
+            w_lower = w.downcase
+            shop_name.include?(w_lower) || shop_full.include?(w_lower)
+          end
+
+          if matched_count > 0
+            ratio = matched_count.to_f / significant_words.length
+            first_word_match = significant_words.first && (shop_name.include?(significant_words.first.downcase) || shop_full.include?(significant_words.first.downcase))
+            first_word_bonus = first_word_match ? 300 : 0
+            name_match_score = (ratio * 500).round + first_word_bonus
+          end
+        end
+
+        # Ad title match bonus: Did this shop post an ad with this exact search term?
+        ad_match_bonus = (matching_ads_by_shop[shop.id].to_i > 0) ? 300 : 0
+
         tier_score = case shop.seller_tier&.tier&.id
                     when 4 then 100  # Premium
                     when 3 then 80   # Gold
@@ -1832,23 +1852,17 @@ class Buyer::AdsController < ApplicationController
                     when 1 then 40   # Bronze / Micro
                     else 40          # Micro
                     end
-        
-        # Product count score (more products = higher score)
+
         product_count = product_counts_by_shop[shop.id] || 0
-        product_score = [product_count * 2, 50].min # Cap at 50 points
-        
-        # Rating score (if reviews exist) - get overall average for the seller
+        product_score = [product_count * 2, 50].min
+
         avg_rating = avg_ratings_by_shop[shop.id]
         avg_rating = avg_rating ? avg_rating.to_f : 0.0
         rating_score = avg_rating > 0 ? (avg_rating * 10).round : 0
-        
-        # Recency score (newer shops get slight boost)
+
         created_at = shop.created_at.is_a?(Time) ? shop.created_at : Time.parse(shop.created_at.to_s)
         days_since_created = (Time.current - created_at) / 1.day
         recency_score = [30 - days_since_created.to_i, 0].max
-        
-        # Name match bonus (shops with name matching get extra points)
-        name_match_bonus = shop.enterprise_name&.downcase&.include?(query.downcase) ? 20 : 0
 
         # Proximity score & distance for Near Me (checking all branches in memory)
         distance_km = nil
@@ -1874,10 +1888,9 @@ class Buyer::AdsController < ApplicationController
                               end
           end
         end
-        
-        # Calculate total score with proximity
-        total_score = tier_score + product_score + rating_score + recency_score + name_match_bonus + proximity_score
-        
+
+        total_score = name_match_score + ad_match_bonus + tier_score + product_score + rating_score + recency_score + proximity_score
+
         {
           shop: shop,
           score: total_score,
@@ -1885,7 +1898,7 @@ class Buyer::AdsController < ApplicationController
           product_score: product_score,
           rating_score: rating_score,
           recency_score: recency_score,
-          name_match_bonus: name_match_bonus,
+          name_match_bonus: name_match_score,
           proximity_score: proximity_score,
           distance_km: distance_km,
           product_count: product_count,
@@ -1990,10 +2003,10 @@ class Buyer::AdsController < ApplicationController
   def popular_searches
     query = params[:q].to_s.strip.downcase
 
-    # Cache the full formatted list (expensive: ~50 sequential LIKE-based DB queries)
-    # for 10 minutes. Query filtering and limiting are applied on the cached result
-    # so that autocomplete requests (with ?q=) stay fast without re-hitting the DB.
-    formatted_searches = Rails.cache.fetch('popular_searches_full_v1', expires_in: 10.minutes) do
+    # Cache the full formatted list for 6 hours.
+    # Query filtering and limiting are applied on the cached result
+    # so that autocomplete requests (with ?q=) stay instantaneous.
+    formatted_searches = Rails.cache.fetch('popular_searches_full_v2', expires_in: 6.hours) do
       build_popular_searches_data
     end
 
@@ -2014,13 +2027,32 @@ class Buyer::AdsController < ApplicationController
       popular_searches: formatted_searches,
       total: formatted_searches.length
     }
+  rescue => e
+    Rails.logger.error "Error in popular_searches: #{e.message}"
+    render json: {
+      popular_searches: [
+        { term: 'phone', count: 100, type: 'electronics' },
+        { term: 'battery', count: 80, type: 'automotive' },
+        { term: 'laptop', count: 60, type: 'electronics' },
+        { term: 'samsung', count: 50, type: 'electronics' },
+        { term: 'filter', count: 40, type: 'automotive' },
+        { term: 'iphone', count: 30, type: 'electronics' },
+        { term: 'tyre', count: 20, type: 'automotive' }
+      ],
+      total: 7
+    }
   end
 
-  # Builds the full list of popular searches with images, prices, and category info.
+  # Builds the list of popular searches with images, prices, and category info.
   # Extracted from popular_searches to allow the result to be cached as a unit.
   def build_popular_searches_data
-    # Get popular searches from Redis analytics
-    redis_searches = SearchRedisService.popular_searches(50, :weekly)
+    # Get popular searches from Redis analytics safely
+    redis_searches = begin
+      SearchRedisService.popular_searches(25, :weekly) || []
+    rescue => e
+      Rails.logger.warn "SearchRedisService popular_searches error: #{e.message}"
+      []
+    end
 
     # Add high-value product terms that have many results
     high_value_terms = [
@@ -2039,10 +2071,8 @@ class Buyer::AdsController < ApplicationController
       term = term_data[:term]
       threshold = term_data[:product_count_threshold]
 
-      # Check if this term has enough products
       product_count = get_product_count_for_term(term)
       if product_count >= threshold
-        # Use the higher count between Redis count and product count
         existing_count = redis_searches.find { |redis_term, _| redis_term.downcase == term.downcase }&.last || 0
         final_count = [existing_count, product_count].max
         additional_searches << [term, final_count]
@@ -2056,8 +2086,11 @@ class Buyer::AdsController < ApplicationController
     # Combine filtered Redis searches with additional high-value searches
     combined_searches = filtered_redis_searches + additional_searches
 
+    # Sort by count descending and only format top 20 items to avoid DB query overload
+    top_searches = combined_searches.sort_by { |_, count| -count.to_i }.first(20)
+
     # Format the response with images, prices, and category info
-    combined_searches.map do |term, count|
+    top_searches.map do |term, count|
       image_url = get_search_image(term)
       price_info = get_search_price_info(term)
       category_info = get_search_category_info(term)
@@ -2068,13 +2101,23 @@ class Buyer::AdsController < ApplicationController
         type: get_search_type(term)
       }
 
-      # Only include optional fields if they exist
       result[:image_url] = image_url if image_url.present?
       result.merge!(price_info) if price_info.present?
       result.merge!(category_info) if category_info.present?
 
       result
     end
+  rescue => e
+    Rails.logger.error "Error in build_popular_searches_data: #{e.message}"
+    [
+      { term: 'phone', count: 100, type: 'electronics' },
+      { term: 'battery', count: 80, type: 'automotive' },
+      { term: 'laptop', count: 60, type: 'electronics' },
+      { term: 'samsung', count: 50, type: 'electronics' },
+      { term: 'filter', count: 40, type: 'automotive' },
+      { term: 'iphone', count: 30, type: 'electronics' },
+      { term: 'tyre', count: 20, type: 'automotive' }
+    ]
   end
 
 
@@ -2106,35 +2149,44 @@ class Buyer::AdsController < ApplicationController
       coords_lat = has_coords ? lat : nil
       coords_lng = has_coords ? lng : nil
 
-      # If no user identity, fall back to best sellers (no personalization)
+      # Extract exclude_ad_ids to ensure recommendations never duplicates best sellers
+      raw_exclude = params[:exclude_ids] || params[:exclude_ad_ids]
+      exclude_ids = if raw_exclude.present?
+                      Array(raw_exclude).flat_map { |id| id.to_s.split(',') }.map(&:to_i).reject(&:zero?)
+                    else
+                      # Auto-exclude top 20 best sellers so recommendations and best sellers never collide
+                      calculate_best_sellers_fast(20, lat: coords_lat, lng: coords_lng).map { |b| b[:id] }
+                    end
+
+      # If no user identity, serve diverse discovery recommendations (distinct from best sellers)
       if device_hash.blank? && buyer_id.blank?
-        best_sellers = calculate_best_sellers_fast(limit, lat: coords_lat, lng: coords_lng)
-        Rails.logger.info "Recommendations no-identity: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
-        render json: best_sellers
+        recs = calculate_discovery_recommendations(limit, exclude_ad_ids: exclude_ids, lat: coords_lat, lng: coords_lng)
+        Rails.logger.info "Recommendations no-identity: count=#{recs.length}, version=v4.0-discovery, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: recs
         return
       end
 
       # Build user profile from recent engagement
       profile = build_user_profile(device_hash, buyer_id)
 
-      # If no meaningful engagement, fall back to best sellers
+      # If no meaningful engagement, serve diverse discovery recommendations
       if profile[:ad_ids].empty?
-        Rails.logger.info "No user profile for recommendations, falling back to best sellers"
-        best_sellers = calculate_best_sellers_fast(limit, lat: coords_lat, lng: coords_lng)
-        Rails.logger.info "Recommendations no-profile: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
-        render json: best_sellers
+        Rails.logger.info "No user profile for recommendations, serving discovery recommendations"
+        recs = calculate_discovery_recommendations(limit, exclude_ad_ids: exclude_ids, lat: coords_lat, lng: coords_lng)
+        Rails.logger.info "Recommendations no-profile: count=#{recs.length}, version=v4.0-discovery, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: recs
         return
       end
 
-      # Fetch personalized recommendations
-      recs = calculate_recommendations_fast(limit, profile, lat: coords_lat, lng: coords_lng)
+      # Fetch personalized recommendations (excluding best sellers / explicit exclusions)
+      recs = calculate_recommendations_fast(limit, profile, exclude_ad_ids: exclude_ids, lat: coords_lat, lng: coords_lng)
 
-      # Fallback to best sellers if empty
+      # Fallback to discovery recommendations if empty
       if recs.empty?
-        Rails.logger.info "No personalized recommendations found, falling back to best sellers"
-        best_sellers = calculate_best_sellers_fast(limit, lat: coords_lat, lng: coords_lng)
-        Rails.logger.info "Recommendations fallback: count=#{best_sellers.length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
-        render json: best_sellers
+        Rails.logger.info "No personalized recommendations found, falling back to discovery recommendations"
+        recs = calculate_discovery_recommendations(limit, exclude_ad_ids: exclude_ids, lat: coords_lat, lng: coords_lng)
+        Rails.logger.info "Recommendations fallback: count=#{recs.length}, version=v4.0-discovery, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: recs
         return
       end
 
@@ -2145,9 +2197,9 @@ class Buyer::AdsController < ApplicationController
       Rails.logger.error e.backtrace.join("\n")
       fallback_limit = limit || 100
       begin
-        best_sellers = calculate_best_sellers_fast(fallback_limit, lat: coords_lat, lng: coords_lng)
-        Rails.logger.info "Recommendations error-fallback: count=#{(best_sellers || []).length}, version=v4.0-demand, buyer=#{buyer_id}, device=#{device_hash}"
-        render json: best_sellers || []
+        recs = calculate_discovery_recommendations(fallback_limit, exclude_ad_ids: exclude_ids, lat: coords_lat, lng: coords_lng)
+        Rails.logger.info "Recommendations error-fallback: count=#{(recs || []).length}, version=v4.0-discovery, buyer=#{buyer_id}, device=#{device_hash}"
+        render json: recs || []
       rescue StandardError => fallback_error
         # DB/cache are both unreachable — degrade to an empty list, not a 500
         Rails.logger.error "Recommendations fallback also failed: #{fallback_error.message}"
@@ -2256,8 +2308,208 @@ class Buyer::AdsController < ApplicationController
     end
   end
 
-  def calculate_recommendations_fast(limit, profile, lat: nil, lng: nil)
+  def calculate_discovery_recommendations(limit, exclude_ad_ids: [], lat: nil, lng: nil)
+    rotation_key = Time.current.to_i / 600
+    exclude_clean = Array(exclude_ad_ids).map(&:to_i).reject(&:zero?).sort
+    exclude_hash = Digest::MD5.hexdigest(exclude_clean.join(','))
+    coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""
+    cache_key = "discovery_recs_v1_#{limit}_#{exclude_hash}#{coords_key}_#{rotation_key}"
+
+    recs = Rails.cache.fetch(cache_key, expires_in: 10.minutes, race_condition_ttl: 10.seconds) do
+      exclude_sql = exclude_clean.any? ? exclude_clean.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+
+      distance_join = if lat.present? && lng.present?
+        <<~SQL.squish
+          LEFT JOIN LATERAL (
+            SELECT
+              6371 * 2 * ASIN(SQRT(
+                POWER(SIN(RADIANS(#{lat.to_f} - branches.latitude) / 2), 2) +
+                COS(RADIANS(branches.latitude)) * COS(RADIANS(#{lat.to_f})) *
+                POWER(SIN(RADIANS(#{lng.to_f} - branches.longitude) / 2), 2))) AS distance_km,
+              branches.name as primary_branch_name,
+              branches.location as primary_branch_address
+            FROM branches
+            WHERE branches.seller_id = ads.seller_id
+              AND branches.latitude IS NOT NULL
+              AND branches.longitude IS NOT NULL
+            ORDER BY distance_km ASC
+            LIMIT 1
+          ) branch_distance ON true
+        SQL
+      else
+        ""
+      end
+
+      proximity_boost_sql = if lat.present? && lng.present?
+        <<~SQL.squish
+          + CASE
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 2.0 THEN 35.0
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 5.0 THEN 20.0
+              WHEN branch_distance.distance_km IS NOT NULL AND branch_distance.distance_km <= 15.0 THEN 10.0
+              ELSE 0.0
+            END
+        SQL
+      else
+        ""
+      end
+
+      sql = <<~SQL.squish
+        WITH diverse_candidates AS (
+          SELECT
+            ads.id,
+            ads.title,
+            ads.price,
+            ads.media,
+            ads.is_brand_kenya,
+            ads.slug,
+            ads.created_at,
+            ads.category_id,
+            ads.subcategory_id,
+            ads.seller_id,
+            ads.specifications,
+            sellers.fullname as seller_name,
+            sellers.document_verified as document_verified,
+            categories.name as category_name,
+            subcategories.name as subcategory_name,
+            COALESCE(tiers.id, 1) as seller_tier_id,
+            COALESCE(tiers.name, 'Free') as seller_tier_name,
+            #{distance_join.present? ? 'ROUND(branch_distance.distance_km::numeric, 1) as distance_km, branch_distance.primary_branch_name, branch_distance.primary_branch_address,' : 'NULL as distance_km, NULL as primary_branch_name, NULL as primary_branch_address,'}
+            COALESCE(ad_stats.review_count, 0) as review_count,
+            COALESCE(ad_stats.avg_rating, 0.0) as avg_rating,
+            COALESCE(ad_stats.click_count, 0) as click_count,
+            COALESCE(ad_stats.wishlist_count, 0) as wishlist_count,
+            (
+              CASE WHEN sellers.document_verified THEN 15.0 ELSE 0.0 END +
+              CASE WHEN COALESCE(ad_stats.review_count, 0) > 0 THEN (ad_stats.avg_rating * 5.0) ELSE 0.0 END +
+              CASE
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 18.0
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 10.0
+                WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 5.0
+                ELSE 0.0
+              END +
+              LN(COALESCE(ad_stats.click_count, 0) + 1) * 2.5 +
+              LN(COALESCE(ad_stats.wishlist_count, 0) + 1) * 2.0 +
+              CASE COALESCE(tiers.id, 1)
+                WHEN 4 THEN 3.0
+                WHEN 3 THEN 2.0
+                WHEN 2 THEN 1.0
+                ELSE 0.0
+              END
+              #{proximity_boost_sql}
+            ) as discovery_score,
+            ROW_NUMBER() OVER (
+              PARTITION BY ads.subcategory_id
+              ORDER BY
+                (
+                  CASE WHEN sellers.document_verified THEN 15.0 ELSE 0.0 END +
+                  CASE WHEN COALESCE(ad_stats.review_count, 0) > 0 THEN (ad_stats.avg_rating * 5.0) ELSE 0.0 END +
+                  CASE
+                    WHEN ads.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 18.0
+                    WHEN ads.created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 10.0
+                    WHEN ads.created_at >= CURRENT_DATE - INTERVAL '90 days' THEN 5.0
+                    ELSE 0.0
+                  END +
+                  LN(COALESCE(ad_stats.click_count, 0) + 1) * 2.5 +
+                  LN(COALESCE(ad_stats.wishlist_count, 0) + 1) * 2.0 +
+                  CASE COALESCE(tiers.id, 1)
+                    WHEN 4 THEN 3.0
+                    WHEN 3 THEN 2.0
+                    WHEN 2 THEN 1.0
+                    ELSE 0.0
+                  END
+                  #{proximity_boost_sql}
+                ) DESC,
+                ads.created_at DESC
+            ) as subcat_rank
+          FROM ads
+          LEFT JOIN ad_stats ON ad_stats.ad_id = ads.id
+          INNER JOIN sellers ON sellers.id = ads.seller_id
+          INNER JOIN categories ON categories.id = ads.category_id
+          INNER JOIN subcategories ON subcategories.id = ads.subcategory_id
+          LEFT JOIN seller_tiers ON sellers.id = seller_tiers.seller_id
+          LEFT JOIN tiers ON seller_tiers.tier_id = tiers.id
+          #{distance_join}
+          WHERE ads.deleted = false
+            AND ads.flagged = false
+            AND sellers.blocked = false
+            AND sellers.deleted = false
+            AND sellers.flagged = false
+            AND ads.media IS NOT NULL
+            AND ads.media != ''
+            AND ads.media::text != '[]'
+            AND (ads.media::jsonb -> 0) IS NOT NULL
+            AND ads.id NOT IN (#{exclude_sql})
+        )
+        SELECT *
+        FROM diverse_candidates
+        WHERE subcat_rank <= 2
+        ORDER BY discovery_score DESC
+        LIMIT #{ActiveRecord::Base.connection.quote([limit * 3, 200].max)}
+      SQL
+
+      results = ActiveRecord::Base.connection.execute(sql).to_a
+
+      results.first(limit).map do |row|
+        media_json = row['media']
+        media_urls = []
+        first_media_url = nil
+
+        if media_json.present?
+          begin
+            media_array = media_json.is_a?(String) ? (media_json.strip == '[]' || media_json.strip == 'null' ? [] : JSON.parse(media_json)) : media_json
+            if media_array.is_a?(Array) && media_array.any?
+              media_urls = media_array.select { |url| url.is_a?(String) && url.strip.length > 0 && (url.start_with?('http://') || url.start_with?('https://')) }
+              first_media_url = media_urls.first
+            end
+          rescue JSON::ParserError
+            if media_json.is_a?(String) && (media_json.start_with?('http://') || media_json.start_with?('https://'))
+              media_urls = [media_json]
+              first_media_url = media_json
+            end
+          end
+        end
+
+        {
+          ad_id: row['id'],
+          id: row['id'],
+          title: row['title'],
+          price: row['price']&.to_f || 0.0,
+          media: media_json,
+          media_urls: media_urls,
+          first_media_url: first_media_url,
+          created_at: row['created_at'],
+          seller_name: row['seller_name'],
+          seller_id: row['seller_id'],
+          category_name: row['category_name'],
+          subcategory_name: row['subcategory_name'],
+          specifications: row['specifications'],
+          seller_tier: row['seller_tier_id'],
+          seller_tier_name: row['seller_tier_name'],
+          slug: row_url_slug(row),
+          is_brand_kenya: row['is_brand_kenya'] == true,
+          distance_km: row['distance_km'] ? row['distance_km'].to_f.round(1) : nil,
+          primary_branch_name: row['primary_branch_name'],
+          primary_branch_address: row['primary_branch_address'],
+          document_verified: row['document_verified'] == true || row['document_verified'] == 't',
+          metrics: {
+            avg_rating: row['avg_rating']&.to_f&.round(2) || 0.0,
+            review_count: row['review_count']&.to_i || 0,
+            total_clicks: row['click_count']&.to_i || 0,
+            wishlist_count: row['wishlist_count']&.to_i || 0
+          },
+          comprehensive_score: row['discovery_score']&.to_f&.round(2) || 0.0,
+          algorithm_version: 'v4.0-discovery'
+        }
+      end
+    end
+
+    attach_engagement_counts(recs)
+  end
+
+  def calculate_recommendations_fast(limit, profile, exclude_ad_ids: [], lat: nil, lng: nil)
     rotation_key = Time.current.to_i / 900
+    exclude_clean = Array(exclude_ad_ids).map(&:to_i).reject(&:zero?).sort
+    exclude_hash = Digest::MD5.hexdigest(exclude_clean.join(','))
     profile_parts = [
       profile[:ad_ids].sort.join(','),
       profile[:category_ids].sort.join(','),
@@ -2268,10 +2520,11 @@ class Buyer::AdsController < ApplicationController
     ]
     profile_hash = Digest::MD5.hexdigest(profile_parts.join('|'))
     coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""
-    cache_key = "recommendations_v3_#{profile_hash}_#{limit}#{coords_key}_#{rotation_key}"
+    cache_key = "recommendations_v4_#{profile_hash}_#{exclude_hash}_#{limit}#{coords_key}_#{rotation_key}"
 
     recs = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
-      ad_ids_sql = profile[:ad_ids].any? ? profile[:ad_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
+      excluded_all = (profile[:ad_ids].to_a + exclude_clean).uniq
+      ad_ids_sql = excluded_all.any? ? excluded_all.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       subcategory_ids_sql = profile[:subcategory_ids].any? ? profile[:subcategory_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       category_ids_sql = profile[:category_ids].any? ? profile[:category_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
       seller_ids_sql = profile[:seller_ids].any? ? profile[:seller_ids].map { |id| ActiveRecord::Base.connection.quote(id) }.join(',') : 'NULL'
@@ -3696,13 +3949,13 @@ class Buyer::AdsController < ApplicationController
     subcategory = Subcategory.find_by('LOWER(name) LIKE ?', "%#{term_lower}%")
     return subcategory.image_url if subcategory&.image_url.present?
 
-    # For popular searches and other cases, check for product images
+    # For popular searches and other cases, check for product images matching title or brand (fast)
     product = Ad.active.with_valid_images
                   .joins(:seller)
                   .where(sellers: { blocked: false, deleted: false, flagged: false })
                   .where(flagged: false)
-                  .where('LOWER(title) LIKE ? OR LOWER(brand) LIKE ? OR LOWER(ads.description) LIKE ?',
-                         "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+                  .where('LOWER(title) LIKE ? OR LOWER(brand) LIKE ?',
+                         "%#{term_lower}%", "%#{term_lower}%")
                   .first
 
     return product.first_media_url if product&.first_media_url.present?
@@ -3714,63 +3967,46 @@ class Buyer::AdsController < ApplicationController
   def get_search_price_info(term)
     term_lower = term.downcase
 
-    # Get price range for products matching this term
+    # Get price range for products matching this term by title or brand
     base_query = Ad.active
                    .with_valid_images
                    .joins(:seller)
                    .where(sellers: { blocked: false, deleted: false, flagged: false })
                    .where(flagged: false)
-                   .where('LOWER(title) LIKE ? OR LOWER(brand) LIKE ? OR LOWER(ads.description) LIKE ?',
-                          "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+                   .where('LOWER(title) LIKE ? OR LOWER(brand) LIKE ?',
+                          "%#{term_lower}%", "%#{term_lower}%")
                    .where.not(price: nil)
                    .where('price > 0')
 
-    # Get regular prices
-    min_price = base_query.minimum(:price)&.to_f
-    max_price = base_query.maximum(:price)&.to_f
-    product_count = base_query.count
+    # Single aggregate query for min, max, count
+    stats = base_query.pick(Arel.sql('MIN(ads.price), MAX(ads.price), COUNT(ads.id)'))
+    return nil unless stats && stats[2].to_i > 0
+
+    min_price = stats[0]&.to_f
+    max_price = stats[1]&.to_f
+    product_count = stats[2].to_i
 
     return nil unless min_price && max_price && product_count > 0
 
-    # Check for discounted prices
-    discounted_query = base_query.joins(:offer_ads)
-                                .where(offer_ads: { is_active: true })
-                                .where('offer_ads.discounted_price < ads.price')
-
-    min_discounted = discounted_query.minimum('offer_ads.discounted_price')&.to_f
-    max_discounted = discounted_query.maximum('offer_ads.discounted_price')&.to_f
-    discounted_count = discounted_query.distinct.count('ads.id')
-
-    result = {
+    {
       min_price: min_price,
       max_price: max_price,
       product_count: product_count,
       price_range: min_price == max_price ? "Ksh #{min_price.to_i}" : "Ksh #{min_price.to_i} - #{max_price.to_i}"
     }
-
-    # Add discount info if available
-    if min_discounted && max_discounted && discounted_count > 0
-      result[:min_discounted_price] = min_discounted
-      result[:max_discounted_price] = max_discounted
-      result[:discounted_count] = discounted_count
-      result[:discounted_price_range] = min_discounted == max_discounted ?
-        "Ksh #{min_discounted.to_i}" : "Ksh #{min_discounted.to_i} - #{max_discounted.to_i}"
-    end
-
-    result
   end
 
   def get_search_category_info(term)
     term_lower = term.downcase
 
-    # Get category and subcategory info for products matching this term
+    # Get category and subcategory info for products matching this term by title or brand
     category_stats = Ad.active
                        .with_valid_images
                        .joins(:seller, :category, :subcategory)
                        .where(sellers: { blocked: false, deleted: false, flagged: false })
                        .where(flagged: false)
-                       .where('LOWER(ads.title) LIKE ? OR LOWER(ads.brand) LIKE ? OR LOWER(ads.description) LIKE ?',
-                              "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+                       .where('LOWER(ads.title) LIKE ? OR LOWER(ads.brand) LIKE ?',
+                              "%#{term_lower}%", "%#{term_lower}%")
                        .group('categories.name', 'subcategories.name')
                        .count
 
@@ -3789,14 +4025,14 @@ class Buyer::AdsController < ApplicationController
   def get_product_count_for_term(term)
     term_lower = term.downcase
 
-    # Count products matching this term with valid images
+    # Count products matching this term by title or brand
     Ad.active
       .with_valid_images
       .joins(:seller)
       .where(sellers: { blocked: false, deleted: false, flagged: false })
       .where(flagged: false)
-      .where('LOWER(ads.title) LIKE ? OR LOWER(ads.brand) LIKE ? OR LOWER(ads.description) LIKE ?',
-             "%#{term_lower}%", "%#{term_lower}%", "%#{term_lower}%")
+      .where('LOWER(ads.title) LIKE ? OR LOWER(ads.brand) LIKE ?',
+             "%#{term_lower}%", "%#{term_lower}%")
       .count
   end
 

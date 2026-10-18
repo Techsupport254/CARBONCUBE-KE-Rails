@@ -197,4 +197,22 @@ RSpec.describe 'Buyer Ads Search', type: :request do
       expect(top_4_sellers).to include('Solo Craft Tools')
     end
   end
+
+  describe 'recommendations and best sellers de-duplication' do
+    let!(:seller_a) { create_seller(enterprise_name: 'Shop Alpha', uid: 'alpha-uid') }
+    let!(:seller_b) { create_seller(enterprise_name: 'Shop Beta', uid: 'beta-uid') }
+
+    it 'excludes specified ad IDs from recommendations' do
+      ad1 = create_ad(seller: seller_a, title: 'Item 1')
+      ad2 = create_ad(seller: seller_b, title: 'Item 2')
+
+      get '/buyer/ads/recommendations', params: { exclude_ids: ad1.id.to_s, limit: 10 }
+      expect(response).to have_http_status(:ok)
+
+      recs = response.parsed_body
+      rec_ids = recs.map { |r| r['id'] }
+
+      expect(rec_ids).not_to include(ad1.id)
+    end
+  end
 end
