@@ -608,6 +608,7 @@ Rails.application.routes.draw do
         post 'offer', to: 'ads#create_offer'
         delete 'offer', to: 'ads#remove_offer'
         patch 'stock', to: 'ads#update_stock'
+        get 'coach', to: 'ads#coach'
       end
     end
 

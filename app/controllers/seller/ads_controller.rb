@@ -4,7 +4,7 @@ class Seller::AdsController < ApplicationController
   before_action :authenticate_seller, except: [:prefill, :conditions, :create]
   before_action :authenticate_for_create, only: [:create]
   before_action :set_branch_context, except: [:prefill, :conditions, :create]
-  before_action :set_ad, only: [:show, :update, :destroy]
+  before_action :set_ad, only: [:show, :update, :destroy, :coach]
   before_action :load_ad_with_offer, only: [:show]
 
 
@@ -70,6 +70,14 @@ class Seller::AdsController < ApplicationController
       ad_json[:offer_id] = active_offer_ad.offer.id
       ad_json[:minimum_quantity] = active_offer_ad.offer.minimum_order_amount
     end
+
+    coach_analysis = OrganicQualityCoachService.analyze(@ad) rescue nil
+    ad_json[:coach] = coach_analysis
+    ad_json[:organic_quality_score] = @ad.organic_quality_score.to_f
+    ad_json[:is_featured] = @ad.featured?
+    ad_json[:featured_until] = @ad.featured_until
+    ad_json[:in_cooldown] = @ad.in_featured_cooldown?
+    ad_json[:cooldown_until] = @ad.last_featured_at ? @ad.last_featured_at + OrganicFeaturedService::COOLDOWN_PERIOD : nil
     
     # Render the complete ad data with reviews and buyer details
     render json: {
@@ -472,6 +480,11 @@ class Seller::AdsController < ApplicationController
     else
       render json: { error: 'Unable to delete ad' }, status: :unprocessable_entity
     end
+  end
+
+  # GET /seller/ads/:id/coach
+  def coach
+    render json: OrganicQualityCoachService.analyze(@ad)
   end
 
   # POST /seller/ads/:id/offer
@@ -971,7 +984,12 @@ class Seller::AdsController < ApplicationController
         copy_clicks: copy_clicks[ad.id] || 0,
         call_clicks: call_clicks[ad.id] || 0,
         whatsapp_clicks: whatsapp_clicks[ad.id] || 0,
-        location_clicks: location_clicks[ad.id] || 0
+        location_clicks: location_clicks[ad.id] || 0,
+        organic_quality_score: ad.organic_quality_score.to_f,
+        is_featured: ad.featured?,
+        featured_until: ad.featured_until,
+        in_cooldown: ad.in_featured_cooldown?,
+        cooldown_until: ad.last_featured_at ? ad.last_featured_at + OrganicFeaturedService::COOLDOWN_PERIOD : nil
       )
     end
   end
