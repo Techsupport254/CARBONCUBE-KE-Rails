@@ -471,7 +471,7 @@ class MessagesController < ApplicationController
     
     # Get all messages from related conversations with preloaded ads & replies
     all_messages = Message.where(conversation_id: recipient_conv_ids.uniq)
-                          .includes(:reply_to_message, ad: [:category, :subcategory])
+                          .includes({ reply_to_message: :sender }, ad: [:category, :subcategory])
                           .order(created_at: :asc)
     
     # Include ad information for each message, filtering out messages deleted for current user
@@ -517,7 +517,7 @@ class MessagesController < ApplicationController
     
     # Get all messages from related conversations with preloaded ads & replies
     all_messages = Message.where(conversation_id: recipient_conv_ids.uniq)
-                          .includes(:reply_to_message, ad: [:category, :subcategory])
+                          .includes({ reply_to_message: :sender }, ad: [:category, :subcategory])
                           .order(created_at: :asc)
     
     # Include ad information for each message, filtering out messages deleted for current user
@@ -577,7 +577,7 @@ class MessagesController < ApplicationController
 
     # Get all messages from these conversations with preloaded ads & replies
     all_messages = Message.where(conversation_id: related_conv_ids.uniq)
-                          .includes(:reply_to_message, ad: [:category, :subcategory])
+                          .includes({ reply_to_message: :sender }, ad: [:category, :subcategory])
                           .order(created_at: :asc)
     
     # Include ad information for each message, filtering out messages deleted for current user

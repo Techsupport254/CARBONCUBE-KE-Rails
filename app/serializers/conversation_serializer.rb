@@ -12,9 +12,14 @@ class ConversationSerializer < ActiveModel::Serializer
 
   def whatsapp_window_expires_at
     return nil unless object.is_whatsapp?
-    last_customer_msg = object.messages.where(sender_type: %w[Buyer Seller]).order(created_at: :desc).first
-    return nil unless last_customer_msg
-    (last_customer_msg.created_at + 24.hours).iso8601
+    return @whatsapp_window_expires_at if defined?(@whatsapp_window_expires_at)
+
+    last_customer_msg = if scope.is_a?(Hash) && scope[:whatsapp_customer_messages]
+      scope[:whatsapp_customer_messages][object.id]
+    else
+      object.messages.where(sender_type: %w[Buyer Seller]).order(created_at: :desc).first
+    end
+    @whatsapp_window_expires_at = last_customer_msg ? (last_customer_msg.created_at + 24.hours).iso8601 : nil
   end
 
   def admin
@@ -83,6 +88,17 @@ class ConversationSerializer < ActiveModel::Serializer
                     seller_obj.branches.order(is_main_branch: :desc, id: :asc).first
                   end
 
+    st = seller_obj.seller_tier if seller_obj.association(:seller_tier).loaded?
+    st ||= seller_obj.seller_tier
+    tid = st&.tier_id || 1
+    tname = if st&.association(:tier)&.loaded? && st.tier
+      st.tier.name
+    elsif scope.is_a?(Hash) && scope[:tiers_lookup] && scope[:tiers_lookup][tid]
+      scope[:tiers_lookup][tid].name
+    else
+      seller_obj.tier_name
+    end
+
     {
       id: seller_obj.id,
       fullname: seller_obj.fullname,
@@ -97,8 +113,8 @@ class ConversationSerializer < ActiveModel::Serializer
       building: seller_obj.building,
       room: seller_obj.room,
       document_verified: seller_obj.document_verified,
-      tier_id: seller_obj.try(:tier_id) || seller_obj.seller_tier&.tier_id || 1,
-      tier_name: seller_obj.try(:tier_name) || seller_obj.tier&.name || 'Free',
+      tier_id: tid,
+      tier_name: tname,
       latitude: main_branch&.latitude&.to_f,
       longitude: main_branch&.longitude&.to_f,
       primary_branch_name: main_branch&.name,
@@ -121,9 +137,9 @@ class ConversationSerializer < ActiveModel::Serializer
       media_urls: object.ad.media_urls,
       media: object.ad.media,
       category: object.ad.category&.name,
-      location: object.ad.try(:seller)&.try(:location),
-      condition: object.ad.try(:condition),
-      brand: object.ad.try(:brand)
+      location: object.ad.seller&.location,
+      condition: object.ad.condition,
+      brand: object.ad.brand
     }
   end
 

@@ -79,48 +79,65 @@ class ConversationsController < ApplicationController
   end
 
   def online_status
-    participant_ids = params[:participant_ids] || []
-    online_status = {}
-    
-    participant_ids.each do |participant_id|
-      # Parse participant ID format: "buyer_123", "seller_456", "admin_789"
-      parts = participant_id.to_s.split('_')
+    participant_ids = Array(params[:participant_ids]).compact.uniq
+    return render json: { online_status: {} }, status: :ok if participant_ids.empty?
+
+    parsed = participant_ids.filter_map do |pid|
+      parts = pid.to_s.split('_', 2)
       next if parts.length < 2
-      
-      user_type = parts[0].downcase
-      user_id = parts[1]
-      
-      # Check if user is online using Redis or Rails cache
-      cache_key = "online_user_#{user_type}_#{user_id}"
-      is_online = begin
-        RedisConnection.exists?(cache_key) ||
-          Rails.cache.exist?(cache_key)
-      rescue
-        false
-      end
-      
-      # Get last_seen_at if offline
-      last_seen_at = nil
-      unless is_online
-        user_model = case user_type
-        when 'buyer' then Buyer
-        when 'seller' then Seller
-        when 'admin' then Admin
-        when 'sales' then SalesUser
-        when 'marketing' then MarketingUser
-        end
-        
-        user = user_model&.find_by(id: user_id)
-        last_seen_at = user.last_active_at if user&.respond_to?(:last_active_at)
-      end
-      
-      online_status[participant_id] = {
-        is_online: is_online,
-        last_seen_at: last_seen_at
-      }
+      [pid, parts[0].downcase, parts[1]]
     end
-    
-    render json: { online_status: online_status }, status: :ok
+
+    # 1. Batch check online status in Redis via pipelining
+    online_keys = parsed.map { |_pid, utype, uid| "online_user_#{utype}_#{uid}" }
+    online_flags = begin
+      if RedisConnection.respond_to?(:pipelined)
+        RedisConnection.pipelined do |pipeline|
+          online_keys.each { |key| pipeline.exists?(key) }
+        end
+      else
+        online_keys.map { |key| RedisConnection.exists?(key) || Rails.cache.exist?(key) }
+      end
+    rescue StandardError => e
+      Rails.logger.warn "online_status Redis batch check failed: #{e.message}"
+      Array.new(parsed.length, false)
+    end
+
+    # Map results and find who needs last_active_at lookup
+    offline_by_type = Hash.new { |h, k| h[k] = [] }
+    status_map = {}
+
+    parsed.each_with_index do |(pid, utype, uid), idx|
+      is_online = (online_flags[idx] == true || online_flags[idx] == 1)
+      status_map[pid] = { is_online: is_online, last_seen_at: nil }
+      offline_by_type[utype] << uid unless is_online
+    end
+
+    # 2. Batch fetch last_active_at in single query per user model
+    last_active_map = {}
+    offline_by_type.each do |utype, uids|
+      next if uids.empty?
+      model = case utype
+              when 'buyer' then Buyer
+              when 'seller' then Seller
+              when 'admin' then Admin
+              when 'sales' then SalesUser
+              when 'marketing' then MarketingUser
+              end
+      next unless model&.column_names&.include?('last_active_at')
+
+      model.where(id: uids).pluck(:id, :last_active_at).each do |id, last_active|
+        last_active_map["#{utype}_#{id}"] = last_active
+      end
+    end
+
+    # Populate last_seen_at for offline users
+    status_map.each do |pid, data|
+      next if data[:is_online]
+      data[:last_seen_at] = last_active_map[pid]
+    end
+
+    render json: { online_status: status_map }, status: :ok
   end
 
   def online_ping
@@ -748,7 +765,12 @@ class ConversationsController < ApplicationController
   def fetch_buyer_conversations
     conversations = Conversation.where("conversations.buyer_id = ?", @current_user.id)
                                 .active_participants
-                                .includes(:admin, :buyer, :ad, seller: :branches)
+                                .includes(
+                                  :admin, :buyer,
+                                  seller: [:branches, { seller_tier: :tier }],
+                                  inquirer_seller: [:branches, { seller_tier: :tier }],
+                                  ad: [:category, :seller]
+                                )
                                 .joins(:messages)
                                 .distinct
                                 .order("conversations.updated_at DESC")
@@ -857,7 +879,12 @@ class ConversationsController < ApplicationController
       @current_user.id,
       @current_user.id
     ).active_participants
-     .includes(:admin, :buyer, :ad, seller: :branches, inquirer_seller: :branches)
+     .includes(
+       :admin, :buyer,
+       seller: [:branches, { seller_tier: :tier }],
+       inquirer_seller: [:branches, { seller_tier: :tier }],
+       ad: [:category, :seller]
+     )
      .joins(:messages)
      .distinct
      .order("conversations.updated_at DESC")
@@ -963,23 +990,31 @@ class ConversationsController < ApplicationController
 
   # Admin conversation methods
   def fetch_admin_conversations
-    # For Sales users, show all conversations (they can see all conversations like admins)
-    # For Admins, show conversations where they are the admin_id
-    if @current_user.is_a?(SalesUser)
-      # Sales users can see all conversations
-      conversations = Conversation.active_participants
-                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad)
-                                  .joins(:messages)
-                                  .distinct
-                                  .order("conversations.updated_at DESC")
+    conversations = if @current_user.is_a?(SalesUser)
+      Conversation.active_participants
+                  .includes(
+                    :admin, :buyer,
+                    seller: [:branches, { seller_tier: :tier }],
+                    inquirer_seller: [:branches, { seller_tier: :tier }],
+                    ad: [:category, :seller]
+                  )
+                  .joins(:messages)
+                  .distinct
+                  .order("conversations.updated_at DESC")
     else
-      # Admins see assigned conversations, unassigned support, and WhatsApp conversations
-      conversations = Conversation.where("conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true", @current_user.id)
-                                  .active_participants
-                                  .includes(:admin, :buyer, :seller, :inquirer_seller, :ad)
-                                  .joins(:messages)
-                                  .distinct
-                                  .order("conversations.updated_at DESC")
+      Conversation.where(
+        "conversations.admin_id = ? OR conversations.admin_id IS NULL OR conversations.is_whatsapp = true",
+        @current_user.id
+      ).active_participants
+       .includes(
+         :admin, :buyer,
+         seller: [:branches, { seller_tier: :tier }],
+         inquirer_seller: [:branches, { seller_tier: :tier }],
+         ad: [:category, :seller]
+       )
+       .joins(:messages)
+       .distinct
+       .order("conversations.updated_at DESC")
     end
 
     grouped_conversations = conversations.group_by do |conversation|
@@ -1286,6 +1321,22 @@ class ConversationsController < ApplicationController
       ORDER BY conversation_id, created_at DESC, id DESC
     SQL
 
+    wa_conv_ids = grouped_conversations.values.flatten.select(&:is_whatsapp?).map(&:id).uniq
+    wa_customer_messages = if wa_conv_ids.any?
+      Message.find_by_sql([<<-SQL.squish, wa_conv_ids, ['Buyer', 'Seller']]).index_by(&:conversation_id)
+        SELECT DISTINCT ON (conversation_id) conversation_id, created_at
+        FROM messages
+        WHERE conversation_id IN (?) AND sender_type IN (?)
+        ORDER BY conversation_id, created_at DESC
+      SQL
+    else
+      {}
+    end
+
+    tiers_lookup = Rails.cache.fetch("all_tiers_lookup_v1", expires_in: 1.hour) do
+      Tier.all.index_by(&:id)
+    end
+
     staff_lookup = Rails.cache.fetch("staff_users_lookup_v1", expires_in: 5.minutes) do
       lookup = {}
       Admin.all.each { |a| lookup[a.id] = a }
@@ -1294,23 +1345,151 @@ class ConversationsController < ApplicationController
       lookup
     end
 
-    serializer_scope = { staff_lookup: staff_lookup, last_messages: last_messages }
+    now = Time.current
 
     grouped_conversations.values.map do |conversation_group|
       representative = representative_conversation_for_batched(conversation_group, last_messages)
       last_message = conversation_group.map { |conv| last_messages[conv.id] }.compact.max_by(&:created_at)
-      serialized = ConversationSerializer.new(representative, scope: serializer_scope).as_json
 
-      serialized.merge(
+      wa_expires_at = nil
+      wa_open = true
+      if representative.is_whatsapp?
+        wa_msg = wa_customer_messages[representative.id]
+        if wa_msg
+          exp = wa_msg.created_at + 24.hours
+          wa_expires_at = exp.iso8601
+          wa_open = exp > now
+        else
+          wa_open = false
+        end
+      end
+
+      # Admin serialization
+      admin_user = representative.admin
+      if admin_user.nil? && representative.admin_id.present?
+        admin_user = staff_lookup[representative.admin_id]
+      end
+      serialized_admin = if admin_user
+        user_role = case admin_user
+                    when SalesUser then 'sales'
+                    when MarketingUser then 'marketing'
+                    else 'admin'
+                    end
+        {
+          id: admin_user.id,
+          fullname: admin_user.fullname,
+          username: admin_user.try(:username) || admin_user.fullname,
+          email: admin_user.email,
+          phone_number: admin_user.try(:phone_number),
+          role: user_role,
+          profile_picture: resolve_profile_picture(admin_user.try(:profile_picture)),
+          profile_picture_url: resolve_profile_picture(admin_user.try(:profile_picture))
+        }
+      end
+
+      # Buyer serialization
+      serialized_buyer = if representative.buyer
+        {
+          id: representative.buyer.id,
+          fullname: representative.buyer.fullname,
+          username: representative.buyer.username,
+          email: representative.buyer.email,
+          phone_number: representative.buyer.phone_number,
+          profile_picture: resolve_profile_picture(representative.buyer.profile_picture),
+          last_active_at: representative.buyer.last_active_at
+        }
+      end
+
+      {
         id: representative.id,
+        admin_id: representative.admin_id,
+        buyer_id: representative.buyer_id,
+        seller_id: representative.seller_id,
+        ad_id: representative.ad_id,
+        created_at: representative.created_at,
         updated_at: (last_message&.created_at || representative.updated_at),
+        inquirer_seller_id: representative.inquirer_seller_id,
         last_message: serialized_last_message(last_message),
         last_message_time: last_message&.created_at,
-        all_conversation_ids: conversation_group.map(&:id)
-      )
+        all_conversation_ids: conversation_group.map(&:id),
+        admin: serialized_admin,
+        buyer: serialized_buyer,
+        seller: serialize_seller_fast(representative.seller, tiers_lookup),
+        inquirer_seller: serialize_seller_fast(representative.inquirer_seller, tiers_lookup),
+        ad: serialize_ad_fast(representative.ad),
+        is_whatsapp: representative.is_whatsapp,
+        whatsapp_window_open: wa_open,
+        whatsapp_window_expires_at: wa_expires_at
+      }
     end.compact.sort_by do |conversation|
       conversation[:last_message_time] || conversation[:updated_at] || Time.zone.at(0)
     end.reverse
+  end
+
+  def serialize_seller_fast(seller_obj, tiers_lookup)
+    return nil unless seller_obj
+
+    main_branch = if seller_obj.association(:branches).loaded?
+                    seller_obj.branches.min_by { |b| [b.is_main_branch ? 0 : 1, b.id] }
+                  else
+                    seller_obj.branches.order(is_main_branch: :desc, id: :asc).first
+                  end
+    st = seller_obj.seller_tier if seller_obj.association(:seller_tier).loaded?
+    st ||= seller_obj.seller_tier
+    tid = st&.tier_id || 1
+    tname = if st&.association(:tier)&.loaded? && st.tier
+      st.tier.name
+    elsif tiers_lookup[tid]
+      tiers_lookup[tid].name
+    else
+      seller_obj.tier_name
+    end
+
+    {
+      id: seller_obj.id,
+      fullname: seller_obj.fullname,
+      username: seller_obj.username,
+      slug: seller_obj.url_slug,
+      enterprise_name: seller_obj.enterprise_name,
+      email: seller_obj.email,
+      phone_number: seller_obj.phone_number,
+      profile_picture: resolve_profile_picture(seller_obj.profile_picture),
+      last_active_at: seller_obj.last_active_at,
+      location: seller_obj.location,
+      building: seller_obj.building,
+      room: seller_obj.room,
+      document_verified: seller_obj.document_verified,
+      tier_id: tid,
+      tier_name: tname,
+      latitude: main_branch&.latitude&.to_f,
+      longitude: main_branch&.longitude&.to_f,
+      primary_branch_name: main_branch&.name,
+      primary_branch_address: main_branch&.try(:location) || main_branch&.try(:address)
+    }
+  end
+
+  def serialize_ad_fast(ad)
+    return nil unless ad
+    {
+      id: ad.id,
+      slug: ad.url_slug,
+      title: ad.title,
+      price: ad.price,
+      description: ad.description,
+      image: ad.first_media_url,
+      first_media_url: ad.first_media_url,
+      media_urls: ad.media_urls,
+      media: ad.media,
+      category: ad.category&.name,
+      location: ad.seller&.location,
+      condition: ad.condition,
+      brand: ad.brand
+    }
+  end
+
+  def resolve_profile_picture(url)
+    return nil if url.blank? || url.start_with?("/cached_profile_pictures/")
+    url
   end
 
   def serialized_last_message(message)
