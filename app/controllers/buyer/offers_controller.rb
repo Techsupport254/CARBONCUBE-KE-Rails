@@ -520,7 +520,9 @@ class Buyer::OffersController < ApplicationController
                        .where(sellers: { blocked: false, deleted: false, flagged: false })
                        .select('ads.*, sellers.fullname as seller_fullname, sellers.enterprise_name as seller_enterprise_name, tiers.id as seller_tier_id, tiers.name as seller_tier_name')
                        .order(organic_quality_score: :desc, created_at: :desc)
-                       .limit(6)
+                       .to_a
+                       .uniq(&:seller_id)
+                       .first(6)
 
       featured_ads.each do |ad|
         next if existing_cover_ids.include?(ad.id)

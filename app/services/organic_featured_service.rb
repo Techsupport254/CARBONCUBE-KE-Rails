@@ -18,8 +18,14 @@ class OrganicFeaturedService
     categories = Category.all
     newly_elected = []
 
+    # Track sellers who currently have an active featured ad to enforce 1 ad per seller platform-wide
+    chosen_seller_ids = Ad.active
+                          .where('featured_until > ?', Time.current)
+                          .pluck(:seller_id)
+                          .to_set
+
     categories.each do |category|
-      # Count how many ads are still actively in their 7-day featured cycle
+      # Count how many ads are still actively in their 7-day featured cycle in this category
       active_count = Ad.active
                        .where(category_id: category.id)
                        .where('featured_until > ?', Time.current)
@@ -28,10 +34,21 @@ class OrganicFeaturedService
       needed_slots = @slots_per_category - active_count
       next if needed_slots <= 0
 
-      candidates = fetch_top_candidates(category.id, limit: needed_slots)
+      # Fetch more candidates than needed so we can skip any seller already featured in another category
+      candidates = fetch_top_candidates(
+        category.id,
+        limit: needed_slots * 5,
+        excluded_seller_ids: chosen_seller_ids.to_a
+      )
       next if candidates.empty?
 
+      category_elected_count = 0
       candidates.each do |row|
+        break if category_elected_count >= needed_slots
+
+        seller_id = row['seller_id']
+        next if chosen_seller_ids.include?(seller_id)
+
         ad_id = row['id']
         score = row['calculated_score'].to_f.round(2)
 
@@ -45,8 +62,10 @@ class OrganicFeaturedService
           organic_quality_score: score
         )
 
-        newly_elected << { id: ad.id, title: ad.title, category: category.name, score: score }
-        Rails.logger.info "[OrganicFeaturedService] Featured Ad ##{ad.id} ('#{ad.title.to_s.slice(0, 30)}') in '#{category.name}' (score=#{score})"
+        chosen_seller_ids.add(seller_id)
+        category_elected_count += 1
+        newly_elected << { id: ad.id, title: ad.title, category: category.name, seller_id: seller_id, score: score }
+        Rails.logger.info "[OrganicFeaturedService] Featured Ad ##{ad.id} ('#{ad.title.to_s.slice(0, 30)}') for seller #{seller_id} in '#{category.name}' (score=#{score})"
       end
     end
 
@@ -55,21 +74,28 @@ class OrganicFeaturedService
     summary = {
       newly_elected_count: newly_elected.size,
       total_active_featured: Ad.active.where('featured_until > ?', Time.current).count,
+      unique_featured_sellers: chosen_seller_ids.size,
       newly_elected: newly_elected
     }
 
-    Rails.logger.info "[OrganicFeaturedService] Completed. Total active featured ads: #{summary[:total_active_featured]}"
+    Rails.logger.info "[OrganicFeaturedService] Completed. Total active featured ads: #{summary[:total_active_featured]} across #{summary[:unique_featured_sellers]} unique sellers"
     summary
   end
 
-  def fetch_top_candidates(category_id, limit: 3)
+  def fetch_top_candidates(category_id, limit: 15, excluded_seller_ids: [])
     cooldown_cutoff = Time.current - COOLDOWN_PERIOD
+    seller_exclusion_sql = if excluded_seller_ids.present?
+      "AND ads.seller_id NOT IN (#{excluded_seller_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')})"
+    else
+      ""
+    end
 
     sql = <<~SQL.squish
       SELECT
         ads.id,
         ads.title,
         ads.category_id,
+        ads.seller_id,
         (
           /* 1. Image Quality (max 15 pts) */
           CASE
@@ -121,6 +147,7 @@ class OrganicFeaturedService
         AND ads.media != ''
         AND ads.media != '[]'
         AND ads.category_id = #{ActiveRecord::Base.connection.quote(category_id)}
+        #{seller_exclusion_sql}
         /* Exclude ads currently active as featured */
         AND (ads.featured_until IS NULL OR ads.featured_until <= #{ActiveRecord::Base.connection.quote(Time.current)})
         /* Exclude ads currently in the 14-day anti-monopoly cooldown */
