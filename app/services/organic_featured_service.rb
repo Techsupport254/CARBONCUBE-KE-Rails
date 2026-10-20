@@ -1,7 +1,7 @@
 class OrganicFeaturedService
-  SLOTS_PER_CATEGORY = 3
-  FEATURED_DURATION = 7.days
-  COOLDOWN_PERIOD = 14.days
+  SLOTS_PER_CATEGORY = 5
+  FEATURED_DURATION = 3.days
+  COOLDOWN_PERIOD = 7.days
   MIN_QUALITY_SCORE = 18.0
 
   def self.elect_featured_ads!(slots_per_category: SLOTS_PER_CATEGORY)
@@ -13,19 +13,32 @@ class OrganicFeaturedService
   end
 
   def elect!
-    Rails.logger.info "[OrganicFeaturedService] Starting organic featured rotation (slots_per_cat=#{@slots_per_category})..."
+    Rails.logger.info "[OrganicFeaturedService] Starting organic featured rotation (slots_per_cat=#{@slots_per_category}, duration=#{FEATURED_DURATION.inspect})..."
 
     categories = Category.all
     newly_elected = []
 
-    # Track sellers who currently have an active featured ad to enforce 1 ad per seller platform-wide
-    chosen_seller_ids = Ad.active
-                          .where('featured_until > ?', Time.current)
-                          .pluck(:seller_id)
-                          .to_set
+    # 1. Track sellers who currently have an active featured ad (strictly 1 ad per seller platform-wide)
+    currently_active_seller_ids = Ad.active
+                                    .where('featured_until > ?', Time.current)
+                                    .pluck(:seller_id)
+                                    .to_set
+
+    # 2. Track sellers who had an ad featured recently within the cooldown period
+    cooldown_cutoff = Time.current - COOLDOWN_PERIOD
+    cooldown_seller_ids = Ad.where('last_featured_at >= ?', cooldown_cutoff)
+                            .pluck(:seller_id)
+                            .to_set - currently_active_seller_ids
+
+    # 3. Track sellers who have ever had an ad featured (for discovery bonus)
+    ever_featured_seller_ids = Ad.where.not(last_featured_at: nil)
+                                 .pluck(:seller_id)
+                                 .to_set
+
+    chosen_seller_ids = currently_active_seller_ids.dup
 
     categories.each do |category|
-      # Count how many ads are still actively in their 7-day featured cycle in this category
+      # Count how many ads are still actively featured in this category
       active_count = Ad.active
                        .where(category_id: category.id)
                        .where('featured_until > ?', Time.current)
@@ -34,12 +47,29 @@ class OrganicFeaturedService
       needed_slots = @slots_per_category - active_count
       next if needed_slots <= 0
 
-      # Fetch more candidates than needed so we can skip any seller already featured in another category
+      # Priority 1: Pick candidates excluding both active sellers AND sellers in cooldown
+      primary_exclusions = (chosen_seller_ids + cooldown_seller_ids).to_a
       candidates = fetch_top_candidates(
         category.id,
         limit: needed_slots * 5,
-        excluded_seller_ids: chosen_seller_ids.to_a
+        excluded_seller_ids: primary_exclusions,
+        ever_featured_seller_ids: ever_featured_seller_ids.to_a
       )
+
+      # Priority 2: Fallback if not enough candidates outside cooldown (e.g. small categories)
+      if candidates.size < needed_slots
+        fallback_candidates = fetch_top_candidates(
+          category.id,
+          limit: needed_slots * 5,
+          excluded_seller_ids: chosen_seller_ids.to_a,
+          ever_featured_seller_ids: ever_featured_seller_ids.to_a
+        )
+        existing_candidate_ids = candidates.map { |c| c['id'] }.to_set
+        fallback_candidates.each do |fc|
+          candidates << fc unless existing_candidate_ids.include?(fc['id'])
+        end
+      end
+
       next if candidates.empty?
 
       category_elected_count = 0
@@ -82,12 +112,19 @@ class OrganicFeaturedService
     summary
   end
 
-  def fetch_top_candidates(category_id, limit: 15, excluded_seller_ids: [])
+  def fetch_top_candidates(category_id, limit: 15, excluded_seller_ids: [], ever_featured_seller_ids: [])
     cooldown_cutoff = Time.current - COOLDOWN_PERIOD
     seller_exclusion_sql = if excluded_seller_ids.present?
       "AND ads.seller_id NOT IN (#{excluded_seller_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')})"
     else
       ""
+    end
+
+    # Discovery Bonus (+8.0 pts) for sellers who have never had any listing featured yet
+    discovery_bonus_sql = if ever_featured_seller_ids.present?
+      "CASE WHEN ads.seller_id NOT IN (#{ever_featured_seller_ids.map { |id| ActiveRecord::Base.connection.quote(id) }.join(',')}) THEN 8.0 ELSE 0.0 END"
+    else
+      "8.0"
     end
 
     sql = <<~SQL.squish
@@ -133,7 +170,9 @@ class OrganicFeaturedService
             WHEN ads.created_at >= CURRENT_DATE - INTERVAL '21 days' THEN 10.0
             WHEN ads.created_at >= CURRENT_DATE - INTERVAL '60 days' THEN 5.0
             ELSE 0.0
-          END
+          END +
+          /* 8. Seller Discovery Bonus (max 8 pts) - promotes sellers who have not been featured yet */
+          #{discovery_bonus_sql}
         ) as calculated_score
       FROM ads
       INNER JOIN ad_stats ON ad_stats.ad_id = ads.id
@@ -150,7 +189,7 @@ class OrganicFeaturedService
         #{seller_exclusion_sql}
         /* Exclude ads currently active as featured */
         AND (ads.featured_until IS NULL OR ads.featured_until <= #{ActiveRecord::Base.connection.quote(Time.current)})
-        /* Exclude ads currently in the 14-day anti-monopoly cooldown */
+        /* Exclude ads currently in the anti-monopoly cooldown */
         AND (ads.last_featured_at IS NULL OR ads.last_featured_at < #{ActiveRecord::Base.connection.quote(cooldown_cutoff)})
         /* Minimum Quality/Content threshold */
         AND (

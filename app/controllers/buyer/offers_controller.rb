@@ -522,9 +522,19 @@ class Buyer::OffersController < ApplicationController
                        .order(organic_quality_score: :desc, created_at: :desc)
                        .to_a
                        .uniq(&:seller_id)
-                       .first(6)
 
-      featured_ads.each do |ad|
+      # Interleave categories across unique sellers so the carousel shows maximum variety
+      grouped_by_cat = featured_ads.group_by(&:category_id).values
+      interleaved_ads = []
+      max_len = grouped_by_cat.map(&:size).max || 0
+      (0...max_len).each do |idx|
+        grouped_by_cat.each do |cat_ads|
+          interleaved_ads << cat_ads[idx] if cat_ads[idx]
+        end
+      end
+
+      # Surface up to 21 distinct sellers on the homepage spotlight
+      interleaved_ads.first(21).each do |ad|
         next if existing_cover_ids.include?(ad.id)
 
         offers_list << {
