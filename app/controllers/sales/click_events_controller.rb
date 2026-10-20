@@ -121,6 +121,7 @@ class Sales::ClickEventsController < ApplicationController
       
       # Get device_hash from params or headers if available
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
+      sort_by = params[:sort_by].presence || 'reveals'
       
       limit = params[:limit].to_i
       limit = 100 if limit < 1 || limit > 100
@@ -131,15 +132,16 @@ class Sales::ClickEventsController < ApplicationController
       )
       
       # Get top ads with caching
-      cache_key = "sales_best_ads_#{filters.to_param}_#{limit}_#{device_hash}"
+      cache_key = "sales_best_ads_#{filters.to_param}_#{limit}_#{sort_by}_#{device_hash}"
       top_ads = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
-        service.top_ads_by_reveals(limit: limit)
+        service.top_ads_by_reveals(limit: limit, sort_by: sort_by)
       end
 
       render json: {
         ads: top_ads,
         total: top_ads.count,
-        limit: limit
+        limit: limit,
+        sort_by: sort_by
       }
     rescue => e
       Rails.logger.error "Best ads error: #{e.message}"

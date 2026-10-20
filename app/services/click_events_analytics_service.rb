@@ -188,21 +188,54 @@ class ClickEventsAnalyticsService
     }
   end
 
-  # Get top ads by reveals - optimized to use a single SQL query with aggregations
-  def top_ads_by_reveals(limit: 10)
-    # Use a single query with aggregations to get all stats for top ads
-    # This eliminates N+1 queries by fetching all data in one go
-    top_ads_data = base_query
+  # Get top ads by reveals / performance - optimized to use a single SQL query with aggregations
+  def top_ads_by_reveals(limit: 100, sort_by: 'reveals')
+    filtered_query = apply_filters(base_query)
+
+    order_clause = case sort_by.to_s
+                   when 'clicks'
+                     "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') DESC, COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC"
+                   when 'contacts'
+                     "(COUNT(*) FILTER (WHERE click_events.metadata->>'action' = 'seller_contact_interaction')) DESC, COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC"
+                   when 'conversions'
+                     "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'converted_from_guest' = 'true') DESC, COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC"
+                   when 'engagement'
+                     "(COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') * 3 + COUNT(*) FILTER (WHERE click_events.event_type = 'Callback-Request') * 2 + COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click')) DESC"
+                   else # 'reveals' (default)
+                     "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC, COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') DESC"
+                   end
+
+    having_clause = case sort_by.to_s
+                    when 'clicks'
+                      "COUNT(*) FILTER (WHERE click_events.event_type = 'Ad-Click') > 0"
+                    when 'contacts'
+                      "COUNT(*) FILTER (WHERE click_events.metadata->>'action' = 'seller_contact_interaction') > 0"
+                    when 'conversions'
+                      "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'converted_from_guest' = 'true') > 0"
+                    when 'engagement'
+                      "COUNT(*) > 0"
+                    else # 'reveals'
+                      "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') > 0"
+                    end
+
+    top_ads_data = filtered_query
       .joins("INNER JOIN ads ON ads.id = click_events.ad_id")
       .joins("LEFT JOIN categories ON categories.id = ads.category_id")
       .joins("LEFT JOIN sellers ON sellers.id = ads.seller_id")
-      .where("ads.deleted = ?", false)
-      .group("ads.id", "ads.title", "ads.media", "ads.seller_id", "categories.name",
-              "sellers.enterprise_name", "sellers.fullname", "sellers.profile_picture")
+      .where("ads.deleted = ? AND ads.flagged = ?", false, false)
+      .where("sellers.blocked = ? AND sellers.deleted = ? AND sellers.flagged = ?", false, false, false)
+      .group(
+        "ads.id", "ads.title", "ads.slug", "ads.price", "ads.media", "ads.seller_id",
+        "ads.organic_quality_score", "categories.name",
+        "sellers.enterprise_name", "sellers.fullname", "sellers.profile_picture"
+      )
       .select(
         "ads.id as ad_id",
         "ads.title as ad_title",
-        "CASE WHEN ads.media IS NOT NULL AND ads.media != '' THEN (ads.media::json->>0) ELSE NULL END as ad_image_url",
+        "ads.slug as ad_slug",
+        "ads.price as ad_price",
+        "ads.organic_quality_score as ad_quality_score",
+        "CASE WHEN ads.media IS NOT NULL AND ads.media != '' AND ads.media LIKE '[%' THEN (ads.media::json->>0) ELSE NULL END as ad_image_url",
         "ads.seller_id as seller_id",
         "categories.name as category_name",
         "sellers.enterprise_name as seller_enterprise_name",
@@ -219,21 +252,27 @@ class ClickEventsAnalyticsService
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'whatsapp') as whatsapp_clicks",
         "COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details' AND click_events.metadata->>'action' = 'seller_contact_interaction' AND click_events.metadata->>'action_type' = 'view_location') as location_clicks"
       )
-      .having(Arel.sql("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') > 0"))
-      .order(Arel.sql("COUNT(*) FILTER (WHERE click_events.event_type = 'Reveal-Seller-Details') DESC"))
+      .having(Arel.sql(having_clause))
+      .order(Arel.sql(order_clause))
       .limit(limit)
       .to_a
     
     top_ads_data.map do |row|
       ad_clicks = row.ad_clicks.to_i
       reveal_clicks = row.reveal_clicks.to_i
-      click_to_reveal_rate = ad_clicks > 0 ? (reveal_clicks.to_f / ad_clicks * 100).round(2) : 0.0
+      
+      # Calculate click-to-reveal rate clamped to 100%
+      raw_rate = ad_clicks > 0 ? (reveal_clicks.to_f / ad_clicks * 100).round(2) : (reveal_clicks > 0 ? 100.0 : 0.0)
+      click_to_reveal_rate = [raw_rate, 100.0].min
       
       seller_name = row.seller_enterprise_name.presence || row.seller_fullname.presence || 'Unknown Seller'
 
       {
         ad_id: row.ad_id,
         ad_title: row.ad_title || 'Unknown Ad',
+        slug: row.respond_to?(:ad_slug) ? row.ad_slug : nil,
+        price: row.respond_to?(:ad_price) ? row.ad_price.to_f : 0.0,
+        quality_score: row.respond_to?(:ad_quality_score) ? row.ad_quality_score.to_f : 0.0,
         ad_image_url: row.ad_image_url,
         category_name: row.category_name || 'Uncategorized',
         seller_name: seller_name,
@@ -724,13 +763,13 @@ class ClickEventsAnalyticsService
     # Filter by date range
     # Qualify created_at with table name to avoid ambiguity when joining with ads table
     if filters[:start_date].present?
-      start_date = Time.parse(filters[:start_date]) rescue nil
-      filtered = filtered.where('click_events.created_at >= ?', start_date) if start_date
+      start_date = Time.zone.parse(filters[:start_date].to_s) rescue nil
+      filtered = filtered.where('click_events.created_at >= ?', start_date.beginning_of_day) if start_date
     end
     
     if filters[:end_date].present?
-      end_date = Time.parse(filters[:end_date]) rescue nil
-      filtered = filtered.where('click_events.created_at <= ?', end_date) if end_date
+      end_date = Time.zone.parse(filters[:end_date].to_s) rescue nil
+      filtered = filtered.where('click_events.created_at <= ?', end_date.end_of_day) if end_date
     end
     
     filtered
