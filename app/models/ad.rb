@@ -19,6 +19,11 @@ class Ad < ApplicationRecord
   scope :from_active_sellers, -> { joins(:seller).where(sellers: { blocked: false, deleted: false, flagged: false }) }
   scope :live, -> { active.with_valid_images.from_active_sellers.where(flagged: false) }
   scope :brand_kenya, -> { where(is_brand_kenya: true) }
+  scope :featured, -> { where('ads.featured_until > ?', Time.current) }
+  scope :featured_in_category, ->(category_id) { featured.where(category_id: category_id) }
+  scope :in_featured_cooldown, -> {
+    where('ads.last_featured_at >= ? AND (ads.featured_until IS NULL OR ads.featured_until <= ?)', 14.days.ago, Time.current)
+  }
   scope :for_branch, ->(branch) {
     return all unless branch
 
@@ -176,6 +181,14 @@ class Ad < ApplicationRecord
   def price_for_quantity(qty)
     return nil if price_tiers.empty?
     price_tiers.reverse_each.find { |t| qty >= t['min_quantity'].to_i }&.[]('unit_price')&.to_f
+  end
+
+  def featured?
+    featured_until.present? && featured_until > Time.current
+  end
+
+  def in_featured_cooldown?
+    last_featured_at.present? && last_featured_at >= 14.days.ago && !featured?
   end
 
   # Ensure media can accept a string or array of strings

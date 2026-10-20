@@ -152,3 +152,14 @@ send_app_install_nudge:
   class: "SendAppInstallNudgeJob"
   queue: broadcast
   description: "Daily email nudge to registered users who have never installed the mobile app"
+
+# --- ORGANIC FEATURED ROTATION ---
+# Elect and rotate merit-based featured listings across categories every 6 hours.
+# Evaluates ad quality, 7-day engagement (clicks/reveals), and upload recency.
+# Staggers 7-day featured windows with a 14-day anti-monopoly cooldown.
+evaluate_organic_featured_ads:
+  cron: "0 */6 * * *"
+  class: "EvaluateOrganicFeaturedAdsJob"
+  queue: low
+  description: "Evaluate and rotate merit-based featured ads across categories"
+

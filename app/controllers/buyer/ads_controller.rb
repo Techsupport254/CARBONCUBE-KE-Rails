@@ -2121,6 +2121,26 @@ class Buyer::AdsController < ApplicationController
   end
 
 
+  # GET /buyer/ads/featured
+  # Returns merit-based, organically featured ads (filtered by category if specified)
+  def featured
+    expires_in 15.minutes, public: true, 'stale-while-revalidate': 1.hour
+    category_id = params[:category_id].presence
+    limit = (params[:limit] || 24).to_i.clamp(1, 100)
+
+    cache_key = "buyer_ads_featured_v1_#{category_id}_#{limit}_#{Time.current.to_i / 900}"
+    @ads = Rails.cache.fetch(cache_key, expires_in: 15.minutes, race_condition_ttl: 10.seconds) do
+      query = Ad.active.with_valid_images.featured
+                .includes(:category, :subcategory, :reviews, offer_ads: :offer,
+                          seller: [{ seller_tier: :tier }, { seller_documents: :document_type },
+                                   :partner, :county, :sub_county, :carbon_code])
+      query = query.where(category_id: category_id) if category_id.present?
+      query.order(organic_quality_score: :desc, created_at: :desc).limit(limit).to_a
+    end
+
+    render json: @ads, each_serializer: AdSerializer
+  end
+
   # GET /buyer/ads/recommendations
   # Get personalized recommendations based on user's engagement
   def recommendations

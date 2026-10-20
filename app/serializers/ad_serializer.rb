@@ -8,7 +8,8 @@ class AdSerializer < ActiveModel::Serializer
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
              :seller_is_online, :has_valid_images, :is_brand_kenya,
-             :views_count, :reveals_count, :views, :reveals, :ad_clicks, :reveal_clicks
+             :views_count, :reveals_count, :views, :reveals, :ad_clicks, :reveal_clicks,
+             :is_featured, :featured_until, :organic_quality_score
 
   def views_count
     batched = instance_options[:ad_clicks_map]
@@ -40,6 +41,24 @@ class AdSerializer < ActiveModel::Serializer
     object.attributes.key?('is_brand_kenya') ? object.is_brand_kenya == true : false
   rescue StandardError
     false
+  end
+
+  def is_featured
+    object.respond_to?(:featured?) ? object.featured? : false
+  rescue StandardError
+    false
+  end
+
+  def featured_until
+    object.attributes.key?('featured_until') ? object.featured_until : nil
+  rescue StandardError
+    nil
+  end
+
+  def organic_quality_score
+    object.attributes.key?('organic_quality_score') ? object.organic_quality_score&.to_f : nil
+  rescue StandardError
+    nil
   end
 
   def has_valid_images

@@ -475,7 +475,7 @@ class Buyer::OffersController < ApplicationController
         ActiveRecord::Base.send(:sanitize_sql_array, [sql, Time.current, Time.current])
       )
 
-      offers_data.map do |row|
+      offers_list = offers_data.map do |row|
         {
           id: row['id'],
           name: row['name'],
@@ -511,6 +511,58 @@ class Buyer::OffersController < ApplicationController
           ads_count: row['ads_count']
         }
       end
+
+      # Blend organically featured ads into the homepage spotlight rail
+      existing_cover_ids = offers_list.map { |o| o[:cover_ad_id].to_i }.to_set
+      featured_ads = Ad.active.with_valid_images.featured
+                       .joins(:seller)
+                       .left_joins(seller: { seller_tier: :tier })
+                       .where(sellers: { blocked: false, deleted: false, flagged: false })
+                       .select('ads.*, sellers.fullname as seller_fullname, sellers.enterprise_name as seller_enterprise_name, tiers.id as seller_tier_id, tiers.name as seller_tier_name')
+                       .order(organic_quality_score: :desc, created_at: :desc)
+                       .limit(6)
+
+      featured_ads.each do |ad|
+        next if existing_cover_ids.include?(ad.id)
+
+        offers_list << {
+          id: -(ad.id), # Negative synthetic ID for ad spotlight
+          name: ad.title,
+          description: ad.description.to_s.truncate(140),
+          offer_type: 'featured_spotlight',
+          discount_type: nil,
+          discount_percentage: nil,
+          fixed_discount_amount: nil,
+          start_time: ad.featured_at || ad.created_at,
+          end_time: ad.featured_until,
+          featured: true,
+          priority: 5,
+          banner_color: '#1e3a8a',
+          badge_color: '#fbbf24',
+          icon_name: 'sparkles',
+          badge_text: 'FEATURED',
+          cta_text: 'View Item',
+          banner_image_url: nil,
+          hero_image_url: nil,
+          cover_image_media: ad.media,
+          cover_ad_id: ad.id,
+          cover_ad_title: ad.title,
+          cover_original_price: ad.price,
+          cover_discounted_price: ad.price,
+          view_count: 0,
+          click_count: 0,
+          skip_click_tracking: true,
+          seller: {
+            id: ad.seller_id,
+            name: ad.seller_enterprise_name.presence || ad.seller_fullname,
+            tier_id: ad.seller_tier_id,
+            tier_name: ad.seller_tier_name || 'Free'
+          },
+          ads_count: 1
+        }
+      end
+
+      offers_list
     end
 
     render json: offers

@@ -837,6 +837,7 @@ Rails.application.routes.draw do
           get 'popular-searches', to: 'ads#popular_searches'
           get 'load_more_subcategory'
           get 'recommendations', to: 'ads#recommendations'
+          get 'featured', to: 'ads#featured'
         end
         member do
           post 'add_to_cart'
@@ -1146,6 +1147,7 @@ Rails.application.routes.draw do
         get 'popular-searches', to: 'ads#popular_searches'
         get 'load_more_subcategory'
         get 'recommendations', to: 'ads#recommendations'
+        get 'featured', to: 'ads#featured'
       end
       member do
         post 'add_to_cart'
