@@ -43,6 +43,17 @@ namespace :prospect_outreach do
     puts "  invalid rows:       #{stats[:invalid]}"
   end
 
+  desc 'Import the prospect CSVs bundled in db/prospect_lists (Usage: rake prospect_outreach:import_bundled)'
+  task import_bundled: :environment do
+    {
+      'db/prospect_lists/nairobi-seller-prospects.csv' => 'main',
+      'db/prospect_lists/backup-leads.csv' => 'backup'
+    }.each do |rel, list|
+      Rake::Task['prospect_outreach:import'].reenable
+      Rake::Task['prospect_outreach:import'].invoke(Rails.root.join(rel).to_s, list)
+    end
+  end
+
   desc 'Show outreach queue status (Usage: rake prospect_outreach:stats)'
   task stats: :environment do
     puts OutreachProspect.group(:status).order(:status).count
