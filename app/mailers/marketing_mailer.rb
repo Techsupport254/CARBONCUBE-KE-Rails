@@ -120,7 +120,51 @@ class MarketingMailer < ApplicationMailer
         reminderNumber: reminder_number,
         playStoreUrl:   "https://play.google.com/store/apps/details?id=com.carboncubeke&#{utm}",
         appStoreUrl:    "https://apps.apple.com/app/carbon-cube-kenya/id000000000?#{utm}",
-        appPageUrl:     "https://carboncube-ke.com/app?#{utm}",
+        appPageUrl:     "https://carboncube-ke.com/app?#{utm}"
+      }
+    )
+  end
+
+  # Invitations & reminders to join WhatsApp updates (T+2d initial, T+5d reminder).
+  # recipient: a Buyer or Seller instance
+  # reminder_number: 0 (initial), 1 (reminder)
+  def whatsapp_updates_invite(recipient:, reminder_number: 0)
+    fullname   = recipient.fullname.presence || recipient.try(:enterprise_name).presence || "there"
+    first_name = fullname.split(" ").first.presence || fullname
+    role       = recipient.is_a?(Seller) ? "seller" : "buyer"
+
+    campaign_stage = reminder_number.zero? ? "initial" : "reminder"
+    business_number = ENV['WHATSAPP_BUSINESS_NUMBER'].presence || '254727854903'
+    utm = "utm_source=email&utm_medium=whatsapp_invite&utm_campaign=whatsapp_updates_#{campaign_stage}&utm_content=#{role}"
+    whatsapp_url = "https://wa.me/#{business_number}?text=START"
+
+    subject = if reminder_number.zero?
+                "#{first_name}, get real-time Carbon Cube Kenya updates on WhatsApp"
+              else
+                "Reminder: Connect Carbon Cube Kenya to WhatsApp for instant alerts"
+              end
+
+    headers["Precedence"]               = nil
+    headers["List-Unsubscribe"]         = nil
+    headers["List-Unsubscribe-Post"]    = nil
+    headers["X-Auto-Response-Suppress"] = nil
+    headers["X-Priority"]               = reminder_number > 0 ? "2" : "3"
+    headers["Feedback-ID"]              = "whatsapp_updates:carboncube"
+    headers["Message-ID"]               = "<#{Time.current.to_f}-whatsapp-invite-#{recipient.class.name.downcase}-#{recipient.id}-#{reminder_number}@carboncube-ke.com>"
+
+    mail(
+      to:      recipient.email,
+      subject: subject,
+      from:    "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      react: {
+        firstName:      first_name,
+        fullname:       fullname,
+        role:           role,
+        reminderNumber: reminder_number,
+        whatsappUrl:    whatsapp_url,
+        dashboardUrl:   "https://carboncube-ke.com/#{role == 'seller' ? 'seller/dashboard' : 'profile'}?#{utm}",
+        supportEmail:   ENV['BREVO_EMAIL'] || 'support@carboncube-ke.com',
+        supportPhone:   '+254 712 990 524'
       }
     )
   end

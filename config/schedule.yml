@@ -131,6 +131,27 @@ catalog_upload_new_sellers:
   queue: broadcast
   description: "Daily catalog upload request to sellers registered 24–48h ago"
 
+# --- CATALOG UPLOAD REMINDER (NEW SELLERS AFTER 1 WEEK) ---
+# Follow-up for new sellers roughly 1 week (7–8 days) after registration
+# who have not uploaded any products/ads yet.
+# Picks up sellers created 168–192h ago, once per day at 9:30 AM EAT (06:30 UTC), all four channels.
+catalog_upload_week_reminder_new_sellers:
+  cron: "30 6 * * *"
+  class: "SendCatalogUploadReminderToNewSellersJob"
+  queue: broadcast
+  description: "Daily catalog upload reminder to new sellers registered 1 week ago with no products"
+
+# --- WHATSAPP UPDATES INVITE & REMINDER (NEW USERS) ---
+# Send an email invite to new users 2 days after registration to join WhatsApp updates (wa.me link with START keyword).
+# Sends a reminder email ~3 days later if they haven't subscribed or engaged on WhatsApp yet.
+# Runs daily at 10:00 AM EAT (07:00 UTC).
+send_whatsapp_updates_invite:
+  cron: "0 7 * * *"
+  class: "SendWhatsappUpdatesInviteJob"
+  queue: broadcast
+  description: "Daily WhatsApp updates email invite (T+2d) and reminder (T+5d) to new users"
+
+
 # --- APP STORE / PLAY STORE IN-APP REVIEW ---
 # Identify users who have been active for at least 7 days with 3+ sessions
 # and schedule them for the native in-app review dialog.

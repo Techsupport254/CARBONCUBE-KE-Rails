@@ -224,12 +224,14 @@ class SendCatalogUploadReminderJob < ApplicationJob
       result[:push] = push_result
     end
 
-    Notification.create!(
-      recipient: seller,
-      title: NOTIFICATION_TITLE,
-      body: NOTIFICATION_BODY,
-      data: NOTIFICATION_DATA
-    )
+    unless Notification.exists?(recipient: seller, title: NOTIFICATION_TITLE)
+      Notification.create!(
+        recipient: seller,
+        title: NOTIFICATION_TITLE,
+        body: NOTIFICATION_BODY,
+        data: NOTIFICATION_DATA
+      )
+    end
     result[:notification] = { success: true }
 
     result
