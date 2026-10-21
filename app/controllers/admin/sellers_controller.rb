@@ -125,7 +125,7 @@ class Admin::SellersController < ApplicationController
       engaged_seller_ids = Message.where(sender_type: 'Seller', sender_id: @sellers.map(&:id)).where.not(whatsapp_message_id: nil).distinct.pluck(:sender_id).to_set
 
       @sellers_data = @sellers.map do |seller|
-        row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :county_id, :sub_county_id, :field_verified_at, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id, :whatsapp_notifications], include: { carbon_code: { only: [:id, :code, :label] } })
+        row = seller.as_json(only: [:id, :fullname, :phone_number, :email, :enterprise_name, :location, :county_id, :sub_county_id, :premises_type, :field_verified_at, :blocked, :deleted, :flagged, :created_at, :updated_at, :last_active_at, :profile_picture, :provider, :carbon_code_id, :whatsapp_notifications], include: { carbon_code: { only: [:id, :code, :label] } })
         row['whatsapp_engaged'] = engaged_seller_ids.include?(seller.id)
         row['total_ads'] = seller[:total_ads_count] || 0
         row['local_reviews_count'] = seller[:local_reviews_count] || 0
@@ -180,7 +180,7 @@ class Admin::SellersController < ApplicationController
         only: [
           :id, :fullname, :username, :slug, :description, :phone_number, :email,
           :secondary_phone_number, :county_id, :sub_county_id, :tier_id,
-          :enterprise_name, :location, :building, :room, :banner_url, :blocked,
+          :enterprise_name, :location, :building, :room, :premises_type, :banner_url, :blocked,
           :profile_picture, :zipcode,
           :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url,
           :twitter_url, :linkedin_url, :website, :google_business_profile_url,
@@ -300,12 +300,37 @@ class Admin::SellersController < ApplicationController
   
 
   def ads
-    cache_key = "seller_ads_v2_#{@seller.id}_#{@seller.updated_at.to_i}"
+    cache_key = "seller_ads_v3_#{@seller.id}_#{@seller.updated_at.to_i}"
     ads_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
-      @seller.ads.where(deleted: false).order(created_at: :desc).as_json(
-        methods: [:first_media_url, :media_urls, :media],
-        only: [:id, :title, :price, :created_at]
-      )
+      ads = @seller.ads.where(deleted: false).order(created_at: :desc)
+      ad_ids = ads.pluck(:id)
+
+      click_counts = ClickEvent.excluding_internal_users
+                               .where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
+                               .group(:ad_id, :event_type)
+                               .count
+
+      ads.map do |ad|
+        views = click_counts[[ad.id, 'Ad-Click']] || 0
+        reveals = click_counts[[ad.id, 'Reveal-Seller-Details']] || 0
+
+        {
+          id: ad.id,
+          title: ad.title,
+          slug: ad.url_slug,
+          price: ad.price,
+          created_at: ad.created_at,
+          first_media_url: ad.first_media_url,
+          media_urls: ad.media_urls,
+          media: ad.media,
+          views_count: views,
+          reveals_count: reveals,
+          views: views,
+          reveals: reveals,
+          ad_clicks: views,
+          reveal_clicks: reveals
+        }
+      end
     end
     render json: ads_data
   end
@@ -829,7 +854,7 @@ class Admin::SellersController < ApplicationController
   def seller_params
     params.require(:seller).permit(
       :fullname, :phone_number, :secondary_phone_number, :email, :enterprise_name,
-      :username, :description, :location, :building, :room, :city, :zipcode,
+      :username, :description, :location, :building, :room, :premises_type, :city, :zipcode,
       :county_id, :sub_county_id, :password, :business_registration_number,
       :profile_picture, :banner_url,
       :facebook_url, :instagram_url, :whatsapp_url, :tiktok_url, :twitter_url,
@@ -874,11 +899,12 @@ class Admin::SellersController < ApplicationController
     ad_ids = seller.ads.where(deleted: false).pluck(:id)
     return nil if ad_ids.empty?
 
-    most_clicked = ClickEvent.where(ad_id: ad_ids)
+    most_clicked = ClickEvent.excluding_internal_users
+                             .where(ad_id: ad_ids)
                              .group(:ad_id)
-                             .order(Arel.sql('COUNT(id) DESC'))
+                             .order(Arel.sql('COUNT(click_events.id) DESC'))
                              .limit(1)
-                             .count(:id)
+                             .count('click_events.id')
                              .first
   
     if most_clicked

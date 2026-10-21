@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_17_090000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_22_100000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -101,16 +101,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_17_090000) do
     t.integer "units_per_pack"
     t.integer "stock_quantity"
     t.boolean "is_brand_kenya", default: false, null: false
+    t.datetime "featured_at"
+    t.datetime "featured_until"
+    t.datetime "last_featured_at"
+    t.decimal "organic_quality_score", precision: 6, scale: 2, default: "0.0"
     t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["brand"], name: "index_ads_on_brand_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"
     t.index ["category_id", "deleted", "flagged"], name: "index_ads_on_category_deleted_flagged"
+    t.index ["category_id", "featured_until"], name: "index_ads_on_category_and_featured_until"
     t.index ["category_id"], name: "index_ads_on_category_id"
     t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at"
     t.index ["deleted", "flagged", "created_at"], name: "index_ads_on_deleted_flagged_created_at_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at", "id"], name: "index_ads_best_sellers_perf"
     t.index ["deleted", "flagged", "seller_id", "created_at"], name: "index_ads_on_deleted_flagged_seller_created_at"
     t.index ["deleted", "flagged", "subcategory_id", "created_at"], name: "index_ads_on_deleted_flagged_subcategory_created_at"
+    t.index ["featured_until", "deleted", "flagged"], name: "index_ads_on_featured_until_deleted_flagged"
     t.index ["is_brand_kenya", "deleted", "flagged"], name: "index_ads_on_is_brand_kenya_deleted_flagged"
     t.index ["is_brand_kenya"], name: "index_ads_on_is_brand_kenya"
     t.index ["price"], name: "index_ads_on_price"
@@ -1500,6 +1506,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_17_090000) do
     t.string "building"
     t.string "room"
     t.string "client_token"
+    t.string "premises_type"
     t.index ["client_token"], name: "index_seller_verifications_on_client_token", unique: true
     t.index ["created_at"], name: "index_seller_verifications_on_created_at"
     t.index ["gps_verdict"], name: "index_seller_verifications_on_gps_verdict"
@@ -1568,6 +1575,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_17_090000) do
     t.boolean "whatsapp_notifications", default: true, null: false
     t.datetime "whatsapp_opted_in_at"
     t.string "whatsapp_opt_in_source"
+    t.string "premises_type"
     t.index "lower((email)::text)", name: "index_vendors_on_lower_email", unique: true
     t.index "lower((enterprise_name)::text)", name: "index_sellers_on_lower_enterprise_name", unique: true
     t.index ["ads_count"], name: "index_sellers_on_ads_count"

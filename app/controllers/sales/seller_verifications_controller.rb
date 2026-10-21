@@ -76,7 +76,7 @@ class Sales::SellerVerificationsController < ApplicationController
         return render json: {
           message: 'Verification logged',
           verification: serialize_verification(existing),
-          seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :field_verified_at]),
+          seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :premises_type, :field_verified_at]),
           deduplicated: true
         }, status: :ok
       end
@@ -94,6 +94,15 @@ class Sales::SellerVerificationsController < ApplicationController
     updates[:building] = building if building
     updates[:room] = room if room
 
+    # Premises type — street shops / stalls / market stands have no room no.;
+    # switching to one clears any stale unit number from a previous building.
+    premises_type = params[:premises_type].to_s.strip.presence
+    premises_type = nil unless SellerVerification::PREMISES_TYPES.include?(premises_type)
+    if premises_type
+      updates[:premises_type] = premises_type
+      updates[:room] = nil unless premises_type == 'building_unit'
+    end
+
     verification = nil
     SellerVerification.transaction do
       @seller.update!(updates) if updates.present?
@@ -110,6 +119,7 @@ class Sales::SellerVerificationsController < ApplicationController
         notes: params[:notes]&.strip&.presence,
         building: building,
         room: room,
+        premises_type: premises_type,
         latitude: params[:latitude],
         longitude: params[:longitude],
         display_name: params[:display_name],
@@ -130,13 +140,13 @@ class Sales::SellerVerificationsController < ApplicationController
     end
 
     verification.assess_gps!
-    sync_shop_coordinates!(verification) if verification.successful?
+    sync_shop_coordinates!(verification) if verification.syncs_shop_location?
     SellerVerificationNotificationJob.perform_later(verification.id)
 
     render json: {
       message: 'Verification logged',
       verification: serialize_verification(verification),
-      seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :field_verified_at])
+      seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :premises_type, :field_verified_at])
     }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: 'Verification failed', details: e.record.errors.full_messages }, status: :unprocessable_entity
@@ -148,7 +158,7 @@ class Sales::SellerVerificationsController < ApplicationController
       render json: {
         message: 'Verification logged',
         verification: serialize_verification(existing),
-        seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :field_verified_at]),
+        seller: @seller.reload.as_json(only: [:id, :enterprise_name, :phone_number, :location, :county_id, :sub_county_id, :building, :room, :premises_type, :field_verified_at]),
         deduplicated: true
       }, status: :ok
     else
@@ -401,6 +411,7 @@ class Sales::SellerVerificationsController < ApplicationController
       notes: verification.notes,
       building: verification.building,
       room: verification.room,
+      premises_type: verification.premises_type,
       photo_url: verification.photo_url,
       latitude: verification.latitude&.to_f,
       longitude: verification.longitude&.to_f,

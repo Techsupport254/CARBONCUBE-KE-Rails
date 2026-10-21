@@ -155,6 +155,20 @@ class ClickEvent < ApplicationRecord
     # Exclude deleted buyers
     query = query.where("buyers.id IS NULL OR buyers.deleted = ?", false)
     
+    # Exclude internal user roles from metadata
+    internal_roles = ['admin', 'sales', 'staff', 'marketing', 'developer', 'internal', 'operations']
+    query = query.where(
+      "metadata->>'user_role' IS NULL OR LOWER(metadata->>'user_role') NOT IN (?)",
+      internal_roles
+    )
+
+    # Exclude records explicitly marked as is_internal_user in device_fingerprint or metadata
+    query = query.where(
+      "(metadata->>'is_internal_user') IS NULL OR metadata->>'is_internal_user' != 'true'"
+    ).where(
+      "(metadata->'device_fingerprint'->>'is_internal_user') IS NULL OR metadata->'device_fingerprint'->>'is_internal_user' != 'true'"
+    )
+    
     # 1. Batch exclude by exact emails
     if hardcoded_excluded_emails.any?
       query = query.where(

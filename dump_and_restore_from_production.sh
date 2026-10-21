@@ -10,6 +10,11 @@ set -o pipefail
 PG_BIN_DIR="/opt/homebrew/opt/postgresql@17/bin"
 export PATH="$PG_BIN_DIR:$PATH"
 
+# Prefer mise-managed Ruby 3.4.8 if installed
+if [ -d "$HOME/.local/share/mise/installs/ruby/3.4.8/bin" ]; then
+  export PATH="$HOME/.local/share/mise/installs/ruby/3.4.8/bin:$PATH"
+fi
+
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -23,7 +28,7 @@ if [ -z "${PRODUCTION_DB:-}" ]; then
 fi
 
 # Local database URL
-LOCAL_DB="postgresql://postgres@localhost:5434/carbon_development"
+LOCAL_DB="postgresql://postgres@127.0.0.1:5434/carbon_development"
 
 # The restore may place pg_trgm in either 'public' or 'extensions'. Ensure
 # pg_restore, psql and other PostgreSQL clients can resolve operator classes
@@ -34,9 +39,17 @@ export PGOPTIONS="-c search_path=public,extensions"
 DUMP_DIR="db/dumps"
 mkdir -p "$DUMP_DIR"
 
-# Generate timestamp for dump file
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-DUMP_FILE="$DUMP_DIR/production_dump_${TIMESTAMP}.custom"
+# Check if an existing dump file was passed as argument
+if [ -n "${1:-}" ] && [ -f "$1" ]; then
+  DUMP_FILE="$1"
+  SKIP_DUMP=true
+  TOC_LIST="${DUMP_FILE%.custom}.list"
+else
+  SKIP_DUMP=false
+  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+  DUMP_FILE="$DUMP_DIR/production_dump_${TIMESTAMP}.custom"
+  TOC_LIST="$DUMP_DIR/production_dump_${TIMESTAMP}.list"
+fi
 
 echo -e "${YELLOW}========================================${NC}"
 echo -e "${YELLOW}Production to Local Database Dump/Restore${NC}"
@@ -48,42 +61,47 @@ echo -e "${GREEN}✓ This script only READS from production${NC}"
 echo -e "${GREEN}✓ Production database will NOT be modified${NC}"
 echo ""
 
-# Step 1: Create dump from production (READ-ONLY operation)
-echo -e "${YELLOW}Step 1: Creating dump from production database...${NC}"
-echo "Dump file: $DUMP_FILE"
-echo ""
+if [ "$SKIP_DUMP" = true ]; then
+  echo -e "${GREEN}✓ Using existing dump file: $DUMP_FILE ($(du -h "$DUMP_FILE" | cut -f1))${NC}"
+  echo ""
+else
+  # Step 1: Create dump from production (READ-ONLY operation)
+  echo -e "${YELLOW}Step 1: Creating dump from production database...${NC}"
+  echo "Dump file: $DUMP_FILE"
+  echo ""
 
-# Use pg_dump with custom format for better compression and flexibility
-# --no-owner: Don't dump ownership information
-# --no-privileges: Don't dump access privileges
-# --clean: Include DROP commands before CREATE (for clean restore)
-# --if-exists: Use IF EXISTS in DROP commands
-# --exclude-schema: Exclude Supabase schemas (no longer used)
-if ! pg_dump "$PRODUCTION_DB" \
-  --format=custom \
-  --no-owner \
-  --no-privileges \
-  --clean \
-  --if-exists \
-  --exclude-schema='auth' \
-  --exclude-schema='storage' \
-  --exclude-schema='realtime' \
-  --exclude-schema='extensions' \
-  --exclude-schema='information_schema' \
-  --exclude-schema='pg_catalog' \
-  --file="$DUMP_FILE" \
-  2>&1 | sed 's/^/  /'; then
-  echo -e "${RED}✗ Failed to create dump from production${NC}"
-  exit 1
+  # Use pg_dump with custom format for better compression and flexibility
+  # --no-owner: Don't dump ownership information
+  # --no-privileges: Don't dump access privileges
+  # --clean: Include DROP commands before CREATE (for clean restore)
+  # --if-exists: Use IF EXISTS in DROP commands
+  # --exclude-schema: Exclude Supabase schemas (no longer used)
+  if ! pg_dump "$PRODUCTION_DB" \
+    --format=custom \
+    --no-owner \
+    --no-privileges \
+    --clean \
+    --if-exists \
+    --exclude-schema='auth' \
+    --exclude-schema='storage' \
+    --exclude-schema='realtime' \
+    --exclude-schema='extensions' \
+    --exclude-schema='information_schema' \
+    --exclude-schema='pg_catalog' \
+    --file="$DUMP_FILE" \
+    2>&1 | sed 's/^/  /'; then
+    echo -e "${RED}✗ Failed to create dump from production${NC}"
+    exit 1
+  fi
+
+  if [ ! -s "$DUMP_FILE" ]; then
+    echo -e "${RED}✗ Failed to create dump from production or dump is empty${NC}"
+    exit 1
+  fi
+
+  echo -e "${GREEN}✓ Dump created successfully: $DUMP_FILE ($(du -h "$DUMP_FILE" | cut -f1))${NC}"
+  echo ""
 fi
-
-if [ ! -s "$DUMP_FILE" ]; then
-  echo -e "${RED}✗ Failed to create dump from production or dump is empty${NC}"
-  exit 1
-fi
-
-echo -e "${GREEN}✓ Dump created successfully: $DUMP_FILE ($(du -h "$DUMP_FILE" | cut -f1))${NC}"
-echo ""
 
 # Step 2: Restore to local database
 echo -e "${YELLOW}Step 2: Restoring to local database...${NC}"
@@ -92,11 +110,11 @@ echo ""
 
 # Drop and recreate the database for a clean restore
 echo "Terminating active connections to carbon_development..."
-psql -d "postgresql://postgres@localhost:5434/postgres" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'carbon_development' AND pid <> pg_backend_pid();" 2>/dev/null || true
+psql -d "postgresql://postgres@127.0.0.1:5434/postgres" -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'carbon_development' AND pid <> pg_backend_pid();" 2>/dev/null || true
 echo "Dropping existing database for clean restore..."
-psql -d "postgresql://postgres@localhost:5434/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
+psql -d "postgresql://postgres@127.0.0.1:5434/postgres" -c "DROP DATABASE IF EXISTS carbon_development;" 2>/dev/null || true
 echo "Creating fresh database..."
-psql -d "postgresql://postgres@localhost:5434/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
+psql -d "postgresql://postgres@127.0.0.1:5434/postgres" -c "CREATE DATABASE carbon_development;" 2>/dev/null || true
 
 # The production dump keeps some extensions in 'extensions' (Supabase-style), but
 # pg_trgm lives in 'public' in production. Pre-create the extensions in the same
@@ -115,7 +133,7 @@ END \$\$;" 2>&1 | sed 's/^/  /' || true
 # restored locally (event triggers referencing extensions.* functions and the
 # supabase_realtime publication).
 echo "Filtering Supabase-only objects from restore list..."
-TOC_LIST="$DUMP_DIR/production_dump_${TIMESTAMP}.list"
+TOC_LIST="${TOC_LIST:-$DUMP_DIR/production_dump_${TIMESTAMP}.list}"
 pg_restore --list "$DUMP_FILE" \
   | grep -v ' EVENT TRIGGER ' \
   | grep -v ' PUBLICATION ' \

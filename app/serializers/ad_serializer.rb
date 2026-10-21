@@ -8,7 +8,7 @@ class AdSerializer < ActiveModel::Serializer
              :flash_sale_info, :listing_type, :pricing_unit, :price_tiers, :price_display_mode, :price_range_max, :unit_label,
              :minimum_order_quantity, :display_price?, :flagged, :flag_notes, :is_flagged,
              :seller_is_online, :has_valid_images, :is_brand_kenya,
-             :views_count, :reveals_count, :views, :reveals, :ad_clicks, :reveal_clicks,
+             :views_count, :reveals_count, :views, :reveals, :ad_clicks, :reveal_clicks, :wishlist_count,
              :is_featured, :featured_until, :organic_quality_score
 
   def views_count

@@ -68,6 +68,7 @@ class Admin::AnalyticsController < ApplicationController
 
     # Calculate seller total reveal clicks
     sellers_by_reveal_clicks = Seller.joins(ads: :click_events)
+                        .merge(ClickEvent.excluding_internal_users)
                         .where(click_events: { event_type: 'Reveal-Seller-Details' })
                         .select('sellers.id, sellers.fullname, sellers.email, sellers.enterprise_name, sellers.profile_picture, COUNT(click_events.id) AS reveal_clicks')
                         .group('sellers.id, sellers.profile_picture')
@@ -75,6 +76,7 @@ class Admin::AnalyticsController < ApplicationController
 
     # Calculate seller total ad clicks
     sellers_by_ad_clicks = Seller.joins(ads: :click_events)
+                        .merge(ClickEvent.excluding_internal_users)
                         .where(click_events: { event_type: 'Ad-Click' })
                         .select('sellers.id, sellers.fullname, sellers.email, sellers.enterprise_name, sellers.profile_picture, COUNT(click_events.id) AS total_ad_clicks')
                         .group('sellers.id, sellers.profile_picture')

@@ -75,60 +75,101 @@ class OfferSerializer
                 fullname: @offer.seller&.fullname
               },
               # Ads with discounts - excludes flagged/blocked/deleted sellers above.
-              ads: offer_ads.map do |offer_ad|
-                ad = offer_ad.ad
-                next nil unless ad && ad.has_valid_images?
+              ads: begin
+                ad_ids = offer_ads.map(&:ad_id).compact.uniq
+                click_counts = Hash.new(0)
+                reveal_counts = Hash.new(0)
+                wishlist_counts = Hash.new(0)
 
-                seller = ad.seller
-                seller_tier = seller&.seller_tier
-                tier_id = seller_tier&.tier_id || 1
-                
-                # Get tier name
-                tier_name = case tier_id
-                when 4 then "Premium"
-                when 3 then "Standard"
-                when 2 then "Basic"
-                when 1 then "Free"
-                else "Free"
+                if ad_ids.any?
+                  begin
+                    ClickEvent.excluding_internal_users
+                              .where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
+                              .group(:ad_id, :event_type)
+                              .count
+                              .each do |(aid, etype), count|
+                                if etype == 'Ad-Click'
+                                  click_counts[aid.to_i] = count
+                                elsif etype == 'Reveal-Seller-Details'
+                                  reveal_counts[aid.to_i] = count
+                                end
+                              end
+
+                    WishList.where(ad_id: ad_ids)
+                            .group(:ad_id)
+                            .count
+                            .each { |aid, count| wishlist_counts[aid.to_i] = count }
+                  rescue StandardError => e
+                    Rails.logger.warn "Failed to batch load click counts in OfferSerializer: #{e.message}"
+                  end
                 end
-                
-                # Get tier priority
-                tier_priority = case tier_id
-                when 4 then 1  # Premium
-                when 3 then 2  # Standard
-                when 2 then 3  # Basic
-                when 1 then 4  # Free
-                else 4
-                end
-                
-                {
-                  id: ad.id,
-                  slug: ad.url_slug,
-                  is_brand_kenya: ad.is_brand_kenya == true,
-                  title: ad.title,
-                  original_price: offer_ad.original_price,
-                  discounted_price: offer_ad.discounted_price,
-                  discount_percentage: offer_ad.discount_percentage,
-                  savings_amount: offer_ad.savings_amount,
-                  first_media_url: ad.first_media_url,
-                  category_name: ad.category&.name,
-                  subcategory_name: ad.subcategory&.name,
-                  seller_notes: offer_ad.seller_notes,
-                  # Seller tier information
-                  seller_tier: tier_id,
-                  seller_tier_name: tier_name,
-                  tier_priority: tier_priority,
-                  seller_name: seller&.fullname || seller&.enterprise_name,
-                  # Additional useful fields
-                  media_urls: ad.valid_media_urls,
-                  rating: if ad.reviews.loaded?
-                            ad.reviews.any? ? (ad.reviews.sum(&:rating).to_f / ad.reviews.size).round(1) : 0.0
-                          else
-                            ad.reviews.average(:rating)&.round(1) || 0.0
-                          end,
-                  review_count: ad.attributes.key?('reviews_count') ? (ad.reviews_count || 0) : ad.reviews.count
-                }
-              end.compact
+
+                offer_ads.map do |offer_ad|
+                  ad = offer_ad.ad
+                  next nil unless ad && ad.has_valid_images?
+
+                  seller = ad.seller
+                  seller_tier = seller&.seller_tier
+                  tier_id = seller_tier&.tier_id || 1
+                  
+                  # Get tier name
+                  tier_name = case tier_id
+                  when 4 then "Premium"
+                  when 3 then "Standard"
+                  when 2 then "Basic"
+                  when 1 then "Free"
+                  else "Free"
+                  end
+                  
+                  # Get tier priority
+                  tier_priority = case tier_id
+                  when 4 then 1  # Premium
+                  when 3 then 2  # Standard
+                  when 2 then 3  # Basic
+                  when 1 then 4  # Free
+                  else 4
+                  end
+
+                  views = click_counts[ad.id] || 0
+                  reveals = reveal_counts[ad.id] || 0
+                  wishlists = wishlist_counts[ad.id] || 0
+
+                  {
+                    id: ad.id,
+                    slug: ad.url_slug,
+                    is_brand_kenya: ad.is_brand_kenya == true,
+                    title: ad.title,
+                    original_price: offer_ad.original_price,
+                    discounted_price: offer_ad.discounted_price,
+                    discount_percentage: offer_ad.discount_percentage,
+                    savings_amount: offer_ad.savings_amount,
+                    first_media_url: ad.first_media_url,
+                    category_name: ad.category&.name,
+                    subcategory_name: ad.subcategory&.name,
+                    seller_notes: offer_ad.seller_notes,
+                    # Seller tier information
+                    seller_tier: tier_id,
+                    seller_tier_name: tier_name,
+                    tier_priority: tier_priority,
+                    seller_name: seller&.fullname || seller&.enterprise_name,
+                    # Additional useful fields
+                    media_urls: ad.valid_media_urls,
+                    views_count: views,
+                    reveals_count: reveals,
+                    views: views,
+                    reveals: reveals,
+                    ad_clicks: views,
+                    reveal_clicks: reveals,
+                    wishlist_count: wishlists,
+                    rating: if ad.reviews.loaded?
+                              ad.reviews.any? ? (ad.reviews.sum(&:rating).to_f / ad.reviews.size).round(1) : 0.0
+                            else
+                              ad.reviews.average(:rating)&.round(1) || 0.0
+                            end,
+                    review_count: ad.attributes.key?('reviews_count') ? (ad.reviews_count || 0) : ad.reviews.count
+                  }
+                end.compact
+              end
     }
   end
   

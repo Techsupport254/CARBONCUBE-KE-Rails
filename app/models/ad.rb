@@ -350,19 +350,23 @@ class Ad < ApplicationRecord
   end
 
   def ad_clicks
-    click_events.where(event_type: 'Ad-Click').count
+    click_events.excluding_internal_users.where(event_type: 'Ad-Click').count
   end
+  alias_method :views_count, :ad_clicks
+  alias_method :views, :ad_clicks
 
   def reveal_clicks
-    click_events.where(event_type: 'Reveal-Seller-Details').count
+    click_events.excluding_internal_users.where(event_type: 'Reveal-Seller-Details').count
   end
+  alias_method :reveals_count, :reveal_clicks
+  alias_method :reveals, :reveal_clicks
 
   def wishlist_clicks
-    click_events.where(event_type: 'Add-to-Wish-List').count
+    click_events.excluding_internal_users.where(event_type: 'Add-to-Wish-List').count
   end
 
   def cart_clicks
-    click_events.where(event_type: 'Add-to-Cart').count
+    click_events.excluding_internal_users.where(event_type: 'Add-to-Cart').count
   end
 
   def wishlist_count

@@ -510,8 +510,8 @@ class Sales::AnalyticsController < ApplicationController
       
       # 2. Bulk fetch basic buyer stats
       # Direct click events counts
-      direct_click_counts = ClickEvent.where(buyer_id: user_ids, event_type: 'Ad-Click').group(:buyer_id).count
-      direct_reveal_counts = ClickEvent.where(buyer_id: user_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
+      direct_click_counts = ClickEvent.excluding_internal_users.where(buyer_id: user_ids, event_type: 'Ad-Click').group(:buyer_id).count
+      direct_reveal_counts = ClickEvent.excluding_internal_users.where(buyer_id: user_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
       
       # Review counts
       reviews_counts = Review.where(buyer_id: user_ids).group(:buyer_id).count
@@ -576,8 +576,16 @@ class Sales::AnalyticsController < ApplicationController
       # Get device_hash from params or headers if available
       device_hash = params[:device_hash] || request.headers['X-Device-Hash']
       
-      # Get click event statistics
-      click_stats = ClickEvent
+      # Raw click event stats for this ad (all tracked events)
+      raw_click_stats = ClickEvent
+        .where(ad_id: ad_id)
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+        .group(:event_type)
+        .count
+
+      # Filtered click event statistics (excluding internal/own clicks)
+      organic_click_stats = ClickEvent
         .excluding_internal_users
         .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
         .where(ad_id: ad_id)
@@ -586,7 +594,13 @@ class Sales::AnalyticsController < ApplicationController
         .group(:event_type)
         .count
       
-      # Get contact interaction stats
+      # Contact interaction stats
+      raw_contact_events = ClickEvent
+        .where(ad_id: ad_id, event_type: 'Reveal-Seller-Details')
+        .where(Arel.sql("metadata->>'action' = 'seller_contact_interaction'"))
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+
       contact_interaction_events = ClickEvent
         .excluding_internal_users
         .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
@@ -595,19 +609,22 @@ class Sales::AnalyticsController < ApplicationController
         .left_joins(:buyer)
         .where("buyers.id IS NULL OR buyers.deleted = ?", false)
       
-      copy_clicks = contact_interaction_events
+      # Use organic events if present, otherwise fall back to raw events so staff/testing views are not shown as 0
+      interaction_scope = contact_interaction_events.exists? ? contact_interaction_events : raw_contact_events
+
+      copy_clicks = interaction_scope
         .where(Arel.sql("metadata->>'action_type' IN ('copy_phone', 'copy_email')"))
         .count
       
-      call_clicks = contact_interaction_events
+      call_clicks = interaction_scope
         .where(Arel.sql("metadata->>'action_type' = 'call_phone'"))
         .count
       
-      whatsapp_clicks = contact_interaction_events
+      whatsapp_clicks = interaction_scope
         .where(Arel.sql("metadata->>'action_type' = 'whatsapp'"))
         .count
       
-      location_clicks = contact_interaction_events
+      location_clicks = interaction_scope
         .where(Arel.sql("metadata->>'action_type' = 'view_location'"))
         .count
       
@@ -618,42 +635,63 @@ class Sales::AnalyticsController < ApplicationController
         .count
       
       # Get guest vs authenticated reveals
-      reveal_clicks = ClickEvent
+      raw_reveals = ClickEvent
+        .where(ad_id: ad_id, event_type: 'Reveal-Seller-Details')
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+
+      organic_reveals = ClickEvent
         .excluding_internal_users
         .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
         .where(ad_id: ad_id, event_type: 'Reveal-Seller-Details')
         .left_joins(:buyer)
         .where("buyers.id IS NULL OR buyers.deleted = ?", false)
-      
-      guest_reveals = reveal_clicks.where(buyer_id: nil).count
-      authenticated_reveals = reveal_clicks.where.not(buyer_id: nil).count
+
+      reveals_scope = organic_reveals.exists? ? organic_reveals : raw_reveals
+      guest_reveals = reveals_scope.where(buyer_id: nil).count
+      authenticated_reveals = reveals_scope.where.not(buyer_id: nil).count
       
       # Get conversions (guest users who revealed and then signed up)
-      conversions = reveal_clicks
+      conversions = reveals_scope
         .where(buyer_id: nil)
         .where(Arel.sql("metadata->>'converted_from_guest' = 'true'"))
         .count
       
       # Get callback request stats
-      callback_requests = ClickEvent
+      raw_callbacks = ClickEvent
+        .where(ad_id: ad_id, event_type: 'Callback-Request')
+        .left_joins(:buyer)
+        .where("buyers.id IS NULL OR buyers.deleted = ?", false)
+
+      organic_callbacks = ClickEvent
         .excluding_internal_users
         .excluding_seller_own_clicks(device_hash: device_hash, seller_id: ad.seller_id)
         .where(ad_id: ad_id, event_type: 'Callback-Request')
         .left_joins(:buyer)
         .where("buyers.id IS NULL OR buyers.deleted = ?", false)
       
-      callback_request_count = callback_requests.count
-      
-      # Get callback requests from alternative sellers
-      alternative_callback_requests = callback_requests
+      callbacks_scope = organic_callbacks.exists? ? organic_callbacks : raw_callbacks
+      callback_request_count = callbacks_scope.count
+      alternative_callback_requests = callbacks_scope
         .where(Arel.sql("metadata->>'is_alternative_seller' = 'true'"))
         .count
       
+      # Canonical counts — identical to AdSerializer / all listing surfaces:
+      # ClickEvent.excluding_internal_users filtered counts (ad.ad_clicks /
+      # ad.reveal_clicks already use that scope). Raw and organic breakdowns
+      # are still exposed below for diagnostics.
+      ad_clicks = ad.ad_clicks
+      reveal_clicks = ad.reveal_clicks
+
       stats = {
         ad_id: ad.id,
         ad_title: ad.title,
-        ad_clicks: click_stats['Ad-Click'] || 0,
-        reveal_clicks: click_stats['Reveal-Seller-Details'] || 0,
+        ad_clicks: ad_clicks,
+        reveal_clicks: reveal_clicks,
+        organic_ad_clicks: organic_click_stats['Ad-Click'] || 0,
+        organic_reveal_clicks: organic_click_stats['Reveal-Seller-Details'] || 0,
+        raw_ad_clicks: [raw_click_stats['Ad-Click'] || 0, ad.ad_clicks].max,
+        raw_reveal_clicks: [raw_click_stats['Reveal-Seller-Details'] || 0, ad.reveal_clicks].max,
         guest_reveals: guest_reveals,
         authenticated_reveals: authenticated_reveals,
         conversions: conversions,

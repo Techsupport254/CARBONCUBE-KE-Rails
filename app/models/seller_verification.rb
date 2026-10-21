@@ -3,8 +3,26 @@ class SellerVerification < ApplicationRecord
   belongs_to :sales_user
   has_many :seller_follow_ups, dependent: :nullify
 
-  OUTCOMES = %w[verified corrected not_found unreachable].freeze
+  # 'unverifiable' = rep confirmed the seller's details on-site but the
+  # premises don't qualify for verification (e.g. demolished shop, seller now
+  # operating from a temporary stall). Records everything, applies corrections,
+  # syncs the new location — but does NOT stamp field_verified_at or the
+  # shop-front banner.
+  OUTCOMES = %w[verified corrected unverifiable not_found unreachable].freeze
   GPS_VERDICTS = %w[verified suspicious pending].freeze
+
+  # What kind of premises the seller operates from. Only 'building_unit' has a
+  # room/shop number — street-facing shops, stalls, market stands and
+  # home-based sellers don't, which is why room no. can't be required.
+  PREMISES_TYPES = %w[building_unit street_front stall_kiosk market_stand home_based].freeze
+
+  PREMISES_LABELS = {
+    'building_unit' => 'Shop in a building / plaza',
+    'street_front' => 'Street-facing shop',
+    'stall_kiosk' => 'Stall / kiosk',
+    'market_stand' => 'Open-air market stand',
+    'home_based' => 'Home-based / mobile seller'
+  }.freeze
 
   # Seller fields a rep is allowed to correct during a field visit.
   # Anything outside this list is ignored.
@@ -12,6 +30,7 @@ class SellerVerification < ApplicationRecord
     enterprise_name
     phone_number
     location
+    premises_type
     county_id
     sub_county_id
   ].freeze
@@ -37,6 +56,7 @@ class SellerVerification < ApplicationRecord
       'enterprise_name' => 'Business name',
       'phone_number' => 'Phone number',
       'location' => 'Location',
+      'premises_type' => 'Premises type',
       'county_id' => 'County',
       'sub_county_id' => 'Sub-county'
     }[field.to_s] || field.to_s.humanize
@@ -47,6 +67,8 @@ class SellerVerification < ApplicationRecord
     return value if value.blank?
 
     case field.to_s
+    when 'premises_type'
+      PREMISES_LABELS[value.to_s] || value
     when 'county_id'
       County.find_by(id: value)&.name || value
     when 'sub_county_id'
@@ -95,6 +117,14 @@ class SellerVerification < ApplicationRecord
 
   def successful?
     VERIFIED_OUTCOMES.include?(outcome)
+  end
+
+  # Whether the rep's on-site GPS should be synced onto the seller's shop
+  # branch. True for verified visits AND 'unverifiable' ones — the stall is
+  # still where the seller actually operates, even though it can't be
+  # field-verified.
+  def syncs_shop_location?
+    successful? || outcome == 'unverifiable'
   end
 
   # Compute distance evidence for this verification:

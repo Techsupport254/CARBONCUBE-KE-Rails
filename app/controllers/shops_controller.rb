@@ -106,7 +106,8 @@ class ShopsController < ApplicationController
     reveal_clicks_map = Hash.new(0)
     if ad_ids.any?
       begin
-        event_counts = ClickEvent.where(ad_id: ad_ids, event_type: ['Ad-Click', 'Reveal-Seller-Details'])
+        event_counts = ClickEvent.excluding_internal_users
+                                 .where(ad_id: ad_ids, event_type: ['Ad-Click', 'Reveal-Seller-Details'])
                                  .group(:ad_id, :event_type)
                                  .count
         event_counts.each do |(aid, etype), count|

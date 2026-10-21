@@ -116,9 +116,9 @@ class InternalUserExclusion < ApplicationRecord
   
   # Check if any identifier matches exclusion criteria
   def self.should_exclude?(device_hash: nil, user_agent: nil, ip_address: nil, email: nil, user_name: nil, role: nil)
-    # Hardcoded role-based exclusions (always exclude admin and sales users)
+    # Hardcoded role-based exclusions (always exclude admin, sales, staff, marketing users)
     if role.present?
-      hardcoded_excluded_roles = ['admin', 'sales']
+      hardcoded_excluded_roles = ['admin', 'sales', 'staff', 'marketing', 'developer', 'internal', 'operations']
       role_lower = role.to_s.downcase.strip
       if hardcoded_excluded_roles.any? { |excluded_role| role_lower == excluded_role.downcase }
         return "Internal Role (#{role_lower})"
@@ -127,7 +127,7 @@ class InternalUserExclusion < ApplicationRecord
     
     # Hardcoded name-based exclusions
     if user_name.present?
-      hardcoded_excluded_names = ['Sales']
+      hardcoded_excluded_names = ['Sales', 'Admin', 'Staff', 'Operations']
       if hardcoded_excluded_names.any? { |excluded_name| user_name.strip.downcase == excluded_name.downcase }
         return "Internal Name (#{user_name})"
       end

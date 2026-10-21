@@ -26,7 +26,7 @@ class Buyer::OffersController < ApplicationController
       Time.current.to_i / 600
     ].map(&:to_s).join('|'))
 
-    cache_key = "buyer_offers_index_#{filter_fingerprint}"
+    cache_key = "buyer_offers_index_v2_#{filter_fingerprint}"
 
     response_data = Rails.cache.fetch(cache_key, expires_in: 10.minutes, race_condition_ttl: 10.seconds) do
       # OPTIMIZATION: Build dynamic WHERE conditions
@@ -150,6 +150,7 @@ class Buyer::OffersController < ApplicationController
             offer_ads.discount_percentage,
             ads.id,
             ads.title,
+            ads.slug,
             ads.price,
             ads.media,
             ads.created_at,
@@ -240,9 +241,12 @@ class Buyer::OffersController < ApplicationController
               tier_name: offer_row['seller_tier_name']
             },
             ads: ads.map do |ad_row|
+              aid = ad_row['id'].to_i
+              canonical_slug = ad_row['slug'].presence || "#{Ad.slugify(ad_row['title']).presence || 'ad'}-#{aid}"
               {
-                id: ad_row['id'],
+                id: aid,
                 title: ad_row['title'],
+                slug: canonical_slug,
                 price: ad_row['price'],
                 original_price: ad_row['original_price'],
                 discounted_price: ad_row['discounted_price'],
@@ -255,7 +259,14 @@ class Buyer::OffersController < ApplicationController
                 seller_tier_id: ad_row['seller_tier_id'],
                 seller_tier_name: ad_row['seller_tier_name'],
                 review_count: ad_row['review_count'],
-                avg_rating: ad_row['avg_rating']
+                avg_rating: ad_row['avg_rating'],
+                views_count: 0,
+                reveals_count: 0,
+                views: 0,
+                reveals: 0,
+                ad_clicks: 0,
+                reveal_clicks: 0,
+                wishlist_count: 0
               }
             end
           }
@@ -292,6 +303,9 @@ class Buyer::OffersController < ApplicationController
         }
       end
     end
+
+    # Attach live engagement counts so views/reveals match ad detail page
+    attach_engagement_counts_to_offers(response_data[:offers]) if response_data && response_data[:offers].present?
 
     render json: response_data
   end
@@ -716,6 +730,54 @@ class Buyer::OffersController < ApplicationController
   end
   
   private
+
+  def attach_engagement_counts_to_offers(offers)
+    return if offers.blank?
+
+    all_ads = offers.flat_map { |offer| offer[:ads] || offer['ads'] || [] }
+    ad_ids = all_ads.map { |ad| (ad[:id] || ad['id'])&.to_i }.compact.uniq
+    return if ad_ids.blank?
+
+    click_counts = Hash.new(0)
+    reveal_counts = Hash.new(0)
+    wishlist_counts = Hash.new(0)
+
+    begin
+      ClickEvent.excluding_internal_users
+                .where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
+                .group(:ad_id, :event_type)
+                .count
+                .each do |(aid, etype), count|
+                  if etype == 'Ad-Click'
+                    click_counts[aid.to_i] = count
+                  elsif etype == 'Reveal-Seller-Details'
+                    reveal_counts[aid.to_i] = count
+                  end
+                end
+
+      WishList.where(ad_id: ad_ids)
+              .group(:ad_id)
+              .count
+              .each { |aid, count| wishlist_counts[aid.to_i] = count }
+    rescue StandardError => e
+      Rails.logger.warn "Failed to attach engagement counts to offers: #{e.message}"
+    end
+
+    all_ads.each do |ad|
+      aid = (ad[:id] || ad['id'])&.to_i
+      views = click_counts[aid] || 0
+      reveals = reveal_counts[aid] || 0
+      wishlists = wishlist_counts[aid] || 0
+
+      ad[:views_count] = views
+      ad[:reveals_count] = reveals
+      ad[:views] = views
+      ad[:reveals] = reveals
+      ad[:ad_clicks] = views
+      ad[:reveal_clicks] = reveals
+      ad[:wishlist_count] = wishlists
+    end
+  end
   
   def authenticate_buyer
     # Implement buyer authentication

@@ -35,8 +35,8 @@ class Sales::BuyersController < ApplicationController
     @buyers = buyers_query.order(created_at: :desc).limit(per_page).offset((page - 1) * per_page).to_a
     buyer_ids = @buyers.map(&:id)
 
-    click_counts = ClickEvent.where(buyer_id: buyer_ids, event_type: 'Ad-Click').group(:buyer_id).count
-    reveal_counts = ClickEvent.where(buyer_id: buyer_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
+    click_counts = ClickEvent.excluding_internal_users.where(buyer_id: buyer_ids, event_type: 'Ad-Click').group(:buyer_id).count
+    reveal_counts = ClickEvent.excluding_internal_users.where(buyer_id: buyer_ids, event_type: 'Reveal-Seller-Details').group(:buyer_id).count
     review_counts = Review.where(buyer_id: buyer_ids).group(:buyer_id).count
     wishlist_counts = WishList.where(buyer_id: buyer_ids).group(:buyer_id).count
     engaged_buyer_ids = Message.where(sender_type: 'Buyer', sender_id: buyer_ids).where.not(whatsapp_message_id: nil).distinct.pluck(:sender_id).to_set

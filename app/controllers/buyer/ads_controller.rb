@@ -202,6 +202,10 @@ class Buyer::AdsController < ApplicationController
           specifications: is_lite_mode ? nil : ad.specifications,
           views_count: engagement_counts[ad.id][:views],
           reveals_count: engagement_counts[ad.id][:reveals],
+          views: engagement_counts[ad.id][:views],
+          reveals: engagement_counts[ad.id][:reveals],
+          ad_clicks: engagement_counts[ad.id][:views],
+          reveal_clicks: engagement_counts[ad.id][:reveals],
           wishlist_count: engagement_counts[ad.id][:wishlists]
         }.compact
 
@@ -3028,7 +3032,36 @@ class Buyer::AdsController < ApplicationController
   end
 
   def serialize_alternatives(scope)
-    scope.map do |alt|
+    scope_array = scope.to_a
+    return [] if scope_array.empty?
+
+    ad_ids = scope_array.map(&:id)
+    click_counts = Hash.new(0)
+    reveal_counts = Hash.new(0)
+    wishlist_counts = Hash.new(0)
+
+    begin
+      ClickEvent.excluding_internal_users
+                .where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
+                .group(:ad_id, :event_type)
+                .count
+                .each do |(aid, etype), count|
+                  if etype == 'Ad-Click'
+                    click_counts[aid.to_i] = count
+                  elsif etype == 'Reveal-Seller-Details'
+                    reveal_counts[aid.to_i] = count
+                  end
+                end
+
+      WishList.where(ad_id: ad_ids)
+              .group(:ad_id)
+              .count
+              .each { |aid, count| wishlist_counts[aid.to_i] = count }
+    rescue StandardError => e
+      Rails.logger.warn "Failed to batch load click counts for alternatives: #{e.message}"
+    end
+
+    scope_array.map do |alt|
       seller_tier_id = alt.seller&.seller_tier&.tier_id || 1
       review_count = alt.reviews&.count || 0
       avg_rating = if alt.reviews&.any?
@@ -3036,6 +3069,10 @@ class Buyer::AdsController < ApplicationController
       else
         0.0
       end
+
+      views = click_counts[alt.id] || 0
+      reveals = reveal_counts[alt.id] || 0
+      wishlists = wishlist_counts[alt.id] || 0
 
       # Get original_price from active offer if available
       original_price = nil
@@ -3080,7 +3117,14 @@ class Buyer::AdsController < ApplicationController
         brand: alt.brand,
         manufacturer: alt.manufacturer,
         slug: alt.url_slug,
-        is_brand_kenya: alt.attributes.key?('is_brand_kenya') ? alt.is_brand_kenya == true : false
+        is_brand_kenya: alt.attributes.key?('is_brand_kenya') ? alt.is_brand_kenya == true : false,
+        views_count: views,
+        reveals_count: reveals,
+        views: views,
+        reveals: reveals,
+        ad_clicks: views,
+        reveal_clicks: reveals,
+        wishlist_count: wishlists
       }
     end
   end
@@ -3804,7 +3848,8 @@ class Buyer::AdsController < ApplicationController
     counts = Hash.new { |h, k| h[k] = { views: 0, reveals: 0, wishlists: 0 } }
     return counts if ad_ids.blank?
 
-    ClickEvent.where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
+    ClickEvent.excluding_internal_users
+              .where(ad_id: ad_ids, event_type: %w[Ad-Click Reveal-Seller-Details])
               .group(:ad_id, :event_type)
               .count
               .each do |(ad_id, event_type), n|
@@ -3827,9 +3872,16 @@ class Buyer::AdsController < ApplicationController
 
     ads.each do |ad|
       id = (ad[:id] || ad['id'])&.to_i
-      ad[:views_count] = counts[id][:views]
-      ad[:reveals_count] = counts[id][:reveals]
-      ad[:wishlist_count] = counts[id][:wishlists]
+      views = counts[id][:views]
+      reveals = counts[id][:reveals]
+      wishlists = counts[id][:wishlists]
+      ad[:views_count] = views
+      ad[:reveals_count] = reveals
+      ad[:views] = views
+      ad[:reveals] = reveals
+      ad[:ad_clicks] = views
+      ad[:reveal_clicks] = reveals
+      ad[:wishlist_count] = wishlists
     end
 
     ads

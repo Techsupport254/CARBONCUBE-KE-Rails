@@ -368,9 +368,10 @@ class Seller::AnalyticsController < ApplicationController
     end
 
     # Step 2: Query the click events for those ads within the date range
-    click_events = ClickEvent.where(ad_id: ad_ids)
-                             .where('created_at BETWEEN ? AND ?', start_date, end_date)
-                             .group("DATE_TRUNC('month', created_at)", :event_type)
+    click_events = ClickEvent.excluding_internal_users
+                             .where(ad_id: ad_ids)
+                             .where('click_events.created_at BETWEEN ? AND ?', start_date, end_date)
+                             .group("DATE_TRUNC('month', click_events.created_at)", :event_type)
                              .count
 
     # Rails.logger.info("Click Events Grouped by Month and Event Type: #{click_events.inspect}")

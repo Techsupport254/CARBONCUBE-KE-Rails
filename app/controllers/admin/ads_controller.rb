@@ -84,7 +84,7 @@ class Admin::AdsController < ApplicationController
           only: [:rating, :review, :created_at]
         }
       },
-      methods: [:mean_rating, :media_urls, :first_media_url],
+      methods: [:mean_rating, :media_urls, :first_media_url, :ad_clicks, :reveal_clicks, :views_count, :reveals_count, :views, :reveals],
       except: [:deleted]
     ).merge("is_added_by_sales" => @ad.effective_is_added_by_sales)
   end

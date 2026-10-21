@@ -3,15 +3,41 @@ class ClickEventsController < ApplicationController
 
   def create
     # Check if this is an internal user that should be excluded
-    is_internal_excluded = internal_user_excluded?
+    exclusion_reason = internal_user_excluded?
+    if exclusion_reason.present?
+      render json: { 
+        message: "Click ignored (internal user excluded: #{exclusion_reason})", 
+        excluded: true,
+        reason: exclusion_reason
+      }, status: :ok
+      return
+    end
+
+    # Resolve ad_id safely; invalid/non-existent IDs become nil to avoid FK violations
+    ad_id = normalize_ad_id(click_event_params[:ad_id])
+
+    # Check if seller is viewing their own ad
+    metadata_source = click_event_params[:metadata] || {}
+    metadata = metadata_source.respond_to?(:to_h) ? metadata_source.to_h : metadata_source
+    user_id_from_metadata = metadata[:user_id] || metadata['user_id']
+    user_role_from_metadata = (metadata[:user_role] || metadata['user_role'])&.to_s&.downcase
+
+    seller_user_id = @current_user&.is_a?(Seller) ? @current_user.id : (user_role_from_metadata == 'seller' ? user_id_from_metadata : nil)
+    if seller_user_id.present? && ad_id.present?
+      target_ad = Ad.find_by(id: ad_id)
+      if target_ad && target_ad.seller_id.to_s == seller_user_id.to_s
+        render json: { 
+          message: 'Click ignored (seller own ad)', 
+          excluded: true,
+          reason: 'Seller viewing own ad'
+        }, status: :ok
+        return
+      end
+    end
 
     # Wrap entire operation in transaction for ACID compliance
     # This ensures metadata preparation and record creation are atomic
     ActiveRecord::Base.transaction do
-      # Prepare metadata with device fingerprinting information
-      metadata_source = click_event_params[:metadata] || {}
-      metadata = metadata_source.respond_to?(:to_h) ? metadata_source.to_h : metadata_source
-      
       # Add device fingerprinting data to metadata if provided
       if params[:device_hash].present?
         metadata[:device_hash] = params[:device_hash]
@@ -132,7 +158,7 @@ class ClickEventsController < ApplicationController
       #   Rails.logger.info "ClickEventsController: Click event saved successfully: ID=#{click_event.id}, buyer_id=#{click_event.buyer_id}, event_type=#{click_event.event_type}, ad_id=#{click_event.ad_id}"
       # end
 
-      message = is_internal_excluded ? 'Click logged successfully (internal user excluded)' : 'Click logged successfully'
+      message = 'Click logged successfully'
       render json: { 
         message: message,
         click_event: {
@@ -307,6 +333,16 @@ class ClickEventsController < ApplicationController
     user_agent = params[:user_agent] || request.user_agent
     ip_address = request.remote_ip
     
+    metadata = click_event_params[:metadata] || {}
+    metadata = metadata.respond_to?(:to_h) ? metadata.to_h : metadata
+
+    # Check explicit frontend internal user flags
+    if metadata[:is_internal_user] == true || metadata['is_internal_user'] == true ||
+       metadata.dig(:device_fingerprint, :is_internal_user) == true ||
+       metadata.dig('device_fingerprint', 'is_internal_user') == true
+      return "Frontend internal user flag"
+    end
+
     # Get email from authenticated user or from metadata
     email = @current_user&.email
     
@@ -355,10 +391,11 @@ class ClickEventsController < ApplicationController
     end
     
     if email.blank?
-      metadata = click_event_params[:metadata] || {}
       email = metadata[:user_email] || metadata['user_email']
       user_name = metadata[:user_name] || metadata['user_name'] if user_name.blank?
       role = metadata[:user_role] || metadata['user_role'] || role
+    else
+      role ||= metadata[:user_role] || metadata['user_role']
     end
 
     # Check against exclusion rules
