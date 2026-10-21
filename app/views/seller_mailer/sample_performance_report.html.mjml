@@ -3,7 +3,7 @@
     <mj-title>Weekly Shop Performance Insights</mj-title>
     <mj-include path="../mjml/shared/baseline-head.mjml" />
     <mj-attributes>
-      <mj-button background-color="#fbbf24" color="#000000" font-weight="900" text-transform="uppercase" border-radius="12px" />
+      <mj-button background-color="#fbbf24" color="#000000" font-weight="900" text-transform="uppercase" border-radius="999px" />
       <mj-section background-color="#ffffff" padding="0 24px" />
     </mj-attributes>
     <mj-style inline="inline">

@@ -100,7 +100,7 @@ export default function WelcomeEmail({
               <Text style={{ margin: "0 0 10px", fontSize: "13px", fontFamily: "monospace", fontWeight: 700, color: "#0f172a", wordBreak: "break-all" }}>
                 {storefront_url}
               </Text>
-              <Button href={storefront_url} style={{ backgroundColor: "#0f172a", color: "#ffffff", padding: "9px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
+              <Button href={storefront_url} style={{ backgroundColor: "#0f172a", color: "#ffffff", padding: "9px 16px", borderRadius: "9999px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
                 View Your Storefront
               </Button>
             </Section>
@@ -131,7 +131,7 @@ export default function WelcomeEmail({
             <Text style={{ margin: "0 0 12px", fontSize: "13px", color: "#475569", lineHeight: "20px" }}>
               You can easily send your product pictures, prices, and details to us via WhatsApp, and our dedicated support team will upload them for you!
             </Text>
-            <Button href={`https://wa.me/254712990524`} style={{ backgroundColor: "#25D366", color: "#ffffff", padding: "9px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
+            <Button href={`https://wa.me/254712990524`} style={{ backgroundColor: "#25D366", color: "#ffffff", padding: "9px 16px", borderRadius: "9999px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
               Message Support on WhatsApp
             </Button>
           </Section>

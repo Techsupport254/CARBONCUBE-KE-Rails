@@ -13,7 +13,7 @@ export function Button({ href, children, variant = "primary", style }: ButtonPro
     padding: "8px 16px",
     fontSize: "13px",
     fontWeight: 600,
-    borderRadius: "5px",
+    borderRadius: "9999px",
     textDecoration: "none",
   }
 

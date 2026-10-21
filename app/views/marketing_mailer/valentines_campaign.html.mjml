@@ -3,7 +3,7 @@
     <mj-title>Your Shop Performance Update</mj-title>
     <mj-include path="../mjml/shared/baseline-head.mjml" />
     <mj-attributes>
-      <mj-button background-color="#E53E3E" color="#ffffff" font-weight="900" text-transform="uppercase" border-radius="14px" />
+      <mj-button background-color="#E53E3E" color="#ffffff" font-weight="900" text-transform="uppercase" border-radius="999px" />
       <mj-section background-color="#ffffff" padding="0px" />
     </mj-attributes>
     <mj-style inline="inline">

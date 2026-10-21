@@ -110,7 +110,7 @@ export default function StorefrontQrWelcome({
 					>
 						{storefrontUrl}
 					</Text>
-					<Button href={storefrontUrl} style={{ backgroundColor: "#0f172a", color: "#ffffff", padding: "10px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
+					<Button href={storefrontUrl} style={{ backgroundColor: "#0f172a", color: "#ffffff", padding: "10px 18px", borderRadius: "9999px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "inline-block" }}>
 						View Storefront
 					</Button>
 				</Section>

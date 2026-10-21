@@ -163,6 +163,17 @@ schedule_app_store_review_prompts:
   queue: low
   description: "Schedule qualifying users for the native App Store / Play Store review dialog"
 
+# --- PROSPECT COLD OUTREACH ---
+# Drains the outreach_prospects queue daily at 9:00 AM EAT (06:00 UTC).
+# Sends at most PROSPECT_DAILY_LIMIT (default 50) per day, each email
+# staggered across a 2-hour window — protects sender reputation on the
+# cold list and stays well under Brevo free-tier daily caps.
+prospect_outreach_batch:
+  cron: "0 6 * * *"
+  class: "ProspectOutreachBatchJob"
+  queue: low
+  description: "Daily staggered cold-outreach email batch to researched prospects"
+
 # --- APP INSTALL NUDGE ---
 # Email buyers and sellers who registered 3–90 days ago but have never opened
 # the mobile app (no iOS/Android DeviceToken). Each user receives the email

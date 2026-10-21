@@ -48,7 +48,7 @@
               </td>
               <td style="padding: 14px 0; width: 96px; vertical-align: middle; text-align: right;">
                 <a href="{{this.review_url}}&utm_source=email&utm_medium=review_request"
-                   style="background-color: #0f172a; color: #fff; font-size: 13px; font-weight: 800; border-radius: 10px; padding: 14px 18px; text-decoration: none; display: inline-block; white-space: nowrap;">
+                   style="background-color: #0f172a; color: #fff; font-size: 13px; font-weight: 800; border-radius: 999px; padding: 14px 18px; text-decoration: none; display: inline-block; white-space: nowrap;">
                   Review
                 </a>
               </td>

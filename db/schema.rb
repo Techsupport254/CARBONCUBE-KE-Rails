@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_22_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_22_120000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -883,6 +883,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_22_100000) do
     t.index ["start_time"], name: "index_offers_on_start_time"
     t.index ["status", "start_time", "end_time"], name: "index_offers_on_status_and_start_time_and_end_time"
     t.index ["status"], name: "index_offers_on_status"
+  end
+
+  create_table "outreach_prospects", force: :cascade do |t|
+    t.string "business_name", null: false
+    t.string "email"
+    t.string "phone"
+    t.string "area"
+    t.string "category"
+    t.string "subcategory"
+    t.string "website"
+    t.string "source_url"
+    t.string "source_type"
+    t.string "list_type", default: "main"
+    t.string "status", default: "pending", null: false
+    t.datetime "sent_at"
+    t.string "message_id"
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((business_name)::text)", name: "index_outreach_prospects_on_lower_business_name"
+    t.index "lower((email)::text)", name: "index_outreach_prospects_on_lower_email", unique: true
+    t.index ["status"], name: "index_outreach_prospects_on_status"
   end
 
   create_table "partner_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

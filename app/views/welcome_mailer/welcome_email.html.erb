@@ -49,11 +49,11 @@
         </div>
 
         <div style="text-align: center; margin: 25px 0;">
-          <a href="<%= @dashboard_url %>" style="display: inline-block; padding: 12px 24px; background: #fbbf24; color: #111827; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 5px;">Get Started Now</a>
+          <a href="<%= @dashboard_url %>" style="display: inline-block; padding: 12px 24px; background: #fbbf24; color: #111827; text-decoration: none; border-radius: 999px; font-weight: 600; font-size: 14px; margin: 5px;">Get Started Now</a>
           <% if @user_type == 'seller' && @user.respond_to?(:enterprise_name) && @user.enterprise_name.present? %>
-            <a href="https://carboncube-ke.com/shop/<%= @user.url_slug %>" style="display: inline-block; padding: 10px 20px; background: #ffffff; color: #374151; text-decoration: none; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600; font-size: 13px; margin: 5px;">View My Shop</a>
+            <a href="https://carboncube-ke.com/shop/<%= @user.url_slug %>" style="display: inline-block; padding: 10px 20px; background: #ffffff; color: #374151; text-decoration: none; border: 2px solid #e5e7eb; border-radius: 999px; font-weight: 600; font-size: 13px; margin: 5px;">View My Shop</a>
           <% end %>
-          <a href="<%= @login_url %>" style="display: inline-block; padding: 10px 20px; background: #ffffff; color: #374151; text-decoration: none; border: 2px solid #e5e7eb; border-radius: 6px; font-weight: 600; font-size: 13px; margin: 5px;">Sign In</a>
+          <a href="<%= @login_url %>" style="display: inline-block; padding: 10px 20px; background: #ffffff; color: #374151; text-decoration: none; border: 2px solid #e5e7eb; border-radius: 999px; font-weight: 600; font-size: 13px; margin: 5px;">Sign In</a>
         </div>
 
         <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 13px; color: #374151;">

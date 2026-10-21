@@ -191,7 +191,7 @@ export default function WhatsAppUpdatesInvite({
               padding: "12px 26px",
               fontSize: "14px",
               fontWeight: 700,
-              borderRadius: "6px",
+              borderRadius: "9999px",
               display: "inline-block",
               boxShadow: "0 2px 4px rgba(37, 211, 102, 0.25)",
             }}
