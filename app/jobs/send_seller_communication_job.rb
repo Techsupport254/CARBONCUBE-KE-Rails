@@ -40,6 +40,9 @@ class SendSellerCommunicationJob < ApplicationJob
         when 'black_friday'
           mail = SellerCommunicationsMailer.with(seller: user).black_friday_email
           mail.deliver_now
+        when 'black_friday_2026'
+          mail = SellerCommunicationsMailer.with(seller: user).black_friday2026
+          Timeout.timeout(30) { mail.deliver_now }
         when 'listing_reminder'
           mail = SellerCommunicationsMailer.with(seller: user).listing_reminder
           Timeout.timeout(30) { mail.deliver_now }

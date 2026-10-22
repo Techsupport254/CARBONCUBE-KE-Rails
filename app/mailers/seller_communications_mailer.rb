@@ -178,6 +178,20 @@ class SellerCommunicationsMailer < ApplicationMailer
     mail_message
   end
 
+  # Black Friday 2026 — clean seller prep email ("get your shop ready").
+  # Replaces the older high-traffic-alert template for this year's campaign.
+  def black_friday2026
+    user = params[:seller] || params[:user]
+    @first_name = user.fullname.to_s.split(' ').first.presence || 'Partner'
+    @dashboard_url = 'https://carboncube-ke.com/seller/dashboard'
+    subject_text = 'Black Friday is coming — get your shop ready'
+
+    mail(
+      to: user.email,
+      subject: subject_text
+    )
+  end
+
   def seller_growth_initiative
     seller = params[:seller]
 
