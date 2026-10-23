@@ -475,7 +475,7 @@ class Seller::AdsController < ApplicationController
   end
 
   def destroy
-    if @ad.update(deleted: true)
+    if @ad.soft_delete(by: 'seller')
       head :no_content
     else
       render json: { error: 'Unable to delete ad' }, status: :unprocessable_entity

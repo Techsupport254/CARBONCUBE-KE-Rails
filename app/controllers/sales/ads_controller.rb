@@ -332,7 +332,7 @@ end
 
   # PATCH /sales/ads/:id/restore
   def restore
-    if @ad.update(flagged: false, deleted: false, flag_notes: nil)
+    if @ad.update(flagged: false, deleted: false, deleted_at: nil, deleted_by: nil, flag_notes: nil)
       render json: { status: 'success', message: 'Ad restored successfully' }
     else
       render json: { status: 'error', message: 'Failed to restore ad' }, status: :unprocessable_entity
@@ -377,8 +377,8 @@ end
   # DELETE /sales/ads/:id - Permanent delete
   def destroy
     # Standard destroy performs permanent deletion in this app's architecture
-    if @ad.destroy
-      render json: { message: "Ad '#{@ad.title}' permanently deleted successfully" }, status: :ok
+    if @ad.soft_delete(by: 'sales')
+      render json: { message: "Ad '#{@ad.title}' deleted successfully" }, status: :ok
     else
       render json: { error: "Failed to delete ad permanently", details: @ad.errors.full_messages }, status: :unprocessable_entity
     end
@@ -422,7 +422,7 @@ end
 
     ads = Ad.where(id: ids)
     count = ads.count
-    ads.update_all(flagged: false, deleted: false, flag_notes: nil)
+    ads.update_all(flagged: false, deleted: false, deleted_at: nil, deleted_by: nil, flag_notes: nil)
     
     render json: { 
       status: 'success', 
@@ -438,15 +438,14 @@ end
       return render json: { error: 'No ad IDs provided' }, status: :unprocessable_entity
     end
 
-    # Use destroy_all to ensure callbacks/associations are handled
-    # Though performance might be slightly slower than delete_all
+    # Soft-delete each ad so callbacks run and attribution is recorded
     ads = Ad.where(id: ids)
-    count = ads.count
-    ads.destroy_all
-    
-    render json: { 
-      status: 'success', 
-      message: "Successfully deleted #{count} ads permanently",
+    count = 0
+    ads.find_each { |ad| count += 1 if ad.soft_delete(by: 'sales') }
+
+    render json: {
+      status: 'success',
+      message: "Successfully deleted #{count} ads",
       affected_count: count
     }
   end

@@ -114,7 +114,7 @@ class Admin::AdsController < ApplicationController
   def destroy
     @ad = Ad.find_by_id_or_slug(params[:id])
     raise ActiveRecord::RecordNotFound unless @ad
-    @ad.destroy
+    @ad.soft_delete(by: 'admin')
     head :no_content
   end
 

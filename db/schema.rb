@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_22_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_23_110000) do
   create_schema "extensions"
   create_schema "graphql"
   create_schema "graphql_public"
@@ -105,6 +105,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_22_120000) do
     t.datetime "featured_until"
     t.datetime "last_featured_at"
     t.decimal "organic_quality_score", precision: 6, scale: 2, default: "0.0"
+    t.datetime "deleted_at"
+    t.string "deleted_by"
     t.index ["branch_id"], name: "index_ads_on_branch_id"
     t.index ["brand"], name: "index_ads_on_brand_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["category_id", "deleted", "flagged", "created_at"], name: "index_ads_on_category_deleted_flagged_created_at"

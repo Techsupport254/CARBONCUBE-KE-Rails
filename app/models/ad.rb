@@ -234,14 +234,18 @@ class Ad < ApplicationRecord
     update(flagged: false)
   end
 
-  # Soft delete ad (for stores to delete their own ads)
-  def soft_delete
-    update(deleted: true)
+  # Soft delete ad, recording who deleted it ('seller' | 'sales' | 'admin')
+  def soft_delete(by: 'seller')
+    update(deleted: true, deleted_at: Time.current, deleted_by: by).tap do |ok|
+      schedule_google_merchant_delete if ok
+    end
   end
 
   # Restore deleted ad
   def restore
-    update(deleted: false)
+    update(deleted: false, deleted_at: nil, deleted_by: nil).tap do |ok|
+      schedule_google_merchant_sync if ok
+    end
   end
 
   # Calculate the average rating for the product
@@ -352,14 +356,14 @@ class Ad < ApplicationRecord
   def ad_clicks
     click_events.excluding_internal_users.where(event_type: 'Ad-Click').count
   end
-  alias_method :views_count, :ad_clicks
-  alias_method :views, :ad_clicks
+  alias views_count ad_clicks
+  alias views ad_clicks
 
   def reveal_clicks
     click_events.excluding_internal_users.where(event_type: 'Reveal-Seller-Details').count
   end
-  alias_method :reveals_count, :reveal_clicks
-  alias_method :reveals, :reveal_clicks
+  alias reveals_count reveal_clicks
+  alias reveals reveal_clicks
 
   def wishlist_clicks
     click_events.excluding_internal_users.where(event_type: 'Add-to-Wish-List').count
