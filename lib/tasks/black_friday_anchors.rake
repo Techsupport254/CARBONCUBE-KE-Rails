@@ -9,8 +9,8 @@ namespace :black_friday do
     Anchor: offer_ads.original_price is set to min(price * MAX_UPLIFT,
     market P75 of same-subcategory listings) and discounted_price to the
     ad's REAL price — the displayed "was" price is inflated but the
-    transaction price never changes. Ads on active offers are skipped
-    here; retag them with black_friday:retag_existing instead.
+    transaction price never changes. Ads on active offers are skipped —
+    previously-offered ads stay out of the Black November set entirely.
 
     Ads whose market reference leaves less than MIN_UPLIFT headroom are
     skipped so the anchor stays believable.
@@ -45,12 +45,9 @@ namespace :black_friday do
       (amount / step).round * step
     end
 
-    # Ads already covered by a live offer — excluded from anchoring,
-    # they belong to the retag pass instead.
-    covered_ad_ids = OfferAd.joins(:offer)
-      .where(is_active: true, offers: { status: %w[active scheduled] })
-      .where("offers.end_time >= ?", now)
-      .pluck(:ad_id)
+    # Ads ever attached to an offer — excluded from the Black November
+    # set entirely; only never-offered ads get anchored.
+    covered_ad_ids = OfferAd.distinct.pluck(:ad_id)
 
     pool = Ad.live.where.not(price: [nil, 0]).where.not(seller_id: nil)
       .where("stock_quantity IS NULL OR stock_quantity > 0")
@@ -164,22 +161,5 @@ namespace :black_friday do
          "#{selected.map { |a| a[:category_id] }.uniq.size} categories)"
     puts "Skipped #{skipped.size} (no believable headroom)" if skipped.any?
     puts "DRY RUN — rerun with COMMIT=1 to write" unless commit
-  end
-
-  desc "Re-tag currently active offers as black_friday (prices untouched)"
-  task retag_existing: :environment do
-    commit = ENV["COMMIT"] == "1"
-    now = Time.current
-    offers = Offer.where(status: "active")
-      .where.not(offer_type: "black_friday")
-      .where("start_time <= ? AND end_time >= ?", now, now)
-    puts "#{offers.count} active offers eligible for re-tagging"
-    if commit
-      updated = offers.update_all(offer_type: "black_friday",
-        updated_at: now)
-      puts "Re-tagged #{updated} offers to black_friday"
-    else
-      puts "DRY RUN — rerun with COMMIT=1 to write"
-    end
   end
 end
