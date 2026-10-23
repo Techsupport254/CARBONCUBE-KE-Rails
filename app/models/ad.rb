@@ -301,9 +301,7 @@ class Ad < ApplicationRecord
     ad = find_by(id: param.to_s)
     return ad if ad
 
-    # Try trailing numeric id ("flip-case-4696"). The digits are only treated as
-    # an id when the preceding words plausibly match that ad's slug/title —
-    # otherwise a spec like "iphone-16-pro-256" would misresolve to ad #256.
+    # Try trailing numeric id ("flip-case-4696" or "old-title-6919").
     if (match = param.to_s.match(/\A(.+)-(\d+)\z/))
       prefix = match[1]
       candidate = find_by(id: match[2])
@@ -313,7 +311,10 @@ class Ad < ApplicationRecord
         return candidate if stored_slug.start_with?("#{prefix}-") ||
                             title_slug == prefix ||
                             title_slug.start_with?("#{prefix}-") ||
-                            prefix.start_with?(title_slug)
+                            prefix.start_with?(title_slug) ||
+                            # Allow lookup by ID if candidate has a canonical slug ending in -ID
+                            # (enables 301 canonical redirect when an ad is renamed)
+                            stored_slug.end_with?("-#{candidate.id}")
       end
     end
 
