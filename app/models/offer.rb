@@ -1,6 +1,11 @@
 class Offer < ApplicationRecord
   self.primary_key = 'id'
 
+  # Name of the ops-created Black November campaign offer (lib/tasks/
+  # black_friday_anchors.rake) — lets us find our own offer without
+  # hijacking a seller-created black_friday offer of the same type.
+  BLACK_NOVEMBER_CAMPAIGN_NAME = 'Black November Deals'
+
   # Associations
   belongs_to :seller
   has_many :offer_ads, dependent: :destroy

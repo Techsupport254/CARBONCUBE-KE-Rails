@@ -219,6 +219,11 @@ class Ad < ApplicationRecord
   # Partner price-drop alerts → distributor network
   after_commit :enqueue_partner_price_drop, on: :update, if: :price_dropped_for_partner?
 
+  # Ops-tagged Black November anchors pin discounted_price to the ad's
+  # price at tag time — rescale them if the seller edits the price so the
+  # deal can never quote below the real price.
+  after_update :resync_black_november_anchor, if: :saved_change_to_price?
+
   # IndexNow: tell Bing/Yandex the product URL changed so new/updated ads get
   # crawled within minutes (sitemap cycle alone can lag by days).
   after_commit :enqueue_index_now_ping, on: [:create, :destroy]
@@ -799,6 +804,26 @@ class Ad < ApplicationRecord
   def enqueue_partner_price_drop
     old_price, new_price = saved_change_to_price
     PartnerPriceDropJob.perform_later(id, old_price.to_s, new_price.to_s)
+  end
+
+  # Rescales ops Black November anchors on a price edit: discounted_price
+  # follows the new price and original_price scales by the same ratio,
+  # keeping the displayed discount% unchanged.
+  def resync_black_november_anchor
+    old_price, new_price = saved_change_to_price
+    return if old_price.to_d <= 0 || new_price.blank?
+
+    scale = new_price.to_d / old_price.to_d
+    offer_ads.joins(:offer)
+      .where(offers: { offer_type: "black_friday", name: Offer::BLACK_NOVEMBER_CAMPAIGN_NAME })
+      .where(discounted_price: old_price)
+      .find_each do |offer_ad|
+        offer_ad.update!(
+          discounted_price: new_price,
+          original_price: (offer_ad.original_price.to_d * scale).round,
+          discount_percentage: nil
+        )
+      end
   end
 
   def schedule_content_moderation

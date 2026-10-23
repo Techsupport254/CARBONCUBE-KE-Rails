@@ -2,8 +2,8 @@ namespace :black_friday do
   desc <<~DESC
     Tag ~100 moving ads as Black November anchor deals.
 
-    Selection: Ad.live minus service categories, bottom 60% price
-    within each category, engagement
+    Selection: Ad.live minus service categories and non-public pricing
+    modes, bottom 60% price within each category, engagement
     score (conversations*4 + wishlists*2 + reviews*2 + quality score),
     best ad per seller, round-robin across categories until TARGET ads.
 
@@ -74,6 +74,9 @@ namespace :black_friday do
       .where("stock_quantity IS NULL OR stock_quantity > 0")
       .where.not(id: covered_ad_ids)
       .where.not("categories.name ILIKE ANY (array[?])", service_patterns)
+      # Anchors need a single public price — tiered, price-range and
+      # request-quote listings don't have one worth inflating.
+      .where("COALESCE(specifications->>'price_display_mode', 'public') = 'public'")
       .pluck(:id, :seller_id, :category_id, :subcategory_id, :price,
         :reviews_count, :organic_quality_score, :title)
 
@@ -134,51 +137,61 @@ namespace :black_friday do
 
     tagged = 0
     skipped = []
-    selected.each do |ad|
-      market_high =
-        market_highs[ad[:subcategory_id]] ||
-        category_market_highs[ad[:category_id]]
-      anchor = [
-        ad[:price] * (1 + max_uplift_for.call(ad[:price])),
-        market_high || Float::INFINITY
-      ].min
-      anchor = believable.call(anchor)
-      if anchor < ad[:price] * (1 + min_uplift) ||
-         anchor - ad[:price] < min_saving
-        skipped << [ad, "no headroom"]
-        next
-      end
-      pct_off = ((anchor - ad[:price]) / anchor * 100).round(1)
-      puts format("%<id>-8d %<seller>-8s %<category>-22s %<title>-40s " \
-                  "%<price>10.0f %<anchor>10.0f %<pct>5.1f%%",
-        id: ad[:id], seller: ad[:seller_id].to_s[0, 8],
-        category: ad[:category_id].to_s, title: ad[:title].to_s[0, 38],
-        price: ad[:price], anchor: anchor, pct: pct_off)
+    # On COMMIT the writes run in one transaction — a partial campaign
+    # would leave the deals grid half-populated.
+    write = ->(&block) { commit ? OfferAd.transaction(&block) : block.call }
+    write.call do
+      selected.each do |ad|
+        market_high =
+          market_highs[ad[:subcategory_id]] ||
+          category_market_highs[ad[:category_id]]
+        anchor = [
+          ad[:price] * (1 + max_uplift_for.call(ad[:price])),
+          market_high || Float::INFINITY
+        ].min
+        anchor = believable.call(anchor)
+        if anchor < ad[:price] * (1 + min_uplift) ||
+           anchor - ad[:price] < min_saving
+          skipped << [ad, "no headroom"]
+          next
+        end
+        pct_off = ((anchor - ad[:price]) / anchor * 100).round(1)
+        puts format("%<id>-8d %<seller>-8s %<category>-22s %<title>-40s " \
+                    "%<price>10.0f %<anchor>10.0f %<pct>5.1f%%",
+          id: ad[:id], seller: ad[:seller_id].to_s[0, 8],
+          category: ad[:category_id].to_s, title: ad[:title].to_s[0, 38],
+          price: ad[:price], anchor: anchor, pct: pct_off)
 
-      if commit
-        offer = Offer.where(seller_id: ad[:seller_id],
-          offer_type: "black_friday").where("end_time >= ?", now).first ||
-          Offer.create_black_friday_offer(
-            seller_id: ad[:seller_id],
-            name: "Black November Deals",
-            description: "Black November special prices",
-            status: "active",
-            start_time: now,
-            end_time: campaign_end,
-            badge_text: "BLACK FRIDAY",
-            show_on_homepage: true
+        if commit
+          # Only reuse OUR ops offer — never attach to a seller-created
+          # black_friday offer, whose targeting could exclude the ad.
+          offer = Offer.where(seller_id: ad[:seller_id],
+            offer_type: "black_friday",
+            name: Offer::BLACK_NOVEMBER_CAMPAIGN_NAME)
+            .where("end_time >= ?", now).first ||
+            Offer.create_black_friday_offer(
+              seller_id: ad[:seller_id],
+              name: Offer::BLACK_NOVEMBER_CAMPAIGN_NAME,
+              description: "Black November special prices",
+              status: "active",
+              start_time: now,
+              end_time: campaign_end,
+              badge_text: "BLACK FRIDAY",
+              show_on_homepage: true
+            )
+          offer_ad = OfferAd.find_or_initialize_by(
+            offer_id: offer.id, ad_id: ad[:id]
           )
-        offer_ad = OfferAd.find_or_initialize_by(
-          offer_id: offer.id, ad_id: ad[:id]
-        )
-        offer_ad.original_price = anchor
-        offer_ad.discounted_price = ad[:price]
-        offer_ad.discount_percentage = nil # derived by model callback
-        offer_ad.is_active = true
-        offer_ad.seller_notes ||= "Black November anchor (ops-tagged)"
-        offer_ad.save!
+          offer_ad.original_price = anchor
+          offer_ad.discounted_price = ad[:price]
+          offer_ad.discount_percentage = nil # derived by model callback
+          offer_ad.is_active = true
+          # Buyer-facing — keep it display-safe; sellers can overwrite.
+          offer_ad.seller_notes ||= "Black November deal"
+          offer_ad.save!
+        end
+        tagged += 1
       end
-      tagged += 1
     end
 
     puts "-" * 96
