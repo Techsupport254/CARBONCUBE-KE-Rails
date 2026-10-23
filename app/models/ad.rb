@@ -502,12 +502,14 @@ class Ad < ApplicationRecord
     @current_offer_ad = if association(:offer_ads).loaded?
       candidates = offer_ads.select do |oa|
         offer = oa.offer
-        offer && ['active', 'scheduled'].include?(offer.status) &&
+        oa.is_active && offer &&
+          ['active', 'scheduled'].include?(offer.status) &&
           offer.end_time >= Time.current
       end
       candidates.min_by { |oa| oa.offer.start_time }
     else
       offer_ads.joins(:offer)
+               .where(offer_ads: { is_active: true })
                .where(offers: { status: ['active', 'scheduled'] })
                .where('offers.end_time >= ?', Time.current)
                .order('offers.start_time ASC')
@@ -529,6 +531,7 @@ class Ad < ApplicationRecord
   # Returns true if the product currently has an active discount
   def on_sale?
     offer_ads.joins(:offer)
+             .where(offer_ads: { is_active: true })
              .where(offers: { status: ['active', 'scheduled'] })
              .where('offers.start_time <= ? AND offers.end_time >= ?', Time.current, Time.current)
              .exists?
