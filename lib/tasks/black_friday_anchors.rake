@@ -24,8 +24,9 @@ namespace :black_friday do
     target = (ENV["TARGET"] || 100).to_i
     price_pct = ((ENV["PRICE_PCT"] || 60).to_f / 100).clamp(0.05, 1.0)
     market_pct = ((ENV["MARKET_PCT"] || 75).to_f / 100).clamp(0.5, 1.0)
-    min_uplift = (ENV["MIN_UPLIFT"] || 10).to_f / 100
-    max_uplift = (ENV["MAX_UPLIFT"] || 25).to_f / 100
+    min_uplift = (ENV["MIN_UPLIFT"] || 4).to_f / 100
+    # 7.5% uplift => ~7% displayed discount, the intended ceiling
+    max_uplift = (ENV["MAX_UPLIFT"] || 7.5).to_f / 100
     campaign_end = Time.zone.parse(ENV["CAMPAIGN_END"] || "2026-11-30 23:59:59")
     now = Time.current
 
