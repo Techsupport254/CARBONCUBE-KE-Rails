@@ -35,6 +35,8 @@ namespace :black_friday do
       sorted[((sorted.length - 1) * pct).round]
     end
 
+    # Round DOWN to a believable figure — rounding up can overshoot both
+    # the MAX_UPLIFT cap and the market ceiling on small prices.
     believable = lambda do |amount|
       step =
         case amount
@@ -43,7 +45,7 @@ namespace :black_friday do
         when 10_000...100_000 then 100
         else 500
         end
-      (amount / step).round * step
+      (amount / step).floor * step
     end
 
     # Ads ever attached to an offer — excluded from the Black November
@@ -121,11 +123,11 @@ namespace :black_friday do
         market_highs[ad[:subcategory_id]] ||
         category_market_highs[ad[:category_id]]
       anchor = [ad[:price] * (1 + max_uplift), market_high || Float::INFINITY].min
+      anchor = believable.call(anchor)
       if anchor < ad[:price] * (1 + min_uplift)
         skipped << [ad, "no headroom"]
         next
       end
-      anchor = believable.call(anchor)
       pct_off = ((anchor - ad[:price]) / anchor * 100).round(1)
       puts format("%<id>-8d %<seller>-8s %<category>-22s %<title>-40s " \
                   "%<price>10.0f %<anchor>10.0f %<pct>5.1f%%",
