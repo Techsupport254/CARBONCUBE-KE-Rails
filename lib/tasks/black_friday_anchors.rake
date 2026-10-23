@@ -7,17 +7,20 @@ namespace :black_friday do
     score (conversations*4 + wishlists*2 + reviews*2 + quality score),
     best ad per seller, round-robin across categories until TARGET ads.
 
-    Anchor: offer_ads.original_price is set to min(price * MAX_UPLIFT,
+    Anchor: offer_ads.original_price is set to min(price * tier uplift,
     market P75 of same-subcategory listings) and discounted_price to the
     ad's REAL price — the displayed "was" price is inflated but the
     transaction price never changes. Ads on active offers are skipped —
     previously-offered ads stay out of the Black November set entirely.
 
-    Ads whose market reference leaves less than MIN_UPLIFT headroom are
-    skipped so the anchor stays believable.
+    Ads whose market reference leaves less than MIN_UPLIFT headroom, or
+    an absolute saving under MIN_SAVING, are skipped so every tag shows
+    a real deal. The uplift ceiling tiers down as price rises
+    (UPLIFT_UNDER_1K ~16.7% off, UPLIFT_UNDER_5K ~10.7%, else ~7%).
 
     Dry-run by default; COMMIT=1 writes. Knobs: TARGET, PRICE_PCT,
-    MARKET_PCT, MIN_UPLIFT, MAX_UPLIFT, CAMPAIGN_END.
+    MARKET_PCT, MIN_UPLIFT, MIN_SAVING, UPLIFT_UNDER_1K,
+    UPLIFT_UNDER_5K, MAX_UPLIFT, CAMPAIGN_END.
   DESC
   task tag_ads: :environment do
     commit = ENV["COMMIT"] == "1"
@@ -25,8 +28,20 @@ namespace :black_friday do
     price_pct = ((ENV["PRICE_PCT"] || 60).to_f / 100).clamp(0.05, 1.0)
     market_pct = ((ENV["MARKET_PCT"] || 75).to_f / 100).clamp(0.5, 1.0)
     min_uplift = (ENV["MIN_UPLIFT"] || 4).to_f / 100
-    # 7.5% uplift => ~7% displayed discount, the intended ceiling
-    max_uplift = (ENV["MAX_UPLIFT"] || 7.5).to_f / 100
+    # A displayed discount must save at least this much — 7% off a
+    # KES 500 item (~35 bob) isn't a deal worth tagging.
+    min_saving = (ENV["MIN_SAVING"] || 100).to_f
+    # Percentage discounts scale with ticket size: a flat % ceiling
+    # makes cheap items pointless, so the allowed anchor uplift steps
+    # down as price rises (~16.7% off under 1k, ~10.7% under 5k, ~7% above).
+    max_uplift_for = lambda do |price|
+      tier =
+        if price < 1_000 then ENV["UPLIFT_UNDER_1K"] || 20
+        elsif price < 5_000 then ENV["UPLIFT_UNDER_5K"] || 12
+        else ENV["MAX_UPLIFT"] || 7.5
+        end
+      tier.to_f / 100
+    end
     campaign_end = Time.zone.parse(ENV["CAMPAIGN_END"] || "2026-11-30 23:59:59")
     now = Time.current
 
@@ -123,9 +138,13 @@ namespace :black_friday do
       market_high =
         market_highs[ad[:subcategory_id]] ||
         category_market_highs[ad[:category_id]]
-      anchor = [ad[:price] * (1 + max_uplift), market_high || Float::INFINITY].min
+      anchor = [
+        ad[:price] * (1 + max_uplift_for.call(ad[:price])),
+        market_high || Float::INFINITY
+      ].min
       anchor = believable.call(anchor)
-      if anchor < ad[:price] * (1 + min_uplift)
+      if anchor < ad[:price] * (1 + min_uplift) ||
+         anchor - ad[:price] < min_saving
         skipped << [ad, "no headroom"]
         next
       end
