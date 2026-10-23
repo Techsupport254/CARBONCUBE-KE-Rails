@@ -2,7 +2,8 @@ namespace :black_friday do
   desc <<~DESC
     Tag ~100 moving ads as Black November anchor deals.
 
-    Selection: Ad.live, bottom 60% price within each category, engagement
+    Selection: Ad.live minus service categories, bottom 60% price
+    within each category, engagement
     score (conversations*4 + wishlists*2 + reviews*2 + quality score),
     best ad per seller, round-robin across categories until TARGET ads.
 
@@ -49,9 +50,12 @@ namespace :black_friday do
     # set entirely; only never-offered ads get anchored.
     covered_ad_ids = OfferAd.distinct.pluck(:ad_id)
 
-    pool = Ad.live.where.not(price: [nil, 0]).where.not(seller_id: nil)
+    service_patterns = Ad::SERVICE_CATEGORY_NAMES.map { |n| "%#{n}%" }
+    pool = Ad.live.joins(:category)
+      .where.not(price: [nil, 0]).where.not(seller_id: nil)
       .where("stock_quantity IS NULL OR stock_quantity > 0")
       .where.not(id: covered_ad_ids)
+      .where.not("categories.name ILIKE ANY (array[?])", service_patterns)
       .pluck(:id, :seller_id, :category_id, :subcategory_id, :price,
         :reviews_count, :organic_quality_score, :title)
 
