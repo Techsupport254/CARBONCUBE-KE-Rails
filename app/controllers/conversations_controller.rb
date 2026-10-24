@@ -1315,7 +1315,7 @@ class ConversationsController < ApplicationController
 
     # Single fast query for latest message across all conversations
     last_messages = Message.find_by_sql([<<-SQL.squish, all_conv_ids]).index_by(&:conversation_id)
-      SELECT DISTINCT ON (conversation_id) id, conversation_id, content, created_at, sender_type, sender_id, status, read_at, delivered_at
+      SELECT DISTINCT ON (conversation_id) id, conversation_id, content, created_at, sender_type, sender_id, status, read_at, delivered_at, media_urls
       FROM messages
       WHERE conversation_id IN (?)
       ORDER BY conversation_id, created_at DESC, id DESC
@@ -1511,7 +1511,8 @@ class ConversationsController < ApplicationController
       sender_id: message.sender_id,
       status: status,
       read_at: message.read_at,
-      delivered_at: message.delivered_at
+      delivered_at: message.delivered_at,
+      media_urls: message.try(:media_urls) || []
     }
   end
 
