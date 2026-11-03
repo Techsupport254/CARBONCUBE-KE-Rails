@@ -63,7 +63,10 @@ class OfferAd < ApplicationRecord
     return unless original_price.present? && discounted_price.present? && discount_percentage.present?
     
     expected_discounted = original_price * (1 - discount_percentage / 100)
-    if (discounted_price - expected_discounted).abs > 0.01 # Allow for small rounding differences
+    # Scale 2 discount_percentage (0.01%) introduces up to 0.005% rounding error on price.
+    # Allow at least 1.0 KES or 0.01% of original_price for rounding.
+    tolerance = [original_price.to_f * 0.0001, 1.0].max
+    if (discounted_price - expected_discounted).abs > tolerance
       errors.add(:discounted_price, "does not match the discount percentage")
     end
   end
