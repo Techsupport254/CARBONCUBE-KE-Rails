@@ -68,9 +68,12 @@ class SendSellerCommunicationJob < ApplicationJob
       end
 
       if channels[:whatsapp] || channels['whatsapp']
+        # Approved templates don't need a prior 24h engagement window —
+        # the check only applies to freeform session messages.
+        template_send = email_type == 'verified_listings_priority'
         if user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications
           Rails.logger.info "#{user_type.capitalize} #{user.id} opted out of WhatsApp notifications - skipping WhatsApp channel"
-        elsif !WhatsAppCloudService.user_whatsapp_engaged?(user)
+        elsif !template_send && !WhatsAppCloudService.user_whatsapp_engaged?(user)
           Rails.logger.info "#{user_type.capitalize} #{user.id} has no WhatsApp engagement - skipping WhatsApp channel"
         elsif user.phone_number.present?
           if email_type == 'verified_listings_priority'
