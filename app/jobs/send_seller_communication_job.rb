@@ -71,7 +71,9 @@ class SendSellerCommunicationJob < ApplicationJob
         # Approved templates don't need a prior 24h engagement window —
         # the check only applies to freeform session messages.
         template_send = email_type == 'verified_listings_priority'
-        if user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications
+        # Template campaigns go to every sendable seller with a phone number —
+        # no opt-in or 24h engagement window required.
+        if !template_send && user.respond_to?(:whatsapp_notifications) && !user.whatsapp_notifications
           Rails.logger.info "#{user_type.capitalize} #{user.id} opted out of WhatsApp notifications - skipping WhatsApp channel"
         elsif !template_send && !WhatsAppCloudService.user_whatsapp_engaged?(user)
           Rails.logger.info "#{user_type.capitalize} #{user.id} has no WhatsApp engagement - skipping WhatsApp channel"
