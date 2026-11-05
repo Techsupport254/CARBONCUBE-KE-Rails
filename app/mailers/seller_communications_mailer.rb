@@ -342,6 +342,37 @@ class SellerCommunicationsMailer < ApplicationMailer
     )
   end
 
+  def verified_listings_priority
+    user = params[:seller] || params[:user]
+    to_email = params[:to_email].presence || user&.email
+
+    fullname = user&.fullname.presence || user&.enterprise_name.presence || "Partner"
+    first_name = fullname.to_s.split(' ').first.presence || "Partner"
+
+    subject_text = params[:subject].presence ||
+      "Did you know verified listings get priority on Carbon Cube Kenya?"
+
+    business_number = ENV['WHATSAPP_BUSINESS_NUMBER'].presence || '254727854903'
+    whatsapp_url = "https://wa.me/#{business_number}"
+
+    headers['X-Priority'] = '1'
+    headers['X-MSMail-Priority'] = 'High'
+    headers['Importance'] = 'High'
+    headers['Auto-Submitted'] = 'auto-generated'
+    headers['X-Auto-Response-Suppress'] = 'All'
+
+    mail(
+      to: to_email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        whatsapp_url: whatsapp_url
+      }
+    )
+  end
+
   def catalog_upload_request
     user = params[:seller] || params[:user]
     to_email = params[:to_email]
@@ -565,6 +596,59 @@ class SellerCommunicationsMailer < ApplicationMailer
         profile_url: profile_url,
         banner_url: banner_url,
         support_url: support_url
+      }
+    )
+  end
+
+  def verification_apology
+    user = params[:seller] || params[:user]
+    to_email = params[:to_email].presence || user&.email
+
+    fullname = user&.fullname.presence || user&.enterprise_name.presence || 'Seller'
+    first_name = fullname.to_s.split(' ').first.presence || 'Seller'
+
+    subject_text = params[:subject].presence || "A Personal Note from Carbon Cube Kenya"
+
+    business_number = ENV['WHATSAPP_BUSINESS_NUMBER'].presence || '254727854903'
+    whatsapp_url = "https://wa.me/#{business_number}"
+
+    mail(
+      to: to_email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        contactUrl: "https://carboncube-ke.com/contact-us",
+        whatsappUrl: whatsapp_url,
+        whatsappNumber: "+254 727 854 903"
+      }
+    )
+  end
+
+  def why_verify_business
+    user = params[:seller] || params[:user]
+    to_email = params[:to_email].presence || user&.email
+
+    fullname = user&.fullname.presence || user&.enterprise_name.presence || 'Seller'
+    first_name = fullname.to_s.split(' ').first.presence || 'Seller'
+
+    subject_text = params[:subject].presence || "Why verify your business on Carbon Cube Kenya?"
+
+    business_number = ENV['WHATSAPP_BUSINESS_NUMBER'].presence || '254727854903'
+    whatsapp_url = "https://wa.me/#{business_number}"
+
+    mail(
+      to: to_email,
+      from: "Carbon Cube Kenya <#{ENV['BREVO_EMAIL']}>",
+      subject: subject_text,
+      react: {
+        fullname: fullname,
+        first_name: first_name,
+        contactUrl: "https://carboncube-ke.com/contact-us",
+        whatsappUrl: whatsapp_url,
+        whatsappNumber: "+254 727 854 903",
+        dashboardUrl: "https://carboncube-ke.com/seller/dashboard"
       }
     )
   end

@@ -55,6 +55,10 @@ class SendSellerCommunicationJob < ApplicationJob
           mail = SellerCommunicationsMailer.with(seller: user).accurate_listings
           Timeout.timeout(30) { mail.deliver_now }
           send_in_app_accurate_listings(user) if user_type == 'seller'
+        when 'verified_listings_priority'
+          mail = SellerCommunicationsMailer.with(seller: user, to_email: user.email).verified_listings_priority
+          Timeout.timeout(30) { mail.deliver_now }
+          send_in_app_verified_listings(user) if user_type == 'seller'
         else
           Rails.logger.error "SendSellerCommunicationJob: Unknown email type '#{email_type}'"
           return
@@ -69,13 +73,23 @@ class SendSellerCommunicationJob < ApplicationJob
         elsif !WhatsAppCloudService.user_whatsapp_engaged?(user)
           Rails.logger.info "#{user_type.capitalize} #{user.id} has no WhatsApp engagement - skipping WhatsApp channel"
         elsif user.phone_number.present?
-          if custom_message.present?
-            message_text = process_whatsapp_markdown(custom_message, user, user_type)
+          if email_type == 'verified_listings_priority'
+            whatsapp_result = WhatsAppCloudService.send_template_with_image(
+              user.phone_number,
+              'verified_listings_priority',
+              'https://res.cloudinary.com/dwrjceslk/image/upload/v1793861019/email_banner_verified_listings.png',
+              [],
+              'en'
+            )
           else
-            message_text = build_communication_message(user, user_type, email_type)
-          end
+            if custom_message.present?
+              message_text = process_whatsapp_markdown(custom_message, user, user_type)
+            else
+              message_text = build_communication_message(user, user_type, email_type)
+            end
 
-          whatsapp_result = WhatsAppCloudService.send_message(user.phone_number, message_text)
+            whatsapp_result = WhatsAppCloudService.send_message(user.phone_number, message_text)
+          end
 
           if whatsapp_result.is_a?(Hash) && whatsapp_result[:success]
             sent_channels << "whatsapp"
@@ -284,6 +298,55 @@ class SendSellerCommunicationJob < ApplicationJob
     
   rescue => e
     Rails.logger.error "Failed to send in-app Share Shop message to seller #{user.id}: #{e.message}"
+  end
+
+  def send_in_app_verified_listings(user)
+    full_name = user.fullname.presence || "Partner"
+
+    markdown_content = <<~MARKDOWN
+      **Verified Listings Get Priority!**
+
+      Hello **#{full_name}**,
+
+      Did you know **verified listings** get priority on Carbon Cube Kenya?
+
+      Show buyers your shop is 100% legit and safe to deal with — verified sellers earn more trust, more clicks, and more sales.
+
+      Reply to this message and our team will get you verified today!
+
+      Best regards,
+      **Carbon Cube Kenya Team**
+    MARKDOWN
+
+    system_admin = Rails.cache.fetch("system_admin_user", expires_in: 1.hour) do
+      Admin.find_by(email: 'support@carboncube-ke.com') ||
+             Admin.find_by(username: 'admin') ||
+             Admin.first
+    end
+
+    unless system_admin
+      Rails.logger.error "Cannot send in-app message: No Admin user found in database"
+      return
+    end
+
+    conversation = Conversation.find_or_create_by!(
+      admin_id: system_admin.id,
+      seller_id: user.id,
+      ad_id: nil,
+      buyer_id: nil,
+      inquirer_seller_id: nil
+    )
+
+    message = conversation.messages.create!(
+      content: markdown_content,
+      sender: system_admin
+    )
+
+    begin
+      UpdateUnreadCountsJob.perform_later(conversation.id, message.id)
+    rescue => e
+      Rails.logger.warn "Failed to enqueue unread count update: #{e.message}"
+    end
   end
 
   def send_in_app_accurate_listings(user)

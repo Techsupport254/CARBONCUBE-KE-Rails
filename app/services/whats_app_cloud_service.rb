@@ -73,7 +73,7 @@ class WhatsAppCloudService
     end
   end
 
-  def self.send_template_with_image(to, template_name, image_url, body_params = [])
+  def self.send_template_with_image(to, template_name, image_url, body_params = [], language_code = 'en_US')
     phone_number_id = ENV['WHATSAPP_CLOUD_PHONE_NUMBER_ID']
     access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
 
@@ -87,7 +87,7 @@ class WhatsAppCloudService
       type: 'template',
       template: {
         name: template_name,
-        language: { code: 'en_US' },
+        language: { code: language_code },
         components: [
           {
             type: 'header',
@@ -95,10 +95,12 @@ class WhatsAppCloudService
               { type: 'image', image: { link: image_url } }
             ]
           },
-          {
-            type: 'body',
-            parameters: body_params.map { |val| { type: 'text', text: val.to_s.squish } }
-          }
+          *(
+            body_params.any? ? [{
+              type: 'body',
+              parameters: body_params.map { |val| { type: 'text', text: val.to_s.squish } }
+            }] : []
+          )
         ]
       }
     }
