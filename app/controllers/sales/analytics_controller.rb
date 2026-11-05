@@ -272,10 +272,10 @@ class Sales::AnalyticsController < ApplicationController
 
         # Parallelize independent heavy queries across connection pool
         threads = [
-          Thread.new { ActiveRecord::Base.connection_pool.with_connection { cat_events = click_events_service.category_click_events } },
-          Thread.new { ActiveRecord::Base.connection_pool.with_connection { subcat_events = click_events_service.subcategory_click_events } },
-          Thread.new { ActiveRecord::Base.connection_pool.with_connection { cat_sellers = category_seller_counts } },
-          Thread.new { ActiveRecord::Base.connection_pool.with_connection { subcat_sellers = subcategory_seller_counts } }
+          Thread.new { with_source_analytics_conn { cat_events = click_events_service.category_click_events } },
+          Thread.new { with_source_analytics_conn { subcat_events = click_events_service.subcategory_click_events } },
+          Thread.new { with_source_analytics_conn { cat_sellers = category_seller_counts } },
+          Thread.new { with_source_analytics_conn { subcat_sellers = subcategory_seller_counts } }
         ]
         threads.each(&:join)
 
@@ -798,6 +798,16 @@ class Sales::AnalyticsController < ApplicationController
     end
   end
 
+  # These aggregation queries scan large analytics tables; give them a
+  # longer statement_timeout than the global default so parallel bursts
+  # don't get killed mid-query.
+  def with_source_analytics_conn
+    ActiveRecord::Base.connection_pool.with_connection do |conn|
+      conn.execute("SET statement_timeout = '120s'")
+      yield conn
+    end
+  end
+
   def get_source_analytics(selected_source = nil, selected_utm_type = nil, selected_utm_value = nil)
     # Get date parameters for filtering
     start_date = params[:start_date]
@@ -864,14 +874,14 @@ class Sales::AnalyticsController < ApplicationController
       referrer_distribution = {}
 
       threads = [
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { total_visits = base_scope.count } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql)) } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_visits = base_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).count } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_unique_visitors = visitor_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).distinct.count(Arel.sql(visitor_id_sql)) } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { visit_timestamps = compact_count_series(base_scope, 'analytics.created_at') } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitor_timestamps = compact_distinct_series(visitor_scope, 'analytics.created_at', Arel.sql(visitor_id_sql)) } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count } },
-        Thread.new { ActiveRecord::Base.connection_pool.with_connection { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } }
+        Thread.new { with_source_analytics_conn { total_visits = base_scope.count } },
+        Thread.new { with_source_analytics_conn { unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql)) } },
+        Thread.new { with_source_analytics_conn { daily_visits = base_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).count } },
+        Thread.new { with_source_analytics_conn { daily_unique_visitors = visitor_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).distinct.count(Arel.sql(visitor_id_sql)) } },
+        Thread.new { with_source_analytics_conn { visit_timestamps = compact_count_series(base_scope, 'analytics.created_at') } },
+        Thread.new { with_source_analytics_conn { unique_visitor_timestamps = compact_distinct_series(visitor_scope, 'analytics.created_at', Arel.sql(visitor_id_sql)) } },
+        Thread.new { with_source_analytics_conn { utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count } },
+        Thread.new { with_source_analytics_conn { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } }
       ]
       threads.each(&:join)
 
@@ -922,19 +932,19 @@ class Sales::AnalyticsController < ApplicationController
     unique_visitor_timestamps = []
 
     threads = [
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { source_distribution = base_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql)) } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_source_distribution = base_scope.where.not(utm_source: [nil, '', 'direct', 'other']).group(Arel.sql("LOWER(utm_source)")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_medium_distribution = base_scope.where.not(utm_medium: [nil, '']).group(Arel.sql("LOWER(utm_medium)")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_content_distribution = base_scope.where.not(utm_content: [nil, '']).group(Arel.sql("LOWER(utm_content)")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { utm_term_distribution = base_scope.where.not(utm_term: [nil, '']).group(Arel.sql("LOWER(utm_term)")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitors_by_source = visitor_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).distinct.count(Arel.sql(visitor_id_sql)) } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_visits = base_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).count } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { daily_unique_visitors = visitor_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).distinct.count(Arel.sql(visitor_id_sql)) } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { visit_timestamps = compact_count_series(base_scope, 'analytics.created_at') } },
-      Thread.new { ActiveRecord::Base.connection_pool.with_connection { unique_visitor_timestamps = compact_distinct_series(visitor_scope, 'analytics.created_at', Arel.sql(visitor_id_sql)) } }
+      Thread.new { with_source_analytics_conn { source_distribution = base_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).count } },
+      Thread.new { with_source_analytics_conn { unique_visitors = visitor_scope.distinct.count(Arel.sql(visitor_id_sql)) } },
+      Thread.new { with_source_analytics_conn { utm_source_distribution = base_scope.where.not(utm_source: [nil, '', 'direct', 'other']).group(Arel.sql("LOWER(utm_source)")).count } },
+      Thread.new { with_source_analytics_conn { utm_medium_distribution = base_scope.where.not(utm_medium: [nil, '']).group(Arel.sql("LOWER(utm_medium)")).count } },
+      Thread.new { with_source_analytics_conn { utm_campaign_distribution = base_scope.where.not(utm_campaign: [nil, '']).group(Arel.sql("LOWER(utm_campaign)")).count } },
+      Thread.new { with_source_analytics_conn { utm_content_distribution = base_scope.where.not(utm_content: [nil, '']).group(Arel.sql("LOWER(utm_content)")).count } },
+      Thread.new { with_source_analytics_conn { utm_term_distribution = base_scope.where.not(utm_term: [nil, '']).group(Arel.sql("LOWER(utm_term)")).count } },
+      Thread.new { with_source_analytics_conn { referrer_distribution = base_scope.where.not(referrer: [nil, '']).group(:referrer).count } },
+      Thread.new { with_source_analytics_conn { unique_visitors_by_source = visitor_scope.group(Arel.sql("CASE WHEN source IS NOT NULL AND source != '' THEN LOWER(source) WHEN utm_source IS NOT NULL AND utm_source != '' AND utm_source NOT IN ('direct', 'other') THEN LOWER(utm_source) ELSE 'other' END")).distinct.count(Arel.sql(visitor_id_sql)) } },
+      Thread.new { with_source_analytics_conn { daily_visits = base_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).count } },
+      Thread.new { with_source_analytics_conn { daily_unique_visitors = visitor_scope.group(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).order(Arel.sql("DATE(created_at + INTERVAL '3 hour')")).distinct.count(Arel.sql(visitor_id_sql)) } },
+      Thread.new { with_source_analytics_conn { visit_timestamps = compact_count_series(base_scope, 'analytics.created_at') } },
+      Thread.new { with_source_analytics_conn { unique_visitor_timestamps = compact_distinct_series(visitor_scope, 'analytics.created_at', Arel.sql(visitor_id_sql)) } }
     ]
     threads.each(&:join)
 
