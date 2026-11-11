@@ -9,7 +9,10 @@ class Seller < ApplicationRecord
   after_commit :schedule_city_geocoding, on: %i[create update]
   before_create :generate_uuid
   before_validation :normalize_email
-  before_validation :normalize_username
+  # Only normalize when the username is being (re)set — running on every save
+  # means a legacy non-normalized value (e.g. 'Lucy' predating the normalizer)
+  # collides on unrelated updates and fails the record forever.
+  before_validation :normalize_username, if: :username_changed?
   before_validation :normalize_phone_numbers
   before_validation :derive_location_fields
   before_validation :normalize_city
