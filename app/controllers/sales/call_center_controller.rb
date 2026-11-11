@@ -7,25 +7,46 @@ module Sales
     end
     private :current_user
 
+    # Previously this only logged failures and let the request through, so a
+    # client polling with a dead token got 200s forever and never re-authed.
+    # Now unauthenticated requests get a 401 the client can react to.
     def authenticate_user
-      header = request.headers['Authorization']
-      if header.present?
-        token = header.split(' ').last
-        begin
-          decoded = JsonWebToken.decode(token)
-          if decoded[:success]
-            payload = decoded[:payload]
-            user_id = payload[:user_id] || payload[:seller_id] || payload[:sales_id] || payload[:admin_id]
-            @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
-          else
-            Rails.logger.warn "CallCenter auth failed: #{decoded[:error]}"
-          end
-        rescue StandardError => e
-          Rails.logger.error "Auth error: #{e.message}"
-        end
+      token = request.headers['Authorization'].to_s.split(' ').last
+      if token.blank?
+        return render json: { error: 'Authentication required' }, status: :unauthorized
       end
+
+      begin
+        decoded = JsonWebToken.decode(token)
+      rescue StandardError => e
+        Rails.logger.error "Auth error: #{e.message}"
+        return render json: { error: 'Authentication failed' }, status: :unauthorized
+      end
+
+      unless decoded[:success]
+        log_auth_failure(token, decoded[:error])
+        return render json: { error: decoded[:error].presence || 'Invalid token' }, status: :unauthorized
+      end
+
+      payload = decoded[:payload]
+      user_id = payload[:user_id] || payload[:seller_id] || payload[:sales_id] || payload[:admin_id]
+      @current_user = SalesUser.find_by(id: user_id) || Admin.find_by(id: user_id)
+      render json: { error: 'Unauthorized' }, status: :unauthorized unless @current_user
     end
     private :authenticate_user
+
+    # A polling client with an expired token would otherwise emit one warn per
+    # request — throttle to once per token+error per 15 minutes.
+    def log_auth_failure(token, error)
+      fingerprint = Digest::MD5.hexdigest("#{token}:#{error}")
+      Rails.cache.fetch("call_center_auth_warn:#{fingerprint}", expires_in: 15.minutes) do
+        Rails.logger.warn "CallCenter auth failed: #{error}"
+        true
+      end
+    rescue StandardError
+      Rails.logger.warn "CallCenter auth failed: #{error}"
+    end
+    private :log_auth_failure
 
     before_action :authenticate_user
     skip_before_action :verify_authenticity_token, only: [:log_call, :queue, :send_email, :populate_queue, :rating, :submit_rating, :generate_summary, :update_log, :delete_log], raise: false

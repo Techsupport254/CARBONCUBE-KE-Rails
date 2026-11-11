@@ -82,7 +82,7 @@ class SellerVerification < ApplicationRecord
   # ({ field => { 'old' => x, 'new' => y } }). Call inside a transaction —
   # raises ActiveRecord::RecordInvalid if the seller update fails validation.
   def self.build_corrections(seller, raw_corrections)
-    return {} if raw_corrections.blank?
+    return [{}, {}] if raw_corrections.blank?
 
     diff = {}
     updates = {}

@@ -14,7 +14,7 @@ class AuthorizeApiRequest
     decoded_result = decoded_token
     
     unless decoded_result[:success]
-      Rails.logger.error "AuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
+      Rails.logger.info "AuthorizeApiRequest: Token validation failed: #{decoded_result[:error]}"
       return nil
     end
     

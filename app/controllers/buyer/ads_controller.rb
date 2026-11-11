@@ -2283,15 +2283,15 @@ class Buyer::AdsController < ApplicationController
 
       # For authenticated users, also use wishlist, cart, and conversations
       if buyer_id.present?
-        WishList.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).each do |id|
+        WishList.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).compact.each do |id|
           2.times { engaged_ad_ids << id }
           ad_ids.add(id)
         end
-        CartItem.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).each do |id|
+        CartItem.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).compact.each do |id|
           3.times { engaged_ad_ids << id }
           ad_ids.add(id)
         end
-        Conversation.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).each do |id|
+        Conversation.where(buyer_id: buyer_id).where('created_at >= ?', 90.days.ago).pluck(:ad_id).compact.each do |id|
           4.times { engaged_ad_ids << id }
           ad_ids.add(id)
         end
@@ -2535,12 +2535,12 @@ class Buyer::AdsController < ApplicationController
     exclude_clean = Array(exclude_ad_ids).map(&:to_i).reject(&:zero?).sort
     exclude_hash = Digest::MD5.hexdigest(exclude_clean.join(','))
     profile_parts = [
-      profile[:ad_ids].sort.join(','),
-      profile[:category_ids].sort.join(','),
-      profile[:subcategory_ids].sort.join(','),
-      profile[:seller_ids].sort.join(','),
-      (profile[:top_subcategory_ids] || []).sort.join(','),
-      (profile[:top_category_ids] || []).sort.join(',')
+      profile[:ad_ids].compact.sort.join(','),
+      profile[:category_ids].compact.sort.join(','),
+      profile[:subcategory_ids].compact.sort.join(','),
+      profile[:seller_ids].compact.sort.join(','),
+      (profile[:top_subcategory_ids] || []).compact.sort.join(','),
+      (profile[:top_category_ids] || []).compact.sort.join(',')
     ]
     profile_hash = Digest::MD5.hexdigest(profile_parts.join('|'))
     coords_key = (lat.present? && lng.present?) ? "_#{lat.to_f.round(2)}_#{lng.to_f.round(2)}" : ""

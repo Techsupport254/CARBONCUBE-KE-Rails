@@ -51,6 +51,11 @@ module ActivityTracking
   end
 
   def update_user_activity(user)
+    # The record can be destroyed (e.g. account deletion) between auth and
+    # this after_action — update_column would raise "cannot update a destroyed
+    # record".
+    return if user.destroyed?
+
     # Use update_column to skip validations and callbacks for performance
     user.update_column(:last_active_at, Time.current)
   end

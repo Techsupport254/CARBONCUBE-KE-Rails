@@ -56,7 +56,7 @@ class FieldLocationRedisService
       hour_key = eat_now.hour
       return false if pings.any? { |p| p['hour'] == hour_key }
 
-      entry = ping.merge(
+      entry = normalize_value(ping).merge(
         'ts' => Time.current.iso8601,
         'hour' => hour_key
       )
@@ -130,6 +130,24 @@ class FieldLocationRedisService
     end
 
     private
+
+    # Request params can arrive tagged ASCII-8BIT when the client sends bytes
+    # that aren't valid UTF-8; JSON.generate warns on those (and will raise on
+    # json 3.0). Retag as UTF-8 and scrub anything still invalid.
+    def normalize_value(value)
+      value = value.to_unsafe_h if value.is_a?(ActionController::Parameters)
+      case value
+      when String
+        utf8 = value.dup.force_encoding(Encoding::UTF_8)
+        utf8.valid_encoding? ? utf8 : utf8.scrub
+      when Hash
+        value.transform_values { |v| normalize_value(v) }
+      when Array
+        value.map { |v| normalize_value(v) }
+      else
+        value
+      end
+    end
 
     def daily_key(user_id, date = eat_today)
       date_str = date.is_a?(Date) ? date.iso8601 : Date.parse(date.to_s).iso8601
