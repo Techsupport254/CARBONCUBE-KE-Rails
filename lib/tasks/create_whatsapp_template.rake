@@ -307,4 +307,129 @@ namespace :admin do
       puts "❌ Error connecting to Graph API: #{e.message}"
     end
   end
+
+  desc "Create the seller_verification_apology WhatsApp template via Graph API"
+  task create_verification_apology_template: :environment do
+    require 'net/http'
+    require 'uri'
+    require 'json'
+
+    waba_id = ENV['WHATSAPP_CLOUD_WABA_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+    graph_url = 'https://graph.facebook.com/v22.0'
+
+    if waba_id.blank? || access_token.blank?
+      puts "❌ Error: WHATSAPP_CLOUD_WABA_ID or WHATSAPP_CLOUD_ACCESS_TOKEN is missing in .env"
+      exit 1
+    end
+
+    uri = URI("#{graph_url}/#{waba_id}/message_templates")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+    request = Net::HTTP::Post.new(uri.path)
+    request['Authorization'] = "Bearer #{access_token}"
+    request['Content-Type'] = 'application/json'
+
+    body_text = "Hello {{1}},\n\nWe’re reaching out personally to apologise for an experience you recently had with someone who approached you claiming to be a buyer, before later identifying themselves as a Carbon Cube Kenya agent seeking to verify your business.\n\nWe understand that this was misleading and frustrating, and we’re truly sorry. This is not how we want our sellers to be treated, and we take your concerns seriously.\n\nAt Carbon Cube Kenya, we value your business and the trust you place in us. We don’t want this experience to affect your confidence in our platform or your decision to continue using it. We are addressing the matter and working to ensure that our verification process is handled openly and honestly.\n\nWe would appreciate the opportunity to make things right and reassure you that your trust matters to us.\n\nThank you for being part of Carbon Cube Kenya. We sincerely apologise for what happened."
+
+    payload = {
+      name: 'seller_verification_apology',
+      language: 'en',
+      category: 'MARKETING',
+      components: [
+        {
+          type: 'BODY',
+          text: body_text,
+          example: {
+            body_text: [
+              ['John Doe']
+            ]
+          }
+        }
+      ]
+    }
+
+    request.body = payload.to_json
+
+    puts "Sending request to Meta Graph API to create template 'seller_verification_apology'..."
+
+    begin
+      response = http.request(request)
+      result = JSON.parse(response.body)
+
+      if response.code.to_i == 200 || response.code.to_i == 201
+        puts "✅ Template successfully submitted for creation/approval!"
+        puts "ID: #{result['id']}"
+        puts "Status: #{result['status']}"
+        puts "Category: #{result['category']}"
+      else
+        puts "❌ Failed to create template:"
+        puts JSON.pretty_generate(result)
+      end
+    rescue StandardError => e
+      puts "❌ Error connecting to Graph API: #{e.message}"
+    end
+  end
+
+  desc "Create the seller_why_verify_business WhatsApp template via Graph API"
+  task create_why_verify_business_template: :environment do
+    require 'net/http'
+    require 'uri'
+    require 'json'
+
+    waba_id = ENV['WHATSAPP_CLOUD_WABA_ID']
+    access_token = ENV['WHATSAPP_CLOUD_ACCESS_TOKEN']
+    graph_url = 'https://graph.facebook.com/v22.0'
+
+    if waba_id.blank? || access_token.blank?
+      puts "❌ Error: WHATSAPP_CLOUD_WABA_ID or WHATSAPP_CLOUD_ACCESS_TOKEN is missing in .env"
+      exit 1
+    end
+
+    uri = URI("#{graph_url}/#{waba_id}/message_templates")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if Rails.env.development?
+
+    request = Net::HTTP::Post.new(uri.path)
+    request['Authorization'] = "Bearer #{access_token}"
+    request['Content-Type'] = 'application/json'
+
+    body_text = "Hello Seller 👋\n\nWhy verify your business on Carbon Cube Kenya?\n\nA verification badge helps build trust, makes your business stand out, and gives potential buyers more confidence when dealing with you.\n\nYour products matter, but trust matters too!\n\nReply to this message to have one of our agents help you verify your business.\n\n🌐 carboncube-ke.com"
+
+    payload = {
+      name: 'seller_why_verify_business',
+      language: 'en',
+      category: 'MARKETING',
+      components: [
+        {
+          type: 'BODY',
+          text: body_text
+        }
+      ]
+    }
+
+    request.body = payload.to_json
+
+    puts "Sending request to Meta Graph API to create template 'seller_why_verify_business'..."
+
+    begin
+      response = http.request(request)
+      result = JSON.parse(response.body)
+
+      if response.code.to_i == 200 || response.code.to_i == 201
+        puts "✅ Template successfully submitted for creation/approval!"
+        puts "ID: #{result['id']}"
+        puts "Status: #{result['status']}"
+        puts "Category: #{result['category']}"
+      else
+        puts "❌ Failed to create template:"
+        puts JSON.pretty_generate(result)
+      end
+    rescue StandardError => e
+      puts "❌ Error connecting to Graph API: #{e.message}"
+    end
+  end
 end

@@ -4,31 +4,33 @@ import type { ReactNode } from "react"
 type InfoCardProps = {
   children: ReactNode
   label?: string
-  backgroundColor?: string
+  /** Card border color — pastel tints for alert/tip variants. */
   borderColor?: string
+  /** Card background — tinted fills for alert/tip variants. */
+  backgroundColor?: string
 }
 
 export function InfoCard({
   children,
   label,
-  backgroundColor = "#f8fafc",
   borderColor = "#e2e8f0",
+  backgroundColor,
 }: InfoCardProps) {
   return (
     <Section
       className="rsp-card"
       style={{
-        backgroundColor,
+        backgroundColor: backgroundColor || "#f8fafc",
         border: `1px solid ${borderColor}`,
-        borderRadius: "5px",
-        padding: "12px",
-        margin: "10px 0",
+        borderRadius: "10px",
+        padding: "14px 16px",
+        margin: "12px 0",
       }}
     >
       {label && (
         <Text
           style={{
-            margin: "0 0 5px",
+            margin: "0 0 6px",
             fontSize: "10px",
             fontWeight: 600,
             color: "#94a3b8",

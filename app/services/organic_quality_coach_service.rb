@@ -87,7 +87,7 @@ class OrganicQualityCoachService
       max_points: 15.0,
       count: media_count,
       status: points >= 15.0 ? 'Excellent' : (points >= 10.0 ? 'Good' : 'Needs Images'),
-      tip: points >= 15.0 ? 'Great job! 3+ clear photos added.' : 'Add at least 3 high-resolution photos showing different angles to earn full +15 points.'
+      tip: points >= 15.0 ? 'Great job! All 3 photo slots filled.' : 'Add 3 high-resolution photos showing different angles to earn full +15 points.'
     }
   end
 
@@ -231,7 +231,7 @@ class OrganicQualityCoachService
   def build_recommendations(images, desc, specs, pricing, trust)
     recs = []
     if images[:points] < 15.0
-      recs << { icon: 'camera', title: 'Upload 3+ Photos', desc: 'Add more photos from different angles to gain up to +15 pts', points: 15.0 - images[:points] }
+      recs << { icon: 'camera', title: 'Upload 3 Photos', desc: 'Add photos from different angles to gain up to +15 pts', points: 15.0 - images[:points] }
     end
     if desc[:points] < 10.0
       recs << { icon: 'file-text', title: 'Expand Description', desc: 'Write at least 250 characters detailing condition, dimensions, and usage', points: 10.0 - desc[:points] }
